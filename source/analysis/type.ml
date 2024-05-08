@@ -3841,7 +3841,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
      because we support Callable type aliases, so we have to resolve aliases to be sure). If so,
      return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
      caller will then parse the expression as a normal parametric type). *)
-  let parse_callable_if_appropriate ~location ~callee_value ~getitem_call =
+  let parse_callable_if_appropriate ~location ~subscript_base ~subscript_index =
     let rec resolve_base base_value =
       match base_value with
       | Expression.Name
@@ -3903,7 +3903,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
           Call { call with callee = resolved_callee }
       | _ -> base_value
     in
-
     let rec is_typing_callable = function
       | Expression.Name
           (Name.Attribute
@@ -3924,7 +3923,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | Call { callee; _ } -> is_typing_callable (Node.value callee)
       | _ -> false
     in
-    let parse_callable expression =
+    let parse_callable ~resolved_subscript_base ~subscript_index =
       let modifiers, implementation_signature, overload_signatures =
         let get_from_base base implementation_argument overloads_argument =
           match Node.value base with
@@ -3942,49 +3941,26 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               (* Invalid base. *)
               None, None, None
         in
-        match expression with
-        | Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            {
-                              Node.value =
-                                Call
-                                  {
-                                    callee =
-                                      {
-                                        Node.value =
-                                          Name
-                                            (Name.Attribute { base; attribute = "__getitem__"; _ });
-                                        _;
-                                      };
-                                    arguments = [{ Call.Argument.value = argument; _ }];
-                                  };
-                              _;
-                            };
-                          attribute = "__getitem__";
-                          _;
-                        });
-                  _;
-                };
-              arguments = [{ Call.Argument.value = overloads_argument; _ }];
-            } ->
-            (* Overloads are provided *)
-            get_from_base base (Some argument) (Some overloads_argument)
-        | Call
-            {
-              callee =
-                { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-              arguments = [{ Call.Argument.value = argument; _ }];
-            } ->
-            (* No overloads provided *)
-            get_from_base base (Some argument) None
-        | _ -> None, None, None
+        match Node.value resolved_subscript_base, subscript_index with
+        (* There are two layers of subscripts, this is how we represent overloads in closed
+           expression form *)
+        | ( Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Name
+                        (Name.Attribute
+                          { base = inner_subscript_base; attribute = "__getitem__"; _ });
+                    _;
+                  };
+                arguments = [{ Call.Argument.value = inner_subscript_index; _ }];
+              },
+            overloads_index ) ->
+            get_from_base inner_subscript_base (Some inner_subscript_index) (Some overloads_index)
+        (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
+           type *)
+        | _, _ -> get_from_base resolved_subscript_base (Some subscript_index) None
       in
       let kind =
         match modifiers with
@@ -4046,35 +4022,19 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    match callee_value with
-    | Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
-        let resolved_base_value = resolve_base (Node.value base) in
-        if is_typing_callable resolved_base_value then
-          let resolved_callee =
-            Expression.Name
-              (Name.Attribute
-                 {
-                   base = { base with Node.value = resolved_base_value };
-                   attribute = "__getitem__";
-                   special = true;
-                 })
-          in
-          Some
-            (parse_callable
-               (Call { getitem_call with callee = { Node.value = resolved_callee; location } }))
-        else
-          None
-    | _ ->
-        (* This case is not possible on legal type annotations, although it currently can be hit if
-           someone *explicitly* calls `__getitem__` (so that special = true won't match above). *)
-        None
+    let resolved_subscript_base_value = resolve_base (Node.value subscript_base) in
+    if is_typing_callable resolved_subscript_base_value then
+      let resolved_subscript_base =
+        { subscript_base with Node.value = resolved_subscript_base_value }
+      in
+      Some (parse_callable ~resolved_subscript_base ~subscript_index)
+    else
+      None
   in
   let create_from_subscript
       ~location
       ~base
       ~index_expression:({ Node.value = index_value; _ } as index_expression)
-      ~getitem_call
-      ~callee_value
     =
     let create_parametric ~base ~index_expression =
       let parametric name =
@@ -4169,7 +4129,12 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>| union
         |> Option.value ~default:Top
     | _, _ -> (
-        match parse_callable_if_appropriate ~location ~callee_value ~getitem_call with
+        match
+          parse_callable_if_appropriate
+            ~location
+            ~subscript_base:base
+            ~subscript_index:index_expression
+        with
         | Some callable_type -> callable_type
         | None ->
             (* This is actually the case that almost all parametric type annotations eventually hit;
@@ -4252,17 +4217,12 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
     | Call
-        ({
-           callee =
-             {
-               Node.value =
-                 Name (Name.Attribute { base; attribute = "__getitem__"; _ }) as callee_value;
-               location;
-             };
-           arguments = [{ Call.Argument.value = index_expression; name = None; _ }];
-         } as getitem_call) ->
-        (* TODO(T101303314) Eliminate the use of `getitem_call` and `callee_value` here. *)
-        create_from_subscript ~location ~base ~index_expression ~getitem_call ~callee_value
+        {
+          callee =
+            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); location };
+          arguments = [{ Call.Argument.value = index_expression; name = None; _ }];
+        } ->
+        create_from_subscript ~location ~base ~index_expression
     | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
