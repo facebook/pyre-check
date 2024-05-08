@@ -4040,7 +4040,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    let create_parametric ~base ~argument =
+    let create_parametric ~base ~index_expression =
       let parametric name =
         let parameters =
           let element_to_parameters = function
@@ -4062,7 +4062,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                         ]
                     | _ -> [Record.Parameter.Single parsed]))
           in
-          match argument with
+          match index_expression with
           | { Node.value = Expression.Tuple elements; _ } ->
               List.concat_map elements ~f:element_to_parameters
           | element -> element_to_parameters element
@@ -4160,7 +4160,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                  name = None;
                  _;
                };
-             ] as getitem_arguments;
+             ];
          } as getitem_call) -> (
         match base, index_value with
         | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Broadcast" base ->
@@ -4171,7 +4171,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Add" base ->
             let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
             (match created_type with
-            | Top -> create_parametric ~base ~argument:index_expression
+            | Top -> create_parametric ~base ~index_expression
             | _ -> created_type)
             |> resolve_aliases
         | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Subtract" base ->
@@ -4179,7 +4179,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               create_int_expression_from_arguments arguments ~operation:`Subtract
             in
             (match created_type with
-            | Top -> create_parametric ~base ~argument:index_expression
+            | Top -> create_parametric ~base ~index_expression
             | _ -> created_type)
             |> resolve_aliases
         | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Multiply" base ->
@@ -4187,13 +4187,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               create_int_expression_from_arguments arguments ~operation:`Multiply
             in
             (match created_type with
-            | Top -> create_parametric ~base ~argument:index_expression
+            | Top -> create_parametric ~base ~index_expression
             | _ -> created_type)
             |> resolve_aliases
         | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Divide" base ->
             let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
             (match created_type with
-            | Top -> create_parametric ~base ~argument:index_expression
+            | Top -> create_parametric ~base ~index_expression
             | _ -> created_type)
             |> resolve_aliases
         | ( {
@@ -4224,18 +4224,23 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             >>= Option.all
             >>| union
             |> Option.value ~default:Top
-        (* This is the "general" parametric type case, which includes both special handling of
-           `typing.Callable` and "normal" parametric types. *)
-        | _, _ -> (
+        | _, _ ->
+            (* After handling all the cases above, we still need to handle the distinction between
+               Callable types vs other parametric types, because the legal forms are different. This
+               requires the ability to resolve aliases because we currently allow users to create
+               type aliases for Callable, which means we have to resolve them at the parsing
+               stage. *)
             let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee_value in
-            match getitem_arguments with
-            | _ when is_typing_callable resolved_callee ->
-                parse_callable
-                  (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
-            | [{ Call.Argument.name = None; value = argument; _ }] ->
-                (* TODO(T84854853): Add back support for `Length` and `Product`. *)
-                create_parametric ~base ~argument
-            | _ -> Top))
+            if is_typing_callable resolved_callee then
+              parse_callable
+                (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
+            else
+              (* This is actually the case that almost all parametric type annotations eventually
+                 hit; everything above is just special-casing some unusual scenarios where we
+                 customize behavior.
+
+                 TODO(T84854853): Add back support for `Length` and `Product`. *)
+              create_parametric ~base ~index_expression)
     | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
