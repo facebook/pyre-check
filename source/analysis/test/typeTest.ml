@@ -6724,17 +6724,12 @@ let () =
          "show" >:: test_show;
          "is_truthy" >:: test_is_truthy;
          "is_falsy" >:: test_is_falsy;
-       ]
-  |> Test.run;
-  "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;
-  "callable"
-  >::: [
+         "is_unit_test" >:: test_is_unit_test;
          "from_overloads" >:: test_from_overloads;
          "with_return_annotation" >:: test_with_return_annotation;
          "overload_parameters" >:: test_overload_parameters;
          "parameter_create" >:: test_parameter_create;
          "resolve_getitem_callee" >:: test_resolve_getitem_callee;
+         "lift_readonly_for_container" >:: test_lift_readonly_if_possible;
        ]
-  |> Test.run;
-  "readOnly" >::: ["lift_readonly_for_container" >:: test_lift_readonly_if_possible] |> Test.run;
-  ()
+  |> Test.run
