@@ -3903,142 +3903,140 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>| IntExpression.create_int_expression_from_types ~operation
         |> Option.value ~default:Top
   in
-  let result =
-    let rec is_typing_callable = function
-      | Expression.Name
-          (Name.Attribute
-            {
-              base = { Node.value = Name (Name.Identifier "typing"); _ };
-              attribute = "Callable";
-              _;
-            }) ->
-          true
-      | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
-      | Call { callee; _ } -> is_typing_callable (Node.value callee)
-      | _ -> false
+  let rec is_typing_callable = function
+    | Expression.Name
+        (Name.Attribute
+          { base = { Node.value = Name (Name.Identifier "typing"); _ }; attribute = "Callable"; _ })
+      ->
+        true
+    | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
+    | Call { callee; _ } -> is_typing_callable (Node.value callee)
+    | _ -> false
+  in
+  let parse_callable expression =
+    let modifiers, implementation_signature, overload_signatures =
+      let get_from_base base implementation_argument overloads_argument =
+        match Node.value base with
+        | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
+            Some arguments, implementation_argument, overloads_argument
+        | Name
+            (Name.Attribute
+              {
+                base = { Node.value = Name (Name.Identifier "typing"); _ };
+                attribute = "Callable";
+                _;
+              }) ->
+            None, implementation_argument, overloads_argument
+        | _ ->
+            (* Invalid base. *)
+            None, None, None
+      in
+      match expression with
+      | Expression.Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Call
+                                {
+                                  callee =
+                                    {
+                                      Node.value =
+                                        Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                                      _;
+                                    };
+                                  arguments = [{ Call.Argument.value = argument; _ }];
+                                };
+                            _;
+                          };
+                        attribute = "__getitem__";
+                        _;
+                      });
+                _;
+              };
+            arguments = [{ Call.Argument.value = overloads_argument; _ }];
+          } ->
+          (* Overloads are provided *)
+          get_from_base base (Some argument) (Some overloads_argument)
+      | Call
+          {
+            callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            arguments = [{ Call.Argument.value = argument; _ }];
+          } ->
+          (* No overloads provided *)
+          get_from_base base (Some argument) None
+      | _ -> None, None, None
     in
-    let parse_callable expression =
-      let modifiers, implementation_signature, overload_signatures =
-        let get_from_base base implementation_argument overloads_argument =
-          match Node.value base with
-          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
-              Some arguments, implementation_argument, overloads_argument
-          | Name
-              (Name.Attribute
-                {
-                  base = { Node.value = Name (Name.Identifier "typing"); _ };
-                  attribute = "Callable";
-                  _;
-                }) ->
-              None, implementation_argument, overloads_argument
-          | _ ->
-              (* Invalid base. *)
-              None, None, None
-        in
-        match expression with
-        | Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            {
-                              Node.value =
-                                Call
-                                  {
-                                    callee =
-                                      {
-                                        Node.value =
-                                          Name
-                                            (Name.Attribute { base; attribute = "__getitem__"; _ });
-                                        _;
-                                      };
-                                    arguments = [{ Call.Argument.value = argument; _ }];
-                                  };
-                              _;
-                            };
-                          attribute = "__getitem__";
-                          _;
-                        });
-                  _;
-                };
-              arguments = [{ Call.Argument.value = overloads_argument; _ }];
-            } ->
-            (* Overloads are provided *)
-            get_from_base base (Some argument) (Some overloads_argument)
+    let kind =
+      match modifiers with
+      | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
+          Ast.Expression.name_to_reference name
+          >>| (fun name -> Named name)
+          |> Option.value ~default:Anonymous
+      | Some
+          ({
+             Call.Argument.value =
+               { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+             _;
+           }
+          :: _) ->
+          Named (Reference.create value)
+      | _ -> Anonymous
+    in
+    let undefined = { annotation = Top; parameters = Undefined } in
+    let get_signature = function
+      | Expression.Tuple [parameters; annotation] -> (
+          let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
+          match Node.value parameters with
+          | List parameters ->
+              make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
+          | _ -> (
+              let parsed = create_logic parameters in
+              match substitute_parameter_variadic parsed with
+              | Some variable -> make_signature ~parameters:(ParameterVariadicTypeVariable variable)
+              | _ -> (
+                  match parsed with
+                  | Primitive "..." -> make_signature ~parameters:Undefined
+                  | _ -> undefined)))
+      | _ -> undefined
+    in
+    let implementation =
+      match implementation_signature with
+      | Some signature -> get_signature (Node.value signature)
+      | None -> undefined
+    in
+    let overloads =
+      let rec parse_overloads = function
+        | Expression.List arguments -> [get_signature (Tuple arguments)]
         | Call
             {
               callee =
                 { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
               arguments = [{ Call.Argument.value = argument; _ }];
             } ->
-            (* No overloads provided *)
-            get_from_base base (Some argument) None
-        | _ -> None, None, None
+            get_signature (Node.value argument) :: parse_overloads (Node.value base)
+        | _ -> [undefined]
       in
-      let kind =
-        match modifiers with
-        | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
-            Ast.Expression.name_to_reference name
-            >>| (fun name -> Named name)
-            |> Option.value ~default:Anonymous
-        | Some
-            ({
-               Call.Argument.value =
-                 {
-                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
-                   _;
-                 };
-               _;
-             }
-            :: _) ->
-            Named (Reference.create value)
-        | _ -> Anonymous
-      in
-      let undefined = { annotation = Top; parameters = Undefined } in
-      let get_signature = function
-        | Expression.Tuple [parameters; annotation] -> (
-            let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
-            match Node.value parameters with
-            | List parameters ->
-                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
-            | _ -> (
-                let parsed = create_logic parameters in
-                match substitute_parameter_variadic parsed with
-                | Some variable ->
-                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
-                | _ -> (
-                    match parsed with
-                    | Primitive "..." -> make_signature ~parameters:Undefined
-                    | _ -> undefined)))
-        | _ -> undefined
-      in
-      let implementation =
-        match implementation_signature with
-        | Some signature -> get_signature (Node.value signature)
-        | None -> undefined
-      in
-      let overloads =
-        let rec parse_overloads = function
-          | Expression.List arguments -> [get_signature (Tuple arguments)]
-          | Call
-              {
-                callee =
-                  { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-                arguments = [{ Call.Argument.value = argument; _ }];
-              } ->
-              get_signature (Node.value argument) :: parse_overloads (Node.value base)
-          | _ -> [undefined]
-        in
-        match overload_signatures with
-        | Some signatures -> List.rev (parse_overloads (Node.value signatures))
-        | None -> []
-      in
-      Callable { kind; implementation; overloads }
+      match overload_signatures with
+      | Some signatures -> List.rev (parse_overloads (Node.value signatures))
+      | None -> []
     in
+    Callable { kind; implementation; overloads }
+  in
+  let create_from_subscript
+      ~location
+      ~base
+      ~index_expression:({ Node.value = index_value; _ } as index_expression)
+      ~getitem_call
+      ~callee_value
+    =
     let create_parametric ~base ~index_expression =
       let parametric name =
         let parameters =
@@ -4073,6 +4071,82 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | _, Name _ -> parametric (Expression.show base)
       | _ -> Top
     in
+    match base, index_value with
+    | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Broadcast" base ->
+        (match List.map ~f:create_logic arguments with
+        | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
+        | _ -> Bottom)
+        |> resolve_aliases
+    | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Add" base ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
+        (match created_type with
+        | Top -> create_parametric ~base ~index_expression
+        | _ -> created_type)
+        |> resolve_aliases
+    | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Subtract" base ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Subtract in
+        (match created_type with
+        | Top -> create_parametric ~base ~index_expression
+        | _ -> created_type)
+        |> resolve_aliases
+    | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Multiply" base ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
+        (match created_type with
+        | Top -> create_parametric ~base ~index_expression
+        | _ -> created_type)
+        |> resolve_aliases
+    | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Divide" base ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
+        (match created_type with
+        | Top -> create_parametric ~base ~index_expression
+        | _ -> created_type)
+        |> resolve_aliases
+    | ( {
+          Node.value =
+            Expression.Name
+              (Name.Attribute
+                {
+                  base =
+                    {
+                      Node.value =
+                        Expression.Name
+                          (Name.Identifier "typing" | Name.Identifier "typing_extensions");
+                      _;
+                    };
+                  attribute = "Literal";
+                  _;
+                });
+          _;
+        },
+        _ ) ->
+        let arguments =
+          match index_value with
+          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
+          | argument -> Some [argument]
+        in
+        arguments
+        >>| List.map ~f:create_literal
+        >>= Option.all
+        >>| union
+        |> Option.value ~default:Top
+    | _, _ ->
+        (* After handling all the cases above, we still need to handle the distinction between
+           Callable types vs other parametric types, because the legal forms are different. This
+           requires the ability to resolve aliases because we currently allow users to create type
+           aliases for Callable, which means we have to resolve them at the parsing stage. *)
+        let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee_value in
+        if is_typing_callable resolved_callee then
+          parse_callable
+            (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
+        else
+          (* This is actually the case that almost all parametric type annotations eventually hit;
+             everything above is just special-casing some unusual scenarios where we customize
+             behavior.
+
+             TODO(T84854853): Add back support for `Length` and `Product`. *)
+          create_parametric ~base ~index_expression
+  in
+  let result =
     match expression with
     | Call
         {
@@ -4152,94 +4226,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                  Name (Name.Attribute { base; attribute = "__getitem__"; _ }) as callee_value;
                location;
              };
-           arguments =
-             [
-               {
-                 Call.Argument.value = { Node.value = index_value; _ } as index_expression;
-                 name = None;
-                 _;
-               };
-             ];
-         } as getitem_call) -> (
-        match base, index_value with
-        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Broadcast" base ->
-            (match List.map ~f:create_logic arguments with
-            | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
-            | _ -> Bottom)
-            |> resolve_aliases
-        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Add" base ->
-            let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
-            (match created_type with
-            | Top -> create_parametric ~base ~index_expression
-            | _ -> created_type)
-            |> resolve_aliases
-        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Subtract" base ->
-            let created_type =
-              create_int_expression_from_arguments arguments ~operation:`Subtract
-            in
-            (match created_type with
-            | Top -> create_parametric ~base ~index_expression
-            | _ -> created_type)
-            |> resolve_aliases
-        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Multiply" base ->
-            let created_type =
-              create_int_expression_from_arguments arguments ~operation:`Multiply
-            in
-            (match created_type with
-            | Top -> create_parametric ~base ~index_expression
-            | _ -> created_type)
-            |> resolve_aliases
-        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Divide" base ->
-            let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
-            (match created_type with
-            | Top -> create_parametric ~base ~index_expression
-            | _ -> created_type)
-            |> resolve_aliases
-        | ( {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Expression.Name
-                              (Name.Identifier "typing" | Name.Identifier "typing_extensions");
-                          _;
-                        };
-                      attribute = "Literal";
-                      _;
-                    });
-              _;
-            },
-            _ ) ->
-            let arguments =
-              match index_value with
-              | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
-              | argument -> Some [argument]
-            in
-            arguments
-            >>| List.map ~f:create_literal
-            >>= Option.all
-            >>| union
-            |> Option.value ~default:Top
-        | _, _ ->
-            (* After handling all the cases above, we still need to handle the distinction between
-               Callable types vs other parametric types, because the legal forms are different. This
-               requires the ability to resolve aliases because we currently allow users to create
-               type aliases for Callable, which means we have to resolve them at the parsing
-               stage. *)
-            let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee_value in
-            if is_typing_callable resolved_callee then
-              parse_callable
-                (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
-            else
-              (* This is actually the case that almost all parametric type annotations eventually
-                 hit; everything above is just special-casing some unusual scenarios where we
-                 customize behavior.
-
-                 TODO(T84854853): Add back support for `Length` and `Product`. *)
-              create_parametric ~base ~index_expression)
+           arguments = [{ Call.Argument.value = index_expression; name = None; _ }];
+         } as getitem_call) ->
+        (* TODO(T101303314) Eliminate the use of `getitem_call` and `callee_value` here. *)
+        create_from_subscript ~location ~base ~index_expression ~getitem_call ~callee_value
     | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
