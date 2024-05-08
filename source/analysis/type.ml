@@ -4281,14 +4281,22 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>= Option.all
         >>| union
         |> Option.value ~default:Top
-    | Call ({ callee = { Node.value = callee; location }; arguments } as callee_expression) -> (
+    | Call
+        ({
+           callee =
+             {
+               Node.value =
+                 Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }) as callee;
+               location;
+             };
+           arguments;
+         } as callee_expression) -> (
         let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee in
-        match callee, arguments with
+        match arguments with
         | _ when is_typing_callable resolved_callee ->
             parse_callable
               (Call { callee_expression with callee = { Node.value = resolved_callee; location } })
-        | ( Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }),
-            [{ Call.Argument.name = None; value = argument; _ }] ) ->
+        | [{ Call.Argument.name = None; value = argument; _ }] ->
             (* TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~argument
         | _ -> Top)
