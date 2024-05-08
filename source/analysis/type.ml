@@ -3914,6 +3914,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             }) ->
           true
       | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
+      | Call
+          {
+            callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            _;
+          } ->
+          is_typing_callable (Node.value base)
       | Call { callee; _ } -> is_typing_callable (Node.value callee)
       | _ -> false
     in
@@ -4039,24 +4046,28 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    let resolved_callee =
-      match callee_value with
-      | Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
-          let resolved_base = { base with Node.value = resolve_base (Node.value base) } in
-          Expression.Name
-            (Name.Attribute { base = resolved_base; attribute = "__getitem__"; special = true })
-      | bad_callee ->
-          (* This case is not possible on legal type annotations, although it currently can be hit
-             if someone *explicitly* calls `__getitem__` (so that special = true won't match
-             above). *)
-          bad_callee
-    in
-    if is_typing_callable resolved_callee then
-      Some
-        (parse_callable
-           (Call { getitem_call with callee = { Node.value = resolved_callee; location } }))
-    else
-      None
+    match callee_value with
+    | Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
+        let resolved_base_value = resolve_base (Node.value base) in
+        if is_typing_callable resolved_base_value then
+          let resolved_callee =
+            Expression.Name
+              (Name.Attribute
+                 {
+                   base = { base with Node.value = resolved_base_value };
+                   attribute = "__getitem__";
+                   special = true;
+                 })
+          in
+          Some
+            (parse_callable
+               (Call { getitem_call with callee = { Node.value = resolved_callee; location } }))
+        else
+          None
+    | _ ->
+        (* This case is not possible on legal type annotations, although it currently can be hit if
+           someone *explicitly* calls `__getitem__` (so that special = true won't match above). *)
+        None
   in
   let create_from_subscript
       ~location
