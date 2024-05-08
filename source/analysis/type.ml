@@ -3841,7 +3841,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
      because we support Callable type aliases, so we have to resolve aliases to be sure). If so,
      return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
      caller will then parse the expression as a normal parametric type). *)
-  let parse_callable_if_appropriate ~location ~subscript_base ~subscript_index =
+  let parse_callable_if_appropriate ~location ~base ~subscript_index =
     let rec resolve_base base_value =
       match base_value with
       | Expression.Name
@@ -3878,17 +3878,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
              callee =
                {
                  Node.value =
-                   Name
-                     (Name.Attribute
-                       { base = subscript_base; attribute = "__getitem__"; special = true });
+                   Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
                  _;
                } as callee;
              _;
            } as call) ->
           let resolved_callee =
-            let resolved_base =
-              { subscript_base with value = resolve_base (Node.value subscript_base) }
-            in
+            let resolved_base = { base with value = resolve_base (Node.value base) } in
             {
               callee with
               Node.value =
@@ -3923,7 +3919,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | Call { callee; _ } -> is_typing_callable (Node.value callee)
       | _ -> false
     in
-    let parse_callable ~resolved_subscript_base ~subscript_index =
+    let parse_callable ~resolved_base ~subscript_index =
       let modifiers, implementation_signature, overload_signatures =
         let get_from_base base implementation_argument overloads_argument =
           match Node.value base with
@@ -3941,7 +3937,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               (* Invalid base. *)
               None, None, None
         in
-        match Node.value resolved_subscript_base, subscript_index with
+        match Node.value resolved_base, subscript_index with
         (* There are two layers of subscripts, this is how we represent overloads in closed
            expression form *)
         | ( Expression.Call
@@ -3949,18 +3945,16 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 callee =
                   {
                     Node.value =
-                      Name
-                        (Name.Attribute
-                          { base = inner_subscript_base; attribute = "__getitem__"; _ });
+                      Name (Name.Attribute { base = inner_base; attribute = "__getitem__"; _ });
                     _;
                   };
                 arguments = [{ Call.Argument.value = inner_subscript_index; _ }];
               },
             overloads_index ) ->
-            get_from_base inner_subscript_base (Some inner_subscript_index) (Some overloads_index)
+            get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
         (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
            type *)
-        | _, _ -> get_from_base resolved_subscript_base (Some subscript_index) None
+        | _, _ -> get_from_base resolved_base (Some subscript_index) None
       in
       let kind =
         match modifiers with
@@ -4022,21 +4016,19 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    let resolved_subscript_base_value = resolve_base (Node.value subscript_base) in
-    if is_typing_callable resolved_subscript_base_value then
-      let resolved_subscript_base =
-        { subscript_base with Node.value = resolved_subscript_base_value }
-      in
-      Some (parse_callable ~resolved_subscript_base ~subscript_index)
+    let resolved_base_value = resolve_base (Node.value base) in
+    if is_typing_callable resolved_base_value then
+      let resolved_base = { base with Node.value = resolved_base_value } in
+      Some (parse_callable ~resolved_base ~subscript_index)
     else
       None
   in
   let create_from_subscript
       ~location
       ~base
-      ~index_expression:({ Node.value = index_value; _ } as index_expression)
+      ~subscript_index:({ Node.value = index_value; _ } as subscript_index)
     =
-    let create_parametric ~base ~index_expression =
+    let create_parametric ~base ~subscript_index =
       let parametric name =
         let parameters =
           let element_to_parameters = function
@@ -4058,7 +4050,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                         ]
                     | _ -> [Record.Parameter.Single parsed]))
           in
-          match index_expression with
+          match subscript_index with
           | { Node.value = Expression.Tuple elements; _ } ->
               List.concat_map elements ~f:element_to_parameters
           | element -> element_to_parameters element
@@ -4079,25 +4071,25 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Add" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
         (match created_type with
-        | Top -> create_parametric ~base ~index_expression
+        | Top -> create_parametric ~base ~subscript_index
         | _ -> created_type)
         |> resolve_aliases
     | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Subtract" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Subtract in
         (match created_type with
-        | Top -> create_parametric ~base ~index_expression
+        | Top -> create_parametric ~base ~subscript_index
         | _ -> created_type)
         |> resolve_aliases
     | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Multiply" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
         (match created_type with
-        | Top -> create_parametric ~base ~index_expression
+        | Top -> create_parametric ~base ~subscript_index
         | _ -> created_type)
         |> resolve_aliases
     | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Divide" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
         (match created_type with
-        | Top -> create_parametric ~base ~index_expression
+        | Top -> create_parametric ~base ~subscript_index
         | _ -> created_type)
         |> resolve_aliases
     | ( {
@@ -4129,12 +4121,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>| union
         |> Option.value ~default:Top
     | _, _ -> (
-        match
-          parse_callable_if_appropriate
-            ~location
-            ~subscript_base:base
-            ~subscript_index:index_expression
-        with
+        match parse_callable_if_appropriate ~location ~base ~subscript_index with
         | Some callable_type -> callable_type
         | None ->
             (* This is actually the case that almost all parametric type annotations eventually hit;
@@ -4142,7 +4129,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                behavior.
 
                TODO(T84854853): Add back support for `Length` and `Product`. *)
-            create_parametric ~base ~index_expression)
+            create_parametric ~base ~subscript_index)
   in
   let result =
     match expression with
@@ -4220,9 +4207,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         {
           callee =
             { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); location };
-          arguments = [{ Call.Argument.value = index_expression; name = None; _ }];
+          arguments = [{ Call.Argument.value = subscript_index; name = None; _ }];
         } ->
-        create_from_subscript ~location ~base ~index_expression
+        create_from_subscript ~location ~base ~subscript_index
     | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
