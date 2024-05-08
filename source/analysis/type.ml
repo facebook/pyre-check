@@ -3796,6 +3796,7 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
 
 
 let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
+  let create_logic = create_logic ~resolve_aliases ~variable_aliases in
   let substitute_parameter_variadic = function
     | Primitive name -> (
         match variable_aliases name with
@@ -3813,7 +3814,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | _ -> None)
     | _ -> None
   in
-  let extract_parameter ~create_logic index parameter =
+  let extract_parameter index parameter =
     match Node.value parameter with
     | Expression.Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
         let arguments =
@@ -3896,14 +3897,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | [_] ->
         Top
     | _ ->
-        List.map arguments ~f:(create_logic ~resolve_aliases ~variable_aliases)
+        List.map arguments ~f:create_logic
         |> List.map ~f:IntExpression.type_to_int_expression
         |> Option.all
         >>| IntExpression.create_int_expression_from_types ~operation
         |> Option.value ~default:Top
   in
   let result =
-    let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
       | Expression.Name
           (Name.Attribute
@@ -4004,8 +4004,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
             match Node.value parameters with
             | List parameters ->
-                make_signature
-                  ~parameters:(Defined (List.mapi ~f:(extract_parameter ~create_logic) parameters))
+                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
             | _ -> (
                 let parsed = create_logic parameters in
                 match substitute_parameter_variadic parsed with
@@ -4047,7 +4046,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             | { Node.value = Expression.List elements; _ } ->
                 [
                   Record.Parameter.CallableParameters
-                    (Defined (List.mapi ~f:(extract_parameter ~create_logic) elements));
+                    (Defined (List.mapi ~f:extract_parameter elements));
                 ]
             | element -> (
                 let parsed = create_logic element in
