@@ -3167,72 +3167,6 @@ module Callable = struct
     List.mapi ~f:correct_indices (head @ tail)
 
 
-  let rec resolve_getitem_callee ~resolve_aliases callee =
-    let resolve_getitem_callee = resolve_getitem_callee ~resolve_aliases in
-    match callee with
-    | Expression.Name
-        (Name.Attribute
-          {
-            base =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "Callable";
-                        _;
-                      });
-                _;
-              };
-            attribute = "__getitem__";
-            _;
-          }) ->
-        callee
-    | Expression.Name
-        (Name.Attribute
-          ({ base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ } as
-          attribute)) ->
-        Ast.Expression.name_to_reference name
-        >>| Reference.show
-        >>| (fun name ->
-              match resolve_aliases (Primitive name) with
-              | Primitive "typing.Callable"
-              | Callable
-                  {
-                    implementation = { parameters = Undefined; annotation = Any };
-                    overloads = [];
-                    _;
-                  } ->
-                  Expression.Name
-                    (Name.Attribute
-                       {
-                         attribute with
-                         base =
-                           {
-                             base with
-                             Node.value =
-                               Name
-                                 (Name.Attribute
-                                    {
-                                      base =
-                                        { Node.value = Name (Name.Identifier "typing"); location };
-                                      attribute = "Callable";
-                                      special = false;
-                                    });
-                           };
-                       })
-              | _ -> callee)
-        |> Option.value ~default:callee
-    | Name (Name.Attribute ({ base = { Node.value = base; location }; _ } as attribute)) ->
-        Name
-          (Name.Attribute
-             { attribute with base = { Node.location; value = resolve_getitem_callee base } })
-    | Call ({ callee = { Node.value = callee; location }; _ } as call) ->
-        Call { call with callee = { Node.value = resolve_getitem_callee callee; location } }
-    | _ -> callee
-
-
   let name = function
     | { kind = Named name; _ } -> Some name
     | _ -> None
@@ -3903,132 +3837,218 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>| IntExpression.create_int_expression_from_types ~operation
         |> Option.value ~default:Top
   in
-  let rec is_typing_callable = function
-    | Expression.Name
-        (Name.Attribute
-          { base = { Node.value = Name (Name.Identifier "typing"); _ }; attribute = "Callable"; _ })
-      ->
-        true
-    | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
-    | Call { callee; _ } -> is_typing_callable (Node.value callee)
-    | _ -> false
-  in
-  let parse_callable expression =
-    let modifiers, implementation_signature, overload_signatures =
-      let get_from_base base implementation_argument overloads_argument =
-        match Node.value base with
-        | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
-            Some arguments, implementation_argument, overloads_argument
-        | Name
-            (Name.Attribute
-              {
-                base = { Node.value = Name (Name.Identifier "typing"); _ };
-                attribute = "Callable";
-                _;
-              }) ->
-            None, implementation_argument, overloads_argument
-        | _ ->
-            (* Invalid base. *)
-            None, None, None
-      in
-      match expression with
-      | Expression.Call
-          {
-            callee =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base =
-                          {
-                            Node.value =
-                              Call
-                                {
-                                  callee =
-                                    {
-                                      Node.value =
-                                        Name (Name.Attribute { base; attribute = "__getitem__"; _ });
-                                      _;
-                                    };
-                                  arguments = [{ Call.Argument.value = argument; _ }];
-                                };
-                            _;
-                          };
-                        attribute = "__getitem__";
-                        _;
-                      });
-                _;
-              };
-            arguments = [{ Call.Argument.value = overloads_argument; _ }];
-          } ->
-          (* Overloads are provided *)
-          get_from_base base (Some argument) (Some overloads_argument)
-      | Call
-          {
-            callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = argument; _ }];
-          } ->
-          (* No overloads provided *)
-          get_from_base base (Some argument) None
-      | _ -> None, None, None
-    in
-    let kind =
-      match modifiers with
-      | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
+  (* Determine whether a subscripted type expression involves a Callable type (this is nontrivial
+     because we support Callable type aliases, so we have to resolve aliases to be sure). If so,
+     return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
+     caller will then parse the expression as a normal parametric type). *)
+  let parse_callable_if_appropriate ~location ~callee_value ~getitem_call =
+    let rec resolve_getitem_callee callee =
+      match callee with
+      | Expression.Name
+          (Name.Attribute
+            {
+              base =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          attribute = "Callable";
+                          _;
+                        });
+                  _;
+                };
+              attribute = "__getitem__";
+              _;
+            }) ->
+          callee
+      | Expression.Name
+          (Name.Attribute
+            ({ base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ }
+            as attribute)) ->
           Ast.Expression.name_to_reference name
-          >>| (fun name -> Named name)
-          |> Option.value ~default:Anonymous
-      | Some
-          ({
-             Call.Argument.value =
-               { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-             _;
-           }
-          :: _) ->
-          Named (Reference.create value)
-      | _ -> Anonymous
+          >>| Reference.show
+          >>| (fun name ->
+                match resolve_aliases (Primitive name) with
+                | Primitive "typing.Callable"
+                | Callable
+                    {
+                      implementation = { parameters = Undefined; annotation = Any };
+                      overloads = [];
+                      _;
+                    } ->
+                    Expression.Name
+                      (Name.Attribute
+                         {
+                           attribute with
+                           base =
+                             {
+                               base with
+                               Node.value =
+                                 Name
+                                   (Name.Attribute
+                                      {
+                                        base =
+                                          { Node.value = Name (Name.Identifier "typing"); location };
+                                        attribute = "Callable";
+                                        special = false;
+                                      });
+                             };
+                         })
+                | _ -> callee)
+          |> Option.value ~default:callee
+      | Name (Name.Attribute ({ base = { Node.value = base; location }; _ } as attribute)) ->
+          Name
+            (Name.Attribute
+               { attribute with base = { Node.location; value = resolve_getitem_callee base } })
+      | Call ({ callee = { Node.value = callee; location }; _ } as call) ->
+          Call { call with callee = { Node.value = resolve_getitem_callee callee; location } }
+      | _ -> callee
     in
-    let undefined = { annotation = Top; parameters = Undefined } in
-    let get_signature = function
-      | Expression.Tuple [parameters; annotation] -> (
-          let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
-          match Node.value parameters with
-          | List parameters ->
-              make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
-          | _ -> (
-              let parsed = create_logic parameters in
-              match substitute_parameter_variadic parsed with
-              | Some variable -> make_signature ~parameters:(ParameterVariadicTypeVariable variable)
-              | _ -> (
-                  match parsed with
-                  | Primitive "..." -> make_signature ~parameters:Undefined
-                  | _ -> undefined)))
-      | _ -> undefined
+
+    let rec is_typing_callable = function
+      | Expression.Name
+          (Name.Attribute
+            {
+              base = { Node.value = Name (Name.Identifier "typing"); _ };
+              attribute = "Callable";
+              _;
+            }) ->
+          true
+      | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
+      | Call { callee; _ } -> is_typing_callable (Node.value callee)
+      | _ -> false
     in
-    let implementation =
-      match implementation_signature with
-      | Some signature -> get_signature (Node.value signature)
-      | None -> undefined
-    in
-    let overloads =
-      let rec parse_overloads = function
-        | Expression.List arguments -> [get_signature (Tuple arguments)]
+    let parse_callable expression =
+      let modifiers, implementation_signature, overload_signatures =
+        let get_from_base base implementation_argument overloads_argument =
+          match Node.value base with
+          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
+              Some arguments, implementation_argument, overloads_argument
+          | Name
+              (Name.Attribute
+                {
+                  base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  attribute = "Callable";
+                  _;
+                }) ->
+              None, implementation_argument, overloads_argument
+          | _ ->
+              (* Invalid base. *)
+              None, None, None
+        in
+        match expression with
+        | Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            {
+                              Node.value =
+                                Call
+                                  {
+                                    callee =
+                                      {
+                                        Node.value =
+                                          Name
+                                            (Name.Attribute { base; attribute = "__getitem__"; _ });
+                                        _;
+                                      };
+                                    arguments = [{ Call.Argument.value = argument; _ }];
+                                  };
+                              _;
+                            };
+                          attribute = "__getitem__";
+                          _;
+                        });
+                  _;
+                };
+              arguments = [{ Call.Argument.value = overloads_argument; _ }];
+            } ->
+            (* Overloads are provided *)
+            get_from_base base (Some argument) (Some overloads_argument)
         | Call
             {
               callee =
                 { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
               arguments = [{ Call.Argument.value = argument; _ }];
             } ->
-            get_signature (Node.value argument) :: parse_overloads (Node.value base)
-        | _ -> [undefined]
+            (* No overloads provided *)
+            get_from_base base (Some argument) None
+        | _ -> None, None, None
       in
-      match overload_signatures with
-      | Some signatures -> List.rev (parse_overloads (Node.value signatures))
-      | None -> []
+      let kind =
+        match modifiers with
+        | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
+            Ast.Expression.name_to_reference name
+            >>| (fun name -> Named name)
+            |> Option.value ~default:Anonymous
+        | Some
+            ({
+               Call.Argument.value =
+                 {
+                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                   _;
+                 };
+               _;
+             }
+            :: _) ->
+            Named (Reference.create value)
+        | _ -> Anonymous
+      in
+      let undefined = { annotation = Top; parameters = Undefined } in
+      let get_signature = function
+        | Expression.Tuple [parameters; annotation] -> (
+            let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
+            match Node.value parameters with
+            | List parameters ->
+                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
+            | _ -> (
+                let parsed = create_logic parameters in
+                match substitute_parameter_variadic parsed with
+                | Some variable ->
+                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
+                | _ -> (
+                    match parsed with
+                    | Primitive "..." -> make_signature ~parameters:Undefined
+                    | _ -> undefined)))
+        | _ -> undefined
+      in
+      let implementation =
+        match implementation_signature with
+        | Some signature -> get_signature (Node.value signature)
+        | None -> undefined
+      in
+      let overloads =
+        let rec parse_overloads = function
+          | Expression.List arguments -> [get_signature (Tuple arguments)]
+          | Call
+              {
+                callee =
+                  { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+                arguments = [{ Call.Argument.value = argument; _ }];
+              } ->
+              get_signature (Node.value argument) :: parse_overloads (Node.value base)
+          | _ -> [undefined]
+        in
+        match overload_signatures with
+        | Some signatures -> List.rev (parse_overloads (Node.value signatures))
+        | None -> []
+      in
+      Callable { kind; implementation; overloads }
     in
-    Callable { kind; implementation; overloads }
+    let resolved_callee = resolve_getitem_callee callee_value in
+    if is_typing_callable resolved_callee then
+      Some
+        (parse_callable
+           (Call { getitem_call with callee = { Node.value = resolved_callee; location } }))
+    else
+      None
   in
   let create_from_subscript
       ~location
@@ -4129,22 +4149,16 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>= Option.all
         >>| union
         |> Option.value ~default:Top
-    | _, _ ->
-        (* After handling all the cases above, we still need to handle the distinction between
-           Callable types vs other parametric types, because the legal forms are different. This
-           requires the ability to resolve aliases because we currently allow users to create type
-           aliases for Callable, which means we have to resolve them at the parsing stage. *)
-        let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee_value in
-        if is_typing_callable resolved_callee then
-          parse_callable
-            (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
-        else
-          (* This is actually the case that almost all parametric type annotations eventually hit;
-             everything above is just special-casing some unusual scenarios where we customize
-             behavior.
+    | _, _ -> (
+        match parse_callable_if_appropriate ~location ~callee_value ~getitem_call with
+        | Some callable_type -> callable_type
+        | None ->
+            (* This is actually the case that almost all parametric type annotations eventually hit;
+               everything above is just special-casing some unusual scenarios where we customize
+               behavior.
 
-             TODO(T84854853): Add back support for `Length` and `Product`. *)
-          create_parametric ~base ~index_expression
+               TODO(T84854853): Add back support for `Length` and `Product`. *)
+            create_parametric ~base ~index_expression)
   in
   let result =
     match expression with

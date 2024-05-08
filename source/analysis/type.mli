@@ -606,11 +606,6 @@ module Callable : sig
     tail:type_t Parameter.t list ->
     type_t Parameter.t list
 
-  val resolve_getitem_callee
-    :  resolve_aliases:(type_t -> type_t) ->
-    Expression.expression ->
-    Expression.expression
-
   val name : t -> Reference.t option
 end
 
