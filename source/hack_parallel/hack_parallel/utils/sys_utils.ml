@@ -263,15 +263,6 @@ let append_file ~file s =
 let filemtime file =
   (Unix.stat file).Unix.st_mtime
 
-external lutimes : string -> unit = "hh_lutimes"
-
-let try_touch ~follow_symlinks file =
-  try
-    if follow_symlinks then Unix.utimes file 0.0 0.0
-    else lutimes file
-  with _ ->
-    ()
-
 let rec mkdir_p = function
   | "" -> failwith "Unexpected empty directory, should never happen"
   | d when not (Sys.file_exists d) ->
