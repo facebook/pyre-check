@@ -39,14 +39,6 @@ let descr_of_out_channel : 'a out_channel -> Unix.file_descr =
 let cast_in ic = ic
 let cast_out oc = oc
 
-let fd_of_path path =
-  Sys_utils.with_umask 0o111 begin fun () ->
-    Sys_utils.mkdir_no_fail (Filename.dirname path);
-    Unix.openfile path [Unix.O_RDWR; Unix.O_CREAT; Unix.O_TRUNC] 0o666
-  end
-
-let null_fd () = fd_of_path Sys_utils.null_path
-
 let setup_channels () =
       let parent_in, child_out = Unix.pipe () in
       let child_in, parent_out = Unix.pipe () in
@@ -79,11 +71,6 @@ let fork
       (try
          ignore(Unix.setsid());
          close_pipe (parent_in, parent_out);
-         Sys_utils.with_umask 0o111 begin fun () ->
-           let fd = null_fd () in
-           Unix.dup2 fd Unix.stdin;
-           Unix.close fd;
-         end;
          f param (child_in, child_out);
          exit 0
        with e ->

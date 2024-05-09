@@ -35,7 +35,6 @@ let getenv_term () =
   get_env term_var
 
 let path_sep = if Sys.win32 then ";" else ":"
-let null_path = if Sys.win32 then "nul" else "/dev/null"
 let temp_dir_name =
   if Sys.win32 then Filename.get_temp_dir_name () else "/tmp"
 
