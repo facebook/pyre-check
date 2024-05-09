@@ -42,13 +42,6 @@ type ('in_, 'out) handle = {
   pid : int;
 }
 
-(* for unit tests *)
-val devnull : unit -> ('a, 'b) handle
-
-val fd_of_path : string -> Unix.file_descr
-
-val null_fd : unit -> Unix.file_descr
-
 (* Fork and run a function that communicates via the typed channels *)
 val fork :
   (* Where the daemon's output should go *)
