@@ -19,11 +19,6 @@ let unsafe_opt_note note = function
 
 let unsafe_opt x = unsafe_opt_note "unsafe_opt got None" x
 
-let try_finally ~f ~(finally: unit -> unit) =
-  let res = try f () with e -> finally (); raise e in
-  finally ();
-  res
-
 let with_context ~enter ~exit ~do_ =
   enter ();
   let result = try do_ () with e ->

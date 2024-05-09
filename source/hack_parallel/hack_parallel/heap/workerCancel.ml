@@ -20,12 +20,9 @@ let on_worker_cancelled = ref (fun () -> ())
 let set_on_worker_cancelled f = on_worker_cancelled := f
 
 let with_no_cancellations f =
-  Hack_utils.Utils.try_finally
-  ~f:begin fun () ->
-    set_can_worker_stop false;
-    f ()
-  end
-  ~finally:(fun () -> set_can_worker_stop true)
+  set_can_worker_stop false;
+  let finally () = set_can_worker_stop true in
+  Fun.protect f ~finally
 
 let with_worker_exit f =
   try f () with
