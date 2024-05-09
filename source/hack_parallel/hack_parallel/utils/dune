@@ -4,4 +4,4 @@
   (names files get_build_id nproc priorities realpath sysinfo))
  (name hack_utils)
  (package hack_parallel)
- (libraries core str hack_collections hack_core unix))
+ (libraries core str hack_collections unix))
