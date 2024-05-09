@@ -11,8 +11,4 @@ let setsid =
   (* Not implemented on Windows. Let's just return the pid *)
   if Sys.win32 then Unix.getpid else Unix.setsid
 
-external nproc: unit -> int = "nproc"
-
-let nbr_procs = nproc ()
-
 let terminate_process pid = Unix.kill pid Sys.sigkill
