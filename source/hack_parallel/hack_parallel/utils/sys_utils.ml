@@ -11,8 +11,6 @@ module List = Core.List
 
 exception NotADirectory of string
 
-external is_nfs: string -> bool = "hh_is_nfs"
-
 (** Option type intead of exception throwing. *)
 let get_env name =
   try Some (Sys.getenv name) with
