@@ -226,48 +226,6 @@ let expanduser path =
           with Not_found -> Str.matched_string s end
     path
 
-(* Turns out it's surprisingly complex to figure out the path to the current
-   executable, which we need in order to extract its embedded libraries. If
-   argv[0] is a path, then we can use that; sometimes it's just the exe name,
-   so we have to search $PATH for it the same way shells do. for example:
-   https://www.gnu.org/software/bash/manual/html_node/Command-Search-and-Execution.html
-
-   There are other options which might be more reliable when they exist, like
-   using the `_` env var set by bash, or /proc/self/exe on Linux, but they are
-   not portable. *)
-let executable_path : unit -> string =
-  let executable_path_ = ref None in
-  let dir_sep = Filename.dir_sep.[0] in
-  let search_path path =
-    let paths =
-      match getenv_path () with
-      | None -> failwith "Unable to determine executable path"
-      | Some paths ->
-          Str.split (Str.regexp_string path_sep) paths in
-    let path = List.fold_left paths ~f:begin fun acc p ->
-        match acc with
-        | Some _ -> acc
-        | None -> realpath (expanduser (Filename.concat p path))
-      end ~init:None
-    in
-    match path with
-    | Some path -> path
-    | None -> failwith "Unable to determine executable path"
-  in
-  fun () -> match !executable_path_ with
-    | Some path -> path
-    | None ->
-        let path = Sys.executable_name in
-        let path =
-          if String.contains path dir_sep then
-            match realpath path with
-            | Some path -> path
-            | None -> failwith "Unable to determine executable path"
-          else search_path path
-        in
-        executable_path_ := Some path;
-        path
-
 let lines_of_in_channel ic =
   let rec loop accum =
     match try Some(input_line ic) with _e -> None with
