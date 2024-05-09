@@ -9,7 +9,7 @@ module UnlabeledList = List
 module List = StdLabels.List
 module String = StdLabels.String
 
-let invalid_argf = Hack_core_printf.invalid_argf
+let invalid_argf fmt = Printf.ksprintf invalid_arg fmt
 
 module T = struct
   type 'a t = 'a list
@@ -72,7 +72,7 @@ let nth_exn t n =
   match nth t n with
   | None ->
       invalid_argf "List.nth_exn %d called on list of length %d"
-        n (length t) ()
+        n (length t)
   | Some a -> a
 ;;
 
@@ -95,7 +95,7 @@ let check_length2 name l1 l2 =
   let n1 = length l1 in
   let n2 = length l2 in
   if n1 <> n2 then
-    raise (invalid_argf "length mismatch in %s: %d <> %d " name n1 n2 ())
+    invalid_argf "length mismatch in %s: %d <> %d " name n1 n2
 ;;
 
 let check_length3 name l1 l2 l3 =
@@ -103,8 +103,7 @@ let check_length3 name l1 l2 l3 =
   let n2 = length l2 in
   let n3 = length l3 in
   if n1 <> n2 || n2 <> n3 then
-    raise (invalid_argf "length mismatch in %s: %d <> %d || %d <> %d"
-             name n1 n2 n2 n3 ())
+    invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3
 ;;
 
 let iter2_exn l1 l2 ~f =
@@ -472,7 +471,7 @@ let min_elt t ~cmp = Hack_container.fold_min fold t ~cmp
 let max_elt t ~cmp = Hack_container.fold_max fold t ~cmp
 
 let init n ~f =
-  if n < 0 then invalid_argf "List.init %d" n ();
+  if n < 0 then invalid_argf "List.init %d" n;
   let rec loop i accum =
     assert (i >= 0);
     if i = 0 then accum
@@ -697,5 +696,5 @@ let rec replicate ~num x =
   match num with
   | 0 -> []
   | n when n < 0 ->
-      invalid_argf "List.replicate was called with %d argument" n ()
+      invalid_argf "List.replicate was called with %d argument" n
   | _ -> x :: replicate ~num:(num - 1) x
