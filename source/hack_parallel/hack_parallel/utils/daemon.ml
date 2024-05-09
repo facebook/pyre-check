@@ -69,7 +69,6 @@ let fork
   | -1 -> failwith "Go get yourself a real computer"
   | 0 -> (* child *)
       (try
-         ignore(Unix.setsid());
          close_pipe (parent_in, parent_out);
          f param (child_in, child_out);
          exit 0

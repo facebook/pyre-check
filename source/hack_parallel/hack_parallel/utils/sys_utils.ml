@@ -7,8 +7,4 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-let setsid =
-  (* Not implemented on Windows. Let's just return the pid *)
-  if Sys.win32 then Unix.getpid else Unix.setsid
-
 let terminate_process pid = Unix.kill pid Sys.sigkill
