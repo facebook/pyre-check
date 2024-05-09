@@ -11,7 +11,6 @@ module List = Core.List
 
 exception NotADirectory of string
 
-external realpath: string -> string option = "hh_realpath"
 external is_nfs: string -> bool = "hh_is_nfs"
 
 (** Option type intead of exception throwing. *)
