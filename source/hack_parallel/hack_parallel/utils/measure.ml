@@ -78,7 +78,6 @@
 
 module SMap = Hack_collections.SMap
 module MyMap = Hack_collections.MyMap
-module List = Hack_core.Hack_core_list
 module FloatMap = MyMap.Make(struct type t = float let compare = compare end)
 
 type distribution = {
@@ -130,12 +129,11 @@ let new_distribution ~bucket_size = Some {
 
 let get_record = function
   | Some record -> record
-  | None -> (match List.hd (!global) with
-      | Some record -> record
-      | None ->
-          failwith ("No global record available! " ^
-                    "Did you forget to call Measure.push_global?"))
-
+  | None ->
+    match !global with
+    | record :: _ -> record
+    | [] ->
+      failwith ("No global record available! Did you forget to call Measure.push_global?")
 
 (* Measure can track how the values are distributed by creating buckets and
  * keeping track of how many samples fall into each buckets. It will not track

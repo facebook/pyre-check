@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Hack_core.Hack_core_list
+module List = Core.List
 module Daemon = Hack_utils.Daemon
 module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
@@ -347,7 +347,7 @@ let select ds =
         match !d with
         | Cached _ | Failed _ ->
             { readys = d :: readys ; waiters }
-        | Processing s when List.mem ready_fds s.infd ->
+        | Processing s when List.mem ~equal:(=) ready_fds s.infd ->
             { readys = d :: readys ; waiters }
         | Processing _ ->
             { readys ; waiters = d :: waiters})

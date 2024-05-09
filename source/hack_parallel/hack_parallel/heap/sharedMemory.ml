@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Hack_core.Hack_core_list
+module List = Core.List
 module ISet = Hack_collections.ISet
 module MyMap = Hack_collections.MyMap
 module Hh_logger = Hack_utils.Hh_logger
@@ -993,7 +993,7 @@ module FreqCache (Key : sig type t end) (Config:ConfigType) :
         l := (key, !freq, v) :: !l
       end cache;
       Hashtbl.clear cache;
-      l := List.sort ~cmp:(fun (_, x, _) (_, y, _) -> y - x) !l;
+      l := List.sort ~compare:(fun (_, x, _) (_, y, _) -> y - x) !l;
       let i = ref 0 in
       while !i < Config.capacity do
         match !l with

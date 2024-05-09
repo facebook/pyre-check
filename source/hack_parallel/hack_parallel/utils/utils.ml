@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Hack_core.Hack_core_list
+module List = Core.List
 module Hack_option = Hack_core.Hack_option
 module SMap = Hack_collections.SMap
 module IMap = Hack_collections.IMap
