@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-type 'a in_channel = Timeout.in_channel
+type 'a in_channel = Stdlib.in_channel
 type 'a out_channel = Stdlib.out_channel
 
 type ('in_, 'out) channel_pair = 'in_ in_channel * 'out out_channel
@@ -25,13 +25,13 @@ let to_channel :
   Marshal.to_channel oc v flags;
   if should_flush then flush oc
 
-let from_channel : ?timeout:Timeout.t -> 'a in_channel -> 'a = fun ?timeout ic ->
-  Timeout.input_value ?timeout ic
+let from_channel : 'a in_channel -> 'a = fun ic ->
+  input_value ic
 
 let flush : 'a out_channel -> unit = Stdlib.flush
 
 let descr_of_in_channel : 'a in_channel -> Unix.file_descr =
-  Timeout.descr_of_in_channel
+  Unix.descr_of_in_channel
 
 let descr_of_out_channel : 'a out_channel -> Unix.file_descr =
   Unix.descr_of_out_channel
@@ -56,12 +56,12 @@ let setup_channels () =
       (parent_in, child_out), (child_in, parent_out)
 
 let make_pipe (descr_in, descr_out)  =
-  let ic = Timeout.in_channel_of_descr descr_in in
+  let ic = Unix.in_channel_of_descr descr_in in
   let oc = Unix.out_channel_of_descr descr_out in
   ic, oc
 
 let close_pipe (ch_in, ch_out) =
-    Timeout.close_in ch_in;
+    close_in ch_in;
     close_out ch_out
 
 (* This only works on Unix, and should be avoided as far as possible. Use
@@ -102,12 +102,12 @@ let fork
 
 (* for testing code *)
 let devnull () =
-  let ic = Timeout.open_in "/dev/null" in
+  let ic = open_in "/dev/null" in
   let oc = open_out "/dev/null" in
   {channels = ic, oc; pid = 0}
 
 let close { channels = (ic, oc); _ } =
-  Timeout.close_in ic;
+  close_in ic;
   close_out oc
 
 let kill h =
@@ -135,8 +135,8 @@ let output_string = output_string
 
 let flush = flush
 
-let close_in = Timeout.close_in
+let close_in = close_in
 
-let input_char ic = Timeout.input_char ic
+let input_char ic = input_char ic
 
-let input_value ic = Timeout.input_value ic
+let input_value ic = input_value ic
