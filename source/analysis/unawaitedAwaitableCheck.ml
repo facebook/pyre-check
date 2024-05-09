@@ -702,6 +702,19 @@ module State (Context : Context) = struct
           state = forward_setitem ~resolution ~state ~base ~key_expression ~value_expression;
           nested_awaitable_expressions = [];
         }
+    | Call
+        {
+          callee =
+            {
+              Node.value = Name (Name.Attribute { attribute = "__getitem__"; base; special = true });
+              _;
+            };
+          arguments = [{ Call.Argument.value = index; _ }];
+        } ->
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:base
+        in
+        forward_expression ~resolution ~state ~expression:index |>> nested_awaitable_expressions
     | Call call -> forward_call ~resolution ~state ~location call
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let { state; nested_awaitable_expressions } =

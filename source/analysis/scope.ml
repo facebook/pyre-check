@@ -94,6 +94,18 @@ module Binding = struct
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in
         of_expression sofar right
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+              _;
+            };
+          arguments = [{ Call.Argument.name = None; value = index }];
+          _;
+        } ->
+        let sofar = of_expression sofar base in
+        of_expression sofar index
     | Expression.Call { Call.callee; arguments } ->
         let sofar =
           List.fold arguments ~init:sofar ~f:(fun sofar { Call.Argument.value; _ } ->

@@ -68,6 +68,18 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
+    | Call
+        {
+          Call.callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+              _;
+            };
+          arguments = [{ Call.Argument.name = None; value = index }];
+          _;
+        } ->
+        let collected = from_expression collected base in
+        from_expression collected index
     | Call { Call.callee; arguments } ->
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
