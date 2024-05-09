@@ -1,7 +1,7 @@
 (library
  (foreign_stubs
   (language c)
-  (names get_build_id nproc priorities sysinfo))
+  (names get_build_id nproc priorities))
  (name hack_utils)
  (package hack_parallel)
  (libraries core str hack_collections unix))
