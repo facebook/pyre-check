@@ -14,7 +14,6 @@ module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
 module PrintSignal = Hack_utils.PrintSignal
 module String_utils = Hack_utils.String_utils
-module Utils = Hack_utils.Utils
 open Hack_heap
 
 (*****************************************************************************
@@ -178,7 +177,6 @@ let ephemeral_worker_main ic oc =
 let worker_main restore state (ic, oc) =
   restore state;
   let in_fd = Daemon.descr_of_in_channel ic in
-  if !Utils.profile then Utils.log := prerr_endline;
   try
     while true do
       (* Wait for an incoming job : is there something to read?

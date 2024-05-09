@@ -13,7 +13,6 @@ module ISet = Hack_collections.ISet
 module MyMap = Hack_collections.MyMap
 module Hh_logger = Hack_utils.Hh_logger
 module Measure = Hack_utils.Measure
-module Utils = Hack_utils.Utils
 
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)
@@ -97,42 +96,15 @@ let rec shm_dir_init config = function
             ~config
             ~shm_dir:(Some shm_dir)
         with
-        | Less_than_minimum_available avail ->
-            if !Utils.debug
-            then Hh_logger.log
-                "Filesystem %s only has %d bytes available, \
-                 which is less than the minimum %d bytes"
-                shm_dir
-                avail
-                config.shm_min_avail;
-            shm_dir_init config shm_dirs
-        | Unix.Unix_error (e, fn, arg) ->
-            let fn_string =
-              if fn = ""
-              then ""
-              else Utils.spf " thrown by %s(%s)" fn arg in
-            let reason =
-              Utils.spf "Unix error%s: %s" fn_string (Unix.error_message e) in
-            if !Utils.debug
-            then Hh_logger.log
-                "Failed to use shm dir `%s`: %s"
-                shm_dir
-                reason;
-            shm_dir_init config shm_dirs
-        | Failed_to_use_shm_dir reason ->
-            if !Utils.debug
-            then Hh_logger.log
-                "Failed to use shm dir `%s`: %s"
-                shm_dir
-                reason;
+        | Less_than_minimum_available _
+        | Unix.Unix_error _
+        | Failed_to_use_shm_dir _ ->
             shm_dir_init config shm_dirs
       end
 
 let init config =
   try anonymous_init config
   with Failed_anonymous_memfd_init ->
-    if !Utils.debug
-    then Hh_logger.log "Failed to use anonymous memfd init";
     shm_dir_init config config.shm_dirs
 
 external connect : handle -> unit = "hh_connect"
