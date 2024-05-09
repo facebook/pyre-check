@@ -15,7 +15,4 @@ external nproc: unit -> int = "nproc"
 
 let nbr_procs = nproc ()
 
-external set_priorities : cpu_priority:int -> io_priority:int -> unit =
-  "hh_set_priorities"
-
 let terminate_process pid = Unix.kill pid Sys.sigkill
