@@ -10,7 +10,6 @@
 
 module List = Hack_core.Hack_core_list
 module Daemon = Hack_utils.Daemon
-module Fork = Hack_utils.Fork
 module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
 module PrintSignal = Hack_utils.PrintSignal
@@ -188,7 +187,7 @@ let worker_main restore state (ic, oc) =
       if readyl = [] then exit 0;
       (* We fork an ephemeral worker for every incoming request.
          And let it die after one request. This is the quickest GC. *)
-      match Fork.fork() with
+      match Unix.fork () with
       | 0 -> ephemeral_worker_main ic oc
       | pid ->
           (* Wait for the ephemeral worker termination... *)
@@ -236,6 +235,8 @@ let make ~nbr_procs ~gc_control ~heap_handle =
       let worker = { busy = false; killed = false; handle } in
       loop (worker :: acc) (n - 1)
   in
+  (* Flush any buffers before forking workers, to avoid double output. *)
+  flush_all ();
   loop [] nbr_procs
 
 let current_worker_id () = !current_worker_id

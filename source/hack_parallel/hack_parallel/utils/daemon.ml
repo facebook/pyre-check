@@ -74,7 +74,7 @@ let fork
   let (parent_in, child_out), (child_in, parent_out) = setup_channels () in
   let (parent_in, child_out) = make_pipe (parent_in, child_out) in
   let (child_in, parent_out) = make_pipe (child_in, parent_out) in
-  match Fork.fork () with
+  match Unix.fork () with
   | -1 -> failwith "Go get yourself a real computer"
   | 0 -> (* child *)
       (try
