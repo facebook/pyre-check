@@ -7,10 +7,6 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-let spf = Printf.sprintf
-let print_endlinef fmt = Printf.ksprintf print_endline fmt
-let prerr_endlinef fmt = Printf.ksprintf prerr_endline fmt
-
 (* Since OCaml usually runs w/o backtraces enabled, the note makes errors
  * easier to debug. *)
 let unsafe_opt_note note = function

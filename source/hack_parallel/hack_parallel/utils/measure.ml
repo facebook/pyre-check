@@ -16,7 +16,7 @@
  * something like
  *
  *   let number_bunnies = count_bunnies () in
- *   Utils.prerr_endlinef "Num bunnies: %d" number_bunnies;
+ *   Printf.eprintf "Num bunnies: %d\n" number_bunnies;
  *
  * but what if this code is called 1000 times? Then you end up with log spew.
  * Using the Measure module helps with this. You can now do
@@ -265,8 +265,8 @@ let print_entry_stats ?record name =
   | Some { count; mean; variance_sum; max; min; distribution=_; } ->
       let total = (float count) *. mean in
       let std_dev = sqrt (variance_sum /. (float count)) in
-      Utils.prerr_endlinef
-        "samples: %s, total: %s, avg: %s, stddev: %s, max: %s, min: %s)"
+      Printf.eprintf
+        "samples: %s, total: %s, avg: %s, stddev: %s, max: %s, min: %s)\n"
         (pretty_num (float count)) (pretty_num total) (pretty_num mean)
         (pretty_num std_dev) (pretty_num max) (pretty_num min)
 
