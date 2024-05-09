@@ -68,7 +68,6 @@ let close_pipe (ch_in, ch_out) =
  * Daemon.spawn instead. *)
 let fork
     (type param)
-    (log_stdout, log_stderr)
     (f : param -> ('a, 'b) channel_pair -> unit)
     (param : param) : ('b, 'a) handle =
   let (parent_in, child_out), (child_in, parent_out) = setup_channels () in
@@ -85,11 +84,6 @@ let fork
            Unix.dup2 fd Unix.stdin;
            Unix.close fd;
          end;
-         Unix.dup2 log_stdout Unix.stdout;
-         Unix.dup2 log_stderr Unix.stderr;
-         if log_stdout <> Unix.stdout then Unix.close log_stdout;
-         if log_stderr <> Unix.stderr && log_stderr <> log_stdout then
-           Unix.close log_stderr;
          f param (child_in, child_out);
          exit 0
        with e ->

@@ -44,11 +44,8 @@ type ('in_, 'out) handle = {
 
 (* Fork and run a function that communicates via the typed channels *)
 val fork :
-  (* Where the daemon's output should go *)
-  (Unix.file_descr * Unix.file_descr) ->
   ('param -> ('input, 'output) channel_pair -> unit) ->
-  'param ->
-  ('output, 'input) handle
+  'param -> ('output, 'input) handle
 
 (* Close the typed channels associated to a 'spawned' child. *)
 val close : ('a, 'b) handle -> unit

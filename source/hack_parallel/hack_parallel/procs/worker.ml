@@ -227,7 +227,7 @@ let make ~nbr_procs ~gc_control ~heap_handle =
     SharedMemory.connect heap_handle;
     Gc.set gc_control
   in
-  let fork worker_id = Daemon.fork (Unix.stdout, Unix.stderr) (worker_main restore) worker_id in
+  let fork worker_id = Daemon.fork (worker_main restore) worker_id in
   let rec loop acc n =
     if n = 0 then acc
     else
