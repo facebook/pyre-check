@@ -13,7 +13,6 @@ module SMap = Hack_collections.SMap
 module IMap = Hack_collections.IMap
 module SSet = Hack_collections.SSet
 
-let () = Random.self_init ()
 let debug = ref false
 let profile = ref false
 
