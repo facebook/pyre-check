@@ -21,9 +21,6 @@ exception Worker_exited_abnormally of int * Unix.process_status
  * exceptions is not safe). *)
 exception Worker_exception of string * Printexc.raw_backtrace
 
-(** Worker killed by Out Of Memory. *)
-exception Worker_oomed
-
 (** Raise this exception when sending work to a worker that is already busy.
  * We should never be doing that, and this is an assertion error. *)
 exception Worker_busy

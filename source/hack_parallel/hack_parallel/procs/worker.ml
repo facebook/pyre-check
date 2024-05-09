@@ -12,7 +12,6 @@ module List = Core.List
 module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
 module PrintSignal = Hack_utils.PrintSignal
-module String_utils = Hack_utils.String_utils
 open Hack_heap
 
 (*****************************************************************************
@@ -37,7 +36,6 @@ open Hack_heap
 
 exception Worker_exited_abnormally of int * Unix.process_status
 exception Worker_exception of string * Printexc.raw_backtrace
-exception Worker_oomed
 exception Worker_busy
 exception Worker_killed
 
@@ -86,28 +84,7 @@ type t = {
   infd: Unix.file_descr;
 }
 
-
-
-(*****************************************************************************
- * The handle is what we get back when we start a job. It's a "future"
- * (sometimes called a "promise"). The scheduler uses the handle to retrieve
- * the result of the job when the task is done (cf multiWorker.ml).
- *
- *****************************************************************************)
-
-type 'a handle = 'a delayed ref
-
-and 'a delayed =
-  | Processing of 'a ephemeral_worker
-  | Cached of 'a
-  | Failed of exn
-
-and 'a ephemeral_worker = {
-  worker: t;      (* The associated worker *)
-
-  (* A blocking function that returns the job result. *)
-  result: unit -> 'a;
-}
+type 'a handle = t
 
 module Response = struct
   type 'a t =
@@ -256,29 +233,9 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  (* Prepare ourself to read answer from the ephemeral_worker. *)
-  let result () : b =
-    match Marshal.from_channel w.ic with
-    | Response.Success { result; stats } ->
-      Measure.merge ~from:(Measure.deserialize stats) ();
-      result
-    | Response.Failure { exn; backtrace } ->
-      raise (Worker_exception (exn, backtrace))
-    | exception exn ->
-      let backtrace = Printexc.get_raw_backtrace () in
-      match Unix.waitpid [Unix.WNOHANG] w.pid with
-      | 0, _ -> Printexc.raise_with_backtrace exn backtrace
-      | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
-          raise SharedMemory.Out_of_shared_memory
-      | _, exit_status ->
-          raise (Worker_exited_abnormally (w.pid, exit_status))
-  in
   (* Mark the worker as busy. *)
-  let ephemeral_worker = { result; worker = w; } in
   w.busy <- true;
-  let request =
-    Request (fun { send } -> send (f x))
-  in
+  let request = Request (fun { send } -> send (f x)) in
   (* Send the job to the ephemeral worker. *)
   let () =
     try
@@ -292,7 +249,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
           raise (Worker_failed_to_send_job (Worker_already_exited status))
   in
   (* And returned the 'handle'. *)
-  ref (Processing ephemeral_worker)
+  w
 
 
 (**************************************************************************
@@ -301,28 +258,22 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
  *
  **************************************************************************)
 
-let is_oom_failure msg =
-  (String_utils.string_starts_with msg "Subprocess") &&
-  (String_utils.is_substring "signaled -7" msg)
-
-let get_result d =
-  match !d with
-  | Cached x -> x
-  | Failed exn -> raise exn
-  | Processing s ->
-      try
-        let res = s.result () in
-        s.worker.busy <- false;
-        d := Cached res;
-        res
-      with
-      | Failure (msg) when is_oom_failure msg ->
-          raise Worker_oomed
-      | exn ->
-          s.worker.busy <- false;
-          d := Failed exn;
-          raise exn
-
+let get_result w =
+  w.busy <- false;
+  match Marshal.from_channel w.ic with
+  | Response.Success { result; stats } ->
+    Measure.merge ~from:(Measure.deserialize stats) ();
+    result
+  | Response.Failure { exn; backtrace } ->
+    raise (Worker_exception (exn, backtrace))
+  | exception exn ->
+    let backtrace = Printexc.get_raw_backtrace () in
+    match Unix.waitpid [Unix.WNOHANG] w.pid with
+    | 0, _ -> Printexc.raise_with_backtrace exn backtrace
+    | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
+        raise SharedMemory.Out_of_shared_memory
+    | _, exit_status ->
+        raise (Worker_exited_abnormally (w.pid, exit_status))
 
 (*****************************************************************************
  * Our polling primitive on workers
@@ -335,36 +286,25 @@ type 'a selected = {
   waiters: 'a handle list;
 }
 
-let get_processing ds =
-  List.rev_filter_map
-    ds
-    ~f:(fun d -> match !d with Processing p -> Some p | _ -> None)
-
-let select ds =
-  let processing = get_processing ds in
-  let fds = List.map ~f:(fun p -> p.worker.infd) processing in
+let select ws =
+  let fds = List.map ~f:(fun w -> w.infd) ws in
   let ready_fds, _, _ =
-    if fds = [] || List.length processing <> List.length ds then
+    if fds = [] then
       [], [], []
     else
-      Unix.select fds [] [] ~-.1. in
-  List.fold_right
-    ~f:(fun d { readys ; waiters } ->
-        match !d with
-        | Cached _ | Failed _ ->
-            { readys = d :: readys ; waiters }
-        | Processing s when List.mem ~equal:(=) ready_fds s.worker.infd ->
-            { readys = d :: readys ; waiters }
-        | Processing _ ->
-            { readys ; waiters = d :: waiters})
-    ~init:{ readys = [] ; waiters = [] }
-    ds
+      Unix.select fds [] [] ~-.1.
+  in
+  let rec loop readys waiters = function
+    | [] -> { readys; waiters }
+    | w :: ws ->
+      if List.mem ~equal:(=) ready_fds w.infd then
+        loop (w :: readys) waiters ws
+      else
+        loop readys (w :: waiters) ws
+  in
+  loop [] [] ws
 
-let get_worker h =
-  match !h with
-  | Processing {worker; _} -> worker
-  | Cached _
-  | Failed _ -> invalid_arg "Worker.get_worker"
+let get_worker w = w
 
 (**************************************************************************
  * Worker termination
