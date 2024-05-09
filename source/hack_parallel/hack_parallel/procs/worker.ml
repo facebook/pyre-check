@@ -9,7 +9,6 @@
 
 
 module List = Core.List
-module Daemon = Hack_utils.Daemon
 module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
 module PrintSignal = Hack_utils.PrintSignal
@@ -79,12 +78,12 @@ type t = {
   (* Sanity check: is the worker currently busy ? *)
   mutable busy: bool;
 
-  (* A reference to the worker process. *)
-  handle: Daemon.handle;
-
-  (* Channels corresponding to the handle's file descriptors. *)
+  pid: int;
   ic: in_channel;
   oc: out_channel;
+
+  (* File descriptor corresponding to ic, used for `select`. *)
+  infd: Unix.file_descr;
 }
 
 
@@ -104,16 +103,10 @@ and 'a delayed =
   | Failed of exn
 
 and 'a ephemeral_worker = {
-
   worker: t;      (* The associated worker *)
-
-  (* The file descriptor we might pass to select in order to
-     wait for the ephemeral worker to finish its job. *)
-  infd: Unix.file_descr;
 
   (* A blocking function that returns the job result. *)
   result: unit -> 'a;
-
 }
 
 module Response = struct
@@ -228,14 +221,25 @@ let make ~nbr_procs ~gc_control ~heap_handle =
     SharedMemory.connect heap_handle;
     Gc.set gc_control
   in
-  let fork worker_id = Daemon.fork (worker_main restore) worker_id in
+  let fork worker_id =
+    let parent_in, child_out = Unix.pipe () in
+    let child_in, parent_out = Unix.pipe () in
+    match Unix.fork () with
+    | 0 ->
+      Unix.close parent_in;
+      Unix.close parent_out;
+      worker_main restore worker_id child_in child_out
+    | pid ->
+      Unix.close child_in;
+      Unix.close child_out;
+      let ic = Unix.in_channel_of_descr parent_in in
+      let oc = Unix.out_channel_of_descr parent_out in
+      { busy = false; killed = false; pid; infd = parent_in; ic; oc }
+  in
   let rec loop acc n =
     if n = 0 then acc
     else
-      let { Daemon.infd; outfd; _ } as handle = fork n in
-      let ic = Unix.in_channel_of_descr infd in
-      let oc = Unix.out_channel_of_descr outfd in
-      let worker = { busy = false; killed = false; handle; ic; oc } in
+      let worker = fork n in
       loop (worker :: acc) (n - 1)
   in
   (* Flush any buffers before forking workers, to avoid double output. *)
@@ -252,7 +256,6 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  let { Daemon.pid = worker_pid; infd; _ } = w.handle in
   (* Prepare ourself to read answer from the ephemeral_worker. *)
   let result () : b =
     match Marshal.from_channel w.ic with
@@ -263,15 +266,15 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
       raise (Worker_exception (exn, backtrace))
     | exception exn ->
       let backtrace = Printexc.get_raw_backtrace () in
-      match Unix.waitpid [Unix.WNOHANG] worker_pid with
+      match Unix.waitpid [Unix.WNOHANG] w.pid with
       | 0, _ -> Printexc.raise_with_backtrace exn backtrace
       | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
           raise SharedMemory.Out_of_shared_memory
       | _, exit_status ->
-          raise (Worker_exited_abnormally (worker_pid, exit_status))
+          raise (Worker_exited_abnormally (w.pid, exit_status))
   in
   (* Mark the worker as busy. *)
-  let ephemeral_worker = { result; infd; worker = w; } in
+  let ephemeral_worker = { result; worker = w; } in
   w.busy <- true;
   let request =
     Request (fun { send } -> send (f x))
@@ -282,7 +285,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
       Marshal.to_channel w.oc request [Marshal.Closures];
       flush w.oc
     with e ->
-      match Unix.waitpid [Unix.WNOHANG] worker_pid with
+      match Unix.waitpid [Unix.WNOHANG] w.pid with
       | 0, _ ->
           raise (Worker_failed_to_send_job (Other_send_job_failure e))
       | _, status ->
@@ -339,7 +342,7 @@ let get_processing ds =
 
 let select ds =
   let processing = get_processing ds in
-  let fds = List.map ~f:(fun {infd; _} -> infd) processing in
+  let fds = List.map ~f:(fun p -> p.worker.infd) processing in
   let ready_fds, _, _ =
     if fds = [] || List.length processing <> List.length ds then
       [], [], []
@@ -350,7 +353,7 @@ let select ds =
         match !d with
         | Cached _ | Failed _ ->
             { readys = d :: readys ; waiters }
-        | Processing s when List.mem ~equal:(=) ready_fds s.infd ->
+        | Processing s when List.mem ~equal:(=) ready_fds s.worker.infd ->
             { readys = d :: readys ; waiters }
         | Processing _ ->
             { readys ; waiters = d :: waiters})
@@ -370,7 +373,14 @@ let get_worker h =
 let kill w =
   if not w.killed then begin
     w.killed <- true;
-    Daemon.kill_and_wait w.handle
+    close_in w.ic;
+    close_out w.oc;
+    Unix.kill w.pid Sys.sigkill;
+    let rec waitpid () =
+      try ignore (Unix.waitpid [] w.pid)
+      with Unix.Unix_error (Unix.EINTR, _, _) -> waitpid ()
+    in
+    waitpid ()
   end
 
 let exception_backtrace = function
