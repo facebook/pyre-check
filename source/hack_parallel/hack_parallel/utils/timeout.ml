@@ -7,8 +7,6 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-module Hack_option = Hack_core.Hack_option
-
 exception Timeout
 
 module Alarm_timeout = struct
@@ -381,7 +379,7 @@ module Select_timeout = struct
   let read_process ~timeout ?on_timeout ~reader cmd args =
     let (tic, oc) = open_process cmd args in
     let on_timeout () =
-      Hack_option.iter ~f:Sys_utils.terminate_process tic.pid;
+      Option.iter Sys_utils.terminate_process tic.pid;
       tic.pid <- None;
       match on_timeout with
       | None -> raise Timeout
@@ -390,7 +388,7 @@ module Select_timeout = struct
       ~do_:(fun timeout ->
           try reader timeout tic oc
           with exn ->
-            Hack_option.iter ~f:Sys_utils.terminate_process tic.pid;
+            Option.iter Sys_utils.terminate_process tic.pid;
             tic.pid <- None;
             close_in tic;
             close_out oc;

@@ -9,7 +9,6 @@
 
 
 module List = Core.List
-module Hack_option = Hack_core.Hack_option
 module SMap = Hack_collections.SMap
 module IMap = Hack_collections.IMap
 module SSet = Hack_collections.SSet
@@ -185,7 +184,7 @@ let with_context ~enter ~exit ~do_ =
 *)
 let assert_false_log_backtrace msg =
   Printf.eprintf "assert false with backtrace:\n";
-  Hack_option.iter msg ~f:(Printf.eprintf "%s\n");
+  Option.iter (Printf.eprintf "%s\n") msg;
   Printf.eprintf "%s" (Printexc.raw_backtrace_to_string
                          (Printexc.get_callstack 100));
   assert false

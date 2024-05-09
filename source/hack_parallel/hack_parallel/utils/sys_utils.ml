@@ -8,14 +8,13 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 module List = Core.List
-module Hack_option = Hack_core.Hack_option
 
 exception NotADirectory of string
 
 external realpath: string -> string option = "hh_realpath"
 external is_nfs: string -> bool = "hh_is_nfs"
 
-(** Hack_option type intead of exception throwing. *)
+(** Option type intead of exception throwing. *)
 let get_env name =
   try Some (Sys.getenv name) with
   | Not_found -> None
@@ -25,7 +24,10 @@ let getenv_user () =
   let logname_var = "LOGNAME" in
   let user = get_env user_var in
   let logname = get_env logname_var in
-  Hack_option.first_some user logname
+  match user, logname with
+  | Some user, _ -> Some user
+  | _, Some logname -> Some logname
+  | _ -> None
 
 let getenv_home () =
   let home_var = if Sys.win32 then "APPDATA" else "HOME" in
