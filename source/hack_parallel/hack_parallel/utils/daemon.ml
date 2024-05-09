@@ -86,7 +86,7 @@ let close { channels = (ic, oc); _ } =
 
 let kill h =
   close h;
-  Sys_utils.terminate_process h.pid
+  Unix.kill h.pid Sys.sigkill
 
 let kill_and_wait h =
   kill h;
