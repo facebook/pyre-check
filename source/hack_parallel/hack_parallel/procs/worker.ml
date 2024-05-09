@@ -66,7 +66,6 @@ let max_workers = 1000
 
 type request = Request of (serializer -> unit)
 and serializer = { send: 'a. 'a -> unit }
-and void (* an empty type *)
 
 (*****************************************************************************
  * Everything we need to know about a worker.
@@ -81,8 +80,11 @@ type t = {
   mutable busy: bool;
 
   (* A reference to the worker process. *)
-  handle: (void, request) Daemon.handle;
+  handle: Daemon.handle;
 
+  (* Channels corresponding to the handle's file descriptors. *)
+  ic: in_channel;
+  oc: out_channel;
 }
 
 
@@ -131,8 +133,8 @@ let ephemeral_worker_main ic oc =
   let start_system_time = ref 0.0 in
   let send_response response =
     let s = Marshal.to_string response [Marshal.Closures] in
-    Daemon.output_string oc s;
-    Daemon.flush oc
+    output_string oc s;
+    flush oc
   in
   let send_result result =
     let tm = Unix.times () in
@@ -146,7 +148,7 @@ let ephemeral_worker_main ic oc =
   in
   try
     Measure.push_global ();
-    let Request do_process = Daemon.from_channel ic in
+    let Request do_process = Marshal.from_channel ic in
     let tm = Unix.times () in
     start_user_time := tm.Unix.tms_utime +. tm.Unix.tms_cutime;
     start_system_time := tm.Unix.tms_stime +. tm.Unix.tms_cstime;
@@ -174,14 +176,15 @@ let ephemeral_worker_main ic oc =
       send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace });
       exit 0
 
-let worker_main restore state (ic, oc) =
+let worker_main restore state infd outfd =
   restore state;
-  let in_fd = Daemon.descr_of_in_channel ic in
+  let ic = Unix.in_channel_of_descr infd in
+  let oc = Unix.out_channel_of_descr outfd in
   try
     while true do
       (* Wait for an incoming job : is there something to read?
          But we don't read it yet. It will be read by the forked ephemeral worker. *)
-      let readyl, _, _ = Unix.select [in_fd] [] [] (-1.0) in
+      let readyl, _, _ = Unix.select [infd] [] [] (-1.0) in
       if readyl = [] then exit 0;
       (* We fork an ephemeral worker for every incoming request.
          And let it die after one request. This is the quickest GC. *)
@@ -229,8 +232,10 @@ let make ~nbr_procs ~gc_control ~heap_handle =
   let rec loop acc n =
     if n = 0 then acc
     else
-      let handle = fork n in
-      let worker = { busy = false; killed = false; handle } in
+      let { Daemon.infd; outfd; _ } as handle = fork n in
+      let ic = Unix.in_channel_of_descr infd in
+      let oc = Unix.out_channel_of_descr outfd in
+      let worker = { busy = false; killed = false; handle; ic; oc } in
       loop (worker :: acc) (n - 1)
   in
   (* Flush any buffers before forking workers, to avoid double output. *)
@@ -247,10 +252,10 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  let { Daemon.pid = worker_pid; channels = (inc, outc) } = w.handle in
+  let { Daemon.pid = worker_pid; infd; _ } = w.handle in
   (* Prepare ourself to read answer from the ephemeral_worker. *)
   let result () : b =
-    match Daemon.input_value inc with
+    match Marshal.from_channel w.ic with
     | Response.Success { result; stats } ->
       Measure.merge ~from:(Measure.deserialize stats) ();
       result
@@ -266,17 +271,17 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
           raise (Worker_exited_abnormally (worker_pid, exit_status))
   in
   (* Mark the worker as busy. *)
-  let infd = Daemon.descr_of_in_channel inc in
   let ephemeral_worker = { result; infd; worker = w; } in
   w.busy <- true;
   let request =
     Request (fun { send } -> send (f x))
   in
   (* Send the job to the ephemeral worker. *)
-  let () = try Daemon.to_channel outc
-                 ~flush:true ~flags:[Marshal.Closures]
-                 request with
-  | e ->
+  let () =
+    try
+      Marshal.to_channel w.oc request [Marshal.Closures];
+      flush w.oc
+    with e ->
       match Unix.waitpid [Unix.WNOHANG] worker_pid with
       | 0, _ ->
           raise (Worker_failed_to_send_job (Other_send_job_failure e))
