@@ -74,9 +74,12 @@ let transform_string_annotation_expression ~relative =
       | Call
           {
             callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-              callee;
-            arguments;
+              {
+                Node.value =
+                  Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                _;
+              };
+            arguments = [{ Call.Argument.value = index; name = None }];
           } -> (
           match base with
           | {
@@ -98,7 +101,17 @@ let transform_string_annotation_expression ~relative =
           } ->
               (* Don't transform arguments in Literals. *)
               value
-          | _ -> Call { callee; arguments = List.map ~f:transform_argument arguments })
+          | _ ->
+              Expression.Call
+                {
+                  callee =
+                    {
+                      Node.value =
+                        Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                      location = Node.location base;
+                    };
+                  arguments = [{ Call.Argument.value = transform_expression index; name = None }];
+                })
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
         when is_type_variable_definition callee ->
           Expression.Call
@@ -118,6 +131,7 @@ let transform_string_annotation_expression ~relative =
               ~relative
           with
           | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
+          (* TODO(T101303314): add a branch for Subscript once we no longer lower __getitem__ *)
           | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
               Transform.map_location expression ~transform_location:(fun _ -> location)
               |> Node.value
@@ -594,21 +608,35 @@ module Qualify (Context : QualifyContext) = struct
                       callee =
                         {
                           Node.value =
-                            Name (Name.Attribute { Name.Attribute.attribute = "__getitem__"; _ });
+                            Name
+                              (Name.Attribute
+                                { Name.Attribute.base; attribute = "__getitem__"; special = true });
                           _;
-                        } as callee;
-                      arguments = [key_argument];
+                        };
+                      arguments = [{ Call.Argument.value = index; name = None }];
                     } ->
-                    let callee = qualify_expression ~qualify_strings:DoNotQualify ~scope callee in
-                    let qualified_key_expression =
-                      let key_expression, _ = Call.Argument.unpack key_argument in
-                      qualify_expression ~qualify_strings:DoNotQualify ~scope key_expression
+                    let qualified_base =
+                      qualify_expression ~qualify_strings:DoNotQualify ~scope base
+                    in
+                    let qualified_index =
+                      qualify_expression ~qualify_strings:DoNotQualify ~scope index
                     in
                     ( scope,
                       Call
                         {
-                          callee;
-                          arguments = [{ key_argument with value = qualified_key_expression }];
+                          callee =
+                            {
+                              Node.value =
+                                Name
+                                  (Name.Attribute
+                                     {
+                                       Name.Attribute.base = qualified_base;
+                                       attribute = "__getitem__";
+                                       special = true;
+                                     });
+                              location = Node.location base;
+                            };
+                          arguments = [{ Call.Argument.value = qualified_index; name = None }];
                         } )
                 | target ->
                     (* This case is allowed in the type signatures, but should be prevented by the
@@ -1085,6 +1113,47 @@ module Qualify (Context : QualifyContext) = struct
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
             }
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      { Name.Attribute.base; attribute = "__getitem__"; special = true });
+                _;
+              };
+            arguments = [{ Call.Argument.value = index; name = None }];
+          } ->
+          let qualified_base = qualify_expression ~qualify_strings ~scope base in
+          let qualified_index =
+            let qualify_strings =
+              if
+                name_is ~name:"typing_extensions.Literal" qualified_base
+                || name_is ~name:"typing.Literal" qualified_base
+              then
+                DoNotQualify
+              else
+                qualify_strings
+            in
+            qualify_expression ~qualify_strings ~scope index
+          in
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                         {
+                           Name.Attribute.base = qualified_base;
+                           attribute = "__getitem__";
+                           special = true;
+                         });
+                  location = Node.location base;
+                };
+              arguments = [{ Call.Argument.value = qualified_index; name = None }];
+            }
       | Call { callee; arguments } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let arguments =
@@ -1109,19 +1178,7 @@ module Qualify (Context : QualifyContext) = struct
                      ~f:(qualify_argument ~qualify_strings:Qualify ~scope)
                      remaining_arguments
             | arguments ->
-                let qualify_strings =
-                  if
-                    name_is ~name:"typing_extensions.Literal.__getitem__" callee
-                    || name_is ~name:"typing.Literal.__getitem__" callee
-                  then
-                    DoNotQualify
-                  else
-                    match callee with
-                    | { value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
-                        qualify_strings
-                    | _ -> DoNotQualify
-                in
-                List.map ~f:(qualify_argument ~qualify_strings ~scope) arguments
+                List.map ~f:(qualify_argument ~qualify_strings:DoNotQualify ~scope) arguments
           in
           Expression.Call { callee; arguments }
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
@@ -1405,7 +1462,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 true
             | _ -> false
           in
-          let is_system_version_tuple_access_expression ?index = function
+          let is_system_version_tuple_access_expression ?which_index = function
             | {
                 Node.value =
                   Expression.Call
@@ -1438,18 +1495,14 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                                 });
                           _;
                         };
-                      arguments = [argument];
+                      arguments = [{ Call.Argument.value = index; _ }];
                     };
                 _;
               } -> (
-                match index, argument with
+                match which_index, index with
                 | None, _ -> true
                 | ( Some expected_index,
-                    {
-                      Call.Argument.value =
-                        { Node.value = Expression.Constant (Constant.Integer actual_index); _ };
-                      _;
-                    } )
+                    { Node.value = Expression.Constant (Constant.Integer actual_index); _ } )
                   when Int.equal expected_index actual_index ->
                     true
                 | _ -> false)
@@ -1526,19 +1579,19 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
               ( operator,
                 left,
                 { Node.value = Expression.Constant (Constant.Integer given_major_version); _ } )
-            when is_system_version_tuple_access_expression ~index:0 left ->
+            when is_system_version_tuple_access_expression ~which_index:0 left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
           | Some
               ( operator,
                 left,
                 { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ } )
-            when is_system_version_tuple_access_expression ~index:1 left ->
+            when is_system_version_tuple_access_expression ~which_index:1 left ->
               evaluate_one_version ~operator minor_version given_minor_version |> do_replace
           | Some
               ( operator,
                 left,
                 { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ } )
-            when is_system_version_tuple_access_expression ~index:2 left ->
+            when is_system_version_tuple_access_expression ~which_index:2 left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
           | Some
               ( operator,
@@ -1631,7 +1684,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
               ( operator,
                 { Node.value = Expression.Constant (Constant.Integer given_major_version); _ },
                 right )
-            when is_system_version_tuple_access_expression ~index:0 right ->
+            when is_system_version_tuple_access_expression ~which_index:0 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 major_version
@@ -1641,7 +1694,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
               ( operator,
                 { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ },
                 right )
-            when is_system_version_tuple_access_expression ~index:1 right ->
+            when is_system_version_tuple_access_expression ~which_index:1 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 minor_version
@@ -1651,7 +1704,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
               ( operator,
                 { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ },
                 right )
-            when is_system_version_tuple_access_expression ~index:2 right ->
+            when is_system_version_tuple_access_expression ~which_index:2 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 micro_version
@@ -3097,6 +3150,17 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
+    | Call
+        {
+          callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+              _;
+            };
+          arguments = [{ Call.Argument.value = index; name = None }];
+        } ->
+        let collected = from_expression collected base in
+        from_expression collected index
     | Call { Call.callee; arguments } ->
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
@@ -3718,14 +3782,20 @@ let replace_union_shorthand_in_annotation_expression =
                                         });
                                   _;
                                 };
-                              _;
+                              attribute = "__getitem__";
+                              special = true;
                             });
                       _;
                     };
                   arguments =
-                    [{ Call.Argument.name = None; value = { Node.value = Tuple argument_list; _ } }];
+                    [
+                      {
+                        Call.Argument.name = None;
+                        value = { Node.value = Tuple index_expressions; _ };
+                      };
+                    ];
                 } ->
-                List.concat [sofar; argument_list] |> List.rev
+                List.concat [sofar; index_expressions] |> List.rev
             | _ -> part_of_union_expression :: sofar
           in
           let indices =
@@ -3767,16 +3837,24 @@ let replace_union_shorthand_in_annotation_expression =
                 };
               arguments = [{ Call.Argument.value = index; name = None }];
             }
-      | Expression.Call
+      | Call
           {
-            callee = { value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
-            arguments;
+            callee =
+              {
+                value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                _;
+              };
+            arguments = [{ Call.Argument.value = index; name = None }];
           } ->
-          let arguments =
-            List.map arguments ~f:(fun ({ Call.Argument.value; _ } as argument) ->
-                { argument with value = transform_expression value })
-          in
-          Expression.Call { callee; arguments }
+          Call
+            {
+              callee =
+                {
+                  value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                  location = Node.location base;
+                };
+              arguments = [{ Call.Argument.value = transform_expression index; name = None }];
+            }
       | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
       | List arguments -> List (List.map ~f:transform_expression arguments)
       | _ -> value
