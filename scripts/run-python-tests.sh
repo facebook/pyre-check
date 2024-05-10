@@ -6,7 +6,7 @@
 
 set -e
 
-SCRIPTS_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPTS_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # For open-source tests to work, we have to run them from one directory
 # higher than the project root, so that the project root is treated as a
@@ -17,7 +17,6 @@ SCRIPTS_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && p
 cd "${SCRIPTS_DIRECTORY}/.."
 ROOT_DIRECTORY="$(pwd)"
 ROOT_DIRECTORY_BASE="$(basename "${ROOT_DIRECTORY}")"
-
 
 # run pyre-extensions tests first: we want to test lower-level code
 # first since higher-level test failures are less informative
@@ -36,7 +35,6 @@ fi
 echo ' Running all tests:'
 echo "${files}" | xargs testslide
 
-
 # Test pyre client code last since that's the highest-level code.
 
 cd "${ROOT_DIRECTORY}/.."
@@ -51,4 +49,8 @@ if [[ -z "${files}" ]]; then
 fi
 
 echo ' Running client tests:'
+echo "${files}" | xargs testslide
+
+files=$(find "${ROOT_DIRECTORY_BASE}/tools/upgrade" -name '*_test.py')
+echo ' Running upgrade tests:'
 echo "${files}" | xargs testslide
