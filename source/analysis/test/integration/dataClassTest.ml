@@ -391,6 +391,121 @@ let test_check_dataclasses =
              "Revealed type [-1]: Revealed type for `a.y` is `unknown`.";
              "Undefined attribute [16]: `A` has no attribute `y`.";
            ];
+      (* TODO(T178998636) Pyright gives the error 'No parameter named id' on this code. We should
+         also error out *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable, Literal, Optional, overload, dataclass_transform
+
+            @overload
+            def field(
+                *,
+                resolver: Callable[[], int],
+                init: Literal[False] = False,
+            ) -> int:
+                ...
+            @overload
+            def field(
+                *,
+                resolver: None = None,
+                init: Literal[True] = True,
+            ) -> int:
+                ...
+            def field(
+                *,
+                resolver: Optional[Callable[[], int]] = None,
+                init: bool = True,
+            ) -> int:
+                ...
+
+
+            @dataclass_transform(field_specifiers=(field,))
+            def create_model(*, init: bool = True) -> None:
+                pass
+
+            @create_model
+            class CustomerModel:
+                id: int = field(resolver=lambda: 0)
+            # This should generate an error because "id" is not
+            # supposed to be part of the init function.
+            CustomerModel(id=1)  # Error
+         |}
+           [
+             "Invalid decoration [56]: Decorator `typing.dataclass_transform(...)` could not be \
+              called, because its type `unknown` is not callable.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable, Literal, Optional, overload, dataclass_transform
+
+            @overload
+            def field(
+                *,
+                resolver: Callable[[], int],
+                init: Literal[True] = True,
+            ) -> int:
+                ...
+            @overload
+            def field(
+                *,
+                resolver: None = None,
+                init: Literal[True] = True,
+            ) -> int:
+                ...
+            def field(
+                *,
+                resolver: Optional[Callable[[], int]] = None,
+                init: bool = True,
+            ) -> int:
+                ...
+
+
+            @dataclass_transform(field_specifiers=(field,))
+            def create_model(*, init: bool = True) -> None:
+                pass
+
+            @create_model
+            class CustomerModel:
+                id: int = field(resolver=lambda: 0)
+            # This should generate an error because "id" is not
+            # supposed to be part of the init function.
+            CustomerModel(id=1)  # No Error
+         |}
+           [
+             "Invalid decoration [56]: Decorator `typing.dataclass_transform(...)` could not be \
+              called, because its type `unknown` is not callable.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable, Optional, dataclass_transform
+
+            def field(
+                *,
+                resolver: Optional[Callable[[], int]] = None,
+                init: bool = True,
+            ) -> int:
+                ...
+
+            @dataclass_transform(field_specifiers=(field,))
+            def create_model(*, init: bool = True) -> None:
+                pass
+
+            @create_model
+            class CustomerModel:
+                id: int = field(init=False)
+            # This should generate an error because "id" is not
+            # supposed to be part of the init function.
+            CustomerModel(id=1)  # Error
+         |}
+           [
+             "Invalid decoration [56]: Decorator `typing.dataclass_transform(...)` could not be \
+              called, because its type `unknown` is not callable.";
+             "Unexpected keyword [28]: Unexpected keyword argument `id` to call \
+              `CustomerModel.__init__`.";
+           ];
       (* TODO(T178998636) Do not allow `frozen` dataclasses to inherit from non-frozen. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

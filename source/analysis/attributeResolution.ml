@@ -347,7 +347,7 @@ module ClassDecorators = struct
     eq: bool;
     order: bool;
     match_args: bool;
-    field_descriptors: Ast.Expression.t list;
+    field_specifiers: Ast.Expression.t list;
     keyword_only: bool;
     has_slots: bool;
     frozen: bool;
@@ -408,9 +408,9 @@ module ClassDecorators = struct
                 default
             in
             let default =
-              if String.equal argument_name "field_descriptors" then
+              if String.equal argument_name "field_specifiers" then
                 match value with
-                | Expression.Tuple field_descriptors -> { default with field_descriptors }
+                | Expression.Tuple field_specifiers -> { default with field_specifiers }
                 | _ -> default
               else
                 default
@@ -445,7 +445,7 @@ module ClassDecorators = struct
 
 
   let dataclass_options ~queries:Queries.{ first_matching_class_decorator; _ } class_summary =
-    let field_descriptors =
+    let field_specifiers =
       [Reference.create "dataclasses.field" |> Ast.Expression.from_reference ~location:Location.any]
     in
     first_matching_class_decorator ~names:["dataclasses.dataclass"; "dataclass"] class_summary
@@ -457,7 +457,7 @@ module ClassDecorators = struct
               eq = true;
               order = false;
               match_args = true;
-              field_descriptors;
+              field_specifiers;
               keyword_only = false;
               has_slots = false;
               frozen = false;
@@ -481,7 +481,7 @@ module ClassDecorators = struct
               eq = true;
               order = true;
               match_args = false;
-              field_descriptors = [];
+              field_specifiers = [];
               keyword_only = false;
               has_slots = false;
               frozen = false;
@@ -525,7 +525,7 @@ module ClassDecorators = struct
         eq = true;
         order = false;
         match_args = false;
-        field_descriptors = [];
+        field_specifiers = [];
         keyword_only = false;
         has_slots = false;
         frozen = false;
@@ -752,7 +752,7 @@ module ClassDecorators = struct
             eq;
             order;
             match_args;
-            field_descriptors;
+            field_specifiers;
             keyword_only = class_level_keyword_only;
             has_slots;
             frozen;
@@ -852,9 +852,9 @@ module ClassDecorators = struct
             match value with
             | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
                 Option.some_if
-                  (List.exists field_descriptors ~f:(fun field_descriptor ->
+                  (List.exists field_specifiers ~f:(fun field_specifier ->
                        Int.equal
-                         (Ast.Expression.location_insensitive_compare callee field_descriptor)
+                         (Ast.Expression.location_insensitive_compare callee field_specifier)
                          0))
                   arguments
             | _ -> None

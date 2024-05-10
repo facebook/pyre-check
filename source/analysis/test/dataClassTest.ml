@@ -600,6 +600,50 @@ let test_transform_environment =
                   def __repr__(self) -> str: ...
                   def __eq__(self, o: object) -> bool: ...
               |};
+      (* TODO T178998636: investigate this testcase *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+                from typing import Callable, Literal, Optional, overload, dataclass_transform
+
+                @overload
+                def field2(
+                    *,
+                    resolver: Callable[[], int],
+                    init: Literal[False] = False,
+                ) -> int:
+                    ...
+                @overload
+                def field2(
+                    *,
+                    resolver: None = None,
+                    init: Literal[True] = True,
+                ) -> int:
+                    ...
+                def field2(
+                    *,
+                    resolver: Optional[Callable[[], int]] = None,
+                    init: bool = True,
+                ) -> int:
+                    ...
+
+
+                @dataclass_transform(field_specifiers=(field2,))
+                def create_model(*, init: bool = True) -> None:
+                    pass
+
+                @create_model
+                class CustomerModel:
+                    id: int = field2(resolver=lambda: 0)
+         |}
+           ~class_name:"CustomerModel"
+           {|
+              class CustomerModel:
+                  id: int = dataclasses.field2()
+                  def __init__(self, id: int) -> None: ...
+                  def __eq__(self, o: object) -> bool: ...
+              |};
       (* Dataclass field init disabler *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
@@ -1302,7 +1346,7 @@ let test_dataclass_transform =
 
               from typing import dataclass_transform
 
-              @dataclass_transform(field_descriptors=(myfield,))
+              @dataclass_transform(field_specifiers=(myfield,))
               def mytransform():
                 ...
 
