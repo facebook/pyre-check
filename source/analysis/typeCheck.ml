@@ -5106,8 +5106,8 @@ module State (Context : Context) = struct
                     value =
                       Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
                     _;
-                  } as getitem_callee_expression;
-                arguments = [raw_key_argument];
+                  };
+                arguments = [{ Call.Argument.value = index; name = None }];
               } ->
               let {
                 Resolved.errors = callee_errors;
@@ -5119,10 +5119,10 @@ module State (Context : Context) = struct
                 =
                 let setitem_callee_expression =
                   {
-                    getitem_callee_expression with
-                    value =
+                    Node.value =
                       Expression.Name
                         (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                    Node.location;
                   }
                 in
                 forward_expression ~resolution setitem_callee_expression
@@ -5140,18 +5140,19 @@ module State (Context : Context) = struct
                           |> Option.value ~default:Type.Top;
                       };
                     attribute = { name = "__setitem__"; resolved = resolved_setitem_type };
-                    (* TODO(T187163267) We need a placeholder expression; use the raw subscript from
-                       the LHS for now, try to find a way of relaxing this requirement. *)
-                    expression = getitem_callee_expression;
+                    (* TODO(T187163267) We need a placeholder expression; use the base of the
+                       subscript for now and eventually try to find a way of relaxing this
+                       requirement. *)
+                    expression = base;
                   }
               in
-              (* resolve the key argument, then combine it with the value *)
-              let resolution_after_key_argument, base_and_callee_errors, setitem_arguments =
-                let updated_resolution, base_and_callee_errors, key_argument =
+              (* resolve the index, then combine it with the value *)
+              let resolution_after_index, base_and_callee_errors, setitem_arguments =
+                let updated_resolution, base_and_callee_errors, index_argument =
                   forward_argument
                     ~resolution:resolution_after_callee
                     ~errors:callee_errors
-                    raw_key_argument
+                    { Call.Argument.value = index; name = None }
                 in
                 let value_argument =
                   {
@@ -5160,7 +5161,7 @@ module State (Context : Context) = struct
                     resolved = guide;
                   }
                 in
-                updated_resolution, base_and_callee_errors, [key_argument; value_argument]
+                updated_resolution, base_and_callee_errors, [index_argument; value_argument]
               in
               let target, dynamic =
                 if Type.is_meta resolved_setitem_type then
@@ -5177,7 +5178,7 @@ module State (Context : Context) = struct
               in
               let { Resolved.resolution; errors = setitem_errors; _ } =
                 forward_call
-                  ~resolution:resolution_after_key_argument
+                  ~resolution:resolution_after_index
                   ~location
                   ~errors:base_and_callee_errors
                   ~target
