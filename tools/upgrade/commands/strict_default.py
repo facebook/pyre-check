@@ -9,6 +9,7 @@
 strict_default contains a library for running a codemod across a codebase that turns pyre-strict on. Optionally, we can also remove the #pyre-strict and add #pyre-unsafe headers from files where the error count is below a certain threshhold.
 """
 
+from __future__ import annotations
 
 import argparse
 import logging
