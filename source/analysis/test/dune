@@ -17,7 +17,6 @@
   classSuccessorMetadataEnvironmentTest
   classSummaryTest
   constraintsSetTest
-  dataClassTest
   decoratorPreprocessingTest
   environmentTest
   errorsEnvironmentTest
