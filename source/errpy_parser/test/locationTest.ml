@@ -19,7 +19,23 @@ let statements_print_to_sexp statements =
   Base.Sexp.to_string_hum ((Base.List.sexp_of_t Statement.sexp_of_t) statements)
 
 
-let assert_parsed = StatementTest.assert_parsed
+let assert_parsed ~expected text _context =
+  let check_ast (actual_ast : Ast.Statement.t list) =
+    assert_equal
+      ~cmp:statements_location_insensitive_equal
+      ~printer:statements_print_to_sexp
+      expected
+      actual_ast
+  in
+  match PyreErrpyParser.parse_module text with
+  | Result.Error error -> (
+      match error with
+      | PyreErrpyParser.ParserError.Recoverable recoverable -> check_ast recoverable.recovered_ast
+      | PyreErrpyParser.ParserError.Unrecoverable message ->
+          let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
+          assert_failure message)
+  | Result.Ok actual_ast -> check_ast actual_ast
+
 
 let test_assert_locations =
   let assert_parsed = assert_parsed in

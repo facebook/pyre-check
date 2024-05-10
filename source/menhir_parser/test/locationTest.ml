@@ -12,7 +12,25 @@ open Expression
 open Statement
 open Test
 
-let parse source = Test.trim_extra_indentation source |> GeneratorTest.parse_untrimmed
+let parse_untrimmed source =
+  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
+  | Result.Ok statements -> Source.create statements
+  | Result.Error
+      {
+        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
+        _;
+      } ->
+      let error =
+        Format.asprintf
+          "Could not parse test source at line %d, column %d. Test input:\n%s"
+          line
+          column
+          source
+      in
+      failwith error
+
+
+let parse source = Test.trim_extra_indentation source |> parse_untrimmed
 
 let assert_source_locations source statements =
   let parsed_source = parse source in
