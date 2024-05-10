@@ -3689,36 +3689,6 @@ let populate_unbound_names source =
 
 let replace_union_shorthand_in_annotation_expression =
   let rec transform_expression ({ Node.value; location } as expression) =
-    let union_value arguments =
-      Expression.Call
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  (Name.Attribute
-                     {
-                       base =
-                         {
-                           Node.location;
-                           value =
-                             Name
-                               (Name.Attribute
-                                  {
-                                    base =
-                                      { Node.location; value = Name (Name.Identifier "typing") };
-                                    attribute = "Union";
-                                    special = false;
-                                  });
-                         };
-                       attribute = "__getitem__";
-                       special = true;
-                     });
-            };
-          arguments;
-        }
-    in
     let value =
       match value with
       | Expression.Call
@@ -3726,12 +3696,8 @@ let replace_union_shorthand_in_annotation_expression =
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__or__"; _ }); _ };
             arguments;
           } ->
-          let base_argument = { Call.Argument.value = base; name = None } in
-          let transform_argument ({ Call.Argument.value; _ } as argument) =
-            { argument with Call.Argument.value = transform_expression value }
-          in
-          let to_expression_list sofar { Call.Argument.value; _ } =
-            match Node.value value with
+          let flatten_typing_unions sofar part_of_union_expression =
+            match Node.value part_of_union_expression with
             | Expression.Call
                 {
                   callee =
@@ -3760,22 +3726,47 @@ let replace_union_shorthand_in_annotation_expression =
                     [{ Call.Argument.name = None; value = { Node.value = Tuple argument_list; _ } }];
                 } ->
                 List.concat [sofar; argument_list] |> List.rev
-            | _ -> value :: sofar
+            | _ -> part_of_union_expression :: sofar
           in
-          let arguments =
-            List.concat [[base_argument]; arguments]
-            |> List.map ~f:transform_argument
-            |> List.fold ~init:[] ~f:to_expression_list
+          let indices =
+            let unpack_argument { Call.Argument.value; _ } = value in
+            (* Form the raw index expressions *)
+            base :: List.map ~f:unpack_argument arguments
+            (* Recursively transform them into `typing.Union[...]` form *)
+            |> List.map ~f:transform_expression
+            (* Flatten all of the inner `typing.Union`s (and use `rev` to preserve order) *)
+            |> List.fold ~init:[] ~f:flatten_typing_unions
             |> List.rev
-            |> fun argument_list ->
-            [
-              {
-                Call.Argument.value = { Node.value = Expression.Tuple argument_list; location };
-                name = None;
-              };
-            ]
           in
-          union_value arguments
+          let index = { Node.value = Expression.Tuple indices; location } in
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.location;
+                  value =
+                    Name
+                      (Name.Attribute
+                         {
+                           base =
+                             {
+                               Node.location;
+                               value =
+                                 Name
+                                   (Name.Attribute
+                                      {
+                                        base =
+                                          { Node.location; value = Name (Name.Identifier "typing") };
+                                        attribute = "Union";
+                                        special = false;
+                                      });
+                             };
+                           attribute = "__getitem__";
+                           special = true;
+                         });
+                };
+              arguments = [{ Call.Argument.value = index; name = None }];
+            }
       | Expression.Call
           {
             callee = { value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
