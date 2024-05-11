@@ -1397,9 +1397,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments =
-    let { Call.callee; arguments } =
-      CallGraph.redirect_special_calls ~pyre_in_context { Call.callee; arguments }
-    in
     let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
 
     let add_type_breadcrumbs taint =
@@ -2135,15 +2132,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~taint
       ~state
-      ~expression:({ Node.location; _ } as expression)
+      ~expression:{ Node.value; location }
     =
     log
       "Backward analysis of expression: `%a` with backward taint: %a"
-      Expression.pp
-      expression
+      Expression.pp_expression
+      value
       BackwardState.Tree.pp
       taint;
-    match expression.Node.value with
+    let value = CallGraph.redirect_expressions ~pyre_in_context value in
+    match value with
     | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
     | BooleanOperator { left; operator = _; right } ->
         analyze_expression ~pyre_in_context ~taint ~state ~expression:right
@@ -2191,7 +2189,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_comprehension ~pyre_in_context taint comprehension state
     | Name (Name.Identifier identifier) ->
         let taint =
-          BackwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression taint
+          BackwardState.Tree.add_local_type_breadcrumbs
+            ~pyre_in_context
+            ~expression:{ Node.value; location }
+            taint
         in
         store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->

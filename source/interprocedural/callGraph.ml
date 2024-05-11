@@ -1784,6 +1784,15 @@ let redirect_special_calls ~pyre_in_context call =
       PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
 
 
+let redirect_expressions ~pyre_in_context = function
+  (* TODO(T101303314): Support rewriting Subscript nodes to __getitem__ once we have them in the
+     AST. *)
+  | Expression.Call call ->
+      let call = redirect_special_calls ~pyre_in_context call in
+      Expression.Call call
+  | expression -> expression
+
+
 let redirect_assignments = function
   | {
       Node.value =
@@ -2535,10 +2544,10 @@ struct
             | Some existing_callees ->
                 UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
       in
+      let value = redirect_expressions ~pyre_in_context value in
       let () =
         match value with
         | Expression.Call call ->
-            let call = redirect_special_calls ~pyre_in_context call in
             resolve_callees ~pyre_in_context ~override_graph ~call_indexer ~call
             |> add_unknown_callee ~expression
             |> ExpressionCallees.from_call

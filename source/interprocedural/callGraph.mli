@@ -296,7 +296,10 @@ val call_graph_of_define
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
 
-val redirect_special_calls : pyre_in_context:PyrePysaApi.InContext.t -> Call.t -> Call.t
+val redirect_expressions
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  Expression.expression ->
+  Expression.expression
 
 val redirect_assignments : Statement.t -> Statement.t
 

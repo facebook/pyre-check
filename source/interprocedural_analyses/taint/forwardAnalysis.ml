@@ -1593,9 +1593,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
       ~arguments
     =
-    let { Call.callee; arguments } =
-      CallGraph.redirect_special_calls ~pyre_in_context { Call.callee; arguments }
-    in
     let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
 
     let add_type_breadcrumbs taint =
@@ -2539,10 +2536,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_result_used
-      ~expression:({ Node.location; _ } as expression)
+      ~expression:{ Node.value; location }
     =
     let taint, state =
-      match expression.Node.value with
+      let value = CallGraph.redirect_expressions ~pyre_in_context value in
+      match value with
       | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
       | BooleanOperator { left; operator = _; right } ->
           let left_taint, state =
@@ -2608,7 +2606,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
-              ~expression
+              ~expression:{ Node.value; location }
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_source
           in
@@ -2639,7 +2637,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let local_taint =
             let root = AccessPath.Root.Variable identifier in
             ForwardState.read ~root ~path:[] state.taint
-            |> ForwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression
+            |> ForwardState.Tree.add_local_type_breadcrumbs
+                 ~pyre_in_context
+                 ~expression:{ Node.value; location }
           in
           ( local_taint
             |> ForwardState.Tree.join global_taint
@@ -2737,7 +2737,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           taint, store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     in
-    log "Forward taint of expression `%a`: %a" Expression.pp expression ForwardState.Tree.pp taint;
+    log
+      "Forward taint of expression `%a`: %a"
+      Expression.pp_expression
+      value
+      ForwardState.Tree.pp
+      taint;
     taint, state
 
 
