@@ -212,8 +212,6 @@ module State (Context : Context) = struct
                 reachable_globals
                 errors;
           }
-        else if String.equal attribute "__getitem__" then
-          { sub_expression_result with reachable_globals }
         else
           let reachable_globals =
             match reachable_globals with
@@ -285,28 +283,32 @@ module State (Context : Context) = struct
               reachable_globals
               (value_errors @ errors);
         }
+    | Call
+        {
+          callee =
+            {
+              Node.value =
+                Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+              _;
+            };
+          arguments = [{ Call.Argument.value = index; name = None }];
+        } ->
+        (* We assume that idiomatic python code does not mutate base in __getitem__ evaluation, and
+           that globals used as index keys aren't going to be mutated later. *)
+        let { errors = base_errors; reachable_globals } = forward_expression base in
+        let { errors = index_errors; _ } = forward_expression index in
+        { errors = base_errors @ index_errors; reachable_globals }
     | Call { callee; arguments } ->
-        let { errors; reachable_globals } = forward_expression callee in
+        let { errors; _ } = forward_expression callee in
         let reachable_globals =
-          match callee with
-          | { Node.value = Expression.Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
-              reachable_globals
-          (* if this call is `__getitem__`, assume a mutation on the return value mutates reachable
-             globals (i.e. `my_global[5].append(3)` would be a mutation) *)
-          | _ -> (
-              let resolved_expression_type = expression_type () in
-              match Type.extract_meta resolved_expression_type with
-              | Some class_name ->
-                  (* if this expression (the result of the call) returns a class reference/type,
-                     then treat it as a global (i.e. `get_class().x = 5` for `def get_class() ->
-                     Type[MyClass]: ...` is a global mutation) *)
-                  [
-                    {
-                      global = Type.class_name class_name;
-                      expression_type = resolved_expression_type;
-                    };
-                  ]
-              | _ -> [])
+          let resolved_expression_type = expression_type () in
+          match Type.extract_meta resolved_expression_type with
+          | Some class_name ->
+              (* if this expression (the result of the call) returns a class reference/type, then
+                 treat it as a global (i.e. `get_class().x = 5` for `def get_class() ->
+                 Type[MyClass]: ...` is a global mutation) *)
+              [{ global = Type.class_name class_name; expression_type = resolved_expression_type }]
+          | _ -> []
         in
         let get_errors_from_forward_expression { Call.Argument.value; _ } =
           let { errors; reachable_globals } = forward_expression value in
@@ -467,9 +469,8 @@ module State (Context : Context) = struct
     | Expression.Call
         {
           callee =
-            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ }
-            as callee;
-          arguments;
+            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
+          arguments = [{ Call.Argument.value = index; name = None }];
         } ->
         (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
            arity should be 2 instead of 1 (we don't have an actual expression for the second
@@ -483,11 +484,11 @@ module State (Context : Context) = struct
                 {
                   callee =
                     {
-                      callee with
-                      value =
+                      Node.value =
                         Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                      location = Node.location base;
                     };
-                  arguments;
+                  arguments = [{ Call.Argument.value = index; name = None }];
                 };
           }
         in

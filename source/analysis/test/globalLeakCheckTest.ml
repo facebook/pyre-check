@@ -618,10 +618,9 @@ let test_list_global_leaks context =
     ]
     context;
   assert_global_leak_errors
-    (* Using a global in a list accessor when the global is not mutated results in a global read
-       error. This is because we consider globals passed as function parameters as potential
-       leaks.*)
-    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
+    (* We don't treat globals used as indexes in subscripts to be leaked; in idiomatic code indexes
+       are almost never mutated (they usually have to be immutable anyway) so this is unsound but
+       almost always correct *)
     {|
       my_global: int = 1
 
@@ -630,10 +629,7 @@ let test_list_global_leaks context =
 
         my_list[my_global].append(4)
     |}
-    [
-      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
-       `int` via method arguments to method `my_list.__getitem__`.";
-    ]
+    []
     context;
   assert_global_leak_errors
     (* Mutating a global with the walrus operator in a list constructor results in an error. *)
