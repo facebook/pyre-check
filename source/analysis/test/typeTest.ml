@@ -2068,40 +2068,59 @@ let test_type_parameters_for_bounded_tuple_union _ =
 
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
-let test_expression_contains_any _ =
-  assert_true
-    (Type.expression_contains_any
-       (parse_single_expression ~preprocess:true "typing.Dict[typing.Any, typing.Any]"));
-  assert_false (Type.expression_contains_any (parse_single_expression ~preprocess:true "dict"));
-  assert_false
-    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
-  assert_false
-    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Callable"));
-  assert_false
-    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Tuple"));
-  assert_true
-    (Type.expression_contains_any
-       (parse_single_expression ~preprocess:true "typing.Union[typing.Any, None]"));
-  assert_false
-    (Type.expression_contains_any
-       (parse_single_expression ~preprocess:true "typing.Union[typing.Callable]"));
-  assert_false
-    (Type.expression_contains_any
-       (parse_single_expression
-          ~preprocess:true
-          "pyre_extensions.type_variable_operators.Map[typing.List, int]"));
-  assert_false
-    (Type.expression_contains_any
-       (parse_single_expression ~preprocess:true "foo[typing.Concatenate[int, bool, Ts]]"));
-  assert_false
-    (Type.expression_contains_any
-       (parse_single_expression
-          ~preprocess:true
-          "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"));
-  assert_false
-    (Type.expression_contains_any
-       (parse_single_expression ~preprocess:true "foo[type_extensions.Concatenate[int, bool, Ts]]"));
-  ()
+let test_expression_contains_any =
+  let assert_true actual _context = assert_true actual in
+  let assert_false actual _context = assert_false actual in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (Type.expression_contains_any
+              (parse_single_expression ~preprocess:true "typing.Dict[typing.Any, typing.Any]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any (parse_single_expression ~preprocess:true "dict"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression ~preprocess:true "typing.Callable"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Tuple"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (Type.expression_contains_any
+              (parse_single_expression ~preprocess:true "typing.Union[typing.Any, None]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression ~preprocess:true "typing.Union[typing.Callable]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression
+                 ~preprocess:true
+                 "pyre_extensions.type_variable_operators.Map[typing.List, int]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression ~preprocess:true "foo[typing.Concatenate[int, bool, Ts]]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression
+                 ~preprocess:true
+                 "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (Type.expression_contains_any
+              (parse_single_expression
+                 ~preprocess:true
+                 "foo[type_extensions.Concatenate[int, bool, Ts]]"));
+    ]
 
 
 let test_is_concrete _ =
@@ -6636,7 +6655,7 @@ let () =
          "exists" >:: test_exists;
          "contains_callable" >:: test_contains_callable;
          "contains_any" >:: test_contains_any;
-         "expression_contains_any" >:: test_expression_contains_any;
+         test_expression_contains_any;
          "is_concrete" >:: test_is_concrete;
          "is_not_instantiated" >:: test_is_not_instantiated;
          "is_meta" >:: test_is_meta;
