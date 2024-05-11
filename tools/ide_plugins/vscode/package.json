@@ -26,12 +26,14 @@
     "lint": "tslint --force -p ."
   },
   "dependencies": {
+    "@vscode/python-extension": "^1.0.5",
     "vscode-languageclient": "^3.5.0",
-    "@vscode/python-extension": "^1.0.5"
+    "which": "^4.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.44",
     "@types/node": "^8.0.53",
+    "@types/which": "^3.0.3",
     "cson": "^4.1.0",
     "tslint": "^5.8.0",
     "tslint-microsoft-contrib": "^5.0.1",
