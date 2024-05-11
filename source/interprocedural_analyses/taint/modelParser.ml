@@ -115,11 +115,11 @@ let parse_access_path ~path ~location expression =
     | Expression.Call
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments = [{ Call.Argument.value = argument; _ }];
+          arguments = [{ Call.Argument.value = index; _ }];
         } -> (
         parse_model_labels base
         >>= fun base ->
-        match Node.value argument with
+        match Node.value index with
         | Expression.Constant (Constant.Integer index) ->
             Ok (TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_int_index index)]))
         | Expression.Constant (Constant.String { StringLiteral.value = key; _ }) ->
@@ -129,7 +129,7 @@ let parse_access_path ~path ~location expression =
               (annotation_error
                  (Format.sprintf
                     "expected int or string literal argument for index access, got `%s`"
-                    (Expression.show argument))))
+                    (Expression.show index))))
     | Expression.Call
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
@@ -481,28 +481,27 @@ let rec parse_annotations
                     });
               _;
             };
-          arguments = [{ Call.Argument.value = argument; _ }];
+          arguments = [{ Call.Argument.value = index; _ }];
         } -> (
         match base_identifier with
-        | "Via" -> extract_breadcrumbs argument >>| TaintKindsWithFeatures.from_breadcrumbs
+        | "Via" -> extract_breadcrumbs index >>| TaintKindsWithFeatures.from_breadcrumbs
         | "ViaDynamicFeature" ->
-            extract_breadcrumbs ~is_dynamic:true argument
-            >>| TaintKindsWithFeatures.from_breadcrumbs
+            extract_breadcrumbs ~is_dynamic:true index >>| TaintKindsWithFeatures.from_breadcrumbs
         | "ViaValueOf" ->
-            extract_via_tag ~requires_parameter_name:true "ViaValueOf" argument
+            extract_via_tag ~requires_parameter_name:true "ViaValueOf" index
             >>= fun tag ->
-            extract_via_parameters "ViaValueOf" argument
+            extract_via_parameters "ViaValueOf" index
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaValueOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | "ViaTypeOf" ->
             let requires_parameter_name =
               not (AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin)
             in
-            extract_via_tag ~requires_parameter_name "ViaTypeOf" argument
+            extract_via_tag ~requires_parameter_name "ViaTypeOf" index
             >>= fun tag ->
             let parameters =
               if requires_parameter_name then
-                extract_via_parameters "ViaTypeOf" argument
+                extract_via_parameters "ViaTypeOf" index
               else
                 Ok [attribute_symbolic_parameter]
             in
@@ -512,7 +511,7 @@ let rec parse_annotations
         | "ViaAttributeName" ->
             check_attribute_annotation "ViaAttributeName" origin
             >>= fun () ->
-            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
+            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" index
             >>| fun tag ->
             [Features.ViaFeature.ViaAttributeName { tag }]
             |> TaintKindsWithFeatures.from_via_features
@@ -525,13 +524,12 @@ let rec parse_annotations
               get_parameter_position name
               >>| fun position -> Kind.from_name (Format.sprintf "ParameterUpdate%d" position)
             in
-            extract_names argument
+            extract_names index
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
         | "ParameterPath" ->
             check_parameter_annotation "ParameterPath" origin
             >>= fun () ->
-            parse_access_path ~path ~location argument
-            >>| TaintKindsWithFeatures.from_parameter_path
+            parse_access_path ~path ~location index >>| TaintKindsWithFeatures.from_parameter_path
         | "ReturnPath" ->
             if not (AnnotationOrigin.is_return origin || AnnotationName.is_tito name) then
               Error
@@ -539,20 +537,20 @@ let rec parse_annotations
                    "`ReturnPath[]` can only be used as a return annotation or within \
                     `TaintInTaintOut[]`")
             else
-              parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
+              parse_access_path ~path ~location index >>| TaintKindsWithFeatures.from_return_path
         | "UpdatePath" ->
             check_tito_annotation "UpdatePath" name
             >>= fun () ->
             check_parameter_annotation "UpdatePath" origin
             >>= fun () ->
-            parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_update_path
+            parse_access_path ~path ~location index >>| TaintKindsWithFeatures.from_update_path
         | "CollapseDepth" ->
             check_tito_annotation "CollapseDepth" name
             >>= fun () ->
-            extract_collapse_depth argument
+            extract_collapse_depth index
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
         | taint_kind ->
-            extract_subkind argument
+            extract_subkind index
             >>| fun subkind ->
             TaintKindsWithFeatures.from_kind { Kind.name = taint_kind; subkind = Some subkind })
     | Tuple expressions ->
@@ -700,30 +698,30 @@ let rec parse_annotations
                     });
               _;
             };
-          arguments = [{ Call.Argument.value = argument; _ }];
+          arguments = [{ Call.Argument.value = index; _ }];
         } -> (
         let open Core.Result in
-        match base_identifier, argument with
-        | "TaintSink", _ -> get_sink_kinds argument
-        | "TaintSource", _ -> get_source_kinds argument
-        | "TaintInTaintOut", _ -> get_taint_in_taint_out argument
+        match base_identifier, index with
+        | "TaintSink", _ -> get_sink_kinds index
+        | "TaintSource", _ -> get_source_kinds index
+        | "TaintInTaintOut", _ -> get_taint_in_taint_out index
         | "AddFeatureToArgument", _ ->
-            extract_kinds_with_features ~name:AddFeatureToArgument argument
+            extract_kinds_with_features ~name:AddFeatureToArgument index
             >>| fun { features; _ } -> [TaintAnnotation.AddFeatureToArgument { features }]
         | "AttachToSink", _ ->
-            extract_attach_features ~name:AttachToSink argument
+            extract_attach_features ~name:AttachToSink index
             >>| fun features -> [TaintAnnotation.Sink { sink = Sinks.Attach; features }]
         | "AttachToTito", _ ->
-            extract_attach_features ~name:AttachToTito argument
+            extract_attach_features ~name:AttachToTito index
             >>| fun features -> [TaintAnnotation.Tito { tito = Sinks.Attach; features }]
         | "AttachToSource", _ ->
-            extract_attach_features ~name:AttachToSource argument
+            extract_attach_features ~name:AttachToSource index
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
         | "ViaTypeOf", _ ->
             check_attribute_annotation "ViaTypeOf" origin
             >>= fun () ->
             (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
-            extract_via_tag ~requires_parameter_name:false "ViaTypeOf" argument
+            extract_via_tag ~requires_parameter_name:false "ViaTypeOf" index
             >>| fun tag ->
             let via_feature =
               Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
@@ -739,7 +737,7 @@ let rec parse_annotations
             check_attribute_annotation "ViaAttributeName" origin
             >>= fun () ->
             (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
-            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
+            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" index
             >>| fun tag ->
             let via_feature = Features.ViaFeature.ViaAttributeName { tag } in
             [
@@ -752,11 +750,11 @@ let rec parse_annotations
         | "PartialSink", _ ->
             check_parameter_annotation "PartialSink" origin
             >>= fun () ->
-            get_partial_sink_kind argument
+            get_partial_sink_kind index
             >>| fun partial_sink ->
             [TaintAnnotation.Sink { sink = partial_sink; features = TaintFeatures.empty }]
         | "Sanitize", _ ->
-            parse_sanitize_annotation (Node.value argument)
+            parse_sanitize_annotation (Node.value index)
             >>| fun annotations -> [TaintAnnotation.Sanitize annotations]
         | ( "AppliesTo",
             {
@@ -807,8 +805,8 @@ let rec parse_annotations
             >>= fun field ->
             parse_annotation expression
             >>= fun annotations -> List.map ~f:(extend_applies_to field) annotations |> all
-        | "CrossRepositoryTaint", _ -> parse_cross_repository_producer argument
-        | "CrossRepositoryTaintAnchor", _ -> parse_cross_repository_anchor argument
+        | "CrossRepositoryTaint", _ -> parse_cross_repository_producer index
+        | "CrossRepositoryTaintAnchor", _ -> parse_cross_repository_anchor index
         | "Union", { value = Tuple expressions; _ } ->
             List.map expressions ~f:(fun expression ->
                 parse_annotations
@@ -893,7 +891,7 @@ let rec parse_annotations
                     });
               _;
             };
-          arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }];
+          arguments = [{ Call.Argument.value = { Node.value = index_value; _ }; _ }];
         } ->
         let gather_sources_sinks (sources, sinks) = function
           | TaintAnnotation.Source { source; features } when TaintFeatures.is_empty features ->
@@ -908,7 +906,7 @@ let rec parse_annotations
                       TaintAnnotation.pp
                       taint_annotation))
         in
-        parse_annotation expression
+        parse_annotation index_value
         >>= List.fold_result ~init:([], []) ~f:gather_sources_sinks
         >>| fun (sources, sinks) ->
         let sources = List.map ~f:(fun source -> Sources.to_sanitized_source_exn source) sources in
@@ -3128,10 +3126,8 @@ let parse_decorator_annotations
     ~top_level_decorators
   =
   let open Core.Result in
-  let create_get_item_call ~location callee arguments =
+  let arguments_as_expressions arguments =
     List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
-    |> Ast.Expression.get_item_call callee ~location
-    |> Node.create ~location
   in
   let create_function_call ~location callee arguments =
     Ast.Expression.Expression.Call
@@ -3140,7 +3136,9 @@ let parse_decorator_annotations
   in
   let parse_sanitize_annotations ~location ~original_expression arguments =
     (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
-    let expression = create_get_item_call ~location "Sanitize" arguments in
+    let synthetic_sanitize_annotation =
+      Ast.Expression.get_item_call "Sanitize" arguments ~location |> Node.create ~location
+    in
     parse_annotations
       ~path
       ~location
@@ -3148,7 +3146,7 @@ let parse_decorator_annotations
       ~taint_configuration
       ~parameters:[]
       ~callable_parameter_names_to_roots:None
-      expression
+      synthetic_sanitize_annotation
     |> function
     | Ok [Sanitize sanitize_annotations] ->
         Ok (sanitize_from_annotations ~source_sink_filter sanitize_annotations)
@@ -3232,17 +3230,18 @@ let parse_decorator_annotations
                                 });
                           _;
                         };
-                      arguments;
+                      arguments = [{ Call.Argument.value = index; _ }];
                     };
                 _;
               };
             _;
           };
         ] ->
-        parse_sanitize_annotations ~location ~original_expression arguments
+        parse_sanitize_annotations ~location ~original_expression [index]
         >>| Model.Sanitizers.from_parameters
     | Some arguments -> (
-        parse_sanitize_annotations ~location ~original_expression arguments
+        arguments_as_expressions arguments
+        |> parse_sanitize_annotations ~location ~original_expression
         >>= function
         | { Sanitize.sources; _ }
           when (not (SanitizeTransform.SourceSet.is_empty sources))
@@ -3292,7 +3291,8 @@ let parse_decorator_annotations
         ] ->
         Ok (Model.Sanitizers.from_global (Sanitize.from_sinks_only SanitizeTransform.SinkSet.all))
     | Some arguments -> (
-        parse_sanitize_annotations ~location ~original_expression arguments
+        arguments_as_expressions arguments
+        |> parse_sanitize_annotations ~location ~original_expression
         >>= function
         | { Sanitize.tito; _ } when not (SanitizeTransformSet.is_empty tito) ->
             Error
