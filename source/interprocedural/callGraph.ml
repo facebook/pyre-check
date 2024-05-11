@@ -1810,7 +1810,7 @@ let redirect_assignments = function
                               (Name.Attribute { base; attribute = "__getitem__"; special = true });
                           _;
                         };
-                      arguments = [key_argument];
+                      arguments = [{ Call.Argument.value = index; name = None }];
                     };
                 _;
               };
@@ -1822,6 +1822,7 @@ let redirect_assignments = function
       (* TODO(T187636576): For now, we translate assignments such as `d[a] = b` into
          `d.__setitem__(a, b)`. Unfortunately, this won't work for multi-target assignments such as
          `x, y[a], z = w`. In the future, we should implement proper logic to handle those. *)
+      let index_argument = { Call.Argument.value = index; name = None } in
       let value_argument = { Call.Argument.value = value_expression; name = None } in
       {
         Node.location;
@@ -1838,7 +1839,7 @@ let redirect_assignments = function
                           Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
                         location;
                       };
-                    arguments = [key_argument; value_argument];
+                    arguments = [index_argument; value_argument];
                   };
             };
       }
