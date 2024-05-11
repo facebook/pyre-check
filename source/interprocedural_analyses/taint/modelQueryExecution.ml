@@ -1461,23 +1461,34 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       let get_subkind_from_annotation ~pattern annotation =
         let get_annotation_of_type annotation =
           match annotation >>| Node.value with
-          | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
-              match callee with
-              | Name
-                  (Name.Attribute
+          | Some
+              (Expression.Call
+                {
+                  Call.callee =
                     {
-                      base =
-                        { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                      attribute = "__getitem__";
-                      special = true;
-                    }) -> (
-                  match arguments with
-                  | [
-                   { Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ }; _ };
-                  ] ->
-                      Some annotation
-                  | _ -> None)
-              | _ -> None)
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              base =
+                                {
+                                  Node.value = Name (Name.Attribute { attribute = "Annotated"; _ });
+                                  _;
+                                };
+                              attribute = "__getitem__";
+                              special = true;
+                            });
+                      _;
+                    };
+                  arguments =
+                    [
+                      {
+                        Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ };
+                        name = None;
+                      };
+                    ];
+                }) ->
+              Some annotation
           | _ -> None
         in
         match get_annotation_of_type annotation with
