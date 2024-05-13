@@ -2405,8 +2405,8 @@ let test_check_dataclasses =
              "Undefined attribute [16]: `A` has no attribute `y`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
-      (* (TODO T178998636: Investigate errorIncompatible attribute type [8]: Attribute `y` declared
-         in class `A` has type \ `InitVar[int]` but is used as type `int`. `default`.) *)
+      (* TODO: Investigate the error "Undefined attribute [16]: `typing.Type` has no attribute
+         `y`." *)
       @@ assert_type_errors
            {|
            from dataclasses import dataclass, InitVar, field
@@ -2420,8 +2420,6 @@ let test_check_dataclasses =
            reveal_type(a.y)
          |}
            [
-             "Incompatible attribute type [8]: Attribute `y` declared in class `A` has type \
-              `InitVar[int]` but is used as type `int`.";
              "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
              "Revealed type [-1]: Revealed type for `a.x` is `int`.";
              "Revealed type [-1]: Revealed type for `a.y` is `unknown`.";

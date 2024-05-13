@@ -4147,10 +4147,15 @@ module State (Context : Context) = struct
             | `NoParameter -> None, true
             | `NotFinal -> Some parsed_annotation, false
           in
-          let unwrap_class_variable annotation =
-            Type.class_variable_value annotation |> Option.value ~default:annotation
+          let unwrap_type_qualifiers annotation =
+            match annotation with
+            | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single parameter_type] }
+              ->
+                (* If annotation is dataclasses.InitVar[T], return T *)
+                parameter_type
+            | _ -> Type.class_variable_value annotation |> Option.value ~default:annotation
           in
-          annotation_errors, is_final, Option.map final_annotation ~f:unwrap_class_variable
+          annotation_errors, is_final, Option.map final_annotation ~f:unwrap_type_qualifiers
     in
     (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
     let value =
@@ -4241,6 +4246,7 @@ module State (Context : Context) = struct
           | Some annotation when not (Type.contains_unknown annotation) -> annotation
           | _ -> resolved_value
         in
+
         let explicit = Option.is_some annotation in
         let rec forward_assign
             ~resolution
