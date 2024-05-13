@@ -101,73 +101,73 @@ let test_harder_registrations =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers {|
-          X = int
-        |} "test.X" (Some "int");
+             X = int
+           |} "test.X" (Some "int");
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
            {|
-          from typing import Tuple
-          X = int
-          Y = Tuple[X, X]
-        |}
+             from typing import Tuple
+             X = int
+             Y = Tuple[X, X]
+           |}
            "test.Y"
            (Some "typing.Tuple[int, int]");
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
            {|
-          from typing import Tuple, List
-          B = int
-          A = List[B]
-          Z = Tuple[A, B]
-        |}
+             from typing import Tuple, List
+             B = int
+             A = List[B]
+             Z = Tuple[A, B]
+           |}
            "test.Z"
            (Some "typing.Tuple[typing.List[int], int]");
       labeled_test_case __FUNCTION__ __LINE__
       @@ unparsed_assert_registers
            {|
-          from mypy_extensions import TypedDict
-          X = int
-          class Q(TypedDict):
-            a: X
-        |}
+             from mypy_extensions import TypedDict
+             X = int
+             class Q(TypedDict):
+               a: X
+           |}
            "test.Q"
            (* TypedDicts are treated as proper classes, not aliases. *)
            None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
            {|
-          class Foo: ...
-          X = Foo[unknown.get("key")]
-        |}
+             class Foo: ...
+             X = Foo[unknown.get("key")]
+           |}
            "test.X"
            None;
       (* Don't treat a global string assignment as an alias unless it is marked as `TypeAlias`. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-          X = int
-          Y = "X"
-        |}
+             X = int
+             Y = "X"
+           |}
            "test.Y"
            ~expected_alias:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-          import typing
+             import typing
 
-          X = int
-          Y: typing_extensions.TypeAlias = "X"
-        |}
+             X = int
+             Y: typing_extensions.TypeAlias = "X"
+           |}
            "test.Y"
            ~expected_alias:(Some (Type.TypeAlias Type.integer));
       (* Recursive alias. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import Tuple, Union
+              from typing import Tuple, Union
 
-            Tree = Union[int, Tuple["Tree", "Tree"]]
-          |}
+              Tree = Union[int, Tuple["Tree", "Tree"]]
+            |}
            "test.Tree"
            ~expected_alias:
              (Some
@@ -182,46 +182,49 @@ let test_harder_registrations =
                            ]))));
       (* Forbid directly-recursive aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_registers {|
-            Tree = "Tree"
-          |} "test.Tree" ~expected_alias:None;
+      @@ assert_registers
+           {|
+              Tree = "Tree"
+            |}
+           "test.Tree"
+           ~expected_alias:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import Union
+              from typing import Union
 
-            X = Union[int, "X"]
-          |}
+              X = Union[int, "X"]
+            |}
            "test.X"
            ~expected_alias:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import Annotated
+              from typing import Annotated
 
-            X = Annotated["X", int]
-          |}
+              X = Annotated["X", int]
+            |}
            "test.X"
            ~expected_alias:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import Tuple, TypeVar, Union
+              from typing import Tuple, TypeVar, Union
 
-            T = TypeVar("T")
-            GenericTree = Union[T, Tuple["GenericTree[T]", "GenericTree[T]"]]
-          |}
+              T = TypeVar("T")
+              GenericTree = Union[T, Tuple["GenericTree[T]", "GenericTree[T]"]]
+            |}
            "test.GenericTree"
            ~expected_alias:None;
       (* Aliases referring to recursive aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import List, Union
+              from typing import List, Union
 
-            X = List["X"]
-            Y = List[X]
-          |}
+              X = List["X"]
+              Y = List[X]
+            |}
            "test.Y"
            ~expected_alias:
              (Some
@@ -233,14 +236,14 @@ let test_harder_registrations =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import List, Sequence, Union
+              from typing import List, Sequence, Union
 
-            X = Union[
-                Sequence["X"],
-                List["X"]
-            ]
-            Y = Union[int, X]
-          |}
+              X = Union[
+                  Sequence["X"],
+                  List["X"]
+              ]
+              Y = Union[int, X]
+            |}
            "test.Y"
            ~expected_alias:
              (Some
@@ -262,15 +265,15 @@ let test_harder_registrations =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-            from typing import List, Sequence, Union
+              from typing import List, Sequence, Union
 
-            X = Union[
-                Sequence["X"],
-                List["X"]
-            ]
-            Y = Union[int, X]
-            Z = List[Y]
-          |}
+              X = Union[
+                  Sequence["X"],
+                  List["X"]
+              ]
+              Y = Union[int, X]
+              Z = List[Y]
+            |}
            "test.Z"
            ~expected_alias:
              (Some
@@ -293,17 +296,17 @@ let test_harder_registrations =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-          from typing import Generic, TypeVar
-          from pyre_extensions import TypeVarTuple, Unpack
-          from typing_extensions import Literal as L
+            from typing import Generic, TypeVar
+            from pyre_extensions import TypeVarTuple, Unpack
+            from typing_extensions import Literal as L
 
-          T = TypeVar("T")
-          Ts = TypeVarTuple("Ts")
+            T = TypeVar("T")
+            Ts = TypeVarTuple("Ts")
 
-          class Tensor(Generic[T, Unpack[Ts]]): ...
+            class Tensor(Generic[T, Unpack[Ts]]): ...
 
-          FloatTensor = Tensor[float, Unpack[Ts]]
-        |}
+            FloatTensor = Tensor[float, Unpack[Ts]]
+          |}
            "test.FloatTensor"
            ~expected_alias:
              (Some
@@ -323,13 +326,13 @@ let test_harder_registrations =
              [
                ( "reexports_callable.py",
                  {|
-          from typing import Callable as Callable
-        |} );
+            from typing import Callable as Callable
+          |} );
              ]
            {|
-          from reexports_callable import Callable
-          F = Callable[..., int]
-        |}
+            from reexports_callable import Callable
+            F = Callable[..., int]
+          |}
            "test.F"
            ~expected_alias:
              (Some (Type.TypeAlias (Type.Callable.create ~annotation:Type.integer ())));
@@ -337,8 +340,8 @@ let test_harder_registrations =
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
            {|
-          X = int | str
-        |}
+            X = int | str
+          |}
            "test.X"
            (Some "typing.Union[int, str]");
     ]
@@ -417,44 +420,44 @@ let test_updates context =
   in
   assert_test_py_updates
     ~original_source:{|
-      class C:
-        pass
-      X = C
-    |}
+        class C:
+          pass
+        X = C
+      |}
     ~new_source:{|
-      class C:
-        pass
-      X = C
-    |}
+        class C:
+          pass
+        X = C
+      |}
     ~middle_actions:["test.X", dependency, Some "test.C"]
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
     ();
   assert_test_py_updates
     ~original_source:{|
-      class C:
-        pass
-      X = C
-    |}
+        class C:
+          pass
+        X = C
+      |}
     ~new_source:{|
-      X = C
-    |}
+        X = C
+      |}
     ~middle_actions:["test.X", dependency, Some "test.C"]
     ~expected_triggers:[dependency]
     ~post_actions:["test.X", dependency, None]
     ();
   assert_test_py_updates
     ~original_source:{|
-      class C:
-        pass
-      X = C
-    |}
+        class C:
+          pass
+        X = C
+      |}
     ~new_source:{|
-      class C:
-        pass
-      Y = C
-      X = Y
-    |}
+        class C:
+          pass
+        Y = C
+        X = Y
+      |}
     ~middle_actions:["test.X", dependency, Some "test.C"]
       (* Even if the route to the alias changed, no trigger *)
     ~expected_triggers:[]
@@ -464,21 +467,21 @@ let test_updates context =
     ~original_sources:
       [
         "test.py", {|
-          from placeholder import Q
-          X = Q
-        |};
+            from placeholder import Q
+            X = Q
+          |};
         "placeholder.pyi", {|
-          # pyre-placeholder-stub
-        |};
+            # pyre-placeholder-stub
+          |};
       ]
     ~new_sources:
       [
         "test.py", {|
-          from placeholder import Q
-          X = Q
-        |};
+            from placeholder import Q
+            X = Q
+          |};
         "placeholder.pyi", {|
-        |};
+          |};
       ]
     ~middle_actions:["test.X", dependency, Some "typing.Any"]
     ~expected_triggers:[dependency]
@@ -488,12 +491,13 @@ let test_updates context =
   (* Addition should trigger previous failed reads *)
   assert_updates
     ~original_sources:["test.py", {|
-        |}]
-    ~new_sources:["test.py", {|
-          class C:
-           pass
-          X = C
-        |}]
+          |}]
+    ~new_sources:
+      ["test.py", {|
+            class C:
+             pass
+            X = C
+          |}]
     ~middle_actions:["test.X", dependency, None]
     ~expected_triggers:[dependency]
     ~post_actions:["test.X", dependency, Some "test.C"]
