@@ -11,3 +11,38 @@ updates:
           - "*"  # Group all Actions updates into a single larger pull request
     schedule:
       interval: weekly
+
+  - package-ecosystem: pip
+    directory: /documentation/deliberately_vulnerable_flask_app
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /documentation/pysa_tutorial
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /documentation/website
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /tools/ide_plugins/pysa-vscode
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /tools/ide_plugins/vscode
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /tools/playground
+    schedule:
+      interval: daily
