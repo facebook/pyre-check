@@ -167,6 +167,14 @@ and invalid_inheritance =
       is_parent_class_typed_dictionary: bool;
     }
   | TypedDictionarySuperclassCollision of typed_dictionary_field_mismatch
+  | FrozenDataclassInheritingFromNonFrozen of {
+      frozen_child: Identifier.t;
+      non_frozen_parent: Identifier.t;
+    }
+  | NonFrozenDataclassInheritingFromFrozen of {
+      non_frozen_child: Identifier.t;
+      frozen_parent: Identifier.t;
+    }
 
 and invalid_override_kind =
   | Final

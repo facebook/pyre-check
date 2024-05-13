@@ -201,6 +201,14 @@ and invalid_inheritance =
       is_parent_class_typed_dictionary: bool;
     }
   | TypedDictionarySuperclassCollision of typed_dictionary_field_mismatch
+  | FrozenDataclassInheritingFromNonFrozen of {
+      frozen_child: Identifier.t;
+      non_frozen_parent: Identifier.t;
+    }
+  | NonFrozenDataclassInheritingFromFrozen of {
+      non_frozen_child: Identifier.t;
+      frozen_parent: Identifier.t;
+    }
 
 and invalid_override_kind =
   | Final
@@ -2032,6 +2040,24 @@ let rec messages ~concise ~signature location kind =
               "`%a` cannot be used with non-method functions."
               pp_identifier
               decorator_name;
+          ]
+      | FrozenDataclassInheritingFromNonFrozen { frozen_child; non_frozen_parent } ->
+          [
+            Format.asprintf
+              "Frozen dataclass `%a` cannot inherit from non-frozen dataclass `%a`."
+              pp_identifier
+              frozen_child
+              pp_identifier
+              non_frozen_parent;
+          ]
+      | NonFrozenDataclassInheritingFromFrozen { non_frozen_child; frozen_parent } ->
+          [
+            Format.asprintf
+              "Non-frozen dataclass `%a` cannot inherit from frozen dataclass `%a`."
+              pp_identifier
+              non_frozen_child
+              pp_identifier
+              frozen_parent;
           ]
       | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
           [
@@ -4011,6 +4037,18 @@ let dequalify
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }
+    | FrozenDataclassInheritingFromNonFrozen { frozen_child; non_frozen_parent } ->
+        FrozenDataclassInheritingFromNonFrozen
+          {
+            frozen_child = dequalify_identifier frozen_child;
+            non_frozen_parent = dequalify_identifier non_frozen_parent;
+          }
+    | NonFrozenDataclassInheritingFromFrozen { non_frozen_child; frozen_parent } ->
+        NonFrozenDataclassInheritingFromFrozen
+          {
+            non_frozen_child = dequalify_identifier non_frozen_child;
+            frozen_parent = dequalify_identifier frozen_parent;
+          }
     | TypedDictionarySuperclassCollision mismatch ->
         TypedDictionarySuperclassCollision
           (match mismatch with
