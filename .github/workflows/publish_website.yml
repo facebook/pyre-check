@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
     - name: Build the Website
       run: |
         cd documentation/website
@@ -23,7 +23,7 @@ jobs:
       run: echo "The time was ${{ env.OUTPUT_TIME }} (UTC)"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
-      uses: JamesIves/github-pages-deploy-action@releases/v4
+      uses: JamesIves/github-pages-deploy-action@ec9c88baef04b842ca6f0a132fd61c762aa6c1b0 # releases/v4
       with:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
