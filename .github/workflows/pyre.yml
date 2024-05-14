@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: 3.x
 
@@ -32,13 +32,13 @@ jobs:
           pyre --output=sarif check > sarif.json
 
       - name: Expose SARIF Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: SARIF Results
           path: sarif.json
 
       - name: Upload SARIF Results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@b7cec7526559c32f1616476ff32d17ba4c59b2d6 # v3.25.5
         with:
           sarif_file: sarif.json
 
