@@ -252,7 +252,7 @@ class Configuration:
                     if not all(target in expanded_targets for target in expanded):
                         expanded_targets.update(expanded)
                         deduplicated_targets.append(target)
-                except subprocess.CalledProcessError as error:
+                except (FileNotFoundError, subprocess.CalledProcessError) as error:
                     LOG.warning("Failed to query target: %s\n%s", target, str(error))
                     deduplicated_targets.append(target)
             elif target not in expanded_targets:
