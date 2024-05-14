@@ -13,7 +13,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from ... import upgrade
 from ...repository import Repository
 from ..fix_configuration import Configuration, FixConfiguration
 
@@ -33,8 +32,8 @@ def _raise_on_bad_target(build_command, timeout) -> str:
 class FixmeConfigurationTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch.object(Configuration, "get_errors")
-    @patch(f"{upgrade.__name__}.Repository.commit_changes")
-    @patch(f"{upgrade.__name__}.Repository.remove_paths")
+    @patch.object(Repository, "commit_changes")
+    @patch.object(Repository, "remove_paths")
     def test_run_fix_configuration(
         self, remove_paths, commit_changes, get_errors, check_output
     ) -> None:

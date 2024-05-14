@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import call, MagicMock, patch
 
 from ... import errors
+from ...configuration import Configuration
 from ...repository import Repository
 from .. import consolidate_nested_configurations
 from ..consolidate_nested_configurations import (
@@ -50,8 +51,8 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.remove_paths")
-    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
+    @patch.object(Repository, "remove_paths")
+    @patch.object(Configuration, "get_errors")
     def test_consolidate(self, get_errors, remove_paths) -> None:
         get_errors.return_value = errors.Errors([])
         with tempfile.TemporaryDirectory() as root:
@@ -89,8 +90,8 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                     {"targets": ["//x/...", "//a/...", "//b/..."]},
                 )
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
-    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
+    @patch.object(Repository, "commit_changes")
+    @patch.object(consolidate_nested_configurations, "consolidate_nested")
     def test_run_skip(self, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
@@ -109,9 +110,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 ).run()
                 consolidate.assert_not_called()
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
-    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
-    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
+    @patch.object(Repository, "commit_changes")
+    @patch.object(consolidate_nested_configurations, "consolidate_nested")
+    @patch.object(Configuration, "get_errors")
     def test_run_topmost(self, get_errors, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
@@ -140,9 +141,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                     sorted([Path(nested_a.name), Path(nested_b.name)]),
                 )
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
-    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
-    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
+    @patch.object(Repository, "commit_changes")
+    @patch.object(consolidate_nested_configurations, "consolidate_nested")
+    @patch.object(Configuration, "get_errors")
     def test_run_no_topmost(self, get_errors, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
