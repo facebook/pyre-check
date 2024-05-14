@@ -216,17 +216,6 @@ module NoCache : sig
     (* Move keys between the current view of the table and the old-values table *)
     val oldify_batch     : KeySet.t -> unit
     val revive_batch     : KeySet.t -> unit
-
-    (* Api to allow batching up local changes before serializing them *)
-    module LocalChanges : sig
-      val has_local_changes : unit -> bool
-      val push_stack : unit -> unit
-      val pop_stack : unit -> unit
-      val revert_batch : KeySet.t -> unit
-      val commit_batch : KeySet.t -> unit
-      val revert_all : unit -> unit
-      val commit_all : unit -> unit
-    end
   end
 
 
