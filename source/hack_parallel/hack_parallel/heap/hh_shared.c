@@ -1675,7 +1675,7 @@ static heap_entry_t* hh_store_ocaml(
 
   // If the data is an Ocaml string it is more efficient to copy its contents
   // directly in our heap instead of serializing it.
-  if (Is_block(data) && Tag_val(data) == String_tag) {
+  if (Is_block(data) && Tag_hd(Hd_val(data)) == String_tag) {
     value = (char*)String_val(data);
     size = caml_string_length(data);
     kind = KIND_STRING;
