@@ -70,6 +70,7 @@ module QueryConfiguration = struct
             python_version;
             parallel;
             number_of_workers;
+            long_lived_workers;
             shared_memory =
               { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
             enable_readonly_analysis;
@@ -90,6 +91,7 @@ module QueryConfiguration = struct
       ~filter_directories:checked_directory_allowlist
       ~ignore_all_errors:checked_directory_blocklist
       ~number_of_workers
+      ?long_lived_workers
       ~local_root:(Option.value local_root ~default:global_root)
       ~project_root:global_root
       ~search_paths:(List.map search_paths ~f:SearchPath.normalize)

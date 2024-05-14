@@ -182,9 +182,9 @@ let worker_loop handler infd outfd =
     done
   with End_of_file -> ()
 
-let worker_main restore state infd outfd =
+let worker_main restore state handler infd outfd =
   restore state;
-  worker_loop fork_handler infd outfd;
+  worker_loop handler infd outfd;
   exit 0
 
 (**************************************************************************
@@ -196,13 +196,19 @@ let worker_main restore state infd outfd =
 let current_worker_id = ref 0
 
 (** Make a few workers. *)
-let make ~nbr_procs ~gc_control ~heap_handle =
+let make ~nbr_procs ~gc_control ~heap_handle ~long_lived_workers =
   if nbr_procs <= 0 then invalid_arg "Number of workers must be positive";
   if nbr_procs >= max_workers then failwith "Too many workers";
   let restore worker_id =
     current_worker_id := worker_id;
     SharedMemory.connect heap_handle;
     Gc.set gc_control
+  in
+  let handler =
+    if long_lived_workers then
+      worker_job_main
+    else
+      fork_handler
   in
   let fork worker_id =
     let parent_in, child_out = Unix.pipe () in
@@ -211,7 +217,7 @@ let make ~nbr_procs ~gc_control ~heap_handle =
     | 0 ->
       Unix.close parent_in;
       Unix.close parent_out;
-      worker_main restore worker_id child_in child_out
+      worker_main restore worker_id handler child_in child_out
     | pid ->
       Unix.close child_in;
       Unix.close child_out;

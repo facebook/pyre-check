@@ -52,6 +52,7 @@ val make:
   nbr_procs   : int ->
   gc_control  : Gc.control ->
   heap_handle : Hack_heap.SharedMemory.handle ->
+  long_lived_workers : bool ->
   t list
 
 (* Call in a sub-process (CAREFUL, GLOBALS ARE COPIED) *)

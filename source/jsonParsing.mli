@@ -126,6 +126,14 @@ module YojsonUtils : sig
       - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
   val optional_int_member : string -> Yojson.Safe.t -> int option
 
+  (** [optional_bool_member name json] tries to look up key [name] in [json] as a dictionary.
+
+      - If [json] is indeed a dictionary and [name] is presented, convert the corresponding value to
+        a bool and return it.
+      - If [json] is indeed a directory but [name] is not presented, return [None].
+      - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
+  val optional_bool_member : string -> Yojson.Safe.t -> bool option
+
   (** [optional_path_member name json] tries to look up key [name] in [json] as a dictionary.
 
       - If [json] is indeed a dictionary and [name] is presented, convert the corresponding value to

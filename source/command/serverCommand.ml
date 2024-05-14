@@ -128,6 +128,7 @@ module ServerConfiguration = struct
             python_version;
             parallel;
             number_of_workers;
+            long_lived_workers;
             enable_readonly_analysis;
             enable_unawaited_awaitable_analysis;
             include_suppressed_errors;
@@ -158,6 +159,7 @@ module ServerConfiguration = struct
       ~filter_directories:checked_directory_allowlist
       ~ignore_all_errors:checked_directory_blocklist
       ~number_of_workers
+      ?long_lived_workers
       ~local_root:(Option.value local_root ~default:global_root)
       ~project_root:global_root
       ~search_paths:(List.map search_paths ~f:SearchPath.normalize)

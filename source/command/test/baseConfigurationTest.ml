@@ -36,6 +36,7 @@ let dummy_base_configuration =
     python_version = Configuration.PythonVersion.create ();
     parallel = false;
     number_of_workers = 1;
+    long_lived_workers = None;
     shared_memory = Configuration.SharedMemory.default;
     remote_logging = None;
     profiling_output = None;

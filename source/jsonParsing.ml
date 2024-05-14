@@ -43,6 +43,8 @@ module YojsonUtils = struct
 
   let optional_int_member = optional_member ~f:to_int
 
+  let optional_bool_member = optional_member ~f:to_bool
+
   let path_member name json = member name json |> to_path
 
   let optional_path_member = optional_member ~f:to_path

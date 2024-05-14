@@ -373,6 +373,7 @@ module Analysis = struct
     filter_directories: PyrePath.t list option;
     ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
+    long_lived_workers: bool;
     local_root: PyrePath.t;
     debug: bool;
     project_root: PyrePath.t;
@@ -402,6 +403,7 @@ module Analysis = struct
       ?filter_directories
       ?ignore_all_errors
       ?(number_of_workers = 4)
+      ?(long_lived_workers = false)
       ?(local_root = PyrePath.current_working_directory ())
       ?(project_root = PyrePath.create_absolute "/")
       ?(search_paths = [])
@@ -444,6 +446,7 @@ module Analysis = struct
       filter_directories;
       ignore_all_errors;
       number_of_workers;
+      long_lived_workers;
       local_root;
       debug;
       project_root;

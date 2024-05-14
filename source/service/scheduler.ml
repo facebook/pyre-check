@@ -82,7 +82,9 @@ module Policy = struct
 end
 
 let create
-    ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
+    ~configuration:
+      ({ Configuration.Analysis.parallel; number_of_workers; long_lived_workers; _ } as
+      configuration)
     ()
   =
   let heap_handle = Memory.get_heap_handle configuration in
@@ -92,6 +94,7 @@ let create
         ~nbr_procs:number_of_workers
         ~heap_handle
         ~gc_control:Memory.worker_garbage_control
+        ~long_lived_workers
     in
     ParallelScheduler workers
   else

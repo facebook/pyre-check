@@ -124,6 +124,7 @@ module Analysis : sig
     filter_directories: PyrePath.t list option;
     ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
+    long_lived_workers: bool;
     local_root: PyrePath.t;
     debug: bool;
     project_root: PyrePath.t;
@@ -153,6 +154,7 @@ module Analysis : sig
     ?filter_directories:PyrePath.t list ->
     ?ignore_all_errors:PyrePath.t list ->
     ?number_of_workers:int ->
+    ?long_lived_workers:bool ->
     ?local_root:PyrePath.t ->
     ?project_root:PyrePath.t ->
     ?search_paths:SearchPath.t list ->

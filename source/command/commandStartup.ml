@@ -31,6 +31,7 @@ module BaseConfiguration = struct
     (* Parallelism controls *)
     parallel: bool;
     number_of_workers: int;
+    long_lived_workers: bool option;
     (* Memory controls *)
     shared_memory: Configuration.SharedMemory.t;
     (* Logging controls *)
@@ -89,6 +90,7 @@ module BaseConfiguration = struct
       in
       let parallel = json |> bool_member "parallel" ~default:false in
       let number_of_workers = json |> int_member "number_of_workers" ~default:1 in
+      let long_lived_workers = json |> optional_bool_member "long_lived_workers" in
       let shared_memory =
         json
         |> member "shared_memory"
@@ -144,6 +146,7 @@ module BaseConfiguration = struct
           python_version;
           parallel;
           number_of_workers;
+          long_lived_workers;
           shared_memory;
           remote_logging;
           profiling_output;
