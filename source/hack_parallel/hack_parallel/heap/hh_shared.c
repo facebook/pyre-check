@@ -452,8 +452,6 @@ static uintptr_t* counter = NULL;
  */
 static size_t* log_level = NULL;
 
-static size_t* workers_should_exit = NULL;
-
 static size_t* allow_removes = NULL;
 
 static size_t* allow_dependency_table_reads = NULL;
@@ -852,20 +850,17 @@ static void define_globals(char* shared_mem_init) {
   log_level = (size_t*)(mem + 5 * CACHE_LINE_SIZE);
 
   assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  workers_should_exit = (size_t*)(mem + 6 * CACHE_LINE_SIZE);
+  wasted_heap_size = (size_t*)(mem + 6 * CACHE_LINE_SIZE);
 
   assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  wasted_heap_size = (size_t*)(mem + 7 * CACHE_LINE_SIZE);
+  allow_removes = (size_t*)(mem + 7 * CACHE_LINE_SIZE);
 
   assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  allow_removes = (size_t*)(mem + 8 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  allow_dependency_table_reads = (size_t*)(mem + 9 * CACHE_LINE_SIZE);
+  allow_dependency_table_reads = (size_t*)(mem + 8 * CACHE_LINE_SIZE);
 
   mem += page_size;
   // Just checking that the page is large enough.
-  assert(page_size > 10 * CACHE_LINE_SIZE + (int)sizeof(int));
+  assert(page_size > 9 * CACHE_LINE_SIZE + (int)sizeof(int));
 
   /* File name we get in hh_load_dep_table_sqlite needs to be smaller than
    * page_size - it should be since page_size is quite big for a string
@@ -949,7 +944,6 @@ static void init_shared_globals(size_t config_log_level) {
   *dcounter = 0;
   *counter = early_counter + 1;
   *log_level = config_log_level;
-  *workers_should_exit = 0;
   *wasted_heap_size = 0;
   *allow_removes = 1;
   *allow_dependency_table_reads = 1;
@@ -1149,26 +1143,6 @@ void assert_allow_dependency_table_reads(void) {
 
 /*****************************************************************************/
 
-CAMLprim value hh_stop_workers(void) {
-  CAMLparam0();
-  assert_master();
-  *workers_should_exit = 1;
-  CAMLreturn(Val_unit);
-}
-
-CAMLprim value hh_resume_workers(void) {
-  CAMLparam0();
-  assert_master();
-  *workers_should_exit = 0;
-  CAMLreturn(Val_unit);
-}
-
-CAMLprim value hh_set_can_worker_stop(value val) {
-  CAMLparam1(val);
-  worker_can_exit = Bool_val(val);
-  CAMLreturn(Val_unit);
-}
-
 CAMLprim value hh_allow_removes(value val) {
   CAMLparam1(val);
   *allow_removes = Bool_val(val);
@@ -1191,22 +1165,6 @@ CAMLprim value hh_allow_dependency_table_reads(value val) {
 CAMLprim value hh_assert_allow_dependency_table_reads(void) {
   CAMLparam0();
   assert_allow_dependency_table_reads();
-  CAMLreturn(Val_unit);
-}
-
-void check_should_exit(void) {
-  assert(workers_should_exit != NULL);
-  if (worker_can_exit && *workers_should_exit) {
-    static const value* exn = NULL;
-    if (!exn)
-      exn = caml_named_value("worker_should_exit");
-    caml_raise_constant(*exn);
-  }
-}
-
-CAMLprim value hh_check_should_exit(void) {
-  CAMLparam0();
-  check_should_exit();
   CAMLreturn(Val_unit);
 }
 
@@ -1445,7 +1403,6 @@ static void add_dep(uint32_t key, uint32_t val) {
 
 void hh_add_dep(value ocaml_dep) {
   CAMLparam1(ocaml_dep);
-  check_should_exit();
   uint64_t dep = Long_val(ocaml_dep);
   add_dep((uint32_t)(dep >> 31), (uint32_t)(dep & 0x7FFFFFFF));
   CAMLreturn0;
@@ -1471,7 +1428,6 @@ CAMLprim value hh_dep_slots(void) {
 /* Given a key, returns the list of values bound to it. */
 CAMLprim value hh_get_dep(value ocaml_key) {
   CAMLparam1(ocaml_key);
-  check_should_exit();
   CAMLlocal2(result, cell);
 
   volatile deptbl_entry_t* const table = deptbl;
@@ -1787,7 +1743,6 @@ static void raise_hash_table_full(void) {
 /*****************************************************************************/
 value hh_add(value key, value data) {
   CAMLparam2(key, data);
-  check_should_exit();
   uint64_t hash = get_hash(key);
   unsigned int slot = hash & (hashtbl_size - 1);
   unsigned int init_slot = slot;
@@ -1873,7 +1828,6 @@ Note that the only valid return values are {1,-1,-2}. In order to use the result
 of this function in an "if" statement an explicit test must be performed.
 */
 int hh_mem_inner(value key) {
-  check_should_exit();
   unsigned int slot = find_slot(key);
   _Bool good_hash = hashtbl[slot].hash == get_hash(key);
   _Bool non_null_addr = hashtbl[slot].addr != NULL;
@@ -1970,7 +1924,6 @@ CAMLprim value hh_deserialize(heap_entry_t* elt) {
 /*****************************************************************************/
 CAMLprim value hh_get_and_deserialize(value key) {
   CAMLparam1(key);
-  check_should_exit();
   CAMLlocal1(result);
 
   unsigned int slot = find_slot(key);

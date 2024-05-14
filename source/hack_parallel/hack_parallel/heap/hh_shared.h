@@ -42,14 +42,6 @@ CAMLprim value hh_hash_slots(void);
 CAMLprim value hh_counter_next(void);
 
 /*****************************************************************************/
-/* Worker management. */
-/*****************************************************************************/
-CAMLprim value hh_stop_workers(void);
-CAMLprim value hh_resume_workers(void);
-CAMLprim value hh_check_should_exit(void);
-CAMLprim value hh_set_can_worker_stop(value val);
-
-/*****************************************************************************/
 /* Global storage. */
 /*****************************************************************************/
 void hh_shared_store(value data);

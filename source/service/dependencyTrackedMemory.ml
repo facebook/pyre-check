@@ -45,10 +45,6 @@ module DependencyGraph = struct
     unit
     = "hh_assert_allow_dependency_table_reads"
 
-  let hh_add_dep x = Hack_parallel.Std.WorkerCancel.with_worker_exit (fun () -> hh_add_dep x)
-
-  let hh_get_dep x = Hack_parallel.Std.WorkerCancel.with_worker_exit (fun () -> hh_get_dep x)
-
   let add x y = hh_add_dep ((x lsl 31) lor y)
 
   let get x =
