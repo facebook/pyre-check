@@ -12,6 +12,8 @@ import json
 import logging
 import re
 import subprocess
+
+import sys
 import tempfile
 from dataclasses import dataclass
 from functools import cached_property
@@ -24,6 +26,15 @@ from ..repository import Repository
 from .command import Command
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def path_is_relative_to(file: Path, path: Path) -> bool:
+    if sys.version_info >= (3, 10):
+        return file.is_relative_to(path)
+    else:
+        # use a string hack on old Python versions; mostly needed to
+        # prevent failures in github CI.
+        return str(file.absolute()).startswith(str(path))
 
 
 @dataclass(frozen=True)
@@ -142,7 +153,7 @@ class Configurationless(Command):
         ):
             return None
         elif any(
-            file.is_relative_to(ignore_prefix)
+            path_is_relative_to(file, ignore_prefix)
             for ignore_prefix in options.ignore_all_errors_prefixes
         ):
             return filesystem.LocalMode.IGNORE
@@ -297,7 +308,7 @@ class Configurationless(Command):
         return {
             file
             for file in build_map
-            if file.exists() and file.is_relative_to(self._path)
+            if file.exists() and path_is_relative_to(file, self._path)
         }
 
     def _get_files_from_classic_targets(
