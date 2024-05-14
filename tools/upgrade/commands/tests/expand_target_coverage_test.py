@@ -10,6 +10,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import call, MagicMock, mock_open, patch
 
+from ...configuration import Configuration
+
 from ...repository import Repository
 from .. import expand_target_coverage
 from ..expand_target_coverage import ErrorSuppressingCommand, ExpandTargetCoverage
@@ -20,12 +22,12 @@ repository = Repository()
 
 class ExpandTargetCoverageTest(unittest.TestCase):
     @patch("builtins.open")
-    @patch(f"{expand_target_coverage.__name__}.Repository.commit_changes")
-    @patch(f"{expand_target_coverage.__name__}.Configuration.find_local_configuration")
-    @patch(f"{expand_target_coverage.__name__}.Configuration.deduplicate_targets")
+    @patch.object(Repository, "commit_changes")
+    @patch.object(Configuration, "find_local_configuration")
+    @patch.object(Configuration, "deduplicate_targets")
     @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
-    @patch(f"{expand_target_coverage.__name__}.Repository.format")
-    @patch(f"{expand_target_coverage.__name__}.find_files")
+    @patch.object(Repository, "format")
+    @patch.object(expand_target_coverage, "find_files")
     def test_run_expand_target_coverage(
         self,
         find_files,
