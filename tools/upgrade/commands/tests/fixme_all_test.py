@@ -1,4 +1,4 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
+# . Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import call, MagicMock, mock_open, patch
 
 from ... import upgrade
+from ...errors import Errors
 from ...repository import Repository
 from .. import command
 from ..command import ErrorSource, ErrorSuppressingCommand
@@ -118,10 +119,10 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
     @patch.object(Configuration, "gather_local_configurations")
-    @patch(f"{command.__name__}.Errors.from_stdin")
+    @patch.object(Errors, "from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
-    @patch(f"{upgrade.__name__}.Repository.format")
+    @patch.object(Repository, "format")
     def test_upgrade_project(
         self,
         repository_format,
@@ -218,7 +219,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(Configuration, "get_errors")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
-    @patch(f"{upgrade.__name__}.Repository.commit_changes")
+    @patch.object(Repository, "commit_changes")
     def test_run_fixme_all(
         self,
         commit_changes,

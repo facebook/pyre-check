@@ -99,7 +99,7 @@ class ErrorsTest(unittest.TestCase):
     @patch.object(errors.Path, "write_text")
     def test_suppress(self, path_write_text, path_read_text) -> None:
         # Test run on multiple files.
-        with patch(f"{errors.__name__}._suppress_errors", return_value="<transformed>"):
+        with patch.object(errors, "_suppress_errors", return_value="<transformed>"):
             Errors(
                 [
                     {
@@ -119,7 +119,7 @@ class ErrorsTest(unittest.TestCase):
                 [call("<transformed>"), call("<transformed>")]
             )
 
-        with patch(f"{errors.__name__}._suppress_errors", side_effect=UnstableAST()):
+        with patch.object(errors, "_suppress_errors", side_effect=UnstableAST()):
             with self.assertRaises(PartialErrorSuppression) as context:
                 Errors(
                     [
