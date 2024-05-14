@@ -57,7 +57,7 @@ let max_workers = 1000
  * be called at the end of the request in order to send back the result
  * to the master (this is "internal business", this is not visible outside
  * this module). The ephemeral worker will provide the expected function.
- * cf 'send_result' in 'ephemeral_worker_main'.
+ * cf 'send_result' in 'worker_job_main.
  *
  *****************************************************************************)
 
@@ -98,7 +98,7 @@ end
  *
  *****************************************************************************)
 
-let ephemeral_worker_main ic oc =
+let worker_job_main ic oc =
   let start_user_time = ref 0.0 in
   let start_system_time = ref 0.0 in
   let send_response response =
@@ -123,7 +123,6 @@ let ephemeral_worker_main ic oc =
     start_user_time := tm.Unix.tms_utime +. tm.Unix.tms_cutime;
     start_system_time := tm.Unix.tms_stime +. tm.Unix.tms_cstime;
     do_process { send = send_result };
-    exit 0
   with
   | End_of_file ->
       exit 1
@@ -143,11 +142,34 @@ let ephemeral_worker_main ic oc =
       Exit_status.exit exit_code
   | exn ->
       let backtrace = Printexc.get_raw_backtrace () in
-      send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace });
-      exit 0
+      send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace })
 
-let worker_main restore state infd outfd =
-  restore state;
+let fork_handler ic oc =
+  (* We fork an ephemeral worker for every incoming request.
+     And let it die after one request. This is the quickest GC. *)
+  match Unix.fork () with
+  | 0 ->
+    worker_job_main ic oc;
+    exit 0
+  | pid ->
+    (* Wait for the ephemeral worker termination... *)
+    match snd (Unix.waitpid [] pid) with
+    | Unix.WEXITED 0 -> ()
+    | Unix.WEXITED 1 ->
+        raise End_of_file
+    | Unix.WEXITED code ->
+        Printf.printf "Worker exited (code: %d)\n" code;
+        flush stdout;
+        Stdlib.exit code
+    | Unix.WSIGNALED x ->
+        let sig_str = PrintSignal.string_of_signal x in
+        Printf.printf "Worker interrupted with signal: %s\n" sig_str;
+        exit 2
+    | Unix.WSTOPPED x ->
+        Printf.printf "Worker stopped with signal: %d\n" x;
+        exit 3
+
+let worker_loop handler infd outfd =
   let ic = Unix.in_channel_of_descr infd in
   let oc = Unix.out_channel_of_descr outfd in
   try
@@ -155,31 +177,15 @@ let worker_main restore state infd outfd =
       (* Wait for an incoming job : is there something to read?
          But we don't read it yet. It will be read by the forked ephemeral worker. *)
       let readyl, _, _ = Unix.select [infd] [] [] (-1.0) in
-      if readyl = [] then exit 0;
-      (* We fork an ephemeral worker for every incoming request.
-         And let it die after one request. This is the quickest GC. *)
-      match Unix.fork () with
-      | 0 -> ephemeral_worker_main ic oc
-      | pid ->
-          (* Wait for the ephemeral worker termination... *)
-          match snd (Unix.waitpid [] pid) with
-          | Unix.WEXITED 0 -> ()
-          | Unix.WEXITED 1 ->
-              raise End_of_file
-          | Unix.WEXITED code ->
-              Printf.printf "Worker exited (code: %d)\n" code;
-              flush stdout;
-              Stdlib.exit code
-          | Unix.WSIGNALED x ->
-              let sig_str = PrintSignal.string_of_signal x in
-              Printf.printf "Worker interrupted with signal: %s\n" sig_str;
-              exit 2
-          | Unix.WSTOPPED x ->
-              Printf.printf "Worker stopped with signal: %d\n" x;
-              exit 3
-    done;
-    assert false
-  with End_of_file -> exit 0
+      if readyl = [] then raise End_of_file;
+      handler ic oc
+    done
+  with End_of_file -> ()
+
+let worker_main restore state infd outfd =
+  restore state;
+  worker_loop fork_handler infd outfd;
+  exit 0
 
 (**************************************************************************
  * Creates a pool of workers.
