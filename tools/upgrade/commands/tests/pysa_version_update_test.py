@@ -9,7 +9,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import call, MagicMock, mock_open, patch
 
-from ... import upgrade
 from ...repository import Repository
 from ..pysa_version_update import Configuration, PysaVersionUpdate
 
@@ -19,7 +18,7 @@ repository = Repository()
 
 class UpdatePysaVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.Repository.commit_changes")
+    @patch.object(Repository, "commit_changes")
     @patch.object(
         Configuration, "find_project_configuration", return_value=Path("/root")
     )

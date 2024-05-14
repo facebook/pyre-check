@@ -19,7 +19,7 @@ repository = Repository()
 
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.Repository.commit_changes")
+    @patch.object(Repository, "commit_changes")
     @patch.object(
         Configuration, "find_project_configuration", return_value=Path("/root")
     )
