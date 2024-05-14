@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ...filesystem import LocalMode
 from ...repository import Repository
+
 from .. import strict_default
 from ..strict_default import (
     _get_configuration_path,
@@ -27,7 +28,7 @@ repository = Repository()
 
 class StrictDefaultTest(unittest.TestCase):
     @patch.object(Configuration, "get_source_paths")
-    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
@@ -65,7 +66,7 @@ class StrictDefaultTest(unittest.TestCase):
             get_and_suppress_errors.assert_called_once()
 
     @patch.object(Configuration, "get_source_paths")
-    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
@@ -98,7 +99,7 @@ class StrictDefaultTest(unittest.TestCase):
             )
 
     @patch.object(Configuration, "get_source_paths")
-    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
@@ -132,7 +133,7 @@ class StrictDefaultTest(unittest.TestCase):
             )
 
     @patch.object(Configuration, "get_source_paths")
-    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
@@ -164,7 +165,7 @@ class StrictDefaultTest(unittest.TestCase):
             )
 
     @patch.object(Configuration, "get_source_paths")
-    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")

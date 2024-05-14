@@ -20,6 +20,7 @@ from .. import targets_to_configuration
 from ..targets_to_configuration import (
     Configuration,
     ErrorSuppressingCommand,
+    StrictDefault,
     TargetPyreRemover,
     TargetsToConfiguration,
 )
@@ -136,20 +137,18 @@ class TargetRemoverTest(unittest.TestCase):
 
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
-    @patch(f"{targets_to_configuration.__name__}.Repository.revert_all")
-    @patch(f"{targets_to_configuration.__name__}.Repository.add_paths")
-    @patch(f"{targets_to_configuration.__name__}.find_targets")
-    @patch(f"{targets_to_configuration.__name__}.get_filesystem")
+    @patch.object(Repository, "revert_all")
+    @patch.object(Repository, "add_paths")
+    @patch.object(targets_to_configuration, "find_targets")
+    @patch.object(targets_to_configuration, "get_filesystem")
     @patch.object(Path, "exists")
-    @patch(f"{targets_to_configuration.__name__}.remove_non_pyre_ignores")
-    @patch(f"{targets_to_configuration.__name__}.Configuration.get_errors")
-    @patch(f"{targets_to_configuration.__name__}.add_local_mode")
+    @patch.object(targets_to_configuration, "remove_non_pyre_ignores")
+    @patch.object(Configuration, "get_errors")
+    @patch.object(targets_to_configuration, "add_local_mode")
     @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
-    @patch(f"{targets_to_configuration.__name__}.Repository.format")
-    @patch(
-        f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
-    )
-    @patch(f"{targets_to_configuration.__name__}.StrictDefault.run")
+    @patch.object(Repository, "format")
+    @patch.object(TargetsToConfiguration, "remove_target_typing_fields")
+    @patch.object(StrictDefault, "run")
     def test_convert_directory(
         self,
         run_strict_default,
@@ -372,8 +371,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
             remove_target_typing_fields.assert_called_once()
             run_strict_default.assert_not_called()
 
-    @patch(f"{targets_to_configuration.__name__}.find_files")
-    @patch(f"{targets_to_configuration.__name__}.find_directories")
+    @patch.object(targets_to_configuration, "find_files")
+    @patch.object(targets_to_configuration, "find_directories")
     def test_gather_directories(self, find_directories, find_files) -> None:
         arguments = MagicMock()
         find_files.return_value = ["subdirectory/.pyre_configuration.local"]
@@ -452,17 +451,11 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(expected_directories, directories)
 
-    @patch(f"{targets_to_configuration.__name__}.Repository.commit_changes")
-    @patch(
-        f"{targets_to_configuration.__name__}.TargetsToConfiguration._gather_directories"
-    )
-    @patch(
-        f"{targets_to_configuration.__name__}.TargetsToConfiguration.convert_directory"
-    )
-    @patch(f"{targets_to_configuration.__name__}.find_targets")
-    @patch(
-        f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
-    )
+    @patch.object(Repository, "commit_changes")
+    @patch.object(TargetsToConfiguration, "_gather_directories")
+    @patch.object(TargetsToConfiguration, "convert_directory")
+    @patch.object(targets_to_configuration, "find_targets")
+    @patch.object(TargetsToConfiguration, "remove_target_typing_fields")
     def test_run_targets_to_configuration(
         self,
         remove_typing_fields,
