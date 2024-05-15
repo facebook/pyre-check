@@ -2458,7 +2458,25 @@ let rec delocalize ({ Node.value; location } as expression) =
         Name (Name.Attribute { name with Name.Attribute.base = delocalize base })
     | List elements -> List (List.map elements ~f:delocalize)
     | Tuple elements -> Tuple (List.map elements ~f:delocalize)
-    | _ -> value
+    | Await _
+    | BooleanOperator _
+    | ComparisonOperator _
+    | Constant _
+    | Dictionary _
+    | DictionaryComprehension _
+    | Generator _
+    | Lambda _
+    | FormatString _
+    | ListComprehension _
+    | Set _
+    | SetComprehension _
+    | Starred _
+    | Ternary _
+    | UnaryOperator _
+    | WalrusOperator _
+    | Yield _
+    | YieldFrom _ ->
+        value
   in
   { expression with Node.value }
 
