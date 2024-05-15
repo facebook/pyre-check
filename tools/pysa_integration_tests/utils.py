@@ -94,7 +94,7 @@ def normalized_json_dump(
 def compare_results(
     actual_results: str,
     expected_results: str,
-    current_directory: Path,
+    test_result_directory: Path,
     filter_issues: bool,
 ) -> None:
     normalized_pysa_results = normalized_json_dump(
@@ -104,21 +104,27 @@ def compare_results(
         expected_results, salient_keys_only=True, filter_issues=filter_issues
     )
     if normalized_pysa_results != normalized_expected_results:
-
-        actual_full_results_path = current_directory / "full_result.actual"
+        actual_full_results_path = test_result_directory / "full_result.actual"
         actual_full_results_path.write_text(
             normalized_json_dump(
                 actual_results, salient_keys_only=False, filter_issues=filter_issues
             )
         )
 
+        expected_full_results_path = test_result_directory / "expected_result.json"
+        expected_full_results_path.write_text(
+            normalized_json_dump(
+                expected_results, salient_keys_only=False, filter_issues=filter_issues
+            )
+        )
+
         actual_invariant_results_path = (
-            current_directory / "position_invariant_result.actual"
+            test_result_directory / "position_invariant_result.actual"
         )
         actual_invariant_results_path.write_text(normalized_pysa_results)
 
         expected_invariant_results_path = (
-            current_directory / "position_invariant_result.json"
+            test_result_directory / "position_invariant_result.json"
         )
         expected_invariant_results_path.write_text(normalized_expected_results)
 
@@ -186,4 +192,9 @@ def run_pysa_integration_test(
 
     expected_results = (current_directory / "full_result.json").read_text()
 
-    compare_results(pysa_results, expected_results, current_directory, filter_issues)
+    test_result_directory = (
+        save_results_to if save_results_to is not None else current_directory
+    )
+    compare_results(
+        pysa_results, expected_results, test_result_directory, filter_issues
+    )
