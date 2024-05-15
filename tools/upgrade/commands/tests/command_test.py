@@ -102,7 +102,7 @@ class CommandTest(unittest.TestCase):
             ]
         )
 
-    @patch(f"{command.__name__}.add_local_mode")
+    @patch.object(command, "add_local_mode")
     def test_get_and_suppress_errors(self, add_local_mode) -> None:
         arguments = MagicMock()
         repository = MagicMock()

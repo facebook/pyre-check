@@ -26,7 +26,7 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
     @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
-    @patch(f"{upgrade.__name__}.Repository.commit_changes")
+    @patch.object(Repository, "commit_changes")
     def test_run_fixme_single(
         self,
         commit_changes: MagicMock,
