@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: "3.10"
 
@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install ocaml ocaml-dune
 
       - name: Setup OCaml
-        uses: avsm/setup-ocaml@v2
+        uses: avsm/setup-ocaml@8ea37830f3b2c9f54178d255808ae377b5758062 # v2.2.9
         with:
           ocaml-compiler: 4.14.0
 
