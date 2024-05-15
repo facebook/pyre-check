@@ -78,14 +78,9 @@ module IncomingDataComputation = struct
       Type.is_generic_primitive primitive
     in
     let extract_protocol_parameters base_type =
-      let primitive, parameters = Type.split base_type in
-      let is_protocol =
-        primitive
-        |> Type.primitive_name
-        >>| String.equal "typing.Protocol"
-        |> Option.value ~default:false
-      in
-      Option.some_if is_protocol parameters
+      match base_type with
+      | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
+      | _ -> None
     in
     match List.find ~f:is_generic parsed_bases with
     | Some _ as generic_base -> generic_base
