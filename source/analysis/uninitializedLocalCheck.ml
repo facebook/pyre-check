@@ -68,6 +68,8 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
+    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Call
         {
           Call.callee =
@@ -77,7 +79,8 @@ module AccessCollector = struct
             };
           arguments = [{ Call.Argument.name = None; value = index }];
           _;
-        } ->
+        }
+    | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index
     | Call { Call.callee; arguments } ->

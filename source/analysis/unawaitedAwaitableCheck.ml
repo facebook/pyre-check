@@ -471,19 +471,19 @@ module State (Context : Context) = struct
      special handling of the return value)
 
      - the base, while it cantain awaitable expressions, is not itself awaitable *)
-  and forward_setitem ~resolution ~state ~base ~key_expression ~value_expression =
+  and forward_setitem ~resolution ~state ~base ~index ~value_expression =
     let { state; nested_awaitable_expressions = awaitable_expressions_from_base } =
       forward_expression ~resolution ~state ~expression:base
     in
-    let { state; nested_awaitable_expressions = awaitable_expressions_from_key } =
-      forward_expression ~resolution ~state ~expression:key_expression
+    let { state; nested_awaitable_expressions = awaitable_expressions_from_index } =
+      forward_expression ~resolution ~state ~expression:index
     in
     let { state; nested_awaitable_expressions = awaitable_expressions_from_value } =
       forward_expression ~resolution ~state ~expression:value_expression
     in
     let new_awaitable_expressions_referrable_from_base =
       awaitable_expressions_from_base
-      @ awaitable_expressions_from_key
+      @ awaitable_expressions_from_index
       @ awaitable_expressions_from_value
     in
     match Node.value base with
@@ -693,15 +693,14 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Attribute { attribute = "__setitem__"; base; _ }); _ };
           arguments =
-            [
-              { Call.Argument.value = key_expression; _ };
-              { Call.Argument.value = value_expression; _ };
-            ];
+            [{ Call.Argument.value = index; _ }; { Call.Argument.value = value_expression; _ }];
         } ->
         {
-          state = forward_setitem ~resolution ~state ~base ~key_expression ~value_expression;
+          state = forward_setitem ~resolution ~state ~base ~index ~value_expression;
           nested_awaitable_expressions = [];
         }
+    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Call
         {
           callee =
@@ -710,7 +709,8 @@ module State (Context : Context) = struct
               _;
             };
           arguments = [{ Call.Argument.value = index; _ }];
-        } ->
+        }
+    | Subscript { Subscript.base; index } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:base
         in
@@ -899,13 +899,16 @@ module State (Context : Context) = struct
         (* Unsoundly assume that any awaitable assigned to an attribute is being awaited somewhere.
            Otherwise, we risk getting many false positives for attribute assignments. *)
         mark_awaitable_originating_at_expression_as_awaited ~expression state
-    | Expression.Call
+    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
+    | Call
         {
           callee =
             { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [{ Call.Argument.value = key_expression; _ }];
-        } ->
-        forward_setitem ~resolution ~state ~base ~key_expression ~value_expression:expression
+          arguments = [{ Call.Argument.value = index; _ }];
+        }
+    | Subscript { Subscript.base; index } ->
+        forward_setitem ~resolution ~state ~base ~index ~value_expression:expression
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (

@@ -127,6 +127,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
+      | Subscript { Subscript.base; index } ->
+          visit_expression base;
+          visit_expression index
       | FormatString substrings ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))

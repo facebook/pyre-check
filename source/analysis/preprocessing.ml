@@ -71,6 +71,30 @@ let transform_string_annotation_expression ~relative =
       match value with
       | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
           Expression.Name (Name.Attribute { name with base = transform_expression base })
+      | Expression.Subscript { Subscript.base; index } -> (
+          match base with
+          | {
+           Node.value =
+             Expression.Name
+               (Name.Attribute
+                 {
+                   base =
+                     {
+                       Node.value =
+                         Expression.Name
+                           (Name.Identifier "typing" | Name.Identifier "typing_extensions");
+                       _;
+                     };
+                   attribute = "Literal";
+                   _;
+                 });
+           _;
+          } ->
+              (* Don't transform arguments in Literals. *)
+              value
+          | _ -> Expression.Subscript { base; index = transform_expression index })
+      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+         producing Subscript nodes. *)
       | Call
           {
             callee =
@@ -131,7 +155,7 @@ let transform_string_annotation_expression ~relative =
               ~relative
           with
           | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
-          (* TODO(T101303314): add a branch for Subscript once we no longer lower __getitem__ *)
+          | Ok [{ Node.value = Expression ({ Node.value = Subscript _; _ } as expression); _ }]
           | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
               Transform.map_location expression ~transform_location:(fun _ -> location)
               |> Node.value
@@ -491,15 +515,19 @@ module Qualify (Context : QualifyContext) = struct
           | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
+          (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
+             always producing Subscript nodes. *)
           | {
-           Node.value =
-             Call
-               {
-                 callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
-                 _;
-               };
-           _;
-          } ->
+              Node.value =
+                Call
+                  {
+                    callee =
+                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                    _;
+                  };
+              _;
+            }
+          | { Node.value = Subscript _; _ } ->
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | _ -> qualify_expression ~qualify_strings:DoNotQualify value ~scope
         in
@@ -603,6 +631,8 @@ module Qualify (Context : QualifyContext) = struct
                         | qualified -> Name qualified
                     in
                     scope, name
+                (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over
+                   to always producing Subscript nodes. *)
                 | Call
                     {
                       callee =
@@ -637,6 +667,14 @@ module Qualify (Context : QualifyContext) = struct
                               location = Node.location base;
                             };
                           arguments = [{ Call.Argument.value = qualified_index; name = None }];
+                        } )
+                | Subscript { Subscript.base; index } ->
+                    ( scope,
+                      Subscript
+                        {
+                          Subscript.base =
+                            qualify_expression ~qualify_strings:DoNotQualify ~scope base;
+                          index = qualify_expression ~qualify_strings:DoNotQualify ~scope index;
                         } )
                 | target ->
                     (* This case is allowed in the type signatures, but should be prevented by the
@@ -1113,6 +1151,8 @@ module Qualify (Context : QualifyContext) = struct
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
             }
+      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+         producing Subscript nodes. *)
       | Call
           {
             callee =
@@ -1154,6 +1194,21 @@ module Qualify (Context : QualifyContext) = struct
                 };
               arguments = [{ Call.Argument.value = qualified_index; name = None }];
             }
+      | Subscript { Subscript.base; index } ->
+          let qualified_base = qualify_expression ~qualify_strings ~scope base in
+          let qualified_index =
+            let qualify_strings =
+              if
+                name_is ~name:"typing_extensions.Literal" qualified_base
+                || name_is ~name:"typing.Literal" qualified_base
+              then
+                DoNotQualify
+              else
+                qualify_strings
+            in
+            qualify_expression ~qualify_strings ~scope index
+          in
+          Subscript { Subscript.base = qualified_base; index = qualified_index }
       | Call { callee; arguments } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let arguments =
@@ -1463,6 +1518,8 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
             | _ -> false
           in
           let is_system_version_tuple_access_expression ?which_index = function
+            (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
+               always producing Subscript nodes. *)
             | {
                 Node.value =
                   Expression.Call
@@ -1496,6 +1553,26 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                           _;
                         };
                       arguments = [{ Call.Argument.value = index; _ }];
+                    };
+                _;
+              }
+            | {
+                Node.value =
+                  Expression.Subscript
+                    {
+                      Subscript.base =
+                        {
+                          Node.value =
+                            Expression.Name
+                              (Name.Attribute
+                                {
+                                  base = { Node.value = Expression.Name (Name.Identifier "sys"); _ };
+                                  attribute = "version_info";
+                                  _;
+                                });
+                          _;
+                        };
+                      index;
                     };
                 _;
               } -> (
@@ -3150,6 +3227,8 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Call
         {
           callee =
@@ -3158,7 +3237,8 @@ module AccessCollector = struct
               _;
             };
           arguments = [{ Call.Argument.value = index; name = None }];
-        } ->
+        }
+    | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index
     | Call { Call.callee; arguments } ->
@@ -3755,6 +3835,8 @@ let replace_union_shorthand_in_annotation_expression =
   let rec transform_expression ({ Node.value; location } as expression) =
     let value =
       match value with
+      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+         producing Subscript nodes. *)
       | Expression.Call
           {
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__or__"; _ }); _ };
@@ -3794,6 +3876,23 @@ let replace_union_shorthand_in_annotation_expression =
                         value = { Node.value = Tuple index_expressions; _ };
                       };
                     ];
+                } ->
+                List.concat [sofar; index_expressions] |> List.rev
+            | Expression.Subscript
+                {
+                  base =
+                    {
+                      value =
+                        Name
+                          (Name.Attribute
+                            {
+                              base = { Node.value = Name (Name.Identifier "typing"); _ };
+                              attribute = "Union";
+                              special = false;
+                            });
+                      _;
+                    };
+                  index = { Node.value = Tuple index_expressions; _ };
                 } ->
                 List.concat [sofar; index_expressions] |> List.rev
             | _ -> part_of_union_expression :: sofar
@@ -3855,6 +3954,8 @@ let replace_union_shorthand_in_annotation_expression =
                 };
               arguments = [{ Call.Argument.value = transform_expression index; name = None }];
             }
+      | Subscript { Subscript.base; index } ->
+          Subscript { base; index = transform_expression index }
       | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
       | List arguments -> List (List.map ~f:transform_expression arguments)
       | _ -> value
@@ -4503,6 +4604,8 @@ module SelfType = struct
           {
             Parameter.annotation =
               ( None
+              (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over
+                 to always producing Subscript nodes. *)
               | Some
                   {
                     Node.value =
@@ -4617,6 +4720,84 @@ module SelfType = struct
                                   };
                               };
                             ];
+                        };
+                    _;
+                  }
+              | Some
+                  {
+                    Node.value =
+                      Subscript
+                        {
+                          base =
+                            {
+                              Node.value =
+                                Name
+                                  (Attribute
+                                    {
+                                      base = { Node.value = Name (Identifier "pyre_extensions"); _ };
+                                      attribute = "ReadOnly";
+                                      special = false;
+                                    });
+                              _;
+                            };
+                          index =
+                            {
+                              Node.value =
+                                ( Name
+                                    (Attribute
+                                      {
+                                        base =
+                                          {
+                                            Node.value =
+                                              Name (Identifier ("typing_extensions" | "typing"));
+                                            _;
+                                          };
+                                        attribute = "Self";
+                                        special = false;
+                                      })
+                                | Subscript
+                                    {
+                                      base =
+                                        {
+                                          Node.value =
+                                            Name
+                                              (Attribute
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.value =
+                                                        Name
+                                                          (Identifier
+                                                            ("typing_extensions" | "typing"));
+                                                      _;
+                                                    };
+                                                  attribute = "Type";
+                                                  special = false;
+                                                });
+                                          _;
+                                        };
+                                      index =
+                                        {
+                                          Node.value =
+                                            Name
+                                              (Attribute
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.value =
+                                                        Name
+                                                          (Identifier
+                                                            ("typing_extensions" | "typing"));
+                                                      _;
+                                                    };
+                                                  attribute = "Self";
+                                                  special = false;
+                                                });
+                                          _;
+                                        };
+                                    } );
+                              _;
+                            };
                         };
                     _;
                   } );

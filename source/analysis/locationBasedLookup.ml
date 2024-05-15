@@ -890,6 +890,7 @@ let get_expression_constructor expression : string =
   | Set _ -> "Set"
   | SetComprehension _ -> "SetComprehension"
   | Starred _ -> "Starred"
+  | Subscript _ -> "Subscript"
   | Ternary _ -> "Ternary"
   | Tuple _ -> "Tuple"
   | UnaryOperator _ -> "UnaryOperator"

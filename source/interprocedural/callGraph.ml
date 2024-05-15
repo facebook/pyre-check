@@ -1785,8 +1785,17 @@ let redirect_special_calls ~pyre_in_context call =
 
 
 let redirect_expressions ~pyre_in_context = function
-  (* TODO(T101303314): Support rewriting Subscript nodes to __getitem__ once we have them in the
-     AST. *)
+  | Expression.Subscript { Subscript.base; index } ->
+      Expression.Call
+        {
+          callee =
+            {
+              Node.value =
+                Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+              location = Node.location base;
+            };
+          arguments = [{ Call.Argument.value = index; name = None }];
+        }
   | Expression.Call call ->
       let call = redirect_special_calls ~pyre_in_context call in
       Expression.Call call

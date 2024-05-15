@@ -191,6 +191,9 @@ module Make (Transformer : Transformer) = struct
               | Starred.Twice expression -> Starred.Twice (transform_expression expression)
             in
             Starred starred
+        | Subscript { Subscript.base; index } ->
+            Subscript
+              { Subscript.base = transform_expression base; index = transform_expression index }
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
               {

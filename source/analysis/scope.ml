@@ -61,14 +61,16 @@ module Binding = struct
     | Expression.Name (Name.Identifier name) -> { name; kind; location } :: sofar
     | Expression.Starred (Starred.Once element | Starred.Twice element) ->
         of_unannotated_target ~kind sofar element
+    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
             { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [key_argument];
-        } ->
-        let key_expression, _ = Call.Argument.unpack key_argument in
-        of_expression (of_expression sofar base) key_expression
+          arguments = [{ Call.Argument.value = index; name = None }];
+        }
+    | Subscript { Subscript.base; index } ->
+        of_expression (of_expression sofar base) index
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
@@ -94,6 +96,8 @@ module Binding = struct
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in
         of_expression sofar right
+    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           Call.callee =
@@ -103,7 +107,8 @@ module Binding = struct
             };
           arguments = [{ Call.Argument.name = None; value = index }];
           _;
-        } ->
+        }
+    | Expression.Subscript { Subscript.base; index } ->
         let sofar = of_expression sofar base in
         of_expression sofar index
     | Expression.Call { Call.callee; arguments } ->

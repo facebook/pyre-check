@@ -3243,6 +3243,22 @@ module State (Context : Context) = struct
               forward_expression ~resolution expression
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
+    | Subscript { Subscript.base; index } ->
+        (* The python runtime will treat `base[index]` (when not inside an assignment target) as
+           `base.__getitem__(index)`. *)
+        let synthetic_getitem_call =
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name (Name.Attribute { base; attribute = "__getitem__"; special = false });
+                  location = Node.location base;
+                };
+              arguments = [{ Call.Argument.value = index; name = None }];
+            }
+        in
+        forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
     | Ternary { Ternary.target; test; alternative } ->
         let test_errors =
           let { Resolved.errors; _ } = forward_expression ~resolution test in
@@ -5105,6 +5121,8 @@ module State (Context : Context) = struct
                   (* We process type as union again to populate resolution *)
                   propagate (resolution, errors) (Union types)
               | resolved -> inner_assignment resolution errors resolved)
+          (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to
+             always producing Subscript nodes. *)
           | Expression.Call
               {
                 callee =
@@ -5114,7 +5132,8 @@ module State (Context : Context) = struct
                     _;
                   };
                 arguments = [{ Call.Argument.value = index; name = None }];
-              } ->
+              }
+          | Expression.Subscript { Subscript.base; index } ->
               let {
                 Resolved.errors = callee_errors;
                 resolved = resolved_setitem_type;

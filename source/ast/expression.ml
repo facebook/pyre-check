@@ -674,6 +674,30 @@ end = struct
     | Twice _, Once _ -> 1
 end
 
+and Subscript : sig
+  type t = {
+    base: Expression.t;
+    index: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type t = {
+    base: Expression.t;
+    index: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare
+      { base = left_base; index = left_index }
+      { base = right_base; index = right_index }
+    =
+    match Expression.location_insensitive_compare left_base right_base with
+    | 0 -> Expression.location_insensitive_compare left_index right_index
+    | nonzero -> nonzero
+end
+
 and Substring : sig
   type t =
     | Literal of string Node.t
@@ -845,6 +869,7 @@ and Expression : sig
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
+    | Subscript of Subscript.t
     | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
@@ -879,6 +904,7 @@ end = struct
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
+    | Subscript of Subscript.t
     | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
@@ -918,6 +944,7 @@ end = struct
     | SetComprehension left, SetComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Starred left, Starred right -> Starred.location_insensitive_compare left right
+    | Subscript left, Subscript right -> Subscript.location_insensitive_compare left right
     | Ternary left, Ternary right -> Ternary.location_insensitive_compare left right
     | Tuple left, Tuple right -> List.compare location_insensitive_compare left right
     | UnaryOperator left, UnaryOperator right ->
@@ -942,6 +969,7 @@ end = struct
     | Set _, _ -> -1
     | SetComprehension _, _ -> -1
     | Starred _, _ -> -1
+    | Subscript _, _ -> -1
     | Ternary _, _ -> -1
     | Tuple _, _ -> -1
     | UnaryOperator _, _ -> -1
@@ -1069,6 +1097,10 @@ end = struct
       | Starred.Twice expression -> Format.fprintf formatter "**%a" pp_expression_t expression
 
 
+    and pp_subscript formatter { Subscript.base; index } =
+      Format.fprintf formatter "%a[%a]" pp_expression_t base pp_expression_t index
+
+
     and pp_ternary formatter { Ternary.target; test; alternative } =
       Format.fprintf
         formatter
@@ -1155,6 +1187,7 @@ end = struct
       | SetComprehension set_comprehension ->
           Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
       | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
+      | Subscript subscript -> Format.fprintf formatter "%a" pp_subscript subscript
       | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
       | Tuple tuple -> Format.fprintf formatter "(%a)" pp_expression_list tuple
       | UnaryOperator { UnaryOperator.operator; operand } ->
@@ -1213,6 +1246,7 @@ module Mapper = struct
     map_set: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
     map_set_comprehension: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
     map_starred: mapper:'a t -> location:Location.t -> Starred.t -> 'a;
+    map_subscript: mapper:'a t -> location:Location.t -> Subscript.t -> 'a;
     map_ternary: mapper:'a t -> location:Location.t -> Ternary.t -> 'a;
     map_tuple: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
     map_unary_operator: mapper:'a t -> location:Location.t -> UnaryOperator.t -> 'a;
@@ -1240,6 +1274,7 @@ module Mapper = struct
            map_set;
            map_set_comprehension;
            map_starred;
+           map_subscript;
            map_ternary;
            map_tuple;
            map_unary_operator;
@@ -1271,6 +1306,7 @@ module Mapper = struct
     | Expression.SetComprehension set_comprehension ->
         map_set_comprehension ~mapper ~location set_comprehension
     | Expression.Starred starred -> map_starred ~mapper ~location starred
+    | Expression.Subscript subscript -> map_subscript ~mapper ~location subscript
     | Expression.Ternary ternary -> map_ternary ~mapper ~location ternary
     | Expression.Tuple tuple -> map_tuple ~mapper ~location tuple
     | Expression.UnaryOperator unary_operator -> map_unary_operator ~mapper ~location unary_operator
@@ -1502,6 +1538,14 @@ module Mapper = struct
     Node.create ~location (Expression.Starred (default_map_starred ~mapper starred))
 
 
+  let default_map_subscript ~mapper { Subscript.base; index } =
+    { Subscript.base = map ~mapper base; index = map ~mapper index }
+
+
+  let default_map_subscript_node ~mapper ~location subscript =
+    Node.create ~location (Expression.Subscript (default_map_subscript ~mapper subscript))
+
+
   let default_map_ternary ~mapper { Ternary.target; test; alternative } =
     {
       Ternary.target = map ~mapper target;
@@ -1569,6 +1613,7 @@ module Mapper = struct
       ~map_set
       ~map_set_comprehension
       ~map_starred
+      ~map_subscript
       ~map_ternary
       ~map_tuple
       ~map_unary_operator
@@ -1594,6 +1639,7 @@ module Mapper = struct
       map_set;
       map_set_comprehension;
       map_starred;
+      map_subscript;
       map_ternary;
       map_tuple;
       map_unary_operator;
@@ -1620,6 +1666,7 @@ module Mapper = struct
       ?(map_set = default_map_set_node)
       ?(map_set_comprehension = default_map_set_comprehension_node)
       ?(map_starred = default_map_starred_node)
+      ?(map_subscript = default_map_subscript_node)
       ?(map_ternary = default_map_ternary_node)
       ?(map_tuple = default_map_tuple_node)
       ?(map_unary_operator = default_map_unary_operator_node)
@@ -1645,6 +1692,7 @@ module Mapper = struct
       map_set;
       map_set_comprehension;
       map_starred;
+      map_subscript;
       map_ternary;
       map_tuple;
       map_unary_operator;
@@ -1671,6 +1719,7 @@ module Mapper = struct
       ?(map_set = default_map_set)
       ?(map_set_comprehension = default_map_set_comprehension)
       ?(map_starred = default_map_starred)
+      ?(map_subscript = default_map_subscript)
       ?(map_ternary = default_map_ternary)
       ?(map_tuple = default_map_tuple)
       ?(map_unary_operator = default_map_unary_operator)
@@ -1770,6 +1819,11 @@ module Mapper = struct
         ~location:(map_location location)
         (Expression.Starred (map_starred ~mapper starred))
     in
+    let map_subscript ~mapper ~location subscript =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Subscript (map_subscript ~mapper subscript))
+    in
     let map_ternary ~mapper ~location ternary =
       Node.create
         ~location:(map_location location)
@@ -1815,6 +1869,7 @@ module Mapper = struct
       ~map_set
       ~map_set_comprehension
       ~map_starred
+      ~map_subscript
       ~map_ternary
       ~map_tuple
       ~map_unary_operator
@@ -1852,6 +1907,7 @@ module Folder = struct
     fold_set_comprehension:
       folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
     fold_starred: folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a;
+    fold_subscript: folder:'a t -> state:'a -> location:Location.t -> Subscript.t -> 'a;
     fold_ternary: folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a;
     fold_tuple: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
     fold_unary_operator: folder:'a t -> state:'a -> location:Location.t -> UnaryOperator.t -> 'a;
@@ -1879,6 +1935,7 @@ module Folder = struct
            fold_set;
            fold_set_comprehension;
            fold_starred;
+           fold_subscript;
            fold_ternary;
            fold_tuple;
            fold_unary_operator;
@@ -1911,6 +1968,7 @@ module Folder = struct
     | Expression.SetComprehension set_comprehension ->
         fold_set_comprehension ~folder ~state ~location set_comprehension
     | Expression.Starred starred -> fold_starred ~folder ~state ~location starred
+    | Expression.Subscript subscript -> fold_subscript ~folder ~state ~location subscript
     | Expression.Ternary ternary -> fold_ternary ~folder ~state ~location ternary
     | Expression.Tuple tuple -> fold_tuple ~folder ~state ~location tuple
     | Expression.UnaryOperator unary_operator ->
@@ -2087,6 +2145,11 @@ module Folder = struct
         fold ~folder ~state expression
 
 
+  let default_fold_subscript ~folder ~state { Subscript.base; index } =
+    let state = fold ~folder ~state base in
+    fold ~folder ~state index
+
+
   let default_fold_ternary ~folder ~state { Ternary.target; test; alternative } =
     let state = fold ~folder ~state target in
     let state = fold ~folder ~state test in
@@ -2126,6 +2189,7 @@ module Folder = struct
       ?(fold_set = fold_ignoring_location default_fold_list)
       ?(fold_set_comprehension = fold_ignoring_location default_fold_generator)
       ?(fold_starred = fold_ignoring_location default_fold_starred)
+      ?(fold_subscript = fold_ignoring_location default_fold_subscript)
       ?(fold_ternary = fold_ignoring_location default_fold_ternary)
       ?(fold_tuple = fold_ignoring_location default_fold_list)
       ?(fold_unary_operator = fold_ignoring_location default_fold_unary_operator)
@@ -2151,6 +2215,7 @@ module Folder = struct
       fold_set;
       fold_set_comprehension;
       fold_starred;
+      fold_subscript;
       fold_ternary;
       fold_tuple;
       fold_unary_operator;
@@ -2177,6 +2242,7 @@ module Folder = struct
       ?(fold_set = default_fold_list)
       ?(fold_set_comprehension = default_fold_generator)
       ?(fold_starred = default_fold_starred)
+      ?(fold_subscript = default_fold_subscript)
       ?(fold_ternary = default_fold_ternary)
       ?(fold_tuple = default_fold_list)
       ?(fold_unary_operator = default_fold_unary_operator)
@@ -2224,6 +2290,7 @@ module Folder = struct
       fold_set = fold_with_location fold_set;
       fold_set_comprehension = fold_with_location fold_set_comprehension;
       fold_starred = fold_with_location fold_starred;
+      fold_subscript = fold_with_location fold_subscript;
       fold_ternary = fold_with_location fold_ternary;
       fold_tuple = fold_with_location fold_tuple;
       fold_unary_operator = fold_with_location fold_unary_operator;
@@ -2429,6 +2496,8 @@ let rec sanitized ({ Node.value; location } as expression) =
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     match value with
+    | Subscript { Subscript.base; index } ->
+        Subscript { Subscript.base = delocalize base; index = delocalize index }
     | Call { Call.callee; arguments } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }

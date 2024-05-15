@@ -1990,6 +1990,8 @@ let is_generator statements =
         List.exists expressions ~f:is_expression_generator
     | Expression.Starred Starred.(Once expression | Twice expression) ->
         is_expression_generator expression
+    | Expression.Subscript { Subscript.base; index } ->
+        is_expression_generator base || is_expression_generator index
     | Expression.FormatString substrings ->
         let is_substring_generator = function
           | Substring.(Literal _) -> false
