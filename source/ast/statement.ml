@@ -230,7 +230,7 @@ and Class : sig
 
   val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
 
-  val is_frozen : t -> bool
+  val is_frozen : t -> bool option
 
   val base_classes : t -> Expression.t list
 
@@ -316,6 +316,9 @@ end = struct
     List.filter_map ~f:is_define body |> List.hd
 
 
+  (* Check if a class is a dataclass or not, and if so, check if it frozen or not. TODO T178998636:
+     Break this function down further by isolating dataclass options in its own module and using it
+     to distinguish between various cases of dataclass/dataclass transforms *)
   let is_frozen { decorators; _ } =
     let open Expression in
     let is_frozen_dataclass decorator =
@@ -328,10 +331,10 @@ end = struct
                 String.equal "frozen" (Identifier.sanitized value)
             | _, _ -> false
           in
-          List.exists arguments ~f:has_frozen_argument
-      | _ -> false
+          Some (List.exists arguments ~f:has_frozen_argument)
+      | _ -> None
     in
-    List.exists decorators ~f:is_frozen_dataclass
+    List.find_map decorators ~f:is_frozen_dataclass
 
 
   let base_classes { base_arguments; _ } =

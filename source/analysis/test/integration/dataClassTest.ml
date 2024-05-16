@@ -2108,7 +2108,23 @@ let test_check_dataclasses =
             b.x = 5
             b.y = 4
          |}
-           ["Invalid assignment [41]: Cannot reassign final attribute `b.x`."];
+           [
+             "Invalid inheritance [39]: Non-frozen dataclass `Bar` cannot inherit from frozen \
+              dataclass `Foo`.";
+             "Invalid assignment [41]: Cannot reassign final attribute `b.x`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
+            class Foo():
+                x: int = 1
+
+            @dataclass(frozen=True)
+            class Bar(Foo):
+                y : int = 3
+         |}
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2241,20 +2257,6 @@ let test_check_dataclasses =
                  return {
                      "x": x,
                  }
-         |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      (* TODO T178998636: complain when a frozen dataclass inherits from a non-frozen dataclass *)
-      @@ assert_type_errors
-           {|
-            from dataclasses import dataclass
-            @dataclass(frozen=False)
-            class Foo():
-                x: int = 1
-
-            @dataclass(frozen=True)
-            class Bar(Foo):
-                pass
          |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2540,7 +2542,6 @@ let test_check_dataclasses =
              "Unexpected keyword [28]: Unexpected keyword argument `id` to call \
               `CustomerModel.__init__`.";
            ];
-      (* TODO(T178998636) Do not allow `frozen` dataclasses to inherit from non-frozen. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2548,11 +2549,39 @@ let test_check_dataclasses =
            @dataclass(frozen=False)
            class A:
              x: int
-           @dataclass(frozen=True)
-           class B:
+           @dataclass(frozen=False)
+           class B(A):
              y: str
+           @dataclass(frozen=True)
+           class C(A):
+             y: str
+
          |}
-           [];
+           [
+             "Invalid inheritance [39]: Frozen dataclass `C` cannot inherit from non-frozen \
+              dataclass `A`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass
+           @dataclass(frozen=True)
+           class A:
+             x: int
+           @dataclass(frozen=False)
+           class B(A):
+             y: str
+           @dataclass(frozen=False)
+           class C(A):
+             y: str
+
+         |}
+           [
+             "Invalid inheritance [39]: Non-frozen dataclass `B` cannot inherit from frozen \
+              dataclass `A`.";
+             "Invalid inheritance [39]: Non-frozen dataclass `C` cannot inherit from frozen \
+              dataclass `A`.";
+           ];
     ]
 
 

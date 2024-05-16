@@ -112,7 +112,7 @@ and Class : sig
 
   val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
 
-  val is_frozen : t -> bool
+  val is_frozen : t -> bool option
 
   val base_classes : t -> Expression.t list
 
