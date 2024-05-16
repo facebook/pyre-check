@@ -240,13 +240,9 @@ module ClassAttributes = struct
       in
       List.fold ~init:Identifier.SerializableMap.empty ~f:add_parameter parameters
     in
-    let attribute ~toplevel map { Node.value; location } =
+    let attribute ~toplevel map { Node.value; _ } =
       match value with
       | Statement.Assign { Assign.target; annotation; value; _ } -> (
-          (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
-          let value =
-            Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
-          in
           let simple_attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
@@ -257,10 +253,15 @@ module ClassAttributes = struct
              _;
             }
               when Identifier.equal self (Define.self_identifier define) ->
+                let values =
+                  match value with
+                  | Some value -> [Attribute.{ value; origin = Implicit }]
+                  | None -> []
+                in
                 let simple =
                   {
                     Attribute.annotation;
-                    values = [{ value; origin = Implicit }];
+                    values;
                     primitive = true;
                     toplevel;
                     implicit = true;
@@ -279,7 +280,7 @@ module ClassAttributes = struct
           | { Node.value = Name _; _ } ->
               let annotation =
                 match toplevel, annotation, value with
-                | true, None, { Node.value = Name (Name.Identifier value); _ } ->
+                | true, None, Some { Node.value = Name (Name.Identifier value); _ } ->
                     Identifier.SerializableMap.find_opt value parameter_annotations
                 | _ -> annotation
               in
@@ -530,10 +531,6 @@ module ClassAttributes = struct
             else
               map
         | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
-            (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
-            let value =
-              Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
-            in
             let add_attribute index map ({ Node.location; _ } as target) =
               Attribute.name ~parent:parent_name target
               |> function
@@ -543,8 +540,8 @@ module ClassAttributes = struct
                       Node.create ~location (Expression.Constant (Constant.Integer index))
                     in
                     match value with
-                    | { Node.value = Call _; _ }
-                    | { Node.value = Name _; _ } ->
+                    | Some ({ Node.value = Call _; _ } as value)
+                    | Some ({ Node.value = Name _; _ } as value) ->
                         Some
                           {
                             value with
@@ -582,21 +579,20 @@ module ClassAttributes = struct
             in
             List.foldi ~init:map ~f:add_attribute targets
         | Assign { Assign.target; annotation; value; _ } -> (
-            (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
-            let value =
-              Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
-            in
             Attribute.name ~parent:parent_name target
             |> function
             | Some name ->
                 let attribute =
-                  Attribute.create_simple
-                    ~location
-                    ~name
-                    ~value_and_origin:{ value; origin = Explicit }
-                    ?annotation
-                    ~primitive:true
-                    ()
+                  match value with
+                  | Some value ->
+                      Attribute.create_simple
+                        ~location
+                        ~name
+                        ~value_and_origin:{ value; origin = Explicit }
+                        ?annotation
+                        ~primitive:true
+                        ()
+                  | None -> Attribute.create_simple ~location ~name ?annotation ~primitive:true ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ -> map)

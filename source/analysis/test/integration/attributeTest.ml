@@ -1015,6 +1015,14 @@ let test_check_attribute_initialization =
       @@ assert_type_errors
            {|
                 class Foo:
+                  a: int = ...
+                Foo.a = 1
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+                class Foo:
                   a: int
                 Foo.a = 1
             |}

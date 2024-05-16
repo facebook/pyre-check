@@ -4013,15 +4013,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         match kind with
         | Simple { nested_class = true; _ } -> AnnotatedAttribute.OnClass
         | Simple { values; _ } ->
-            let is_not_ellipsis = function
-              | { Attribute.value = { Node.value = Constant Expression.Constant.Ellipsis; _ }; _ }
-                ->
-                  false
-              | _ -> true
-            in
-            List.find values ~f:is_not_ellipsis
+            List.hd values
             >>| (function
-                  | { Attribute.origin = Explicit; _ } -> AnnotatedAttribute.OnClass
+                  | {
+                      Attribute.value = { Node.value = Constant Expression.Constant.Ellipsis; _ };
+                      _;
+                    } ->
+                      AnnotatedAttribute.OnlyOnInstance
+                  | { Attribute.origin = Explicit; _ } -> OnClass
                   | { origin = Implicit; _ } -> OnlyOnInstance)
             |> Option.value ~default:AnnotatedAttribute.NotInitialized
         | Method _
@@ -4930,14 +4929,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             |> Annotation.create_immutable
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
-        | SimpleAssign { explicit_annotation; value; target_location = location } ->
-            (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
-            let location = Location.strip_module location in
-            let value =
-              Option.value
-                value
-                ~default:(Ast.Expression.Expression.Constant Ellipsis |> Node.create ~location)
-            in
+        | SimpleAssign { explicit_annotation; value; _ } -> (
             let explicit_annotation =
               explicit_annotation
               >>| self#parse_annotation ~assumptions
@@ -4945,16 +4937,19 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             let annotation, is_explicit, is_final =
               match explicit_annotation with
-              | None -> self#resolve_literal value ~assumptions, false, false
+              | None -> value >>| self#resolve_literal ~assumptions, false, false
               | Some explicit -> (
                   match Type.final_value explicit with
-                  | `Ok final_value -> final_value, true, true
-                  | `NoParameter -> self#resolve_literal value ~assumptions, false, true
-                  | `NotFinal -> explicit, true, false)
+                  | `Ok final_value -> Some final_value, true, true
+                  | `NoParameter -> value >>| self#resolve_literal ~assumptions, false, true
+                  | `NotFinal -> Some explicit, true, false)
             in
-            produce_assignment_global ~is_explicit ~is_final annotation
-            |> fun annotation ->
-            Some { Global.annotation; undecorated_signature = None; problem = None }
+            match annotation with
+            | Some annotation ->
+                produce_assignment_global ~is_explicit ~is_final annotation
+                |> fun annotation ->
+                Some { Global.annotation; undecorated_signature = None; problem = None }
+            | _ -> None)
         | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
               match self#resolve_literal ~assumptions value with

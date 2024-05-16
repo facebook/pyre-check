@@ -3794,8 +3794,6 @@ let test_check_compose =
               result = layer( *x)
             |}
            [
-             "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` \
-              to have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
              "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
               inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the \
               overridden attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
@@ -3839,8 +3837,6 @@ let test_check_compose =
               reveal_type(result)
             |}
            [
-             "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` \
-              to have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
              "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
               inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the \
               overridden attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
@@ -3954,8 +3950,6 @@ let test_check_compose =
               reveal_type(result)
             |}
            [
-             "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` \
-              to have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
              "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
               inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the \
               overridden attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
@@ -3998,8 +3992,6 @@ let test_check_compose =
               reveal_type(result2)
             |}
            [
-             "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` \
-              to have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
              "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
               inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the \
               overridden attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \

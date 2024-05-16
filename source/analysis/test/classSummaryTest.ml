@@ -300,11 +300,7 @@ let test_attributes _ =
     |}
     [
       attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute
-        ~name:"attribute"
-        ~annotation:Type.integer
-        ~values:["...", Attribute.Explicit; "value", Attribute.Implicit]
-        ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Implicit] ();
     ];
   assert_attributes
     {|

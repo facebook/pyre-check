@@ -4173,12 +4173,8 @@ module State (Context : Context) = struct
           in
           annotation_errors, is_final, Option.map final_annotation ~f:unwrap_type_qualifiers
     in
-    (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
-    let value =
-      Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
-    in
-    match Node.value target with
-    | Expression.Name (Name.Identifier _)
+    match Node.value target, value with
+    | Expression.Name (Name.Identifier _), Some value
       when delocalize target
            |> Expression.show
            |> GlobalResolution.get_type_alias global_resolution
@@ -4251,10 +4247,13 @@ module State (Context : Context) = struct
     | _ ->
         (* Processing actual value assignments. *)
         let resolution, errors, resolved_value =
-          let { Resolved.resolution; errors = new_errors; resolved; _ } =
-            forward_expression ~resolution value
-          in
-          resolution, List.append new_errors errors, resolved
+          match value with
+          | Some value ->
+              let { Resolved.resolution; errors = new_errors; resolved; _ } =
+                forward_expression ~resolution value
+              in
+              resolution, List.append new_errors errors, resolved
+          | None -> resolution, errors, Type.Any
         in
         let guide =
           (* This is the annotation determining how we recursively break up the assignment. *)
@@ -4730,10 +4729,10 @@ module State (Context : Context) = struct
                   let insufficiently_annotated, thrown_at_source =
                     let is_reassignment =
                       (* Special-casing re-use of typed parameters as attributes *)
-                      match name, Node.value value with
+                      match name, value with
                       | ( Name.Attribute
                             { base = { Node.value = Name (Name.Identifier self); _ }; attribute; _ },
-                          Name _ )
+                          Some ({ Node.value = Name _; _ } as value) )
                         when String.equal (Identifier.sanitized self) "self" ->
                           let sanitized =
                             Ast.Transform.sanitize_expression value |> Expression.show
@@ -5331,7 +5330,7 @@ module State (Context : Context) = struct
                 resolution, errors
         in
         let resolution, errors =
-          forward_assign ~resolution ~errors ~target ~guide ~resolved_value (Some value)
+          forward_assign ~resolution ~errors ~target ~guide ~resolved_value value
         in
         Value resolution, errors
 
