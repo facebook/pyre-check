@@ -78,6 +78,7 @@ def user_data_to_filesystem_read_write_tp(payload: Path) -> None:
 
 @app.route("/open_redirect_tp/<string:payload>")
 def open_redirect_tp(payload: str) -> None:
+    # TODO(T189346522): Fix false negative due to unresolved call.
     redirect(payload)
 
 @app.route("/open_redirect_tn/<int:payload>")
@@ -97,6 +98,7 @@ def user_controlled_data_to_email_send_to_users_tn(payload: str) -> None:
 
 @app.route("/user_controlled_data_flows_into_url_like_string_tp/<string:payload>")
 def user_controlled_data_flows_into_url_like_string_tp(payload: str) -> None:
+    # TODO(T189346647): Fix false negative due to disabled multi-source rule
     url = "https://test/" + payload # noqa
 
 @app.route("/user_controlled_data_flows_into_url_like_string_tn/<string:payload>")
