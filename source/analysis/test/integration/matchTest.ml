@@ -8,10 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_simple context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_simple =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(x: int) -> None:
         y = None
         match x:
@@ -21,9 +23,10 @@ let test_simple context =
             y = "Hello"
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `typing.Union[None, int, str]`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `y` is `typing.Union[None, int, str]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(x: int) -> None:
         y = None
         match x:
@@ -33,9 +36,10 @@ let test_simple context =
             y = "Hello"
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(x: int) -> None:
         match x:
           case 1:
@@ -44,9 +48,10 @@ let test_simple context =
             y = "Hello"
         print(y)
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  assert_type_errors
-    {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def http_error(status: int) -> str:
         match status:
           case 400:
@@ -56,9 +61,10 @@ let test_simple context =
           case 418:
             return "I'm a teapot"
     |}
-    ["Incompatible return type [7]: Expected `str` but got implicit return value of `None`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got implicit return value of `None`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def http_error(status: int) -> str:
         match status:
           case 400:
@@ -70,9 +76,10 @@ let test_simple context =
           case _:
             return "Something's wrong with the Internet"
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def http_error(status: None | int) -> str:
         match status:
           case None:
@@ -83,9 +90,13 @@ let test_simple context =
             reveal_type(status)
             return "Something's wrong with the Internet"
     |}
-    ["Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: `int`)."];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: \
+              `int`).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def test_capture(status: None | int) -> None:
         match status:
           case None:
@@ -94,12 +105,14 @@ let test_simple context =
             reveal_type(status)
             reveal_type(x)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: `int`).";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: \
+              `int`).";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def test_bools(status: bool) -> None:
         match status:
           case True:
@@ -107,22 +120,24 @@ let test_simple context =
           case False:
             reveal_type(status)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[True]`.";
-      "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[False]`.";
-    ];
-  (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[True]`.";
+             "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[False]`.";
+           ];
+      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(subject: int | str) -> None:
         match subject:
           case "hello":
             reveal_type(subject)
     |}
-    ["Revealed type [-1]: Revealed type for `subject` is `typing.Union[int, str]`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `subject` is `typing.Union[int, str]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(subject: int) -> None:
         match subject:
@@ -132,14 +147,16 @@ let test_simple context =
             x = 5.0
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `float`."];
-  ()
+           ["Revealed type [-1]: Revealed type for `x` is `float`."];
+    ]
 
 
-let test_pattern context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_pattern =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(point: Tuple[int, int]) -> None:
         match point:
@@ -158,14 +175,15 @@ let test_pattern context =
           case _:
             raise ValueError("Not a point")
     |}
-    [
-      "Revealed type [-1]: Revealed type for `y_only` is `int`.";
-      "Revealed type [-1]: Revealed type for `x_only` is `int`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `y_only` is `int`.";
+             "Revealed type [-1]: Revealed type for `x_only` is `int`.";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def foo(pair: Tuple[str, int]) -> None:
         match pair:
@@ -179,13 +197,14 @@ let test_pattern context =
             pass
         reveal_type(z)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `str`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List
       def split(x: str) -> List[str]:
         ...
@@ -200,15 +219,16 @@ let test_pattern context =
           case ["give", "away", num_items] | ["donate", num_items]:
             ...
     |}
-    [
-      "Revealed type [-1]: Revealed type for `item` is `str`.";
-      "Incompatible variable type [9]: num_items is declared to have type `int` but is used as \
-       type `str`.";
-      "Incompatible variable type [9]: num_items is declared to have type `int` but is used as \
-       type `str`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `item` is `str`.";
+             "Incompatible variable type [9]: num_items is declared to have type `int` but is used \
+              as type `str`.";
+             "Incompatible variable type [9]: num_items is declared to have type `int` but is used \
+              as type `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def test_variable_length_pattern(subject: Tuple[int, str, float]) -> None:
         match subject:
@@ -216,12 +236,13 @@ let test_pattern context =
             reveal_type(first)
             reveal_type(last)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `first` is `int`.";
-      "Revealed type [-1]: Revealed type for `last` is `float`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `first` is `int`.";
+             "Revealed type [-1]: Revealed type for `last` is `float`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def test_subpattern(point: Tuple[int, int] | None) -> None:
         match point:
@@ -232,14 +253,15 @@ let test_pattern context =
             reveal_type(y)
             reveal_type(p)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `p` is `Tuple[int, int]`.";
-    ];
-  (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `p` is `Tuple[int, int]`.";
+           ];
+      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(point: Tuple[int, int | str]) -> None:
         match point:
@@ -247,13 +269,14 @@ let test_pattern context =
             reveal_type(x)
             reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
-    ];
-  (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+           ];
+      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(point: Tuple[int, str] | Tuple[str, int]) -> None:
         match point:
@@ -261,13 +284,14 @@ let test_pattern context =
             reveal_type(x)
             reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
-    ];
-  (* TODO(T105331662): Refinement on length needed. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+           ];
+      (* TODO(T105331662): Refinement on length needed. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(point: Tuple[int, str]) -> None:
         match point:
@@ -276,14 +300,15 @@ let test_pattern context =
             reveal_type(y)
             reveal_type(z)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
-    ];
-  (* TODO(T105331662): Refinement on length needed. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
+             "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
+           ];
+      (* TODO(T105331662): Refinement on length needed. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def print_point(point: Tuple[int, str] | Tuple[float, complex, bool]) -> None:
         match point:
@@ -295,20 +320,22 @@ let test_pattern context =
             reveal_type(v)
             reveal_type(w)
     |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `float`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[complex, str]`.";
+             "Revealed type [-1]: Revealed type for `u` is `float`.";
+             "Revealed type [-1]: Revealed type for `v` is `typing.Union[complex, str]`.";
+             "Revealed type [-1]: Revealed type for `w` is `typing.Union[bool, int, str]`.";
+           ];
+    ]
+
+
+let test_class =
+  test_list
     [
-      "Revealed type [-1]: Revealed type for `x` is `float`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Union[complex, str]`.";
-      "Revealed type [-1]: Revealed type for `u` is `float`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[complex, str]`.";
-      "Revealed type [-1]: Revealed type for `w` is `typing.Union[bool, int, str]`.";
-    ];
-  ()
-
-
-let test_class context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from dataclasses import dataclass
 
       @dataclass
@@ -331,12 +358,13 @@ let test_class context =
           case _:
             print("Not a point")
     |}
-    [
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from dataclasses import dataclass
 
       @dataclass
@@ -357,13 +385,14 @@ let test_class context =
           case Bar() as bar_object:
             reveal_type(bar_object)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `foo_object` is `Foo`.";
-      "Undefined attribute [16]: `Bar` has no attribute `x`.";
-      "Revealed type [-1]: Revealed type for `bar_object` is `Bar`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `foo_object` is `Foo`.";
+             "Undefined attribute [16]: `Bar` has no attribute `x`.";
+             "Revealed type [-1]: Revealed type for `bar_object` is `Bar`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from dataclasses import dataclass
       from typing import Tuple
 
@@ -386,24 +415,26 @@ let test_class context =
             reveal_type(y2)
             reveal_type(p2)
     |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `p` is `Point`.";
+             "Revealed type [-1]: Revealed type for `x1` is `int`.";
+             "Revealed type [-1]: Revealed type for `y1` is `int`.";
+             "Revealed type [-1]: Revealed type for `p1` is `Point`.";
+             "Revealed type [-1]: Revealed type for `x2` is `int`.";
+             "Revealed type [-1]: Revealed type for `y2` is `int`.";
+             "Revealed type [-1]: Revealed type for `p2` is `Point`.";
+           ];
+    ]
+
+
+let test_mapping =
+  test_list
     [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `p` is `Point`.";
-      "Revealed type [-1]: Revealed type for `x1` is `int`.";
-      "Revealed type [-1]: Revealed type for `y1` is `int`.";
-      "Revealed type [-1]: Revealed type for `p1` is `Point`.";
-      "Revealed type [-1]: Revealed type for `x2` is `int`.";
-      "Revealed type [-1]: Revealed type for `y2` is `int`.";
-      "Revealed type [-1]: Revealed type for `p2` is `Point`.";
-    ];
-  ()
-
-
-let test_mapping context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Dict
       def process(action: Dict[str, object]) -> None:
         match action:
@@ -417,9 +448,10 @@ let test_mapping context =
           case {"sound": _, "format": _}:
             print("Unsupported audio format")
     |}
-    ["Revealed type [-1]: Revealed type for `url` is `object`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `url` is `object`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Dict
       def process(action: Dict[str, str|int]) -> None:
         match action:
@@ -433,37 +465,41 @@ let test_mapping context =
           case {"sound": _, "format": _}:
             print("Unsupported audio format")
     |}
-    [
-      "Revealed type [-1]: Revealed type for `message` is `str`.";
-      "Revealed type [-1]: Revealed type for `c` is `str`.";
-      "Revealed type [-1]: Revealed type for `duration` is `int`.";
-      "Revealed type [-1]: Revealed type for `url` is `str`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `message` is `str`.";
+             "Revealed type [-1]: Revealed type for `c` is `str`.";
+             "Revealed type [-1]: Revealed type for `duration` is `int`.";
+             "Revealed type [-1]: Revealed type for `url` is `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Dict
       def process(action: Dict[str, int]) -> None:
         match action:
           case {"a": _, **rest}:
             reveal_type(rest)
     |}
-    ["Revealed type [-1]: Revealed type for `rest` is `Dict[str, int]`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `rest` is `Dict[str, int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Mapping
       def process(action: Mapping[str, int]) -> None:
         match action:
           case {"a": _, **rest}:
             reveal_type(rest)
     |}
-    ["Revealed type [-1]: Revealed type for `rest` is `typing.Dict[str, int]`."];
-  ()
+           ["Revealed type [-1]: Revealed type for `rest` is `typing.Dict[str, int]`."];
+    ]
 
 
-let test_guard context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_guard =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def test_guard(command: Tuple[str, int|str]) -> None:
         match command:
@@ -474,17 +510,19 @@ let test_guard context =
             reveal_type(y)
             print("str")
     |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
+           ];
+    ]
+
+
+let test_star =
+  test_list
     [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `str`.";
-    ];
-  ()
-
-
-let test_star context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List
       def process(numbers: List[int]) -> None:
         match numbers:
@@ -493,22 +531,24 @@ let test_star context =
             reveal_type(rest)
             reveal_type(last)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `first` is `int`.";
-      "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
-      "Revealed type [-1]: Revealed type for `last` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `first` is `int`.";
+             "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
+             "Revealed type [-1]: Revealed type for `last` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List
       def process(numbers: List[int]) -> None:
         match numbers:
           case [*_, last]:
             reveal_type(last)
     |}
-    ["Revealed type [-1]: Revealed type for `last` is `int`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `last` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List
       def process(numbers: List[int]) -> None:
         match numbers:
@@ -516,23 +556,25 @@ let test_star context =
             reveal_type(first)
             reveal_type(rest)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `first` is `int`.";
-      "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `first` is `int`.";
+             "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List
       def process(numbers: List[int]) -> None:
         match numbers:
           case [*rest]:
             reveal_type(rest)
     |}
-    ["Revealed type [-1]: Revealed type for `rest` is `List[int]`."];
-  (* TODO(T105342940): For rest, the imprecision comes from literal slice resolution. It should
-     technically be possible to resolve to List[bool, complex, float]. *)
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `rest` is `List[int]`."];
+      (* TODO(T105342940): For rest, the imprecision comes from literal slice resolution. It should
+         technically be possible to resolve to List[bool, complex, float]. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Tuple
       def process(numbers: Tuple[int, float, complex, bool, str]) -> None:
         match numbers:
@@ -541,19 +583,21 @@ let test_star context =
             reveal_type(rest)
             reveal_type(last)
     |}
+           [
+             "Revealed type [-1]: Revealed type for `first` is `int`.";
+             "Revealed type [-1]: Revealed type for `rest` is `typing.List[typing.Union[bool, \
+              complex, float, int, str]]`.";
+             "Revealed type [-1]: Revealed type for `last` is `str`.";
+           ];
+    ]
+
+
+let test_enum =
+  test_list
     [
-      "Revealed type [-1]: Revealed type for `first` is `int`.";
-      "Revealed type [-1]: Revealed type for `rest` is `typing.List[typing.Union[bool, complex, \
-       float, int, str]]`.";
-      "Revealed type [-1]: Revealed type for `last` is `str`.";
-    ];
-  ()
-
-
-let test_enum context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from enum import Enum
 
       class Color(Enum):
@@ -573,14 +617,15 @@ let test_enum context =
           case RED:
             reveal_type(RED)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `color` is `Color`.";
-      "Revealed type [-1]: Revealed type for `RED` is `Color`.";
-    ];
-  (* TODO(T83684046): We should consider throwing a more direct error here about a non-exhaustive
-     match. *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `color` is `Color`.";
+             "Revealed type [-1]: Revealed type for `RED` is `Color`.";
+           ];
+      (* TODO(T83684046): We should consider throwing a more direct error here about a
+         non-exhaustive match. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from enum import Enum
 
       class Color(Enum):
@@ -592,10 +637,11 @@ let test_enum context =
           case Color.RED:
             return 1
     |}
-    ["Incompatible return type [7]: Expected `int` but got implicit return value of `None`."];
-  (* TODO(T83684046): We could consider throwing an error here. *)
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `int` but got implicit return value of `None`."];
+      (* TODO(T83684046): We could consider throwing an error here. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from enum import Enum
 
       class Color(Enum):
@@ -607,10 +653,11 @@ let test_enum context =
           case Color.RED:
             print("RED")
     |}
-    [];
-  (* TODO(T83684046): A wildcard should be possible to avoid without Pyre complaining. *)
-  assert_type_errors
-    {|
+           [];
+      (* TODO(T83684046): A wildcard should be possible to avoid without Pyre complaining. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from enum import Enum
 
       class Color(Enum):
@@ -626,14 +673,16 @@ let test_enum context =
           case _:
             assert False, "unreachable"
     |}
-    [];
-  ()
+           [];
+    ]
 
 
-let test_match_args context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_match_args =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Literal, Tuple
       class Foo():
         __match_args__ : Tuple[Literal["hello"], Literal["world"]] = ("hello", "world")
@@ -646,12 +695,13 @@ let test_match_args context =
             reveal_type(h)
             reveal_type(w)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `h` is `int`.";
-      "Revealed type [-1]: Revealed type for `w` is `str`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `h` is `int`.";
+             "Revealed type [-1]: Revealed type for `w` is `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Literal, Tuple
       class Foo():
         __match_args__ = ("hello", "world")
@@ -664,12 +714,13 @@ let test_match_args context =
             reveal_type(h)
             reveal_type(w)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `h` is `int`.";
-      "Revealed type [-1]: Revealed type for `w` is `str`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `h` is `int`.";
+             "Revealed type [-1]: Revealed type for `w` is `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from dataclasses import dataclass
 
       @dataclass
@@ -692,25 +743,28 @@ let test_match_args context =
           case _:
             print("Not a point")
     |}
-    [
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(x: int|str) -> None:
           match x:
               case int(y):
                   reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `int`."];
-  ()
+           ["Revealed type [-1]: Revealed type for `y` is `int`."];
+    ]
 
 
-let test_syntax context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_syntax =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(subject: int) -> None:
         match subject:
           case x:
@@ -718,9 +772,10 @@ let test_syntax context =
           case x:
             pass
     |}
-    ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
-  assert_type_errors
-    {|
+           ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(subject: int) -> None:
         match subject:
           case _:
@@ -728,14 +783,16 @@ let test_syntax context =
           case 42:
             pass
     |}
-    ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
-  ()
+           ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
+    ]
 
 
-let test_isinstance context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_isinstance =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import List, Dict
       def foo(subject: List[str] | Dict[int, str]) -> None:
         match subject:
@@ -744,12 +801,13 @@ let test_isinstance context =
           case ["x", "y"]:
             reveal_type(subject)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `subject` is `Dict[int, str]`.";
-      "Revealed type [-1]: Revealed type for `subject` is `List[str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `subject` is `Dict[int, str]`.";
+             "Revealed type [-1]: Revealed type for `subject` is `List[str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Sequence, Mapping
       class MySequence(Sequence[str]):
         ...
@@ -762,25 +820,25 @@ let test_isinstance context =
           case []:
             reveal_type(subject)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `subject` is `MyMapping`.";
-      "Revealed type [-1]: Revealed type for `subject` is `MySequence`.";
-    ];
-  ()
+           [
+             "Revealed type [-1]: Revealed type for `subject` is `MyMapping`.";
+             "Revealed type [-1]: Revealed type for `subject` is `MySequence`.";
+           ];
+    ]
 
 
 let () =
   "match"
   >::: [
-         "simple" >:: test_simple;
-         "pattern" >:: test_pattern;
-         "class" >:: test_class;
-         "mapping" >:: test_mapping;
-         "guard" >:: test_guard;
-         "star" >:: test_star;
-         "enum" >:: test_enum;
-         "match_args" >:: test_match_args;
-         "syntax" >:: test_syntax;
-         "isinstance" >:: test_isinstance;
+         test_simple;
+         test_pattern;
+         test_class;
+         test_mapping;
+         test_guard;
+         test_star;
+         test_enum;
+         test_match_args;
+         test_syntax;
+         test_isinstance;
        ]
   |> Test.run
