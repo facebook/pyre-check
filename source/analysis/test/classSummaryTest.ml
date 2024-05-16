@@ -14,28 +14,29 @@ open ClassSummary
 open Ast
 open Statement
 
-let test_attributes _ =
-  let create_attribute
-      ~annotation
-      ?(implicit = true)
-      ?(location = Location.any)
-      ~name
-      ?(primitive = false)
-      ?(toplevel = true)
-      ~value
-      ~origin
-      ()
-    =
-    let values = value >>| (fun value -> { Attribute.value; origin }) |> Option.to_list in
-    {
-      Attribute.kind =
-        Simple { annotation; implicit; primitive; toplevel; values; nested_class = false };
-      name;
-    }
-    |> Node.create ~location
-  in
+let create_attribute
+    ~annotation
+    ?(implicit = true)
+    ?(location = Location.any)
+    ~name
+    ?(primitive = false)
+    ?(toplevel = true)
+    ~value
+    ~origin
+    ()
+  =
+  let values = value >>| (fun value -> { Attribute.value; origin }) |> Option.to_list in
+  {
+    Attribute.kind =
+      Simple { annotation; implicit; primitive; toplevel; values; nested_class = false };
+    name;
+  }
+  |> Node.create ~location
+
+
+let test_attributes =
   (* Test define field assigns. *)
-  let assert_assigned_by_define source expected =
+  let assert_assigned_by_define source expected _ =
     let expected =
       let attribute (name, annotation, value, toplevel) =
         create_attribute
@@ -67,75 +68,87 @@ let test_attributes _ =
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd)
   in
-  assert_assigned_by_define "def foo(): pass" [];
-  assert_assigned_by_define
-    {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_assigned_by_define "def foo(): pass" [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo():
         self.attribute = value
         self.attribute: int = value
     |}
-    ["attribute", Some Type.integer, Some "value", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some Type.integer, Some "value", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo():
         self.attribute: int = value
         self.attribute = value
     |}
-    ["attribute", Some Type.integer, Some "value", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some Type.integer, Some "value", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo():
         self.attribute: int = value
         self.attribute: str = value
     |}
-    ["attribute", Some (Type.Union [Type.string; Type.integer]), Some "value", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some (Type.Union [Type.string; Type.integer]), Some "value", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo():
         self.attribute, self.other = derp()
     |}
-    ["attribute", None, Some "derp()", true; "other", None, Some "derp()", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", None, Some "derp()", true; "other", None, Some "derp()", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, derp: int):
         self.attribute, self.other = derp
     |}
-    ["attribute", None, Some "derp", true; "other", None, Some "derp", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", None, Some "derp", true; "other", None, Some "derp", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, argument: str):
         self.attribute = argument
     |}
-    ["attribute", Some Type.string, Some "argument", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some Type.string, Some "argument", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, attribute: str):
         self.attribute = attribute
     |}
-    ["attribute", Some Type.string, Some "attribute", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some Type.string, Some "attribute", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, attribute: MyType):
         self.attribute = attribute
     |}
-    ["attribute", Some (Type.Primitive "MyType"), Some "attribute", true];
-  assert_assigned_by_define
-    {|
+           ["attribute", Some (Type.Primitive "MyType"), Some "attribute", true];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, attribute: str, test: bool):
         if test:
           self.attribute = attribute
     |}
-    ["attribute", None, Some "attribute", false];
-  assert_assigned_by_define
-    {|
+           ["attribute", None, Some "attribute", false];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo(self, argument: str):
         self.argument = unknown
     |}
-    ["argument", None, Some "unknown", true];
-
-  (* Implicit arguments in branches. *)
-  assert_assigned_by_define
-    {|
+           ["argument", None, Some "unknown", true];
+      (* Implicit arguments in branches. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
       def foo():
         a = 1
         self.attribute = value
@@ -144,22 +157,25 @@ let test_attributes _ =
           if False:
             self.nested = value
     |}
-    [
-      "attribute", None, Some "value", true;
-      "nested", None, Some "value", false;
-      "other", None, Some "value", false;
-    ];
-
-  (* `self` isn't special cased if a self parameter is passed into the function. *)
-  assert_assigned_by_define
-    {|
+           [
+             "attribute", None, Some "value", true;
+             "nested", None, Some "value", false;
+             "other", None, Some "value", false;
+           ];
+      (* `self` isn't special cased if a self parameter is passed into the function. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_assigned_by_define
+           {|
     def foo(renamed_self):
       renamed_self.attribute: int = value
   |}
-    ["attribute", Some Type.integer, Some "value", true];
+           ["attribute", Some Type.integer, Some "value", true];
+    ]
 
+
+let test_class_attributes =
   (* Test class attributes. *)
-  let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected =
+  let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected _ =
     let expected =
       let attribute
           ( name,
@@ -291,25 +307,40 @@ let test_attributes _ =
       class_property,
       nested_class )
   in
-  assert_attributes
-    {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         attribute: int
         def __init__(self) -> None:
           self.attribute = value
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Implicit] ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__init__" ~number_of_defines:1 ();
+             attribute
+               ~name:"attribute"
+               ~annotation:Type.integer
+               ~values:["value", Attribute.Implicit]
+               ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         attribute: int = value
     |}
-    [attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Explicit] ()];
-  assert_attributes
-    {|
+           [
+             attribute
+               ~name:"attribute"
+               ~annotation:Type.integer
+               ~values:["value", Attribute.Explicit]
+               ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         def __init__(self):
           self.implicit = implicit
@@ -319,37 +350,44 @@ let test_attributes _ =
         attribute: int = value
         whatever()['asdf'] = 5
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Explicit] ();
-      attribute ~name:"ignored" ~values:["ignored", Attribute.Implicit] ();
-      attribute ~name:"implicit" ~values:["implicit", Attribute.Implicit] ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__init__" ~number_of_defines:1 ();
+             attribute
+               ~name:"attribute"
+               ~annotation:Type.integer
+               ~values:["value", Attribute.Explicit]
+               ();
+             attribute ~name:"ignored" ~values:["ignored", Attribute.Implicit] ();
+             attribute ~name:"implicit" ~values:["implicit", Attribute.Implicit] ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         @overload
         def f(self, x: int) -> int: ...
         def f(self, x: str) -> str: ...
     |}
-    [attribute ~name:"f" ~number_of_defines:2 ()];
-  assert_attributes
-    {|
+           [attribute ~name:"f" ~number_of_defines:2 ()];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         def __init__(self):
           self.attribute = value  # Prioritize explicit declaration
         attribute: int = value
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute
-        ~name:"attribute"
-        ~annotation:Type.integer
-        ~values:["value", Attribute.Explicit; "value", Implicit]
-        ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__init__" ~number_of_defines:1 ();
+             attribute
+               ~name:"attribute"
+               ~annotation:Type.integer
+               ~values:["value", Attribute.Explicit; "value", Implicit]
+               ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         def __init__(self):
           self.init()
@@ -358,155 +396,191 @@ let test_attributes _ =
         def not_inlined(self):
           self.other: int = 1
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Implicit] ();
-      attribute ~name:"init" ~number_of_defines:1 ();
-      attribute ~name:"not_inlined" ~number_of_defines:1 ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__init__" ~number_of_defines:1 ();
+             attribute
+               ~name:"attribute"
+               ~annotation:Type.integer
+               ~values:["value", Attribute.Implicit]
+               ();
+             attribute ~name:"init" ~number_of_defines:1 ();
+             attribute ~name:"not_inlined" ~number_of_defines:1 ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         @property
         def property(self) -> int:
           pass
     |}
-    [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
-  assert_attributes
-    {|
+           [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         @property
         def property(self) -> int: ...
     |}
-    [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
-  assert_attributes
-    {|
+           [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         class Bar:
           ...
     |}
-    [
-      attribute
-        ~name:"Bar"
-        ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
-        ~nested_class:true
-        ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute
+               ~name:"Bar"
+               ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
+               ~nested_class:true
+               ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         @property
         def x(self) -> int: ...
         @x.setter
         def x(self, value:str) -> None: ...
     |}
-    [
-      attribute
-        ~name:"x"
-        ~annotation:Type.string
-        ~values:["int", Attribute.Implicit]
-        ~property:true
-        ~setter:true
-        ();
-    ];
-
-  assert_attributes
-    {|
+           [
+             attribute
+               ~name:"x"
+               ~annotation:Type.string
+               ~values:["int", Attribute.Implicit]
+               ~property:true
+               ~setter:true
+               ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         @pyre_extensions.classproperty
         def property(self) -> int: ...
     |}
-    [attribute ~name:"property" ~annotation:Type.integer ~property:true ~class_property:true ()];
-
-  (* Simultaneous assignment *)
-  assert_attributes
-    {|
+           [
+             attribute
+               ~name:"property"
+               ~annotation:Type.integer
+               ~property:true
+               ~class_property:true
+               ();
+           ];
+      (* Simultaneous assignment *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         a, b = 1, 2
      |}
-    [
-      "a", None, None, ["1", Attribute.Explicit], false, 0, false, false, false;
-      "b", None, None, ["2", Attribute.Explicit], false, 0, false, false, false;
-    ];
-  assert_attributes
-    {|
+           [
+             "a", None, None, ["1", Attribute.Explicit], false, 0, false, false, false;
+             "b", None, None, ["2", Attribute.Explicit], false, 0, false, false, false;
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         a, b = list(range(2))
     |}
-    [
-      "a", None, None, ["list(range(2))[0]", Attribute.Explicit], false, 0, false, false, false;
-      "b", None, None, ["list(range(2))[1]", Attribute.Explicit], false, 0, false, false, false;
-    ];
-
-  (* Implicit attributes in tests. *)
-  assert_attributes
-    ~in_test:true
-    {|
+           [
+             ( "a",
+               None,
+               None,
+               ["list(range(2))[0]", Attribute.Explicit],
+               false,
+               0,
+               false,
+               false,
+               false );
+             ( "b",
+               None,
+               None,
+               ["list(range(2))[1]", Attribute.Explicit],
+               false,
+               0,
+               false,
+               false,
+               false );
+           ];
+      (* Implicit attributes in tests. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           ~in_test:true
+           {|
       class Test:
         def setUp(self):
           self.attribute = value
     |}
-    [
-      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
-      attribute ~name:"setUp" ~number_of_defines:1 ();
-    ];
-  assert_attributes
-    ~in_test:true
-    {|
+           [
+             attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+             attribute ~name:"setUp" ~number_of_defines:1 ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           ~in_test:true
+           {|
       class Test:
         def setUp(self):
           self.attribute = value
         def with_context(self):
           self.context = value
     |}
-    [
-      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
-      attribute ~name:"context" ~values:["value", Attribute.Implicit] ();
-      attribute ~name:"setUp" ~number_of_defines:1 ();
-      attribute ~name:"with_context" ~number_of_defines:1 ();
-    ];
-  assert_attributes
-    ~in_test:true
-    {|
+           [
+             attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+             attribute ~name:"context" ~values:["value", Attribute.Implicit] ();
+             attribute ~name:"setUp" ~number_of_defines:1 ();
+             attribute ~name:"with_context" ~number_of_defines:1 ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           ~in_test:true
+           {|
       class Test:
         def setUpClass(self):
           self.attribute = value
     |}
-    [
-      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
-      attribute ~name:"setUpClass" ~number_of_defines:1 ();
-    ];
-
-  (* __slot__ attributes *)
-  assert_attributes
-    {|
+           [
+             attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+             attribute ~name:"setUpClass" ~number_of_defines:1 ();
+           ];
+      (* __slot__ attributes *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         __slots__ = ['attribute']
     |}
-    [
-      attribute ~name:"__slots__" ~values:["['attribute']", Attribute.Explicit] ();
-      attribute ~name:"attribute" ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__slots__" ~values:["['attribute']", Attribute.Explicit] ();
+             attribute ~name:"attribute" ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         __slots__ = ['name', 'identifier']
     |}
-    [
-      attribute ~name:"__slots__" ~values:["['name', 'identifier']", Attribute.Explicit] ();
-      attribute ~name:"identifier" ();
-      attribute ~name:"name" ();
-    ];
-  assert_attributes
-    {|
+           [
+             attribute ~name:"__slots__" ~values:["['name', 'identifier']", Attribute.Explicit] ();
+             attribute ~name:"identifier" ();
+             attribute ~name:"name" ();
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           {|
       class Foo:
         x, y = 1, 2
     |}
-    [
-      attribute ~name:"x" ~values:["1", Attribute.Explicit] ();
-      attribute ~name:"y" ~values:["2", Attribute.Explicit] ();
-    ];
-  ()
+           [
+             attribute ~name:"x" ~values:["1", Attribute.Explicit] ();
+             attribute ~name:"y" ~values:["2", Attribute.Explicit] ();
+           ];
+    ]
 
 
 let test_is_final _ =
@@ -526,4 +600,6 @@ let test_is_final _ =
 
 
 let () =
-  "classSummary" >::: ["attributes" >:: test_attributes; "is_final" >:: test_is_final] |> Test.run
+  "classSummary"
+  >::: [test_attributes; test_class_attributes; "test_is_final" >:: test_is_final]
+  |> Test.run
