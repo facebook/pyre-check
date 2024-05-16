@@ -185,7 +185,7 @@ def run_pysa_integration_test(
             pysa_results = (save_results_to / "errors.json").read_text()
     except subprocess.CalledProcessError as exception:
         LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
-        sys.stdout.write(exception.output.decode())
+        sys.stdout.write(exception.output)
         sys.exit(exception.returncode)
 
     (current_directory / "raw_results.json").write_text(pysa_results)
