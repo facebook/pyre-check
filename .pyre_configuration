@@ -42,6 +42,12 @@
       "site-package": "testslide"
     },
     {
+      "site-package": "toml"
+    },
+    {
+      "site-package": "tabulate"
+    },
+    {
       "is_toplevel_module": true,
       "site-package": "typing_extensions"
     },
