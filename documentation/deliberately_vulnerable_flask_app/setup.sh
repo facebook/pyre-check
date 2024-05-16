@@ -11,11 +11,9 @@ pip install -r requirements.txt
 rm ../../.pyre_configuration
 echo '{
     "source_directories": ["."],
+    "site_package_search_strategy": "all",
     "search_path": [
-        "../../stubs/integration_test/fixture_stubs",
-        {"site-package": "flask"},
-        {"site-package": "werkzeug"},
-        {"site-package": "jsonpickle"}
+        "../../stubs/integration_test/fixture_stubs"
     ],
     "taint_models_path": "../../stubs"
 }' > ./.pyre_configuration
