@@ -9,7 +9,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
-from ... import upgrade
 from ...errors import Errors
 from ...repository import Repository
 from ..command import ErrorSuppressingCommand
