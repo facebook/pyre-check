@@ -444,7 +444,7 @@ let compute_triggered_flows
     else
       ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
   in
-  let check_source_sink_flows ~candidates ~source ~partial_sink =
+  let check_source_sink_flows ~source ~partial_sink =
     TaintConfiguration.get_triggered_sink taint_configuration ~partial_sink ~source
     |> function
     | Some (Sinks.TriggeredPartialSink triggered_sink) ->
@@ -478,7 +478,7 @@ let compute_triggered_flows
                     frame))
         in
         if Candidate.is_empty candidate then
-          candidates
+          None
         else
           let issues = generate_issues ~taint_configuration ~define candidate in
           let issue_handles =
@@ -489,16 +489,13 @@ let compute_triggered_flows
             triggered_sinks_for_call
             ~triggered_sink
             ~issue_handles (* Case B above *);
-          candidate :: candidates
-    | _ -> candidates
+          Some candidate
+    | _ -> None
   in
-  let check_sink_flows candidates partial_sink =
-    List.fold
-      ~f:(fun candidates source -> check_source_sink_flows ~candidates ~source ~partial_sink)
-      ~init:candidates
-      sources
-  in
-  List.fold ~f:check_sink_flows ~init:[] partial_sinks
+  partial_sinks
+  |> List.cartesian_product sources
+  |> List.filter_map ~f:(fun (source, partial_sink) ->
+         check_source_sink_flows ~source ~partial_sink)
 
 
 module Candidates = struct
