@@ -1,5 +1,5 @@
 click>=8.0
-dataclasses-json
+dataclasses-json==0.5.7
 intervaltree
 libcst
 psutil
