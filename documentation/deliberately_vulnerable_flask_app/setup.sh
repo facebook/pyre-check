@@ -11,7 +11,7 @@ pip install -r requirements.txt
 rm ../../.pyre_configuration
 echo '{
     "source_directories": ["."],
-    "site_package_search_strategy": "all",
+    "site_package_search_strategy": "pep561",
     "search_path": [
         "../../stubs/integration_test/fixture_stubs"
     ],
