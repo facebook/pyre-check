@@ -22,6 +22,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           pip install cython flask flask_cors graphql-core typing_inspect
           VERSION=$(grep "version" .pyre_configuration | sed -n -e 's/.*\(0\.0\.[0-9]*\).*/\1/p')
           pip install pyre-check-nightly==$VERSION
@@ -29,7 +30,7 @@ jobs:
       - name: Run Pyre
         continue-on-error: true
         run: |
-          pyre --output=sarif check > sarif.json
+          pyre -n --output=sarif check > sarif.json
 
       - name: Expose SARIF Results
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
