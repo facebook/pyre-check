@@ -9,12 +9,10 @@ import json
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import call, MagicMock, mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from ... import upgrade
-from ...errors import Errors
 from ...repository import Repository
-from .. import command
 from ..command import ErrorSource, ErrorSuppressingCommand
 from ..fixme_all import Configuration, FixmeAll
 
