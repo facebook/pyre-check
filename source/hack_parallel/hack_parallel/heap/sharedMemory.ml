@@ -21,8 +21,6 @@ type config = {
   heap_size        : int;
   dep_table_pow    : int;
   hash_table_pow   : int;
-  shm_dirs         : string list;
-  shm_min_avail    : int;
   log_level        : int;
 }
 
@@ -41,9 +39,7 @@ exception Dep_table_full
 exception Heap_full
 exception Revision_length_is_zero
 exception Sql_assertion_failure of int
-exception Failed_anonymous_memfd_init
 exception Less_than_minimum_available of int
-exception Failed_to_use_shm_dir of string
 exception C_assertion_failure of string
 let () =
   Callback.register_exception "out_of_shared_memory" Out_of_shared_memory;
@@ -55,9 +51,6 @@ let () =
     "sql_assertion_failure"
     (Sql_assertion_failure 0);
   Callback.register_exception
-    "failed_anonymous_memfd_init"
-    Failed_anonymous_memfd_init;
-  Callback.register_exception
     "less_than_minimum_available"
     (Less_than_minimum_available 0);
   Callback.register_exception
@@ -66,39 +59,7 @@ let () =
 (*****************************************************************************)
 (* Initializes the shared memory. Must be called before forking. *)
 (*****************************************************************************)
-external hh_shared_init :
-  config:config -> shm_dir:string option -> unit = "hh_shared_init"
-
-let anonymous_init config =
-  hh_shared_init
-    ~config
-    ~shm_dir: None
-
-let rec shm_dir_init config = function
-  | [] ->
-      Hh_logger.log
-        "We've run out of filesystems to use for shared memory";
-      raise Out_of_shared_memory
-  | shm_dir::shm_dirs ->
-      begin try
-          (* For some reason statvfs is segfaulting when the directory doesn't
-           * exist, instead of returning -1 and an errno *)
-          if not (Sys.file_exists shm_dir)
-          then raise (Failed_to_use_shm_dir "shm_dir does not exist");
-          hh_shared_init
-            ~config
-            ~shm_dir:(Some shm_dir)
-        with
-        | Less_than_minimum_available _
-        | Unix.Unix_error _
-        | Failed_to_use_shm_dir _ ->
-            shm_dir_init config shm_dirs
-      end
-
-let init config =
-  try anonymous_init config
-  with Failed_anonymous_memfd_init ->
-    shm_dir_init config config.shm_dirs
+external init : config -> unit = "hh_shared_init"
 
 external connect : unit -> unit = "hh_connect"
 

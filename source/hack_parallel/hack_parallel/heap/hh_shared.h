@@ -16,7 +16,7 @@
 /*****************************************************************************/
 /* Initializes the shared heap. */
 /* Must be called by the master BEFORE forking the workers! */
-CAMLprim value hh_shared_init(value config_val, value shm_dir_val);
+CAMLprim value hh_shared_init(value config_val);
 value hh_check_heap_overflow(void);
 /* Must be called by every worker before any operation is performed. */
 value hh_connect(value connector);

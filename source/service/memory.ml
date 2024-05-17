@@ -52,16 +52,7 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         space_overhead = 120;
       };
     let shared_mem_config =
-      {
-        SharedMemory.global_size = 0;
-        heap_size;
-        dep_table_pow;
-        hash_table_pow;
-        shm_dirs = ["/dev/shm"; "/pyre"];
-        shm_min_avail = 1024 * 1024 * 512;
-        (* 512 MB *)
-        log_level;
-      }
+      { SharedMemory.global_size = 0; heap_size; dep_table_pow; hash_table_pow; log_level }
     in
     Log.info
       "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
