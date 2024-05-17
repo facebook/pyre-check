@@ -42,13 +42,6 @@ CAMLprim value hh_hash_slots(void);
 CAMLprim value hh_counter_next(void);
 
 /*****************************************************************************/
-/* Global storage. */
-/*****************************************************************************/
-void hh_shared_store(value data);
-CAMLprim value hh_shared_load(void);
-void hh_shared_clear(void);
-
-/*****************************************************************************/
 /* Garbage collection. */
 /*****************************************************************************/
 CAMLprim value hh_collect(void);

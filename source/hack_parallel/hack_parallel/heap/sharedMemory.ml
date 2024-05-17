@@ -17,7 +17,6 @@ module Measure = Hack_utils.Measure
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)
 type config = {
-  global_size      : int;
   heap_size        : int;
   dep_table_pow    : int;
   hash_table_pow   : int;

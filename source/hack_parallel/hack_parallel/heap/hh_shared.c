@@ -18,19 +18,8 @@
  * The lock-free data structures implemented here only work because of how
  * the Hack phases are synchronized.
  *
- * There are 3 kinds of storage implemented in this file.
- * I) The global storage. Used by the master to efficiently transfer a blob
- *    of data to the workers. This is used to share an environment in
- *    read-only mode with all the workers.
- *    The master stores, the workers read.
- *    Only concurrent reads allowed. No concurrent write/read and write/write.
- *    There are a few different OCaml modules that act as interfaces to this
- *    global storage. They all use the same area of memory, so only one can be
- *    active at any one time. The first word indicates the size of the global
- *    storage currently in use; callers are responsible for setting it to zero
- *    once they are done.
- *
- * II) The dependency table. It's a hashtable that contains all the
+ * There are 2 kinds of storage implemented in this file.
+ * I) The dependency table. It's a hashtable that contains all the
  *    dependencies between Hack objects. It is filled concurrently by
  *    the workers. The dependency table is made of 2 hashtables, one that
  *    is used to quickly answer if a dependency exists. The other one
@@ -38,7 +27,7 @@
  *    Only the hashes of the objects are stored, so this uses relatively
  *    little memory. No dynamic allocation is required.
  *
- * III) The hashtable that maps string keys to string values. (The strings
+ * II) The hashtable that maps string keys to string values. (The strings
  *    are really serialized / marshalled representations of OCaml structures.)
  *    Key observation of the table is that data with the same key are
  *    considered equivalent, and so you can arbitrarily get any copy of it;
@@ -71,7 +60,7 @@
  *    Since the values are variably sized and can get quite large, they are
  *    stored separately from the hashes in a garbage-collected heap.
  *
- * Both II and III resolve hash collisions via linear probing.
+ * Both I and II resolve hash collisions via linear probing.
  */
 /*****************************************************************************/
 
@@ -148,7 +137,6 @@ static sqlite3_stmt* get_select_stmt = NULL;
 
 /* Convention: .*_b = Size in bytes. */
 
-static size_t global_size_b;
 static size_t heap_size;
 
 /* Used for the dependency hashtable */
@@ -240,11 +228,6 @@ static size_t shared_mem_size = 0;
 
 /* Beginning of shared memory */
 static char* shared_mem = NULL;
-
-/* ENCODING: The first element is the size stored in bytes, the rest is
- * the data. The size is set to zero when the storage is empty.
- */
-static value* global_storage = NULL;
 
 /* A pair of a 31-bit unsigned number and a tag bit. */
 typedef struct {
@@ -543,10 +526,6 @@ static void define_globals(size_t page_size) {
   mem += page_size;
   /* END OF THE SMALL OBJECTS PAGE */
 
-  /* Global storage initialization */
-  global_storage = (value*)mem;
-  mem += global_size_b;
-
   /* Dependencies */
   deptbl = (deptbl_entry_t*)mem;
   mem += dep_size_b;
@@ -590,8 +569,6 @@ static void init_zstd_compression() {
 }
 
 static void init_shared_globals(size_t page_size, size_t config_log_level) {
-  // Initial size is zero for global storage is zero
-  global_storage[0] = 0;
   // Initialize the number of element in the table
   *hcounter = 0;
   *dcounter = 0;
@@ -617,16 +594,15 @@ CAMLprim value hh_shared_init(value config_val) {
   CAMLparam1(config_val);
   size_t page_size = getpagesize();
 
-  global_size_b = Long_val(Field(config_val, 0));
-  heap_size = Long_val(Field(config_val, 1));
-  dep_size = 1ul << Long_val(Field(config_val, 2));
+  heap_size = Long_val(Field(config_val, 0));
+  dep_size = 1ul << Long_val(Field(config_val, 1));
   dep_size_b = dep_size * sizeof(deptbl[0]);
   bindings_size_b = dep_size * sizeof(deptbl_bindings[0]);
-  hashtbl_size = 1ul << Long_val(Field(config_val, 3));
+  hashtbl_size = 1ul << Long_val(Field(config_val, 2));
   hashtbl_size_b = hashtbl_size * sizeof(hashtbl[0]);
 
-  shared_mem_size = global_size_b + dep_size_b + bindings_size_b +
-      hashtbl_size_b + heap_size + 3 * page_size;
+  shared_mem_size =
+      dep_size_b + bindings_size_b + hashtbl_size_b + heap_size + 3 * page_size;
 
   define_globals(page_size);
 
@@ -634,7 +610,7 @@ CAMLprim value hh_shared_init(value config_val) {
   *master_pid = getpid();
   my_pid = *master_pid;
 
-  init_shared_globals(page_size, Long_val(Field(config_val, 4)));
+  init_shared_globals(page_size, Long_val(Field(config_val, 3)));
   // Checking that we did the maths correctly.
   assert(*heap + heap_size == shared_mem + shared_mem_size);
 
@@ -661,9 +637,6 @@ value hh_connect(value unit) {
 }
 
 void pyre_reset() {
-  // Reset global storage
-  global_storage[0] = 0;
-
   // Reset the number of element in the table
   *hcounter = 0;
   *dcounter = 0;
@@ -761,48 +734,6 @@ CAMLprim value hh_assert_allow_dependency_table_reads(void) {
   CAMLparam0();
   assert_allow_dependency_table_reads();
   CAMLreturn(Val_unit);
-}
-
-/*****************************************************************************/
-/* Global storage */
-/*****************************************************************************/
-
-void hh_shared_store(value data) {
-  CAMLparam1(data);
-  size_t size = caml_string_length(data);
-
-  assert_master(); // only the master can store
-  assert(global_storage[0] == 0); // Is it clear?
-  assert(size < global_size_b - sizeof(value)); // Do we have enough space?
-
-  global_storage[0] = size;
-  memcpy(&global_storage[1], String_val(data), size);
-
-  CAMLreturn0;
-}
-
-/*****************************************************************************/
-/* We are allocating ocaml values. The OCaml GC must know about them.
- * caml_alloc_string might trigger the GC, when that happens, the GC needs
- * to scan the stack to find the OCaml roots. The macros CAMLparam0 and
- * CAMLlocal1 register the roots.
- */
-/*****************************************************************************/
-
-CAMLprim value hh_shared_load(void) {
-  CAMLparam0();
-  CAMLlocal1(result);
-
-  size_t size = global_storage[0];
-  assert(size != 0);
-  result = caml_alloc_initialized_string(size, (char*)&global_storage[1]);
-
-  CAMLreturn(result);
-}
-
-void hh_shared_clear(void) {
-  assert_master();
-  global_storage[0] = 0;
 }
 
 /*****************************************************************************/

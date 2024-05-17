@@ -15,7 +15,6 @@
 (*****************************************************************************)
 
 type config = {
-  global_size      : int;
   heap_size        : int;
   dep_table_pow    : int;
   hash_table_pow   : int;
