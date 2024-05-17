@@ -293,7 +293,7 @@ let initialize_shared_memory ~path ~configuration =
         ~message:"loading cached state"
         ~f:(fun () ->
           Log.info "Loading cached state from `%s`" (PyrePath.absolute path);
-          let _ = Memory.get_heap_handle configuration in
+          Memory.initialize configuration;
           Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
           Log.info "Cached state successfully loaded.";
           Ok ())

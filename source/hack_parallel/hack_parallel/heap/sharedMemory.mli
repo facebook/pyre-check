@@ -24,12 +24,6 @@ type config = {
   log_level        : int;
 }
 
-type handle = private {
-  h_fd: Unix.file_descr;
-  h_global_size: int;
-  h_heap_size: int;
-}
-
 exception Out_of_shared_memory
 exception Hash_table_full
 exception Dep_table_full
@@ -41,13 +35,13 @@ exception C_assertion_failure of string
 (* Initializes the shared memory. Must be called before forking! *)
 (*****************************************************************************)
 
-val init: config -> handle
+val init: config -> unit
 
 (*****************************************************************************)
 (* Connect a slave to the shared heap *)
 (*****************************************************************************)
 
-val connect: handle -> unit
+val connect: unit -> unit
 
 (*****************************************************************************)
 (* The shared memory garbage collector. It must be called every time we

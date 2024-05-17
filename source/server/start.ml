@@ -216,7 +216,7 @@ let initialize_server_state
   let ({ Configuration.Analysis.log_directory; _ } as configuration) =
     Analysis.EnvironmentControls.configuration environment_controls
   in
-  let _ = Memory.get_heap_handle configuration in
+  Memory.initialize configuration;
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
     let environment = Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls in

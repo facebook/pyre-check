@@ -24,7 +24,7 @@ module FirstClass = SharedMemory.FirstClass
 
 type bytes = int
 
-let heap_handle : SharedMemory.handle option ref = ref None
+let initialized : bool ref = ref false
 
 (* Defined in `Gc` module. *)
 let best_fit_allocation_policy = 2
@@ -40,39 +40,36 @@ let worker_garbage_control =
 
 
 let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
-  match !heap_handle with
-  | None ->
-      (* 4 MB *)
-      let minor_heap_size = 4 * 1024 * 1024 in
-      (* GC for the master process. *)
-      Gc.set
-        {
-          (Gc.get ()) with
-          Gc.minor_heap_size;
-          allocation_policy = best_fit_allocation_policy;
-          space_overhead = 120;
-        };
-      let shared_mem_config =
-        {
-          SharedMemory.global_size = 0;
-          heap_size;
-          dep_table_pow;
-          hash_table_pow;
-          shm_dirs = ["/dev/shm"; "/pyre"];
-          shm_min_avail = 1024 * 1024 * 512;
-          (* 512 MB *)
-          log_level;
-        }
-      in
-      Log.info
-        "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
-        heap_size
-        dep_table_pow
+  if not !initialized then (
+    (* 4 MB *)
+    let minor_heap_size = 4 * 1024 * 1024 in
+    (* GC for the master process. *)
+    Gc.set
+      {
+        (Gc.get ()) with
+        Gc.minor_heap_size;
+        allocation_policy = best_fit_allocation_policy;
+        space_overhead = 120;
+      };
+    let shared_mem_config =
+      {
+        SharedMemory.global_size = 0;
+        heap_size;
+        dep_table_pow;
         hash_table_pow;
-      let handle = SharedMemory.init shared_mem_config in
-      heap_handle := Some handle;
-      handle
-  | Some heap_handle -> heap_handle
+        shm_dirs = ["/dev/shm"; "/pyre"];
+        shm_min_avail = 1024 * 1024 * 512;
+        (* 512 MB *)
+        log_level;
+      }
+    in
+    Log.info
+      "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
+      heap_size
+      dep_table_pow
+      hash_table_pow;
+    SharedMemory.init shared_mem_config;
+    initialized := true)
 
 
 let initialize_for_tests () =
@@ -83,11 +80,10 @@ let initialize_for_tests () =
   let dep_table_pow = 18 in
   let hash_table_pow = 18 in
   let log_level = 0 in
-  let _ = initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () in
-  ()
+  initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level ()
 
 
-let get_heap_handle
+let initialize
     {
       Configuration.Analysis.debug;
       shared_memory = { heap_size; dependency_table_power; hash_table_power };
@@ -100,15 +96,12 @@ let get_heap_handle
     else
       0
   in
-  let heap_handle =
-    initialize
-      ~heap_size
-      ~dep_table_pow:dependency_table_power
-      ~hash_table_pow:hash_table_power
-      ~log_level
-      ()
-  in
-  heap_handle
+  initialize
+    ~heap_size
+    ~dep_table_pow:dependency_table_power
+    ~hash_table_pow:hash_table_power
+    ~log_level
+    ()
 
 
 let heap_size () =
@@ -120,7 +113,7 @@ let report_statistics () =
   Hack_parallel.Std.Measure.print_distributions ()
 
 
-let is_initialized () = Option.is_some !heap_handle
+let is_initialized () = !initialized
 
 exception TarError of string
 

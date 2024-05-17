@@ -16,9 +16,9 @@ module NoCache = SharedMemory.NoCache
 module WithCache = SharedMemory.WithCache
 module FirstClass = SharedMemory.FirstClass
 
-val initialize_for_tests : unit -> unit
+val initialize : Configuration.Analysis.t -> unit
 
-val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
+val initialize_for_tests : unit -> unit
 
 val heap_size : unit -> int
 

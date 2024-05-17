@@ -87,12 +87,11 @@ let create
       configuration)
     ()
   =
-  let heap_handle = Memory.get_heap_handle configuration in
+  Memory.initialize configuration;
   if parallel then
     let workers =
       Hack_parallel.Std.Worker.make
         ~nbr_procs:number_of_workers
-        ~heap_handle
         ~gc_control:Memory.worker_garbage_control
         ~long_lived_workers
     in

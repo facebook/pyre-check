@@ -26,13 +26,6 @@ type config = {
   log_level        : int;
 }
 
-(* Allocated in C only. *)
-type handle = private {
-  h_fd: Unix.file_descr;
-  h_global_size: int;
-  h_heap_size: int;
-}
-
 let kind_of_int x = match x with
   | 0 -> `ConstantK
   | 1 -> `ClassK
@@ -74,7 +67,7 @@ let () =
 (* Initializes the shared memory. Must be called before forking. *)
 (*****************************************************************************)
 external hh_shared_init :
-  config:config -> shm_dir:string option -> handle = "hh_shared_init"
+  config:config -> shm_dir:string option -> unit = "hh_shared_init"
 
 let anonymous_init config =
   hh_shared_init
@@ -107,7 +100,7 @@ let init config =
   with Failed_anonymous_memfd_init ->
     shm_dir_init config config.shm_dirs
 
-external connect : handle -> unit = "hh_connect"
+external connect : unit -> unit = "hh_connect"
 
 (*****************************************************************************)
 (* The shared memory garbage collector. It must be called every time we

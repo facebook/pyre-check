@@ -901,15 +901,6 @@ static void define_globals(char* shared_mem_init) {
 #endif
 }
 
-/* The total size of the shared memory.  Most of it is going to remain
- * virtual. */
-static size_t get_shared_mem_size(void) {
-  size_t page_size = getpagesize();
-  return (
-      global_size_b + dep_size_b + bindings_size_b + hashtbl_size_b +
-      heap_size + 3 * page_size);
-}
-
 // Must be called AFTER init_shared_globals / define_globals
 // once per process, during hh_shared_init / hh_connect
 static void init_zstd_compression() {
@@ -957,46 +948,24 @@ static void init_shared_globals(size_t config_log_level) {
   memset(hashtable_db_filename, 0, page_size);
 }
 
-static void set_sizes(
-    uint64_t config_global_size,
-    uint64_t config_heap_size,
-    uint64_t config_dep_table_pow,
-    uint64_t config_hash_table_pow) {
-  global_size_b = config_global_size;
-  heap_size = config_heap_size;
-
-  dep_size = 1ul << config_dep_table_pow;
-  dep_size_b = dep_size * sizeof(deptbl[0]);
-  bindings_size_b = dep_size * sizeof(deptbl_bindings[0]);
-  hashtbl_size = 1ul << config_hash_table_pow;
-  hashtbl_size_b = hashtbl_size * sizeof(hashtbl[0]);
-
-  shared_mem_size = get_shared_mem_size();
-}
-
 /*****************************************************************************/
 /* Must be called by the master BEFORE forking the workers! */
 /*****************************************************************************/
 
 CAMLprim value hh_shared_init(value config_val, value shm_dir_val) {
   CAMLparam2(config_val, shm_dir_val);
-  CAMLlocal5(
-      connector,
-      config_global_size_val,
-      config_heap_size_val,
-      config_dep_table_pow_val,
-      config_hash_table_pow_val);
 
-  config_global_size_val = Field(config_val, 0);
-  config_heap_size_val = Field(config_val, 1);
-  config_dep_table_pow_val = Field(config_val, 2);
-  config_hash_table_pow_val = Field(config_val, 3);
+  global_size_b = Long_val(Field(config_val, 0));
+  heap_size = Long_val(Field(config_val, 1));
+  dep_size = 1ul << Long_val(Field(config_val, 2));
+  dep_size_b = dep_size * sizeof(deptbl[0]);
+  bindings_size_b = dep_size * sizeof(deptbl_bindings[0]);
+  hashtbl_size = 1ul << Long_val(Field(config_val, 3));
+  hashtbl_size_b = hashtbl_size * sizeof(hashtbl[0]);
 
-  set_sizes(
-      Long_val(config_global_size_val),
-      Long_val(config_heap_size_val),
-      Long_val(config_dep_table_pow_val),
-      Long_val(config_hash_table_pow_val));
+  size_t page_size = getpagesize();
+  shared_mem_size = global_size_b + dep_size_b + bindings_size_b +
+      hashtbl_size_b + heap_size + 3 * page_size;
 
   // None -> NULL
   // Some str -> String_val(str)
@@ -1034,34 +1003,17 @@ CAMLprim value hh_shared_init(value config_val, value shm_dir_val) {
 
   init_zstd_compression();
 
-  connector = caml_alloc_tuple(5);
-  Field(connector, 0) = Val_handle(memfd);
-  Field(connector, 1) = config_global_size_val;
-  Field(connector, 2) = config_heap_size_val;
-  Field(connector, 3) = config_dep_table_pow_val;
-  Field(connector, 4) = config_hash_table_pow_val;
-
-  CAMLreturn(connector);
+  CAMLreturn(Val_unit);
 }
 
 /* Must be called by every worker before any operation is performed */
-value hh_connect(value connector) {
-  CAMLparam1(connector);
-  memfd = Handle_val(Field(connector, 0));
-  set_sizes(
-      Long_val(Field(connector, 1)),
-      Long_val(Field(connector, 2)),
-      Long_val(Field(connector, 3)),
-      Long_val(Field(connector, 4)));
+value hh_connect(value unit) {
+  CAMLparam1(unit);
 #ifdef _WIN32
   my_pid = 1; // Trick
 #else
   my_pid = getpid();
 #endif
-  char* shared_mem_init = memfd_map(shared_mem_size);
-  define_globals(shared_mem_init);
-  init_zstd_compression();
-
   CAMLreturn(Val_unit);
 }
 

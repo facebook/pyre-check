@@ -196,12 +196,12 @@ let worker_main restore state handler infd outfd =
 let current_worker_id = ref 0
 
 (** Make a few workers. *)
-let make ~nbr_procs ~gc_control ~heap_handle ~long_lived_workers =
+let make ~nbr_procs ~gc_control ~long_lived_workers =
   if nbr_procs <= 0 then invalid_arg "Number of workers must be positive";
   if nbr_procs >= max_workers then failwith "Too many workers";
   let restore worker_id =
     current_worker_id := worker_id;
-    SharedMemory.connect heap_handle;
+    SharedMemory.connect ();
     Gc.set gc_control
   in
   let handler =

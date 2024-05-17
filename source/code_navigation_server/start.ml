@@ -130,9 +130,7 @@ let on_watchman_update ~server paths =
 
 
 let initialize_shared_memory environment_controls =
-  Analysis.EnvironmentControls.configuration environment_controls
-  |> Memory.get_heap_handle
-  |> ignore
+  Analysis.EnvironmentControls.configuration environment_controls |> Memory.initialize
 
 
 let initialize_server_state ~build_system_initializer ~environment_controls () =

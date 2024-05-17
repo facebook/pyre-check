@@ -40,7 +40,7 @@ let create_environment_controls ~root ~python_version () =
       ()
   in
   (* This is needed to initiailze sharedmem *)
-  let _ = Memory.get_heap_handle configuration in
+  Memory.initialize configuration;
   Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
 
 
