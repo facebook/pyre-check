@@ -57,8 +57,6 @@ class Typeshed(abc.ABC):
     Representation of a collection of Python stub files.
     """
 
-    # pyre-fixme[56]: Pyre doesn't yet support decorators with ParamSpec applied to
-    #  generic functions Please add # pyre-ignore[56] to `abc.abstractclassmethod`.
     @abc.abstractclassmethod
     def get_file_content(self, path: pathlib.Path) -> Optional[str]:
         """
@@ -69,8 +67,6 @@ class Typeshed(abc.ABC):
         """
         raise NotImplementedError()
 
-    # pyre-fixme[56]: Pyre doesn't yet support decorators with ParamSpec applied to
-    #  generic functions Please add # pyre-ignore[56] to `abc.abstractclassmethod`.
     @abc.abstractclassmethod
     def all_files(self) -> Iterable[pathlib.Path]:
         """
