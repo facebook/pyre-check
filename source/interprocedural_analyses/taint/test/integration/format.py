@@ -30,3 +30,17 @@ def sink_in_format(arg):
 def issue_in_format():
     taint = _test_source()
     return f"{_test_sink(taint)} is bad"
+
+
+def source_in_format_specifier():
+    value = ""
+    return f"{value:{_test_source()}}"
+
+
+def sink_in_format_specifier(value, argument):
+    f"{value:{_test_sink(argument)}}"
+
+
+def issue_in_format_specifier():
+    value = ""
+    f"{value:{_test_sink(_test_source())}}"

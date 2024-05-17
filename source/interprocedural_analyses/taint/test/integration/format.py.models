@@ -1,5 +1,72 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "format.issue_in_format_specifier",
+    "callable_line": 44,
+    "code": 5002,
+    "line": 46,
+    "start": 25,
+    "end": 39,
+    "filename": "format.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "format.py",
+              "line": 46,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "format.py",
+              "line": 46,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "format.issue_in_format_specifier:5002:0:Call|_test_sink|0|formal(arg):539f62facb86a7b839eb74cb3d169c7a"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -340,6 +407,36 @@
 {
   "kind": "model",
   "data": {
+    "callable": "format.sink_in_format_specifier",
+    "filename": "format.py",
+    "callable_line": 40,
+    "sinks": [
+      {
+        "port": "formal(argument, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "format.py",
+              "line": 41,
+              "start": 25,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "format.sink_via_format",
     "filename": "format.py",
     "callable_line": 22,
@@ -400,6 +497,47 @@
               "line": 15,
               "start": 14,
               "end": 28
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.source_in_format_specifier",
+    "filename": "format.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 37, "start": 11, "end": 38 },
+              { "line": 37, "start": 21, "end": 35 }
+            ],
+            "origin": {
+              "filename": "format.py",
+              "line": 37,
+              "start": 21,
+              "end": 35
             }
           }
         ]
