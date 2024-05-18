@@ -168,15 +168,14 @@ let fork_handler ic oc =
     | Unix.WEXITED 1 ->
         raise End_of_file
     | Unix.WEXITED code ->
-        Printf.printf "Worker exited (code: %d)\n" code;
-        flush stdout;
+        Printf.eprintf "Worker exited (code: %d)\n" code;
         Stdlib.exit code
     | Unix.WSIGNALED x ->
         let sig_str = PrintSignal.string_of_signal x in
-        Printf.printf "Worker interrupted with signal: %s\n" sig_str;
+        Printf.eprintf "Worker interrupted with signal: %s\n" sig_str;
         exit 2
     | Unix.WSTOPPED x ->
-        Printf.printf "Worker stopped with signal: %d\n" x;
+        Printf.eprintf "Worker stopped with signal: %d\n" x;
         exit 3
 
 let worker_loop handler infd outfd =
