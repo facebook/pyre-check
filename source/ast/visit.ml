@@ -574,6 +574,7 @@ let collect_base_identifiers statement =
 
 let rec collect_non_generic_type_names { Node.value; _ } =
   match value with
+  | Expression.Subscript { Subscript.index; _ } -> collect_non_generic_type_names index
   | Expression.Call { Call.arguments; _ } ->
       List.concat_map
         ~f:(fun { Call.Argument.value; _ } -> collect_non_generic_type_names value)

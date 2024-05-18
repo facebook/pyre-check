@@ -565,23 +565,27 @@ module State (Context : Context) = struct
               target =
                 {
                   Node.value =
-                    Expression.Call
-                      {
-                        callee =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Attribute
-                                  {
-                                    attribute = "__getitem__";
-                                    base = { Node.value = Name name; _ } as base;
-                                    _;
-                                  });
-                            _;
-                          };
-                        arguments = [{ Call.Argument.value = key; _ }];
-                        _;
-                      };
+                    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut
+                       over to always producing Subscript nodes. *)
+                    ( Expression.Call
+                        {
+                          callee =
+                            {
+                              Node.value =
+                                Name
+                                  (Name.Attribute
+                                    {
+                                      attribute = "__getitem__";
+                                      base = { Node.value = Name name; _ } as base;
+                                      _;
+                                    });
+                              _;
+                            };
+                          arguments = [{ Call.Argument.value = key; _ }];
+                          _;
+                        }
+                    | Expression.Subscript
+                        { base = { Node.value = Name name; _ } as base; index = key } );
                   _;
                 };
               _;

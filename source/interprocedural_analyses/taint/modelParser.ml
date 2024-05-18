@@ -112,11 +112,14 @@ let parse_access_path ~path ~location expression =
         parse_model_labels base
         >>| fun base ->
         TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_name_index attribute)])
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments = [{ Call.Argument.value = index; _ }];
-        } -> (
+        }
+    | Expression.Subscript { base; index } -> (
         parse_model_labels base
         >>= fun base ->
         match Node.value index with
@@ -323,6 +326,8 @@ let rec parse_annotations
           >>| fun position ->
           [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
       | Tuple expressions -> List.map ~f:parse_expression expressions |> all >>| List.concat
+      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+         producing Subscript nodes. *)
       | Call
           {
             callee =
@@ -338,7 +343,8 @@ let rec parse_annotations
                 _;
               };
             _;
-          } ->
+          }
+      | Subscript { base = { Node.value = Name (Name.Identifier "WithTag"); _ }; _ } ->
           Ok []
       | _ -> Error (annotation_error (Format.sprintf "Invalid expression for `%s`" via_kind))
     in
@@ -349,6 +355,8 @@ let rec parse_annotations
   in
   let rec extract_via_tag ~requires_parameter_name via_kind expression =
     match expression.Node.value with
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
@@ -374,6 +382,12 @@ let rec parse_annotations
                 _;
               };
             ];
+        }
+    | Subscript
+        {
+          base = { Node.value = Name (Name.Identifier "WithTag"); _ };
+          index =
+            { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
         } ->
         Ok (Some value)
     | Expression.Name (Name.Identifier _) when requires_parameter_name -> Ok None
@@ -467,6 +481,8 @@ let rec parse_annotations
             check_tito_annotation identifier name
             >>| fun () -> TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Call
         {
           callee =
@@ -482,7 +498,9 @@ let rec parse_annotations
               _;
             };
           arguments = [{ Call.Argument.value = index; _ }];
-        } -> (
+        }
+    | Subscript
+        { base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ }; index } -> (
         match base_identifier with
         | "Via" -> extract_breadcrumbs index >>| TaintKindsWithFeatures.from_breadcrumbs
         | "ViaDynamicFeature" ->
@@ -647,6 +665,8 @@ let rec parse_annotations
   in
   let get_partial_sink_kind expression =
     match Node.value expression with
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
@@ -663,6 +683,11 @@ let rec parse_annotations
             };
           arguments =
             [{ Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ }];
+        }
+    | Expression.Subscript
+        {
+          base = { Node.value = Expression.Name (Name.Identifier kind); _ };
+          index = { Node.value = Name (Name.Identifier label); _ };
         } -> (
         match
           TaintConfiguration.PartialSinkLabelsMap.find_opt
@@ -684,6 +709,8 @@ let rec parse_annotations
     | _ -> invalid_annotation_error ()
   in
   let rec parse_annotation = function
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
@@ -699,7 +726,9 @@ let rec parse_annotations
               _;
             };
           arguments = [{ Call.Argument.value = index; _ }];
-        } -> (
+        }
+    | Expression.Subscript
+        { base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ }; index } -> (
         let open Core.Result in
         match base_identifier, index with
         | "TaintSink", _ -> get_sink_kinds index
@@ -877,6 +906,8 @@ let rec parse_annotations
         List.map ~f:(fun expression -> parse_sanitize_annotation expression.Node.value) expressions
         |> all
         >>| List.concat
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
@@ -892,6 +923,11 @@ let rec parse_annotations
               _;
             };
           arguments = [{ Call.Argument.value = { Node.value = index_value; _ }; _ }];
+        }
+    | Expression.Subscript
+        {
+          base = { Node.value = Expression.Name (Name.Identifier "TaintInTaintOut"); _ };
+          index = { Node.value = index_value; _ };
         } ->
         let gather_sources_sinks (sources, sinks) = function
           | TaintAnnotation.Source { source; features } when TaintFeatures.is_empty features ->
@@ -2328,6 +2364,8 @@ let parse_model_clause
                      ~path
                      ~location
                      (UnexpectedTaintAnnotation parametric_annotation)))
+        (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
+           always producing Subscript nodes. *)
         | Expression.Call
             {
               Call.callee =
@@ -2355,6 +2393,15 @@ let parse_model_clause
                     _;
                   };
                 ];
+            }
+        | Expression.Subscript
+            {
+              base = { Node.value = Name (Name.Identifier "CrossRepositoryTaintAnchor"); _ };
+              index =
+                {
+                  Node.value = Expression.Tuple [taint_expression; canonical_name; canonical_port];
+                  _;
+                };
             } ->
             let parse_string_argument parameter_name argument =
               match Node.value argument with
@@ -3206,6 +3253,8 @@ let parse_decorator_annotations
             Ok (Model.Sanitizers.from_global (Sanitize.from_tito_only SanitizeTransformSet.all))
         | "Parameters" -> Ok (Model.Sanitizers.from_parameters Sanitize.all)
         | _ -> failwith "impossible")
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Some
         [
           {
@@ -3231,6 +3280,22 @@ let parse_decorator_annotations
                           _;
                         };
                       arguments = [{ Call.Argument.value = index; _ }];
+                    };
+                _;
+              };
+            _;
+          };
+        ]
+    | Some
+        [
+          {
+            Call.Argument.value =
+              {
+                Node.value =
+                  Expression.Subscript
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier "Parameters"); _ };
+                      index;
                     };
                 _;
               };

@@ -131,6 +131,8 @@ module IncomingDataComputation = struct
             Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
+          (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
+             always producing Subscript nodes. *)
           | ( _,
               Some
                 {
@@ -211,13 +213,60 @@ module IncomingDataComputation = struct
                           ];
                       };
                   _;
+                } )
+          | ( _,
+              Some
+                {
+                  Node.value =
+                    Subscript
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    base = { Node.value = Name (Name.Identifier "typing"); _ };
+                                    attribute = "Type";
+                                    _;
+                                  });
+                            _;
+                          };
+                        index =
+                          {
+                            Node.value =
+                              Subscript
+                                {
+                                  base =
+                                    {
+                                      Node.value =
+                                        Name
+                                          (Name.Attribute
+                                            {
+                                              base =
+                                                {
+                                                  Node.value =
+                                                    Name (Name.Identifier "mypy_extensions");
+                                                  _;
+                                                };
+                                              attribute = "TypedDict";
+                                              _;
+                                            });
+                                      _;
+                                    };
+                                  _;
+                                };
+                            _;
+                          };
+                      };
+                  _;
                 } ) ->
               if not (Type.is_top target_annotation) then
                 let value = delocalize value in
                 Some (TypeAlias { target = name; value })
               else
                 None
-          | ( (Call _ | Name _ | Constant (Constant.String _)),
+          | ( (Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
               Some
                 {
                   Node.value =
@@ -234,7 +283,7 @@ module IncomingDataComputation = struct
                         });
                   _;
                 } )
-          | (Call _ | Name _), None -> (
+          | (Subscript _ | Call _ | Name _), None -> (
               match Type.Variable.parse_declaration (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->

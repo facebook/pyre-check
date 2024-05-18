@@ -180,14 +180,14 @@ let extract_value_expressions_from_assignment_target expression =
      the base and the key in subscript targets. *)
   let rec extract_one_element so_far { Node.value; _ } =
     match value with
-    | Expression.Call
+    | Expression.Subscript { base; index }
+    | Call
         {
           callee =
             { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [key_argument];
+          arguments = [{ Call.Argument.value = index; _ }];
         } ->
-        let key_expression, _ = Call.Argument.unpack key_argument in
-        base :: key_expression :: so_far
+        base :: index :: so_far
     | List elements
     | Tuple elements ->
         List.fold ~f:extract_one_element ~init:so_far elements

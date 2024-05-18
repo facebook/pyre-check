@@ -540,8 +540,9 @@ module ClassAttributes = struct
                       Node.create ~location (Expression.Constant (Constant.Integer index))
                     in
                     match value with
-                    | Some ({ Node.value = Call _; _ } as value)
-                    | Some ({ Node.value = Name _; _ } as value) ->
+                    | Some ({ Node.value = Name _; _ } as value)
+                    | Some ({ Node.value = Subscript _; _ } as value)
+                    | Some ({ Node.value = Call _; _ } as value) ->
                         Some
                           {
                             value with
@@ -972,6 +973,8 @@ let is_protocol { bases = { base_classes; _ }; _ } =
   let is_protocol { Node.value; _ } =
     let open Expression in
     match value with
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | Expression.Call
         {
           callee =
@@ -993,6 +996,22 @@ let is_protocol { bases = { base_classes; _ }; _ } =
                           _;
                         };
                       attribute = "__getitem__";
+                      _;
+                    });
+              _;
+            };
+          _;
+        }
+    | Expression.Subscript
+        {
+          Subscript.base =
+            {
+              Node.value =
+                Name
+                  (Attribute
+                    {
+                      base = { Node.value = Name (Identifier typing); _ };
+                      attribute = "Protocol";
                       _;
                     });
               _;

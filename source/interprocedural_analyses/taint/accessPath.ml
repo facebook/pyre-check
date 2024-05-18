@@ -379,6 +379,8 @@ let of_expression ~self_parameter expression =
     | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
         let path = Abstract.TreeDomain.Label.Index attribute :: path in
         of_expression path base
+    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+       producing Subscript nodes. *)
     | {
         Node.value =
           Call
@@ -397,6 +399,12 @@ let of_expression ~self_parameter expression =
                   };
                 ];
             };
+        _;
+      }
+    | {
+        Node.value =
+          Subscript
+            { base; index = { Node.value = Expression.Constant (Constant.String { value; _ }); _ } };
         _;
       } ->
         let path = Abstract.TreeDomain.Label.Index value :: path in
