@@ -89,6 +89,7 @@ let create
   =
   Memory.initialize configuration;
   if parallel then
+    let () = Statistics.flush () in
     let workers =
       Hack_parallel.Std.Worker.make
         ~nbr_procs:number_of_workers
