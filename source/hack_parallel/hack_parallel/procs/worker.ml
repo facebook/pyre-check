@@ -49,6 +49,16 @@ exception Worker_failed_to_send_job of send_job_failure
 let max_workers = 1000
 
 
+let () =
+  let print_status () = function
+    | Unix.WEXITED code -> Printf.sprintf "exited with return code %d" code
+    | Unix.WSIGNALED signal -> Printf.sprintf "was killed with signal %d" signal
+    | Unix.WSTOPPED signal -> Printf.sprintf "was stopped with signal %d" signal
+  in
+  Printexc.register_printer (function
+    | Worker_exited_abnormally (pid, status) ->
+      Some (Printf.sprintf "Worker exited abnormally. Process %d %a" pid print_status status)
+    | _ -> None)
 
 (*****************************************************************************
  * The job executed by the worker.

@@ -7,7 +7,6 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-module CamlUnix = Unix
 open Core
 
 module ExitStatus = struct
@@ -241,23 +240,9 @@ let on_exception = function
   | Server.ChecksumMap.LoadError message ->
       Log.error "Cannot load external wheel properly. %s" message;
       ExitStatus.PyreError
-  | Hack_parallel.Std.Worker.Worker_exited_abnormally (pid, status)
-  | Base.Exn.Finally (Hack_parallel.Std.Worker.Worker_exited_abnormally (pid, status), _) ->
-      let message =
-        match status with
-        | CamlUnix.WEXITED return_code -> Format.sprintf "exited with return code %d" return_code
-        | CamlUnix.WSIGNALED signal -> Format.sprintf "was killed with signal %d" signal
-        | CamlUnix.WSTOPPED signal -> Format.sprintf "was stopped with signal %d" signal
-      in
-      Log.error
-        "Pyre encountered an internal exception: Worker_exited_abnormally: process %d %s"
-        pid
-        message;
-      ExitStatus.PyreError
   | exn ->
-      let exn = Exception.wrap exn in
-      Log.error "Pyre encountered an internal exception.";
-      Log.error "%s" (Exception.get_backtrace_string exn);
+      let raw_backtrace = Stdlib.Printexc.get_raw_backtrace () in
+      Log.log_exception "Pyre encountered an internal exception." exn raw_backtrace;
       ExitStatus.PyreError
 
 
