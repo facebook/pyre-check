@@ -4222,6 +4222,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               (self#resolve_literal ~assumptions right)
           in
           if Type.is_concrete annotation then annotation else Type.Any
+      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
+         producing Subscript nodes. *)
       | Call { callee; _ } -> (
           match fully_specified_type expression with
           | Some annotation ->
@@ -4231,6 +4233,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
               Option.value (fully_specified_type callee) ~default:Type.Any)
+      | Subscript { base; _ } -> (
+          match fully_specified_type expression with
+          | Some annotation ->
+              (* Literal generic type, e.g. global = List[int] *)
+              Type.meta annotation
+          | None ->
+              (* Constructor on concrete class or fully specified generic,
+               * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
+              Option.value (fully_specified_type base) ~default:Type.Any)
       | Constant Constant.NoneLiteral -> Type.Any
       | Constant (Constant.Complex _) -> Type.complex
       | Constant (Constant.False | Constant.True) -> Type.bool

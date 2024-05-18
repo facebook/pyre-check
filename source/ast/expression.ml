@@ -2439,6 +2439,7 @@ let is_simple_name name = Option.is_some (name_to_identifiers name)
 let rec get_identifier_base expression =
   match Node.value expression with
   | Call { Call.callee; _ } -> get_identifier_base callee
+  | Subscript { Subscript.base; _ } -> get_identifier_base base
   | Name (Name.Attribute { Name.Attribute.base; _ }) -> get_identifier_base base
   | Name (Name.Identifier identifier) -> Some identifier
   | _ -> None
