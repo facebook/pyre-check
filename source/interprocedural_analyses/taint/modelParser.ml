@@ -3184,7 +3184,7 @@ let parse_decorator_annotations
   let parse_sanitize_annotations ~location ~original_expression arguments =
     (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
     let synthetic_sanitize_annotation =
-      Ast.Expression.get_item_call "Sanitize" arguments ~location |> Node.create ~location
+      Ast.Expression.subscript "Sanitize" arguments ~location |> Node.create ~location
     in
     parse_annotations
       ~path
@@ -4044,7 +4044,10 @@ let rec parse_statement
         let name = name |> name_to_reference_exn |> mangle_private_variable in
         let arguments =
           match annotation.Node.value with
+          (* TODO(T101303314) eliminate this (implicit!) __getitem__ match once parsers are cut
+             over. *)
           | Expression.Call { arguments; _ } -> Some arguments
+          | Expression.Subscript { index; _ } -> Some [{ Call.Argument.value = index; name = None }]
           | _ -> None
         in
         let decorator =

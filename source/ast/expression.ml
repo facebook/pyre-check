@@ -2656,6 +2656,16 @@ let get_item_call base arguments ~location =
     }
 
 
+let subscript base indices ~location =
+  let create_name name = Name (create_name ~location name) in
+  let index =
+    match indices with
+    | [index] -> index
+    | multiple_indices -> Tuple multiple_indices |> Node.create_with_default_location
+  in
+  Subscript { Subscript.base = { Node.location; value = create_name base }; index }
+
+
 let is_dunder_attribute attribute_name =
   String.is_prefix ~prefix:"__" attribute_name && String.is_suffix ~suffix:"__" attribute_name
 
