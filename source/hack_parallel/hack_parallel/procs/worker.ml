@@ -335,14 +335,14 @@ let get_worker w = w
 let kill w =
   if not w.killed then begin
     w.killed <- true;
-    close_in w.ic;
-    close_out w.oc;
-    Unix.kill w.pid Sys.sigkill;
+    close_in_noerr w.ic;
+    close_out_noerr w.oc;
     let rec waitpid () =
       try ignore (Unix.waitpid [] w.pid)
       with Unix.Unix_error (Unix.EINTR, _, _) -> waitpid ()
     in
-    waitpid ()
+    try Unix.kill w.pid Sys.sigkill; waitpid ()
+    with Unix.Unix_error (Unix.ESRCH, _, _) -> ()
   end
 
 let exception_backtrace = function
