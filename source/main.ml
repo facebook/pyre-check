@@ -35,6 +35,10 @@ let run () =
 
 let () =
   try
+    (* Ignore SIGPIPE since >99% of the time they are non-fatal but the default Unix behavior is for
+       it to terminate the server, which is not ideal. Besides, individual callsites can mostly
+       detect the same class of issue by handling the EPIPE unix errno. *)
+    Signal.ignore Signal.pipe;
     Exception.record_backtrace true;
     Random.self_init ();
     run ()

@@ -225,11 +225,6 @@ let run_server configuration_file =
       Server.StartupNotification.consume ~log_path ()
       |> Option.iter ~f:(fun message -> Log.warning "%s" message);
 
-      (* Ignore SIGPIPE since >99% of the time they are non-fatal but the default Unix behavior is
-         for it to terminate the server, which is not ideal. Besides, individual callsites can
-         mostly detect the same class of issue by handling the EPIPE unix errno. *)
-      Signal.Expert.(set Signal.pipe `Ignore);
-
       let exit_status = Lwt_main.run (start_server_and_wait code_navigation_configuration) in
       exit (ServerCommand.ExitStatus.exit_code exit_status)
 
