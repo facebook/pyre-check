@@ -3252,7 +3252,7 @@ module State (Context : Context) = struct
               callee =
                 {
                   Node.value =
-                    Name (Name.Attribute { base; attribute = "__getitem__"; special = false });
+                    Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
                   location = Node.location base;
                 };
               arguments = [{ Call.Argument.value = index; name = None }];
