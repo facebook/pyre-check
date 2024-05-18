@@ -56,7 +56,14 @@ let compare_instantiated_return_annotation left right =
 
 
 let test_unresolved_select =
-  let assert_select ?(allow_undefined = false) ?name callable arguments expected context =
+  let assert_select
+      ?(allow_undefined = false)
+      ?name
+      brackets_for_callable_type
+      parentheses_for_call
+      expected
+      context
+    =
     let replace_specials name =
       name
       |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
@@ -64,15 +71,13 @@ let test_unresolved_select =
            ~pattern:"$literal_string"
            ~with_:"typing_extensions.Literal[\"string\"]"
     in
-    let parse_callable_and_signature ~callable ~arguments =
-      let callable = replace_specials callable in
-      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-        ScratchProject.setup
-          ~context
-          [
-            ( "test.py",
-              Format.sprintf
-                {|
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup
+        ~context
+        [
+          ( "test.py",
+            Format.sprintf
+              {|
                   _T = typing.TypeVar('_T')
                   _S = typing.TypeVar('_S')
                   _R = typing.TypeVar('_R', int, float)
@@ -103,90 +108,84 @@ let test_unresolved_select =
                   typing.Callable%s
                   call%s
                 |}
-                callable
-                arguments );
-          ]
-        |> ScratchProject.build_global_environment
-      in
-      let global_resolution = GlobalResolution.create global_environment in
-      let resolution =
-        TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
-        |> Resolution.new_local
-             ~reference:(Reference.create "optional")
-             ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
-      in
-      let enforce_callable = function
-        | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
-            let undefined { Type.Callable.parameters; _ } =
-              match parameters with
-              | Type.Callable.Undefined -> true
-              | _ -> false
-            in
-            if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
-              failwith "Undefined parameters"
-            else
-              name
-              >>| Reference.create
-              >>| (fun name -> { callable with kind = Named name })
-              |> Option.value ~default:callable
-        | _ -> failwith "Could not extract signatures"
-      in
-      Type.Variable.Namespace.reset ();
-      let callable, signature =
-        let arguments, expression =
-          match
-            SourceCodeApi.source_of_qualifier
-              (AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api global_environment)
-              (Reference.create "test")
-            >>| Source.statements
-            >>| List.rev
-          with
-          | Some
-              ({ Node.value = Expression { Node.value = Expression.Call { arguments; _ }; _ }; _ }
-              :: { Node.value = Expression expression; _ }
-              :: _) ->
-              arguments, expression
-          | _ -> failwith "couldnt extract"
-        in
-        let callable =
-          expression
-          |> GlobalResolution.parse_annotation
-               ~validation:NoValidation
-               (Resolution.global_resolution resolution)
-          |> enforce_callable
-        in
-        let resolved_arguments =
-          let create_argument argument =
-            let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-            let resolved =
-              (Resolution.resolve_expression_to_type_with_locals resolution) ~locals:[] expression
-            in
-            { AttributeResolution.Argument.expression = Some expression; kind; resolved }
+              (replace_specials brackets_for_callable_type)
+              parentheses_for_call );
+        ]
+      |> ScratchProject.build_global_environment
+    in
+    let global_resolution = GlobalResolution.create global_environment in
+    let resolution =
+      TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
+      |> Resolution.new_local
+           ~reference:(Reference.create "optional")
+           ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
+    in
+    Type.Variable.Namespace.reset ();
+    let arguments_of_call, callable_type_expression =
+      match
+        SourceCodeApi.source_of_qualifier
+          (AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api global_environment)
+          (Reference.create "test")
+        >>| Source.statements
+        >>| List.rev
+      with
+      | Some
+          ({ Node.value = Expression { Node.value = Expression.Call { arguments; _ }; _ }; _ }
+          :: { Node.value = Expression callable_type_expression; _ }
+          :: _) ->
+          arguments, callable_type_expression
+      | _ -> failwith "couldnt extract"
+    in
+    let callable =
+      callable_type_expression
+      |> GlobalResolution.parse_annotation
+           ~validation:NoValidation
+           (Resolution.global_resolution resolution)
+      |> function
+      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
+          let undefined { Type.Callable.parameters; _ } =
+            match parameters with
+            | Type.Callable.Undefined -> true
+            | _ -> false
           in
-          List.map arguments ~f:create_argument
+          if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
+            failwith "Undefined parameters"
+          else
+            name
+            >>| Reference.create
+            >>| (fun name -> { callable with kind = Named name })
+            |> Option.value ~default:callable
+      | _ -> failwith "Could not extract signatures"
+    in
+    let signature =
+      let ast_argument_to_attribute_resolution_argument argument =
+        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+        let resolved =
+          (Resolution.resolve_expression_to_type_with_locals resolution) ~locals:[] expression
         in
-        ( callable,
-          GlobalResolution.signature_select
-            global_resolution
-            ~arguments:resolved_arguments
-            ~location:Location.any
-            ~callable
-            ~self_argument:None
-            ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution) )
+        { AttributeResolution.Argument.expression = Some expression; kind; resolved }
       in
-      callable, signature
-    in
-    let callable, signature = parse_callable_and_signature ~callable ~arguments in
-    let callable = { callable with Type.Callable.overloads = [] } in
-    let implementation_annotation { Type.Callable.implementation = { annotation; _ }; _ } =
-      annotation
-    in
-    let closest_return_annotation = implementation_annotation callable in
-    let parse_return return =
-      replace_specials return |> parse_single_expression |> Type.create ~aliases:Type.empty_aliases
+      GlobalResolution.signature_select
+        global_resolution
+        ~arguments:(List.map arguments_of_call ~f:ast_argument_to_attribute_resolution_argument)
+        ~location:Location.any
+        ~callable
+        ~self_argument:None
+        ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
     let expected =
       let open SignatureSelectionTypes in
+      let closest_return_annotation =
+        let implementation_annotation { Type.Callable.implementation = { annotation; _ }; _ } =
+          annotation
+        in
+        implementation_annotation callable
+      in
+      let parse_return return =
+        replace_specials return
+        |> parse_single_expression
+        |> Type.create ~aliases:Type.empty_aliases
+      in
       match expected with
       | `Found expected -> Found { selected_return_annotation = parse_return expected }
       | `NotFoundNoReason -> NotFound { closest_return_annotation; reason = None }
