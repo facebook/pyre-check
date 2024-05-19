@@ -2668,7 +2668,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         let create_name name =
           Node.create ~location (Expression.Name (create_name ~location name))
         in
-        let p = get_item_call "typing.Tuple" ~location in
+        let p = subscript "typing.Tuple" ~location in
         let q =
           match List.length attributes with
           | 0 -> [Node.create ~location (Expression.Tuple [])]
@@ -2693,23 +2693,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             {
               Node.location;
               value =
-                Expression.Call
+                Expression.Subscript
                   {
-                    callee =
-                      {
-                        Node.location;
-                        value =
-                          Expression.Name
-                            (Attribute
-                               {
-                                 base =
-                                   Reference.create "typing.Final"
-                                   |> Ast.Expression.from_reference ~location;
-                                 attribute = "__getitem__";
-                                 special = true;
-                               });
-                      };
-                    arguments = [{ name = None; value = annotation }];
+                    base =
+                      Reference.create "typing.Final" |> Ast.Expression.from_reference ~location;
+                    index = annotation;
                   };
             }
           in
@@ -3477,9 +3465,9 @@ let populate_captures ({ Source.statements; _ } as source) =
                       {
                         Node.location;
                         value =
-                          Expression.Call
+                          Expression.Subscript
                             {
-                              callee =
+                              base =
                                 {
                                   Node.location;
                                   value =
@@ -3489,42 +3477,25 @@ let populate_captures ({ Source.statements; _ } as source) =
                                            base =
                                              {
                                                Node.location;
-                                               value =
-                                                 Name
-                                                   (Name.Attribute
-                                                      {
-                                                        base =
-                                                          {
-                                                            Node.location;
-                                                            value = Name (Name.Identifier "typing");
-                                                          };
-                                                        attribute = "Dict";
-                                                        special = false;
-                                                      });
+                                               value = Name (Name.Identifier "typing");
                                              };
-                                           attribute = "__getitem__";
-                                           special = true;
+                                           attribute = "Dict";
+                                           special = false;
                                          });
                                 };
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.name = None;
-                                    value =
-                                      {
-                                        Node.location;
-                                        value =
-                                          Expression.Tuple
-                                            [
-                                              {
-                                                Node.location;
-                                                value = Expression.Name (Name.Identifier "str");
-                                              };
-                                              value_annotation;
-                                            ];
-                                      };
-                                  };
-                                ];
+                              index =
+                                {
+                                  Node.location;
+                                  value =
+                                    Expression.Tuple
+                                      [
+                                        {
+                                          Node.location;
+                                          value = Expression.Name (Name.Identifier "str");
+                                        };
+                                        value_annotation;
+                                      ];
+                                };
                             };
                       }
                     in
@@ -3565,9 +3536,9 @@ let populate_captures ({ Source.statements; _ } as source) =
                       {
                         Node.location;
                         value =
-                          Expression.Call
+                          Expression.Subscript
                             {
-                              callee =
+                              base =
                                 {
                                   Node.location;
                                   value =
@@ -3577,42 +3548,25 @@ let populate_captures ({ Source.statements; _ } as source) =
                                            base =
                                              {
                                                Node.location;
-                                               value =
-                                                 Name
-                                                   (Name.Attribute
-                                                      {
-                                                        base =
-                                                          {
-                                                            Node.location;
-                                                            value = Name (Name.Identifier "typing");
-                                                          };
-                                                        attribute = "Tuple";
-                                                        special = false;
-                                                      });
+                                               value = Name (Name.Identifier "typing");
                                              };
-                                           attribute = "__getitem__";
-                                           special = true;
+                                           attribute = "Tuple";
+                                           special = false;
                                          });
                                 };
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.name = None;
-                                    value =
-                                      {
-                                        Node.location;
-                                        value =
-                                          Expression.Tuple
-                                            [
-                                              value_annotation;
-                                              {
-                                                Node.location;
-                                                value = Expression.Constant Constant.Ellipsis;
-                                              };
-                                            ];
-                                      };
-                                  };
-                                ];
+                              index =
+                                {
+                                  Node.location;
+                                  value =
+                                    Expression.Tuple
+                                      [
+                                        value_annotation;
+                                        {
+                                          Node.location;
+                                          value = Expression.Constant Constant.Ellipsis;
+                                        };
+                                      ];
+                                };
                             };
                       }
                     in
@@ -3908,33 +3862,21 @@ let replace_union_shorthand_in_annotation_expression =
             |> List.rev
           in
           let index = { Node.value = Expression.Tuple indices; location } in
-          Expression.Call
+          Expression.Subscript
             {
-              callee =
+              base =
                 {
                   Node.location;
                   value =
                     Name
                       (Name.Attribute
                          {
-                           base =
-                             {
-                               Node.location;
-                               value =
-                                 Name
-                                   (Name.Attribute
-                                      {
-                                        base =
-                                          { Node.location; value = Name (Name.Identifier "typing") };
-                                        attribute = "Union";
-                                        special = false;
-                                      });
-                             };
-                           attribute = "__getitem__";
-                           special = true;
+                           base = { Node.location; value = Name (Name.Identifier "typing") };
+                           attribute = "Union";
+                           special = false;
                          });
                 };
-              arguments = [{ Call.Argument.value = index; name = None }];
+              index;
             }
       | Call
           {
@@ -4835,7 +4777,7 @@ module SelfType = struct
               from_reference ~location mangled_self_type_variable_reference
             in
             if Define.Signature.is_class_method signature then
-              get_item_call ~location "typing.Type" [variable_annotation] |> Node.create ~location
+              subscript ~location "typing.Type" [variable_annotation] |> Node.create ~location
             else
               variable_annotation
           in
@@ -4844,8 +4786,7 @@ module SelfType = struct
             | { Parameter.annotation = Some _readonly_self_or_class_parameter; _ } ->
                 (* The user wrote `self: ReadOnly[Self]` or `cls: ReadOnly[Type[Self]]`. So, wrap
                    the synthesized type in `ReadOnly`. *)
-                get_item_call ~location "pyre_extensions.ReadOnly" [annotation]
-                |> Node.create ~location
+                subscript ~location "pyre_extensions.ReadOnly" [annotation] |> Node.create ~location
             | _ -> annotation
           in
           {

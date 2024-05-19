@@ -305,7 +305,7 @@ module ClassAttributes = struct
             match List.filter_map ~f:annotation (head :: tail) with
             | [] -> None
             | ({ Node.location; _ } as annotation) :: annotations ->
-                let argument_value =
+                let index =
                   Node.create_with_default_location (Expression.Tuple (annotation :: annotations))
                 in
                 if List.for_all ~f:([%compare.equal: Expression.t] annotation) annotations then
@@ -315,9 +315,9 @@ module ClassAttributes = struct
                     {
                       Node.location;
                       value =
-                        Call
+                        Subscript
                           {
-                            callee =
+                            base =
                               {
                                 Node.location;
                                 value =
@@ -327,24 +327,13 @@ module ClassAttributes = struct
                                          base =
                                            {
                                              Node.location;
-                                             value =
-                                               Name
-                                                 (Name.Attribute
-                                                    {
-                                                      base =
-                                                        {
-                                                          Node.location;
-                                                          value = Name (Name.Identifier "typing");
-                                                        };
-                                                      attribute = "Union";
-                                                      special = false;
-                                                    });
+                                             value = Name (Name.Identifier "typing");
                                            };
-                                         attribute = "__getitem__";
-                                         special = true;
+                                         attribute = "Union";
+                                         special = false;
                                        });
                               };
-                            arguments = [{ Call.Argument.name = None; value = argument_value }];
+                            index;
                           };
                     }
           in
@@ -544,26 +533,7 @@ module ClassAttributes = struct
                     | Some ({ Node.value = Subscript _; _ } as value)
                     | Some ({ Node.value = Call _; _ } as value) ->
                         Some
-                          {
-                            value with
-                            Node.value =
-                              Expression.Call
-                                {
-                                  callee =
-                                    {
-                                      Node.location;
-                                      value =
-                                        Name
-                                          (Name.Attribute
-                                             {
-                                               base = value;
-                                               attribute = "__getitem__";
-                                               special = true;
-                                             });
-                                    };
-                                  arguments = [{ Call.Argument.name = None; value = index }];
-                                };
-                          }
+                          { value with Node.value = Expression.Subscript { base = value; index } }
                     | _ -> None
                   in
                   value
@@ -760,9 +730,9 @@ module ClassAttributes = struct
                   {
                     Node.location;
                     value =
-                      Expression.Call
+                      Expression.Subscript
                         {
-                          callee =
+                          base =
                             {
                               Node.location;
                               value =
@@ -770,41 +740,21 @@ module ClassAttributes = struct
                                   (Name.Attribute
                                      {
                                        base =
-                                         {
-                                           Node.location;
-                                           value =
-                                             Name
-                                               (Name.Attribute
-                                                  {
-                                                    base =
-                                                      {
-                                                        Node.location;
-                                                        value = Name (Name.Identifier "typing");
-                                                      };
-                                                    attribute = "Type";
-                                                    special = false;
-                                                  });
-                                         };
-                                       attribute = "__getitem__";
-                                       special = true;
+                                         { Node.location; value = Name (Name.Identifier "typing") };
+                                       attribute = "Type";
+                                       special = false;
                                      });
                             };
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = from_reference ~location:Location.any name;
-                              };
-                            ];
+                          index = from_reference ~location:Location.any name;
                         };
                   }
                 in
                 {
                   Node.location;
                   value =
-                    Expression.Call
+                    Expression.Subscript
                       {
-                        callee =
+                        base =
                           {
                             Node.location;
                             value =
@@ -812,26 +762,12 @@ module ClassAttributes = struct
                                 (Name.Attribute
                                    {
                                      base =
-                                       {
-                                         Node.location;
-                                         value =
-                                           Name
-                                             (Name.Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.location;
-                                                      value = Name (Name.Identifier "typing");
-                                                    };
-                                                  attribute = "ClassVar";
-                                                  special = false;
-                                                });
-                                       };
-                                     attribute = "__getitem__";
-                                     special = true;
+                                       { Node.location; value = Name (Name.Identifier "typing") };
+                                     attribute = "ClassVar";
+                                     special = false;
                                    });
                           };
-                        arguments = [{ Call.Argument.name = None; value = meta_annotation }];
+                        index = meta_annotation;
                       };
                 }
               in

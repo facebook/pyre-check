@@ -4204,16 +4204,6 @@ let test_transform_ast _ =
   in
   assert_expand
     {|
-      T = typing.NamedTuple('T')
-    |}
-    {|
-      class T(typing.NamedTuple):
-        def __new__(cls) -> typing.NamedTuple: ...
-        def __init__(self) -> None: ...
-        _fields: typing.Tuple[()] = ()
-    |};
-  assert_expand
-    {|
       T = collections.namedtuple('T', ['a'])
     |}
     {|
@@ -5130,75 +5120,43 @@ let test_populate_captures _ =
   in
   let tuple_annotation value_annotation start stop =
     Node.create
-      (Expression.Call
+      (Expression.Subscript
          {
-           callee =
+           Subscript.base =
              Node.create
-               (Expression.Name
-                  (Name.Attribute
-                     {
-                       base =
-                         Node.create
-                           (Expression.Name
-                              (create_name ~location:(location start stop) "typing.Tuple"))
-                           ~location:(location start stop);
-                       attribute = "__getitem__";
-                       special = true;
-                     }))
+               (Expression.Name (create_name ~location:(location start stop) "typing.Tuple"))
                ~location:(location start stop);
-           arguments =
-             [
-               {
-                 Call.Argument.name = None;
-                 value =
-                   Node.create
-                     ~location:(location start stop)
-                     (Expression.Tuple
-                        [
-                          value_annotation;
-                          Node.create
-                            ~location:(location start stop)
-                            (Expression.Constant Constant.Ellipsis);
-                        ]);
-               };
-             ];
+           index =
+             Node.create
+               ~location:(location start stop)
+               (Expression.Tuple
+                  [
+                    value_annotation;
+                    Node.create
+                      ~location:(location start stop)
+                      (Expression.Constant Constant.Ellipsis);
+                  ]);
          })
       ~location:(location start stop)
   in
   let dict_annotation value_annotation start stop =
     Node.create
-      (Expression.Call
+      (Expression.Subscript
          {
-           callee =
+           base =
+             Node.create
+               (Expression.Name (create_name ~location:(location start stop) "typing.Dict"))
+               ~location:(location start stop);
+           index =
              Node.create
                ~location:(location start stop)
-               (Expression.Name
-                  (Name.Attribute
-                     {
-                       base =
-                         Node.create
-                           (Expression.Name
-                              (create_name ~location:(location start stop) "typing.Dict"))
-                           ~location:(location start stop);
-                       attribute = "__getitem__";
-                       special = true;
-                     }));
-           arguments =
-             [
-               {
-                 Call.Argument.name = None;
-                 value =
-                   Node.create
-                     ~location:(location start stop)
-                     (Expression.Tuple
-                        [
-                          Node.create
-                            (Expression.Name (create_name ~location:(location start stop) "str"))
-                            ~location:(location start stop);
-                          value_annotation;
-                        ]);
-               };
-             ];
+               (Expression.Tuple
+                  [
+                    Node.create
+                      (Expression.Name (create_name ~location:(location start stop) "str"))
+                      ~location:(location start stop);
+                    value_annotation;
+                  ]);
          })
       ~location:(location start stop)
   in

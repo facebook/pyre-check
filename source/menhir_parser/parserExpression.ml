@@ -207,6 +207,18 @@ end = struct
     | Twice of Expression.t
 end
 
+and Subscript : sig
+  type t = {
+    base: Expression.t;
+    index: Expression.t;
+  }
+end = struct
+  type t = {
+    base: Expression.t;
+    index: Expression.t;
+  }
+end
+
 and Ternary : sig
   type t = {
     target: Expression.t;
@@ -264,6 +276,7 @@ and Expression : sig
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
+    | Subscript of Subscript.t
     | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
@@ -291,6 +304,7 @@ end = struct
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
+    | Subscript of Subscript.t
     | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t

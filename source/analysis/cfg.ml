@@ -50,25 +50,19 @@ module MatchTranslate = struct
     |> Node.create ~location
 
 
-  let create_call ~location ~callee ~arguments =
-    Expression.Call { callee; arguments } |> Node.create ~location
+  let create_subscript ~location ~container ~key =
+    Expression.Subscript { base = container; index = key } |> Node.create ~location
 
 
-  let create_getitem ~location ~container ~key =
-    create_call
-      ~location
-      ~callee:
-        (create_name
-           ~location
-           (Name.Attribute { base = container; attribute = "__getitem__"; special = true }))
-      ~arguments:[{ Call.Argument.value = key; name = None }]
-
-
-  let create_getitem_index ~location ~sequence ~index =
-    create_getitem
+  let create_subscript_index ~location ~sequence ~index =
+    create_subscript
       ~location
       ~container:sequence
       ~key:(create_constant ~location (Constant.Integer index))
+
+
+  let create_call ~location ~callee ~arguments =
+    Expression.Call { callee; arguments } |> Node.create ~location
 
 
   let create_slice ~location ~lower ~upper =
@@ -179,7 +173,7 @@ module MatchTranslate = struct
             pattern_to_condition ~subject
           else
             let attribute =
-              create_getitem_index
+              create_subscript_index
                 ~location
                 ~sequence:
                   (create_attribute_name ~location ~base:subject ~attribute:"__match_args__")
@@ -199,7 +193,7 @@ module MatchTranslate = struct
         |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
     | MatchMapping { keys; patterns; rest } ->
         let of_key_pattern key =
-          pattern_to_condition ~subject:(create_getitem ~location ~container:subject ~key)
+          pattern_to_condition ~subject:(create_subscript ~location ~container:subject ~key)
         in
         let of_rest rest =
           let target = create_identifier_name ~location rest in
@@ -235,18 +229,21 @@ module MatchTranslate = struct
           let value =
             let lower = if phys_equal prefix_length 0 then None else Some prefix_length in
             let upper = if phys_equal suffix_length 0 then None else Some (-suffix_length) in
-            create_getitem ~location ~container:subject ~key:(create_slice ~location ~lower ~upper)
+            create_subscript
+              ~location
+              ~container:subject
+              ~key:(create_slice ~location ~lower ~upper)
             |> create_list ~location
           in
           boolean_expression_capture ~location ~target ~value
         in
         let of_prefix_pattern index =
-          pattern_to_condition ~subject:(create_getitem_index ~location ~sequence:subject ~index)
+          pattern_to_condition ~subject:(create_subscript_index ~location ~sequence:subject ~index)
         in
         let of_suffix_pattern index =
           pattern_to_condition
             ~subject:
-              (create_getitem_index ~location ~sequence:subject ~index:(index - suffix_length))
+              (create_subscript_index ~location ~sequence:subject ~index:(index - suffix_length))
         in
         create_isinstance ~location subject (create_typing_sequence ~location)
         :: List.mapi prefix ~f:of_prefix_pattern

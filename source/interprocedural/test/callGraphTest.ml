@@ -1968,24 +1968,13 @@ let test_call_graph_of_define =
            ~expected:
              [
                ( "11:2-11:3",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "$local_test$d",
-                          ExpressionCallees.from_identifier
-                            {
-                              IdentifierCallees.global_targets =
-                                [CallTarget.create ~return_type:None (Target.Object "test.d")];
-                              nonlocal_targets = [];
-                            } );
-                        ( "__getitem__",
-                          ExpressionCallees.from_attribute_access
-                            {
-                              AttributeAccessCallees.property_targets = [];
-                              global_targets = [];
-                              is_attribute = true;
-                            } );
-                      ]) );
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_identifier
+                      {
+                        IdentifierCallees.global_targets =
+                          [CallTarget.create ~return_type:None (Target.Object "test.d")];
+                        nonlocal_targets = [];
+                      }) );
                ( "11:2-11:6",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call

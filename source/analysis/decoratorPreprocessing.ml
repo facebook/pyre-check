@@ -350,7 +350,7 @@ let set_first_parameter_type
     when not (Define.is_static_method original_define) ->
       let new_annotation =
         if Define.is_class_method original_define then
-          get_item_call ~location "typing.Type" [from_reference ~location parent]
+          subscript ~location "typing.Type" [from_reference ~location parent]
           |> Node.create ~location
         else
           from_reference ~location parent

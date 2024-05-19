@@ -327,7 +327,7 @@ module Record = struct
 
 
       let rec unpackable_to_expression ~expression ~location unpackable =
-        let argument =
+        let index_value =
           match unpackable with
           | Variadic variadic ->
               Expression.Name
@@ -335,7 +335,7 @@ module Record = struct
                    ~location
                    (Format.asprintf "%a" Variable.RecordVariadic.Tuple.pp_concise variadic))
           | UnboundedElements annotation ->
-              get_item_call
+              subscript
                 ~location
                 "typing.Tuple"
                 [
@@ -347,30 +347,30 @@ module Record = struct
                 List.map ~f:expression prefix
                 @ [unpackable_to_expression ~expression ~location middle]
                 @ List.map ~f:expression suffix
-                |> get_item_call ~location "typing.Tuple"
+                |> subscript ~location "typing.Tuple"
               in
               let broadcast_to_expression = function
                 | ConcreteAgainstConcrete { left; right } ->
-                    get_item_call
+                    subscript
                       ~location
                       "pyre_extensions.Broadcast"
                       [
-                        get_item_call ~location "typing.Tuple" (List.map ~f:expression left)
+                        subscript ~location "typing.Tuple" (List.map ~f:expression left)
                         |> Node.create ~location;
-                        get_item_call ~location "typing.Tuple" (List.map ~f:expression right)
+                        subscript ~location "typing.Tuple" (List.map ~f:expression right)
                         |> Node.create ~location;
                       ]
                 | ConcreteAgainstConcatenation { concrete; concatenation } ->
-                    get_item_call
+                    subscript
                       ~location
                       "pyre_extensions.Broadcast"
                       [
-                        get_item_call ~location "typing.Tuple" (List.map ~f:expression concrete)
+                        subscript ~location "typing.Tuple" (List.map ~f:expression concrete)
                         |> Node.create ~location;
                         concatenation_to_expression concatenation |> Node.create ~location;
                       ]
                 | ConcatenationAgainstConcatenation { left_concatenation; right_concatenation } ->
-                    get_item_call
+                    subscript
                       ~location
                       "pyre_extensions.Broadcast"
                       [
@@ -380,23 +380,10 @@ module Record = struct
               in
               broadcast_to_expression broadcast
         in
-        Expression.Call
+        Expression.Subscript
           {
-            callee =
-              {
-                Node.location;
-                value =
-                  Name
-                    (Name.Attribute
-                       {
-                         base =
-                           Expression.Name (create_name ~location "typing.Unpack")
-                           |> Node.create ~location;
-                         attribute = "__getitem__";
-                         special = true;
-                       });
-              };
-            arguments = [{ name = None; value = argument |> Node.create ~location }];
+            base = Expression.Name (create_name ~location "typing.Unpack") |> Node.create ~location;
+            index = index_value |> Node.create ~location;
           }
         |> Node.create ~location
     end
@@ -2377,7 +2364,7 @@ let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _
 let rec expression annotation =
   let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
-  let get_item_call = get_item_call ~location in
+  let subscript = subscript ~location in
   let concatenation_to_expressions
       { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
     =
@@ -2463,32 +2450,16 @@ let rec expression annotation =
             ~location
             (Expression.List [callable_parameters_expression parameters; expression annotation])
         in
-        (* TODO(T101303314) Once we are using proper Subscript nodes, we should cut this over to
-           just returning `index_expression` and constructing a subscript node. *)
-        let convert_signature_as_argument { annotation; parameters; _ } =
-          let index_expression =
-            Node.create
-              ~location
-              (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
-          in
-          { Call.Argument.name = None; value = index_expression }
+        let convert_signature_as_index { annotation; parameters; _ } =
+          Node.create
+            ~location
+            (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
         in
-        let base_callable =
-          Expression.Call
+        let base_value =
+          Expression.Subscript
             {
-              callee =
-                {
-                  Node.location;
-                  value =
-                    Name
-                      (Name.Attribute
-                         {
-                           base = { Node.location; value = create_name "typing.Callable" };
-                           attribute = "__getitem__";
-                           special = true;
-                         });
-                };
-              arguments = [convert_signature_as_argument implementation];
+              base = { Node.location; value = create_name "typing.Callable" };
+              index = convert_signature_as_index implementation;
             }
         in
         let overloads =
@@ -2496,18 +2467,8 @@ let rec expression annotation =
             match sofar with
             | None -> Some (convert_signature_as_leftmost_overload overload)
             | Some expression ->
-                Expression.Call
-                  {
-                    callee =
-                      {
-                        Node.location;
-                        value =
-                          Name
-                            (Name.Attribute
-                               { base = expression; attribute = "__getitem__"; special = true });
-                      };
-                    arguments = [convert_signature_as_argument overload];
-                  }
+                Expression.Subscript
+                  { base = expression; index = convert_signature_as_index overload }
                 |> Node.create ~location
                 |> Option.some
           in
@@ -2515,23 +2476,8 @@ let rec expression annotation =
         in
         match overloads with
         | Some overloads ->
-            Expression.Call
-              {
-                callee =
-                  {
-                    Node.location;
-                    value =
-                      Name
-                        (Name.Attribute
-                           {
-                             base = { Node.location; value = base_callable };
-                             attribute = "__getitem__";
-                             special = true;
-                           });
-                  };
-                arguments = [{ Call.Argument.name = None; value = overloads }];
-              }
-        | None -> base_callable)
+            Expression.Subscript { base = { Node.location; value = base_value }; index = overloads }
+        | None -> base_value)
     | Any -> create_name "typing.Any"
     | Literal literal ->
         let literal =
@@ -2549,7 +2495,7 @@ let rec expression annotation =
                 (Attribute
                    { base = expression enumeration_type; attribute = member_name; special = false })
         in
-        get_item_call "typing_extensions.Literal" [Node.create ~location literal]
+        subscript "typing_extensions.Literal" [Node.create ~location literal]
     | NoneType -> Expression.Constant Constant.NoneLiteral
     | Parametric { name; parameters } ->
         let parameters =
@@ -2565,7 +2511,7 @@ let rec expression annotation =
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
-        get_item_call (reverse_substitute name) parameters
+        subscript (reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
         let attribute =
           Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
@@ -2573,44 +2519,28 @@ let rec expression annotation =
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
-    | ReadOnly type_ -> get_item_call "pyre_extensions.ReadOnly" [expression type_]
+    | ReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
     | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
-    | Tuple (Concrete []) ->
-        get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
-    | Tuple ordered_type -> get_item_call "typing.Tuple" (convert_ordered_type ordered_type)
+    | Tuple (Concrete []) -> subscript "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
+    | Tuple ordered_type -> subscript "typing.Tuple" (convert_ordered_type ordered_type)
     | TypeOperation (Compose ordered_type) ->
-        get_item_call "pyre_extensions.Compose" (convert_ordered_type ordered_type)
+        subscript "pyre_extensions.Compose" (convert_ordered_type ordered_type)
     | Union [NoneType; parameter]
     | Union [parameter; NoneType] ->
-        get_item_call "typing.Optional" [expression parameter]
-    | Union parameters -> get_item_call "typing.Union" (List.map ~f:expression parameters)
+        subscript "typing.Optional" [expression parameter]
+    | Union parameters -> subscript "typing.Union" (List.map ~f:expression parameters)
     | Variable { variable; _ } -> create_name variable
     | IntExpression (Data polynomial) when Polynomial.is_base_case polynomial ->
         convert_annotation (polynomial_to_type polynomial)
     | IntExpression (Data polynomial) ->
         let convert_int_expression arguments ~operator =
-          Expression.Call
+          Expression.Subscript
             {
-              callee =
+              base = { Node.location; value = create_name ("pyre_extensions." ^ operator) };
+              index =
                 Node.create_with_default_location
-                  (Expression.Name
-                     (Name.Attribute
-                        {
-                          base =
-                            { Node.location; value = create_name ("pyre_extensions." ^ operator) };
-                          attribute = "__getitem__";
-                          special = true;
-                        }));
-              arguments =
-                [
-                  {
-                    Call.Argument.name = None;
-                    value =
-                      Node.create_with_default_location
-                        (Expression.Tuple (List.map arguments ~f:Node.create_with_default_location));
-                  };
-                ];
+                  (Expression.Tuple (List.map arguments ~f:Node.create_with_default_location));
             }
         in
         let convert_monomial { Monomial.constant_factor; variables } =
@@ -2632,7 +2562,7 @@ let rec expression annotation =
                                ];
                            })
                   | Monomial.Operation (Product unpackable) ->
-                      get_item_call
+                      subscript
                         "pyre_extensions.Product"
                         [
                           Record.OrderedTypes.Concatenation.unpackable_to_expression
@@ -3426,7 +3356,7 @@ module OrderedTypes = struct
       -> (
         let location = Location.any in
         let wrapped_in_tuple =
-          get_item_call ~location "typing.Tuple" [annotation] |> Node.create ~location
+          subscript ~location "typing.Tuple" [annotation] |> Node.create ~location
         in
         match parse_annotation wrapped_in_tuple with
         | Tuple (Concatenation concatenation) -> Some concatenation

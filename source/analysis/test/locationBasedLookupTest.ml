@@ -2634,18 +2634,12 @@ let test_lookup_unbound context =
       "3:13-3:14/typing.Any";
       "3:18-3:20/typing.List[Variable[_T]]";
       "4:2-4:3/typing.Any";
-      "4:7-4:8/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-       typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
-       typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
-       typing.List[typing.Any]]";
+      "4:7-4:8/typing.List[typing.Any]";
       "4:7-4:11/typing.Any";
       "4:7-4:26/typing.Any";
       "4:9-4:10/typing_extensions.Literal[0]";
       "4:15-4:16/typing.List[typing.Any]";
-      "4:22-4:23/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-       typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
-       typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
-       typing.List[typing.Any]]";
+      "4:22-4:23/typing.List[typing.Any]";
       "4:22-4:26/typing.Any";
       "4:24-4:25/typing_extensions.Literal[1]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
@@ -2659,22 +2653,6 @@ let test_lookup_unbound context =
   assert_annotation
     ~position:{ Location.line = 3; column = 18 }
     ~annotation:(Some "3:18-3:20/typing.List[Variable[_T]]");
-  assert_annotation
-    ~position:{ Location.line = 4; column = 7 }
-    ~annotation:
-      (Some
-         "4:7-4:8/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-          typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
-          typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
-          typing.List[typing.Any]]");
-  assert_annotation
-    ~position:{ Location.line = 4; column = 22 }
-    ~annotation:
-      (Some
-         "4:22-4:23/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-          typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
-          typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
-          typing.List[typing.Any]]");
   ()
 
 

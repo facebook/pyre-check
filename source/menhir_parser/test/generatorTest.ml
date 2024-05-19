@@ -498,24 +498,8 @@ let test_name =
            "a[1]"
            [
              +Statement.Expression
-                (+Expression.Call
-                    {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 1);
-                          };
-                        ];
-                    });
+                (+Expression.Subscript
+                    { Subscript.base = !"a"; index = +Expression.Constant (Constant.Integer 1) });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
@@ -546,30 +530,16 @@ let test_name =
            "a[1 < 2]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.ComparisonOperator
-                                 {
-                                   ComparisonOperator.left =
-                                     +Expression.Constant (Constant.Integer 1);
-                                   operator = ComparisonOperator.LessThan;
-                                   right = +Expression.Constant (Constant.Integer 2);
-                                 };
-                          };
-                        ];
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.ComparisonOperator
+                           {
+                             ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
+                             operator = ComparisonOperator.LessThan;
+                             right = +Expression.Constant (Constant.Integer 2);
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -581,23 +551,10 @@ let test_name =
                     (Name.Attribute
                        {
                          Name.Attribute.base =
-                           +Expression.Call
+                           +Expression.Subscript
                               {
-                                Call.callee =
-                                  +Expression.Name
-                                     (Name.Attribute
-                                        {
-                                          Name.Attribute.base = !"a";
-                                          attribute = "__getitem__";
-                                          special = true;
-                                        });
-                                arguments =
-                                  [
-                                    {
-                                      Call.Argument.name = None;
-                                      value = +Expression.Constant (Constant.Integer 1);
-                                    };
-                                  ];
+                                Subscript.base = !"a";
+                                index = +Expression.Constant (Constant.Integer 1);
                               };
                          attribute = "b";
                          special = false;
@@ -606,62 +563,35 @@ let test_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "a[b]"
-           [
-             +Statement.Expression
-                (+Expression.Call
-                    {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments = [{ Call.Argument.name = None; value = !"b" }];
-                    });
-           ];
+           [+Statement.Expression (+Expression.Subscript { Subscript.base = !"a"; index = !"b" })];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "a[:]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -669,42 +599,29 @@ let test_name =
            "a[1:]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant (Constant.Integer 1);
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant (Constant.Integer 1);
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -712,42 +629,29 @@ let test_name =
            "a[::2]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant (Constant.Integer 2);
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant (Constant.Integer 2);
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -755,42 +659,29 @@ let test_name =
            "a[:1]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant (Constant.Integer 1);
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant (Constant.Integer 1);
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -798,50 +689,35 @@ let test_name =
            "a[:1 if True else 2]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value =
-                                           +Expression.Ternary
-                                              {
-                                                Ternary.target =
-                                                  +Expression.Constant (Constant.Integer 1);
-                                                test = +Expression.Constant Constant.True;
-                                                alternative =
-                                                  +Expression.Constant (Constant.Integer 2);
-                                              };
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value =
+                                     +Expression.Ternary
+                                        {
+                                          Ternary.target = +Expression.Constant (Constant.Integer 1);
+                                          test = +Expression.Constant Constant.True;
+                                          alternative = +Expression.Constant (Constant.Integer 2);
+                                        };
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -849,42 +725,29 @@ let test_name =
            "a[1:1]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Call
+                           {
+                             Call.callee = !"slice";
+                             arguments =
+                               [
                                  {
-                                   Call.callee = !"slice";
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant (Constant.Integer 1);
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant (Constant.Integer 1);
-                                       };
-                                       {
-                                         Call.Argument.name = None;
-                                         value = +Expression.Constant Constant.NoneLiteral;
-                                       };
-                                     ];
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant (Constant.Integer 1);
                                  };
-                          };
-                        ];
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant (Constant.Integer 1);
+                                 };
+                                 {
+                                   Call.Argument.name = None;
+                                   value = +Expression.Constant Constant.NoneLiteral;
+                                 };
+                               ];
+                           };
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -892,28 +755,15 @@ let test_name =
            "a[1,2]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Tuple
-                                 [
-                                   +Expression.Constant (Constant.Integer 1);
-                                   +Expression.Constant (Constant.Integer 2);
-                                 ];
-                          };
-                        ];
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Tuple
+                           [
+                             +Expression.Constant (Constant.Integer 1);
+                             +Expression.Constant (Constant.Integer 2);
+                           ];
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -921,46 +771,33 @@ let test_name =
            "a[:1,2]"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.Subscript
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = !"a";
-                                attribute = "__getitem__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Tuple
-                                 [
-                                   +Expression.Call
+                      Subscript.base = !"a";
+                      index =
+                        +Expression.Tuple
+                           [
+                             +Expression.Call
+                                {
+                                  Call.callee = !"slice";
+                                  arguments =
+                                    [
                                       {
-                                        Call.callee = !"slice";
-                                        arguments =
-                                          [
-                                            {
-                                              Call.Argument.name = None;
-                                              value = +Expression.Constant Constant.NoneLiteral;
-                                            };
-                                            {
-                                              Call.Argument.name = None;
-                                              value = +Expression.Constant (Constant.Integer 1);
-                                            };
-                                            {
-                                              Call.Argument.name = None;
-                                              value = +Expression.Constant Constant.NoneLiteral;
-                                            };
-                                          ];
+                                        Call.Argument.name = None;
+                                        value = +Expression.Constant Constant.NoneLiteral;
                                       };
-                                   +Expression.Constant (Constant.Integer 2);
-                                 ];
-                          };
-                        ];
+                                      {
+                                        Call.Argument.name = None;
+                                        value = +Expression.Constant (Constant.Integer 1);
+                                      };
+                                      {
+                                        Call.Argument.name = None;
+                                        value = +Expression.Constant Constant.NoneLiteral;
+                                      };
+                                    ];
+                                };
+                             +Expression.Constant (Constant.Integer 2);
+                           ];
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a.((2, 3))";
@@ -1272,23 +1109,10 @@ let test_define =
                              (Name.Attribute
                                 {
                                   Name.Attribute.base =
-                                    +Expression.Call
+                                    +Expression.Subscript
                                        {
-                                         Call.callee =
-                                           +Expression.Name
-                                              (Name.Attribute
-                                                 {
-                                                   Name.Attribute.base = !"x";
-                                                   attribute = "__getitem__";
-                                                   special = true;
-                                                 });
-                                         arguments =
-                                           [
-                                             {
-                                               Call.Argument.name = None;
-                                               value = +Expression.Constant (Constant.Integer 0);
-                                             };
-                                           ];
+                                         Subscript.base = !"x";
+                                         index = +Expression.Constant (Constant.Integer 0);
                                        };
                                   attribute = "y";
                                   special = false;
@@ -1613,23 +1437,10 @@ let test_define =
                              value = None;
                              annotation =
                                Some
-                                 (+Expression.Call
+                                 (+Expression.Subscript
                                      {
-                                       Call.callee =
-                                         +Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 Name.Attribute.base = !"Tuple";
-                                                 attribute = "__getitem__";
-                                                 special = true;
-                                               });
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Tuple [!"int"; !"str"];
-                                           };
-                                         ];
+                                       Subscript.base = !"Tuple";
+                                       index = +Expression.Tuple [!"int"; !"str"];
                                      });
                            };
                         ];
@@ -6311,19 +6122,7 @@ let test_stubs =
                 {
                   Assign.target = !"a";
                   annotation =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base = !"Optional";
-                                      attribute = "__getitem__";
-                                      special = true;
-                                    });
-                            arguments = [{ Call.Argument.name = None; value = !"int" }];
-                          });
+                    Some (+Expression.Subscript { Subscript.base = !"Optional"; index = !"int" });
                   value = Some (+Expression.Constant Constant.Ellipsis);
                 };
            ];
@@ -6558,19 +6357,7 @@ let test_setitem =
            [
              +Statement.Assign
                 {
-                  Assign.target =
-                    +Expression.Call
-                       {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base = !"i";
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments = [{ Call.Argument.name = None; value = !"j" }];
-                       };
+                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
                   value = Some (+Expression.Constant (Constant.Integer 3));
                   annotation = None;
                 };
@@ -6581,19 +6368,7 @@ let test_setitem =
            [
              +Statement.Assign
                 {
-                  Assign.target =
-                    +Expression.Call
-                       {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base = !"i";
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments = [{ Call.Argument.name = None; value = !"j" }];
-                       };
+                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
                   value =
                     Some
                       (+Expression.Call
@@ -6603,19 +6378,8 @@ let test_setitem =
                                  (Name.Attribute
                                     {
                                       Name.Attribute.base =
-                                        +Expression.Call
-                                           {
-                                             Call.callee =
-                                               +Expression.Name
-                                                  (Name.Attribute
-                                                     {
-                                                       Name.Attribute.base = !"i";
-                                                       attribute = "__getitem__";
-                                                       special = true;
-                                                     });
-                                             arguments =
-                                               [{ Call.Argument.name = None; value = !"j" }];
-                                           };
+                                        +Expression.Subscript
+                                           { Subscript.base = !"i"; index = !"j" };
                                       attribute = "__iadd__";
                                       special = true;
                                     });
@@ -6637,35 +6401,11 @@ let test_setitem =
              +Statement.Assign
                 {
                   Assign.target =
-                    +Expression.Call
+                    +Expression.Subscript
                        {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base =
-                                     +Expression.Call
-                                        {
-                                          Call.callee =
-                                            +Expression.Name
-                                               (Name.Attribute
-                                                  {
-                                                    Name.Attribute.base = !"i";
-                                                    attribute = "__getitem__";
-                                                    special = true;
-                                                  });
-                                          arguments = [{ Call.Argument.name = None; value = !"j" }];
-                                        };
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments =
-                           [
-                             {
-                               Call.Argument.name = None;
-                               value = +Expression.Constant (Constant.Integer 7);
-                             };
-                           ];
+                         Subscript.base =
+                           +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                         index = +Expression.Constant (Constant.Integer 7);
                        };
                   value = Some (+Expression.Constant (Constant.Integer 8));
                   annotation = None;
@@ -6678,75 +6418,49 @@ let test_setitem =
              +Statement.Assign
                 {
                   Assign.target =
-                    +Expression.Call
+                    +Expression.Subscript
                        {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base = !"i";
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments =
-                           [
-                             {
-                               Call.Argument.name = None;
-                               value =
-                                 +Expression.Call
+                         Subscript.base = !"i";
+                         index =
+                           +Expression.Call
+                              {
+                                Call.callee = !"slice";
+                                arguments =
+                                  [
+                                    { Call.Argument.name = None; value = !"j" };
                                     {
-                                      Call.callee = !"slice";
-                                      arguments =
-                                        [
-                                          { Call.Argument.name = None; value = !"j" };
-                                          {
-                                            Call.Argument.name = None;
-                                            value = +Expression.Constant Constant.NoneLiteral;
-                                          };
-                                          {
-                                            Call.Argument.name = None;
-                                            value = +Expression.Constant (Constant.Integer 1);
-                                          };
-                                        ];
+                                      Call.Argument.name = None;
+                                      value = +Expression.Constant Constant.NoneLiteral;
                                     };
-                             };
-                           ];
+                                    {
+                                      Call.Argument.name = None;
+                                      value = +Expression.Constant (Constant.Integer 1);
+                                    };
+                                  ];
+                              };
                        };
                   value =
                     Some
-                      (+Expression.Call
+                      (+Expression.Subscript
                           {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base = !"i";
-                                      attribute = "__getitem__";
-                                      special = true;
-                                    });
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    +Expression.Call
+                            Subscript.base = !"i";
+                            index =
+                              +Expression.Call
+                                 {
+                                   Call.callee = !"slice";
+                                   arguments =
+                                     [
                                        {
-                                         Call.callee = !"slice";
-                                         arguments =
-                                           [
-                                             {
-                                               Call.Argument.name = None;
-                                               value = +Expression.Constant Constant.NoneLiteral;
-                                             };
-                                             { Call.Argument.name = None; value = !"j" };
-                                             {
-                                               Call.Argument.name = None;
-                                               value = +Expression.Constant Constant.NoneLiteral;
-                                             };
-                                           ];
+                                         Call.Argument.name = None;
+                                         value = +Expression.Constant Constant.NoneLiteral;
                                        };
-                                };
-                              ];
+                                       { Call.Argument.name = None; value = !"j" };
+                                       {
+                                         Call.Argument.name = None;
+                                         value = +Expression.Constant Constant.NoneLiteral;
+                                       };
+                                     ];
+                                 };
                           });
                   annotation = None;
                 };
@@ -6757,19 +6471,7 @@ let test_setitem =
            [
              +Statement.Assign
                 {
-                  Assign.target =
-                    +Expression.Call
-                       {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base = !"i";
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments = [{ Call.Argument.name = None; value = !"j" }];
-                       };
+                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
                   value =
                     Some
                       (+Expression.Ternary
@@ -6788,19 +6490,7 @@ let test_setitem =
              +Statement.Assign { Assign.target = !"x"; annotation = None; value = Some !"y" };
              +Statement.Assign
                 {
-                  Assign.target =
-                    +Expression.Call
-                       {
-                         Call.callee =
-                           +Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base = !"i";
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                         arguments = [{ Call.Argument.name = None; value = !"j" }];
-                       };
+                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
                   value = Some !"y";
                   annotation = None;
                 };
@@ -6813,21 +6503,7 @@ let test_setitem =
                 {
                   Assign.target =
                     +Expression.Tuple
-                       [
-                         !"x";
-                         +Expression.Call
-                            {
-                              Call.callee =
-                                +Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base = !"i";
-                                        attribute = "__getitem__";
-                                        special = true;
-                                      });
-                              arguments = [{ Call.Argument.name = None; value = !"j" }];
-                            };
-                       ];
+                       [!"x"; +Expression.Subscript { Subscript.base = !"i"; index = !"j" }];
                   annotation = None;
                   value = Some !"y";
                 };

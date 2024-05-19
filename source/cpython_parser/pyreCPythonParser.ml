@@ -443,15 +443,7 @@ let expression =
     |> Node.create ~location
   in
   let subscript ~location ~value ~slice ~ctx:() =
-    (* TODO(T101303314): We should avoid lowering subscript expressions at parser phase. *)
-    let callee =
-      let { Node.location = value_location; _ } = value in
-      Expression.Name
-        (Name.Attribute { Name.Attribute.base = value; attribute = "__getitem__"; special = true })
-      |> Node.create ~location:value_location
-    in
-    let arguments = [{ Call.Argument.name = None; value = slice }] in
-    Expression.Call { Call.callee; arguments } |> Node.create ~location
+    Expression.Subscript { Subscript.base = value; index = slice } |> Node.create ~location
   in
   let starred ~location ~value ~ctx:() =
     Expression.Starred (Starred.Once value) |> Node.create ~location

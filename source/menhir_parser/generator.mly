@@ -166,8 +166,10 @@
     Node.create (Expression.Constant AstExpression.Constant.Ellipsis) ~location
 
 
-  let subscript_argument subscripts =
-    let value =
+  let subscript_access subscript =
+    let head, subscripts, subscript_location = subscript in
+    let location = Node.location head in
+    let index =
       match subscripts with
       | [] -> failwith "subscript can never be empty"
       | [subscript] -> subscript
@@ -176,16 +178,7 @@
          let { Node.location = { Location.stop; _ }; _ } = List.last_exn subscripts in
          { Node.location = { Location.start; stop }; value = Expression.Tuple subscripts }
     in
-    { Call.Argument.name = None; value }
-
-  let subscript_access subscript =
-    let head, subscripts, subscript_location = subscript in
-    let location = Node.location head in
-    let callee =
-      Expression.Name (Name.Attribute { Name.Attribute.base = head; attribute = "__getitem__"; special = true })
-      |> Node.create ~location:(Node.location head)
-    in
-    Expression.Call { Call.callee; arguments = [subscript_argument subscripts] }
+    Expression.Subscript { Subscript.base = head; index }
     |> Node.create ~location:{ subscript_location with Location.start = location.Location.start }
 
   let with_annotation ~parameter ~annotation =
