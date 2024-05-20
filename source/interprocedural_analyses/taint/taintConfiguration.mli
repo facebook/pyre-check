@@ -156,7 +156,10 @@ module Error : sig
         name: string;
         previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
       }
-    | TransformDuplicate of string
+    | TransformDuplicate of {
+        name: string;
+        previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
+      }
     | FeatureDuplicate of string
     | InvalidRegex of {
         regex: string;

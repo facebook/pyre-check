@@ -72,7 +72,8 @@ let set_up_environment
         { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric; location = None };
       ]
     in
-    let transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"] in
+    let named_transform name = TaintTransform.Named { name; location = None } in
+    let transforms = [named_transform "TestTransform"; named_transform "DemoTransform"] in
     let rules =
       match rules with
       | Some rules -> rules
@@ -2679,7 +2680,8 @@ let test_taint_in_taint_out_transform context =
                     Sinks.Transform
                       {
                         local =
-                          TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
+                          TaintTransforms.of_named_transforms
+                            [TaintTransform.Named { name = "TestTransform"; location = None }];
                         global = TaintTransforms.empty;
                         base = Sinks.LocalReturn;
                       };
@@ -2695,7 +2697,8 @@ let test_taint_in_taint_out_transform context =
                     Sinks.Transform
                       {
                         local =
-                          TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
+                          TaintTransforms.of_named_transforms
+                            [TaintTransform.Named { name = "TestTransform"; location = None }];
                         global = TaintTransforms.empty;
                         base = Sinks.ExtraTraceSink;
                       };

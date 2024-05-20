@@ -13,14 +13,20 @@
 
 open Core
 
+type named_transform = {
+  name: string;
+  location: (JsonParsing.JsonAst.LocationWithPath.t option[@hash.ignore] [@sexp.opaque]);
+}
+[@@deriving compare, eq, hash, sexp]
+
 type t =
-  | Named of string
+  | Named of named_transform
   (* Invariant: set is not empty. *)
   | Sanitize of SanitizeTransformSet.t
 [@@deriving compare, eq, hash, sexp]
 
 let pp formatter = function
-  | Named transform -> Format.fprintf formatter "%s" transform
+  | Named { name; _ } -> Format.fprintf formatter "%s" name
   | Sanitize transforms -> SanitizeTransformSet.pp formatter transforms
 
 
@@ -39,3 +45,8 @@ let is_sanitize_transforms = function
 let get_sanitize_transforms = function
   | Named _ -> None
   | Sanitize sanitize -> Some sanitize
+
+
+let get_location = function
+  | Named { location; _ } -> location
+  | Sanitize _ -> None
