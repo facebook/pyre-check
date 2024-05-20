@@ -16,7 +16,7 @@ standard library, and many open source libraries. Since the previous exercises
 already covered those concepts, from this exercise forward we will be relying on
 pre-written sources, sinks, and rules where we can. You can look at the
 collection of pre-written
-[`taint.config`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/taint.config)
+[`taint.config`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/core_privacy_security/taint.config)
 and `*.pysa` files in the
 [`stubs/taint`](https://github.com/facebook/pyre-check/tree/main/stubs/taint)
 folder in this repository. If you are curious about what changed between this

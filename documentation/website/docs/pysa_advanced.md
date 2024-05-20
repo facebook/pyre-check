@@ -727,7 +727,7 @@ method.
 
 By default, Pysa skips overrides on some functions that are typically
 problematic. You can find the full list of default-skipped functions in
-[`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/skipped_overrides.pysa)
+[`stubs/taint/common/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/common/skipped_overrides.pysa)
 
 ## Force to analyze all overrides
 
