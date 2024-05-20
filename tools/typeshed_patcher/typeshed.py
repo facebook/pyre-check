@@ -57,7 +57,7 @@ class Typeshed(abc.ABC):
     Representation of a collection of Python stub files.
     """
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def get_file_content(self, path: pathlib.Path) -> Optional[str]:
         """
         Return content of the given path, or `None` if the content is not available.
@@ -67,7 +67,7 @@ class Typeshed(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def all_files(self) -> Iterable[pathlib.Path]:
         """
         Return paths to all contained files (directory excluded).
