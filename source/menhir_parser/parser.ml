@@ -524,7 +524,7 @@ module ParserToAst = struct
       | Return { Return.is_implicit; expression } ->
           AstStatement.Statement.Return
             { AstStatement.Return.is_implicit; expression = expression >>| convert_expression }
-      | Try { Try.body; handlers; orelse; finally } ->
+      | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
           let convert_handler { ParserStatement.Try.Handler.kind; name; body } =
             {
               AstStatement.Try.Handler.kind = kind >>| convert_expression;
@@ -538,7 +538,7 @@ module ParserToAst = struct
               handlers = List.map ~f:convert_handler handlers;
               orelse = List.map ~f:convert_statement orelse;
               finally = List.map ~f:convert_statement finally;
-              handles_exception_group = false;
+              handles_exception_group;
             }
       | With { With.items; body; async } ->
           let convert_item (resource, target) =

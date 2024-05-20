@@ -243,6 +243,7 @@
 %}
 
 (* The syntactic junkyard. *)
+%token <Lexing.position> EXCEPT_STAR
 %token <Lexing.position * Lexing.position> ASTERIKS
 %token <Lexing.position> AWAIT
 %token <Lexing.position> COLON
@@ -388,12 +389,14 @@
 %type <string> from_string
 %type <ParserStatement.Expression.expression Ast.Node.t> generator
 %type <Location.t * ParserStatement.Try.Handler.t> handler
+%type <Location.t * ParserStatement.Try.Handler.t> group_handler
 %type <Location.t * string> identifier
 %type <Location.t * Ast.Statement.Import.import> import
 %type <Location.t * Ast.Statement.Import.import Ast.Node.t list> imports
 %type <Lexing.position list> list(NEWLINE)
 %type <ParserExpression.Expression.t list> list(condition)
 %type <(Location.t * ParserStatement.Try.Handler.t) list> list(handler)
+%type <(Location.t * ParserStatement.Try.Handler.t) list> list(group_handler)
 %type <((Lexing.position * Lexing.position) * ParserExpression.Substring.t) list> mixed_string
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(ELSE)
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(FINALLY)
@@ -874,6 +877,35 @@ compound_statement:
       }
     }
 
+  (* TryStar requires at least 1 group_handler because with no handlers it is ambiguous with Try *)
+  | start = TRY; COLON;
+    body = block;
+    first_handler = group_handler;
+    handlers = list(group_handler);
+    orelse = named_optional_block(ELSE);
+    finally = named_optional_block(FINALLY) {
+      let handlers = first_handler::handlers in
+      let stop =
+        begin
+          match handlers, snd orelse, snd finally with
+          | _, _, (_::_) -> fst finally
+          | _, (_::_), [] -> fst orelse
+          | (_::_), [], [] -> (fst (List.last_exn handlers))
+          | _ -> (fst body)
+        end.Location.stop
+      in
+      {
+        Node.location = location_create_with_stop ~start ~stop;
+        value = Statement.Try {
+          Try.body = snd body;
+          handlers = List.map ~f:snd handlers;
+          orelse = snd orelse;
+          finally = snd finally;
+          handles_exception_group = true
+        };
+      }
+    }
+
   | start = TRY; COLON;
     body = block;
     handlers = list(handler);
@@ -894,7 +926,8 @@ compound_statement:
           Try.body = snd body;
           handlers = List.map ~f:snd handlers;
           orelse = snd orelse;
-          finally = snd finally
+          finally = snd finally;
+          handles_exception_group = false
         };
       }
     }
@@ -1222,6 +1255,30 @@ handler:
       { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
     }
   | start = EXCEPT;
+    kind = or_test; AS; name = identifier;
+    COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
+    }
+  ;
+
+group_handler:
+  | start = EXCEPT_STAR; kind = expression; COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
+    }
+  | start = EXCEPT_STAR;
+    kind = expression; AS; name = identifier;
+    COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
+    }
+  | start = EXCEPT_STAR;
+    kind = or_test; COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
+    }
+  | start = EXCEPT_STAR;
     kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,

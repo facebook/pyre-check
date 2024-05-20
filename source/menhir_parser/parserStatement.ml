@@ -159,6 +159,7 @@ and Try : sig
     handlers: Handler.t list;
     orelse: Statement.t list;
     finally: Statement.t list;
+    handles_exception_group: bool;
   }
 end = struct
   module Handler = struct
@@ -174,6 +175,7 @@ end = struct
     handlers: Handler.t list;
     orelse: Statement.t list;
     finally: Statement.t list;
+    handles_exception_group: bool;
   }
 end
 

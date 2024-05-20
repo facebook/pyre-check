@@ -330,7 +330,7 @@ and read_without_indent state = parse
       )
     }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
-
+  | "except*" { EXCEPT_STAR lexbuf.lex_start_p }
   | '.' { DOT (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
   | '!' { EXCLAMATIONMARK }
   | "%=" { PERCENTEQUALS }
