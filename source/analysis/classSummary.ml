@@ -909,35 +909,6 @@ let is_protocol { bases = { base_classes; _ }; _ } =
   let is_protocol { Node.value; _ } =
     let open Expression in
     match value with
-    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-       producing Subscript nodes. *)
-    | Expression.Call
-        {
-          callee =
-            {
-              Node.value =
-                Name
-                  (Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Name
-                              (Attribute
-                                {
-                                  base = { Node.value = Name (Identifier typing); _ };
-                                  attribute = "Protocol";
-                                  _;
-                                });
-                          _;
-                        };
-                      attribute = "__getitem__";
-                      _;
-                    });
-              _;
-            };
-          _;
-        }
     | Expression.Subscript
         {
           Subscript.base =

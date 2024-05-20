@@ -113,11 +113,7 @@ module IncomingDataComputation = struct
     let extract_supertype base_expression =
       let value = delocalize base_expression in
       match Node.value value with
-      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-         producing Subscript nodes. *)
-      | Call
-          { callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ }; _ }
-      | Subscript _
+      | Expression.Subscript _
       | Name _ -> (
           let supertype, parameters =
             parse_annotation_without_validating_type_parameters ~allow_untracked:true value

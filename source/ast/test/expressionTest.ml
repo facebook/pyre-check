@@ -236,13 +236,25 @@ let test_pp _ =
         })
     "a.__getitem__(1)";
   assert_pp_equal
-    (+Expression.Call
+    (+Expression.Subscript
         {
-          Call.callee =
-            +Expression.Name
-               (Name.Attribute
+          Subscript.base = +Expression.Name (Name.Identifier "a");
+          index =
+            +Expression.Subscript
+               {
+                 Subscript.base = +Expression.Name (Name.Identifier "b");
+                 index = +Expression.Constant (Constant.Integer 1);
+               };
+        })
+    "a[b[1]]";
+  assert_pp_equal
+    (+Expression.Name
+        (Name.Attribute
+           {
+             Name.Attribute.base =
+               +Expression.Subscript
                   {
-                    Name.Attribute.base =
+                    Subscript.base =
                       +Expression.Name
                          (Name.Attribute
                             {
@@ -250,65 +262,7 @@ let test_pp _ =
                               attribute = "b";
                               special = false;
                             });
-                    attribute = "__getitem__";
-                    special = true;
-                  });
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value =
-                  +Expression.Call
-                     {
-                       Call.callee =
-                         +Expression.Name
-                            (Name.Attribute
-                               {
-                                 Name.Attribute.base = +Expression.Name (Name.Identifier "c");
-                                 attribute = "__getitem__";
-                                 special = true;
-                               });
-                       arguments =
-                         [
-                           {
-                             Call.Argument.name = None;
-                             value = +Expression.Constant (Constant.Integer 1);
-                           };
-                         ];
-                     };
-              };
-            ];
-        })
-    "a.b[c[1]]";
-  assert_pp_equal
-    (+Expression.Name
-        (Name.Attribute
-           {
-             Name.Attribute.base =
-               +Expression.Call
-                  {
-                    Call.callee =
-                      +Expression.Name
-                         (Name.Attribute
-                            {
-                              Name.Attribute.base =
-                                +Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base = +Expression.Name (Name.Identifier "a");
-                                        attribute = "b";
-                                        special = false;
-                                      });
-                              attribute = "__getitem__";
-                              special = true;
-                            });
-                    arguments =
-                      [
-                        {
-                          Call.Argument.name = None;
-                          value = +Expression.Constant (Constant.Integer 1);
-                        };
-                      ];
+                    index = +Expression.Constant (Constant.Integer 1);
                   };
              attribute = "c";
              special = false;

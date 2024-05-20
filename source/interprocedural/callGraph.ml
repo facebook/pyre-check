@@ -1807,25 +1807,7 @@ let redirect_assignments = function
       Node.value =
         Statement.Assign
           {
-            Assign.target =
-              {
-                Node.value =
-                  (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut
-                     over to always producing Subscript nodes. *)
-                  ( Expression.Call
-                      {
-                        callee =
-                          {
-                            value =
-                              Name
-                                (Name.Attribute { base; attribute = "__getitem__"; special = true });
-                            _;
-                          };
-                        arguments = [{ Call.Argument.value = index; name = None }];
-                      }
-                  | Expression.Subscript { base; index } );
-                _;
-              };
+            Assign.target = { Node.value = Expression.Subscript { base; index }; _ };
             value = Some value_expression;
             _;
           };

@@ -3341,17 +3341,7 @@ module OrderedTypes = struct
 
 
   let concatenation_from_unpack_expression ~parse_annotation = function
-    | ({
-         Node.value =
-           Expression.Call
-             {
-               callee =
-                 { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-               _;
-             };
-         _;
-       } as annotation)
-    | ({ Node.value = Expression.Subscript { base; _ }; _ } as annotation)
+    | { Node.value = Expression.Subscript { base; _ }; _ } as annotation
       when List.exists ~f:(fun n -> name_is ~name:n base) Record.OrderedTypes.unpack_public_names
       -> (
         let location = Location.any in
@@ -3809,28 +3799,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                     }
                 | _ -> base)
           |> Option.value ~default:base
-      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-         producing Subscript nodes. *)
-      | Call
-          ({
-             callee =
-               {
-                 Node.value =
-                   Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-                 _;
-               } as callee;
-             _;
-           } as call) ->
-          let resolved_callee =
-            {
-              callee with
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                     { base = resolve_base base; attribute = "__getitem__"; special = true });
-            }
-          in
-          { base with Node.value = Call { call with callee = resolved_callee } }
       | Subscript ({ base = inner_base; _ } as subscript) ->
           { base with Node.value = Subscript { subscript with base = resolve_base inner_base } }
       | Call ({ callee; _ } as call) ->
@@ -3848,15 +3816,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             }) ->
           true
       | Name (Name.Attribute { base; _ }) -> is_typing_callable base
-      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-         producing Subscript nodes. *)
-      | Call
-          {
-            callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            _;
-          } ->
-          is_typing_callable base
       | Subscript { base; _ } -> is_typing_callable base
       | Call { callee; _ } -> is_typing_callable callee
       | _ -> false
@@ -3882,20 +3841,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         match Node.value resolved_base, subscript_index with
         (* There are two layers of subscripts, this is how we represent overloads in closed
            expression form *)
-        (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
-           always producing Subscript nodes. *)
-        | ( Expression.Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name (Name.Attribute { base = inner_base; attribute = "__getitem__"; _ });
-                    _;
-                  };
-                arguments = [{ Call.Argument.value = inner_subscript_index; _ }];
-              },
-            overloads_index )
-        | Subscript { base = inner_base; index = inner_subscript_index }, overloads_index ->
+        | Expression.Subscript { base = inner_base; index = inner_subscript_index }, overloads_index
+          ->
             get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
         (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
            type *)
@@ -3946,14 +3893,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       let overloads =
         let rec parse_overloads = function
           | Expression.List arguments -> [get_signature (Tuple arguments)]
-          (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
-             always producing Subscript nodes. *)
-          | Call
-              {
-                callee =
-                  { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-                arguments = [{ Call.Argument.value = index; _ }];
-              }
           | Subscript { base; index } ->
               get_signature (Node.value index) :: parse_overloads (Node.value base)
           | _ -> [undefined]
@@ -4150,13 +4089,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
-    (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-       producing Subscript nodes. *)
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments = [{ Call.Argument.value = subscript_index; name = None; _ }];
-        }
     | Subscript { base; index = subscript_index } ->
         create_from_subscript ~location:(Node.location base) ~base ~subscript_index
     | Constant Constant.NoneLiteral -> none
@@ -4486,24 +4418,7 @@ let split annotation =
 let class_name annotation =
   let strip_calls =
     let rec collect_identifiers identifiers = function
-      (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-         producing Subscript nodes. *)
-      | {
-          Node.value =
-            Expression.Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-                    _;
-                  };
-                _;
-              };
-          _;
-        }
-      | { Node.value = Subscript { base; _ }; _ } ->
-          collect_identifiers identifiers base
+      | { Node.value = Expression.Subscript { base; _ }; _ } -> collect_identifiers identifiers base
       | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
       | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
           collect_identifiers (attribute :: identifiers) base

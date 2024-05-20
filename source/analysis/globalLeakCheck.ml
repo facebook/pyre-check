@@ -283,18 +283,6 @@ module State (Context : Context) = struct
               reachable_globals
               (value_errors @ errors);
         }
-        (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
-           always producing Subscript nodes. *)
-    | Call
-        {
-          callee =
-            {
-              Node.value =
-                Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-              _;
-            };
-          arguments = [{ Call.Argument.value = index; name = None }];
-        }
     | Subscript { Subscript.base; index } ->
         (* We assume that idiomatic python code does not mutate base in __getitem__ evaluation, and
            that globals used as index keys aren't going to be mutated later. *)
@@ -469,14 +457,6 @@ module State (Context : Context) = struct
           }
         in
         List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
-        (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
-           always producing Subscript nodes. *)
-    | Expression.Call
-        {
-          callee =
-            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [{ Call.Argument.value = index; name = None }];
-        }
     | Expression.Subscript { Subscript.base; index } ->
         (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
            arity should be 2 instead of 1 (we don't have an actual expression for the second

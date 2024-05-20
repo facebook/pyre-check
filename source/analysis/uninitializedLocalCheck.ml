@@ -68,18 +68,6 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
-    (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to always
-       producing Subscript nodes. *)
-    | Call
-        {
-          Call.callee =
-            {
-              Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-              _;
-            };
-          arguments = [{ Call.Argument.name = None; value = index }];
-          _;
-        }
     | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index
@@ -180,14 +168,7 @@ let extract_value_expressions_from_assignment_target expression =
      the base and the key in subscript targets. *)
   let rec extract_one_element so_far { Node.value; _ } =
     match value with
-    | Expression.Subscript { base; index }
-    | Call
-        {
-          callee =
-            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [{ Call.Argument.value = index; _ }];
-        } ->
-        base :: index :: so_far
+    | Expression.Subscript { base; index } -> base :: index :: so_far
     | List elements
     | Tuple elements ->
         List.fold ~f:extract_one_element ~init:so_far elements

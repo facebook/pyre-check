@@ -5120,18 +5120,6 @@ module State (Context : Context) = struct
                   (* We process type as union again to populate resolution *)
                   propagate (resolution, errors) (Union types)
               | resolved -> inner_assignment resolution errors resolved)
-          (* TODO(T101303314) Eliminate the __getitem__ call case once the parser is cut over to
-             always producing Subscript nodes. *)
-          | Expression.Call
-              {
-                callee =
-                  {
-                    value =
-                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-                    _;
-                  };
-                arguments = [{ Call.Argument.value = index; name = None }];
-              }
           | Expression.Subscript { Subscript.base; index } ->
               let {
                 Resolved.errors = callee_errors;

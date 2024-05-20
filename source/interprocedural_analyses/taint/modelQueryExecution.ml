@@ -498,30 +498,6 @@ let matches_annotation_constraint
   =
   let open Expression in
   match annotation_constraint, annotation with
-  (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to always
-     producing Subscript nodes. *)
-  | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
-      {
-        Node.value =
-          Expression.Call
-            {
-              Call.callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                          attribute = "__getitem__";
-                          special = true;
-                        });
-                  _;
-                };
-              _;
-            };
-        _;
-      } )
   | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
       {
         Node.value =
@@ -1470,35 +1446,6 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       let get_subkind_from_annotation ~pattern annotation =
         let get_annotation_of_type annotation =
           match annotation >>| Node.value with
-          (* TODO(T101303314) Eliminate this __getitem__ call case once the parser is cut over to
-             always producing Subscript nodes. *)
-          | Some
-              (Expression.Call
-                {
-                  Call.callee =
-                    {
-                      Node.value =
-                        Name
-                          (Name.Attribute
-                            {
-                              base =
-                                {
-                                  Node.value = Name (Name.Attribute { attribute = "Annotated"; _ });
-                                  _;
-                                };
-                              attribute = "__getitem__";
-                              special = true;
-                            });
-                      _;
-                    };
-                  arguments =
-                    [
-                      {
-                        Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ };
-                        name = None;
-                      };
-                    ];
-                })
           | Some
               (Expression.Subscript
                 {

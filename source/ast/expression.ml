@@ -1126,13 +1126,8 @@ end = struct
             operator
             pp_expression_t
             right
-      | Call { Call.callee; arguments } -> (
-          match Node.value callee with
-          | Expression.Name
-              (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; special = true }) ->
-              Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
-          | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
-          )
+      | Call { Call.callee; arguments } ->
+          Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
       | FormatString substrings ->
           let pp_substring formatter = function
             | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
