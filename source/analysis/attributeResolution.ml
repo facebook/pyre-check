@@ -1614,7 +1614,7 @@ let apply
     | None -> []
     | Some
         {
-          ClassDecorators.init;
+          ExtractDataclassOptions.init;
           repr;
           eq;
           order;
@@ -1769,10 +1769,11 @@ let apply
         let split_parameters_by_keyword_only parameters =
           let keyword_only, not_keyword_only =
             List.partition_tf parameters ~f:(function
-                | { ClassDecorators.name = _; annotation = _; default = _; keyword_only } ->
+                | { ExtractDataclassOptions.name = _; annotation = _; default = _; keyword_only } ->
                 keyword_only)
           in
-          let dataclass_constructor_to_named { ClassDecorators.name; annotation; default; _ }
+          let dataclass_constructor_to_named
+              { ExtractDataclassOptions.name; annotation; default; _ }
               : Type.t Callable.RecordParameter.named
             =
             { name; annotation; default }
@@ -1814,13 +1815,13 @@ let apply
                 in
                 let rec override_existing_parameters
                     (unchecked_parameters :
-                      Type.t ClassDecorators.dataclass_constructor_parameter list)
+                      Type.t ExtractDataclassOptions.dataclass_constructor_parameter list)
                   =
                   match unchecked_parameters with
                   | [] ->
                       [
                         {
-                          ClassDecorators.name;
+                          ExtractDataclassOptions.name;
                           annotation;
                           default = Option.is_some init_value;
                           keyword_only;
@@ -1974,21 +1975,22 @@ let apply
   let dataclass_attributes () =
     (* TODO (T43210531): Warn about inconsistent annotations
      * TODO (T131540506): Decouple dataclass options from other options *)
-    generate_attributes ~options:(ClassDecorators.dataclass_options ~queries)
+    generate_attributes ~options:(ExtractDataclassOptions.dataclass_options ~queries)
   in
   let attrs_attributes () =
     (* TODO (T41039225): Add support for other methods
      * TODO (T129741558): support type annotations in attr *)
-    generate_attributes ~options:(ClassDecorators.attrs_attributes ~queries)
+    generate_attributes ~options:(ExtractDataclassOptions.attrs_attributes ~queries)
   in
   let dataclass_transform_attributes () =
     generate_attributes
-      ~options:(ClassDecorators.options_from_custom_dataclass_transform_decorator ~queries)
+      ~options:(ExtractDataclassOptions.options_from_custom_dataclass_transform_decorator ~queries)
   in
   let dataclass_transform_class_attributes () =
     generate_attributes
       ~options:
-        (ClassDecorators.options_from_custom_dataclass_transform_base_class_or_metaclass ~queries)
+        (ExtractDataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
+           ~queries)
   in
   dataclass_attributes ()
   @ attrs_attributes ()

@@ -45,7 +45,7 @@ module Queries : sig
   val class_summary_for_outer_type : t -> Type.t -> ClassSummary.t Ast.Node.t option
 end
 
-module ClassDecorators : sig
+module ExtractDataclassOptions : sig
   type options = {
     init: bool;
     repr: bool;

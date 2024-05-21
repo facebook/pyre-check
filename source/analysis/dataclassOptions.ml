@@ -50,7 +50,7 @@ module Queries = struct
     Type.split annotation |> fst |> Type.primitive_name >>= get_class_summary
 end
 
-module ClassDecorators = struct
+module ExtractDataclassOptions = struct
   type options = {
     init: bool;
     repr: bool;
