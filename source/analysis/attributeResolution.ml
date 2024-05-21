@@ -1871,464 +1871,467 @@ module ClassDecorators = struct
           synthetic_decorator
           default_options_for_custom_transform)
       default_options_for_custom_transform
+end
 
-
-  let apply
-      ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
-      ~definition
-      ~create_attribute
-      ~instantiate_attribute
-      ~class_name
-      table
-    =
-    let open Expression in
-    let { Node.value = { ClassSummary.name; _ }; _ } = definition in
-    let parent_dataclasses =
-      Reference.show name |> successors |> List.filter_map ~f:get_class_summary
+let apply
+    ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
+    ~definition
+    create_attribute
+    instantiate_attribute
+    class_name
+    table
+  =
+  let open Expression in
+  let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+  let parent_dataclasses =
+    Reference.show name |> successors |> List.filter_map ~f:get_class_summary
+  in
+  let generate_attributes ~options =
+    let already_in_table name =
+      UninstantiatedAttributeTable.lookup_name table name |> Option.is_some
     in
-    let generate_attributes ~options =
-      let already_in_table name =
-        UninstantiatedAttributeTable.lookup_name table name |> Option.is_some
-      in
-      let make_attribute ~annotation ~attribute_name =
-        AnnotatedAttribute.create_uninstantiated
-          ~uninstantiated_annotation:
-            {
-              AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
-              kind = Attribute annotation;
-            }
-          ~abstract:false
-          ~async_property:false
-          ~class_variable:false
-          ~defined:true
-          ~initialized:OnClass
-          ~name:attribute_name
-          ~parent:(Reference.show name)
-          ~visibility:ReadWrite
-          ~property:false
-          ~undecorated_signature:None
-          ~problem:None
-      in
-      let make_method ~parameters ~annotation ~attribute_name =
-        let parameters =
+    let make_attribute ~annotation ~attribute_name =
+      AnnotatedAttribute.create_uninstantiated
+        ~uninstantiated_annotation:
           {
-            Type.Callable.Parameter.name = "$parameter$self";
-            annotation = Type.Primitive (Reference.show name);
-            default = false;
+            AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
+            kind = Attribute annotation;
           }
-          :: parameters
-        in
-
-        let callable =
-          {
-            Type.Callable.kind = Named (Reference.combine name (Reference.create attribute_name));
-            overloads = [];
-            implementation =
-              { annotation; parameters = Defined (Type.Callable.Parameter.create parameters) };
-          }
-        in
-
-        AnnotatedAttribute.create_uninstantiated
-          ~uninstantiated_annotation:
-            {
-              AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
-              kind = Attribute (Callable callable);
-            }
-          ~abstract:false
-          ~async_property:false
-          ~class_variable:false
-          ~defined:true
-          ~initialized:OnClass
-          ~name:attribute_name
-          ~parent:(Reference.show name)
-          ~visibility:ReadWrite
-          ~property:false
-          ~undecorated_signature:(Some callable)
-          ~problem:None
+        ~abstract:false
+        ~async_property:false
+        ~class_variable:false
+        ~defined:true
+        ~initialized:OnClass
+        ~name:attribute_name
+        ~parent:(Reference.show name)
+        ~visibility:ReadWrite
+        ~property:false
+        ~undecorated_signature:None
+        ~problem:None
+    in
+    let make_method ~parameters ~annotation ~attribute_name =
+      let parameters =
+        {
+          Type.Callable.Parameter.name = "$parameter$self";
+          annotation = Type.Primitive (Reference.show name);
+          default = false;
+        }
+        :: parameters
       in
-      match options definition with
-      | None -> []
-      | Some
+
+      let callable =
+        {
+          Type.Callable.kind = Named (Reference.combine name (Reference.create attribute_name));
+          overloads = [];
+          implementation =
+            { annotation; parameters = Defined (Type.Callable.Parameter.create parameters) };
+        }
+      in
+
+      AnnotatedAttribute.create_uninstantiated
+        ~uninstantiated_annotation:
           {
-            init;
-            repr;
-            eq;
-            order;
-            match_args;
-            field_specifiers;
-            keyword_only = class_level_keyword_only;
-            has_slots;
-            frozen;
-          } ->
-          let is_class_var attribute =
-            match Node.value attribute with
-            | {
-             Attribute.kind =
-               Attribute.Simple
-                 {
-                   annotation =
-                     Some
-                       {
-                         Node.value =
-                           Expression.Subscript
-                             {
-                               base =
-                                 {
-                                   Node.value =
-                                     Name
-                                       (Name.Attribute
-                                         {
-                                           attribute = "ClassVar";
-                                           base =
-                                             { Node.value = Name (Name.Identifier "typing"); _ };
-                                           _;
-                                         });
-                                   _;
-                                 };
-                               _;
-                             };
-                         _;
-                       };
-                   _;
-                 };
-             _;
-            } ->
-                false
-            | _ -> true
-          in
-          let get_table_from_classsummary ({ Node.value = class_summary; _ } as parent) =
-            let create attribute : AnnotatedAttribute.uninstantiated * Expression.t =
-              let value =
-                match attribute with
-                | {
-                 Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
+            AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
+            kind = Attribute (Callable callable);
+          }
+        ~abstract:false
+        ~async_property:false
+        ~class_variable:false
+        ~defined:true
+        ~initialized:OnClass
+        ~name:attribute_name
+        ~parent:(Reference.show name)
+        ~visibility:ReadWrite
+        ~property:false
+        ~undecorated_signature:(Some callable)
+        ~problem:None
+    in
+    match options definition with
+    | None -> []
+    | Some
+        {
+          ClassDecorators.init;
+          repr;
+          eq;
+          order;
+          match_args;
+          field_specifiers;
+          keyword_only = class_level_keyword_only;
+          has_slots;
+          frozen;
+        } ->
+        let is_class_var attribute =
+          match Node.value attribute with
+          | {
+           Attribute.kind =
+             Attribute.Simple
+               {
+                 annotation =
+                   Some
+                     {
+                       Node.value =
+                         Expression.Subscript
+                           {
+                             base =
+                               {
+                                 Node.value =
+                                   Name
+                                     (Name.Attribute
+                                       {
+                                         attribute = "ClassVar";
+                                         base = { Node.value = Name (Name.Identifier "typing"); _ };
+                                         _;
+                                       });
+                                 _;
+                               };
+                             _;
+                           };
+                       _;
+                     };
                  _;
-                } ->
-                    value
-                | { Node.location; _ } ->
-                    Node.create (Expression.Constant Constant.Ellipsis) ~location
-              in
-
-              ( create_attribute
-                  ~parent
-                  ?defined:None
-                  ~accessed_via_metaclass:false
-                  (Node.value attribute),
-                value )
+               };
+           _;
+          } ->
+              false
+          | _ -> true
+        in
+        let get_table_from_classsummary ({ Node.value = class_summary; _ } as parent) =
+          let create attribute : AnnotatedAttribute.uninstantiated * Expression.t =
+            let value =
+              match attribute with
+              | { Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ }; _ }
+                ->
+                  value
+              | { Node.location; _ } ->
+                  Node.create (Expression.Constant Constant.Ellipsis) ~location
             in
-            let compare_by_location left right =
-              Ast.Location.compare (Node.location left) (Node.location right)
-            in
-            ClassSummary.attributes ~include_generated_attributes:false ~in_test:false class_summary
-            |> Identifier.SerializableMap.bindings
-            |> List.unzip
-            |> snd
-            |> List.filter ~f:is_class_var
-            |> List.sort ~compare:compare_by_location
-            |> List.map ~f:create
-          in
 
-          let attribute_tables =
-            (parent_dataclasses
-            |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
-            |> List.rev
-            |> List.map ~f:get_table_from_classsummary)
-            @ [get_table_from_classsummary definition]
+            ( create_attribute
+                ~parent
+                ?defined:None
+                ~accessed_via_metaclass:false
+                (Node.value attribute),
+              value )
           in
+          let compare_by_location left right =
+            Ast.Location.compare (Node.location left) (Node.location right)
+          in
+          ClassSummary.attributes ~include_generated_attributes:false ~in_test:false class_summary
+          |> Identifier.SerializableMap.bindings
+          |> List.unzip
+          |> snd
+          |> List.filter ~f:is_class_var
+          |> List.sort ~compare:compare_by_location
+          |> List.map ~f:create
+        in
 
-          let extract_dataclass_field_arguments (_, value) =
-            match value with
-            | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
-                Option.some_if
-                  (List.exists field_specifiers ~f:(fun field_specifier ->
-                       Int.equal
-                         (Ast.Expression.location_insensitive_compare callee field_specifier)
-                         0))
-                  arguments
+        let attribute_tables =
+          (parent_dataclasses
+          |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
+          |> List.rev
+          |> List.map ~f:get_table_from_classsummary)
+          @ [get_table_from_classsummary definition]
+        in
+
+        let extract_dataclass_field_arguments (_, value) =
+          match value with
+          | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
+              Option.some_if
+                (List.exists field_specifiers ~f:(fun field_specifier ->
+                     Int.equal
+                       (Ast.Expression.location_insensitive_compare callee field_specifier)
+                       0))
+                arguments
+          | _ -> None
+        in
+
+        let init_not_disabled attribute =
+          let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
+            match name, value with
+            | Some { Node.value = parameter_name; _ }, Expression.Constant Constant.False
+              when String.equal "init" (Identifier.sanitized parameter_name) ->
+                true
+            | _ -> false
+          in
+          match extract_dataclass_field_arguments attribute with
+          | Some arguments -> not (List.exists arguments ~f:is_disable_init)
+          | _ -> true
+        in
+
+        let extract_init_value (attribute, value) =
+          let initialized = AnnotatedAttribute.initialized attribute in
+          let get_default_value { Call.Argument.name; value } =
+            name
+            >>| Node.value
+            >>| Identifier.sanitized
+            >>= function
+            | "default" -> Some value
+            | "default_factory"
+            | "factory" ->
+                let { Node.location; _ } = value in
+                Some
+                  { Node.value = Expression.Call { Call.callee = value; arguments = [] }; location }
+            | _ -> None
+          in
+          match initialized with
+          | NotInitialized -> None
+          | _ -> (
+              match extract_dataclass_field_arguments (attribute, value) with
+              | Some arguments -> List.find_map arguments ~f:get_default_value
+              | _ -> Some value)
+        in
+        let get_is_field_level_keyword_only (attribute, value) =
+          let initialized = AnnotatedAttribute.initialized attribute in
+          let get_is_keyword_only { Call.Argument.name; value } =
+            name
+            >>| Node.value
+            >>| Identifier.sanitized
+            >>= function
+            | "kw_only" -> (
+                match value with
+                | { Node.location = _; Node.value = Expression.Constant Constant.True } -> Some true
+                | _ -> Some false)
             | _ -> None
           in
 
-          let init_not_disabled attribute =
-            let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
-              match name, value with
-              | Some { Node.value = parameter_name; _ }, Expression.Constant Constant.False
-                when String.equal "init" (Identifier.sanitized parameter_name) ->
-                  true
-              | _ -> false
-            in
-            match extract_dataclass_field_arguments attribute with
-            | Some arguments -> not (List.exists arguments ~f:is_disable_init)
-            | _ -> true
-          in
+          match initialized with
+          | NotInitialized -> None
+          | _ -> (
+              match extract_dataclass_field_arguments (attribute, value) with
+              | Some arguments -> List.find_map arguments ~f:get_is_keyword_only
+              | _ -> None)
+        in
 
-          let extract_init_value (attribute, value) =
-            let initialized = AnnotatedAttribute.initialized attribute in
-            let get_default_value { Call.Argument.name; value } =
-              name
-              >>| Node.value
-              >>| Identifier.sanitized
-              >>= function
-              | "default" -> Some value
-              | "default_factory"
-              | "factory" ->
-                  let { Node.location; _ } = value in
-                  Some
-                    {
-                      Node.value = Expression.Call { Call.callee = value; arguments = [] };
-                      location;
-                    }
-              | _ -> None
-            in
-            match initialized with
-            | NotInitialized -> None
-            | _ -> (
-                match extract_dataclass_field_arguments (attribute, value) with
-                | Some arguments -> List.find_map arguments ~f:get_default_value
-                | _ -> Some value)
+        let split_parameters_by_keyword_only parameters =
+          let keyword_only, not_keyword_only =
+            List.partition_tf parameters ~f:(function
+                | { ClassDecorators.name = _; annotation = _; default = _; keyword_only } ->
+                keyword_only)
           in
-          let get_is_field_level_keyword_only (attribute, value) =
-            let initialized = AnnotatedAttribute.initialized attribute in
-            let get_is_keyword_only { Call.Argument.name; value } =
-              name
-              >>| Node.value
-              >>| Identifier.sanitized
-              >>= function
-              | "kw_only" -> (
-                  match value with
-                  | { Node.location = _; Node.value = Expression.Constant Constant.True } ->
-                      Some true
-                  | _ -> Some false)
-              | _ -> None
-            in
-
-            match initialized with
-            | NotInitialized -> None
-            | _ -> (
-                match extract_dataclass_field_arguments (attribute, value) with
-                | Some arguments -> List.find_map arguments ~f:get_is_keyword_only
-                | _ -> None)
+          let dataclass_constructor_to_named { ClassDecorators.name; annotation; default; _ }
+              : Type.t Callable.RecordParameter.named
+            =
+            { name; annotation; default }
           in
-
-          let split_parameters_by_keyword_only parameters =
-            let keyword_only, not_keyword_only =
-              List.partition_tf parameters ~f:(function
-                  | { name = _; annotation = _; default = _; keyword_only } -> keyword_only)
-            in
-            let dataclass_constructor_to_named { name; annotation; default; _ }
-                : Type.t Callable.RecordParameter.named
-              =
-              { name; annotation; default }
-            in
-            let keyword_only_named = List.map keyword_only ~f:dataclass_constructor_to_named in
-            let not_keyword_only_named =
-              List.map not_keyword_only ~f:dataclass_constructor_to_named
-            in
-            match keyword_only_named, not_keyword_only_named with
-            | [], not_keyword_only -> not_keyword_only
-            | keyword_only, not_keyword_only ->
-                not_keyword_only @ [Type.Callable.Parameter.dummy_star_parameter] @ keyword_only
+          let keyword_only_named = List.map keyword_only ~f:dataclass_constructor_to_named in
+          let not_keyword_only_named =
+            List.map not_keyword_only ~f:dataclass_constructor_to_named
           in
-          (* A central method that processes parameters that abstracts over constructing methods. It
-             specializes on __init__ and __match_args__. *)
-          let process_parameters ~implicitly_initialize process_potential_initvar_annotation =
-            let collect_parameters parameters (attribute, value) =
-              (* Parameters must be annotated attributes *)
-              let original_annotation =
-                instantiate_attribute attribute
-                |> AnnotatedAttribute.annotation
-                |> Annotation.original
-              in
-              let annotation, is_initvar_for_init =
-                process_potential_initvar_annotation original_annotation
-              in
-              match AnnotatedAttribute.name attribute with
-              | name when not (Type.contains_unknown annotation) ->
-                  if implicitly_initialize && not is_initvar_for_init then
-                    UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
-                      table
-                      name;
-                  let name = "$parameter$" ^ name in
-                  let init_value = extract_init_value (attribute, value) in
-                  let keyword_only =
-                    match get_is_field_level_keyword_only (attribute, value) with
-                    | Some value -> value
-                    | None -> class_level_keyword_only
-                  in
-                  let rec override_existing_parameters
-                      (unchecked_parameters : Type.t dataclass_constructor_parameter list)
-                    =
-                    match unchecked_parameters with
-                    | [] ->
-                        [{ name; annotation; default = Option.is_some init_value; keyword_only }]
-                    | { name = old_name; default = old_default; _ } :: tail
-                      when Identifier.equal old_name name ->
+          match keyword_only_named, not_keyword_only_named with
+          | [], not_keyword_only -> not_keyword_only
+          | keyword_only, not_keyword_only ->
+              not_keyword_only @ [Type.Callable.Parameter.dummy_star_parameter] @ keyword_only
+        in
+        (* A central method that processes parameters that abstracts over constructing methods. It
+           specializes on __init__ and __match_args__. *)
+        let process_parameters ~implicitly_initialize process_potential_initvar_annotation =
+          let collect_parameters parameters (attribute, value) =
+            (* Parameters must be annotated attributes *)
+            let original_annotation =
+              instantiate_attribute attribute
+              |> AnnotatedAttribute.annotation
+              |> Annotation.original
+            in
+            let annotation, is_initvar_for_init =
+              process_potential_initvar_annotation original_annotation
+            in
+            match AnnotatedAttribute.name attribute with
+            | name when not (Type.contains_unknown annotation) ->
+                if implicitly_initialize && not is_initvar_for_init then
+                  UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
+                    table
+                    name;
+                let name = "$parameter$" ^ name in
+                let init_value = extract_init_value (attribute, value) in
+                let keyword_only =
+                  match get_is_field_level_keyword_only (attribute, value) with
+                  | Some value -> value
+                  | None -> class_level_keyword_only
+                in
+                let rec override_existing_parameters
+                    (unchecked_parameters :
+                      Type.t ClassDecorators.dataclass_constructor_parameter list)
+                  =
+                  match unchecked_parameters with
+                  | [] ->
+                      [
                         {
-                          name;
+                          ClassDecorators.name;
                           annotation;
-                          default = Option.is_some init_value || old_default;
+                          default = Option.is_some init_value;
                           keyword_only;
-                        }
-                        :: tail
-                    | head :: tail -> head :: override_existing_parameters tail
-                  in
-                  override_existing_parameters parameters
-              | _ -> parameters
-            in
+                        };
+                      ]
+                  | { name = old_name; default = old_default; _ } :: tail
+                    when Identifier.equal old_name name ->
+                      {
+                        name;
+                        annotation;
+                        default = Option.is_some init_value || old_default;
+                        keyword_only;
+                      }
+                      :: tail
+                  | head :: tail -> head :: override_existing_parameters tail
+                in
+                override_existing_parameters parameters
+            | _ -> parameters
+          in
+          attribute_tables
+          |> List.map ~f:(List.filter ~f:init_not_disabled)
+          |> List.fold ~init:[] ~f:(fun parameters ->
+                 List.fold ~init:parameters ~f:collect_parameters)
+          |> split_parameters_by_keyword_only
+        in
+        (* generate parameters for __match_args__. InitVar parameters should be excluded. *)
+        let match_parameters ~implicitly_initialize =
+          process_parameters ~implicitly_initialize (fun original_annotation ->
+              original_annotation, false)
+        in
+        (* generate parameters for __init__. InitVar parameters should be included in the parameter
+           list but not initialized *)
+        let init_parameters ~implicitly_initialize =
+          process_parameters ~implicitly_initialize (fun original_annotation ->
+              match original_annotation with
+              | Type.Parametric
+                  { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
+                  single_parameter, true
+              | _ -> original_annotation, false)
+        in
+
+        (* Override the attribute table with respect to frozen attributes *)
+        let handle_frozen_attributes table frozen =
+          let frozen_attributes attribute name =
+            if frozen then begin
+              let frozen_visibility =
+                AnnotatedAttribute.ReadOnly (AnnotatedAttribute.Refinable { overridable = true })
+              in
+              let frozen_attribute =
+                AnnotatedAttribute.with_visibility attribute ~visibility:frozen_visibility
+              in
+              Stdlib.Hashtbl.replace table name frozen_attribute
+            end
+          in
+          Stdlib.Hashtbl.iter (fun name attribute -> frozen_attributes attribute name) table
+        in
+        handle_frozen_attributes table.attributes frozen;
+
+        (* We are unable to use init_parameters because slots items can have different values
+         * for ancestors and we do not want the dummy star argument.
+         * TODO(T130663259) Inaccurate for ancestors *)
+        let slots_items =
+          if has_slots then
             attribute_tables
-            |> List.map ~f:(List.filter ~f:init_not_disabled)
-            |> List.fold ~init:[] ~f:(fun parameters ->
-                   List.fold ~init:parameters ~f:collect_parameters)
-            |> split_parameters_by_keyword_only
-          in
-          (* generate parameters for __match_args__. InitVar parameters should be excluded. *)
-          let match_parameters ~implicitly_initialize =
-            process_parameters ~implicitly_initialize (fun original_annotation ->
-                original_annotation, false)
-          in
-          (* generate parameters for __init__. InitVar parameters should be included in the
-             parameter list but not initialized *)
-          let init_parameters ~implicitly_initialize =
-            process_parameters ~implicitly_initialize (fun original_annotation ->
-                match original_annotation with
-                | Type.Parametric
-                    { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
-                    single_parameter, true
-                | _ -> original_annotation, false)
-          in
+            |> List.concat
+            |> List.map ~f:(fun (attribute, _) -> AnnotatedAttribute.name attribute)
+            |> List.dedup_and_sort ~compare:Identifier.compare
+          else
+            []
+        in
 
-          (* Override the attribute table with respect to frozen attributes *)
-          let handle_frozen_attributes table frozen =
-            let frozen_attributes attribute name =
-              if frozen then begin
-                let frozen_visibility =
-                  AnnotatedAttribute.ReadOnly (AnnotatedAttribute.Refinable { overridable = true })
-                in
-                let frozen_attribute =
-                  AnnotatedAttribute.with_visibility attribute ~visibility:frozen_visibility
-                in
-                Stdlib.Hashtbl.replace table name frozen_attribute
-              end
-            in
-            Stdlib.Hashtbl.iter (fun name attribute -> frozen_attributes attribute name) table
-          in
-          handle_frozen_attributes table.attributes frozen;
-
-          (* We are unable to use init_parameters because slots items can have different values
-           * for ancestors and we do not want the dummy star argument.
-           * TODO(T130663259) Inaccurate for ancestors *)
-          let slots_items =
-            if has_slots then
-              attribute_tables
-              |> List.concat
-              |> List.map ~f:(fun (attribute, _) -> AnnotatedAttribute.name attribute)
-              |> List.dedup_and_sort ~compare:Identifier.compare
-            else
-              []
-          in
-
-          let methods =
-            if init && not (already_in_table "__init__") then
-              [
-                make_method
-                  ~parameters:(init_parameters ~implicitly_initialize:true)
-                  ~annotation:Type.none
-                  ~attribute_name:"__init__";
-              ]
-            else
-              []
-          in
-          let methods =
-            if repr && not (already_in_table "__repr__") then
-              let new_method =
-                make_method ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
-              in
-              new_method :: methods
-            else
-              methods
-          in
-          let add_order_method methods name =
-            let annotation =
-              match name with
-              | "__eq__" -> Type.object_primitive
-              | _ -> Type.Primitive class_name
-            in
-            if not (already_in_table name) then
+        let methods =
+          if init && not (already_in_table "__init__") then
+            [
               make_method
-                ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
-                ~annotation:Type.bool
-                ~attribute_name:name
-              :: methods
-            else
-              methods
+                ~parameters:(init_parameters ~implicitly_initialize:true)
+                ~annotation:Type.none
+                ~attribute_name:"__init__";
+            ]
+          else
+            []
+        in
+        let methods =
+          if repr && not (already_in_table "__repr__") then
+            let new_method =
+              make_method ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
+            in
+            new_method :: methods
+          else
+            methods
+        in
+        let add_order_method methods name =
+          let annotation =
+            match name with
+            | "__eq__" -> Type.object_primitive
+            | _ -> Type.Primitive class_name
           in
-          let methods =
-            if eq then
-              add_order_method methods "__eq__"
-            else
-              methods
-          in
-          let methods =
-            if order then
-              ["__lt__"; "__le__"; "__gt__"; "__ge__"]
-              |> List.fold ~init:methods ~f:add_order_method
-            else
-              methods
-          in
-          let methods =
-            if match_args && not (already_in_table "__match_args__") then
-              let parameter_name { Callable.RecordParameter.name; _ } = Identifier.sanitized name in
+          if not (already_in_table name) then
+            make_method
+              ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
+              ~annotation:Type.bool
+              ~attribute_name:name
+            :: methods
+          else
+            methods
+        in
+        let methods =
+          if eq then
+            add_order_method methods "__eq__"
+          else
+            methods
+        in
+        let methods =
+          if order then
+            ["__lt__"; "__le__"; "__gt__"; "__ge__"] |> List.fold ~init:methods ~f:add_order_method
+          else
+            methods
+        in
+        let methods =
+          if match_args && not (already_in_table "__match_args__") then
+            let parameter_name { Callable.RecordParameter.name; _ } = Identifier.sanitized name in
 
-              let params = match_parameters ~implicitly_initialize:false in
-              let is_not_initvar param =
-                match param.Callable.RecordParameter.annotation with
-                | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single _] } -> false
-                | _ -> true
-              in
-              let initvar_params = List.filter ~f:is_not_initvar params in
+            let params = match_parameters ~implicitly_initialize:false in
+            let is_not_initvar param =
+              match param.Callable.RecordParameter.annotation with
+              | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single _] } -> false
+              | _ -> true
+            in
+            let initvar_params = List.filter ~f:is_not_initvar params in
 
-              let init_parameter_names = List.map ~f:parameter_name initvar_params in
-              let literal_string_value_type name = Type.Literal (String (LiteralValue name)) in
-              let annotation =
-                Type.tuple (List.map ~f:literal_string_value_type init_parameter_names)
-              in
-              make_attribute ~annotation ~attribute_name:"__match_args__" :: methods
-            else
-              methods
-          in
-          let methods =
-            if (not (List.is_empty slots_items)) && not (already_in_table "__slots__") then
-              make_attribute
-                ~annotation:(Type.tuple (List.map slots_items ~f:(fun _ -> Type.string)))
-                ~attribute_name:"__slots__"
-              :: methods
-            else
-              methods
-          in
-          methods
-    in
-    let dataclass_attributes () =
-      (* TODO (T43210531): Warn about inconsistent annotations
-       * TODO (T131540506): Decouple dataclass options from other options *)
-      generate_attributes ~options:(dataclass_options ~queries)
-    in
-    let attrs_attributes () =
-      (* TODO (T41039225): Add support for other methods
-       * TODO (T129741558): support type annotations in attr *)
-      generate_attributes ~options:(attrs_attributes ~queries)
-    in
-    let dataclass_transform_attributes () =
-      generate_attributes ~options:(options_from_custom_dataclass_transform_decorator ~queries)
-    in
-    let dataclass_transform_class_attributes () =
-      generate_attributes
-        ~options:(options_from_custom_dataclass_transform_base_class_or_metaclass ~queries)
-    in
-    dataclass_attributes ()
-    @ attrs_attributes ()
-    @ dataclass_transform_attributes ()
-    @ dataclass_transform_class_attributes ()
-    |> List.iter ~f:(UninstantiatedAttributeTable.add table)
-end
+            let init_parameter_names = List.map ~f:parameter_name initvar_params in
+            let literal_string_value_type name = Type.Literal (String (LiteralValue name)) in
+            let annotation =
+              Type.tuple (List.map ~f:literal_string_value_type init_parameter_names)
+            in
+            make_attribute ~annotation ~attribute_name:"__match_args__" :: methods
+          else
+            methods
+        in
+        let methods =
+          if (not (List.is_empty slots_items)) && not (already_in_table "__slots__") then
+            make_attribute
+              ~annotation:(Type.tuple (List.map slots_items ~f:(fun _ -> Type.string)))
+              ~attribute_name:"__slots__"
+            :: methods
+          else
+            methods
+        in
+        methods
+  in
+  let dataclass_attributes () =
+    (* TODO (T43210531): Warn about inconsistent annotations
+     * TODO (T131540506): Decouple dataclass options from other options *)
+    generate_attributes ~options:(ClassDecorators.dataclass_options ~queries)
+  in
+  let attrs_attributes () =
+    (* TODO (T41039225): Add support for other methods
+     * TODO (T129741558): support type annotations in attr *)
+    generate_attributes ~options:(ClassDecorators.attrs_attributes ~queries)
+  in
+  let dataclass_transform_attributes () =
+    generate_attributes
+      ~options:(ClassDecorators.options_from_custom_dataclass_transform_decorator ~queries)
+  in
+  let dataclass_transform_class_attributes () =
+    generate_attributes
+      ~options:
+        (ClassDecorators.options_from_custom_dataclass_transform_base_class_or_metaclass ~queries)
+  in
+  dataclass_attributes ()
+  @ attrs_attributes ()
+  @ dataclass_transform_attributes ()
+  @ dataclass_transform_class_attributes ()
+  |> List.iter ~f:(UninstantiatedAttributeTable.add table)
+
 
 let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~self_type =
   let open Type.Callable in
@@ -3098,22 +3101,21 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           add_placeholder_stub_inheritances ();
         let () =
           if include_generated_attributes then
-            ClassDecorators.apply
+            apply
               ~queries
               ~definition:parent
-              ~create_attribute:(self#create_attribute ~assumptions)
-              ~instantiate_attribute:
-                (self#instantiate_attribute
-                   ~assumptions
-                   ?instantiated:None
-                   ~accessed_through_class:false
-                   ~accessed_through_readonly:false
-                     (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
-                        attributes. This avoids needing to explicitly break the loop that would
-                        otherwise result or to somehow separate these results from the main set of
-                        attributes *)
-                   ~apply_descriptors:false)
-              ~class_name
+              (self#create_attribute ~assumptions)
+              (self#instantiate_attribute
+                 ~assumptions
+                 ?instantiated:None
+                 ~accessed_through_class:false
+                 ~accessed_through_readonly:false
+                   (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
+                      attributes. This avoids needing to explicitly break the loop that would
+                      otherwise result or to somehow separate these results from the main set of
+                      attributes *)
+                 ~apply_descriptors:false)
+              class_name
               table
         in
         table
