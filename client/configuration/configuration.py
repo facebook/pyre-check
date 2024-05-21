@@ -957,6 +957,10 @@ def create_configuration(
             base=partial_configuration,
             override=command_argument_configuration,
         )
+        if arguments.no_logger:
+            partial_configuration = dataclasses.replace(
+                partial_configuration, logger=None
+            )
 
     return Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
@@ -982,6 +986,8 @@ def create_overridden_configuration(
         ).expand_relative_paths(str(base_directory)),
         override=command_argument_configuration,
     )
+    if arguments.no_logger:
+        partial_configuration = dataclasses.replace(partial_configuration, logger=None)
     return Configuration.from_partial_configuration(
         base_directory, None, partial_configuration
     )

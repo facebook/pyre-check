@@ -330,6 +330,7 @@ def _create_and_check_codenav_configuration(
     hidden=True,
 )
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
+@click.option("--no-logger", is_flag=True, default=False, hidden=True)
 def pyre(
     context: click.Context,
     version: command_arguments.VersionKind,
@@ -359,6 +360,7 @@ def pyre(
     shared_memory_dependency_table_power: Optional[int],
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
+    no_logger: bool,
 ) -> None:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
@@ -374,6 +376,7 @@ def pyre(
         logging_sections=logging_sections,
         log_identifier=None,
         logger=None,
+        no_logger=no_logger,
         targets=[],
         source_directories=list(source_directory),
         only_check_paths=list(only_check_paths),

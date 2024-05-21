@@ -847,12 +847,13 @@ class ConfigurationTest(testslide.TestCase):
     def test_create_from_global_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            write_configuration_file(root_path, {"strict": False})
+            write_configuration_file(root_path, {"strict": False, "logger": "foo"})
 
             with switch_working_directory(root_path):
                 configuration = create_configuration(
                     command_arguments.CommandArguments(
                         strict=True,  # override configuration file
+                        no_logger=True,  # override configuration file
                         source_directories=["."],
                         dot_pyre_directory=Path(".pyre"),
                     ),
@@ -862,6 +863,7 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertEqual(configuration.logger, None)
                 self.assertListEqual(
                     list(configuration.source_directories or []),
                     [SimpleRawElement(str(root_path))],
@@ -872,12 +874,15 @@ class ConfigurationTest(testslide.TestCase):
             print(root)
             root_path = Path(root).resolve()
             print(root_path)
-            write_configuration_file(root_path, {"strict": False}, codenav=True)
+            write_configuration_file(
+                root_path, {"strict": False, "logger": "foo"}, codenav=True
+            )
 
             with switch_working_directory(root_path):
                 configuration = create_overridden_configuration(
                     command_arguments.CommandArguments(
                         strict=True,  # override configuration file
+                        no_logger=True,  # override configuration file
                         source_directories=["."],
                         dot_pyre_directory=Path(".pyre"),
                     ),
@@ -888,6 +893,7 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertEqual(configuration.logger, None)
                 self.assertListEqual(
                     list(configuration.source_directories or []),
                     [SimpleRawElement(str(root_path))],

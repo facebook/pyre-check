@@ -84,6 +84,7 @@ class CommandArguments:
     logging_sections: Optional[str] = None
     log_identifier: Optional[str] = None
     logger: Optional[str] = None
+    no_logger: bool = False
     targets: List[str] = field(default_factory=list)
     source_directories: List[str] = field(default_factory=list)
     only_check_paths: List[str] = field(default_factory=list)
