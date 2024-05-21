@@ -153,6 +153,9 @@ module.exports = {
             'fb/warning_codes/code-5037',
             'fb/warning_codes/code-5042',
             'fb/warning_codes/code-5043',
+            'fb/warning_codes/code-5045',
+            'fb/warning_codes/code-5046',
+            'fb/warning_codes/code-5047',
             'fb/warning_codes/code-5100',
             'fb/warning_codes/code-5101',
             'fb/warning_codes/code-5102',
@@ -225,7 +228,7 @@ module.exports = {
     ]),
     ...fbInternalOnly([
       {
-        'Roadmaps': [
+        Roadmaps: [
           'fb/pysa_roadmaps/pysa-h2-2023',
           'fb/pysa_roadmaps/pysa-h1-2023',
           'fb/pysa_roadmaps/pysa-h2-2022',
