@@ -16,24 +16,26 @@ let assert_uninitialized_errors source errors context =
   assert_errors ~check source errors context
 
 
-let test_simple context =
-  let assert_uninitialized_errors source errors =
-    assert_uninitialized_errors source errors context
-  in
-  assert_uninitialized_errors
-    {|
+let test_simple =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         x = y
         y = 5
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  assert_uninitialized_errors {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors {|
       def f(y):
         x = y
         y = 5
     |} [];
-  assert_uninitialized_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f(x):
         if x > 5:
           return y   # Error
@@ -41,17 +43,19 @@ let test_simple context =
         z = 5
         return z   # OK
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f(x):
         if x > 5:
           y = 2
         return y
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f() -> int:
           try:
               bad = 0 / 0
@@ -59,9 +63,10 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       x, y, z = 0, 0, 0
       def access_global() -> int:
         global y
@@ -71,85 +76,100 @@ let test_simple context =
         y = 1
         _ = z      # Refers to global `z`, implicitly
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       class Foo(object):
         pass
       def f():
         return Foo()
     |}
-    [];
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         def g():
           pass
         g()
     |}
-    [];
-  assert_uninitialized_errors {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         x, y = 0, 0
         return x, y
-    |} [];
-  assert_uninitialized_errors
-    {|
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f( *args, **kwargs) -> None:
         print(args)
         print(list(kwargs.items()))
     |}
-    [];
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       x = 0
       def f() -> None:
         global x
         if x == 0:
           x = 1
     |}
-    [];
-  assert_uninitialized_errors {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f(x: str) -> None:
         assert True, x
-    |} [];
-  assert_uninitialized_errors
-    {|
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from media import something
       def f():
         something()
         media = 1
     |}
-    [];
-  assert_uninitialized_errors {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors {|
       def f():
         (x := 0)
     |} [];
-  assert_uninitialized_errors {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors {|
       def f():
         ((x := 0) and (y := x))
     |} [];
-
-  (* Nested classes and defines *)
-  assert_uninitialized_errors
-    {|
+      (* Nested classes and defines *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f() -> None:
         x = 1
         def nested_f() -> None:
           a = b
     |}
-    [];
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f() -> None:
         x = 1
         class Nested:
           def __init__(self) -> None:
             self.a = b
     |}
-    [];
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       class A:
           def __init__(self, x: int) -> None: ...
           def meth(self) -> None: ...
@@ -159,9 +179,10 @@ let test_simple context =
         A(x=x).meth()
         x = 5
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       class A:
           z: int
           def __init__(self, x: int) -> None: ...
@@ -171,29 +192,34 @@ let test_simple context =
         _ = A(x=x).z
         x = 5
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-
-  (* TODO (T94201165): walrus operator same-expression false negative *)
-  assert_uninitialized_errors {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      (* TODO (T94201165): walrus operator same-expression false negative *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors {|
       def f():
         ((y := x) and (x := 0))
     |} [];
-
-  assert_uninitialized_errors {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         [y for x in [1,2,3] if (y:=x) > 2]
-    |} [];
-
-  (* TODO(T94414920): attribute reads *)
-  assert_uninitialized_errors {|
+    |}
+           [];
+      (* TODO(T94414920): attribute reads *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         _ = x.field
         x = Foo()
-    |} [];
-  (* TODO(T94414920): binary operators desugar into method calls, which under the hood are attribute
-     reads *)
-  assert_uninitialized_errors
-    {|
+    |}
+           [];
+      (* TODO(T94414920): binary operators desugar into method calls, which under the hood are
+         attribute reads *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def test_method() -> None:
         try:
           a = 5
@@ -203,57 +229,58 @@ let test_simple context =
           b = a + 5
           print(b)
     |}
-    [];
-
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         with open("x") as x:
           pass
         _ = x, y
         x, y = None, None
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         y = [x for x in x]
         x = []
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         _  = [(x, y) for x,y in []]
         x = None
         _ = x, y
         y = None
     |}
-    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-  (* TODO(T101303314) Validate use of uninitialized locals in subscript assignment targets *)
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+      (* TODO(T101303314) Validate use of uninitialized locals in subscript assignment targets *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         d[k], y = v, 42
         d = {}
         k = "k"
     |}
-    [
-      "Uninitialized local [61]: Local variable `d` is undefined, or not always defined.";
-      "Uninitialized local [61]: Local variable `k` is undefined, or not always defined.";
-    ];
-
-  ()
+           [
+             "Uninitialized local [61]: Local variable `d` is undefined, or not always defined.";
+             "Uninitialized local [61]: Local variable `k` is undefined, or not always defined.";
+           ];
+    ]
 
 
 (* Tests about uninitialized locals reliant on correct CFG construction. *)
-let test_cfg context =
-  let assert_uninitialized_errors source errors =
-    assert_uninitialized_errors source errors context
-  in
-
-  assert_uninitialized_errors
-    {|
+let test_cfg =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         if True:
           x = 1
@@ -275,18 +302,20 @@ let test_cfg context =
           assert True, "error"
         return z
     |}
-    ["Uninitialized local [61]: Local variable `z` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `z` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def baz() -> int:
           while True:
               b = 1
               break
           return b
     |}
-    [];
-  assert_uninitialized_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         try:
           x = 1
@@ -295,10 +324,11 @@ let test_cfg context =
         finally:
           print(x)
     |}
-    [];
-  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
-  assert_uninitialized_errors
-    {|
+           [];
+      (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         try:
           x = 1
@@ -306,19 +336,21 @@ let test_cfg context =
         finally:
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         try:
           return (x := 1)
         finally:
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def may_raise() -> bool:
         if 1 > 2:
           raise Exception()
@@ -332,11 +364,11 @@ let test_cfg context =
         finally:
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  ()
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+    ]
 
 
-let assert_defined_locals source expected =
+let assert_defined_locals source expected _context =
   let define = parse_single_define source in
   let open Statement in
   let open Expression in
@@ -389,9 +421,12 @@ let assert_defined_locals source expected =
 
 
 (* Note: We currently compute locals that are defined *after* each statement. *)
-let test_defined_locals_at_each_statement _ =
-  assert_defined_locals
-    {|
+let test_defined_locals_at_each_statement =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         if True:
           x = 1
@@ -399,29 +434,35 @@ let test_defined_locals_at_each_statement _ =
           raise AssertionError("error")
         return x
     |}
-    [
-      {| x = 1 |}, ["x", "4:4-4:5"];
-      {| raise AssertionError("error") |}, [];
-      {| assert True |}, [];
-      {| return x |}, ["x", "4:4-4:5"];
-      {| assert False |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| x = 1 |}, ["x", "4:4-4:5"];
+             {| raise AssertionError("error") |}, [];
+             {| assert True |}, [];
+             {| return x |}, ["x", "4:4-4:5"];
+             {| assert False |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         x = y
         y = 5
     |}
-    [{| y = 5 |}, ["x", "3:2-3:3"; "y", "4:2-4:3"]; {| x = y |}, ["x", "3:2-3:3"]];
-  assert_defined_locals
-    {|
+           [{| y = 5 |}, ["x", "3:2-3:3"; "y", "4:2-4:3"]; {| x = y |}, ["x", "3:2-3:3"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f(y):
         x = y
         y = 5
     |}
-    [{| y = 5 |}, ["x", "3:2-3:3"; "y", "4:2-4:3"]; {| x = y |}, ["x", "3:2-3:3"; "y", "2:6-2:7"]];
-  assert_defined_locals
-    {|
+           [
+             {| y = 5 |}, ["x", "3:2-3:3"; "y", "4:2-4:3"];
+             {| x = y |}, ["x", "3:2-3:3"; "y", "2:6-2:7"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f(x):
         if x > 5:
           return y
@@ -429,29 +470,31 @@ let test_defined_locals_at_each_statement _ =
         z = 5
         return z
     |}
-    [
-      {| return z |}, ["x", "2:6-2:7"; "y", "5:2-5:3"; "z", "6:2-6:3"];
-      {| z = 5 |}, ["x", "2:6-2:7"; "y", "5:2-5:3"; "z", "6:2-6:3"];
-      {| return y |}, ["x", "2:6-2:7"];
-      {| assert x > 5 |}, ["x", "2:6-2:7"];
-      {| y = 5 |}, ["x", "2:6-2:7"; "y", "5:2-5:3"];
-      {| assert x <= 5 |}, ["x", "2:6-2:7"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| return z |}, ["x", "2:6-2:7"; "y", "5:2-5:3"; "z", "6:2-6:3"];
+             {| z = 5 |}, ["x", "2:6-2:7"; "y", "5:2-5:3"; "z", "6:2-6:3"];
+             {| return y |}, ["x", "2:6-2:7"];
+             {| assert x > 5 |}, ["x", "2:6-2:7"];
+             {| y = 5 |}, ["x", "2:6-2:7"; "y", "5:2-5:3"];
+             {| assert x <= 5 |}, ["x", "2:6-2:7"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f(x):
         if x > 5:
           y = 2
         return y
     |}
-    [
-      {| y = 2 |}, ["x", "2:6-2:7"; "y", "4:4-4:5"];
-      {| assert x > 5 |}, ["x", "2:6-2:7"];
-      {| return y |}, ["x", "2:6-2:7"];
-      {| assert x <= 5 |}, ["x", "2:6-2:7"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| y = 2 |}, ["x", "2:6-2:7"; "y", "4:4-4:5"];
+             {| assert x > 5 |}, ["x", "2:6-2:7"];
+             {| return y |}, ["x", "2:6-2:7"];
+             {| assert x <= 5 |}, ["x", "2:6-2:7"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f() -> int:
           try:
               bad = 0 / 0
@@ -459,14 +502,15 @@ let test_defined_locals_at_each_statement _ =
           except ZeroDivisionError:
               return x
     |}
-    [
-      {| return x |}, [];
-      {| x = 1 |}, ["bad", "4:8-4:11"; "x", "5:8-5:9"];
-      {| ZeroDivisionError |}, [];
-      {| bad = 0 / 0 |}, ["bad", "4:8-4:11"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| return x |}, [];
+             {| x = 1 |}, ["bad", "4:8-4:11"; "x", "5:8-5:9"];
+             {| ZeroDivisionError |}, [];
+             {| bad = 0 / 0 |}, ["bad", "4:8-4:11"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def access_global() -> int:
         global y
         _ = x      # Refers to local `x` (defined below)
@@ -475,131 +519,153 @@ let test_defined_locals_at_each_statement _ =
         y = 1
         _ = z      # Refers to global `z`
     |}
-    [
-      {| x = 1 |}, ["_", "4:2-4:3"; "x", "5:2-5:3"];
-      {| _ = z |}, ["_", "8:2-8:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
-      {| _ = x |}, ["_", "4:2-4:3"];
-      {| _ = y |}, ["_", "6:2-6:3"; "x", "5:2-5:3"];
-      {| global y |}, [];
-      {| y = 1 |}, ["_", "6:2-6:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
-    ];
-  assert_defined_locals {|
+           [
+             {| x = 1 |}, ["_", "4:2-4:3"; "x", "5:2-5:3"];
+             {| _ = z |}, ["_", "8:2-8:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
+             {| _ = x |}, ["_", "4:2-4:3"];
+             {| _ = y |}, ["_", "6:2-6:3"; "x", "5:2-5:3"];
+             {| global y |}, [];
+             {| y = 1 |}, ["_", "6:2-6:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         return Foo()
-    |} [{| return Foo() |}, []];
-  assert_defined_locals
-    {|
+    |}
+           [{| return Foo() |}, []];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         def g():
           pass
         g()
     |}
-    [{| g() |}, ["g", "3:2-4:8"]; {| def g(): pass |}, ["g", "3:2-4:8"]];
-  assert_defined_locals
-    {|
+           [{| g() |}, ["g", "3:2-4:8"]; {| def g(): pass |}, ["g", "3:2-4:8"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         x, y = 0, 0
         return x, y
     |}
-    [
-      {| return (x, y) |}, ["x", "3:2-3:3"; "y", "3:5-3:6"];
-      {| x, y = 0, 0 |}, ["x", "3:2-3:3"; "y", "3:5-3:6"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| return (x, y) |}, ["x", "3:2-3:3"; "y", "3:5-3:6"];
+             {| x, y = 0, 0 |}, ["x", "3:2-3:3"; "y", "3:5-3:6"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f( *args, **kwargs) -> None:
         print(args)
         print(list(kwargs.items()))
     |}
-    [
-      {| print(list(kwargs.items())) |}, ["args", "2:8-2:12"; "kwargs", "2:16-2:22"];
-      {| print(args) |}, ["args", "2:8-2:12"; "kwargs", "2:16-2:22"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| print(list(kwargs.items())) |}, ["args", "2:8-2:12"; "kwargs", "2:16-2:22"];
+             {| print(args) |}, ["args", "2:8-2:12"; "kwargs", "2:16-2:22"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f() -> None:
         global x
         if x == 0:
           x = 1
     |}
-    [
-      {| x = 1 |}, ["x", "5:4-5:5"];
-      {| assert x != 0 |}, [];
-      {| assert x == 0 |}, [];
-      {| global x |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| x = 1 |}, ["x", "5:4-5:5"];
+             {| assert x != 0 |}, [];
+             {| assert x == 0 |}, [];
+             {| global x |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f(x: str) -> None:
         assert True, x
     |}
-    [{| assert True, x |}, ["x", "2:6-2:12"]];
-  assert_defined_locals {|
+           [{| assert True, x |}, ["x", "2:6-2:12"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         (x := 0)
-    |} [{| (x := 0) |}, ["x", "3:3-3:4"]];
-  assert_defined_locals
-    {|
+    |}
+           [{| (x := 0) |}, ["x", "3:3-3:4"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         ((x := 0) and (y := x))
     |}
-    [{| ((x := 0) and (y := x)) |}, ["x", "3:4-3:5"; "y", "3:17-3:18"]];
-  assert_defined_locals
-    {|
+           [{| ((x := 0) and (y := x)) |}, ["x", "3:4-3:5"; "y", "3:17-3:18"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         ((y := x) and (x := 0))
     |}
-    [{| ((y := x) and (x := 0)) |}, ["x", "3:17-3:18"; "y", "3:4-3:5"]];
-  assert_defined_locals
-    {|
+           [{| ((y := x) and (x := 0)) |}, ["x", "3:17-3:18"; "y", "3:4-3:5"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         [y for x in [1,2,3] if (y:=x) > 2]
     |}
-    [{| [y for x in [1,2,3] if (y:=x) > 2] |}, ["y", "3:26-3:27"]];
-  assert_defined_locals
-    {|
+           [{| [y for x in [1,2,3] if (y:=x) > 2] |}, ["y", "3:26-3:27"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         _ = x.field
         x = Foo()
     |}
-    [{| x = Foo() |}, ["_", "3:2-3:3"; "x", "4:2-4:3"]; {| _ = x.field |}, ["_", "3:2-3:3"]];
-  assert_defined_locals
-    {|
+           [{| x = Foo() |}, ["_", "3:2-3:3"; "x", "4:2-4:3"]; {| _ = x.field |}, ["_", "3:2-3:3"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         with open("x", "1:2-3:4") as x:
           pass
         _ = x, y
         x, y = None, None
     |}
-    [
-      {| x, y = None, None |}, ["_", "5:2-5:3"; "x", "6:2-6:3"; "y", "6:5-6:6"];
-      {| pass |}, ["x", "3:31-3:32"];
-      {| _ = x, y |}, ["_", "5:2-5:3"; "x", "3:31-3:32"];
-      {| x = open("x", "1:2-3:4").__enter__() |}, ["x", "3:31-3:32"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| x, y = None, None |}, ["_", "5:2-5:3"; "x", "6:2-6:3"; "y", "6:5-6:6"];
+             {| pass |}, ["x", "3:31-3:32"];
+             {| _ = x, y |}, ["_", "5:2-5:3"; "x", "3:31-3:32"];
+             {| x = open("x", "1:2-3:4").__enter__() |}, ["x", "3:31-3:32"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         y = [x for x in x]
         x = []
     |}
-    [{| x = [] |}, ["x", "4:2-4:3"; "y", "3:2-3:3"]; {| y = [x for x in x] |}, ["y", "3:2-3:3"]];
-  assert_defined_locals
-    {|
+           [
+             {| x = [] |}, ["x", "4:2-4:3"; "y", "3:2-3:3"];
+             {| y = [x for x in x] |}, ["y", "3:2-3:3"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         _  = [(x, y) for x,y in []]
         x = None
         _ = x, y
         y = None
     |}
-    [
-      {| _ = x, y |}, ["_", "5:2-5:3"; "x", "4:2-4:3"];
-      {| x = None |}, ["_", "3:2-3:3"; "x", "4:2-4:3"];
-      {| y = None |}, ["_", "5:2-5:3"; "x", "4:2-4:3"; "y", "6:2-6:3"];
-      {| _  = [(x, y) for x,y in []] |}, ["_", "3:2-3:3"];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| _ = x, y |}, ["_", "5:2-5:3"; "x", "4:2-4:3"];
+             {| x = None |}, ["_", "3:2-3:3"; "x", "4:2-4:3"];
+             {| y = None |}, ["_", "5:2-5:3"; "x", "4:2-4:3"; "y", "6:2-6:3"];
+             {| _  = [(x, y) for x,y in []] |}, ["_", "3:2-3:3"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         if True:
           x = 1
@@ -607,15 +673,16 @@ let test_defined_locals_at_each_statement _ =
           raise AssertionError("error")
         return x
     |}
-    [
-      {| x = 1 |}, ["x", "4:4-4:5"];
-      {| raise AssertionError("error") |}, [];
-      {| assert True |}, [];
-      {| return x |}, ["x", "4:4-4:5"];
-      {| assert False |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| x = 1 |}, ["x", "4:4-4:5"];
+             {| raise AssertionError("error") |}, [];
+             {| assert True |}, [];
+             {| return x |}, ["x", "4:4-4:5"];
+             {| assert False |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def g():
         if True:
           y = 1
@@ -623,15 +690,16 @@ let test_defined_locals_at_each_statement _ =
           assert False, "error"
         return y
     |}
-    [
-      {| y = 1 |}, ["y", "4:4-4:5"];
-      {| assert False, "error" |}, [];
-      {| assert True |}, [];
-      {| return y |}, ["y", "4:4-4:5"];
-      {| assert False |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| y = 1 |}, ["y", "4:4-4:5"];
+             {| assert False, "error" |}, [];
+             {| assert True |}, [];
+             {| return y |}, ["y", "4:4-4:5"];
+             {| assert False |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def h():
         if True:
           z = 1
@@ -639,30 +707,32 @@ let test_defined_locals_at_each_statement _ =
           assert True, "error"
         return z
     |}
-    [
-      {| z = 1 |}, ["z", "4:4-4:5"];
-      {| assert True, "error" |}, [];
-      {| assert True |}, [];
-      {| return z |}, [];
-      {| assert False |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| z = 1 |}, ["z", "4:4-4:5"];
+             {| assert True, "error" |}, [];
+             {| assert True |}, [];
+             {| return z |}, [];
+             {| assert False |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def baz() -> int:
           while True:
               b = 1
               break
           return b
     |}
-    [
-      {| b = 1 |}, ["b", "4:8-4:9"];
-      {| assert True |}, [];
-      {| break |}, ["b", "4:8-4:9"];
-      {| return b |}, ["b", "4:8-4:9"];
-      {| assert False |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| b = 1 |}, ["b", "4:8-4:9"];
+             {| assert True |}, [];
+             {| break |}, ["b", "4:8-4:9"];
+             {| return b |}, ["b", "4:8-4:9"];
+             {| assert False |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         try:
           x = 1
@@ -671,15 +741,16 @@ let test_defined_locals_at_each_statement _ =
         finally:
           print(x)
     |}
-    [
-      {| x = 2 |}, ["x", "6:4-6:5"];
-      {| print(x) |}, ["x", "4:4-4:5"];
-      {| Exception |}, [];
-      {| x = 1 |}, ["x", "4:4-4:5"];
-    ];
-  (* TODO(T106611060): `x` isn't defined at `print(x)` due to CFG construction for `finally`. *)
-  assert_defined_locals
-    {|
+           [
+             {| x = 2 |}, ["x", "6:4-6:5"];
+             {| print(x) |}, ["x", "4:4-4:5"];
+             {| Exception |}, [];
+             {| x = 1 |}, ["x", "4:4-4:5"];
+           ];
+      (* TODO(T106611060): `x` isn't defined at `print(x)` due to CFG construction for `finally`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         try:
           x = 1
@@ -687,33 +758,36 @@ let test_defined_locals_at_each_statement _ =
         finally:
           print(x)
     |}
-    [{| return |}, ["x", "4:4-4:5"]; {| print(x) |}, []; {| x = 1 |}, ["x", "4:4-4:5"]];
-  (* TODO(T106611060): `x` isn't defined at `print(x)` due to CFG construction for `finally`. *)
-  assert_defined_locals
-    {|
+           [{| return |}, ["x", "4:4-4:5"]; {| print(x) |}, []; {| x = 1 |}, ["x", "4:4-4:5"]];
+      (* TODO(T106611060): `x` isn't defined at `print(x)` due to CFG construction for `finally`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f():
         try:
           return (x := 1)
         finally:
           print(x)
     |}
-    [{| print(x) |}, []; {| return (x := 1) |}, ["x", "4:12-4:13"]];
-  assert_defined_locals
-    {|
+           [{| print(x) |}, []; {| return (x := 1) |}, ["x", "4:12-4:13"]];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def may_raise() -> bool:
         if 1 > 2:
           raise Exception()
         else:
           return True
     |}
-    [
-      {| raise Exception() |}, [];
-      {| return True |}, [];
-      {| assert 1 > 2 |}, [];
-      {| assert 1 <= 2 |}, [];
-    ];
-  assert_defined_locals
-    {|
+           [
+             {| raise Exception() |}, [];
+             {| return True |}, [];
+             {| assert 1 > 2 |}, [];
+             {| assert 1 <= 2 |}, [];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def f() -> bool:
         try:
           x = may_raise()
@@ -721,20 +795,25 @@ let test_defined_locals_at_each_statement _ =
         finally:
           print(x)
     |}
-    [{| return x |}, ["x", "4:4-4:5"]; {| print(x) |}, []; {| x = may_raise() |}, ["x", "4:4-4:5"]];
-  assert_defined_locals
-    {|
+           [
+             {| return x |}, ["x", "4:4-4:5"];
+             {| print(x) |}, [];
+             {| x = may_raise() |}, ["x", "4:4-4:5"];
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_defined_locals
+           {|
       def foo(x: str) -> None:
         for x in [1]:
           print(x)
         print(x, "outside")
     |}
-    [
-      {| print(x) |}, ["x", "3:6-3:7"];
-      {| x = [1].__iter__().__next__() |}, ["x", "3:6-3:7"];
-      {| print(x, "outside") |}, ["x", "2:8-2:14"];
-    ];
-  ()
+           [
+             {| print(x) |}, ["x", "3:6-3:7"];
+             {| x = [1].__iter__().__next__() |}, ["x", "3:6-3:7"];
+             {| print(x, "outside") |}, ["x", "2:8-2:14"];
+           ];
+    ]
 
 
 (* All local actions that lead to jump conditions are reflected statically in the CFG, so that for
@@ -747,12 +826,12 @@ let test_defined_locals_at_each_statement _ =
 
    As a result, it merits a separate test suite because the implementation is separate from the
    implementation of language features that can be represented in the CFG. *)
-let test_no_return context =
-  let assert_uninitialized_errors source errors =
-    assert_uninitialized_errors source errors context
-  in
-  assert_uninitialized_errors
-    {|
+let test_no_return =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing import NoReturn
 
       def does_not_return() -> NoReturn:
@@ -765,9 +844,10 @@ let test_no_return context =
               does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing import NoReturn
 
       async def does_not_return() -> NoReturn:
@@ -780,9 +860,10 @@ let test_no_return context =
               await does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing import Never
 
       def does_not_return() -> Never:
@@ -795,9 +876,10 @@ let test_no_return context =
               does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing import Never
 
       async def does_not_return() -> Never:
@@ -810,9 +892,10 @@ let test_no_return context =
               await does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing_extensions import Never
 
       def does_not_return() -> Never:
@@ -825,9 +908,10 @@ let test_no_return context =
               does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  assert_uninitialized_errors
-    {|
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       from typing_extensions import Never
 
       async def does_not_return() -> Never:
@@ -840,16 +924,11 @@ let test_no_return context =
               await does_not_return()
           print(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  ()
+           ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+    ]
 
 
 let () =
   "uninitializedCheck"
-  >::: [
-         "simple" >:: test_simple;
-         "cfg" >:: test_cfg;
-         "defined_locals_at_each_statement" >:: test_defined_locals_at_each_statement;
-         "no_return" >:: test_no_return;
-       ]
+  >::: [test_simple; test_cfg; test_defined_locals_at_each_statement; test_no_return]
   |> Test.run
