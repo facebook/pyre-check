@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ast
+
 module Queries : sig
   type t = {
     controls: EnvironmentControls.t;
@@ -41,4 +43,41 @@ module Queries : sig
   }
 
   val class_summary_for_outer_type : t -> Type.t -> ClassSummary.t Ast.Node.t option
+end
+
+module ClassDecorators : sig
+  type options = {
+    init: bool;
+    repr: bool;
+    eq: bool;
+    order: bool;
+    match_args: bool;
+    field_specifiers: Ast.Expression.t list;
+    keyword_only: bool;
+    has_slots: bool;
+    frozen: bool;
+  }
+
+  (** This is necessary as an abstraction over AnnotatedAttribute to determine which attributes are
+      keyword_only. *)
+  type 'annotation dataclass_constructor_parameter = {
+    name: Identifier.t;
+    annotation: 'annotation;
+    default: bool;
+    keyword_only: bool;
+  }
+
+  val dataclass_options : queries:Queries.t -> ClassSummary.t Node.t -> options option
+
+  val attrs_attributes : queries:Queries.t -> ClassSummary.t Node.t -> options option
+
+  val options_from_custom_dataclass_transform_decorator
+    :  queries:Queries.t ->
+    ClassSummary.t Node.t ->
+    options option
+
+  val options_from_custom_dataclass_transform_base_class_or_metaclass
+    :  queries:Queries.t ->
+    ClassSummary.t Node.t ->
+    options option
 end
