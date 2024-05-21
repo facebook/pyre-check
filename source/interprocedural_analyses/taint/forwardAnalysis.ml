@@ -234,14 +234,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match Sinks.extract_partial_sink kind with
       | Some sink -> (
           match Issue.TriggeredSinkHashMap.find triggered_sinks sink with
-          | Some issue_handles ->
-              let existing_issue_handles = Frame.get Frame.Slots.MultiSourceIssueHandle frame in
-              let frame =
-                Frame.update
-                  Frame.Slots.MultiSourceIssueHandle
-                  (IssueHandleSet.join existing_issue_handles issue_handles)
-                  frame
-              in
+          | Some _ ->
+              (* TODO: Add extra traces instead of issue handles. *)
               Some (Sinks.TriggeredPartialSink sink, frame)
           | None -> None)
       | None -> None

@@ -416,12 +416,9 @@ module Frame = struct
       | LeafName : Features.LeafNameSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
-        (* A set of issue handles attached to a triggered sink of a multi-source rule, + which
-           represent issues with flows to the other partial sink label. *)
-      | MultiSourceIssueHandle : IssueHandleSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 8
+    let slots = 7
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -432,7 +429,6 @@ module Frame = struct
       | LeafName -> "LeafName"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
-      | MultiSourceIssueHandle -> "MultiSourceIssueHandle"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -445,7 +441,6 @@ module Frame = struct
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
-      | MultiSourceIssueHandle -> (module IssueHandleSet : Abstract.Domain.S with type t = a)
 
 
     let strict _ = false
@@ -891,11 +886,6 @@ end = struct
             ~first_fields:(Frame.get Frame.Slots.FirstField frame)
         in
         let json = cons_if_non_empty "features" breadcrumbs json in
-
-        let multi_source_issue_handles =
-          Frame.get Frame.Slots.MultiSourceIssueHandle frame |> IssueHandleSet.to_json
-        in
-        let json = cons_if_non_empty "multi_source_issue_handles" multi_source_issue_handles json in
 
         `Assoc json
       in
