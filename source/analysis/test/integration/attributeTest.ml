@@ -140,10 +140,10 @@ let test_check_attributes =
                 bar: typing.Any
             |}
            [
-             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
-              type `typing.Any` but is never initialized.";
              "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type \
               other than `Any`.";
+             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
+              type `typing.Any` but is never initialized.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -202,10 +202,10 @@ let test_check_attributes =
                   return self.bar
             |}
            [
-             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
-              type `typing.Any` but is never initialized.";
              "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type \
               other than `Any`.";
+             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
+              type `typing.Any` but is never initialized.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -927,10 +927,10 @@ let test_attribute_strict =
                   return self.bar
             |}
            [
-             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
-              type `typing.Any` but is never initialized.";
              "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type \
               other than `Any`.";
+             "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have \
+              type `typing.Any` but is never initialized.";
            ];
       (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference
          errors are thrown in debug that are filtered away in strict. *)
@@ -1353,10 +1353,10 @@ let test_check_missing_attribute =
                 Foo.a = 1
             |}
            [
-             "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have "
-             ^ "type `typing.Any` but is never initialized.";
              "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type \
               other than `Any`.";
+             "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have "
+             ^ "type `typing.Any` but is never initialized.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
@@ -1387,10 +1387,10 @@ let test_check_missing_attribute =
                 return Foo().a
             |}
            [
-             "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type \
-              `typing.Any` but is never initialized.";
              "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type \
               other than `Any`.";
+             "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type \
+              `typing.Any` but is never initialized.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

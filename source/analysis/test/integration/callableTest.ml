@@ -283,9 +283,9 @@ let test_bound_method =
       @@ assert_type_errors
            {|
               from typing import Callable
-              # pyre-ignore[13]: __call__ not initialized
               class Bar:
                 # pyre-ignore[15]: inconsistent with type.__call__
+                # pyre-ignore[13]: __call__ not initialized
                 __call__: BoundMethod[Callable[[Bar, str], bool], Bar]
               def foo(bar: Bar) -> None:
                   c = bar("A")

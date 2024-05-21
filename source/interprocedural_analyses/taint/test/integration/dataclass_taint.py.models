@@ -82,9 +82,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.issue_with_weird_dataclass",
-    "callable_line": 59,
+    "callable_line": 60,
     "code": 5002,
-    "line": 61,
+    "line": 62,
     "start": 15,
     "end": 22,
     "filename": "dataclass_taint.py",
@@ -115,7 +115,7 @@
             "call": {
               "position": {
                 "filename": "dataclass_taint.py",
-                "line": 60,
+                "line": 61,
                 "start": 10,
                 "end": 42
               },
@@ -138,7 +138,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 61,
+              "line": 62,
               "start": 15,
               "end": 22
             }
@@ -166,9 +166,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
-    "callable_line": 94,
+    "callable_line": 95,
     "code": 5002,
-    "line": 104,
+    "line": 105,
     "start": 4,
     "end": 25,
     "filename": "dataclass_taint.py",
@@ -189,7 +189,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 104,
+              "line": 105,
               "start": 28,
               "end": 42
             }
@@ -213,7 +213,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 104,
+              "line": 105,
               "start": 4,
               "end": 25
             }
@@ -234,9 +234,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
-    "callable_line": 94,
+    "callable_line": 95,
     "code": 5002,
-    "line": 98,
+    "line": 99,
     "start": 51,
     "end": 65,
     "filename": "dataclass_taint.py",
@@ -257,7 +257,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 98,
+              "line": 99,
               "start": 51,
               "end": 65
             }
@@ -281,7 +281,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 98,
+              "line": 99,
               "start": 51,
               "end": 65
             }
@@ -303,9 +303,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_class_attr_model_tainted_in_constructor",
-    "callable_line": 113,
+    "callable_line": 114,
     "code": 5002,
-    "line": 117,
+    "line": 118,
     "start": 56,
     "end": 70,
     "filename": "dataclass_taint.py",
@@ -326,7 +326,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 117,
+              "line": 118,
               "start": 56,
               "end": 70
             }
@@ -353,7 +353,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 117,
+              "line": 118,
               "start": 56,
               "end": 70
             }
@@ -510,7 +510,7 @@
   "data": {
     "callable": "dataclass_taint.DataClassSwapArguments.__init__",
     "filename": "dataclass_taint.py",
-    "callable_line": 139,
+    "callable_line": 140,
     "tito": [
       {
         "port": "formal(bar, position=2)",
@@ -788,7 +788,7 @@
   "data": {
     "callable": "dataclass_taint.WeirdDataClass.__init__",
     "filename": "dataclass_taint.py",
-    "callable_line": 50,
+    "callable_line": 51,
     "sources": [
       {
         "port": "formal(self, position=0)[bad]",
@@ -813,7 +813,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 50,
+              "line": 51,
               "start": 23,
               "end": 31
             },
@@ -848,7 +848,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 52,
+              "line": 53,
               "start": 8,
               "end": 53
             },
@@ -1084,7 +1084,7 @@
   "data": {
     "callable": "dataclass_taint.test_constructor_tito",
     "filename": "dataclass_taint.py",
-    "callable_line": 130,
+    "callable_line": 131,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -1098,7 +1098,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 131, "start": 35, "end": 36 } ],
+            "tito_positions": [ { "line": 132, "start": 35, "end": 36 } ],
             "tito": null
           }
         ]
@@ -1119,7 +1119,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 131, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 132, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -1132,7 +1132,7 @@
   "data": {
     "callable": "dataclass_taint.test_dataclass_parameter_path",
     "filename": "dataclass_taint.py",
-    "callable_line": 144,
+    "callable_line": 145,
     "sinks": [
       {
         "port": "formal(dc, position=0)[bad]",
@@ -1147,7 +1147,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 145,
+              "line": 146,
               "start": 15,
               "end": 21
             }
@@ -1169,9 +1169,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_dataclass_parameter_path",
-    "callable_line": 144,
+    "callable_line": 145,
     "code": 5002,
-    "line": 145,
+    "line": 146,
     "start": 15,
     "end": 21,
     "filename": "dataclass_taint.py",
@@ -1197,7 +1197,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 144,
+              "line": 145,
               "start": 34,
               "end": 47
             }
@@ -1217,7 +1217,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 145,
+              "line": 146,
               "start": 15,
               "end": 21
             }
@@ -1244,7 +1244,7 @@
   "data": {
     "callable": "dataclass_taint.test_dataclass_positional_parameter",
     "filename": "dataclass_taint.py",
-    "callable_line": 148,
+    "callable_line": 149,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -1258,10 +1258,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 149, "start": 28, "end": 29 } ],
+            "tito_positions": [ { "line": 150, "start": 28, "end": 29 } ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 149,
+              "line": 150,
               "start": 15,
               "end": 30
             }
@@ -1284,10 +1284,10 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 149, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 150, "start": 25, "end": 26 } ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 149,
+              "line": 150,
               "start": 15,
               "end": 30
             }
@@ -1302,7 +1302,7 @@
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_other_source",
     "filename": "dataclass_taint.py",
-    "callable_line": 83,
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(context, position=0)[not_tainted]",
@@ -1317,7 +1317,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 85,
+              "line": 86,
               "start": 15,
               "end": 34
             }
@@ -1337,7 +1337,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 84,
+              "line": 85,
               "start": 15,
               "end": 30
             }
@@ -1351,9 +1351,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_other_source",
-    "callable_line": 83,
+    "callable_line": 84,
     "code": 5002,
-    "line": 84,
+    "line": 85,
     "start": 15,
     "end": 30,
     "filename": "dataclass_taint.py",
@@ -1376,7 +1376,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 84,
+              "line": 85,
               "start": 15,
               "end": 30
             }
@@ -1396,7 +1396,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 84,
+              "line": 85,
               "start": 15,
               "end": 30
             }
@@ -1419,7 +1419,7 @@
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_source",
     "filename": "dataclass_taint.py",
-    "callable_line": 71,
+    "callable_line": 72,
     "sinks": [
       {
         "port": "formal(context, position=0)[not_tainted]",
@@ -1434,7 +1434,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 73,
+              "line": 74,
               "start": 15,
               "end": 34
             }
@@ -1454,7 +1454,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 72,
+              "line": 73,
               "start": 15,
               "end": 30
             }
@@ -1468,9 +1468,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_source",
-    "callable_line": 71,
+    "callable_line": 72,
     "code": 5002,
-    "line": 72,
+    "line": 73,
     "start": 15,
     "end": 30,
     "filename": "dataclass_taint.py",
@@ -1493,7 +1493,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 72,
+              "line": 73,
               "start": 15,
               "end": 30
             }
@@ -1513,7 +1513,7 @@
             ],
             "origin": {
               "filename": "dataclass_taint.py",
-              "line": 72,
+              "line": 73,
               "start": 15,
               "end": 30
             }
@@ -1536,7 +1536,7 @@
   "data": {
     "callable": "dataclass_taint.test_weird_dataclass_taint",
     "filename": "dataclass_taint.py",
-    "callable_line": 55,
+    "callable_line": 56,
     "sources": [
       {
         "port": "result[bad]",
@@ -1554,7 +1554,7 @@
             "call": {
               "position": {
                 "filename": "dataclass_taint.py",
-                "line": 56,
+                "line": 57,
                 "start": 11,
                 "end": 43
               },

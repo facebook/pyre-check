@@ -7186,6 +7186,12 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                      (List.cons name_and_metadata concrete_superclasses))
               |> Map.to_alist
           in
+          let attribute_location name =
+            let class_attributes = ClassSummary.attributes definition in
+            match Identifier.SerializableMap.find_opt name class_attributes with
+            | Some value -> value.location
+            | None -> location
+          in
           uninitialized_attributes
           |> List.filter_map
                ~f:(fun
@@ -7213,10 +7219,11 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                      else
                        Error.Class
                    in
+                   let error_location = attribute_location name in
                    Some
                      (Error.create
                         ~location:
-                          (Location.with_module ~module_reference:Context.qualifier location)
+                          (Location.with_module ~module_reference:Context.qualifier error_location)
                         ~kind:
                           (Error.UninitializedAttribute
                              {

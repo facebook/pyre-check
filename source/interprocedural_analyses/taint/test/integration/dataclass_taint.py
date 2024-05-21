@@ -40,11 +40,12 @@ def issue_in_dataclass_constructor() -> None:
 
 
 @dataclass
-# pyre-ignore[13]: Uninitialized attributes.
 class WeirdDataClass:
     # Declare the attributes because Pysa complains when specifying an
     # attribute as a sink.
+    # pyre-ignore[13]: Uninitialized attributes.
     bad: int
+    # pyre-ignore[13]: Uninitialized attributes.
     bad_sink: int
 
     def __init__(self, bad: int, another: int) -> None:
