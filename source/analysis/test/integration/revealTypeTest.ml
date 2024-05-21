@@ -289,6 +289,16 @@ let test_reveal_type =
              reveal_type(x)
            |}
            ["Revealed type [-1]: Revealed type for `x` is `Never`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+             from typing_extensions import Never
+
+             x: Never
+
+             reveal_type(x)
+           |}
+           ["Revealed type [-1]: Revealed type for `x` is `Never`."];
     ]
 
 

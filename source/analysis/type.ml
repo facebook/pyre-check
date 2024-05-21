@@ -1895,6 +1895,7 @@ let is_noreturn_or_never = function
   | Primitive "typing.NoReturn"
   | Primitive "NoReturn"
   | Primitive "Never"
+  | Primitive "typing_extensions.Never"
   | Primitive "typing.Never" ->
       true
   | _ -> false

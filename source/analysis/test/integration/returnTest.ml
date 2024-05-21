@@ -693,6 +693,23 @@ let test_check_never context =
     ["Incompatible return type [7]: Function declared non-returnable, but got `int`."];
   assert_type_errors
     {|
+      from typing_extensions import Never
+      def never() -> Never:
+        while True:
+          pass
+
+      never()
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing_extensions import Never
+      def never() -> Never:
+        return 0
+    |}
+    ["Incompatible return type [7]: Function declared non-returnable, but got `int`."];
+  assert_type_errors
+    {|
       import typing
       def never_explicit_return() -> typing.Never:
         return None

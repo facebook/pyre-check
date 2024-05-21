@@ -781,6 +781,66 @@ let test_no_return context =
           print(x)
     |}
     ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      from typing import Never
+
+      def does_not_return() -> Never:
+          raise Exception()
+
+      def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      from typing import Never
+
+      async def does_not_return() -> Never:
+          raise Exception()
+
+      async def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              await does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      from typing_extensions import Never
+
+      def does_not_return() -> Never:
+          raise Exception()
+
+      def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      from typing_extensions import Never
+
+      async def does_not_return() -> Never:
+          raise Exception()
+
+      async def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              await does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   ()
 
 

@@ -250,6 +250,7 @@ let missing_typing_extensions_classes =
     make "typing_extensions.Literal" ~bases:catch_all_generic;
     make "typing_extensions.Annotated" ~bases:catch_all_generic;
     make "typing_extensions.TypeAlias";
+    make "typing_extensions.Never";
     make "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     make "typing_extensions.Required" ~bases:single_unary_generic;
     make "typing_extensions.NotRequired" ~bases:single_unary_generic;
