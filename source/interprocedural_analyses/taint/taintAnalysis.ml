@@ -827,21 +827,6 @@ let run_taint_analysis
 
   let callables = Target.Set.of_list all_callables in
 
-  Log.info "Post-processing issues for multi-source rules...";
-  let timer = Timer.start () in
-  let () =
-    MultiSourcePostProcessing.update_multi_source_issues
-      ~resolve_module_path
-      ~taint_configuration
-      ~callables:callables_to_analyze
-      ~fixpoint_state
-  in
-  Statistics.performance
-    ~name:"Finished issue post-processing for multi-source rules"
-    ~phase_name:"Post-processing issues for multi-source rules"
-    ~timer
-    ();
-
   let errors =
     TaintReporting.produce_errors
       ~scheduler

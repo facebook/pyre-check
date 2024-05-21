@@ -110,7 +110,6 @@ module Candidates : sig
     sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
-    define:Define.t Node.t ->
     unit
 
   val generate_issues
@@ -118,42 +117,4 @@ module Candidates : sig
     taint_configuration:TaintConfiguration.Heap.t ->
     define:Define.t Node.t ->
     issue IssueHandle.SerializableMap.t
-end
-
-module MultiSource : sig
-  type issue = t
-
-  (* Whether an issue is related with a multi-source rule. *)
-  val is_multi_source : issue -> bool
-
-  (* When the combination of the given issue alongwith other issues that it relates to (under the
-     same partial sink kind) constitutes all issues required for reporting an issue of the
-     corresponding multi-source rule, return a pair of the partial sink kind and the related issues.
-     Fact: There exists a valid issue for a multi-source rule iff. there exists a non-empty set of
-     related issues (under a partial sink kind). *)
-  val find_related_issues
-    :  taint_configuration:TaintConfiguration.Heap.t ->
-    issue_handle_map:t IssueHandle.SerializableMap.t ->
-    issue ->
-    issue list Sinks.Map.t
-
-  val is_main_issue : sink:Sinks.t -> taint_configuration:TaintConfiguration.Heap.t -> issue -> bool
-
-  val get_first_sink_hops
-    :  main_issue_location:Location.WithModule.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
-    issue ->
-    ExtraTraceFirstHop.Set.t
-
-  val get_first_source_hops
-    :  main_issue_location:Location.WithModule.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
-    issue ->
-    ExtraTraceFirstHop.Set.t
-
-  val attach_extra_traces
-    :  source_traces:ExtraTraceFirstHop.Set.t ->
-    sink_traces:ExtraTraceFirstHop.Set.t ->
-    issue ->
-    issue
 end

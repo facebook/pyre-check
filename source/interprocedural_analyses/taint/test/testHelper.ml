@@ -861,11 +861,6 @@ let end_to_end_integration_test path context =
     let divergent_files =
       [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
-    MultiSourcePostProcessing.update_multi_source_issues
-      ~resolve_module_path
-      ~taint_configuration
-      ~callables:callables_to_analyze
-      ~fixpoint_state;
     let serialized_models =
       List.rev_append (Registry.targets initial_models) callables_to_analyze
       |> Target.Set.of_list

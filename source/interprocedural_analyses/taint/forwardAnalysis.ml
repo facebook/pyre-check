@@ -219,7 +219,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~location
       ~source_tree
       ~sink_tree
-      ~define:FunctionContext.definition
       ~taint_configuration:FunctionContext.taint_configuration
 
 

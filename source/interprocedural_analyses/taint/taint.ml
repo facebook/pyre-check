@@ -13,7 +13,6 @@ module Rule = Rule
 module SourceSinkFilter = SourceSinkFilter
 module TaintConfiguration = TaintConfiguration
 module Domains = Domains
-module MultiSourcePostProcessing = MultiSourcePostProcessing
 module Sanitize = Sanitize
 module SanitizeTransform = SanitizeTransform
 module SanitizeTransformSet = SanitizeTransformSet

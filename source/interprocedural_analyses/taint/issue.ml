@@ -383,11 +383,6 @@ module TriggeredSinkHashMap = struct
 
   let mem map partial_sink = Core.Hashtbl.mem map (convert_to_key partial_sink)
 
-  let get_issue_handles map partial_sink =
-    Core.Hashtbl.find map (convert_to_key partial_sink)
-    |> Option.value ~default:IssueHandleSet.bottom
-
-
   let add map ~triggered_sink ~issue_handles =
     let update = function
       | Some existing_issue_handles -> IssueHandleSet.join existing_issue_handles issue_handles
@@ -423,7 +418,6 @@ let compute_triggered_flows
     ~sink_handle
     ~source_tree
     ~sink_tree
-    ~define
   =
   let partial_sinks =
     if ForwardState.Tree.is_bottom source_tree then
@@ -448,48 +442,29 @@ let compute_triggered_flows
     TaintConfiguration.get_triggered_sink taint_configuration ~partial_sink ~source
     |> function
     | Some (Sinks.TriggeredPartialSink triggered_sink) ->
-        (* For a multi-source rule, the main issue could be the first candidate that is discovered,
-         * or the second. We consider both situations as valid issues here, but after the global
-         * fixpoint computation is done, we will remove the secondary issue.
-         * Invariant: Any multi-source issue must refer to the known issues under the same multi-source
-         * rule, such that if there exists no known issue, then this issue is incomplete and thus needs
-         * to be discarded:
-         * - Case A: We have already found both issues.
-         * - Case B: We have just found the first issue. We will propagate the triggered sink, which
-         * may eventually lead to finding a second issue.
-         *)
-        let candidate =
-          let related_issues =
-            TriggeredSinkHashMap.get_issue_handles triggered_sinks_for_call partial_sink
-          in
-          let frame =
-            (* Case A above *)
-            Frame.update Frame.Slots.MultiSourceIssueHandle related_issues Frame.initial
-          in
-          generate_source_sink_matches
-            ~location
-            ~sink_handle
-            ~source_tree
-            ~sink_tree:
-              (BackwardState.Tree.create_leaf
-                 (BackwardTaint.singleton
-                    (CallInfo.origin location)
-                    (Sinks.TriggeredPartialSink partial_sink)
-                    frame))
-        in
-        if Candidate.is_empty candidate then
-          None
-        else
-          let issues = generate_issues ~taint_configuration ~define candidate in
-          let issue_handles =
-            List.fold issues ~init:IssueHandleSet.bottom ~f:(fun so_far issue ->
-                IssueHandleSet.add issue.handle so_far)
-          in
+        let () =
           TriggeredSinkHashMap.add
             triggered_sinks_for_call
             ~triggered_sink
-            ~issue_handles (* Case B above *);
-          Some candidate
+            ~issue_handles:IssueHandleSet.bottom
+          (* TODO: Add extra traces instead of issue handles. *)
+        in
+        if TriggeredSinkHashMap.mem triggered_sinks_for_call partial_sink then
+          (* Since another flow has already been found, both flows are found and hence we emit an
+             issue. *)
+          Some
+            (generate_source_sink_matches
+               ~location
+               ~sink_handle
+               ~source_tree
+               ~sink_tree:
+                 (BackwardState.Tree.create_leaf
+                    (BackwardTaint.singleton
+                       (CallInfo.origin location)
+                       (Sinks.TriggeredPartialSink partial_sink)
+                       Frame.initial)))
+        else
+          None
     | _ -> None
   in
   partial_sinks
@@ -531,7 +506,6 @@ module Candidates = struct
       ~sink_handle
       ~source_tree
       ~sink_tree
-      ~define
     =
     let new_candidates =
       compute_triggered_flows
@@ -541,7 +515,6 @@ module Candidates = struct
         ~location
         ~source_tree
         ~sink_tree
-        ~define
     in
     List.iter new_candidates ~f:(add_candidate candidates)
 
@@ -721,193 +694,3 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
       "sink_handle", sink_handle;
       "master_handle", `String master_handle;
     ]
-
-
-module MultiSource = struct
-  type issue = t
-
-  (* Get all triggered sink kinds from the sink taint of the issue. *)
-  let get_triggered_sinks { flow = { Flow.sink_taint; _ }; _ } =
-    BackwardTaint.fold
-      BackwardTaint.kind
-      ~f:(fun sink sofar ->
-        (* For now, if a partial sink is transformed, we do not consider it as a sink for a
-           multi-source rule. *)
-        match Sinks.discard_sanitize_transforms sink with
-        | Sinks.TriggeredPartialSink _ as partial_sink -> Sinks.Set.add partial_sink sofar
-        | _ -> sofar)
-      ~init:Sinks.Set.empty
-      sink_taint
-
-
-  let is_multi_source issue = not (Sinks.Set.is_empty (get_triggered_sinks issue))
-
-  (* Get all triggered sink kind labels from the sink taint of the issue that match the given sink
-     kind. *)
-  let get_triggered_sink_labels ~sink_kind issue =
-    get_triggered_sinks issue
-    |> Sinks.Set.elements
-    |> List.filter_map ~f:(function
-           | Sinks.TriggeredPartialSink { Sinks.kind; label } ->
-               if String.equal kind sink_kind then
-                 Some label
-               else
-                 None
-           | _ -> failwith "Expect triggered sinks")
-
-
-  (* Get issue handles sharing the same partial sink kind with `triggered_sink`. *)
-  let get_issue_handles ~triggered_sink:{ Sinks.kind; _ } { flow = { Flow.sink_taint; _ }; _ } =
-    BackwardTaint.reduce
-      IssueHandleSet.Self
-      ~using:(Context (BackwardTaint.kind, Acc))
-      ~f:(fun sink_kind issue_handles so_far ->
-        match sink_kind with
-        | Sinks.TriggeredPartialSink { Sinks.kind = sink_kind; _ } ->
-            if String.equal kind sink_kind then
-              IssueHandleSet.join so_far issue_handles
-            else
-              so_far
-        | _ -> so_far)
-      ~init:IssueHandleSet.bottom
-      sink_taint
-
-
-  (* When the combination of the given issue alongwith other issues that it relates to (under the
-     same partial sink kind) constitutes all issues required for reporting an issue of the
-     corresponding multi-source rule, return a pair of the partial sink kind and the related issues.
-     Fact: There exists a valid issue for a multi-source rule iff. there exists a non-empty set of
-     related issues (under a partial sink kind). *)
-  let find_related_issues ~taint_configuration ~issue_handle_map issue =
-    let is_related ~triggered_sink:{ Sinks.kind; label } ~main_label ~secondary_label related_issue =
-      let missing_label = if String.equal main_label label then secondary_label else main_label in
-      get_triggered_sink_labels ~sink_kind:kind related_issue
-      |> List.exists ~f:(String.equal missing_label)
-    in
-    let accumulate_related_issues triggered_sink so_far =
-      match triggered_sink with
-      | Sinks.TriggeredPartialSink triggered_sink ->
-          (* Issues that are known to be related to the given issue, due to sharing the same partial
-             sink kind and matching the labels under this partial sink kind. *)
-          let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
-          let {
-            TaintConfiguration.PartialSinkLabelsMap.main = main_label;
-            secondary = secondary_label;
-          }
-            =
-            TaintConfiguration.PartialSinkLabelsMap.find_opt triggered_sink.kind partial_sink_labels
-            |> Option.value_exn
-          in
-          let related_issues =
-            get_issue_handles ~triggered_sink issue
-            |> IssueHandleSet.elements
-            |> List.map ~f:(fun issue_handle ->
-                   IssueHandle.SerializableMap.find issue_handle issue_handle_map)
-            |> List.filter ~f:(is_related ~triggered_sink ~main_label ~secondary_label)
-          in
-          Sinks.Map.add (Sinks.TriggeredPartialSink triggered_sink) related_issues so_far
-      | _ -> so_far
-    in
-    Sinks.Set.fold accumulate_related_issues (get_triggered_sinks issue) Sinks.Map.empty
-
-
-  let is_main_issue ~sink ~taint_configuration issue =
-    let is_main_label ~kind label =
-      let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
-      match TaintConfiguration.PartialSinkLabelsMap.find_opt kind partial_sink_labels with
-      | Some { main; _ } -> String.equal main label
-      | None -> false
-    in
-    match sink with
-    | Sinks.TriggeredPartialSink { kind; _ } ->
-        get_triggered_sink_labels ~sink_kind:kind issue |> List.exists ~f:(is_main_label ~kind)
-    | _ -> false
-
-
-  let show_call_info ~resolve_module_path call_info =
-    let show_location location =
-      let filename_lookup qualifier =
-        resolve_module_path qualifier >>= fun { RepositoryPath.filename; _ } -> filename
-      in
-      let { Location.WithPath.path; start; _ } =
-        Location.WithModule.instantiate ~lookup:filename_lookup location
-      in
-      Format.asprintf "%s:%s" path (Location.show_position start)
-    in
-    match call_info with
-    | CallInfo.Tito -> "tito"
-    | Declaration _ -> "declaration"
-    | Origin { location; _ } -> Format.asprintf "%s (leaf)" (show_location location)
-    | CallSite { location; callees; _ } ->
-        Format.asprintf
-          "%s (resolving to: %s)"
-          (show_location location)
-          (callees |> List.map ~f:Target.external_name |> String.concat ~sep:"; ")
-
-
-  let get_first_sink_hops
-      ~main_issue_location
-      ~resolve_module_path
-      { flow = { Flow.sink_taint; _ }; _ }
-    =
-    BackwardTaint.reduce
-      BackwardTaint.kind
-      ~using:(Context (BackwardTaint.call_info, Acc))
-      ~f:(fun call_info sink_kind so_far ->
-        let extra_trace =
-          {
-            ExtraTraceFirstHop.call_info =
-              CallInfo.replace_location ~location:main_issue_location call_info;
-            leaf_kind = Sink sink_kind;
-            message =
-              Some
-                (Format.asprintf
-                   "Sink trace of secondary flow leading to %s begins at %s"
-                   (Sinks.show sink_kind)
-                   (show_call_info ~resolve_module_path call_info));
-          }
-        in
-        ExtraTraceFirstHop.Set.add extra_trace so_far)
-      ~init:ExtraTraceFirstHop.Set.bottom
-      sink_taint
-
-
-  let get_first_source_hops
-      ~main_issue_location
-      ~resolve_module_path
-      { flow = { Flow.source_taint; _ }; _ }
-    =
-    ForwardTaint.reduce
-      ForwardTaint.kind
-      ~using:(Context (ForwardTaint.call_info, Acc))
-      ~f:(fun call_info source_kind so_far ->
-        let extra_trace =
-          {
-            ExtraTraceFirstHop.call_info =
-              CallInfo.replace_location ~location:main_issue_location call_info;
-            leaf_kind = Source source_kind;
-            message =
-              Some
-                (Format.asprintf
-                   "Source trace of secondary flow from %s begins at %s"
-                   (Sources.show source_kind)
-                   (show_call_info ~resolve_module_path call_info));
-          }
-        in
-        ExtraTraceFirstHop.Set.add extra_trace so_far)
-      ~init:ExtraTraceFirstHop.Set.bottom
-      source_taint
-
-
-  let attach_extra_traces
-      ~source_traces
-      ~sink_traces
-      ({ flow = { Flow.source_taint; sink_taint }; _ } as issue)
-    =
-    let sink_taint =
-      BackwardTaint.add_extra_traces
-        ~extra_traces:(ExtraTraceFirstHop.Set.join source_traces sink_traces)
-        sink_taint
-    in
-    { issue with flow = { Flow.source_taint; sink_taint } }
-end
