@@ -4202,10 +4202,12 @@ let contains_literal annotation =
   exists annotation ~predicate
 
 
-let final_value = function
+let rec final_value = function
   | Parametric
       { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
       `Ok parameter
+  | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } ->
+      final_value parameter
   | Primitive ("typing.Final" | "typing_extensions.Final") -> `NoParameter
   | _ -> `NotFinal
 

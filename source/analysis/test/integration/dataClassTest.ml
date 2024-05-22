@@ -2152,11 +2152,9 @@ let test_check_dataclasses =
             @dataclass
             class D:
                 final_classvar: ClassVar[Final[int]] = 4
+            D.final_classvar = 10
          |}
-           [
-             "Incompatible attribute type [8]: Attribute `final_classvar` declared in class `D` \
-              has type `Final[int]` but is used as type `int`.";
-           ];
+           ["Invalid assignment [41]: Cannot reassign final attribute `D.final_classvar`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
