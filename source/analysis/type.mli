@@ -810,6 +810,8 @@ val class_variable : t -> t
 
 val class_variable_value : t -> t option
 
+val is_class_variable : t -> bool
+
 val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
 
 val assume_any : t -> t

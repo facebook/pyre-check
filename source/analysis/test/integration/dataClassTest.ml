@@ -2146,6 +2146,20 @@ let test_check_dataclasses =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            from dataclasses import dataclass
+            from typing import assert_type, ClassVar, Final
+
+            @dataclass
+            class D:
+                final_classvar: ClassVar[Final[int]] = 4
+         |}
+           [
+             "Incompatible attribute type [8]: Attribute `final_classvar` declared in class `D` \
+              has type `Final[int]` but is used as type `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
            from dataclasses import dataclass
            @dataclass
            class Foo():

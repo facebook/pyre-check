@@ -4445,6 +4445,12 @@ let class_variable_value = function
   | _ -> None
 
 
+let is_class_variable annotation =
+  match class_variable_value annotation with
+  | Some _ -> true
+  | None -> false
+
+
 (* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
    See T22792667. *)
 let assume_any = function

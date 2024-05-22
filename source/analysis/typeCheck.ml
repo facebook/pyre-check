@@ -4163,6 +4163,18 @@ module State (Context : Context) = struct
             | `NoParameter -> None, true
             | `NotFinal -> Some parsed_annotation, false
           in
+          let annotation_errors =
+            final_annotation
+            >>| (fun annotation ->
+                  if Type.contains_final annotation && not (Type.is_class_variable annotation) then
+                    emit_error
+                      ~errors:annotation_errors
+                      ~location
+                      ~kind:(Error.InvalidType (FinalNested annotation))
+                  else
+                    annotation_errors)
+            |> Option.value ~default:annotation_errors
+          in
           let unwrap_type_qualifiers annotation =
             match annotation with
             | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single parameter_type] }
@@ -4545,18 +4557,6 @@ module State (Context : Context) = struct
                                    (ClassVariable { class_name = Type.show parent; class_variable }))
                         | _ -> errors
                       in
-                      let check_final_is_outermost_parametric_type errors =
-                        original_annotation
-                        >>| (fun annotation ->
-                              if Type.contains_final annotation then
-                                emit_error
-                                  ~errors
-                                  ~location
-                                  ~kind:(Error.InvalidType (FinalNested annotation))
-                              else
-                                errors)
-                        |> Option.value ~default:errors
-                      in
                       let check_undefined_attribute_target errors =
                         match resolved_base, attribute with
                         | `Attribute (_, parent), Some (attribute, _)
@@ -4717,7 +4717,6 @@ module State (Context : Context) = struct
                             check_assignment_compatibility errors
                       in
                       check_assign_class_variable_on_instance errors
-                      |> check_final_is_outermost_parametric_type
                       |> check_undefined_attribute_target
                       |> check_nested_explicit_type_alias
                       |> check_enumeration_literal
