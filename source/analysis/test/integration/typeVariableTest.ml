@@ -1438,9 +1438,8 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Callable, List
-              import pyre_extensions
-              V = pyre_extensions.ParameterSpecification("V")
+              from typing import Callable, List, ParamSpec
+              V = ParamSpec("V")
               def f(x: Callable[V, int]) -> Callable[V, List[int]]: ...
               def foo(x: int) -> int:
                 return 7
@@ -1462,8 +1461,7 @@ let test_callable_parameter_variadics =
       @@ assert_type_errors
            {|
               import typing
-              import pyre_extensions
-              V = pyre_extensions.ParameterSpecification("V")
+              V = typing.ParamSpec("V")
               class Propagating(typing.List[typing.Callable[V, int]]):
                  def foo(self) -> int: ...
             |}
@@ -1472,10 +1470,9 @@ let test_callable_parameter_variadics =
       @@ assert_type_errors
            ~handle:"qualifier.py"
            {|
-              from typing import Callable, List
-              from pyre_extensions import ParameterSpecification
+              from typing import Callable, List, ParamSpec
               from pyre_extensions.type_variable_operators import PositionalArgumentsOf, KeywordArgumentsOf
-              V = ParameterSpecification("V")
+              V = ParamSpec("V")
               def f(x: Callable[V, int]) -> Callable[V, List[int]]:
                 def decorated( *args: V.args, **kwargs: V.kwargs) -> List[int]:
                   return [x( *args, **kwargs)]
@@ -1485,10 +1482,9 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-             from typing import Callable
-             from pyre_extensions import ParameterSpecification
+             from typing import Callable, ParamSpec
 
-             TParams = ParameterSpecification("TParams")
+             TParams = ParamSpec("TParams")
              def eek(x: Callable[TParams, int]) -> Callable[TParams, float]:
                  return x
             |}
@@ -1496,9 +1492,8 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Protocol, Callable, TypeVar
-              import pyre_extensions
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              from typing import Protocol, Callable, TypeVar, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
                 return __f( *args, **kwargs)
@@ -1524,9 +1519,8 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Protocol, Callable, TypeVar, overload, Union
-              import pyre_extensions
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              from typing import Protocol, Callable, TypeVar, overload, Union, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
                 return __f( *args, **kwargs)
@@ -1558,9 +1552,8 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Protocol, Callable, TypeVar
-              import pyre_extensions
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              from typing import Protocol, Callable, TypeVar, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def call_n_times(
                   __f: Callable[TParams, None],
@@ -1590,9 +1583,8 @@ let test_callable_parameter_variadics =
       @@ assert_type_errors
            {|
               from typing import *
-              from pyre_extensions import ParameterSpecification
 
-              P = ParameterSpecification("P")
+              P = ParamSpec("P")
               R = TypeVar("R")
 
               class Client: ...
@@ -1635,9 +1627,8 @@ let test_callable_parameter_variadics =
       @@ assert_type_errors
            {|
               from abc import ABCMeta
-              from typing import Protocol, Callable, TypeVar
-              import pyre_extensions
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              from typing import Protocol, Callable, TypeVar, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               class HasForward(Protocol[TParams, TReturn]):
                 forward: Callable[TParams, TReturn]
@@ -1682,9 +1673,8 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import Generic
-              P = ParameterSpecification("P")
+              from typing import Generic, ParamSpec
+              P = ParamSpec("P")
               class H(Generic[P]):
                 def f(self, /, *args: P.args, **kwargs: P.kwargs) -> int:
                   return 5
@@ -1711,10 +1701,9 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Callable
-              import pyre_extensions
+              from typing import Callable, ParamSpec
 
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
               def outer(f: Callable[TParams, int]) -> None:
                 def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
                   pass
@@ -1740,15 +1729,27 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Callable
-              import pyre_extensions
+              from typing import Callable, ParamSpec
 
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
               def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
                 def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
                   f( *args, **kwargs)
                 def bar( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
                   foo(1, *args, **kwargs) # Accepted
+                return bar
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable, ParamSpec
+
+              TParams = ParamSpec("TParams")
+              def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
+                def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+                  f( *args, **kwargs)
+                def bar( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
                   foo(x=1, *args, **kwargs) # Rejected
                 return bar
             |}
@@ -1756,9 +1757,9 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Protocol, Callable, TypeVar, overload, Union
-              import pyre_extensions
-              TParams = pyre_extensions.ParameterSpecification("TParams")
+              from typing import Protocol, Callable, TypeVar, overload, Union, ParamSpec
+
+              TParams = ParamSpec("TParams")
 
               def doesnt_care_positional( *args: object) -> None:
                 pass
@@ -1811,8 +1812,7 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Callable
-              from typing_extensions import ParamSpec
+              from typing import Callable, ParamSpec
               TParams = ParamSpec("TParams")
               def client(f: Callable[TParams, int]) -> None:
                 def inner( *args: TParams.args, **kwargs: TParams.kwargs) -> int:
@@ -1822,10 +1822,9 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable
+              from typing import TypeVar, Generic, Callable, ParamSpec
 
-              TParams = ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def function(param: str) -> str:
                 ...
@@ -1855,9 +1854,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable
-              TParams = ParameterSpecification("TParams")
+              from typing import TypeVar, Generic, Callable, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def client(f: Callable[TParams, TReturn]) -> None:
                 def inner(__x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
@@ -1872,9 +1870,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable, Protocol
-              TParams = ParameterSpecification("TParams")
+              from typing import TypeVar, Generic, Callable, Protocol, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               class CallableReturningInt(Protocol[TParams]):
                 def __call__(__self, __f: int, *args: TParams.args, **kwargs: TParams.kwargs) -> int:
@@ -1890,9 +1887,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable, Protocol, Concatenate
-              TParams = ParameterSpecification("TParams")
+              from typing import TypeVar, Generic, Callable, Protocol, Concatenate, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def remove_int_argument(f: Callable[Concatenate[int, TParams], str]) -> Callable[TParams, int]:
                 def inner( *args: TParams.args, **kwargs: TParams.kwargs) -> int:
@@ -1909,9 +1905,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Protocol, TypeVar, Generic, Callable
-            from pyre_extensions import ParameterSpecification
-            TParams = ParameterSpecification("TParams")
+            from typing import Protocol, TypeVar, Generic, Callable, ParamSpec
+            TParams = ParamSpec("TParams")
             TReturn = TypeVar("TReturn")
             TSelf = TypeVar("TSelf")
             class ObjectMethod(Protocol[TSelf, TParams, TReturn]):
@@ -1943,9 +1938,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Protocol, TypeVar, Generic, Callable, Concatenate
-            from pyre_extensions import ParameterSpecification
-            TParams = ParameterSpecification("TParams")
+            from typing import Protocol, TypeVar, Generic, Callable, Concatenate, ParamSpec
+            TParams = ParamSpec("TParams")
             TReturn = TypeVar("TReturn")
             TSelf = TypeVar("TSelf")
             def track_assertion(
@@ -1976,9 +1970,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable, Protocol, Concatenate
-              TParams = ParameterSpecification("TParams")
+              from typing import TypeVar, Generic, Callable, Protocol, Concatenate, ParamSpec
+              TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               def add_on_argument(f: Callable[TParams, str]) -> Callable[Concatenate[str, TParams], int]:
                 def inner(first: str, /, *args: TParams.args, **kwargs: TParams.kwargs) -> int:
@@ -1998,10 +1991,9 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable
+              from typing import TypeVar, Generic, Callable, ParamSpec
 
-              TParams = ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
 
               class MyClass(Generic[TParams]):
                 def __call__(__self, *args: TParams.args, **kwargs: TParams.kwargs) -> bool: ...
@@ -2023,10 +2015,9 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ParameterSpecification
-              from typing import TypeVar, Generic, Callable, Protocol
+              from typing import TypeVar, Generic, Callable, Protocol, ParamSpec
 
-              TParams = ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
 
               class PrependIntProtocol(Protocol[TParams]):
                 def __call__(__self, __f: int, *args: TParams.args, **kwargs: TParams.kwargs) -> int: ...
@@ -2076,10 +2067,9 @@ let test_duplicate_type_variables =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Generic
-            from pyre_extensions import ParameterSpecification
+            from typing import Generic, ParamSpec
 
-            P = ParameterSpecification("P")
+            P = ParamSpec("P")
             class A(Generic[P, P]):
                 pass
           |}
@@ -3627,13 +3617,13 @@ let test_variadic_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Callable, Generic, Tuple, TypeVar
-              from pyre_extensions import ParameterSpecification, TypeVarTuple, Unpack
+              from typing import Callable, Generic, Tuple, TypeVar, ParamSpec
+              from pyre_extensions import TypeVarTuple, Unpack
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
               Ts = TypeVarTuple("Ts")
-              TParams = ParameterSpecification("TParams")
+              TParams = ParamSpec("TParams")
 
               class Tensor(Generic[T, TParams, Unpack[Ts]]):
                 def __init__(self, f: Callable[TParams, T], shape: Tuple[Unpack[Ts]]) -> None:

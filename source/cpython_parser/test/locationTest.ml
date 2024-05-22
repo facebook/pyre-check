@@ -701,6 +701,14 @@ let test_call_locations =
                                         (Expression.Constant (Constant.Integer 1));
                                   };
                                   {
+                                    Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 8) "a");
+                                    value =
+                                      node
+                                        ~start:(1, 11)
+                                        ~stop:(1, 12)
+                                        (Expression.Constant (Constant.Integer 2));
+                                  };
+                                  {
                                     Call.Argument.name = None;
                                     value =
                                       node
@@ -712,14 +720,6 @@ let test_call_locations =
                                                  ~start:(1, 15)
                                                  ~stop:(1, 19)
                                                  (Expression.Name (Name.Identifier "args")))));
-                                  };
-                                  {
-                                    Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 8) "a");
-                                    value =
-                                      node
-                                        ~start:(1, 11)
-                                        ~stop:(1, 12)
-                                        (Expression.Constant (Constant.Integer 2));
                                   };
                                   {
                                     Call.Argument.name = None;

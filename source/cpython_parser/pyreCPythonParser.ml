@@ -413,10 +413,18 @@ let expression =
   in
   let call ~location ~func ~args ~keywords =
     let arguments =
-      (* NOTE(T101305324): Ordering between positional and keyword args is artificial. *)
       List.append
-        (List.map args ~f:convert_positional_argument)
-        (List.map keywords ~f:convert_keyword_argument)
+        (List.map args ~f:(fun arg -> convert_positional_argument arg, arg.Node.location))
+        (List.map keywords ~f:(fun arg ->
+             convert_keyword_argument arg, arg.KeywordArgument.location))
+    in
+    (* sort arguments by original position *)
+    let arguments =
+      List.stable_sort
+        ~compare:(fun (_, { Location.start = start1; _ }) (_, { Location.start = start2; _ }) ->
+          Location.compare_position start1 start2)
+        arguments
+      |> List.map ~f:fst
     in
     Expression.Call { Call.callee = func; arguments } |> Node.create ~location
   in
@@ -817,6 +825,7 @@ let statement =
       ~context
   in
   let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
+    (* TODO:T101306421 *)
     let base_arguments =
       List.append
         (List.map bases ~f:convert_positional_argument)

@@ -367,6 +367,19 @@ let test_unresolved_select =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
       labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select
+           "[[int, str], int]"
+           "(*[1], *['asdf'])"
+           (`NotFoundMismatch [Type.integer, Type.string, None, 2]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[int, str], int]" "(1, *['asdf'])" (`Found "int");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[int, Named(i, int)], int]" "(1, 2, 3)" (`NotFoundTooManyArguments (2, 3));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundUnexpectedKeyword "i");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 2));
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[object], None]" "(union)" (`Found "None");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
@@ -374,10 +387,7 @@ let test_unresolved_select =
            "(union)"
            (`NotFoundMismatch [Type.union [Type.integer; Type.string], Type.integer, None, 1]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select
-           "[[int, Named(i, int)], int]"
-           "(1, 2, i=3)"
-           (`NotFoundTooManyArguments (1, 2));
+      @@ assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundUnexpectedKeyword "i");
       (* Traverse variable arguments. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[Variable()], int]" "()" (`Found "int");
@@ -420,7 +430,7 @@ let test_unresolved_select =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 1));
+      @@ assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 2));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[KeywordOnly(i, int)], int]" "(**{'A': 7})" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__

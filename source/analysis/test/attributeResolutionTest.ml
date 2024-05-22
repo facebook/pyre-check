@@ -46,16 +46,16 @@ let test_prepare_arguments_for_signature_selection _ =
         position = 0;
       };
       {
-        Argument.WithPosition.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
-        expression = parse_single_expression "'hello'" |> Option.some;
-        position = 2;
-      };
-      {
         Argument.WithPosition.resolved = Type.integer;
         kind = Positional;
         expression = parse_single_expression "42" |> Option.some;
         position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.string;
+        kind = Named (Node.create_with_default_location "some_argument");
+        expression = parse_single_expression "'hello'" |> Option.some;
+        position = 2;
       };
     ];
   assert_prepared_arguments
@@ -79,12 +79,6 @@ let test_prepare_arguments_for_signature_selection _ =
     ]
     [
       {
-        Argument.WithPosition.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
-        expression = parse_single_expression "'hello'" |> Option.some;
-        position = 3;
-      };
-      {
         Argument.WithPosition.resolved = Type.integer;
         kind = Positional;
         expression = parse_single_expression "42" |> Option.some;
@@ -95,6 +89,12 @@ let test_prepare_arguments_for_signature_selection _ =
         kind = SingleStar;
         expression = None;
         position = 2;
+      };
+      {
+        Argument.WithPosition.resolved = Type.string;
+        kind = Named (Node.create_with_default_location "some_argument");
+        expression = parse_single_expression "'hello'" |> Option.some;
+        position = 3;
       };
     ];
   ()

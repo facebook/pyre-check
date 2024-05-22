@@ -1845,12 +1845,12 @@ let test_call =
                          value = +Expression.Constant (Constant.Integer 1);
                        };
                        {
-                         Call.Argument.name = None;
-                         value = +Expression.Starred (Starred.Once !"args");
-                       };
-                       {
                          Call.Argument.name = Some (+"a");
                          value = +Expression.Constant (Constant.Integer 2);
+                       };
+                       {
+                         Call.Argument.name = None;
+                         value = +Expression.Starred (Starred.Once !"args");
                        };
                        {
                          Call.Argument.name = None;

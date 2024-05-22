@@ -313,11 +313,12 @@ module SignatureSelection = struct
       List.mapi ~f:add_index arguments
     in
     let separate_labeled_unlabeled_arguments arguments =
-      let is_labeled = function
-        | { Argument.WithPosition.kind = Named _; _ } -> true
-        | _ -> false
+      let classify_argument argument =
+        match argument with
+        | { Argument.WithPosition.kind = DoubleStar; _ } -> false
+        | _ -> true
       in
-      let labeled_arguments, unlabeled_arguments = arguments |> List.partition_tf ~f:is_labeled in
+      let positional_and_named_args, kwargs = List.partition_tf arguments ~f:classify_argument in
       let self_argument =
         self_argument
         >>| (fun resolved ->
@@ -329,7 +330,7 @@ module SignatureSelection = struct
               })
         |> Option.to_list
       in
-      self_argument @ labeled_arguments @ unlabeled_arguments
+      self_argument @ positional_and_named_args @ kwargs
     in
     arguments |> add_positions |> separate_labeled_unlabeled_arguments
 
@@ -370,7 +371,10 @@ module SignatureSelection = struct
                 | { Argument.WithPosition.kind = Named _; _ } -> true
                 | _ -> false
               in
-              List.filter ~f:is_keyword_argument all_arguments
+              let matched_arguments =
+                List.take all_arguments (List.length all_arguments - List.length arguments)
+              in
+              List.filter ~f:is_keyword_argument matched_arguments
             in
             let positional_parameter_count =
               List.length all_parameters
@@ -1239,9 +1243,16 @@ module SignatureSelection = struct
             | { Argument.WithPosition.kind = Named _; _ } -> true
             | _ -> false
           in
-          let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
-          let first_unlabeled, remainder = List.split_n unlabeled (List.length head) in
-          first_unlabeled, labeled @ remainder
+          (* extract the first N unlabeled arguments, keeping the remaining arguments in order *)
+          let rec partition_first_unlabeled left right n args =
+            match n, args with
+            | 0, _
+            | _, [] ->
+                List.rev left, List.rev right @ args
+            | _, hd :: tl when is_labeled hd -> partition_first_unlabeled left (hd :: right) n tl
+            | _, hd :: tl -> partition_first_unlabeled (hd :: left) right (n - 1) tl
+          in
+          partition_first_unlabeled [] [] (List.length head) arguments
         in
         let ({ constraints_set; reasons = { arity = head_arity; annotation = head_annotation }; _ }
             as head_signature)

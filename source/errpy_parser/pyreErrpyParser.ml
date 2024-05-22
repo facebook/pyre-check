@@ -272,8 +272,16 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.Call call ->
             let arguments =
               List.append
-                (List.map call.args ~f:convert_positional_argument)
-                (List.map call.keywords ~f:convert_keyword_argument)
+                (List.map call.args ~f:(fun arg -> convert_positional_argument arg))
+                (List.map call.keywords ~f:(fun arg -> convert_keyword_argument arg))
+            in
+            (* sort arguments by original position *)
+            let arguments =
+              List.stable_sort
+                ~compare:(fun (_, pos1) (_, pos2) ->
+                  Ast.Location.compare_position pos1.start pos2.start)
+                arguments
+              |> List.map ~f:fst
             in
             Expression.Call { callee = translate_expression call.func; arguments }
         | Errpyast.Subscript subscript ->
@@ -364,7 +372,8 @@ let rec translate_expression (expression : Errpyast.expr) =
 
 
 and convert_positional_argument value =
-  { Ast.Expression.Call.Argument.name = None; value = translate_expression value }
+  let expression = translate_expression value in
+  { Ast.Expression.Call.Argument.name = None; value = expression }, expression.location
 
 
 and convert_keyword_argument (kw_argument : Errpyast.keyword) =
@@ -382,28 +391,30 @@ and convert_keyword_argument (kw_argument : Errpyast.keyword) =
   match name with
   | None ->
       (* CPython AST (and ERRPY) quirk: **arg is represented as keyword arg without a name. *)
-      {
-        Call.Argument.name = None;
-        value = Expression.Starred (Starred.Twice value) |> Node.create ~location;
-      }
+      ( {
+          Call.Argument.name = None;
+          value = Expression.Starred (Starred.Twice value) |> Node.create ~location;
+        },
+        location )
   | Some name ->
-      {
-        Call.Argument.name =
-          Some
-            {
-              value = name;
-              location =
-                {
-                  location with
-                  stop =
-                    {
-                      line = location.start.line;
-                      column = location.start.column + String.length name;
-                    };
-                };
-            };
-        value;
-      }
+      ( {
+          Call.Argument.name =
+            Some
+              {
+                value = name;
+                location =
+                  {
+                    location with
+                    stop =
+                      {
+                        line = location.start.line;
+                        column = location.start.column + String.length name;
+                      };
+                  };
+              };
+          value;
+        },
+        location )
 
 
 and translate_argument (argument : Errpyast.arg) =
@@ -840,10 +851,12 @@ and translate_statements
       | Errpyast.Continue -> [Statement.Continue]
       | Errpyast.Expr expression -> [Statement.Expression (translate_expression expression)]
       | Errpyast.ClassDef class_def ->
+          (* TODO:T101306421 *)
           let base_arguments =
             List.append
               (List.map class_def.bases ~f:convert_positional_argument)
               (List.map class_def.keywords ~f:convert_keyword_argument)
+            |> List.map ~f:fst
           in
           let name = class_def.name in
           [

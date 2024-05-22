@@ -214,6 +214,30 @@ let test_check_function_parameters context =
   let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
+      class A:
+        def __init__(self, x: int, *args: object, **kwargs: object) -> None:
+          pass
+
+      class B(A):
+        def __init__(self, x: int, *args: object, **kwargs: object) -> None:
+          super().__init__(x=x, *args, **kwargs)
+      B(x=1, *(), **{})
+    |}
+    [];
+  assert_type_errors
+    {|
+      class A:
+        def __init__(self, x: int, *args: object, **kwargs: object) -> None:
+          pass
+
+      class B(A):
+        def __init__(self, x: int, *args: object, **kwargs: object) -> None:
+          super().__init__(x, *args, **kwargs)
+      B(x=1, *(), **{})
+    |}
+    [];
+  assert_type_errors
+    {|
       from builtins import int_to_int
       def foo() -> None:
         int_to_int(1)
@@ -585,6 +609,23 @@ let test_check_function_parameters context =
 
 let test_check_function_parameter_errors context =
   let assert_type_errors source errors = assert_type_errors source errors context in
+  assert_type_errors
+    {|
+      def foo(a: str, b: str) -> None:
+        pass
+      foo("", a="")
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
+  assert_type_errors
+    {|
+      from typing import *
+
+      def foo(a: str, b: str, c: Dict[str, str], d: str = "") -> None:
+          pass
+
+      foo("a", {}, b="b")
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `b` to call `foo`."];
   assert_type_errors
     {|
       from builtins import str_float_to_int
