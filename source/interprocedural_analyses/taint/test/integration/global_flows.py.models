@@ -589,7 +589,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -710,7 +713,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(arg1, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -732,7 +738,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 0 }, "kind": "ParameterUpdate1" }
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(arg2, position=1)]"
+              }
             ],
             "tito": null
           }

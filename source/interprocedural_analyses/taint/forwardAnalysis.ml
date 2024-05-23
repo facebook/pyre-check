@@ -164,7 +164,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let self_parameter =
+  let self_variable =
     if Interprocedural.Target.is_method FunctionContext.callable then
       let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
         FunctionContext.definition
@@ -275,7 +275,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
       let accumulate so_far nested_expression =
-        match AccessPath.of_expression ~self_parameter nested_expression with
+        match AccessPath.of_expression ~self_variable nested_expression with
         | Some access_path ->
             gather_triggered_sinks_to_propagate
               ~path:access_path.path
@@ -427,6 +427,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let get map ~kind = Map.Poly.find map kind |> Option.value ~default:ForwardState.Tree.empty
 
     let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~taint:data)
+
+    let get_for_self map =
+      fold map ~init:ForwardState.Tree.bottom ~f:(fun ~kind ~taint sofar ->
+          match kind with
+          | Sinks.ParameterUpdate (AccessPath.Root.PositionalParameter { position = 0; _ }) ->
+              ForwardState.Tree.join sofar taint
+          | _ -> sofar)
   end
 
   let add_extra_traces_for_transforms
@@ -598,7 +605,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       CallEffects.add call_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
     in
     let analyze_argument_effect
-        argument_position
         (call_effects, state)
         ( argument_taint,
           {
@@ -644,7 +650,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
       (* Add features to arguments. *)
       let state =
-        match AccessPath.of_expression ~self_parameter argument with
+        match AccessPath.of_expression ~self_variable argument with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               List.fold
@@ -681,20 +687,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ())
       in
 
-      let source_trees =
-        CallModel.source_trees_of_argument
-          ~pyre_in_context
-          ~model:taint_model
-          ~location
-          ~call_target
-          ~arguments
-          ~generation_source_matches
-          ~is_class_method
-          ~is_static_method
-          ~call_info_intervals
-      in
+      (* Propagate generations *)
       let call_effects =
-        CallEffects.add ~kind:(ParameterUpdate argument_position) ~taint:source_trees call_effects
+        let add_generation_effect call_effects ({ AccessPath.root; _ } as generation_source_match) =
+          let source_tree =
+            CallModel.source_tree_of_argument
+              ~pyre_in_context
+              ~model:taint_model
+              ~location
+              ~call_target
+              ~arguments
+              ~is_class_method
+              ~is_static_method
+              ~call_info_intervals
+              ~generation_source_match
+          in
+          CallEffects.add ~kind:(Sinks.ParameterUpdate root) ~taint:source_tree call_effects
+        in
+        List.fold ~init:call_effects ~f:add_generation_effect generation_source_matches
       in
 
       call_effects, state
@@ -708,7 +718,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments @ captures
       |> List.zip_exn (arguments_taint @ captures_taint)
-      |> List.foldi ~f:analyze_argument_effect ~init:(CallEffects.empty, initial_state)
+      |> List.fold ~f:analyze_argument_effect ~init:(CallEffects.empty, initial_state)
     in
 
     (* Compute return taint *)
@@ -735,7 +745,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (* For implicit `__init__` calls, e.g `Foo()`, we should consider the return value as
            tainted. *)
         result_taint
-        |> ForwardState.Tree.join (CallEffects.get call_effects ~kind:(Sinks.ParameterUpdate 0))
+        |> ForwardState.Tree.join (CallEffects.get_for_self call_effects)
         |> ForwardState.Tree.join
              (List.hd arguments_taint |> Option.value ~default:ForwardState.Tree.bottom)
       else
@@ -758,7 +768,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_call_effects call_effects state =
       (* We also have to consider the cases when the updated parameter has a global model, in which
          case we need to capture the flow. *)
-      let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
+      let apply_effect_for_argument_expression
+          ~argument:{ Call.Argument.value = argument; _ }
+          ~source_tree
+          state
+        =
         GlobalModel.from_expression
           ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
@@ -767,7 +781,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location:argument.Node.location ~source_tree;
-        let access_path = AccessPath.of_expression ~self_parameter argument in
+        let access_path = AccessPath.of_expression ~self_variable argument in
         log
           "Propagating taint to argument `%a`: %a"
           Expression.pp
@@ -776,14 +790,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           source_tree;
         store_taint_option ~weak:true access_path source_tree state
       in
+      let apply_effect_for_formal_argument ~source_tree ~formal_argument state =
+        AccessPath.match_actuals_to_one_formal arguments formal_argument
+        |> List.fold ~init:state ~f:(fun state (actual_argument, _) ->
+               apply_effect_for_argument_expression ~argument:actual_argument ~source_tree state)
+      in
       let for_each_target ~kind:target ~taint state =
         match target with
-        | Sinks.LocalReturn -> state (* This is regular tito which was computed above *)
-        | ParameterUpdate n -> (
-            (* Side effect on argument n *)
-            match List.nth arguments n with
-            | None -> state
-            | Some argument -> apply_argument_effect ~argument ~source_tree:taint state)
+        | Sinks.LocalReturn ->
+            (* This is regular tito which was computed above *)
+            state
+        | ParameterUpdate root ->
+            (* Side effect on argument *)
+            apply_effect_for_formal_argument ~source_tree:taint ~formal_argument:root state
         | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp target |> failwith
       in
       CallEffects.fold call_effects ~f:for_each_target ~init:state
@@ -2235,7 +2254,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:object_
         | _ -> (
             (* Use implicit self *)
-            match self_parameter with
+            match self_variable with
             | Some root -> ForwardState.read ~root ~path:[] state.taint, state
             | None -> ForwardState.Tree.empty, state))
     | {
@@ -2826,7 +2845,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         (* Propagate taint for assignment. *)
         let access_path =
-          AccessPath.of_expression ~self_parameter target >>| AccessPath.extend ~path:fields
+          AccessPath.of_expression ~self_variable target >>| AccessPath.extend ~path:fields
         in
         store_taint_option ~weak access_path taint state
 
@@ -2866,7 +2885,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Assign
         { value = Some { Node.value = Expression.Constant Constant.NoneLiteral; _ }; target; _ }
       -> (
-        match AccessPath.of_expression ~self_parameter target with
+        match AccessPath.of_expression ~self_variable target with
         | Some { AccessPath.root; path } ->
             (* We need to take some care to ensure we clear existing taint, without adding new
                taint. *)
@@ -2942,7 +2961,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
-          match AccessPath.of_expression ~self_parameter expression with
+          match AccessPath.of_expression ~self_variable expression with
           | Some { AccessPath.root; path } ->
               { taint = ForwardState.assign ~root ~path ForwardState.Tree.bottom state.taint }
           | _ -> state
@@ -3145,17 +3164,17 @@ let extract_source_model
   let model =
     match normalized_parameters with
     | {
-        root = self_port;
+        root = self_parameter;
         original =
-          { Node.value = { Parameter.name = self_parameter; annotation = self_annotation; _ }; _ };
+          { Node.value = { Parameter.name = self_variable; annotation = self_annotation; _ }; _ };
         _;
       }
       :: _
       when Interprocedural.Target.is_method callable ->
         ForwardState.bottom
         |> extract_model_from_variable
-             ~variable:(AccessPath.Root.Variable self_parameter)
-             ~port:self_port
+             ~variable:(AccessPath.Root.Variable self_variable)
+             ~port:self_parameter
              ~annotation:self_annotation
         |> extract_model_from_variable
              ~variable:AccessPath.Root.LocalResult

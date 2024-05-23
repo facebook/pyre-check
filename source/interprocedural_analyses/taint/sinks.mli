@@ -21,7 +21,7 @@ type t =
       sink_name: string;
       subkind: string;
     }
-  | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
+  | ParameterUpdate of AccessPath.Root.t (* Special marker to describe function in-out behavior *)
   | AddFeatureToArgument
   | ExtraTraceSink (* Special marker to show traces that end with this sink *)
   | Transform of {

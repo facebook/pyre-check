@@ -372,7 +372,7 @@
               {
                 "features": [ { "always-via": "tito_value" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -387,7 +387,7 @@
               {
                 "features": [ { "always-via": "tito_key" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -402,7 +402,7 @@
               {
                 "features": [ { "always-via": "tito_self" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null

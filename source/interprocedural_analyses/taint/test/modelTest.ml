@@ -52,14 +52,14 @@ let set_up_environment
   let project = ScratchProject.setup ~context [source_file_name, source] in
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let taint_configuration =
-    let named name = { AnnotationParser.name; kind = Named; location = None } in
+    let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None } in
     let sources =
       [
         named "TestTest";
         named "UserControlled";
         named "Test";
         named "Demo";
-        { AnnotationParser.name = "WithSubkind"; kind = Parametric; location = None };
+        { AnnotationParser.KindDefinition.name = "WithSubkind"; kind = Parametric; location = None };
       ]
     in
     let sinks =
@@ -69,7 +69,11 @@ let set_up_environment
         named "Test";
         named "Demo";
         named "XSS";
-        { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric; location = None };
+        {
+          AnnotationParser.KindDefinition.name = "TestSinkWithSubkind";
+          kind = Parametric;
+          location = None;
+        };
       ]
     in
     let transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"] in
@@ -80,8 +84,11 @@ let set_up_environment
           [
             {
               Rule.sources =
-                List.map sources ~f:(fun { AnnotationParser.name; _ } -> Sources.NamedSource name);
-              sinks = List.map sinks ~f:(fun { AnnotationParser.name; _ } -> Sinks.NamedSink name);
+                List.map sources ~f:(fun { AnnotationParser.KindDefinition.name; _ } ->
+                    Sources.NamedSource name);
+              sinks =
+                List.map sinks ~f:(fun { AnnotationParser.KindDefinition.name; _ } ->
+                    Sinks.NamedSink name);
               transforms = [];
               code = 1;
               name = "rule 1";
@@ -213,11 +220,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         empty with
         sources =
           List.map
-            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
             ["A"; "B"; "Test"];
         sinks =
           List.map
-            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
             ["X"; "Y"; "Test"];
         features = ["featureA"; "featureB"];
         rules = [];
@@ -2824,13 +2831,17 @@ let test_skip_inlining_decorator context =
 
 let test_taint_in_taint_out_update_models context =
   let assert_model = assert_model ~context in
+  let positional_parameter position name =
+    AccessPath.Root.PositionalParameter { position; name; positional_only = false }
+  in
   assert_model
     ~model_source:"def test.update(self, arg1: TaintInTaintOut[Updates[self]]): ..."
     ~expect:
       [
         outcome
           ~kind:`Function
-          ~parameter_titos:[{ name = "arg1"; titos = [Sinks.ParameterUpdate 0] }]
+          ~parameter_titos:
+            [{ name = "arg1"; titos = [Sinks.ParameterUpdate (positional_parameter 0 "self")] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2842,7 +2853,16 @@ let test_taint_in_taint_out_update_models context =
         outcome
           ~kind:`Function
           ~parameter_titos:
-            [{ name = "arg2"; titos = [Sinks.ParameterUpdate 0; Sinks.ParameterUpdate 1] }]
+            [
+              {
+                name = "arg2";
+                titos =
+                  [
+                    Sinks.ParameterUpdate (positional_parameter 0 "self");
+                    Sinks.ParameterUpdate (positional_parameter 1 "arg1");
+                  ];
+              };
+            ]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2853,7 +2873,13 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_titos:[{ name = "self"; titos = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~parameter_titos:
+            [
+              {
+                name = "self";
+                titos = [Sinks.LocalReturn; Sinks.ParameterUpdate (positional_parameter 1 "arg1")];
+              };
+            ]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2866,7 +2892,8 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_titos:[{ name = "arg1"; titos = [Sinks.ParameterUpdate 0] }]
+          ~parameter_titos:
+            [{ name = "arg1"; titos = [Sinks.ParameterUpdate (positional_parameter 0 "self")] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -3503,7 +3530,19 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~parameter_titos:[{ name = "self"; titos = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~parameter_titos:
+            [
+              {
+                name = "self";
+                titos =
+                  [
+                    Sinks.LocalReturn;
+                    Sinks.ParameterUpdate
+                      (AccessPath.Root.PositionalParameter
+                         { position = 1; name = "arg1"; positional_only = false });
+                  ];
+              };
+            ]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]

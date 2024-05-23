@@ -44,7 +44,7 @@ let set_up_environment ?source ~context ~model_source ~validate () =
   let source_file_name = "test.py" in
   let project = ScratchProject.setup ~context [source_file_name, source] in
   let taint_configuration =
-    let named name = { AnnotationParser.name; kind = Named; location = None } in
+    let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None } in
     let sources = [named "Test"] in
     let sinks = [named "Test"] in
     let transforms = [TaintTransform.Named "TestTransform"] in

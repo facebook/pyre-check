@@ -843,7 +843,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -857,7 +857,7 @@
             "kinds": [
               {
                 "return_paths": { "[nested]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -871,7 +871,7 @@
             "kinds": [
               {
                 "return_paths": { "[genuine]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -883,7 +883,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 0 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -896,7 +899,7 @@
             "kinds": [
               {
                 "return_paths": { ".**keys": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -918,7 +921,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -932,7 +935,7 @@
             "kinds": [
               {
                 "return_paths": { "[sanitized]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -946,7 +949,7 @@
             "kinds": [
               {
                 "return_paths": { "[safe]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -958,7 +961,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 0 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -971,7 +977,7 @@
             "kinds": [
               {
                 "return_paths": { ".**keys": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -993,7 +999,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1007,7 +1013,7 @@
             "kinds": [
               {
                 "return_paths": { "[foo]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1021,7 +1027,7 @@
             "kinds": [
               {
                 "return_paths": { "[bar]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1033,7 +1039,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 0 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1046,7 +1055,7 @@
             "kinds": [
               {
                 "return_paths": { ".**keys": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null

@@ -1475,9 +1475,12 @@ let test_actual_parameter_matching context =
 
 
 let test_constructor_argument_tito context =
-  let self_tito = { name = "self"; titos = [Sinks.ParameterUpdate 0] } in
+  let self_root =
+    AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
+  in
+  let self_tito = { name = "self"; titos = [Sinks.ParameterUpdate self_root] } in
   let tito_to_return = { name = "tito"; titos = [Sinks.LocalReturn] } in
-  let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate 0] } in
+  let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate self_root] } in
   assert_taint
     ~context
     {|

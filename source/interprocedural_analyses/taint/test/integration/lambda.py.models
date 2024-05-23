@@ -1617,7 +1617,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1631,7 +1631,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1654,7 +1654,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1668,7 +1668,7 @@
             "kinds": [
               {
                 "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null

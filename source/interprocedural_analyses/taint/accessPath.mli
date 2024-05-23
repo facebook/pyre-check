@@ -78,7 +78,7 @@ val create : Root.t -> Path.t -> t
 
 val extend : t -> path:Path.t -> t
 
-val of_expression : self_parameter:Root.t option -> Expression.t -> t option
+val of_expression : self_variable:Root.t option -> Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 
@@ -94,5 +94,11 @@ val match_actuals_to_formals
   :  Call.Argument.t list ->
   Root.t list ->
   (Call.Argument.t * argument_match list) list
+
+(* Only returns arguments that match with the given formal parameter. *)
+val match_actuals_to_one_formal
+  :  Call.Argument.t list ->
+  Root.t ->
+  (Call.Argument.t * argument_match) list
 
 val dictionary_keys : Abstract.TreeDomain.Label.t

@@ -426,7 +426,10 @@ let rec parse_annotations
         | "NoCollapse" ->
             check_tito_annotation identifier name
             >>| fun () -> TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse
-        | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
+        | taint_kind ->
+            Ok
+              (TaintKindsWithFeatures.from_kind
+                 (AnnotationParser.KindExpression.from_name taint_kind)))
     | Subscript
         { base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ }; index } -> (
         match base_identifier with
@@ -468,7 +471,9 @@ let rec parse_annotations
             >>= fun () ->
             let to_leaf name =
               get_parameter_position name
-              >>| fun position -> Kind.from_name (Format.sprintf "ParameterUpdate%d" position)
+              >>| fun position ->
+              AnnotationParser.KindExpression.Updates
+                (AccessPath.Root.PositionalParameter { position; name; positional_only = false })
             in
             extract_names index
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
@@ -498,7 +503,8 @@ let rec parse_annotations
         | taint_kind ->
             extract_subkind index
             >>| fun subkind ->
-            TaintKindsWithFeatures.from_kind { Kind.name = taint_kind; subkind = Some subkind })
+            TaintKindsWithFeatures.from_kind
+              (AnnotationParser.KindExpression.Name { name = taint_kind; subkind = Some subkind }))
     | Tuple expressions ->
         List.map ~f:(extract_kinds_with_features ~name) expressions
         |> all
@@ -516,8 +522,8 @@ let rec parse_annotations
     extract_kinds_with_features ~name:Source expression
     >>= error_on_path_with_parameter_name
     >>= fun { kinds; features } ->
-    List.map kinds ~f:(fun { name; subkind } ->
-        AnnotationParser.parse_source ~allowed:taint_configuration.sources ?subkind name
+    List.map kinds ~f:(function kind ->
+        AnnotationParser.parse_source ~allowed:taint_configuration.sources kind
         >>| fun source -> TaintAnnotation.Source { source; features })
     |> all
     |> map_error ~f:annotation_error
@@ -527,8 +533,8 @@ let rec parse_annotations
     extract_kinds_with_features ~name:Sink expression
     >>= error_on_path_with_parameter_name
     >>= fun { kinds; features } ->
-    List.map kinds ~f:(fun { name; subkind } ->
-        AnnotationParser.parse_sink ~allowed:taint_configuration.sinks ?subkind name
+    List.map kinds ~f:(fun kind ->
+        AnnotationParser.parse_sink ~allowed:taint_configuration.sinks kind
         >>| fun sink -> TaintAnnotation.Sink { sink; features })
     |> all
     |> map_error ~f:annotation_error
@@ -550,11 +556,8 @@ let rec parse_annotations
         Error (annotation_error "`parameter_name()` can only be used on parameters")
     | [] -> Ok [TaintAnnotation.Tito { tito = Sinks.LocalReturn; features }]
     | _ ->
-        List.map kinds ~f:(fun { name; subkind } ->
-            AnnotationParser.parse_tito
-              ~allowed_transforms:taint_configuration.transforms
-              ?subkind
-              name
+        List.map kinds ~f:(fun kind ->
+            AnnotationParser.parse_tito ~allowed_transforms:taint_configuration.transforms kind
             >>| fun tito -> TaintAnnotation.Tito { tito; features })
         |> all
         |> map_error ~f:annotation_error
@@ -2586,7 +2589,7 @@ let convert_return_into_self_annotation ~source_sink_filter annotation =
   in
   let rec convert_tito_kind kind =
     match kind with
-    | Sinks.LocalReturn -> Sinks.ParameterUpdate 0
+    | Sinks.LocalReturn -> Sinks.ParameterUpdate self_parameter
     | Sinks.Transform { local; global; base } ->
         Sinks.Transform { local; global; base = convert_tito_kind base }
     | _ -> kind

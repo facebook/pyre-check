@@ -1060,7 +1060,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[b]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1071,7 +1074,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[a]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1082,7 +1088,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1103,7 +1112,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[arg]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[arg]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1114,7 +1126,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1138,7 +1153,7 @@
               {
                 "return_paths": { "[arg]": 3 },
                 "length": 1,
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -1152,7 +1167,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 157, "start": 26, "end": 30 } ],
@@ -1183,7 +1201,7 @@
                   "[related][init_list][*]": 0,
                   "[init_list][*]": 0
                 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
@@ -1203,7 +1221,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }

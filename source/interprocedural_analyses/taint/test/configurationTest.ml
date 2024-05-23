@@ -77,11 +77,12 @@ let assert_rules_equal ~actual ~expected =
 
 let without_locations sources_or_sinks =
   List.map
-    ~f:(fun source_or_sink -> { source_or_sink with AnnotationParser.location = None })
+    ~f:(fun source_or_sink ->
+      { source_or_sink with AnnotationParser.KindDefinition.location = None })
     sources_or_sinks
 
 
-let named name = { AnnotationParser.name; kind = Named; location = None }
+let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None }
 
 let test_simple _ =
   let configuration =

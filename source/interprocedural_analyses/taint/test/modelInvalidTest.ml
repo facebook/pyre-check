@@ -50,11 +50,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         empty with
         sources =
           List.map
-            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
             ["A"; "B"; "Test"];
         sinks =
           List.map
-            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
             ["X"; "Y"; "Test"];
         features = ["featureA"; "featureB"];
         rules = [];

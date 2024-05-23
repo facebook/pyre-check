@@ -349,6 +349,13 @@ let match_actuals_to_formals arguments roots =
   List.rev result
 
 
+let match_actuals_to_one_formal arguments root =
+  match_actuals_to_formals arguments [root]
+  |> List.filter_map ~f:(function
+         | argument, [argument_match] -> Some (argument, argument_match)
+         | _ -> None)
+
+
 type t = {
   root: Root.t;
   path: Path.t;
@@ -371,7 +378,7 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let of_expression ~self_parameter expression =
+let of_expression ~self_variable expression =
   let open Option.Monad_infix in
   let rec of_expression path = function
     | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
@@ -403,7 +410,7 @@ let of_expression ~self_parameter expression =
           Call { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments = [] };
         _;
       } ->
-        self_parameter >>| fun self_parameter -> { root = self_parameter; path }
+        self_variable >>| fun self_variable -> { root = self_variable; path }
     | _ -> None
   in
   of_expression [] expression

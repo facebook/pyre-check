@@ -1088,7 +1088,7 @@
             "kinds": [
               {
                 "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1102,7 +1102,7 @@
             "kinds": [
               {
                 "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1116,7 +1116,7 @@
             "kinds": [
               {
                 "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1138,7 +1138,7 @@
             "kinds": [
               {
                 "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1152,7 +1152,7 @@
             "kinds": [
               {
                 "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1166,7 +1166,7 @@
             "kinds": [
               {
                 "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -1188,7 +1188,7 @@
             "kinds": [
               {
                 "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [ { "always-via-model-query-attribute": "z" } ],
@@ -1203,7 +1203,7 @@
             "kinds": [
               {
                 "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [ { "always-via-model-query-attribute": "y" } ],
@@ -1218,7 +1218,7 @@
             "kinds": [
               {
                 "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [ { "always-via-model-query-attribute": "x" } ],
@@ -1241,7 +1241,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[z]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1252,7 +1255,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[y]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1263,7 +1269,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[x]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -1274,7 +1283,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }

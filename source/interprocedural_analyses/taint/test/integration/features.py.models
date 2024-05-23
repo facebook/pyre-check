@@ -533,7 +533,7 @@
               {
                 "features": [ { "always-via": "copy" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -545,7 +545,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }

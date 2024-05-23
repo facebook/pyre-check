@@ -59,7 +59,7 @@
             "kinds": [
               {
                 "return_paths": { "[ids_list]": 3 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -73,7 +73,7 @@
             "kinds": [
               {
                 "return_paths": { "[id_float]": 3 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
@@ -86,7 +86,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }

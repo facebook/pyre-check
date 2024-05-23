@@ -7,17 +7,6 @@
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
-(* Represents a source or sink kind (e.g, UserControlled) *)
-module Kind : sig
-  type t = {
-    name: string;
-    subkind: string option;
-  }
-  [@@deriving equal]
-
-  val from_name : string -> t
-end
-
 module CollapseDepth : sig
   type t =
     | Value of int
@@ -74,15 +63,15 @@ end
 
 module TaintKindsWithFeatures : sig
   type t = {
-    kinds: Kind.t list;
+    kinds: AnnotationParser.KindExpression.t list;
     features: TaintFeatures.t;
   }
 
   val empty : t
 
-  val from_kinds : Kind.t list -> t
+  val from_kinds : AnnotationParser.KindExpression.t list -> t
 
-  val from_kind : Kind.t -> t
+  val from_kind : AnnotationParser.KindExpression.t -> t
 
   val from_breadcrumbs : Features.Breadcrumb.t list -> t
 

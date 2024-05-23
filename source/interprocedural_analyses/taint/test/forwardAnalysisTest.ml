@@ -1104,7 +1104,18 @@ let test_construction context =
       outcome
         ~kind:`Method
         ~returns:[]
-        ~parameter_titos:[{ name = "capture"; titos = [Sinks.ParameterUpdate 0] }]
+        ~parameter_titos:
+          [
+            {
+              name = "capture";
+              titos =
+                [
+                  Sinks.ParameterUpdate
+                    (AccessPath.Root.PositionalParameter
+                       { position = 0; name = "self"; positional_only = false });
+                ];
+            };
+          ]
         "qualifier.Data.__init__";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_capture";
       outcome ~kind:`Function ~returns:[] "qualifier.test_no_capture";
@@ -1196,7 +1207,18 @@ let test_tito_side_effects context =
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_weak_assign";
       outcome
         ~kind:`Method
-        ~parameter_titos:[{ name = "arg"; titos = [Sinks.ParameterUpdate 0] }]
+        ~parameter_titos:
+          [
+            {
+              name = "arg";
+              titos =
+                [
+                  Sinks.ParameterUpdate
+                    (AccessPath.Root.PositionalParameter
+                       { position = 0; name = "self"; positional_only = false });
+                ];
+            };
+          ]
         "qualifier.MyList.append";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_list_append";
     ]

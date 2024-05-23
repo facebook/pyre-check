@@ -87,16 +87,16 @@ val sink_trees_of_argument
   call_info_intervals:Domains.ClassIntervals.t ->
   Domains.SinkTreeWithHandle.t list
 
-val source_trees_of_argument
+val source_tree_of_argument
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   model:Model.t ->
   location:Location.WithModule.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
-  generation_source_matches:AccessPath.argument_match list ->
   is_class_method:bool ->
   is_static_method:bool ->
   call_info_intervals:Domains.ClassIntervals.t ->
+  generation_source_match:AccessPath.argument_match ->
   Domains.ForwardState.Tree.t
 
 val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t

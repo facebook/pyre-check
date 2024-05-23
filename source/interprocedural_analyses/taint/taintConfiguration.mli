@@ -75,8 +75,8 @@ end
 (** Taint configuration, stored in the ocaml heap. *)
 module Heap : sig
   type t = {
-    sources: AnnotationParser.source_or_sink list;
-    sinks: AnnotationParser.source_or_sink list;
+    sources: AnnotationParser.KindDefinition.t list;
+    sinks: AnnotationParser.KindDefinition.t list;
     transforms: TaintTransform.t list;
     filtered_sources: Sources.Set.t option;
     filtered_sinks: Sinks.Set.t option;

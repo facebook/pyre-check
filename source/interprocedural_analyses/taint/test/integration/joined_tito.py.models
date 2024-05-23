@@ -258,7 +258,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[x]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -269,7 +272,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[y]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -280,7 +286,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -301,7 +310,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[b]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -312,7 +324,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[a]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -323,7 +338,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }

@@ -174,18 +174,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     String.equal (Reference.last name) "__setitem__"
 
 
-  let self_parameter =
+  let self_variable, self_parameter =
     if Interprocedural.Target.is_method FunctionContext.callable then
       let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
         FunctionContext.definition
       in
       match AccessPath.normalize_parameters parameters with
-      | { root = AccessPath.Root.PositionalParameter { position = 0; _ }; qualified_name; _ } :: _
-        ->
-          Some (AccessPath.Root.Variable qualified_name)
-      | _ -> None
+      | {
+          root = AccessPath.Root.PositionalParameter { position = 0; _ } as root;
+          qualified_name;
+          _;
+        }
+        :: _ ->
+          Some (AccessPath.Root.Variable qualified_name), Some root
+      | _ -> None, None
     else
-      None
+      None, None
 
 
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
@@ -211,12 +215,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       || is_setitem
       || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
     then
-      match self_parameter with
-      | Some root ->
+      match self_variable, self_parameter with
+      | Some self_variable, Some self_parameter ->
           BackwardState.assign
-            ~root
+            ~root:self_variable
             ~path:[]
-            (make_tito_leaf (Sinks.ParameterUpdate 0))
+            (make_tito_leaf (Sinks.ParameterUpdate self_parameter))
             BackwardState.bottom
       | _ -> BackwardState.bottom
     else
@@ -404,9 +408,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (Features.type_breadcrumbs (Option.value_exn return_type))
         call_taint
     in
-    let get_argument_taint
+    let get_taint_from_argument_expression
         ~pyre_in_context
-        ~position
+        ~root
         ~argument:{ Call.Argument.value = argument; _ }
       =
       let global_sink =
@@ -421,18 +425,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> SinkTreeWithHandle.join
       in
       let taint_from_state =
-        let access_path = AccessPath.of_expression ~self_parameter argument in
+        let access_path = AccessPath.of_expression ~self_variable argument in
         get_taint access_path initial_state
       in
       let implicit_self_taint =
-        if implicit_returns_self && Int.equal position 0 then
-          call_taint
-        else
-          BackwardState.Tree.bottom
+        match root with
+        | AccessPath.Root.PositionalParameter { position = 0; _ } when implicit_returns_self ->
+            call_taint
+        | _ -> BackwardState.Tree.bottom
       in
       taint_from_state
       |> BackwardState.Tree.join global_sink
       |> BackwardState.Tree.join implicit_self_taint
+    in
+    let get_taint_of_formal_argument ~pyre_in_context ~formal_argument =
+      AccessPath.match_actuals_to_one_formal arguments formal_argument
+      |> List.fold ~init:BackwardState.Tree.empty ~f:(fun sofar (actual_argument, _) ->
+             get_taint_from_argument_expression
+               ~pyre_in_context
+               ~root:formal_argument
+               ~argument:actual_argument
+             |> BackwardState.Tree.join sofar)
     in
     let convert_tito_path_to_taint
         ~sink_trees
@@ -448,12 +461,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint_to_propagate =
         match Sinks.discard_transforms kind with
         | Sinks.LocalReturn -> call_taint
-        (* Attach nodes shouldn't affect analysis. *)
-        | Sinks.Attach -> BackwardState.Tree.empty
-        | Sinks.ParameterUpdate n -> (
-            match List.nth arguments n with
-            | None -> BackwardState.Tree.empty
-            | Some argument -> get_argument_taint ~pyre_in_context ~position:n ~argument)
+        | Sinks.ParameterUpdate root ->
+            get_taint_of_formal_argument ~pyre_in_context ~formal_argument:root
+        | Sinks.Attach ->
+            (* Attach nodes shouldn't affect analysis. *)
+            BackwardState.Tree.empty
         | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
       in
       let taint_to_propagate =
@@ -591,7 +603,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =
-        match AccessPath.of_expression ~self_parameter argument with
+        match AccessPath.of_expression ~self_variable argument with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
@@ -1962,7 +1974,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~pyre_in_context ~taint ~state ~expression:object_
         | _ -> (
             (* Use implicit self *)
-            match self_parameter with
+            match self_variable with
             | Some root -> store_taint ~weak:true ~root ~path:[] taint state
             | None -> state))
     | {
@@ -1970,7 +1982,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments = [{ Call.Argument.value = expression; _ }];
     } ->
         begin
-          match AccessPath.of_expression ~self_parameter expression with
+          match AccessPath.of_expression ~self_variable expression with
           | None ->
               Log.dump
                 "%a: Revealed backward taint for `%s`: expression is too complex"
@@ -2309,7 +2321,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ ->
         let taint =
           let local_taint =
-            let access_path = AccessPath.of_expression ~self_parameter target in
+            let access_path = AccessPath.of_expression ~self_variable target in
             get_taint access_path state
           in
           let global_taint =
@@ -2347,7 +2359,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match Node.value target with
         | Expression.Tuple items -> List.fold items ~f:clear_taint ~init:state
         | _ -> (
-            match AccessPath.of_expression ~self_parameter target with
+            match AccessPath.of_expression ~self_variable target with
             | Some { root; path } ->
                 {
                   taint =
@@ -2431,7 +2443,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
-          match AccessPath.of_expression ~self_parameter expression with
+          match AccessPath.of_expression ~self_variable expression with
           | Some { AccessPath.root; path } ->
               { taint = BackwardState.assign ~root ~path BackwardState.Tree.bottom state.taint }
           | _ -> state

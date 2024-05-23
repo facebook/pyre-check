@@ -441,8 +441,8 @@ let filter_implicit_sinks ~source_sink_filter { conditional_test; literal_string
 (** Taint configuration, stored in the ocaml heap. *)
 module Heap = struct
   type t = {
-    sources: AnnotationParser.source_or_sink list;
-    sinks: AnnotationParser.source_or_sink list;
+    sources: AnnotationParser.KindDefinition.t list;
+    sinks: AnnotationParser.KindDefinition.t list;
     transforms: TaintTransform.t list;
     filtered_sources: Sources.Set.t option;
     filtered_sinks: Sinks.Set.t option;
@@ -487,12 +487,12 @@ module Heap = struct
   let default =
     let sources =
       List.map
-        ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+        ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
         ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"]
     in
     let sinks =
       List.map
-        ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+        ~f:(fun name -> { AnnotationParser.KindDefinition.name; kind = Named; location = None })
         [
           "Demo";
           "FileSystem";
@@ -980,8 +980,8 @@ let from_json_list source_json_list =
   let parse_kind ~path ?section json =
     let kind_node = JsonAst.Json.Util.member "kind" json in
     match kind_node.JsonAst.Node.value with
-    | `Null -> Result.Ok AnnotationParser.Named
-    | `String "parametric" -> Result.Ok AnnotationParser.Parametric
+    | `Null -> Result.Ok AnnotationParser.KindDefinition.Named
+    | `String "parametric" -> Result.Ok AnnotationParser.KindDefinition.Parametric
     | _ ->
         Error
           [
@@ -1023,7 +1023,7 @@ let from_json_list source_json_list =
     parse_kind ~path json
     >>| fun kind ->
     {
-      AnnotationParser.name;
+      AnnotationParser.KindDefinition.name;
       kind;
       location = Some (JsonAst.LocationWithPath.create ~path ~location);
     }
@@ -1067,11 +1067,15 @@ let from_json_list source_json_list =
     |> Result.map_error ~f:List.concat
   in
   let parse_source_reference ~path ~allowed_sources source =
-    AnnotationParser.parse_source ~allowed:allowed_sources source
+    AnnotationParser.parse_source
+      ~allowed:allowed_sources
+      (AnnotationParser.KindExpression.from_name source)
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSource source))
   in
   let parse_sink_reference ~path ~allowed_sinks sink =
-    AnnotationParser.parse_sink ~allowed:allowed_sinks sink
+    AnnotationParser.parse_sink
+      ~allowed:allowed_sinks
+      (AnnotationParser.KindExpression.from_name sink)
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSink sink))
   in
   let parse_transform_reference ~path ~allowed_transforms transform =
@@ -1691,15 +1695,15 @@ let validate ({ Heap.sources; sinks; transforms; features; rules; _ } as configu
   Result.combine_errors_unit
     [
       ensure_list_unique_with_location
-        ~get_key:(fun { AnnotationParser.name; _ } -> name)
-        ~get_location:(fun { AnnotationParser.location; _ } -> location)
-        ~get_error:(fun { AnnotationParser.name; _ } previous_location ->
+        ~get_key:(fun { AnnotationParser.KindDefinition.name; _ } -> name)
+        ~get_location:(fun { AnnotationParser.KindDefinition.location; _ } -> location)
+        ~get_error:(fun { AnnotationParser.KindDefinition.name; _ } previous_location ->
           Error.SourceDuplicate { name; previous_location })
         sources;
       ensure_list_unique_with_location
-        ~get_key:(fun { AnnotationParser.name; _ } -> name)
-        ~get_location:(fun { AnnotationParser.location; _ } -> location)
-        ~get_error:(fun { AnnotationParser.name; _ } previous_location ->
+        ~get_key:(fun { AnnotationParser.KindDefinition.name; _ } -> name)
+        ~get_location:(fun { AnnotationParser.KindDefinition.location; _ } -> location)
+        ~get_error:(fun { AnnotationParser.KindDefinition.name; _ } previous_location ->
           Error.SinkDuplicate { name; previous_location })
         sinks;
       ensure_list_unique
@@ -1853,7 +1857,9 @@ let with_command_line_options
   | None -> Result.Ok configuration
   | Some source_filter ->
       let parse_source_reference source =
-        AnnotationParser.parse_source ~allowed:configuration.Heap.sources source
+        source
+        |> AnnotationParser.KindExpression.from_name
+        |> AnnotationParser.parse_source ~allowed:configuration.Heap.sources
         |> Result.map_error ~f:(fun _ ->
                { Error.path = None; kind = Error.UnsupportedSource source; location = None })
       in
@@ -1869,7 +1875,9 @@ let with_command_line_options
   | None -> Result.Ok configuration
   | Some sink_filter ->
       let parse_sink_reference sink =
-        AnnotationParser.parse_sink ~allowed:configuration.sinks sink
+        sink
+        |> AnnotationParser.KindExpression.from_name
+        |> AnnotationParser.parse_sink ~allowed:configuration.sinks
         |> Result.map_error ~f:(fun _ ->
                { Error.path = None; kind = Error.UnsupportedSink sink; location = None })
       in

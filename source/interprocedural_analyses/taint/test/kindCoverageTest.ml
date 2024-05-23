@@ -69,7 +69,10 @@ let test_from_sink _ =
   assert_sinks
     ~expected:(Some (Sinks.NamedSink "SinkD"))
     ~actual:(KindCoverage.Sinks.from_sink sink);
-  let sink = Sinks.ParameterUpdate 5 in
+  let sink =
+    Sinks.ParameterUpdate
+      (AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false })
+  in
   assert_sinks ~expected:None ~actual:(KindCoverage.Sinks.from_sink sink);
   let sink = Sinks.AddFeatureToArgument in
   assert_sinks ~expected:None ~actual:(KindCoverage.Sinks.from_sink sink);

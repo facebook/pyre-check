@@ -273,7 +273,12 @@ let taint_in_taint_out_mapping_for_argument
       (* Turn source- and sink- specific tito sanitizers into a tito taint with
        * sanitize taint transforms for obscure models. *)
       let output_kind =
-        if treat_obscure_as_self_update then Sinks.ParameterUpdate 0 else Sinks.LocalReturn
+        if treat_obscure_as_self_update then
+          Sinks.ParameterUpdate
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "self"; positional_only = false })
+        else
+          Sinks.LocalReturn
       in
       let obscure_sanitize = tito_sanitize_of_argument ~model ~sanitize_matches in
       let obscure_breadcrumbs =
@@ -362,33 +367,29 @@ let sink_trees_of_argument
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Domains.SinkTreeWithHandle.filter_bottom
 
 
-let source_trees_of_argument
+let source_tree_of_argument
     ~pyre_in_context
     ~model:{ Model.forward; _ }
     ~location
     ~call_target:{ CallGraph.CallTarget.target; _ }
     ~arguments
-    ~generation_source_matches
     ~is_class_method
     ~is_static_method
     ~call_info_intervals
+    ~generation_source_match:{ AccessPath.root; actual_path; formal_path }
   =
-  let to_source_tree sofar { AccessPath.root; actual_path; formal_path } =
-    ForwardState.read ~root ~path:[] forward.generations
-    |> ForwardState.Tree.apply_call
-         ~pyre_in_context
-         ~location
-         ~callee:(Some target)
-         ~arguments
-         ~port:root
-         ~is_class_method
-         ~is_static_method
-         ~call_info_intervals
-    |> ForwardState.Tree.read formal_path
-    |> ForwardState.Tree.prepend actual_path
-    |> ForwardState.Tree.join sofar
-  in
-  List.fold generation_source_matches ~f:to_source_tree ~init:ForwardState.Tree.bottom
+  ForwardState.read ~root ~path:[] forward.generations
+  |> ForwardState.Tree.apply_call
+       ~pyre_in_context
+       ~location
+       ~callee:(Some target)
+       ~arguments
+       ~port:root
+       ~is_class_method
+       ~is_static_method
+       ~call_info_intervals
+  |> ForwardState.Tree.read formal_path
+  |> ForwardState.Tree.prepend actual_path
 
 
 let type_breadcrumbs_of_calls targets =

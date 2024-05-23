@@ -12,17 +12,6 @@ open Pyre
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
-(* Represents a source or sink kind (e.g, UserControlled) *)
-module Kind = struct
-  type t = {
-    name: string;
-    subkind: string option;
-  }
-  [@@deriving equal]
-
-  let from_name name = { name; subkind = None }
-end
-
 module CollapseDepth = struct
   type t =
     | Value of int
@@ -216,7 +205,7 @@ end
 
 module TaintKindsWithFeatures = struct
   type t = {
-    kinds: Kind.t list;
+    kinds: AnnotationParser.KindExpression.t list;
     features: TaintFeatures.t;
   }
 

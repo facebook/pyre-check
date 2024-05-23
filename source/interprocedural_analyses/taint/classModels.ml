@@ -131,10 +131,13 @@ let infer ~pyre_api ~user_models =
     let { FeatureSet.breadcrumbs; via_features } =
       get_attribute_tito_features class_name attribute input_root
     in
+    let self =
+      AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
+    in
     add_tito
       ~input_root
       ~input_path:[]
-      ~output_root:(Sinks.ParameterUpdate 0)
+      ~output_root:(Sinks.ParameterUpdate self)
       ~output_path:[Abstract.TreeDomain.Label.create_name_index attribute]
       ~collapse_depth:Features.CollapseDepth.no_collapse
       ~breadcrumbs
@@ -238,6 +241,9 @@ let infer ~pyre_api ~user_models =
       >>| List.map ~f:(fun { Analysis.Type.Record.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]
     in
+    let self =
+      AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
+    in
     let taint_in_taint_out =
       List.foldi
         ~f:(add_parameter_to_self_attribute_tito ~class_name ~positional:false)
@@ -249,7 +255,7 @@ let infer ~pyre_api ~user_models =
              (AccessPath.Root.PositionalParameter
                 { position = 1; name = "__iterable"; positional_only = true })
            ~input_path:[Abstract.TreeDomain.Label.AnyIndex]
-           ~output_root:(Sinks.ParameterUpdate 0)
+           ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:0
            ~breadcrumbs:Features.BreadcrumbSet.bottom
@@ -259,7 +265,7 @@ let infer ~pyre_api ~user_models =
              (AccessPath.Root.PositionalParameter
                 { position = 1; name = "__iterable"; positional_only = true })
            ~input_path:[AccessPath.dictionary_keys]
-           ~output_root:(Sinks.ParameterUpdate 0)
+           ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[AccessPath.dictionary_keys]
            ~collapse_depth:Features.CollapseDepth.no_collapse
            ~breadcrumbs:Features.BreadcrumbSet.bottom
@@ -267,7 +273,7 @@ let infer ~pyre_api ~user_models =
       |> add_tito
            ~input_root:(AccessPath.Root.StarStarParameter { excluded = fields })
            ~input_path:[]
-           ~output_root:(Sinks.ParameterUpdate 0)
+           ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:Features.CollapseDepth.no_collapse
            ~breadcrumbs:Features.BreadcrumbSet.bottom

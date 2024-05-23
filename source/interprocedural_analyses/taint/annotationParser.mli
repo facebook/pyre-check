@@ -5,32 +5,39 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type taint_kind =
-  | Named
-  | Parametric
+(* Represents a source or sink kind from a model (e.g, UserControlled). *)
+module KindExpression : sig
+  type t =
+    | Name of {
+        name: string;
+        subkind: string option;
+      }
+    | Updates of AccessPath.Root.t
+  [@@deriving equal]
 
-type source_or_sink = {
-  name: string;
-  kind: taint_kind;
-  location: JsonParsing.JsonAst.LocationWithPath.t option;
-}
+  val from_name : string -> t
+end
 
-val parse_source
-  :  allowed:source_or_sink list ->
-  ?subkind:string ->
-  string ->
-  (Sources.t, string) result
+(* Represents a source or sink defined in a taint.config file. *)
+module KindDefinition : sig
+  type taint_kind =
+    | Named
+    | Parametric
 
-val parse_sink
-  :  allowed:source_or_sink list ->
-  ?subkind:string ->
-  string ->
-  (Sinks.t, string) result
+  type t = {
+    name: string;
+    kind: taint_kind;
+    location: JsonParsing.JsonAst.LocationWithPath.t option;
+  }
+end
+
+val parse_source : allowed:KindDefinition.t list -> KindExpression.t -> (Sources.t, string) result
+
+val parse_sink : allowed:KindDefinition.t list -> KindExpression.t -> (Sinks.t, string) result
 
 val parse_transform : allowed:TaintTransform.t list -> string -> (TaintTransform.t, string) result
 
 val parse_tito
   :  allowed_transforms:TaintTransform.t list ->
-  ?subkind:string ->
-  string ->
+  KindExpression.t ->
   (Sinks.t, string) result

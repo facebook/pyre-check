@@ -37,7 +37,8 @@ module T = struct
         sink_name: string;
         subkind: string;
       }
-    | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
+    | ParameterUpdate of
+        AccessPath.Root.t (* Special marker to describe side effect in-out behavior *)
     | AddFeatureToArgument
     (* Special marker to designate modifying the state the parameter passed in. *)
     | ExtraTraceSink (* Special marker to show subtraces that end with this sink *)
@@ -59,7 +60,7 @@ module T = struct
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
-    | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
+    | ParameterUpdate root -> Format.fprintf formatter "ParameterUpdate[%a]" AccessPath.Root.pp root
     | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
     | Transform { local; global; base } ->
         TaintTransforms.pp_kind ~formatter ~pp_base:pp ~local ~global ~base

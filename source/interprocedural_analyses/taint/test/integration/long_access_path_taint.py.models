@@ -260,7 +260,7 @@
             "kinds": [
               {
                 "return_paths": { "[request]": 3 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": null
@@ -272,7 +272,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[kind]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[kind]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
@@ -285,7 +288,7 @@
             "kinds": [
               {
                 "return_paths": { "[app_id]": 3 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
@@ -303,7 +306,7 @@
             "kinds": [
               {
                 "return_paths": { "[timestamp]": 3 },
-                "kind": "ParameterUpdate0"
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
@@ -319,7 +322,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[id]": 3 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "[id]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
@@ -333,7 +339,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": null
           }
