@@ -503,24 +503,43 @@ module StringFormatCall = struct
   }
 
   let implicit_string_literal_sources ~implicit_sources ~module_reference { value; location } =
-    if String.is_empty value then
+    let literal_string_regular_expressions = implicit_sources.TaintConfiguration.literal_strings in
+    if String.is_empty value || List.is_empty literal_string_regular_expressions then
       ForwardTaint.bottom
     else
       let value_location = Location.with_module ~module_reference location in
-      let literal_string_regular_expressions =
-        implicit_sources.TaintConfiguration.literal_strings
-      in
-      let add_matching_source_kind sofar { TaintConfiguration.pattern; source_kind = kind } =
+      let add_matching_source_kind so_far { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
           ForwardTaint.singleton (CallInfo.origin value_location) kind Frame.initial
-          |> ForwardTaint.join sofar
+          |> ForwardTaint.join so_far
         else
-          sofar
+          so_far
       in
       List.fold
         literal_string_regular_expressions
-        ~init:ForwardTaint.bottom
         ~f:add_matching_source_kind
+        ~init:ForwardTaint.bottom
+
+
+  let implicit_string_literal_sinks ~implicit_sinks ~module_reference { value; location } =
+    let literal_string_regular_expressions =
+      implicit_sinks.TaintConfiguration.literal_string_sinks
+    in
+    if String.is_empty value || List.is_empty literal_string_regular_expressions then
+      BackwardTaint.bottom
+    else
+      let value_location = Location.with_module ~module_reference location in
+      let add_matching_sink_kind so_far { TaintConfiguration.pattern; sink_kind } =
+        if Re2.matches pattern value then
+          BackwardTaint.singleton (CallInfo.origin value_location) sink_kind Frame.initial
+          |> BackwardTaint.join so_far
+        else
+          so_far
+      in
+      List.fold
+        literal_string_regular_expressions
+        ~f:add_matching_sink_kind
+        ~init:BackwardTaint.bottom
 
 
   let declared_partial_sink_tree { TaintConfiguration.Heap.string_combine_partial_sinks; _ } =

@@ -157,6 +157,12 @@ module StringFormatCall : sig
     string_literal ->
     ForwardTaint.t
 
+  val implicit_string_literal_sinks
+    :  implicit_sinks:TaintConfiguration.implicit_sinks ->
+    module_reference:Reference.t ->
+    string_literal ->
+    BackwardTaint.t
+
   module CallTarget : sig
     val create
       :  call_targets:CallGraph.CallTarget.t list ->

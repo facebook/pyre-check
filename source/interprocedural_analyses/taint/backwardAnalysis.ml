@@ -1826,7 +1826,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     base =
                       {
                         Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location;
+                        location = value_location;
                       };
                     attribute = "__mod__" as function_name;
                     _;
@@ -1845,7 +1845,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     base =
                       {
                         Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location;
+                        location = value_location;
                       };
                     attribute = "format" as function_name;
                     _;
@@ -1868,12 +1868,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:true
-          ~string_literal:value
-          ~call_target
-          arguments_formatted_string
+          {
+            CallModel.StringFormatCall.nested_expressions = arguments_formatted_string;
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
     (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
     | {
      callee =
@@ -1882,7 +1884,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        [
          {
            Call.Argument.value =
-             { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+               location = value_location;
+             };
            name = None;
          };
        ];
@@ -1899,12 +1904,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
           ~increase_trace_length:true
-          ~string_literal:value
-          ~call_target
-          [expression]
+          {
+            CallModel.StringFormatCall.nested_expressions = [expression];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
     | {
      callee =
        {
@@ -1912,7 +1919,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
-                 base = { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                 base =
+                   {
+                     Node.value = Constant (Constant.String { StringLiteral.value; _ });
+                     location = value_location;
+                   };
                  attribute = "__add__";
                  _;
                });
@@ -1932,13 +1943,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~location
           ~breadcrumbs:
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
           ~increase_trace_length:true
-          ~string_literal:value
-          ~call_target
-          [expression]
+          {
+            CallModel.StringFormatCall.nested_expressions = [expression];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
     | {
      callee =
        {
@@ -1992,12 +2005,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~location
           ~breadcrumbs
           ~increase_trace_length:true
-          ~string_literal
-          ~call_target
-          substrings
+          {
+            CallModel.StringFormatCall.nested_expressions = substrings;
+            string_literal = { CallModel.StringFormatCall.value = string_literal; location };
+            call_target;
+            location;
+          }
     | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
         match arguments with
         | [_; Call.Argument.{ value = object_; _ }] ->
@@ -2045,12 +2060,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~taint
       ~state
-      ~location
       ~breadcrumbs
       ~increase_trace_length
-      ~string_literal
-      ~call_target
-      substrings
+      { CallModel.StringFormatCall.nested_expressions; string_literal; call_target; location }
     =
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
@@ -2068,23 +2080,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
-      let literal_string_sinks =
-        FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
-      in
-      if List.is_empty literal_string_sinks then
-        taint
-      else
-        List.fold
-          literal_string_sinks
-          ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
-            if Re2.matches pattern string_literal then
-              (* TODO(T190129419): Should create an origin frame with leaves. *)
-              BackwardTaint.singleton (CallInfo.origin location_with_module) sink_kind Frame.initial
-              |> BackwardState.Tree.create_leaf
-              |> BackwardState.Tree.join taint
-            else
-              taint)
-          ~init:taint
+      CallModel.StringFormatCall.implicit_string_literal_sinks
+        ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
+        ~module_reference:FunctionContext.qualifier
+        string_literal
+      |> BackwardState.Tree.create_leaf
+      |> BackwardState.Tree.join taint
     in
     let taint =
       taint
@@ -2181,7 +2182,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       analyze_expression ~pyre_in_context ~taint:new_taint ~state:new_state ~expression
     in
-    List.fold (List.rev substrings) ~f:analyze_nested_expression ~init:state
+    List.fold (List.rev nested_expressions) ~f:analyze_nested_expression ~init:state
 
 
   and analyze_expression
@@ -2301,12 +2302,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:false
-          ~string_literal
-          ~call_target:(Some call_target)
-          substrings
+          {
+            CallModel.StringFormatCall.nested_expressions = substrings;
+            string_literal = { value = string_literal; location };
+            call_target = Some call_target;
+            location;
+          }
     | Ternary { target; test; alternative } ->
         let state_then = analyze_expression ~pyre_in_context ~taint ~state ~expression:target in
         let state_else =

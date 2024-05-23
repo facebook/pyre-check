@@ -580,7 +580,7 @@
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 56,
-              "start": 14,
+              "start": 18,
               "end": 25
             }
           }
@@ -637,7 +637,7 @@
               "filename": "implicit_sinks.py",
               "line": 40,
               "start": 4,
-              "end": 18
+              "end": 14
             }
           }
         ]
