@@ -41,6 +41,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 60, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -108,6 +116,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 60, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -175,6 +191,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 50, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -240,26 +264,30 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 88, "start": 4, "end": 27 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                  {
+                    "name": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+                    "port": "leaf:arg2"
+                  }
                 ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 94,
-                "start": 56,
-                "end": 71
-              },
-              "resolves_to": [
-                "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
-              ],
-              "port": "formal(arg2, position=1)"
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 94,
+              "start": 56,
+              "end": 71
             }
           }
         ]
@@ -315,26 +343,30 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 88, "start": 4, "end": 27 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                  {
+                    "name": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+                    "port": "leaf:arg1"
+                  }
                 ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 93,
-                "start": 53,
-                "end": 68
-              },
-              "resolves_to": [
-                "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
-              ],
-              "port": "formal(arg1, position=0)"
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 93,
+              "start": 53,
+              "end": 68
             }
           }
         ]
@@ -380,26 +412,30 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 78, "start": 22, "end": 45 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                  {
+                    "name": "multiple_sources_string_operations.format_string_triggered_sql",
+                    "port": "leaf:arg"
+                  }
                 ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 84,
-                "start": 32,
-                "end": 37
-              },
-              "resolves_to": [
-                "multiple_sources_string_operations.format_string_triggered_sql"
-              ],
-              "port": "formal(arg, position=0)"
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 84,
+              "start": 32,
+              "end": 37
             }
           }
         ]
@@ -455,26 +491,30 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 68, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                  {
+                    "name": "multiple_sources_string_operations.format_string_triggered_user_controlled",
+                    "port": "leaf:arg"
+                  }
                 ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 74,
-                "start": 44,
-                "end": 59
-              },
-              "resolves_to": [
-                "multiple_sources_string_operations.format_string_triggered_user_controlled"
-              ],
-              "port": "formal(arg, position=0)"
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 74,
+              "start": 44,
+              "end": 59
             }
           }
         ]
@@ -532,6 +572,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 56, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -599,6 +647,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 55, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -666,6 +722,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 39, "start": 4, "end": 16 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -733,6 +797,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 28, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -800,6 +872,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 28, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -867,6 +947,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 28, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -924,6 +1012,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 29, "start": 27, "end": 50 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
@@ -991,6 +1087,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 28, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
@@ -1027,18 +1131,22 @@
         "port": "formal(self, position=0)[attribute_query]",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 23, "start": 31, "end": 54 },
+                "caller_interval": [ { "lower": 2, "upper": 3 } ],
+                "is_self_call": false,
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [ { "name": "str.format", "port": "leaf:return" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 24,
-              "start": 8,
-              "end": 52
-            }
+            "declaration": null
           }
         ]
       }
@@ -1056,20 +1164,20 @@
         "port": "formal(arg2, position=1)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 88, "start": 4, "end": 27 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
-                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 88,
-              "start": 4,
-              "end": 27
-            }
+            "declaration": null
           }
         ]
       },
@@ -1077,20 +1185,20 @@
         "port": "formal(arg1, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 88, "start": 4, "end": 27 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
-                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 88,
-              "start": 4,
-              "end": 27
-            }
+            "declaration": null
           }
         ]
       }
@@ -1108,20 +1216,20 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 78, "start": 22, "end": 45 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
-                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 79,
-              "start": 4,
-              "end": 29
-            }
+            "declaration": null
           }
         ]
       }
@@ -1139,20 +1247,20 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for StringMayBeSQL",
+                "origin": { "line": 68, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
-                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 69,
-              "start": 4,
-              "end": 19
-            }
+            "declaration": null
           }
         ]
       }
@@ -1215,20 +1323,20 @@
         "port": "formal(arg, position=0)[f]",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 104, "start": 13, "end": 36 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
-                "leaves": [
-                  { "name": "str.__add__", "port": "leaf:return" }
-                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 105,
-              "start": 4,
-              "end": 13
-            }
+            "declaration": null
           }
         ]
       }

@@ -636,7 +636,7 @@ let test_string_combine_rules _ =
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     let configuration = assert_parse configuration in
-    TaintConfiguration.get_triggered_sink configuration ~partial_sink ~source
+    TaintConfiguration.get_triggered_sink_if_matched configuration ~partial_sink ~source
     |> assert_equal
          ~cmp:(Option.equal Sinks.equal)
          ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")

@@ -39,6 +39,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 30, "start": 9, "end": 32 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
             ],
@@ -102,6 +110,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestA",
+                "origin": { "line": 129, "start": 8, "end": 18 },
+                "leaf_kind": "TestA",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
@@ -165,6 +181,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestB",
+                "origin": { "line": 90, "start": 31, "end": 41 },
+                "leaf_kind": "TestB",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
@@ -228,6 +252,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestA",
+                "origin": { "line": 89, "start": 31, "end": 41 },
+                "leaf_kind": "TestA",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
@@ -495,69 +527,6 @@
     "callable_line": 164,
     "code": 4321,
     "line": 166,
-    "start": 22,
-    "end": 45,
-    "filename": "multiple_sources.py",
-    "message": "User controlled and permissive context combine",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.user_controlled_input",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 166,
-              "start": 22,
-              "end": 45
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              { "kind": "TriggeredPartialSink[UserControlledAndVC[id]]" }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 166,
-              "start": 22,
-              "end": 45
-            }
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.B.multi_sink",
-      "index": 0,
-      "parameter": "formal(user_controlled)"
-    },
-    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.B.multi_sink|0|formal(user_controlled):97d331ea2a489aaae712a662df8866db"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.muliple_main_issues_1",
-    "callable_line": 164,
-    "code": 4321,
-    "line": 166,
     "start": 47,
     "end": 67,
     "filename": "multiple_sources.py",
@@ -591,6 +560,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 166, "start": 22, "end": 45 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
             ],
@@ -654,6 +631,14 @@
         "name": "backward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 166, "start": 22, "end": 45 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
             ],
@@ -975,6 +960,14 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 36, "start": 9, "end": 32 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
@@ -1008,6 +1001,20 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "call": {
+                  "position": { "line": 145, "start": 9, "end": 40 },
+                  "resolves_to": [
+                    "multiple_sources.user_controlled_input_wrapper"
+                  ],
+                  "port": "result"
+                },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
@@ -1041,6 +1048,14 @@
         "port": "formal(id, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for PermissiveContext",
+                "origin": { "line": 41, "start": 9, "end": 29 },
+                "leaf_kind": "PermissiveContext",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
@@ -1083,6 +1098,14 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 176, "start": 10, "end": 33 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [
@@ -1101,6 +1124,14 @@
             "is_self_call": false
           },
           {
+            "extra_traces": [
+              {
+                "message": "Source trace for UserControlled",
+                "origin": { "line": 178, "start": 10, "end": 33 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [

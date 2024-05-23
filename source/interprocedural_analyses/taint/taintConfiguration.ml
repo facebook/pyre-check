@@ -346,7 +346,7 @@ module PartialSinkConverter = struct
       right
 
 
-  let get_triggered_sink sink_to_sources ~partial_sink ~source =
+  let get_triggered_sink_if_matched sink_to_sources ~partial_sink ~source =
     let source = Sources.discard_sanitize_transforms source in
     match SerializableStringMap.find_opt (Sinks.show_partial_sink partial_sink) sink_to_sources with
     | Some (supported_sources, triggered_sink)
@@ -1973,8 +1973,8 @@ let literal_string_sinks { Heap.implicit_sinks = { literal_string_sinks; _ }; _ 
   literal_string_sinks
 
 
-let get_triggered_sink { Heap.partial_sink_converter; _ } ~partial_sink ~source =
-  PartialSinkConverter.get_triggered_sink partial_sink_converter ~partial_sink ~source
+let get_triggered_sink_if_matched { Heap.partial_sink_converter; _ } ~partial_sink ~source =
+  PartialSinkConverter.get_triggered_sink_if_matched partial_sink_converter ~partial_sink ~source
 
 
 let is_missing_flow_analysis { Heap.find_missing_flows; _ } kind =

@@ -229,7 +229,7 @@ val literal_string_sinks : Heap.t -> literal_string_sink list
 
 val literal_string_sources : Heap.t -> literal_string_source list
 
-val get_triggered_sink
+val get_triggered_sink_if_matched
   :  Heap.t ->
   partial_sink:Sinks.partial_sink ->
   source:Sources.t ->
