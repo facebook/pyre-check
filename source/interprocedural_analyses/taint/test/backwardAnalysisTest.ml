@@ -1478,7 +1478,6 @@ let test_constructor_argument_tito context =
   let self_root =
     AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
   in
-  let self_tito = { name = "self"; titos = [Sinks.ParameterUpdate self_root] } in
   let tito_to_return = { name = "tito"; titos = [Sinks.LocalReturn] } in
   let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate self_root] } in
   assert_taint
@@ -1554,7 +1553,7 @@ let test_constructor_argument_tito context =
 
     |}
     [
-      outcome ~kind:`Method ~parameter_titos:[self_tito; tito_to_self] "qualifier.Data.__init__";
+      outcome ~kind:`Method ~parameter_titos:[tito_to_self] "qualifier.Data.__init__";
       outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.tito_via_construction";
       outcome ~kind:`Function ~parameter_titos:[] "qualifier.no_tito_via_construction";
       outcome
@@ -1584,10 +1583,7 @@ let test_constructor_argument_tito context =
         ~parameter_titos:[tito_to_return]
         "qualifier.test_tito_via_multiple_some_more";
       outcome ~kind:`Function ~parameter_titos:[] "qualifier.test_tito_via_multiple_none";
-      outcome
-        ~kind:`Method
-        ~parameter_titos:[self_tito; tito_to_self]
-        "qualifier.DerivedData.__init__";
+      outcome ~kind:`Method ~parameter_titos:[tito_to_self] "qualifier.DerivedData.__init__";
     ]
 
 

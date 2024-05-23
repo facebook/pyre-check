@@ -1082,20 +1082,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1114,20 +1100,6 @@
             "kinds": [
               {
                 "return_paths": { "[arg]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1158,22 +1130,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 157, "start": 32, "end": 35 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 157, "start": 26, "end": 30 } ],
             "tito": null
           }
         ]
@@ -1212,20 +1168,6 @@
               { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 67, "start": 35, "end": 41 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
             "tito": null
           }
         ]

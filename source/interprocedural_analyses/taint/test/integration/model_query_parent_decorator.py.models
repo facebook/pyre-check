@@ -119,22 +119,6 @@
         ]
       }
     ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ],
     "parameter_sources": [
       {
         "port": "formal(bar, position=2)",
@@ -362,22 +346,6 @@
           }
         ]
       }
-    ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
     ]
   }
 }
@@ -451,22 +419,6 @@
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
           }
         ]
       }

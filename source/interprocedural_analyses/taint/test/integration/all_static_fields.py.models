@@ -68,20 +68,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -127,22 +113,6 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 107, "start": 25, "end": 26 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 107, "start": 8, "end": 15 } ],
             "tito": null
           }
         ]
@@ -194,22 +164,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 115, "start": 8, "end": 15 } ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -253,30 +207,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "all_static_fields.Empty.__init__",
-    "filename": "all_static_fields.py",
-    "callable_line": 160,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "all_static_fields.RegularClass.__init__",
     "filename": "all_static_fields.py",
     "callable_line": 17,
@@ -307,20 +237,6 @@
             ],
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
             ],
             "tito": null
           }

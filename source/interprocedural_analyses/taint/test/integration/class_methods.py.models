@@ -599,30 +599,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "class_methods.C.my_abstract_property@setter",
-    "filename": "class_methods.py",
-    "callable_line": 75,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "class_methods.C.one_hop_abstract_class_method",
     "filename": "class_methods.py",
     "callable_line": 30,
@@ -895,20 +871,6 @@
             "kinds": [
               {
                 "return_paths": { "[_my_abstract_property]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],

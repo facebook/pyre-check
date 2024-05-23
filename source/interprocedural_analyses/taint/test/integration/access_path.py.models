@@ -537,30 +537,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "access_path.SpecialDict.__init__",
-    "filename": "access_path.py",
-    "callable_line": 17,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "access_path.positional_and_variadic1",
     "filename": "access_path.py",
     "callable_line": 38,

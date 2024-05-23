@@ -394,30 +394,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "builder_pattern.Builder.__init__",
-    "filename": "builder_pattern.py",
-    "callable_line": 14,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "builder_pattern.Builder.async_save",
     "filename": "builder_pattern.py",
     "callable_line": 26,

@@ -191,102 +191,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_query_transitive_extends.Test1_C.__init__",
-    "filename": "model_query_transitive_extends.py",
-    "callable_line": 12,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_transitive_extends.Test1_C1.__init__",
-    "filename": "model_query_transitive_extends.py",
-    "callable_line": 19,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_transitive_extends.Test1_C2.__init__",
-    "filename": "model_query_transitive_extends.py",
-    "callable_line": 26,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_transitive_extends.Test1_D.__init__",
-    "filename": "model_query_transitive_extends.py",
-    "callable_line": 33,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "model_query_transitive_extends.Test2_D.foo",
     "filename": "model_query_transitive_extends.py",
     "callable_line": 53,
@@ -297,30 +201,6 @@
       }
     ],
     "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_transitive_extends.UnrelatedClass.__init__",
-    "filename": "model_query_transitive_extends.py",
-    "callable_line": 60,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
   }
 }
 {

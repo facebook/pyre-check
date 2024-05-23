@@ -155,30 +155,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "readonly.A.__init__",
-    "filename": "readonly.py",
-    "callable_line": 13,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "readonly.A.readonly_tito",
     "filename": "readonly.py",
     "callable_line": 38,

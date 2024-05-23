@@ -1238,22 +1238,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 32, "start": 8, "end": 25 } ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1347,22 +1331,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 42, "start": 8, "end": 25 } ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1453,20 +1421,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1508,22 +1462,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 56, "start": 8, "end": 22 } ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1548,22 +1486,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 68, "start": 32, "end": 35 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 68, "start": 8, "end": 22 } ],
             "tito": null
           }
         ]

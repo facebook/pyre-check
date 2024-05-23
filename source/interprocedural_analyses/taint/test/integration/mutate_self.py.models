@@ -411,30 +411,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "mutate_self.Base.__init__",
-    "filename": "mutate_self.py",
-    "callable_line": 14,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "mutate_self.Base.bar_sink",
     "filename": "mutate_self.py",
     "callable_line": 21,

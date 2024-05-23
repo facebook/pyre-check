@@ -2523,6 +2523,7 @@ let extract_tito_and_sink_models
             maximum_model_tito_tree_width;
             maximum_trace_length;
             maximum_tito_depth;
+            maximum_tito_collapse_depth;
             _;
           };
         _;
@@ -2569,6 +2570,22 @@ let extract_tito_and_sink_models
           ~attach_to_kind:Sinks.Attach
           existing_backward.Model.Backward.taint_in_taint_out
       in
+      let discard_trivial_tito partition =
+        (* Remove trivial taint-in-taint-out Argument(x) -> Argument(x) *)
+        Map.Poly.change partition (Sinks.ParameterUpdate parameter) ~f:(function
+            | Some tito_taint ->
+                let trivial_tito =
+                  Domains.local_return_frame
+                    ~output_path:[]
+                    ~collapse_depth:maximum_tito_collapse_depth
+                  |> BackwardTaint.singleton CallInfo.Tito (Sinks.ParameterUpdate parameter)
+                  |> BackwardState.Tree.create_leaf
+                in
+                Option.some_if
+                  (not (BackwardState.Tree.less_or_equal ~left:tito_taint ~right:trivial_tito))
+                  tito_taint
+            | None -> None)
+      in
       let candidate_tree =
         partition
         |> Map.Poly.filteri ~f:(fun ~key:kind ~data:_ ->
@@ -2577,6 +2594,7 @@ let extract_tito_and_sink_models
                | Sinks.ParameterUpdate _ ->
                    true
                | _ -> false)
+        |> discard_trivial_tito
         |> Map.Poly.fold ~init:BackwardState.Tree.empty ~f:(fun ~key:_ ~data:taint sofar ->
                BackwardState.Tree.join taint sofar)
         |> simplify

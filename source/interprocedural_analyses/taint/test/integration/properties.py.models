@@ -745,44 +745,6 @@
           }
         ]
       }
-    ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{properties.GrandDerived.my_property@setter}",
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
     ]
   }
 }
@@ -883,20 +845,6 @@
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1023,30 +971,6 @@
       }
     ],
     "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "properties.Class.__init__",
-    "filename": "properties.py",
-    "callable_line": 13,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
   }
 }
 {
@@ -1310,30 +1234,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "properties.CollidePropertySetterName.collided_property@setter",
-    "filename": "properties.py",
-    "callable_line": 255,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "properties.Derived.uses_property",
     "filename": "properties.py",
     "callable_line": 37,
@@ -1473,46 +1373,6 @@
           }
         ]
       }
-    ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "properties.GrandDerived.my_property@setter",
-    "filename": "properties.py",
-    "callable_line": 92,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
     ]
   }
 }
@@ -1624,20 +1484,6 @@
             "kinds": [
               {
                 "return_paths": { "[z]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1782,20 +1628,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1820,22 +1652,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 148, "start": 17, "end": 18 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 148, "start": 8, "end": 12 } ],
             "tito": null
           }
         ]
@@ -1882,20 +1698,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -1933,20 +1735,6 @@
             "kinds": [
               {
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -2148,10 +1936,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 269, "start": 8, "end": 12 },
-              { "line": 270, "start": 19, "end": 23 }
-            ],
+            "tito_positions": [ { "line": 270, "start": 19, "end": 23 } ],
             "origin": {
               "filename": "properties.py",
               "line": 270,
@@ -2264,44 +2049,6 @@
             "tito": null
           }
         ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "properties.SetterMutatesValue.__init__",
-    "filename": "properties.py",
-    "callable_line": 101,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
       }
     ]
   }
@@ -2339,20 +2086,6 @@
             "kinds": [
               {
                 "return_paths": { "[_p]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -2444,20 +2177,6 @@
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
