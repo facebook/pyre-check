@@ -469,3 +469,71 @@ def tito_with_sink(d):
     x = d["a"]
     _test_sink(d["a"])
     return x
+
+
+# Test tito to self.
+
+class TitoSelf:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def set_a(self, a):
+        self.a = a
+
+    def set_join(self, x, y):
+        if 1 < 1:
+            self.a = x
+        else:
+            self.a = y
+
+    def set_subfield(self, x):
+        self.a.x = perfect_tito(x)
+
+
+def test_tito_self():
+    o = TitoSelf(_test_source(), "")
+    _test_sink(o.a)  # Issue.
+    _test_sink(o.b)  # No issue.
+
+    o = TitoSelf("", "")
+    o.set_a(_test_source())
+    _test_sink(o.a)  # Issue.
+    _test_sink(o.b)  # No issue.
+
+    o = TitoSelf("", "")
+    o.set_a(["", _test_source()])
+    _test_sink(o.a[1])  # Issue.
+    _test_sink(o.a[0])  # No issue.
+    _test_sink(o.b)  # No issue.
+
+    o = TitoSelf("", "")
+    o.set_join(_test_source(), "")
+    _test_sink(o.a)  # Issue.
+    _test_sink(o.b)  # No issue.
+
+    o.set_join("", _test_source())
+    _test_sink(o.a)  # Issue.
+    _test_sink(o.b)  # No issue.
+
+    o = TitoSelf("", "")
+    o.set_subfield(_test_source())
+    _test_sink(o.a.x)  # Issue.
+    _test_sink(o.a.y)  # No issue.
+    _test_sink(o.b)  # No issue.
+
+
+# Test tito to cls.
+
+class TitoClassMethod:
+    a = ""
+
+    @classmethod
+    def set_a(cls, a):
+        cls.a = a
+
+
+def test_tito_class_method():
+    _test_sink(TitoClassMethod.a)  # No issue.
+    TitoClassMethod.set_a(_test_source())
+    _test_sink(TitoClassMethod.a)  # Issue.

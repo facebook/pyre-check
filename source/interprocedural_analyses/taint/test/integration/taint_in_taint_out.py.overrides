@@ -4,4 +4,5 @@ taint_in_taint_out.Data.__init__ (override) -> [taint_in_taint_out.Data.__init__
 taint_in_taint_out.GetQuery.__init__ (override) -> [taint_in_taint_out.GetQuery.__init__ (method) taint_in_taint_out.GetUser.__init__ (override)]
 taint_in_taint_out.GetUser.__init__ (override) -> [taint_in_taint_out.GetUser.__init__ (method)]
 taint_in_taint_out.Recursive.__init__ (override) -> [taint_in_taint_out.Recursive.__init__ (method)]
-object.__init__ (override) -> [object.__init__ (method) taint_in_taint_out.Data.__init__ (override) taint_in_taint_out.GetQuery.__init__ (override) taint_in_taint_out.Recursive.__init__ (override)]
+taint_in_taint_out.TitoSelf.__init__ (override) -> [taint_in_taint_out.TitoSelf.__init__ (method)]
+object.__init__ (override) -> [object.__init__ (method) taint_in_taint_out.Data.__init__ (override) taint_in_taint_out.GetQuery.__init__ (override) taint_in_taint_out.Recursive.__init__ (override) taint_in_taint_out.TitoSelf.__init__ (override)]

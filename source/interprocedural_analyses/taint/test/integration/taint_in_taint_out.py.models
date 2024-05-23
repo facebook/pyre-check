@@ -884,6 +884,83 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_tito_self",
+    "callable_line": 494,
+    "code": 5002,
+    "line": 496,
+    "start": 15,
+    "end": 18,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "a" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 495, "start": 17, "end": 31 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 495,
+              "start": 17,
+              "end": 31
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 496,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "a" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_tito_self:5002:0:Call|_test_sink|0|formal(arg):9889cda2da940a02f3e96ccd24d92510"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
@@ -1168,6 +1245,44 @@
               { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 67, "start": 35, "end": 41 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 477,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
             "tito": null
           }
         ]
