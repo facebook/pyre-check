@@ -122,7 +122,35 @@ end
 
 val transform_tito_depth_breadcrumb : BackwardTaint.t -> int
 
-val string_combine_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
+module StringFormatCall : sig
+  val declared_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
+
+  val get_string_format_callees
+    :  call_graph_of_define:CallGraph.DefineCallGraph.t ->
+    location:Location.t ->
+    CallGraph.StringFormatCallees.t option
+
+  val apply_call
+    :  callee_target:CallGraph.CallTarget.t option ->
+    pyre_in_context:PyrePysaApi.InContext.t ->
+    location:Location.WithModule.t ->
+    BackwardState.Tree.t ->
+    BackwardState.Tree.t
+
+  module CallTarget : sig
+    val create
+      :  call_targets:CallGraph.CallTarget.t list ->
+      default_target:CallGraph.CallTarget.t ->
+      CallGraph.CallTarget.t
+
+    val from_function_name : string -> CallGraph.CallTarget.t
+
+    val from_format_string
+      :  call_graph_of_define:CallGraph.DefineCallGraph.t ->
+      location:Location.t ->
+      CallGraph.CallTarget.t
+  end
+end
 
 (* Compute the arguments at a call site that formats strings, such as `str.__add__` and
    f-strings. *)

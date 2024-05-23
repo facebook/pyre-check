@@ -482,14 +482,69 @@ let transform_tito_depth_breadcrumb tito_taint =
   Features.Breadcrumb.TransformTitoDepth (length + 1) |> Features.BreadcrumbInterned.intern
 
 
-let string_combine_partial_sink_tree { TaintConfiguration.Heap.string_combine_partial_sinks; _ } =
-  let create_sink_taint sink = BackwardTaint.singleton CallInfo.declaration sink Frame.initial in
-  TaintConfiguration.StringOperationPartialSinks.get_partial_sinks string_combine_partial_sinks
-  |> List.map ~f:create_sink_taint
-  |> List.reduce ~f:BackwardTaint.join
-  |> Option.value ~default:BackwardTaint.bottom
-  |> BackwardState.Tree.create_leaf
+module StringFormatCall = struct
+  let declared_partial_sink_tree { TaintConfiguration.Heap.string_combine_partial_sinks; _ } =
+    let create_sink_taint sink = BackwardTaint.singleton CallInfo.declaration sink Frame.initial in
+    TaintConfiguration.StringOperationPartialSinks.get_partial_sinks string_combine_partial_sinks
+    |> List.map ~f:create_sink_taint
+    |> List.reduce ~f:BackwardTaint.join
+    |> Option.value ~default:BackwardTaint.bottom
+    |> BackwardState.Tree.create_leaf
 
+
+  let get_string_format_callees ~call_graph_of_define ~location =
+    CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
+
+
+  let apply_call ~callee_target ~pyre_in_context ~location =
+    let callee =
+      match callee_target with
+      | Some call_target -> Some call_target.CallGraph.CallTarget.target
+      | None ->
+          (* TODO(T190129382): Disallow this because without a callee, the UI can't show where the
+             sinks originate from. *)
+          None
+    in
+    BackwardState.Tree.apply_call
+      ~pyre_in_context
+      ~location
+      ~callee
+      ~arguments:[]
+      ~port:AccessPath.Root.sink_port_in_string_combine_functions
+      ~is_class_method:false
+      ~is_static_method:false
+      ~call_info_intervals:Domains.ClassIntervals.top
+
+
+  module CallTarget = struct
+    let create ~call_targets ~default_target =
+      call_targets
+      |> List.min_elt ~compare:CallGraph.CallTarget.compare
+      |> Option.value ~default:default_target
+
+
+    let from_function_name string_function_name =
+      CallGraph.CallTarget.create
+        (match string_function_name with
+        | "__add__" -> Target.StringCombineArtificialTargets.str_add
+        | "__mod__" -> Target.StringCombineArtificialTargets.str_mod
+        | "format" -> Target.StringCombineArtificialTargets.str_format
+        | _ -> failwith "Expect either `__add__` or `__mod__` or `format`")
+
+
+    let from_format_string ~call_graph_of_define ~location =
+      let call_targets =
+        match get_string_format_callees ~call_graph_of_define ~location with
+        | Some { CallGraph.StringFormatCallees.f_string_targets; _ } -> f_string_targets
+        | None -> []
+      in
+      create
+        ~call_targets
+        ~default_target:
+          (CallGraph.CallTarget.create
+             Interprocedural.Target.StringCombineArtificialTargets.format_string)
+  end
+end
 
 let arguments_for_string_format arguments =
   let string_literals =

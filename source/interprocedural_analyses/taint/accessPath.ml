@@ -116,6 +116,10 @@ module Root = struct
     let is_captured_variable = function
       | CapturedVariable _ -> true
       | _ -> false
+
+
+    (* Represent the origins of triggered sinks for string combine functions. *)
+    let sink_port_in_string_combine_functions = StarStarParameter { excluded = [] }
   end
 
   include T

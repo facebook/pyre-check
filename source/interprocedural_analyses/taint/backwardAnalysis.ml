@@ -154,10 +154,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let get_string_format_callees ~location =
-    CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
-
-
   let is_constructor =
     let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
       FunctionContext.definition
@@ -1832,7 +1828,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         Node.value = Constant (Constant.String { StringLiteral.value; _ });
                         location;
                       };
-                    attribute = "__mod__";
+                    attribute = "__mod__" as function_name;
                     _;
                   });
             _;
@@ -1851,7 +1847,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         Node.value = Constant (Constant.String { StringLiteral.value; _ });
                         location;
                       };
-                    attribute = "format";
+                    attribute = "format" as function_name;
                     _;
                   });
             _;
@@ -1861,6 +1857,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let arguments_formatted_string =
           List.map ~f:(fun call_argument -> call_argument.value) arguments
         in
+        let call_target_for_string_combine_rules =
+          Some
+            (CallModel.StringFormatCall.CallTarget.create
+               ~call_targets:callees.call_targets
+               ~default_target:
+                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+        in
         analyze_joined_string
           ~pyre_in_context
           ~taint
@@ -1869,6 +1872,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:true
           ~string_literal:value
+          ~call_target_for_string_combine_rules
           arguments_formatted_string
     (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
     | {
@@ -1883,6 +1887,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     } ->
+        let call_target_for_string_combine_rules =
+          Some
+            (CallModel.StringFormatCall.CallTarget.create
+               ~call_targets:callees.call_targets
+               ~default_target:
+                 (CallGraph.CallTarget.create
+                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+        in
         analyze_joined_string
           ~pyre_in_context
           ~taint
@@ -1891,6 +1903,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
           ~increase_trace_length:true
           ~string_literal:value
+          ~call_target_for_string_combine_rules
           [expression]
     | {
      callee =
@@ -1907,6 +1920,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        };
      arguments = [{ Call.Argument.value = expression; name = None }];
     } ->
+        let call_target_for_string_combine_rules =
+          Some
+            (CallModel.StringFormatCall.CallTarget.create
+               ~call_targets:callees.call_targets
+               ~default_target:
+                 (CallGraph.CallTarget.create
+                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+        in
         analyze_joined_string
           ~pyre_in_context
           ~taint
@@ -1916,6 +1937,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
           ~increase_trace_length:true
           ~string_literal:value
+          ~call_target_for_string_combine_rules
           [expression]
     | {
      callee =
@@ -1959,6 +1981,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.map ~f:globals_to_constants
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
+        let call_target_for_string_combine_rules =
+          Some
+            (CallModel.StringFormatCall.CallTarget.create
+               ~call_targets:callees.call_targets
+               ~default_target:
+                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+        in
         analyze_joined_string
           ~pyre_in_context
           ~taint
@@ -1967,6 +1996,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs
           ~increase_trace_length:true
           ~string_literal
+          ~call_target_for_string_combine_rules
           substrings
     | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
         match arguments with
@@ -2019,13 +2049,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~breadcrumbs
       ~increase_trace_length
       ~string_literal
+      ~call_target_for_string_combine_rules
       substrings
     =
-    let triggered_taint =
-      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location
-    in
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
+    in
+    let triggered_taint =
+      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location
+      |> BackwardState.transform
+           BackwardState.Tree.Self
+           Map
+           ~f:
+             (CallModel.StringFormatCall.apply_call
+                ~callee_target:call_target_for_string_combine_rules
+                ~pyre_in_context
+                ~location:location_with_module)
     in
     let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
@@ -2039,6 +2078,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           literal_string_sinks
           ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern string_literal then
+              (* TODO(T190129419): Should create an origin frame with leaves. *)
               BackwardTaint.singleton (CallInfo.origin location_with_module) sink_kind Frame.initial
               |> BackwardState.Tree.create_leaf
               |> BackwardState.Tree.join taint
@@ -2104,7 +2144,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let new_taint, new_state =
-        match get_string_format_callees ~location:expression_location with
+        match
+          CallModel.StringFormatCall.get_string_format_callees
+            ~call_graph_of_define:FunctionContext.call_graph_of_define
+            ~location:expression_location
+        with
         | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
           ->
             List.fold
@@ -2248,6 +2292,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ])
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
+        let call_target_for_string_combine_rules =
+          CallModel.StringFormatCall.CallTarget.from_format_string
+            ~call_graph_of_define:FunctionContext.call_graph_of_define
+            ~location
+        in
         analyze_joined_string
           ~pyre_in_context
           ~taint
@@ -2256,6 +2305,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:false
           ~string_literal
+          ~call_target_for_string_combine_rules:(Some call_target_for_string_combine_rules)
           substrings
     | Ternary { target; test; alternative } ->
         let state_then = analyze_expression ~pyre_in_context ~taint ~state ~expression:target in

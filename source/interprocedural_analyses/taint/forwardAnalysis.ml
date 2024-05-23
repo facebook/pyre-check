@@ -178,10 +178,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       None
 
 
-  let get_string_format_callees ~location =
-    CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
-
-
   let candidates = Issue.Candidates.create ()
 
   let check_flow ~location ~sink_handle ~source_tree ~sink_tree =
@@ -318,12 +314,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Location of the string formatting operation. *)
       location: Location.t;
     }
-
-    let create_call_target_for_string_combine ~call_targets ~default_target =
-      call_targets
-      |> List.min_elt ~compare:CallGraph.CallTarget.compare
-      |> Option.value ~default:(CallGraph.CallTarget.create default_target)
-
 
     let implicit_string_literal_sources { value; location } =
       if String.equal "" value then
@@ -2116,17 +2106,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         arguments;
       } ->
         let nested_expressions = List.map ~f:(fun call_argument -> call_argument.value) arguments in
-        let default_target =
-          match function_name with
-          | "__mod__" -> Interprocedural.Target.StringCombineArtificialTargets.str_mod
-          | "format" -> Interprocedural.Target.StringCombineArtificialTargets.str_format
-          | _ -> failwith "Expect either `__mod__` or `format`"
-        in
         let call_target_for_string_combine_rules =
           Some
-            (StringFormatCall.create_call_target_for_string_combine
+            (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
-               ~default_target)
+               ~default_target:
+                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2156,9 +2141,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         let call_target_for_string_combine_rules =
           Some
-            (StringFormatCall.create_call_target_for_string_combine
+            (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
-               ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
+               ~default_target:
+                 (CallGraph.CallTarget.create
+                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2191,9 +2178,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         let call_target_for_string_combine_rules =
           Some
-            (StringFormatCall.create_call_target_for_string_combine
+            (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
-               ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
+               ~default_target:
+                 (CallGraph.CallTarget.create
+                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2225,18 +2214,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               Features.BreadcrumbSet.singleton (Features.format_string ())
           | _ -> Features.BreadcrumbSet.empty
         in
-        let default_target =
-          match function_name with
-          | "__add__" -> Interprocedural.Target.StringCombineArtificialTargets.str_add
-          | "__mod__" -> Interprocedural.Target.StringCombineArtificialTargets.str_mod
-          | "format" -> Interprocedural.Target.StringCombineArtificialTargets.str_format
-          | _ -> failwith "Expect either `__add__` or `__mod__` or `format`"
-        in
         let call_target_for_string_combine_rules =
           Some
-            (StringFormatCall.create_call_target_for_string_combine
+            (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
-               ~default_target)
+               ~default_target:
+                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
         in
         let nested_expressions =
           arguments
@@ -2426,21 +2409,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         location;
       }
     =
-    let callee =
-      match call_target_for_string_combine_rules with
-      | Some call_target -> Some call_target.target
-      | None -> None
-    in
     let string_combine_partial_sink_tree =
-      BackwardState.Tree.apply_call
+      CallModel.StringFormatCall.apply_call
+        ~callee_target:call_target_for_string_combine_rules
         ~pyre_in_context
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
-        ~callee
-        ~arguments:[]
-        ~port:AccessPath.Root.LocalResult
-        ~is_class_method:false
-        ~is_static_method:false
-        ~call_info_intervals:Domains.ClassIntervals.top
         FunctionContext.string_combine_partial_sink_tree
     in
     let string_literal_taint = StringFormatCall.implicit_string_literal_sources string_literal in
@@ -2503,7 +2476,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
       in
       let expression_taint, state =
-        match get_string_format_callees ~location:expression_location with
+        match
+          CallModel.StringFormatCall.get_string_format_callees
+            ~call_graph_of_define:FunctionContext.call_graph_of_define
+            ~location:expression_location
+        with
         | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
           ->
             List.fold
@@ -2711,14 +2688,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             CallModel.arguments_for_string_format substrings
           in
           let call_target_for_string_combine_rules =
-            let call_targets =
-              match get_string_format_callees ~location with
-              | Some { CallGraph.StringFormatCallees.f_string_targets; _ } -> f_string_targets
-              | None -> []
-            in
-            StringFormatCall.create_call_target_for_string_combine
-              ~call_targets
-              ~default_target:Interprocedural.Target.StringCombineArtificialTargets.format_string
+            CallModel.StringFormatCall.CallTarget.from_format_string
+              ~call_graph_of_define:FunctionContext.call_graph_of_define
+              ~location
           in
           analyze_joined_string
             ~pyre_in_context

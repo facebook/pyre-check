@@ -73,7 +73,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ?profiler:None
         ~taint_configuration
         ~string_combine_partial_sink_tree:
-          (Taint.CallModel.string_combine_partial_sink_tree taint_configuration)
+          (Taint.CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
         ~pyre_api
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:

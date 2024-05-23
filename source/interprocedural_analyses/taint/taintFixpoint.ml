@@ -137,7 +137,7 @@ module Analysis = struct
             ~profiler
             ~taint_configuration
             ~string_combine_partial_sink_tree:
-              (CallModel.string_combine_partial_sink_tree taint_configuration)
+              (CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
             ~pyre_api
             ~class_interval_graph
             ~global_constants

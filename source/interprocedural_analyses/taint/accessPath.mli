@@ -42,6 +42,8 @@ module Root : sig
 
   val is_captured_variable : t -> bool
 
+  val sink_port_in_string_combine_functions : t
+
   module Set : Stdlib.Set.S with type elt = t
 end
 
