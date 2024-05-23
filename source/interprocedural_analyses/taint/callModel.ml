@@ -483,6 +483,46 @@ let transform_tito_depth_breadcrumb tito_taint =
 
 
 module StringFormatCall = struct
+  type string_literal = {
+    value: string;
+    location: Location.t;
+  }
+
+  (* Represent what to analyze when creating strings from string formatting operations, such as
+     `str.__add__`, `str.__mod__`, `e.format`, and f-strings. *)
+  type t = {
+    (* Any expression used in the string formatting. *)
+    nested_expressions: Ast.Expression.Expression.t list;
+    (* Any string literal used in the string formatting. *)
+    string_literal: string_literal;
+    (* If a triggered flow exists on any expression used in the string formatting, this is the
+       responsible call site. *)
+    call_target: CallGraph.CallTarget.t option;
+    (* Location of the string formatting operation. *)
+    location: Location.t;
+  }
+
+  let implicit_string_literal_sources ~implicit_sources ~module_reference { value; location } =
+    if String.is_empty value then
+      ForwardTaint.bottom
+    else
+      let value_location = Location.with_module ~module_reference location in
+      let literal_string_regular_expressions =
+        implicit_sources.TaintConfiguration.literal_strings
+      in
+      let add_matching_source_kind sofar { TaintConfiguration.pattern; source_kind = kind } =
+        if Re2.matches pattern value then
+          ForwardTaint.singleton (CallInfo.origin value_location) kind Frame.initial
+          |> ForwardTaint.join sofar
+        else
+          sofar
+      in
+      List.fold
+        literal_string_regular_expressions
+        ~init:ForwardTaint.bottom
+        ~f:add_matching_source_kind
+
+
   let declared_partial_sink_tree { TaintConfiguration.Heap.string_combine_partial_sinks; _ } =
     let create_sink_taint sink = BackwardTaint.singleton CallInfo.declaration sink Frame.initial in
     TaintConfiguration.StringOperationPartialSinks.get_partial_sinks string_combine_partial_sinks

@@ -1857,7 +1857,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let arguments_formatted_string =
           List.map ~f:(fun call_argument -> call_argument.value) arguments
         in
-        let call_target_for_string_combine_rules =
+        let call_target =
           Some
             (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
@@ -1872,7 +1872,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:true
           ~string_literal:value
-          ~call_target_for_string_combine_rules
+          ~call_target
           arguments_formatted_string
     (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
     | {
@@ -1887,7 +1887,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     } ->
-        let call_target_for_string_combine_rules =
+        let call_target =
           Some
             (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
@@ -1903,7 +1903,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
           ~increase_trace_length:true
           ~string_literal:value
-          ~call_target_for_string_combine_rules
+          ~call_target
           [expression]
     | {
      callee =
@@ -1920,7 +1920,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        };
      arguments = [{ Call.Argument.value = expression; name = None }];
     } ->
-        let call_target_for_string_combine_rules =
+        let call_target =
           Some
             (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
@@ -1937,7 +1937,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
           ~increase_trace_length:true
           ~string_literal:value
-          ~call_target_for_string_combine_rules
+          ~call_target
           [expression]
     | {
      callee =
@@ -1981,7 +1981,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.map ~f:globals_to_constants
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
-        let call_target_for_string_combine_rules =
+        let call_target =
           Some
             (CallModel.StringFormatCall.CallTarget.create
                ~call_targets:callees.call_targets
@@ -1996,7 +1996,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs
           ~increase_trace_length:true
           ~string_literal
-          ~call_target_for_string_combine_rules
+          ~call_target
           substrings
     | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
         match arguments with
@@ -2049,7 +2049,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~breadcrumbs
       ~increase_trace_length
       ~string_literal
-      ~call_target_for_string_combine_rules
+      ~call_target
       substrings
     =
     let location_with_module =
@@ -2062,7 +2062,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Map
            ~f:
              (CallModel.StringFormatCall.apply_call
-                ~callee_target:call_target_for_string_combine_rules
+                ~callee_target:call_target
                 ~pyre_in_context
                 ~location:location_with_module)
     in
@@ -2292,7 +2292,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ])
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
-        let call_target_for_string_combine_rules =
+        let call_target =
           CallModel.StringFormatCall.CallTarget.from_format_string
             ~call_graph_of_define:FunctionContext.call_graph_of_define
             ~location
@@ -2305,7 +2305,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           ~increase_trace_length:false
           ~string_literal
-          ~call_target_for_string_combine_rules:(Some call_target_for_string_combine_rules)
+          ~call_target:(Some call_target)
           substrings
     | Ternary { target; test; alternative } ->
         let state_then = analyze_expression ~pyre_in_context ~taint ~state ~expression:target in

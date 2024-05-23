@@ -123,6 +123,20 @@ end
 val transform_tito_depth_breadcrumb : BackwardTaint.t -> int
 
 module StringFormatCall : sig
+  type string_literal = {
+    value: string;
+    location: Location.t;
+  }
+
+  (* Represent what to analyze when creating strings from string formatting operations, such as
+     `str.__add__`, `str.__mod__`, `e.format`, and f-strings. *)
+  type t = {
+    nested_expressions: Ast.Expression.Expression.t list;
+    string_literal: string_literal;
+    call_target: CallGraph.CallTarget.t option;
+    location: Location.t;
+  }
+
   val declared_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
 
   val get_string_format_callees
@@ -136,6 +150,12 @@ module StringFormatCall : sig
     location:Location.WithModule.t ->
     BackwardState.Tree.t ->
     BackwardState.Tree.t
+
+  val implicit_string_literal_sources
+    :  implicit_sources:TaintConfiguration.implicit_sources ->
+    module_reference:Reference.t ->
+    string_literal ->
+    ForwardTaint.t
 
   module CallTarget : sig
     val create
