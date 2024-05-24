@@ -825,11 +825,19 @@ let statement =
       ~context
   in
   let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
-    (* TODO:T101306421 *)
     let base_arguments =
       List.append
-        (List.map bases ~f:convert_positional_argument)
-        (List.map keywords ~f:convert_keyword_argument)
+        (List.map bases ~f:(fun arg -> convert_positional_argument arg, arg.Node.location))
+        (List.map keywords ~f:(fun arg ->
+             convert_keyword_argument arg, arg.KeywordArgument.location))
+    in
+    (* sort arguments by original position *)
+    let base_arguments =
+      List.stable_sort
+        ~compare:(fun (_, { Location.start = start1; _ }) (_, { Location.start = start2; _ }) ->
+          Location.compare_position start1 start2)
+        base_arguments
+      |> List.map ~f:fst
     in
     [
       Statement.Class

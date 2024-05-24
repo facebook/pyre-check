@@ -851,11 +851,17 @@ and translate_statements
       | Errpyast.Continue -> [Statement.Continue]
       | Errpyast.Expr expression -> [Statement.Expression (translate_expression expression)]
       | Errpyast.ClassDef class_def ->
-          (* TODO:T101306421 *)
           let base_arguments =
             List.append
-              (List.map class_def.bases ~f:convert_positional_argument)
-              (List.map class_def.keywords ~f:convert_keyword_argument)
+              (List.map class_def.bases ~f:(fun arg -> convert_positional_argument arg))
+              (List.map class_def.keywords ~f:(fun arg -> convert_keyword_argument arg))
+          in
+          (* sort arguments by original position *)
+          let base_arguments =
+            List.stable_sort
+              ~compare:(fun (_, pos1) (_, pos2) ->
+                Ast.Location.compare_position pos1.start pos2.start)
+              base_arguments
             |> List.map ~f:fst
           in
           let name = class_def.name in

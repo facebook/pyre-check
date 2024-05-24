@@ -4045,17 +4045,6 @@ let test_expand_typed_dictionaries _ =
     |};
   assert_expand
     {|
-      class Movie(mypy_extensions.TypedDict, total=True, total=False):
-        name: str
-        year: int
-    |}
-    {|
-      class Movie(TypedDictionary):
-        name: str = ...
-        year: int = ...
-    |};
-  assert_expand
-    {|
       class Movie(mypy_extensions.TypedDict, garbage=7):
         name: str
         year: int

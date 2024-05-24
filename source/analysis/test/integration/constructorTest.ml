@@ -1095,6 +1095,22 @@ let test_init_subclass =
            {|
               class QuestBase:
                 swallow: str = ""
+                def __init_subclass__(cls, swallow: str) -> None:
+                    cls.swallow = swallow
+                    super().__init_subclass__()
+
+              class Quest(QuestBase, swallow="african", swallow="african"):
+                  pass
+            |}
+           [
+             "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
+              `QuestBase.__init_subclass__`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              class QuestBase:
+                swallow: str = ""
                 def __init_subclass__(cls, bird: str) -> None:
                     pass
 
