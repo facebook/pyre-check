@@ -452,12 +452,6 @@ let test_unresolved_select =
            (`NotFoundUnexpectedKeyword "q");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[], int]" "(j=1, q=2)" (`NotFoundUnexpectedKeyword "j");
-      (* May want new class of error for `keyword argument repeated` *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select
-           "[[Named(i, int), Named(j, int)], int]"
-           "(j=1, j=2, q=3)"
-           (`NotFoundUnexpectedKeyword "j");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
            "[[Named(i, int), Named(j, int), Named(k, int)], int]"

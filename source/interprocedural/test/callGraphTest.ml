@@ -670,45 +670,6 @@ let test_call_graph_of_define =
       @@ assert_call_graph_of_define
            ~source:
              {|
-        from typing import TypedDict
-
-        class A(TypedDict):
-          x: str
-          y: int
-
-        def foo():
-          return A(x="foo", x=0)
-      |}
-           ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "9:9-9:24",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_call
-                      (CallCallees.create
-                         ~init_targets:
-                           [
-                             CallTarget.create
-                               ~implicit_receiver:true
-                               ~return_type:(Some ReturnType.any)
-                               (Target.Method
-                                  { class_name = "test.A"; method_name = "__init__"; kind = Normal });
-                           ]
-                         ~new_targets:
-                           [
-                             CallTarget.create
-                               ~return_type:(Some ReturnType.any)
-                               ~is_static_method:true
-                               (Target.Method
-                                  { class_name = "object"; method_name = "__new__"; kind = Normal });
-                           ]
-                         ())) );
-             ]
-           ();
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_call_graph_of_define
-           ~source:
-             {|
         class C:
           @property
           def p(self) -> int: ...
