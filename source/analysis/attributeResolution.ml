@@ -351,6 +351,7 @@ module SignatureSelection = struct
   let get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument arguments =
     let open Type.Callable in
     let all_arguments = arguments in
+    let all_parameters_list = parameters in
     let rec consume
         ?index_into_starred_tuple
         ~arguments
@@ -398,6 +399,22 @@ module SignatureSelection = struct
             { reasons with arity = error :: arity }
         | _ -> reasons
       in
+      let extract_matching_parameter_name argument_name parameters =
+        let rec search_parameters searched to_search =
+          match to_search with
+          | [] -> None, List.rev searched
+          | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
+          | (Parameter.Named { name = parameter_name; _ } as head) :: tail
+            when Identifier.equal_sanitized parameter_name argument_name ->
+              Some head, List.rev searched @ tail
+          | (Parameter.Keywords _ as head) :: tail ->
+              let matching, parameters = search_parameters (head :: searched) tail in
+              let matching = Some (Option.value matching ~default:head) in
+              matching, parameters
+          | head :: tail -> search_parameters (head :: searched) tail
+        in
+        search_parameters [] parameters
+      in
       match arguments, parameters with
       | [], [] ->
           (* Both empty *)
@@ -406,10 +423,38 @@ module SignatureSelection = struct
       | { kind = DoubleStar; _ } :: arguments_tail, [] ->
           (* Starred or double starred arguments; parameters empty *)
           consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-      | { kind = Named name; _ } :: _, [] ->
+      | ({ kind = Named name; _ } as argument) :: _, [] -> (
           (* Named argument; parameters empty *)
-          let reasons = { reasons with arity = UnexpectedKeyword name.value :: arity } in
-          { parameter_argument_mapping_with_reasons with reasons }
+          let matching_parameter, _ =
+            extract_matching_parameter_name name.value all_parameters_list
+          in
+          match matching_parameter with
+          | Some matching_parameter -> (
+              let named_parameter_already_matched = function
+                | MatchedArgument { index_into_starred_tuple = None; _ } -> true
+                | _ -> false
+              in
+              match Map.find parameter_argument_mapping matching_parameter with
+              | Some matched_arguments
+                when List.exists matched_arguments ~f:named_parameter_already_matched ->
+                  (* Another named or positional argument has already matched the parameter *)
+                  {
+                    parameter_argument_mapping_with_reasons with
+                    reasons = { reasons with arity = UnexpectedKeyword name.value :: arity };
+                  }
+              | _ ->
+                  (* Possible matched arguments are all unpacked tuples or dicts *)
+                  {
+                    parameter_argument_mapping =
+                      update_mapping matching_parameter (make_matched_argument argument);
+                    reasons;
+                  })
+          | None ->
+              (* No parameter has that name *)
+              {
+                parameter_argument_mapping_with_reasons with
+                reasons = { reasons with arity = UnexpectedKeyword name.value :: arity };
+              })
       | _, [] ->
           (* Positional argument; parameters empty *)
           {
@@ -448,20 +493,9 @@ module SignatureSelection = struct
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
       | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
           (* Labeled argument *)
-          let rec extract_matching_name searched to_search =
-            match to_search with
-            | [] -> None, List.rev searched
-            | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
-            | (Parameter.Named { name = parameter_name; _ } as head) :: tail
-              when Identifier.equal_sanitized parameter_name name.value ->
-                Some head, List.rev searched @ tail
-            | (Parameter.Keywords _ as head) :: tail ->
-                let matching, parameters = extract_matching_name (head :: searched) tail in
-                let matching = Some (Option.value matching ~default:head) in
-                matching, parameters
-            | head :: tail -> extract_matching_name (head :: searched) tail
+          let matching_parameter, remaining_parameters =
+            extract_matching_parameter_name name.value parameters
           in
-          let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
           let parameter_argument_mapping, reasons =
             match matching_parameter with
             | Some matching_parameter ->

@@ -232,6 +232,19 @@ let test_check_function_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+      from typing import Any
+      class A:
+        def __init__(self, x: int, y: int = 1, z: int = 1) -> None:
+          pass
+
+      class B(A):
+        def __init__(self,  *args: Any, **kwargs: Any) -> None:
+          super().__init__(*args, **kwargs, z=1)
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       class A:
         def __init__(self, x: int, *args: object, **kwargs: object) -> None:
           pass
