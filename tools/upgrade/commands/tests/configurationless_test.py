@@ -179,17 +179,6 @@ class TestConfigurationless(TestCase):
             LocalMode.UNSAFE,
         )
 
-    def test_get_mode_to_apply_file_in_exclude(self) -> None:
-        options = self.get_options(
-            ignore_all_errors_prefixes=["path/to/ignore"],
-            exclude_patterns=[r".*/exclude/.*"],
-        )
-        self.assertIsNone(
-            options.get_file_mode_to_apply(
-                Path("path/to/exclude/file.py"),
-            )
-        )
-
     def test_get_mode_to_apply_file_in_ignore(self) -> None:
         options = self.get_options(
             ignore_all_errors_prefixes=["path/to/ignore"],
@@ -221,15 +210,6 @@ class TestConfigurationless(TestCase):
                 ),
                 LocalMode.IGNORE,
             )
-
-    def test_get_mode_to_apply_file_ignore_exclude_precedence(self) -> None:
-        options = self.get_options(
-            ignore_all_errors_prefixes=["path/to/regex"],
-            exclude_patterns=[r".*/regex/.*"],
-        )
-        self.assertIsNone(
-            options.get_file_mode_to_apply(Path("path/to/regex/file.py")),
-        )
 
     def test_get_mode_to_apply_file_project_mode_same_as_global(self) -> None:
         options = self.get_options()

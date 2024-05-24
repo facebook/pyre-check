@@ -92,11 +92,6 @@ class ConfigurationlessOptions:
         file = file.resolve()
         default_local_mode = self.default_local_mode
         if any(
-            exclude_pattern.search(str(file)) is not None
-            for exclude_pattern in self.exclude_patterns
-        ):
-            return None
-        elif any(
             path_is_relative_to(file, ignore_prefix)
             for ignore_prefix in self.ignore_all_errors_prefixes
         ):
@@ -345,7 +340,18 @@ class ConfigurationlessOptions:
         LOG.debug(
             f"Found {len(files)} files in local configuration {local_configuration.get_path()}"
         )
-        return files
+        non_excluded_files = {
+            file
+            for file in files
+            if not any(
+                exclude_pattern.search(str(file)) is not None
+                for exclude_pattern in self.exclude_patterns
+            )
+        }
+        LOG.debug(
+            f"Found {len(non_excluded_files)} in local configuration {local_configuration.get_path()}"
+        )
+        return non_excluded_files
 
     def get_already_migrated_files(
         self, local_configuration: Configuration, buck_root: Path, includes: List[str]
