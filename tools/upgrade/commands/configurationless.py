@@ -88,7 +88,7 @@ class ConfigurationlessOptions:
     def get_file_mode_to_apply(
         self,
         file: Path,
-    ) -> Optional[filesystem.LocalMode]:
+    ) -> filesystem.LocalMode:
         file = file.resolve()
         default_local_mode = self.default_local_mode
         if any(
@@ -163,7 +163,9 @@ class ConfigurationlessOptions:
         formatted_targets = " ".join([f"{target!r}" for target in applicable_targets])
         arguments = f"inputs( set( {formatted_targets} ) )"
 
-        with tempfile.NamedTemporaryFile("w+", prefix="pyre_configurationless") as file:
+        with tempfile.NamedTemporaryFile(
+            "w+", prefix="pyre_configurationless_"
+        ) as file:
             file.write(arguments)
             file.flush()
 
