@@ -146,6 +146,8 @@ and BinaryOperator : sig
   val pp_binary_operator : Format.formatter -> operator -> unit
 
   val location_insensitive_compare : t -> t -> int
+
+  val override : location:Location.t -> t -> Expression.t
 end
 
 and Comprehension : sig

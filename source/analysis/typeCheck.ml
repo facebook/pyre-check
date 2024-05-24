@@ -1896,9 +1896,11 @@ module State (Context : Context) = struct
                 in
                 { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
             ))
-    (* TODO: T101299882 *)
-    | BinaryOperator _ ->
-        { resolution; resolved = Type.Any; errors = []; resolved_annotation = None; base = None }
+    | BinaryOperator operator ->
+        let resolved =
+          forward_expression ~resolution (BinaryOperator.override ~location operator)
+        in
+        { resolved with errors = resolved.errors }
     | BooleanOperator { BooleanOperator.left; operator; right } -> (
         let {
           Resolved.resolution = resolution_left;

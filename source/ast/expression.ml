@@ -397,6 +397,8 @@ and BinaryOperator : sig
   val pp_binary_operator : Format.formatter -> operator -> unit
 
   val location_insensitive_compare : t -> t -> int
+
+  val override : location:Location.t -> t -> Expression.t
 end = struct
   type operator =
     | Add
@@ -448,6 +450,38 @@ end = struct
         match [%compare: operator] left.operator right.operator with
         | x when not (Int.equal x 0) -> x
         | _ -> Expression.location_insensitive_compare left.right right.right)
+
+
+  let override ~location { left; operator; right } =
+    let operator =
+      match operator with
+      | Add -> "__add__"
+      | Sub -> "__sub__"
+      | Mult -> "__mul__"
+      | MatMult -> "__matmul__"
+      | Div -> "__truediv__"
+      | Mod -> "__mod__"
+      | Pow -> "__pow__"
+      | LShift -> "__lshift__"
+      | RShift -> "__rshift__"
+      | BitOr -> "__or__"
+      | BitXor -> "__xor__"
+      | BitAnd -> "__and__"
+      | FloorDiv -> "__floordiv__"
+    in
+    let arguments = [{ Call.Argument.name = None; value = right }] in
+    Expression.Call
+      {
+        Call.callee =
+          {
+            Node.location;
+            value =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base = left; attribute = operator; special = true });
+          };
+        arguments;
+      }
+    |> Node.create ~location
 end
 
 and Comprehension : sig
