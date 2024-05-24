@@ -8,14 +8,13 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import logging
 import re
 import subprocess
-
 import sys
 import tempfile
-from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 from typing import Collection, List, Optional, Set
@@ -37,10 +36,11 @@ def path_is_relative_to(file: Path, path: Path) -> bool:
         return str(file.absolute()).startswith(str(path))
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ConfigurationlessOptions:
     global_configuration: Configuration
     local_configuration: Configuration
+    isolation_dir: Optional[str] = dataclasses.field(default=None)
 
     @cached_property
     def ignore_all_errors_prefixes(self) -> Collection[Path]:
@@ -85,88 +85,38 @@ class ConfigurationlessOptions:
         global_path = str(self.global_configuration.get_path())
         return f"ConfigurationlessOptions(local={local_path}, global={global_path})"
 
-
-class Configurationless(Command):
-    def __init__(
-        self,
-        *,
-        repository: Repository,
-        path: Path,
-        includes: List[str],
-        commit: bool,
-        force_remigrate: bool,
-    ) -> None:
-        super().__init__(repository)
-        self._path: Path = path
-        self._includes: List[str] = includes
-        self._commit: bool = commit
-        self._force_remigrate: bool = force_remigrate
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace, repository: Repository
-    ) -> "Configurationless":
-        return Configurationless(
-            repository=repository,
-            path=arguments.path.resolve(),
-            includes=arguments.include_file_suffixes,
-            commit=(not arguments.no_commit),
-            force_remigrate=arguments.force_remigrate,
-        )
-
-    @classmethod
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
-        super(Configurationless, cls).add_arguments(parser)
-        parser.set_defaults(command=cls.from_arguments)
-        parser.add_argument(
-            "path",
-            help="Path to project root with local configuration.",
-            type=Path,
-        )
-        parser.add_argument(
-            "--no-commit",
-            help="Do not commit changes after completing codemod.",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--include-file-suffixes",
-            action="extend",
-            nargs="+",
-            type=str,
-            default=["**.py"],
-            help="The suffixes to search for and include in the codemod. Default is '**.py'.",
-        )
-        parser.add_argument(
-            "--force-remigrate",
-            help="Remigrate all files, even if they already have a mode header present",
-            action="store_true",
-        )
-
     def get_file_mode_to_apply(
-        self, file: Path, options: ConfigurationlessOptions
+        self,
+        file: Path,
     ) -> Optional[filesystem.LocalMode]:
         file = file.resolve()
-        default_local_mode = options.default_local_mode
+        default_local_mode = self.default_local_mode
         if any(
             exclude_pattern.search(str(file)) is not None
-            for exclude_pattern in options.exclude_patterns
+            for exclude_pattern in self.exclude_patterns
         ):
             return None
         elif any(
             path_is_relative_to(file, ignore_prefix)
-            for ignore_prefix in options.ignore_all_errors_prefixes
+            for ignore_prefix in self.ignore_all_errors_prefixes
         ):
             return filesystem.LocalMode.IGNORE
         else:
             return default_local_mode
 
-    def _get_buck_root(self) -> Path:
+    def _get_isolation_dir(self) -> List[str]:
+        if self.isolation_dir is not None:
+            return ["--isolation-dir", self.isolation_dir]
+        else:
+            return []
+
+    def get_buck_root(self) -> Path:
         try:
             root = Path(
                 subprocess.check_output(
-                    ["buck2", "root", "--kind", "project"],
+                    ["buck2", *self._get_isolation_dir(), "root", "--kind", "project"],
                     text=True,
-                    cwd=self._path,
+                    cwd=self.local_configuration.root,
                 ).strip()
             )
             LOG.info(f"buck2 root is {str(root)}")
@@ -191,6 +141,7 @@ class Configurationless(Command):
         targets = self.format_buck_targets_for_query(targets)
         buck_command = [
             "buck2",
+            *self._get_isolation_dir(),
             "bxl",
             "prelude//python/sourcedb/filter.bxl:filter",
             "--",
@@ -204,7 +155,7 @@ class Configurationless(Command):
         raw_result = subprocess.check_output(
             buck_command,
             text=True,
-            cwd=self._path,
+            cwd=self.local_configuration.root,
         )
         LOG.debug(f"Found targets:\n{raw_result}")
         result = json.loads(raw_result)
@@ -223,6 +174,7 @@ class Configurationless(Command):
 
             buck_command = [
                 "buck2",
+                *self._get_isolation_dir(),
                 "uquery",
                 f"@{file.name}",
             ]
@@ -234,7 +186,7 @@ class Configurationless(Command):
             result = subprocess.check_output(
                 buck_command,
                 text=True,
-                cwd=self._path,
+                cwd=self.local_configuration.root,
             ).strip()
 
             LOG.debug(f"Found files from applicable targets:\n`{result}`")
@@ -267,6 +219,7 @@ class Configurationless(Command):
         targets = self.format_buck_targets_for_query(targets)
         buck_command = [
             "buck2",
+            *self._get_isolation_dir(),
             "bxl",
             "prelude//python/sourcedb/classic.bxl:build",
             "--",
@@ -278,7 +231,7 @@ class Configurationless(Command):
         raw_result = subprocess.check_output(
             buck_command,
             text=True,
-            cwd=self._path,
+            cwd=self.local_configuration.root,
         )
         result = json.loads(raw_result)
         if "db" in result:
@@ -308,7 +261,8 @@ class Configurationless(Command):
         return {
             file
             for file in build_map
-            if file.exists() and path_is_relative_to(file, self._path)
+            if file.exists()
+            and path_is_relative_to(file, self.local_configuration.get_path().parent)
         }
 
     def _get_files_from_classic_targets(
@@ -333,10 +287,11 @@ class Configurationless(Command):
         return classic_target_files
 
     def _get_files_to_migrate_from_targets(
-        self, configuration_targets: List[str]
+        self,
+        configuration_targets: List[str],
+        buck_project_root: Path,
+        includes: List[str],
     ) -> Set[Path]:
-        buck_project_root = self._get_buck_root()
-
         wildcard_targets: List[str] = [
             target for target in configuration_targets if target.endswith("...")
         ]
@@ -354,11 +309,11 @@ class Configurationless(Command):
         return {
             file
             for file in wildcard_target_files | classic_target_files
-            if any(file.match(pattern) for pattern in self._includes)
+            if any(file.match(pattern) for pattern in includes)
         }
 
     def _get_files_to_migrate_from_source_directories(
-        self, source_directories: List[Path]
+        self, source_directories: List[Path], includes: List[str]
     ) -> Set[Path]:
         LOG.debug(f"Finding files with filesystem under {source_directories}")
         file_system = filesystem.get_filesystem()
@@ -366,19 +321,22 @@ class Configurationless(Command):
         return {
             (source_directory / file).resolve()
             for source_directory in source_directories
-            for file in file_system.list(str(source_directory), patterns=self._includes)
+            for file in file_system.list(str(source_directory), patterns=includes)
         }
 
     def get_files_from_local_configuration(
-        self, local_configuration: Configuration
+        self, local_configuration: Configuration, buck_root: Path, includes: List[str]
     ) -> Set[Path]:
         if local_configuration.targets is not None:
-            files = self._get_files_to_migrate_from_targets(local_configuration.targets)
+            files = self._get_files_to_migrate_from_targets(
+                local_configuration.targets, buck_root, includes
+            )
         elif local_configuration.source_directories is not None:
             source_directories = local_configuration.source_directories
             local_root = Path(local_configuration.root)
             files = self._get_files_to_migrate_from_source_directories(
-                [local_root / directory for directory in source_directories]
+                [local_root / directory for directory in source_directories],
+                includes,
             )
         else:
             raise ValueError(
@@ -389,18 +347,79 @@ class Configurationless(Command):
         )
         return files
 
-    def _get_already_migrated_files(
-        self, local_configuration: Configuration
+    def get_already_migrated_files(
+        self, local_configuration: Configuration, buck_root: Path, includes: List[str]
     ) -> Set[Path]:
         already_migrated_files: Set[Path] = set()
         nested_configurations = local_configuration.get_nested_configuration_paths()
         for configuration_path in nested_configurations:
             nested_local_configuration = Configuration(Path(configuration_path))
             migrated_files = self.get_files_from_local_configuration(
-                nested_local_configuration
+                nested_local_configuration, buck_root, includes
             )
             already_migrated_files |= migrated_files
         return already_migrated_files
+
+
+class Configurationless(Command):
+    def __init__(
+        self,
+        *,
+        repository: Repository,
+        path: Path,
+        includes: List[str],
+        commit: bool,
+        force_remigrate: bool,
+        isolation_dir: Optional[str] = None,
+    ) -> None:
+        super().__init__(repository)
+        self._path: Path = path
+        self._includes: List[str] = includes
+        self._commit: bool = commit
+        self._force_remigrate: bool = force_remigrate
+        self._isolation_dir = isolation_dir
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "Configurationless":
+        return Configurationless(
+            repository=repository,
+            path=arguments.path.resolve(),
+            includes=arguments.include_file_suffixes,
+            commit=(not arguments.no_commit),
+            force_remigrate=arguments.force_remigrate,
+            isolation_dir=arguments.isolation_dir,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(Configurationless, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
+        parser.add_argument(
+            "path",
+            help="Path to project root with local configuration.",
+            type=Path,
+        )
+        parser.add_argument(
+            "--no-commit",
+            help="Do not commit changes after completing codemod.",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--include-file-suffixes",
+            action="extend",
+            nargs="+",
+            type=str,
+            default=["**.py"],
+            help="The suffixes to search for and include in the codemod. Default is '**.py'.",
+        )
+        parser.add_argument(
+            "--force-remigrate",
+            help="Remigrate all files, even if they already have a mode header present",
+            action="store_true",
+        )
+        parser.add_argument("--isolation-dir", help="Buck2 isolation dir", default=None)
 
     def get_options(
         self,
@@ -433,7 +452,7 @@ class Configurationless(Command):
         self, options: ConfigurationlessOptions, files_to_migrate: Set[Path]
     ) -> None:
         for file in files_to_migrate:
-            file_mode = self.get_file_mode_to_apply(file, options)
+            file_mode = options.get_file_mode_to_apply(file)
             existing_modes = set(
                 filesystem.get_lines_with_modes(
                     file.read_text().split("\n"), list(filesystem.LocalMode)
@@ -448,12 +467,13 @@ class Configurationless(Command):
 
     def run(self) -> None:
         options = self.get_options()
+        buck_root = options.get_buck_root()
 
-        files_to_migrate = self.get_files_from_local_configuration(
-            options.local_configuration
+        files_to_migrate = options.get_files_from_local_configuration(
+            options.local_configuration, buck_root, self._includes
         )
-        already_migrated_files = self._get_already_migrated_files(
-            options.local_configuration
+        already_migrated_files = options.get_already_migrated_files(
+            options.local_configuration, buck_root, self._includes
         )
 
         LOG.info(f"Found {len(files_to_migrate)} files to migrate")

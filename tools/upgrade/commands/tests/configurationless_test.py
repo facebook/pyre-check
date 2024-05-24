@@ -10,7 +10,6 @@ from typing import Any, Iterable, List, Optional
 from unittest import mock, TestCase
 
 from ...configuration import Configuration
-
 from ...filesystem import LocalMode
 from ...repository import Repository
 from ..configurationless import Configurationless, ConfigurationlessOptions
@@ -186,9 +185,8 @@ class TestConfigurationless(TestCase):
             exclude_patterns=[r".*/exclude/.*"],
         )
         self.assertIsNone(
-            self.configurationless.get_file_mode_to_apply(
+            options.get_file_mode_to_apply(
                 Path("path/to/exclude/file.py"),
-                options,
             )
         )
 
@@ -198,9 +196,8 @@ class TestConfigurationless(TestCase):
             exclude_patterns=[r".*/exclude/.*"],
         )
         self.assertEqual(
-            self.configurationless.get_file_mode_to_apply(
+            options.get_file_mode_to_apply(
                 Path("path/to/ignore/file.py"),
-                options,
             ),
             LocalMode.IGNORE,
         )
@@ -213,16 +210,14 @@ class TestConfigurationless(TestCase):
             return_value=options.global_configuration.get_path(),
         ):
             self.assertEqual(
-                self.configurationless.get_file_mode_to_apply(
+                options.get_file_mode_to_apply(
                     Path("path/to/ignore/file.py").resolve(),
-                    options,
                 ),
                 LocalMode.STRICT,
             )
             self.assertEqual(
-                self.configurationless.get_file_mode_to_apply(
+                options.get_file_mode_to_apply(
                     Path("../path/to/ignore/file.py").resolve(),
-                    options,
                 ),
                 LocalMode.IGNORE,
             )
@@ -233,17 +228,14 @@ class TestConfigurationless(TestCase):
             exclude_patterns=[r".*/regex/.*"],
         )
         self.assertIsNone(
-            self.configurationless.get_file_mode_to_apply(
-                Path("path/to/regex/file.py"), options
-            ),
+            options.get_file_mode_to_apply(Path("path/to/regex/file.py")),
         )
 
     def test_get_mode_to_apply_file_project_mode_same_as_global(self) -> None:
         options = self.get_options()
         self.assertEqual(
-            self.configurationless.get_file_mode_to_apply(
+            options.get_file_mode_to_apply(
                 Path("path/to/file.py"),
-                options,
             ),
             LocalMode.STRICT,
         )
@@ -255,9 +247,8 @@ class TestConfigurationless(TestCase):
         options = self.get_options(local_configuration=local_configuration)
 
         self.assertEqual(
-            self.configurationless.get_file_mode_to_apply(
+            options.get_file_mode_to_apply(
                 Path("path/to/file.py"),
-                options,
             ),
             LocalMode.UNSAFE,
         )
@@ -276,8 +267,6 @@ class TestConfigurationless(TestCase):
             local_configuration=local_configuration,
         )
         self.assertEqual(
-            self.configurationless.get_file_mode_to_apply(
-                Path("path/to/file.py"), options
-            ),
+            options.get_file_mode_to_apply(Path("path/to/file.py")),
             LocalMode.STRICT,
         )
