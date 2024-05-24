@@ -21,7 +21,6 @@ from pyre_extensions import override
 
 from . import ast
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
@@ -161,7 +160,8 @@ def get_lines_with_modes(
     for index, line in enumerate(lines):
         for mode in modes:
             if re.match(mode.get_regex(), line):
-                lines_with_modes[index] = mode
+                # add one to index, since line numbers start at 1
+                lines_with_modes[index + 1] = mode
                 continue
     return lines_with_modes
 
