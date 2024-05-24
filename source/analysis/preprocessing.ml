@@ -1052,6 +1052,13 @@ module Qualify (Context : QualifyContext) = struct
       match value with
       | Expression.Await expression ->
           Expression.Await (qualify_expression ~qualify_strings ~scope expression)
+      | BinaryOperator { BinaryOperator.left; operator; right } ->
+          BinaryOperator
+            {
+              BinaryOperator.left = qualify_expression ~qualify_strings ~scope left;
+              operator;
+              right = qualify_expression ~qualify_strings ~scope right;
+            }
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           BooleanOperator
             {
@@ -3038,6 +3045,7 @@ module AccessCollector = struct
         from_expression collected base
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
     | Await await -> from_expression collected await
+    | BinaryOperator { BinaryOperator.left; right; _ }
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in

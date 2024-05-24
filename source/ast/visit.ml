@@ -86,6 +86,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       let open Expression in
       match value with
       | Await expression -> visit_expression expression
+      | BinaryOperator { BinaryOperator.left; right; _ }
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;

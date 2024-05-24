@@ -677,18 +677,13 @@ module State (Context : Context) = struct
           state = mark_expression_at_location_as_awaited state ~location;
           nested_awaitable_expressions;
         }
-    | BooleanOperator { BooleanOperator.left; right; _ } ->
-        let { state; nested_awaitable_expressions = left_awaitable_expressions } =
+    | BinaryOperator { BinaryOperator.left; right; _ }
+    | BooleanOperator { BooleanOperator.left; right; _ }
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:left
         in
-        let { state; nested_awaitable_expressions = right_awaitable_expressions } =
-          forward_expression ~resolution ~state ~expression:right
-        in
-        {
-          state;
-          nested_awaitable_expressions =
-            List.rev_append left_awaitable_expressions right_awaitable_expressions;
-        }
+        forward_expression ~resolution ~state ~expression:right |>> nested_awaitable_expressions
     | Call
         {
           callee = { Node.value = Name (Name.Attribute { attribute = "__setitem__"; base; _ }); _ };
@@ -705,11 +700,6 @@ module State (Context : Context) = struct
         in
         forward_expression ~resolution ~state ~expression:index |>> nested_awaitable_expressions
     | Call call -> forward_call ~resolution ~state ~location call
-    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let { state; nested_awaitable_expressions } =
-          forward_expression ~resolution ~state ~expression:left
-        in
-        forward_expression ~resolution ~state ~expression:right |>> nested_awaitable_expressions
     | Dictionary entries ->
         let forward_entry { state; nested_awaitable_expressions } entry =
           let open Dictionary.Entry in

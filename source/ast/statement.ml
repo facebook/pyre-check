@@ -1964,6 +1964,7 @@ let is_generator statements =
     | Expression.YieldFrom _ ->
         true
     | Expression.Await await -> is_expression_generator await
+    | Expression.BinaryOperator { BinaryOperator.left; right; _ }
     | Expression.BooleanOperator { BooleanOperator.left; right; _ }
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         is_expression_generator left || is_expression_generator right

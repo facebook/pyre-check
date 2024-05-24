@@ -64,6 +64,7 @@ module AccessCollector = struct
         | _ -> from_expression collected base)
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
     | Await await -> from_expression collected await
+    | BinaryOperator { BinaryOperator.left; right; _ }
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in

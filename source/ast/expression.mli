@@ -119,6 +119,35 @@ and ComparisonOperator : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+and BinaryOperator : sig
+  type operator =
+    | Add
+    | Sub
+    | Mult
+    | MatMult
+    | Div
+    | Mod
+    | Pow
+    | LShift
+    | RShift
+    | BitOr
+    | BitXor
+    | BitAnd
+    | FloorDiv
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val pp_binary_operator : Format.formatter -> operator -> unit
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 and Comprehension : sig
   module Generator : sig
     type t = {
@@ -303,6 +332,7 @@ end
 and Expression : sig
   type expression =
     | Await of t
+    | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
@@ -342,6 +372,7 @@ module Mapper : sig
 
   val create
     :  map_await:(mapper:'a t -> location:Location.t -> Expression.t -> 'a) ->
+    map_binary_operator:(mapper:'a t -> location:Location.t -> BinaryOperator.t -> 'a) ->
     map_boolean_operator:(mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a) ->
     map_call:(mapper:'a t -> location:Location.t -> Call.t -> 'a) ->
     map_comparison_operator:(mapper:'a t -> location:Location.t -> ComparisonOperator.t -> 'a) ->
@@ -371,6 +402,8 @@ module Mapper : sig
 
   val create_default
     :  ?map_await:(mapper:Expression.t t -> location:Location.t -> Expression.t -> Expression.t) ->
+    ?map_binary_operator:
+      (mapper:Expression.t t -> location:Location.t -> BinaryOperator.t -> Expression.t) ->
     ?map_boolean_operator:
       (mapper:Expression.t t -> location:Location.t -> BooleanOperator.t -> Expression.t) ->
     ?map_call:(mapper:Expression.t t -> location:Location.t -> Call.t -> Expression.t) ->
@@ -410,6 +443,7 @@ module Mapper : sig
 
   val create_transformer
     :  ?map_await:(mapper:Expression.t t -> Expression.t -> Expression.t) ->
+    ?map_binary_operator:(mapper:Expression.t t -> BinaryOperator.t -> BinaryOperator.t) ->
     ?map_boolean_operator:(mapper:Expression.t t -> BooleanOperator.t -> BooleanOperator.t) ->
     ?map_call:(mapper:Expression.t t -> Call.t -> Call.t) ->
     ?map_comparison_operator:(mapper:Expression.t t -> ComparisonOperator.t -> ComparisonOperator.t) ->
@@ -454,6 +488,7 @@ module Folder : sig
 
   val create
     :  ?fold_await:(folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a) ->
+    ?fold_binary_operator:(folder:'a t -> state:'a -> location:Location.t -> BinaryOperator.t -> 'a) ->
     ?fold_boolean_operator:
       (folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a) ->
     ?fold_call:(folder:'a t -> state:'a -> location:Location.t -> Call.t -> 'a) ->
@@ -491,6 +526,7 @@ module Folder : sig
 
   val create_with_uniform_location_fold
     :  ?fold_await:(folder:'a t -> state:'a -> Expression.t -> 'a) ->
+    ?fold_binary_operator:(folder:'a t -> state:'a -> BinaryOperator.t -> 'a) ->
     ?fold_boolean_operator:(folder:'a t -> state:'a -> BooleanOperator.t -> 'a) ->
     ?fold_call:(folder:'a t -> state:'a -> Call.t -> 'a) ->
     ?fold_comparison_operator:(folder:'a t -> state:'a -> ComparisonOperator.t -> 'a) ->

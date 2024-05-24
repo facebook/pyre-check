@@ -370,6 +370,86 @@ end = struct
         | _ -> Expression.location_insensitive_compare left.right right.right)
 end
 
+and BinaryOperator : sig
+  type operator =
+    | Add
+    | Sub
+    | Mult
+    | MatMult
+    | Div
+    | Mod
+    | Pow
+    | LShift
+    | RShift
+    | BitOr
+    | BitXor
+    | BitAnd
+    | FloorDiv
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val pp_binary_operator : Format.formatter -> operator -> unit
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type operator =
+    | Add
+    | Sub
+    | Mult
+    | MatMult
+    | Div
+    | Mod
+    | Pow
+    | LShift
+    | RShift
+    | BitOr
+    | BitXor
+    | BitAnd
+    | FloorDiv
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let pp_binary_operator formatter operator =
+    Format.fprintf
+      formatter
+      "%s"
+      (match operator with
+      | Add -> "+"
+      | Sub -> "-"
+      | Mult -> "*"
+      | MatMult -> "@"
+      | Div -> "/"
+      | Mod -> "%"
+      | Pow -> "**"
+      | LShift -> "<<"
+      | RShift -> ">>"
+      | BitOr -> "|"
+      | BitXor -> "^"
+      | BitAnd -> "&"
+      | FloorDiv -> "//")
+
+
+  let location_insensitive_compare left right =
+    match Expression.location_insensitive_compare left.left right.left with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match [%compare: operator] left.operator right.operator with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_insensitive_compare left.right right.right)
+end
+
 and Comprehension : sig
   module Generator : sig
     type t = {
@@ -854,6 +934,7 @@ end
 and Expression : sig
   type expression =
     | Await of t
+    | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
@@ -889,6 +970,7 @@ and Expression : sig
 end = struct
   type expression =
     | Await of t
+    | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
@@ -919,6 +1001,8 @@ end = struct
   let rec location_insensitive_compare_expression left right =
     match left, right with
     | Await left, Await right -> location_insensitive_compare left right
+    | BinaryOperator left, BinaryOperator right ->
+        BinaryOperator.location_insensitive_compare left right
     | BooleanOperator left, BooleanOperator right ->
         BooleanOperator.location_insensitive_compare left right
     | Call left, Call right -> Call.location_insensitive_compare left right
@@ -954,6 +1038,7 @@ end = struct
     | Yield left, Yield right -> Option.compare location_insensitive_compare left right
     | YieldFrom left, YieldFrom right -> location_insensitive_compare left right
     | Await _, _ -> -1
+    | BinaryOperator _, _ -> -1
     | BooleanOperator _, _ -> -1
     | Call _, _ -> -1
     | ComparisonOperator _, _ -> -1
@@ -1116,6 +1201,16 @@ end = struct
     and pp_expression formatter expression =
       match expression with
       | Await expression -> Format.fprintf formatter "await %a" pp_expression_t expression
+      | BinaryOperator { BinaryOperator.left; operator; right } ->
+          Format.fprintf
+            formatter
+            "%a %a %a"
+            pp_expression_t
+            left
+            BinaryOperator.pp_binary_operator
+            operator
+            pp_expression_t
+            right
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           Format.fprintf
             formatter
@@ -1224,6 +1319,7 @@ end
 module Mapper = struct
   type 'a t = {
     map_await: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+    map_binary_operator: mapper:'a t -> location:Location.t -> BinaryOperator.t -> 'a;
     map_boolean_operator: mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a;
     map_call: mapper:'a t -> location:Location.t -> Call.t -> 'a;
     map_comparison_operator: mapper:'a t -> location:Location.t -> ComparisonOperator.t -> 'a;
@@ -1254,6 +1350,7 @@ module Mapper = struct
       ~mapper:
         ({
            map_await;
+           map_binary_operator;
            map_boolean_operator;
            map_call;
            map_comparison_operator;
@@ -1281,6 +1378,8 @@ module Mapper = struct
     =
     match value with
     | Expression.Await expression -> map_await ~mapper ~location expression
+    | Expression.BinaryOperator binary_operator ->
+        map_binary_operator ~mapper ~location binary_operator
     | Expression.BooleanOperator boolean_operator ->
         map_boolean_operator ~mapper ~location boolean_operator
     | Expression.Call call -> map_call ~mapper ~location call
@@ -1403,6 +1502,16 @@ module Mapper = struct
 
   let default_map_await_node ~mapper ~location awaited =
     Node.create ~location (Expression.Await (default_map_await ~mapper awaited))
+
+
+  let default_map_binary_operator ~mapper { BinaryOperator.left; operator; right } =
+    { BinaryOperator.left = map ~mapper left; operator; right = map ~mapper right }
+
+
+  let default_map_binary_operator_node ~mapper ~location binary_operator =
+    Node.create
+      ~location
+      (Expression.BinaryOperator (default_map_binary_operator ~mapper binary_operator))
 
 
   let default_map_boolean_operator ~mapper { BooleanOperator.left; operator; right } =
@@ -1593,6 +1702,7 @@ module Mapper = struct
 
   let create
       ~map_await
+      ~map_binary_operator
       ~map_boolean_operator
       ~map_call
       ~map_comparison_operator
@@ -1619,6 +1729,7 @@ module Mapper = struct
     =
     {
       map_await;
+      map_binary_operator;
       map_boolean_operator;
       map_call;
       map_comparison_operator;
@@ -1646,6 +1757,7 @@ module Mapper = struct
 
   let create_default
       ?(map_await = default_map_await_node)
+      ?(map_binary_operator = default_map_binary_operator_node)
       ?(map_boolean_operator = default_map_boolean_operator_node)
       ?(map_call = default_map_call_node)
       ?(map_comparison_operator = default_map_comparison_operator_node)
@@ -1672,6 +1784,7 @@ module Mapper = struct
     =
     {
       map_await;
+      map_binary_operator;
       map_boolean_operator;
       map_call;
       map_comparison_operator;
@@ -1699,6 +1812,7 @@ module Mapper = struct
 
   let create_transformer
       ?(map_await = default_map_await)
+      ?(map_binary_operator = default_map_binary_operator)
       ?(map_boolean_operator = default_map_boolean_operator)
       ?(map_call = default_map_call)
       ?(map_comparison_operator = default_map_comparison_operator)
@@ -1726,6 +1840,11 @@ module Mapper = struct
     =
     let map_await ~mapper ~location awaited =
       Node.create ~location:(map_location location) (Expression.Await (map_await ~mapper awaited))
+    in
+    let map_binary_operator ~mapper ~location binary_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.BinaryOperator (map_binary_operator ~mapper binary_operator))
     in
     let map_boolean_operator ~mapper ~location boolean_operator =
       Node.create
@@ -1849,6 +1968,7 @@ module Mapper = struct
     in
     create_default
       ~map_await
+      ~map_binary_operator
       ~map_boolean_operator
       ~map_call
       ~map_comparison_operator
@@ -1877,6 +1997,7 @@ end
 module Folder = struct
   type 'a t = {
     fold_await: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+    fold_binary_operator: folder:'a t -> state:'a -> location:Location.t -> BinaryOperator.t -> 'a;
     fold_boolean_operator:
       folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a;
     fold_call: folder:'a t -> state:'a -> location:Location.t -> Call.t -> 'a;
@@ -1915,6 +2036,7 @@ module Folder = struct
       ~folder:
         ({
            fold_await;
+           fold_binary_operator;
            fold_boolean_operator;
            fold_call;
            fold_comparison_operator;
@@ -1943,6 +2065,8 @@ module Folder = struct
     =
     match value with
     | Expression.Await expression -> fold_await ~folder ~state ~location expression
+    | Expression.BinaryOperator binary_operator ->
+        fold_binary_operator ~folder ~state ~location binary_operator
     | Expression.BooleanOperator boolean_operator ->
         fold_boolean_operator ~folder ~state ~location boolean_operator
     | Expression.Call call -> fold_call ~folder ~state ~location call
@@ -2081,6 +2205,11 @@ module Folder = struct
 
   let default_fold_await ~folder ~state awaited = fold ~folder ~state awaited
 
+  let default_fold_binary_operator ~folder ~state { BinaryOperator.left; operator = _; right } =
+    let state = fold ~folder ~state left in
+    fold ~folder ~state right
+
+
   let default_fold_boolean_operator ~folder ~state { BooleanOperator.left; operator = _; right } =
     let state = fold ~folder ~state left in
     fold ~folder ~state right
@@ -2168,6 +2297,7 @@ module Folder = struct
 
   let create
       ?(fold_await = fold_ignoring_location default_fold_await)
+      ?(fold_binary_operator = fold_ignoring_location default_fold_binary_operator)
       ?(fold_boolean_operator = fold_ignoring_location default_fold_boolean_operator)
       ?(fold_call = fold_ignoring_location default_fold_call)
       ?(fold_comparison_operator = fold_ignoring_location default_fold_comparison_operator)
@@ -2195,6 +2325,7 @@ module Folder = struct
     =
     {
       fold_await;
+      fold_binary_operator;
       fold_boolean_operator;
       fold_call;
       fold_comparison_operator;
@@ -2222,6 +2353,7 @@ module Folder = struct
 
   let create_with_uniform_location_fold
       ?(fold_await = default_fold_await)
+      ?(fold_binary_operator = default_fold_binary_operator)
       ?(fold_boolean_operator = default_fold_boolean_operator)
       ?(fold_call = default_fold_call)
       ?(fold_comparison_operator = default_fold_comparison_operator)
@@ -2270,6 +2402,7 @@ module Folder = struct
     in
     {
       fold_await = fold_with_location fold_await;
+      fold_binary_operator = fold_with_location fold_binary_operator;
       fold_boolean_operator = fold_with_location fold_boolean_operator;
       fold_call = fold_with_location fold_call;
       fold_comparison_operator = fold_with_location fold_comparison_operator;
@@ -2524,6 +2657,7 @@ let rec delocalize ({ Node.value; location } as expression) =
     | List elements -> List (List.map elements ~f:delocalize)
     | Tuple elements -> Tuple (List.map elements ~f:delocalize)
     | Await _
+    | BinaryOperator _
     | BooleanOperator _
     | ComparisonOperator _
     | Constant _

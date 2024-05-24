@@ -875,6 +875,7 @@ let find_definition ~resolution ~module_reference ~define_name reference =
 let get_expression_constructor expression : string =
   match expression with
   | Expression.Await _ -> "Await"
+  | BinaryOperator _ -> "BinaryOperator"
   | BooleanOperator _ -> "BooleanOperator"
   | Call _ -> "Call"
   | ComparisonOperator _ -> "ComparisonOperator"

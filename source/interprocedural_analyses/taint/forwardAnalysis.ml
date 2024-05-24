@@ -2505,6 +2505,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let value = CallGraph.redirect_expressions ~pyre_in_context value in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
+      | BinaryOperator _ -> failwith "T101299882"
       | BooleanOperator { left; operator = _; right } ->
           let left_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left

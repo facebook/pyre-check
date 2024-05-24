@@ -333,6 +333,7 @@ module State (Context : Context) = struct
             expressions
         in
         { empty_result with errors }
+    | BinaryOperator { left; right; _ }
     | BooleanOperator { left; right; _ }
     | ComparisonOperator { left; right; _ } ->
         let { errors = left_errors; _ } = forward_expression left in
@@ -496,6 +497,7 @@ module State (Context : Context) = struct
     | SetComprehension _
     | FormatString _
     | Lambda _
+    | BinaryOperator _
     | BooleanOperator _
     | ComparisonOperator _
     | Ternary _
