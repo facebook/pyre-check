@@ -20,6 +20,17 @@ module Assign : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+module AugmentedAssign : sig
+  type t = {
+    target: Expression.t;
+    operator: Expression.BinaryOperator.operator;
+    value: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 module Import : sig
   type import = {
     name: Reference.t;
@@ -421,6 +432,7 @@ and Statement : sig
   type statement =
     | Assign of Assign.t
     | Assert of Assert.t
+    | AugmentedAssign of AugmentedAssign.t
     | Break
     | Class of Class.t
     | Continue

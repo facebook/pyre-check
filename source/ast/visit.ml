@@ -176,6 +176,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
+      | AugmentedAssign { AugmentedAssign.target; value; _ } ->
+          visit_expression target;
+          visit_expression value
       | Class ({ Class.name; base_arguments; body; decorators; _ } as class_) ->
           visit_node
             ~state
@@ -335,6 +338,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         match value with
         | Assign _
         | Assert _
+        | AugmentedAssign _
         | Break
         | Continue
         | Delete _

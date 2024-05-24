@@ -81,6 +81,7 @@ let collect_typecheck_units { Source.statements; _ } =
     | With { With.body; _ } -> List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)
     | Assign _
     | Assert _
+    | AugmentedAssign _
     | Break
     | Continue
     | Delete _

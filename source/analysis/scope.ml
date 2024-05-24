@@ -179,6 +179,9 @@ module Binding = struct
     | Statement.Assign { Assign.target; value; _ } ->
         let sofar = of_optional_expression sofar value in
         of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
+    | Statement.AugmentedAssign { AugmentedAssign.target; value; _ } ->
+        let sofar = of_expression sofar value in
+        of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
     | Statement.Class { Class.name; base_arguments; decorators; _ } ->
         let sofar = List.fold ~init:sofar ~f:of_expression decorators in
         let sofar =
@@ -354,6 +357,7 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | With { With.body; _ } -> globals_of_statements sofar body
   | Assign _
   | Assert _
+  | AugmentedAssign _
   | Break
   | Class _
   | Continue
@@ -395,6 +399,7 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | With { With.body; _ } -> nonlocals_of_statements sofar body
   | Assign _
   | Assert _
+  | AugmentedAssign _
   | Break
   | Class _
   | Continue

@@ -5397,6 +5397,8 @@ module State (Context : Context) = struct
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
         forward_assignment ~resolution ~location ~target ~annotation ~value
+    | AugmentedAssign { AugmentedAssign.target; value; _ } ->
+        forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some value)
     | Assert { Assert.test; origin; message } ->
         let message_errors =
           Option.value

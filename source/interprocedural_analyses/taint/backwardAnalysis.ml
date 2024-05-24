@@ -2440,6 +2440,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
         state
     | Assign { value = None; _ } -> state
+    | AugmentedAssign _ -> failwith "T101299882"
     | Assign { target = { Node.location; value = target_value } as target; value = Some value; _ }
       -> (
         let target_global_model =

@@ -969,6 +969,7 @@ module State (Context : Context) = struct
     match value with
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
+    | AugmentedAssign { value; target; _ }
     | Assign { value = Some value; target; _ } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:value

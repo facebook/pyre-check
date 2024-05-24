@@ -50,6 +50,23 @@ module Assign = struct
         | _ -> Option.compare Expression.location_insensitive_compare left.value right.value)
 end
 
+module AugmentedAssign = struct
+  type t = {
+    target: Expression.t;
+    operator: Expression.BinaryOperator.operator;
+    value: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match Expression.location_insensitive_compare left.target right.target with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match [%compare: Expression.BinaryOperator.operator] left.operator right.operator with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_insensitive_compare left.value right.value)
+end
+
 module Import = struct
   type import = {
     name: Reference.t;
@@ -1479,6 +1496,7 @@ and Statement : sig
   type statement =
     | Assign of Assign.t
     | Assert of Assert.t
+    | AugmentedAssign of AugmentedAssign.t
     | Break
     | Class of Class.t
     | Continue
@@ -1510,6 +1528,7 @@ end = struct
   type statement =
     | Assign of Assign.t
     | Assert of Assert.t
+    | AugmentedAssign of AugmentedAssign.t
     | Break
     | Class of Class.t
     | Continue
@@ -1536,6 +1555,8 @@ end = struct
     match left, right with
     | Assign left, Assign right -> Assign.location_insensitive_compare left right
     | Assert left, Assert right -> Assert.location_insensitive_compare left right
+    | AugmentedAssign left, AugmentedAssign right ->
+        AugmentedAssign.location_insensitive_compare left right
     | Break, Break -> 0
     | Class left, Class right -> Class.location_insensitive_compare left right
     | Continue, Continue -> 0
@@ -1556,6 +1577,7 @@ end = struct
     | While left, While right -> While.location_insensitive_compare left right
     | Assign _, _ -> -1
     | Assert _, _ -> -1
+    | AugmentedAssign _, _ -> -1
     | Break, _ -> -1
     | Class _, _ -> -1
     | Continue, _ -> -1
@@ -1739,6 +1761,18 @@ module PrettyPrinter = struct
       ("", value)
 
 
+  and pp_augmented_assign formatter { AugmentedAssign.target; operator; value } =
+    Format.fprintf
+      formatter
+      "%a %a= %a"
+      Expression.pp
+      target
+      Expression.BinaryOperator.pp_binary_operator
+      operator
+      Expression.pp
+      value
+
+
   and pp_class formatter { Class.name; base_arguments; body; decorators; _ } =
     Format.fprintf
       formatter
@@ -1790,6 +1824,8 @@ module PrettyPrinter = struct
   and pp_statement formatter statement =
     match statement with
     | Assign assign -> Format.fprintf formatter "%a" pp_assign assign
+    | AugmentedAssign augmented_assign ->
+        Format.fprintf formatter "%a" pp_augmented_assign augmented_assign
     | Assert { Assert.test; Assert.message; _ } ->
         Format.fprintf
           formatter
@@ -2027,6 +2063,7 @@ let is_generator statements =
   let rec is_statement_generator { Node.value; _ } =
     match value with
     | Assign { Assign.value = Some value; _ } -> is_expression_generator value
+    | AugmentedAssign { AugmentedAssign.value; _ } -> is_expression_generator value
     | Assign _ -> false
     | Assert { Assert.test; message; _ } ->
         is_expression_generator test || is_optional_expression_generator message

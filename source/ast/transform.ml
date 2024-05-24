@@ -255,6 +255,13 @@ module Make (Transformer : Transformer) = struct
                 message = message >>| transform_expression;
                 origin;
               }
+        | AugmentedAssign { AugmentedAssign.target; operator; value } ->
+            Statement.AugmentedAssign
+              {
+                AugmentedAssign.target = transform_expression target;
+                operator;
+                value = transform_expression value;
+              }
         | Break -> value
         | Class { Class.name; base_arguments; body; decorators; top_level_unbound_names } ->
             Class
@@ -459,6 +466,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
         match value with
         | Assign _
         | Assert _
+        | AugmentedAssign _
         | Break
         | Continue
         | Delete _
