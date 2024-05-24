@@ -11,7 +11,6 @@ TODO(T132414938) Add a module-level docstring
 
 from __future__ import annotations
 
-import glob
 import json
 import logging
 import re
@@ -23,7 +22,6 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Set
 from . import UserError
 from .errors import Errors
 from .filesystem import get_filesystem
-
 
 LOG: Logger = logging.getLogger(__name__)
 
@@ -294,18 +292,18 @@ class Configuration:
             return None
 
     def get_nested_configuration_paths(self) -> Set[Path]:
-        downward_search_start = self.root
-        if not downward_search_start.endswith("/"):
-            downward_search_start += "/"
-        nested_configurations = glob.glob(
-            f"{downward_search_start}*/**/.pyre_configuration.local",
-            recursive=True,
+        filesystem = get_filesystem()
+        nested_configurations = filesystem.list(
+            root=self.root, patterns=["**/.pyre_configuration.local"]
         )
-        LOG.info(f"Found {len(nested_configurations)} nested configurations")
-        LOG.debug(f"Nested configurations found: {nested_configurations}")
-        return {
-            Path(nested_configuration) for nested_configuration in nested_configurations
+        filtered_nested_configurations = {
+            path
+            for nested_configuration in nested_configurations
+            if (path := Path(self.root, nested_configuration)) != self.get_path()
         }
+        LOG.info(f"Found {len(filtered_nested_configurations)} nested configurations")
+        LOG.debug(f"Nested configurations found: {filtered_nested_configurations}")
+        return filtered_nested_configurations
 
     def get_errors(
         self,
