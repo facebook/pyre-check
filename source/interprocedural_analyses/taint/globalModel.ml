@@ -104,7 +104,11 @@ let get_sinks { models; pyre_in_context; location; interval } =
            ~is_static_method:false
            ~call_info_intervals:{ Domains.ClassIntervals.top with caller_interval = interval }
     in
-    { Domains.SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_global ~call_target }
+    {
+      Domains.SinkTreeWithHandle.sink_tree;
+      handle = IssueHandle.Sink.make_global ~call_target;
+      port = AccessPath.Root.LocalResult;
+    }
   in
   List.map ~f:to_sink_tree_with_identifier models |> Domains.SinkTreeWithHandle.filter_bottom
 

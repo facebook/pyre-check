@@ -1879,6 +1879,7 @@ module SinkTreeWithHandle = struct
   type t = {
     sink_tree: BackwardState.Tree.t;
     handle: IssueHandle.Sink.t;
+    port: AccessPath.Root.t; (* The port to which the sink is attached. *)
   }
 
   let filter_bottom sink_tree_with_identifiers =

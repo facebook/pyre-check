@@ -51,6 +51,9 @@
             ],
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -126,6 +129,9 @@
             ],
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -201,6 +207,9 @@
             ],
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -566,6 +575,9 @@
             ],
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -641,6 +653,9 @@
             ],
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -716,6 +731,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -791,6 +807,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -866,6 +883,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -941,6 +959,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.__mod__", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -1006,6 +1025,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
@@ -1081,6 +1101,7 @@
             ],
             "kinds": [
               {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],

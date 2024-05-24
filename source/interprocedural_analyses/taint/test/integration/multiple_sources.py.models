@@ -48,7 +48,12 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",
@@ -119,7 +124,15 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",
@@ -190,7 +203,15 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",
@@ -261,7 +282,15 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",
@@ -569,7 +598,15 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.B.multi_sink",
+                    "port": "leaf:permissive_context"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",
@@ -640,7 +677,15 @@
               }
             ],
             "kinds": [
-              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.A.multi_sink",
+                    "port": "leaf:permissive_context"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
             ],
             "origin": {
               "filename": "multiple_sources.py",

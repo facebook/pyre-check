@@ -104,12 +104,15 @@ module Candidates : sig
    *)
   val check_triggered_flows
     :  t ->
+    pyre_in_context:PyrePysaApi.InContext.t ->
     taint_configuration:TaintConfiguration.Heap.t ->
     triggered_sinks_for_call:TriggeredSinkHashMap.t ->
     location:Location.WithModule.t ->
     sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
+    callee:Target.t ->
+    port:AccessPath.Root.t ->
     unit
 
   val generate_issues

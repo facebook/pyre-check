@@ -200,22 +200,33 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let check_flow_to_global ~location ~source_tree global_model =
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-    let check { SinkTreeWithHandle.sink_tree; handle } =
+    let check { SinkTreeWithHandle.sink_tree; handle; _ } =
       check_flow ~location ~sink_handle:handle ~source_tree ~sink_tree
     in
     GlobalModel.get_sinks global_model |> List.iter ~f:check
 
 
-  let check_triggered_flows ~triggered_sinks_for_call ~sink_handle ~location ~source_tree ~sink_tree
+  let check_triggered_flows
+      ~pyre_in_context
+      ~triggered_sinks_for_call
+      ~sink_handle
+      ~location
+      ~source_tree
+      ~sink_tree
+      ~callee
+      ~port
     =
     Issue.Candidates.check_triggered_flows
       candidates
+      ~pyre_in_context
       ~triggered_sinks_for_call
       ~sink_handle
       ~location
       ~source_tree
       ~sink_tree
       ~taint_configuration:FunctionContext.taint_configuration
+      ~callee
+      ~port
 
 
   let generate_issues () =
@@ -331,6 +342,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Check triggered flows into partial sinks that are introduced onto expressions that are used
        in the string operations. *)
     let check_triggered_flows
+        ~pyre_in_context
         ~triggered_sinks
         ~parameter_index
         ~call_target
@@ -347,11 +359,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             IssueHandle.Sink.StringFormat { callee = target; index; parameter_index }
           in
           check_triggered_flows
+            ~pyre_in_context
             ~triggered_sinks_for_call:triggered_sinks
             ~sink_handle
             ~location
             ~source_tree
             ~sink_tree:string_combine_partial_sink_tree
+            ~callee:target
+            ~port:AccessPath.Root.sink_port_in_string_combine_functions
       | None -> ()
   end
 
@@ -633,16 +648,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
 
       let () =
-        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle } ->
+        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; port } ->
             (* Check for issues. *)
             check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
             (* Check for issues for combined source rules. *)
             check_triggered_flows
+              ~pyre_in_context
               ~triggered_sinks_for_call
               ~sink_handle:handle
               ~location
               ~source_tree:argument_taint
-              ~sink_tree;
+              ~sink_tree
+              ~callee:call_target.CallGraph.CallTarget.target
+              ~port;
             ())
       in
 
@@ -2385,6 +2403,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let triggered_sinks = Issue.TriggeredSinkHashMap.create () in
     StringFormatCall.check_triggered_flows
+      ~pyre_in_context
       ~triggered_sinks
       ~parameter_index:0
       ~call_target
@@ -2472,6 +2491,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ()) expression_taint
       in
       StringFormatCall.check_triggered_flows
+        ~pyre_in_context
         ~triggered_sinks
         ~parameter_index:(index + 1)
         ~call_target

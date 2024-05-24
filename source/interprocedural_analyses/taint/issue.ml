@@ -418,12 +418,15 @@ module TriggeredSinkLocationMap = struct
 end
 
 let compute_triggered_flows
+    ~pyre_in_context
     ~taint_configuration
     ~triggered_sinks_for_call
     ~location
     ~sink_handle
     ~source_tree
     ~sink_tree
+    ~callee
+    ~port
   =
   let partial_sinks =
     if ForwardState.Tree.is_bottom source_tree then
@@ -462,10 +465,21 @@ let compute_triggered_flows
             TriggeredSinkHashMap.get_extra_traces triggered_sinks_for_call partial_sink
           in
           let sink_taint =
-            BackwardTaint.singleton
-              (CallInfo.origin location)
-              (Sinks.TriggeredPartialSink partial_sink)
-              Frame.initial
+            BackwardTaint.apply_call
+              ~pyre_in_context
+              ~location
+              ~callee:(Some callee)
+              ~arguments:[]
+              ~path:[]
+              ~element:
+                (BackwardTaint.singleton
+                   CallInfo.declaration
+                   (Sinks.TriggeredPartialSink partial_sink)
+                   Frame.initial)
+              ~port
+              ~is_class_method:false
+              ~is_static_method:false
+              ~call_info_intervals:Domains.ClassIntervals.top
             |> BackwardTaint.add_extra_traces ~extra_traces
           in
           Some
@@ -522,21 +536,27 @@ module Candidates = struct
    *)
   let check_triggered_flows
       candidates
+      ~pyre_in_context
       ~taint_configuration
       ~triggered_sinks_for_call
       ~location
       ~sink_handle
       ~source_tree
       ~sink_tree
+      ~callee
+      ~port
     =
     let new_candidates =
       compute_triggered_flows
+        ~pyre_in_context
         ~taint_configuration
         ~triggered_sinks_for_call
         ~sink_handle
         ~location
         ~source_tree
         ~sink_tree
+        ~callee
+        ~port
     in
     List.iter new_candidates ~f:(add_candidate candidates)
 
