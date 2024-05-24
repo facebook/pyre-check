@@ -5472,7 +5472,8 @@ module State (Context : Context) = struct
             return_type
         in
         Value resolution, validate_return expression ~resolution ~errors ~actual ~is_implicit
-    | Define { signature = { Define.Signature.name; nesting_define; _ } as signature; _ } ->
+    | Define
+        { signature = { Define.Signature.name; nesting_define; parameters; _ } as signature; _ } ->
         let resolution =
           match nesting_define with
           | Some _ ->
@@ -5483,7 +5484,20 @@ module State (Context : Context) = struct
               |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
           | None -> resolution
         in
-        Value resolution, []
+        let duplicate_parameters, _ =
+          List.fold
+            parameters
+            ~init:([], Identifier.Set.empty)
+            ~f:(fun (duplicates, seen) { Node.value = { Parameter.name; _ }; location } ->
+              match Set.mem seen name with
+              | true -> (name, location) :: duplicates, seen
+              | false -> duplicates, Set.add seen name)
+        in
+        let errors =
+          List.fold duplicate_parameters ~init:[] ~f:(fun errors (name, location) ->
+              emit_error ~errors ~location ~kind:(Error.DuplicateParameter name))
+        in
+        Value resolution, errors
     | Import { Import.from; imports } ->
         let get_export_kind = function
           | ResolvedReference.Exported export -> Some export

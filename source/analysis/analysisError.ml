@@ -863,6 +863,7 @@ and kind =
       variable: Type.Variable.t;
       base: polymorphism_base_class;
     }
+  | DuplicateParameter of string
   | TupleConcatenationError of tuple_concatenation_problem
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
@@ -943,6 +944,7 @@ let code_of_kind = function
   | NonLiteralString _ -> 62
   | SuppressionCommentWithoutErrorCode _ -> 63
   | InconsistentMethodResolutionOrder _ -> 64
+  | DuplicateParameter _ -> 65
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -959,6 +961,7 @@ let name_of_kind = function
   | AnalysisFailure _ -> "Analysis failure"
   | BroadcastError _ -> "Broadcast error"
   | DuplicateTypeVariables _ -> "Duplicate type variables"
+  | DuplicateParameter _ -> "Duplicate parameter"
   | ParserFailure _ -> "Parsing failure"
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
@@ -2726,6 +2729,8 @@ let rec messages ~concise ~signature location kind =
           (show_sanitized_expression expression)
           start_line;
       ]
+  | DuplicateParameter name ->
+      [Format.asprintf "Duplicate parameter name `%a`." Identifier.pp_sanitized name]
   | DuplicateTypeVariables { variable; base } -> (
       let format : ('b, Format.formatter, unit, string) format4 =
         match base with
@@ -3159,6 +3164,7 @@ let due_to_analysis_limitations { kind; _ } =
   | DeadStore _
   | Deobfuscation _
   | DuplicateTypeVariables _
+  | DuplicateParameter _
   | IllegalAnnotationTarget _
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
@@ -3257,6 +3263,8 @@ let join ~resolution left right =
     | ParserFailure left_message, ParserFailure right_message
       when String.equal left_message right_message ->
         ParserFailure left_message
+    | DuplicateParameter left, DuplicateParameter right when String.equal left right ->
+        DuplicateParameter left
     | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
     | Deobfuscation left, Deobfuscation right when [%compare.equal: Source.t] left right ->
         Deobfuscation left
@@ -3721,6 +3729,7 @@ let join ~resolution left right =
     | UnawaitedAwaitable _, _
     | UnboundName _, _
     | UninitializedLocal _, _
+    | DuplicateParameter _, _
     | DuplicateTypeVariables _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
@@ -4341,6 +4350,7 @@ let dequalify
     | UnsafeCast kind -> UnsafeCast kind
     | UnawaitedAwaitable { references; expression } ->
         UnawaitedAwaitable { references = List.map references ~f:dequalify_reference; expression }
+    | DuplicateParameter name -> DuplicateParameter (dequalify_identifier name)
     | DuplicateTypeVariables { variable; base } ->
         DuplicateTypeVariables { variable = Type.Variable.dequalify dequalify_map variable; base }
     | UnboundName name -> UnboundName (dequalify_identifier name)

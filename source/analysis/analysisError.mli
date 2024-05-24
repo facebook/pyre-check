@@ -517,6 +517,7 @@ and kind =
       variable: Type.Variable.t;
       base: polymorphism_base_class;
     }
+  | DuplicateParameter of string
   | TupleConcatenationError of tuple_concatenation_problem
   (* Additional errors. *)
   | DeadStore of Identifier.t

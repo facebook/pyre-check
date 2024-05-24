@@ -101,6 +101,23 @@ let test_callable_parameters =
               foo(a=42, a=42)
             |}
            ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              def foo(a:int, a:int) -> None:
+                pass
+            |}
+           ["Duplicate parameter [65]: Duplicate parameter name `a`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              def foo(a:int, a:int, b: int, b: int) -> None:
+                pass
+            |}
+           [
+             "Duplicate parameter [65]: Duplicate parameter name `a`.";
+             "Duplicate parameter [65]: Duplicate parameter name `b`.";
+           ];
     ]
 
 
