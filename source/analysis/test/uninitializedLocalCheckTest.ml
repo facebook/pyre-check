@@ -258,7 +258,6 @@ let test_simple =
         y = None
     |}
            ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
-      (* TODO(T101303314) Validate use of uninitialized locals in subscript assignment targets *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_uninitialized_errors
            {|
