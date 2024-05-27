@@ -2,7 +2,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "lists.setitem",
+    "callable": "lists.test_setitem",
     "callable_line": 68,
     "code": 5002,
     "line": 71,
@@ -69,7 +69,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lists.setitem:5002:0:Call|_test_sink|0|formal(arg):ccabaa5708a8750d374f01ec1d3513d8"
+    "master_handle": "lists.test_setitem:5002:0:Call|_test_sink|0|formal(arg):93fe32a73583c124119699bca5a42b1d"
   }
 }
 {

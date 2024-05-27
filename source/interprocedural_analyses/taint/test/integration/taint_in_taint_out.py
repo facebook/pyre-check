@@ -7,6 +7,10 @@ from builtins import _test_sink, _test_source
 from typing import Dict, List, Tuple
 
 
+class Object:
+    pass
+
+
 def some_service(id):
     ...
 
@@ -246,21 +250,21 @@ def no_issue_with_perfect_tito_then_into_dict():
 
 
 def issue_approximate_return_access_paths():
-    x = object()
+    x = Object()
     x.a = _test_source()
     y = approximate_return_access_paths(x)
     _test_sink(y["a"])  # This is an issue.
 
 
 def issue_approximate_return_access_paths_common_prefix():
-    x = object()
+    x = Object()
     x.y.a = _test_source()
     y = approximate_return_access_paths(x)
     _test_sink(y["a"])  # This is an issue.
 
 
 def non_issue_approximate_return_access_paths_common_prefix():
-    x = object()
+    x = Object()
     x.a = _test_source()
     y = approximate_return_access_paths(x)
     # This is not an issue, but triggers a false positive, which is expected behavior.
@@ -381,7 +385,7 @@ def loop_tito_collapse_two(x):
 
 
 def join_tito_collapse_test_1(x):
-    result = object()
+    result = Object()
     if 1 > 2:
         result.a = tito_collapse_two(x)
     else:
@@ -390,7 +394,7 @@ def join_tito_collapse_test_1(x):
 
 
 def join_tito_collapse_test_2(x):
-    result = object()
+    result = Object()
     if 1 > 2:
         result.a = tito_collapse_two(x)
     else:
@@ -537,3 +541,51 @@ def test_tito_class_method():
     _test_sink(TitoClassMethod.a)  # No issue.
     TitoClassMethod.set_a(_test_source())
     _test_sink(TitoClassMethod.a)  # Issue.
+
+
+# Test tito between arguments.
+
+def random_integer() -> int:
+    ...
+
+
+def tito_from_0_to_1(x: str, y: Dict[int, str]):
+    y[random_integer()] = x
+
+
+def test_tito_from_0_to_1():
+    x = _test_source()
+    y = {}
+    tito_from_0_to_1(x, y)
+    _test_sink(x)  # Issue.
+    _test_sink(y)  # TODO(T174606751): False negative.
+
+
+def complex_argument_tito(x, y):
+    x.foo = y.bar
+
+
+def test_complex_argument_tito():
+    x = Object()
+    y = Object()
+    y.foo = _test_source()
+    complex_argument_tito(x, y)
+    _test_sink(x.foo)  # No issue.
+    _test_sink(x.bar)  # No issue.
+    _test_sink(y.foo)  # Issue.
+    _test_sink(y.bar)  # No issue.
+
+    y.bar = _test_source()
+    complex_argument_tito(x, y)
+    _test_sink(x.foo)  # TODO(T174606751): False negative.
+    _test_sink(x.bar)  # No issue.
+    _test_sink(y.foo)  # Issue.
+    _test_sink(y.bar)  # Issue.
+
+    x = Object()
+    x.baz = Object()
+    complex_argument_tito(x.baz, y)
+    _test_sink(x.foo)  # No issue.
+    _test_sink(x.bar)  # No issue.
+    _test_sink(x.baz.foo)  # TODO(T174606751): False negative.
+    _test_sink(x.baz.bar)  # No issue.

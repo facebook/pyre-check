@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
-    "callable_line": 248,
+    "callable_line": 252,
     "code": 5002,
-    "line": 252,
+    "line": 256,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -33,10 +33,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 251, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 255, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 250,
+              "line": 254,
               "start": 10,
               "end": 24
             }
@@ -56,7 +56,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 252,
+              "line": 256,
               "start": 15,
               "end": 21
             }
@@ -88,9 +88,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix",
-    "callable_line": 255,
+    "callable_line": 259,
     "code": 5002,
-    "line": 259,
+    "line": 263,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -118,10 +118,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 258, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 262, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 257,
+              "line": 261,
               "start": 12,
               "end": 26
             }
@@ -141,7 +141,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 259,
+              "line": 263,
               "start": 15,
               "end": 21
             }
@@ -173,9 +173,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
-    "callable_line": 422,
+    "callable_line": 426,
     "code": 5002,
-    "line": 425,
+    "line": 429,
     "start": 15,
     "end": 28,
     "filename": "taint_in_taint_out.py",
@@ -199,10 +199,10 @@
               { "first-index": "foo" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 424, "start": 34, "end": 35 } ],
+            "tito_positions": [ { "line": 428, "start": 34, "end": 35 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 423,
+              "line": 427,
               "start": 14,
               "end": 28
             }
@@ -222,7 +222,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 425,
+              "line": 429,
               "start": 15,
               "end": 28
             }
@@ -250,9 +250,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
-    "callable_line": 448,
+    "callable_line": 452,
     "code": 5002,
-    "line": 451,
+    "line": 455,
     "start": 15,
     "end": 26,
     "filename": "taint_in_taint_out.py",
@@ -278,10 +278,10 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 450, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 454, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 449,
+              "line": 453,
               "start": 20,
               "end": 34
             }
@@ -301,7 +301,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 451,
+              "line": 455,
               "start": 15,
               "end": 26
             }
@@ -331,9 +331,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
-    "callable_line": 98,
+    "callable_line": 102,
     "code": 5002,
-    "line": 100,
+    "line": 104,
     "start": 33,
     "end": 34,
     "filename": "taint_in_taint_out.py",
@@ -354,7 +354,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 99,
+              "line": 103,
               "start": 8,
               "end": 22
             }
@@ -379,7 +379,7 @@
             "call": {
               "position": {
                 "filename": "taint_in_taint_out.py",
-                "line": 100,
+                "line": 104,
                 "start": 33,
                 "end": 34
               },
@@ -410,9 +410,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
-    "callable_line": 210,
+    "callable_line": 214,
     "code": 5002,
-    "line": 213,
+    "line": 217,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -437,10 +437,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 212, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 216, "start": 37, "end": 38 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 211,
+              "line": 215,
               "start": 8,
               "end": 22
             }
@@ -460,7 +460,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 213,
+              "line": 217,
               "start": 15,
               "end": 21
             }
@@ -489,9 +489,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
-    "callable_line": 262,
+    "callable_line": 266,
     "code": 5002,
-    "line": 267,
+    "line": 271,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -519,10 +519,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 265, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 269, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 264,
+              "line": 268,
               "start": 10,
               "end": 24
             }
@@ -542,7 +542,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 267,
+              "line": 271,
               "start": 15,
               "end": 21
             }
@@ -574,9 +574,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_always_via_feature",
-    "callable_line": 143,
+    "callable_line": 147,
     "code": 5002,
-    "line": 144,
+    "line": 148,
     "start": 15,
     "end": 48,
     "filename": "taint_in_taint_out.py",
@@ -598,10 +598,10 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 144, "start": 33, "end": 47 } ],
+            "tito_positions": [ { "line": 148, "start": 33, "end": 47 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 144,
+              "line": 148,
               "start": 33,
               "end": 47
             }
@@ -621,7 +621,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 144,
+              "line": 148,
               "start": 15,
               "end": 48
             }
@@ -647,10 +647,229 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "taint_in_taint_out.test_complex_evaluator",
-    "callable_line": 189,
+    "callable": "taint_in_taint_out.test_complex_argument_tito",
+    "callable_line": 568,
     "code": 5002,
-    "line": 190,
+    "line": 583,
+    "start": 15,
+    "end": 20,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bar" }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 578,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 583,
+              "start": 15,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 7,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|7|formal(arg):e01d9a0e94ec4c1f6a16bce99d8d9040"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_complex_argument_tito",
+    "callable_line": 568,
+    "code": 5002,
+    "line": 582,
+    "start": 15,
+    "end": 20,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "foo" }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 571,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 582,
+              "start": 15,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 6,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|6|formal(arg):ad2a67cf72f264c002bf59e822e0c972"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_complex_argument_tito",
+    "callable_line": 568,
+    "code": 5002,
+    "line": 575,
+    "start": 15,
+    "end": 20,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "foo" }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 571,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 575,
+              "start": 15,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|2|formal(arg):e26e1e66d8be1337852ba48c8246e509"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_complex_evaluator",
+    "callable_line": 193,
+    "code": 5002,
+    "line": 194,
     "start": 15,
     "end": 62,
     "filename": "taint_in_taint_out.py",
@@ -678,10 +897,10 @@
               { "via": "model-tito-shaping" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 190, "start": 47, "end": 61 } ],
+            "tito_positions": [ { "line": 194, "start": 47, "end": 61 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 190,
+              "line": 194,
               "start": 47,
               "end": 61
             }
@@ -701,7 +920,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 190,
+              "line": 194,
               "start": 15,
               "end": 62
             }
@@ -733,9 +952,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
-    "callable_line": 160,
+    "callable_line": 164,
     "code": 5002,
-    "line": 162,
+    "line": 166,
     "start": 15,
     "end": 23,
     "filename": "taint_in_taint_out.py",
@@ -759,10 +978,10 @@
               { "first-field": "arg" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 161, "start": 19, "end": 33 } ],
+            "tito_positions": [ { "line": 165, "start": 19, "end": 33 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 161,
+              "line": 165,
               "start": 19,
               "end": 33
             }
@@ -782,7 +1001,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 162,
+              "line": 166,
               "start": 15,
               "end": 23
             }
@@ -810,9 +1029,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_simplified_evaluator",
-    "callable_line": 169,
+    "callable_line": 173,
     "code": 5002,
-    "line": 170,
+    "line": 174,
     "start": 15,
     "end": 44,
     "filename": "taint_in_taint_out.py",
@@ -836,10 +1055,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 170, "start": 29, "end": 43 } ],
+            "tito_positions": [ { "line": 174, "start": 29, "end": 43 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 170,
+              "line": 174,
               "start": 29,
               "end": 43
             }
@@ -859,7 +1078,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 170,
+              "line": 174,
               "start": 15,
               "end": 44
             }
@@ -886,10 +1105,77 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 494,
+    "callable": "taint_in_taint_out.test_tito_from_0_to_1",
+    "callable_line": 556,
     "code": 5002,
-    "line": 496,
+    "line": 560,
+    "start": 15,
+    "end": 16,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 557,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 560,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_tito_from_0_to_1:5002:0:Call|_test_sink|0|formal(arg):8fad1fe9526b2fba923135310fd5d879"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_tito_self",
+    "callable_line": 498,
+    "code": 5002,
+    "line": 500,
     "start": 15,
     "end": 18,
     "filename": "taint_in_taint_out.py",
@@ -913,10 +1199,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 495, "start": 17, "end": 31 } ],
+            "tito_positions": [ { "line": 499, "start": 17, "end": 31 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 495,
+              "line": 499,
               "start": 17,
               "end": 31
             }
@@ -936,7 +1222,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 496,
+              "line": 500,
               "start": 15,
               "end": 18
             }
@@ -1040,7 +1326,7 @@
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 174,
+    "callable_line": 178,
     "tito": [
       {
         "port": "formal(field, position=1)",
@@ -1060,7 +1346,7 @@
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 180,
+    "callable_line": 184,
     "tito": [
       {
         "port": "formal(payload, position=1)[items]",
@@ -1080,7 +1366,7 @@
               { "via": "model-tito-shaping" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 186, "start": 31, "end": 36 } ],
+            "tito_positions": [ { "line": 190, "start": 31, "end": 36 } ],
             "tito": null
           }
         ]
@@ -1093,7 +1379,7 @@
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 181,
+    "callable_line": 185,
     "tito": [
       {
         "port": "formal(field, position=0)",
@@ -1115,8 +1401,8 @@
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 183, "start": 50, "end": 55 },
-              { "line": 184, "start": 44, "end": 49 }
+              { "line": 187, "start": 50, "end": 55 },
+              { "line": 188, "start": 44, "end": 49 }
             ],
             "tito": null
           }
@@ -1130,7 +1416,7 @@
   "data": {
     "callable": "taint_in_taint_out.Data.__init__",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 23,
+    "callable_line": 27,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -1168,7 +1454,7 @@
   "data": {
     "callable": "taint_in_taint_out.GetQuery.__init__",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 151,
+    "callable_line": 155,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1192,7 +1478,7 @@
   "data": {
     "callable": "taint_in_taint_out.GetUser.__init__",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 156,
+    "callable_line": 160,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1206,7 +1492,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 157, "start": 32, "end": 35 } ],
+            "tito_positions": [ { "line": 161, "start": 32, "end": 35 } ],
             "tito": null
           }
         ]
@@ -1219,7 +1505,7 @@
   "data": {
     "callable": "taint_in_taint_out.Recursive.__init__",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 63,
+    "callable_line": 67,
     "tito": [
       {
         "port": "formal(select, position=1)[*][*][0][target]",
@@ -1244,7 +1530,7 @@
               { "via": "broadening" },
               { "via": "widen-broadening" }
             ],
-            "tito_positions": [ { "line": 67, "start": 35, "end": 41 } ],
+            "tito_positions": [ { "line": 71, "start": 35, "end": 41 } ],
             "tito": null
           }
         ]
@@ -1257,7 +1543,7 @@
   "data": {
     "callable": "taint_in_taint_out.TitoSelf.__init__",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 477,
+    "callable_line": 481,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -1295,7 +1581,7 @@
   "data": {
     "callable": "taint_in_taint_out.add_feature",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 132,
+    "callable_line": 136,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1324,7 +1610,7 @@
   "data": {
     "callable": "taint_in_taint_out.adds_tito",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 78,
+    "callable_line": 82,
     "sources": [
       {
         "port": "result",
@@ -1350,7 +1636,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 78,
+              "line": 82,
               "start": 14,
               "end": 28
             }
@@ -1383,7 +1669,7 @@
   "data": {
     "callable": "taint_in_taint_out.adds_tito_inherited",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 86,
+    "callable_line": 90,
     "sources": [
       {
         "port": "result",
@@ -1409,7 +1695,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 86,
+              "line": 90,
               "start": 24,
               "end": 43
             }
@@ -1442,7 +1728,7 @@
   "data": {
     "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 90,
+    "callable_line": 94,
     "sinks": [
       {
         "port": "formal(src, position=0)[add_tito]",
@@ -1461,7 +1747,7 @@
             "call": {
               "position": {
                 "filename": "taint_in_taint_out.py",
-                "line": 91,
+                "line": 95,
                 "start": 18,
                 "end": 21
               },
@@ -1479,7 +1765,7 @@
   "data": {
     "callable": "taint_in_taint_out.approximate_return_access_paths",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 103,
+    "callable_line": 107,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1503,7 +1789,7 @@
   "data": {
     "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 317,
+    "callable_line": 321,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1517,7 +1803,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 318, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 322, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1530,7 +1816,7 @@
   "data": {
     "callable": "taint_in_taint_out.collapse_two_then_into_dict",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 307,
+    "callable_line": 311,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1544,7 +1830,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 308, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 312, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1557,7 +1843,7 @@
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_one",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 322,
+    "callable_line": 326,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1572,8 +1858,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 324, "start": 26, "end": 27 },
-              { "line": 326, "start": 26, "end": 27 }
+              { "line": 328, "start": 26, "end": 27 },
+              { "line": 330, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1587,7 +1873,7 @@
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_one_and_two",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 354,
+    "callable_line": 358,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1602,8 +1888,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 356, "start": 26, "end": 27 },
-              { "line": 358, "start": 26, "end": 27 }
+              { "line": 360, "start": 26, "end": 27 },
+              { "line": 362, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1617,7 +1903,7 @@
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_three",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 338,
+    "callable_line": 342,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1632,8 +1918,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 340, "start": 28, "end": 29 },
-              { "line": 342, "start": 28, "end": 29 }
+              { "line": 344, "start": 28, "end": 29 },
+              { "line": 346, "start": 28, "end": 29 }
             ],
             "tito": null
           }
@@ -1647,7 +1933,7 @@
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_two",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 330,
+    "callable_line": 334,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1662,8 +1948,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 332, "start": 26, "end": 27 },
-              { "line": 334, "start": 26, "end": 27 }
+              { "line": 336, "start": 26, "end": 27 },
+              { "line": 338, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1677,7 +1963,7 @@
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_two_and_one",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 346,
+    "callable_line": 350,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1692,8 +1978,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 348, "start": 26, "end": 27 },
-              { "line": 350, "start": 26, "end": 27 }
+              { "line": 352, "start": 26, "end": 27 },
+              { "line": 354, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1707,7 +1993,7 @@
   "data": {
     "callable": "taint_in_taint_out.evaluate_lazy",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 165,
+    "callable_line": 169,
     "tito": [
       {
         "port": "formal(payload, position=0)[*]",
@@ -1739,7 +2025,7 @@
   "data": {
     "callable": "taint_in_taint_out.get_data",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 28,
+    "callable_line": 32,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1763,7 +2049,7 @@
   "data": {
     "callable": "taint_in_taint_out.get_related",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 70,
+    "callable_line": 74,
     "tito": [
       {
         "port": "formal(select, position=0)[*][*][0][target]",
@@ -1787,7 +2073,7 @@
               { "via": "broadening" },
               { "via": "widen-broadening" }
             ],
-            "tito_positions": [ { "line": 71, "start": 21, "end": 27 } ],
+            "tito_positions": [ { "line": 75, "start": 21, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1800,7 +2086,7 @@
   "data": {
     "callable": "taint_in_taint_out.indirect_sink",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 94,
+    "callable_line": 98,
     "sinks": [
       {
         "port": "formal(x, position=0)[add_tito]",
@@ -1816,7 +2102,7 @@
             "local_features": [ { "always-via": "string_concat_lhs" } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 95,
+              "line": 99,
               "start": 15,
               "end": 25
             }
@@ -1831,7 +2117,7 @@
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_collapse_two",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 302,
+    "callable_line": 306,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1845,7 +2131,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 304, "start": 29, "end": 30 } ],
+            "tito_positions": [ { "line": 308, "start": 29, "end": 30 } ],
             "tito": null
           }
         ]
@@ -1858,7 +2144,7 @@
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 226,
+    "callable_line": 230,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1872,7 +2158,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 228, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 232, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1885,7 +2171,7 @@
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 200,
+    "callable_line": 204,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1901,7 +2187,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 202, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 206, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1914,7 +2200,7 @@
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_1",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 383,
+    "callable_line": 387,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1929,8 +2215,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 386, "start": 37, "end": 38 },
-              { "line": 388, "start": 39, "end": 40 }
+              { "line": 390, "start": 37, "end": 38 },
+              { "line": 392, "start": 39, "end": 40 }
             ],
             "tito": null
           }
@@ -1944,7 +2230,7 @@
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_2",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 392,
+    "callable_line": 396,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1959,8 +2245,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 395, "start": 37, "end": 38 },
-              { "line": 397, "start": 41, "end": 42 }
+              { "line": 399, "start": 37, "end": 38 },
+              { "line": 401, "start": 41, "end": 42 }
             ],
             "tito": null
           }
@@ -1974,7 +2260,7 @@
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_3",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 415,
+    "callable_line": 419,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1989,8 +2275,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 417, "start": 33, "end": 34 },
-              { "line": 419, "start": 41, "end": 42 }
+              { "line": 421, "start": 33, "end": 34 },
+              { "line": 423, "start": 41, "end": 42 }
             ],
             "tito": null
           }
@@ -2004,7 +2290,7 @@
   "data": {
     "callable": "taint_in_taint_out.loop_perfect_tito",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 362,
+    "callable_line": 366,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2023,7 +2309,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 365, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 369, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -2036,7 +2322,7 @@
   "data": {
     "callable": "taint_in_taint_out.loop_tito_collapse_one",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 369,
+    "callable_line": 373,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2046,7 +2332,7 @@
               { "return_paths": { "[a]": 0, "": 4 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 372, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 376, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -2059,7 +2345,7 @@
   "data": {
     "callable": "taint_in_taint_out.loop_tito_collapse_two",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 376,
+    "callable_line": 380,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2072,7 +2358,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 379, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 383, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -2085,7 +2371,7 @@
   "data": {
     "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 457,
+    "callable_line": 461,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2106,7 +2392,7 @@
   "data": {
     "callable": "taint_in_taint_out.perfect_tito",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 222,
+    "callable_line": 226,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2125,7 +2411,7 @@
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 312,
+    "callable_line": 316,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2139,7 +2425,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 313, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 317, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2152,7 +2438,7 @@
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 231,
+    "callable_line": 235,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2166,7 +2452,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 232, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 236, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2179,7 +2465,7 @@
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 270,
+    "callable_line": 274,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2201,7 +2487,7 @@
   "data": {
     "callable": "taint_in_taint_out.product_data",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 32,
+    "callable_line": 36,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2233,13 +2519,13 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [
-              { "line": 33, "start": 20, "end": 21 },
-              { "line": 36, "start": 30, "end": 38 },
-              { "line": 40, "start": 30, "end": 37 },
-              { "line": 41, "start": 33, "end": 40 },
-              { "line": 41, "start": 51, "end": 60 },
-              { "line": 41, "start": 72, "end": 82 },
-              { "line": 43, "start": 26, "end": 38 }
+              { "line": 37, "start": 20, "end": 21 },
+              { "line": 40, "start": 30, "end": 38 },
+              { "line": 44, "start": 30, "end": 37 },
+              { "line": 45, "start": 33, "end": 40 },
+              { "line": 45, "start": 51, "end": 60 },
+              { "line": 45, "start": 72, "end": 82 },
+              { "line": 47, "start": 26, "end": 38 }
             ],
             "tito": null
           }
@@ -2253,7 +2539,7 @@
   "data": {
     "callable": "taint_in_taint_out.product_data_wrapper",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 50,
+    "callable_line": 54,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2284,7 +2570,7 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 51, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 55, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -2297,7 +2583,7 @@
   "data": {
     "callable": "taint_in_taint_out.return_taint",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 119,
+    "callable_line": 123,
     "tito": [
       {
         "port": "formal(b2, position=2)",
@@ -2340,7 +2626,7 @@
   "data": {
     "callable": "taint_in_taint_out.return_taint_in_list",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 128,
+    "callable_line": 132,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -2383,7 +2669,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 54,
+    "callable_line": 58,
     "sources": [
       {
         "port": "result[id]",
@@ -2405,10 +2691,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2435,10 +2721,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2465,10 +2751,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2495,10 +2781,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2525,10 +2811,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2555,10 +2841,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2585,10 +2871,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2615,10 +2901,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2645,10 +2931,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2675,10 +2961,10 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 59, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 55,
+              "line": 59,
               "start": 32,
               "end": 46
             }
@@ -2693,7 +2979,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 279,
+    "callable_line": 283,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2711,7 +2997,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 280, "start": 39, "end": 40 } ],
+            "tito_positions": [ { "line": 284, "start": 39, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2724,7 +3010,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 275,
+    "callable_line": 279,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2745,7 +3031,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 401,
+    "callable_line": 405,
     "tito": [
       {
         "port": "formal(x, position=0)[a][b]",
@@ -2763,7 +3049,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 402, "start": 29, "end": 40 } ],
+            "tito_positions": [ { "line": 406, "start": 29, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2776,7 +3062,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path_with_hop",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 405,
+    "callable_line": 409,
     "tito": [
       {
         "port": "formal(x, position=0)[a][b]",
@@ -2790,7 +3076,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 406, "start": 45, "end": 46 } ],
+            "tito_positions": [ { "line": 410, "start": 45, "end": 46 } ],
             "tito": null
           }
         ]
@@ -2803,7 +3089,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 205,
+    "callable_line": 209,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2819,7 +3105,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 206, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 210, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2832,7 +3118,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_three",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 297,
+    "callable_line": 301,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2850,7 +3136,7 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 298, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 302, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2863,7 +3149,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_three_append_a",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 293,
+    "callable_line": 297,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2884,7 +3170,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_two",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 288,
+    "callable_line": 292,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2902,7 +3188,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 289, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 293, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2915,7 +3201,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_two_append_a_b",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 284,
+    "callable_line": 288,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2936,7 +3222,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_with_feature",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 136,
+    "callable_line": 140,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2955,7 +3241,7 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "via": "tito" }
             ],
-            "tito_positions": [ { "line": 140, "start": 27, "end": 30 } ],
+            "tito_positions": [ { "line": 144, "start": 27, "end": 30 } ],
             "tito": null
           }
         ]
@@ -2968,7 +3254,7 @@
   "data": {
     "callable": "taint_in_taint_out.tito_with_sink",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 468,
+    "callable_line": 472,
     "sinks": [
       {
         "port": "formal(d, position=0)[a]",
@@ -2986,7 +3272,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 470,
+              "line": 474,
               "start": 15,
               "end": 21
             }
@@ -3015,7 +3301,7 @@
   "data": {
     "callable": "taint_in_taint_out.user_declared_tito_collapse_one",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 438,
+    "callable_line": 442,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -3034,7 +3320,7 @@
   "data": {
     "callable": "taint_in_taint_out.user_declared_tito_no_collapse",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 428,
+    "callable_line": 432,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -3055,7 +3341,7 @@
   "data": {
     "callable": "taint_in_taint_out.via_getattr",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 58,
+    "callable_line": 62,
     "tito": [
       {
         "port": "formal(y, position=1)",

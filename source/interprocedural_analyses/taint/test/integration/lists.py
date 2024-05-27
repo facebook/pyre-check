@@ -65,25 +65,49 @@ def push_pop_taint() -> List[int]:
     return x
 
 
-def setitem() -> None:
+def test_setitem() -> None:
     x = [""] * 10
     x[2] = _test_source()
     _test_sink(x[2])
     _test_sink(x[3])
 
 
-def setitem_wrapper(x: List[int]) -> None:
+def list_setitem_source(x: List[int]) -> None:
     # TODO(T165056052): Model source on parameter
     x[0] = _test_source()
 
 
-def setitem_no_wrapper(x: List[int]) -> None:
+def list_setitem_local(x: List[int]) -> None:
     x = []
     x[0] = _test_source()
 
 
-def setitem_wrapper_issue() -> None:
-    # TODO(T165056297): False Negative from the fact that we have an empty model for setitem_wrapper
+def test_setitem_source() -> None:
+    # TODO(T165056297): False Negative from the fact that we have an empty model for list_setitem_source
     x: List[int] = []
-    setitem_wrapper(x)
+    list_setitem_source(x)
     _test_sink(x[0])
+
+
+def list_setitem_wrapper(l: List[str], i: int, v: str) -> None:
+    l[i] = v
+
+
+def test_list_setitem_wrapper():
+    l = ["", "", ""]
+    list_setitem_wrapper(l, 0, _test_source())
+    _test_sink(l[0])  # TODO(T174606751): False negative.
+    _test_sink(l[1])  # No issue.
+
+
+def list_append_wrapper(l: List[str], y: str) -> None:
+    l.append(y)
+
+
+def test_list_append_wrapper():
+    l = []
+    list_append_wrapper(l, _test_source())
+    _test_sink(l[0])  # TODO(T174606751): False negative.
+
+    l.append("")
+    _test_sink(l[1])  # No issue.
