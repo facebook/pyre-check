@@ -648,9 +648,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_complex_argument_tito",
-    "callable_line": 568,
+    "callable_line": 574,
     "code": 5002,
-    "line": 583,
+    "line": 589,
     "start": 15,
     "end": 20,
     "filename": "taint_in_taint_out.py",
@@ -674,7 +674,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 578,
+              "line": 584,
               "start": 12,
               "end": 26
             }
@@ -694,7 +694,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 583,
+              "line": 589,
               "start": 15,
               "end": 20
             }
@@ -721,9 +721,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_complex_argument_tito",
-    "callable_line": 568,
+    "callable_line": 574,
     "code": 5002,
-    "line": 582,
+    "line": 588,
     "start": 15,
     "end": 20,
     "filename": "taint_in_taint_out.py",
@@ -747,7 +747,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 571,
+              "line": 577,
               "start": 12,
               "end": 26
             }
@@ -767,7 +767,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 582,
+              "line": 588,
               "start": 15,
               "end": 20
             }
@@ -794,9 +794,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_complex_argument_tito",
-    "callable_line": 568,
+    "callable_line": 574,
     "code": 5002,
-    "line": 575,
+    "line": 581,
     "start": 15,
     "end": 20,
     "filename": "taint_in_taint_out.py",
@@ -820,7 +820,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 571,
+              "line": 577,
               "start": 12,
               "end": 26
             }
@@ -840,7 +840,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 575,
+              "line": 581,
               "start": 15,
               "end": 20
             }
@@ -1106,9 +1106,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_class_method",
-    "callable_line": 540,
+    "callable_line": 546,
     "code": 5002,
-    "line": 543,
+    "line": 549,
     "start": 15,
     "end": 32,
     "filename": "taint_in_taint_out.py",
@@ -1132,10 +1132,10 @@
               { "first-field": "TitoClassMethod" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 542, "start": 26, "end": 40 } ],
+            "tito_positions": [ { "line": 548, "start": 26, "end": 40 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 542,
+              "line": 548,
               "start": 26,
               "end": 40
             }
@@ -1155,7 +1155,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 543,
+              "line": 549,
               "start": 15,
               "end": 32
             }
@@ -1183,9 +1183,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_from_0_to_1",
-    "callable_line": 556,
+    "callable_line": 562,
     "code": 5002,
-    "line": 560,
+    "line": 566,
     "start": 15,
     "end": 16,
     "filename": "taint_in_taint_out.py",
@@ -1206,7 +1206,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 557,
+              "line": 563,
               "start": 8,
               "end": 22
             }
@@ -1226,7 +1226,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 560,
+              "line": 566,
               "start": 15,
               "end": 16
             }
@@ -1250,9 +1250,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 525,
+    "line": 531,
     "start": 15,
     "end": 20,
     "filename": "taint_in_taint_out.py",
@@ -1276,10 +1276,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 524, "start": 19, "end": 33 } ],
+            "tito_positions": [ { "line": 530, "start": 19, "end": 33 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 524,
+              "line": 530,
               "start": 19,
               "end": 33
             }
@@ -1299,7 +1299,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 525,
+              "line": 531,
               "start": 15,
               "end": 20
             }
@@ -1327,9 +1327,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 520,
+    "line": 526,
     "start": 15,
     "end": 18,
     "filename": "taint_in_taint_out.py",
@@ -1353,10 +1353,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 515, "start": 15, "end": 29 } ],
+            "tito_positions": [ { "line": 521, "start": 15, "end": 29 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 515,
+              "line": 521,
               "start": 15,
               "end": 29
             }
@@ -1376,10 +1376,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 519, "start": 19, "end": 33 } ],
+            "tito_positions": [ { "line": 525, "start": 19, "end": 33 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 519,
+              "line": 525,
               "start": 19,
               "end": 33
             }
@@ -1399,7 +1399,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 520,
+              "line": 526,
               "start": 15,
               "end": 18
             }
@@ -1427,9 +1427,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 516,
+    "line": 522,
     "start": 15,
     "end": 18,
     "filename": "taint_in_taint_out.py",
@@ -1453,10 +1453,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 515, "start": 15, "end": 29 } ],
+            "tito_positions": [ { "line": 521, "start": 15, "end": 29 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 515,
+              "line": 521,
               "start": 15,
               "end": 29
             }
@@ -1476,7 +1476,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 516,
+              "line": 522,
               "start": 15,
               "end": 18
             }
@@ -1504,9 +1504,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 510,
+    "line": 516,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -1532,10 +1532,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 509, "start": 12, "end": 32 } ],
+            "tito_positions": [ { "line": 515, "start": 12, "end": 32 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 509,
+              "line": 515,
               "start": 17,
               "end": 31
             }
@@ -1555,7 +1555,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 510,
+              "line": 516,
               "start": 15,
               "end": 21
             }
@@ -1585,9 +1585,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 505,
+    "line": 511,
     "start": 15,
     "end": 18,
     "filename": "taint_in_taint_out.py",
@@ -1611,10 +1611,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 504, "start": 12, "end": 26 } ],
+            "tito_positions": [ { "line": 510, "start": 12, "end": 26 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 504,
+              "line": 510,
               "start": 12,
               "end": 26
             }
@@ -1634,7 +1634,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 505,
+              "line": 511,
               "start": 15,
               "end": 18
             }
@@ -1662,9 +1662,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_tito_self",
-    "callable_line": 498,
+    "callable_line": 504,
     "code": 5002,
-    "line": 500,
+    "line": 506,
     "start": 15,
     "end": 18,
     "filename": "taint_in_taint_out.py",
@@ -1688,10 +1688,10 @@
               { "first-field": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 499, "start": 17, "end": 31 } ],
+            "tito_positions": [ { "line": 505, "start": 17, "end": 31 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 499,
+              "line": 505,
               "start": 17,
               "end": 31
             }
@@ -1711,7 +1711,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 500,
+              "line": 506,
               "start": 15,
               "end": 18
             }
@@ -2032,7 +2032,7 @@
   "data": {
     "callable": "taint_in_taint_out.TitoClassMethod.set_a",
     "filename": "taint_in_taint_out.py",
-    "callable_line": 536,
+    "callable_line": 542,
     "tito": [
       {
         "port": "formal(a, position=1)",
@@ -2083,6 +2083,59 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.recursive_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 500,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3, "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.self_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 497,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 498, "start": 28, "end": 32 } ],
             "tito": null
           }
         ]

@@ -2187,6 +2187,58 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.TitoSelf.sanitize_self",
+    "filename": "sanitize.py",
+    "callable_line": 965,
+    "sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Cookies" } ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 966,
+                "start": 15,
+                "end": 55
+              },
+              "resolves_to": [
+                "sanitize.sanitize_return_no_user_controlled"
+              ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "NotSource[UserControlled]@ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 966, "start": 50, "end": 54 } ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.a_sink",
     "filename": "sanitize.py",
     "callable_line": 153,

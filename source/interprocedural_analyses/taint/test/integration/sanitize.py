@@ -959,3 +959,8 @@ class GenerationOnSelf:
 
     def sanitize_return(self):
         self.foo = _test_source()
+
+
+class TitoSelf:
+    def sanitize_self(self):
+        self = sanitize_return_no_user_controlled(self)

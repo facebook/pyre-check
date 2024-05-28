@@ -494,6 +494,12 @@ class TitoSelf:
     def set_subfield(self, x):
         self.a.x = perfect_tito(x)
 
+    def self_tito(self):
+        self = perfect_tito(self)
+
+    def recursive_tito(self):
+        self.a = self
+
 
 def test_tito_self():
     o = TitoSelf(_test_source(), "")
