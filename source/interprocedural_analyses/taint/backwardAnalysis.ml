@@ -170,6 +170,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     String.equal (Reference.last name) "__setitem__"
 
 
+  let is_instance_or_class_method =
+    let { Node.value = { Statement.Define.signature; _ }; _ } = FunctionContext.definition in
+    Statement.Define.Signature.is_method signature
+    && not (Statement.Define.Signature.is_static_method signature)
+
+
   let self_variable, self_parameter =
     if Interprocedural.Target.is_method FunctionContext.callable then
       let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
@@ -192,11 +198,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      paths for more precise tito. *)
   let initial_taint =
     let {
-      TaintConfiguration.Heap.analysis_model_constraints = { maximum_tito_collapse_depth; _ };
+      TaintConfiguration.Heap.infer_self_tito = configuration_infer_self_tito;
+      analysis_model_constraints = { maximum_tito_collapse_depth; _ };
       _;
     }
       =
       FunctionContext.taint_configuration
+    in
+    let mode_infer_self_tito =
+      Model.ModeSet.contains Model.Mode.InferSelfTito FunctionContext.existing_model.Model.modes
     in
     let make_tito_leaf kind =
       BackwardState.Tree.create_leaf
@@ -205,26 +215,28 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            kind
            (Domains.local_return_frame ~output_path:[] ~collapse_depth:maximum_tito_collapse_depth))
     in
-    (* We infer tito to self for constructors, __setitem__ methods, and property setters. *)
-    if
-      is_constructor
-      || is_setitem
-      || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
-    then
+    let taint =
       match self_variable, self_parameter with
-      | Some self_variable, Some self_parameter ->
+      | Some self_variable, Some self_parameter
+        when is_instance_or_class_method
+             && (configuration_infer_self_tito
+                || mode_infer_self_tito
+                || is_constructor
+                || is_setitem
+                || Statement.Define.is_property_setter (Node.value FunctionContext.definition)) ->
+          (* Infer tito from arguments to self. *)
           BackwardState.assign
             ~root:self_variable
             ~path:[]
             (make_tito_leaf (Sinks.ParameterUpdate self_parameter))
             BackwardState.bottom
       | _ -> BackwardState.bottom
-    else
-      BackwardState.assign
-        ~root:AccessPath.Root.LocalResult
-        ~path:[]
-        (make_tito_leaf Sinks.LocalReturn)
-        BackwardState.bottom
+    in
+    BackwardState.assign
+      ~root:AccessPath.Root.LocalResult
+      ~path:[]
+      (make_tito_leaf Sinks.LocalReturn)
+      taint
 
 
   let transform_non_leaves new_path taint =

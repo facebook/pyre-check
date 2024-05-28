@@ -457,6 +457,8 @@ module Heap = struct
     string_combine_partial_sinks: StringOperationPartialSinks.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
+    infer_self_tito: bool;
+    infer_argument_tito: bool;
     analysis_model_constraints: ModelConstraints.t;
     source_sink_filter: SourceSinkFilter.t;
   }
@@ -479,6 +481,8 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
+      infer_self_tito = false;
+      infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
       source_sink_filter = SourceSinkFilter.all;
     }
@@ -655,6 +659,8 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
+      infer_self_tito = false;
+      infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
       source_sink_filter =
         SourceSinkFilter.create
@@ -1619,6 +1625,8 @@ let from_json_list source_json_list =
     string_combine_partial_sinks;
     find_missing_flows = None;
     dump_model_query_results_path = None;
+    infer_self_tito = false;
+    infer_argument_tito = false;
     analysis_model_constraints =
       ModelConstraints.override_with
         ~maximum_model_source_tree_width
@@ -1841,6 +1849,8 @@ let with_command_line_options
     ~transform_filter
     ~find_missing_flows
     ~dump_model_query_results_path
+    ~infer_self_tito
+    ~infer_argument_tito
     ~maximum_model_source_tree_width
     ~maximum_model_sink_tree_width
     ~maximum_model_tito_tree_width
@@ -1959,6 +1969,8 @@ let with_command_line_options
     rules;
     implicit_sources;
     implicit_sinks;
+    infer_self_tito = configuration.infer_self_tito || infer_self_tito;
+    infer_argument_tito = configuration.infer_argument_tito || infer_argument_tito;
     source_sink_filter;
   }
 

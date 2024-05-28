@@ -91,6 +91,8 @@ module Heap : sig
     string_combine_partial_sinks: StringOperationPartialSinks.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
+    infer_self_tito: bool;
+    infer_argument_tito: bool;
     analysis_model_constraints: ModelConstraints.t;
     source_sink_filter: SourceSinkFilter.t;
   }
@@ -199,6 +201,8 @@ val with_command_line_options
   transform_filter:string list option ->
   find_missing_flows:Configuration.MissingFlowKind.t option ->
   dump_model_query_results_path:PyrePath.t option ->
+  infer_self_tito:bool ->
+  infer_argument_tito:bool ->
   maximum_model_source_tree_width:int option ->
   maximum_model_sink_tree_width:int option ->
   maximum_model_tito_tree_width:int option ->

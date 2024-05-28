@@ -66,8 +66,8 @@ def test_issue_with_type_var():
 
 
 def test_chained_class_setter():
-    # TODO(T161085814): False negative due to no model for
-    # set_saved_no_return, so no taint is propagated
+    # TODO(T161085814): False negative due to return_self() returning self not
+    # being understood by the analysis. We need an alias analysis.
     builder = Builder()
     builder.return_self().set_saved_no_return(_test_source())
     _test_sink(builder)
@@ -75,12 +75,10 @@ def test_chained_class_setter():
 
 
 def test_class_setter():
-    # TODO(T161085814): False negative due to no model for
-    # set_saved_no_return, so no taint is propagated
     builder = Builder()
     builder.set_saved_no_return(_test_source())
-    _test_sink(builder)
-    _test_sink(builder._saved)
+    _test_sink(builder)  # Issue.
+    _test_sink(builder._saved)  # Issue.
 
 
 def test_taint_update_receiver_declaration():
