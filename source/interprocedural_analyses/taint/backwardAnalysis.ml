@@ -2641,16 +2641,31 @@ let extract_tito_and_sink_models
         (* Remove trivial taint-in-taint-out Argument(x) -> Argument(x) *)
         Map.Poly.change partition (Sinks.ParameterUpdate parameter) ~f:(function
             | Some tito_taint ->
+                (* Drop sanitizers. Since tito between arguments is implemented as a weak update, we
+                   will always assume Argument(x) -> Argument(x) is a valid flow. Adding sanitizers
+                   would create extra flows that are not interesting. *)
+                let tito_taint =
+                  BackwardState.Tree.transform
+                    BackwardTaint.kind
+                    Map
+                    ~f:Sinks.discard_sanitize_transforms
+                    tito_taint
+                in
+                let tito_for_comparison =
+                  BackwardState.Tree.essential ~preserve_return_access_paths:true tito_taint
+                in
                 let trivial_tito =
                   Domains.local_return_frame
                     ~output_path:[]
                     ~collapse_depth:maximum_tito_collapse_depth
                   |> BackwardTaint.singleton CallInfo.Tito (Sinks.ParameterUpdate parameter)
                   |> BackwardState.Tree.create_leaf
+                  |> BackwardState.Tree.essential ~preserve_return_access_paths:true
                 in
-                Option.some_if
-                  (not (BackwardState.Tree.less_or_equal ~left:tito_taint ~right:trivial_tito))
-                  tito_taint
+                let is_trivial_tito =
+                  BackwardState.Tree.less_or_equal ~left:tito_for_comparison ~right:trivial_tito
+                in
+                Option.some_if (not is_trivial_tito) tito_taint
             | None -> None)
       in
       let candidate_tree =

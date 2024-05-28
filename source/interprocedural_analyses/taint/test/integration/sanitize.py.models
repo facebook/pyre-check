@@ -2214,25 +2214,6 @@
         ]
       }
     ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "NotSource[UserControlled]@ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 966, "start": 50, "end": 54 } ],
-            "tito": null
-          }
-        ]
-      }
-    ],
     "modes": [ "InferSelfTito" ]
   }
 }

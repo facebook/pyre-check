@@ -2119,34 +2119,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_in_taint_out.TitoSelf.self_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 497,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 498, "start": 28, "end": 32 } ],
-            "tito": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_in_taint_out.TitoSelf.set_a",
     "filename": "taint_in_taint_out.py",
     "callable_line": 485,
