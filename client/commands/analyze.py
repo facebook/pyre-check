@@ -45,6 +45,8 @@ class Arguments:
     dump_model_query_results: Optional[str] = None
     find_missing_flows: Optional[str] = None
     inline_decorators: bool = False
+    infer_self_tito: bool = False
+    infer_argument_tito: bool = False
     maximum_model_source_tree_width: Optional[int] = None
     maximum_model_sink_tree_width: Optional[int] = None
     maximum_model_tito_tree_width: Optional[int] = None
@@ -116,6 +118,8 @@ class Arguments:
                 else {"find_missing_flows": find_missing_flows}
             ),
             "inline_decorators": self.inline_decorators,
+            "infer_self_tito": self.infer_self_tito,
+            "infer_argument_tito": self.infer_argument_tito,
             **(
                 {}
                 if maximum_model_source_tree_width is None
@@ -279,6 +283,8 @@ def create_analyze_arguments(
             str(find_missing_flows.value) if find_missing_flows is not None else None
         ),
         inline_decorators=analyze_arguments.inline_decorators,
+        infer_self_tito=analyze_arguments.infer_self_tito,
+        infer_argument_tito=analyze_arguments.infer_argument_tito,
         maximum_model_source_tree_width=analyze_arguments.maximum_model_source_tree_width,
         maximum_model_sink_tree_width=analyze_arguments.maximum_model_sink_tree_width,
         maximum_model_tito_tree_width=analyze_arguments.maximum_model_tito_tree_width,

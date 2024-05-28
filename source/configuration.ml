@@ -584,6 +584,8 @@ module StaticAnalysis = struct
     use_cache: bool;
     build_cache_only: bool;
     inline_decorators: bool;
+    infer_self_tito: bool;
+    infer_argument_tito: bool;
     maximum_model_source_tree_width: int option;
     maximum_model_sink_tree_width: int option;
     maximum_model_tito_tree_width: int option;
@@ -620,6 +622,8 @@ module StaticAnalysis = struct
       ?(use_cache = false)
       ?(build_cache_only = false)
       ?(inline_decorators = true)
+      ?(infer_self_tito = false)
+      ?(infer_argument_tito = false)
       ?maximum_model_source_tree_width
       ?maximum_model_sink_tree_width
       ?maximum_model_tito_tree_width
@@ -656,6 +660,8 @@ module StaticAnalysis = struct
       use_cache;
       build_cache_only;
       inline_decorators;
+      infer_self_tito;
+      infer_argument_tito;
       maximum_model_source_tree_width;
       maximum_model_sink_tree_width;
       maximum_model_tito_tree_width;

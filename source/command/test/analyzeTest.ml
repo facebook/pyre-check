@@ -31,6 +31,8 @@ let test_json_parsing context =
       dump_model_query_results = None;
       find_missing_flows = None;
       inline_decorators = false;
+      infer_self_tito = false;
+      infer_argument_tito = false;
       maximum_model_source_tree_width = None;
       maximum_model_sink_tree_width = None;
       maximum_model_tito_tree_width = None;
@@ -89,6 +91,12 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("inline_decorators", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with inline_decorators = true };
+  assert_parsed
+    (`Assoc (("infer_self_tito", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with infer_self_tito = true };
+  assert_parsed
+    (`Assoc (("infer_argument_tito", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with infer_argument_tito = true };
   assert_parsed
     (`Assoc (("maximum_tito_depth", `Int 5) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with maximum_tito_depth = Some 5 };

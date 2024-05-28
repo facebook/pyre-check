@@ -289,6 +289,8 @@ class AnalyzeArguments:
     enable_profiling: bool = False
     find_missing_flows: Optional[MissingFlowsKind] = None
     inline_decorators: bool = False
+    infer_self_tito: bool = False
+    infer_argument_tito: bool = False
     log_identifier: Optional[str] = None
     maximum_model_source_tree_width: Optional[int] = None
     maximum_model_sink_tree_width: Optional[int] = None

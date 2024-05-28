@@ -508,6 +508,18 @@ def pyre(
     help="Inline decorators at use sites to catch flows through decorators.",
 )
 @click.option(
+    "--infer-self-tito",
+    is_flag=True,
+    default=False,
+    help="Infer taint propagations (tito) from arguments to `self` for all methods.",
+)
+@click.option(
+    "--infer-argument-tito",
+    is_flag=True,
+    default=False,
+    help="Infer taint propagations (tito) from arguments to other arguments.",
+)
+@click.option(
     "--maximum-model-source-tree-width",
     type=int,
     help="Limits the width of the source tree in the model for a callable.",
@@ -608,6 +620,8 @@ def analyze(
     use_cache: bool,
     build_cache_only: bool,
     inline_decorators: bool,
+    infer_self_tito: bool,
+    infer_argument_tito: bool,
     maximum_model_source_tree_width: Optional[int],
     maximum_model_sink_tree_width: Optional[int],
     maximum_model_tito_tree_width: Optional[int],
@@ -648,6 +662,8 @@ def analyze(
                 else None
             ),
             inline_decorators=inline_decorators,
+            infer_self_tito=infer_self_tito,
+            infer_argument_tito=infer_argument_tito,
             log_identifier=command_argument.log_identifier,
             maximum_model_source_tree_width=maximum_model_source_tree_width,
             maximum_model_sink_tree_width=maximum_model_sink_tree_width,
