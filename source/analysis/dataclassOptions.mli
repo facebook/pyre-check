@@ -67,17 +67,24 @@ module ExtractDataclassOptions : sig
     keyword_only: bool;
   }
 
-  val dataclass_options : queries:Queries.t -> ClassSummary.t Node.t -> options option
+  val dataclass_options
+    :  first_matching_class_decorator:(names:string list -> 'a -> Ast.Statement.Decorator.t option) ->
+    'a ->
+    options option
 
-  val attrs_attributes : queries:Queries.t -> ClassSummary.t Node.t -> options option
+  val attrs_attributes
+    :  first_matching_class_decorator:(names:string list -> 'a -> Ast.Statement.Decorator.t option) ->
+    'a ->
+    options option
 
   val options_from_custom_dataclass_transform_decorator
-    :  queries:Queries.t ->
-    ClassSummary.t Node.t ->
+    :  get_unannotated_global:(Ast.Reference.t -> Ast.UnannotatedGlobal.t option) ->
+    ClassSummary.t Ast.Node.t ->
     options option
 
   val options_from_custom_dataclass_transform_base_class_or_metaclass
-    :  queries:Queries.t ->
-    ClassSummary.t Node.t ->
+    :  get_class_summary:(string -> ClassSummary.t Ast.Node.t option) ->
+    successors:(string -> string list) ->
+    ClassSummary.t Ast.Node.t ->
     options option
 end

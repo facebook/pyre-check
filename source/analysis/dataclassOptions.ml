@@ -154,7 +154,7 @@ module ExtractDataclassOptions = struct
     | _ -> default
 
 
-  let dataclass_options ~queries:Queries.{ first_matching_class_decorator; _ } class_summary =
+  let dataclass_options ~first_matching_class_decorator class_summary =
     let field_specifiers =
       [Reference.create "dataclasses.field" |> Ast.Expression.from_reference ~location:Location.any]
     in
@@ -181,7 +181,7 @@ module ExtractDataclassOptions = struct
           ~frozen:"frozen"
 
 
-  let attrs_attributes ~queries:Queries.{ first_matching_class_decorator; _ } class_summary =
+  let attrs_attributes ~first_matching_class_decorator class_summary =
     first_matching_class_decorator ~names:["attr.s"; "attr.attrs"] class_summary
     >>| extract_options
           ~default:
@@ -284,7 +284,7 @@ module ExtractDataclassOptions = struct
      `@dataclass` decorator itself. Transforms defined as base classes are handled separately in
      `options_from_custom_dataclass_transform_base_class_or_metaclass`. *)
   let options_from_custom_dataclass_transform_decorator
-      ~queries:Queries.{ get_unannotated_global; _ }
+      ~get_unannotated_global
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
     let get_dataclass_transform_decorator_with_default_options decorator =
@@ -334,7 +334,8 @@ module ExtractDataclassOptions = struct
 
 
   let options_from_custom_dataclass_transform_base_class_or_metaclass
-      ~queries:Queries.{ get_class_summary; successors; _ }
+      ~get_class_summary
+      ~successors
       { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
     =
     let get_dataclass_transform_default name =

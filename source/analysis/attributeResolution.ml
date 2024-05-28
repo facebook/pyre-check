@@ -2020,22 +2020,31 @@ let apply
   let dataclass_attributes () =
     (* TODO (T43210531): Warn about inconsistent annotations
      * TODO (T131540506): Decouple dataclass options from other options *)
-    generate_attributes ~options:(ExtractDataclassOptions.dataclass_options ~queries)
+    let Queries.{ first_matching_class_decorator; _ } = queries in
+
+    generate_attributes
+      ~options:(ExtractDataclassOptions.dataclass_options ~first_matching_class_decorator)
   in
   let attrs_attributes () =
     (* TODO (T41039225): Add support for other methods
      * TODO (T129741558): support type annotations in attr *)
-    generate_attributes ~options:(ExtractDataclassOptions.attrs_attributes ~queries)
+    let Queries.{ first_matching_class_decorator; _ } = queries in
+    generate_attributes
+      ~options:(ExtractDataclassOptions.attrs_attributes ~first_matching_class_decorator)
   in
   let dataclass_transform_attributes () =
+    let Queries.{ get_unannotated_global; _ } = queries in
     generate_attributes
-      ~options:(ExtractDataclassOptions.options_from_custom_dataclass_transform_decorator ~queries)
+      ~options:
+        (ExtractDataclassOptions.options_from_custom_dataclass_transform_decorator
+           ~get_unannotated_global)
   in
   let dataclass_transform_class_attributes () =
     generate_attributes
       ~options:
         (ExtractDataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
-           ~queries)
+           ~get_class_summary
+           ~successors)
   in
   dataclass_attributes ()
   @ attrs_attributes ()
