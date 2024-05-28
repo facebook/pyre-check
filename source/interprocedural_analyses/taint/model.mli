@@ -59,6 +59,8 @@ module Mode : sig
     | Entrypoint
     | IgnoreDecorator
     | SkipModelBroadening
+    | InferSelfTito (* Infer taint propagation from arguments to `self` for all methods. *)
+    | InferArgumentTito (* Infer taint propagation between arguments. *)
   [@@deriving show, compare, equal]
 
   val from_string : string -> t option

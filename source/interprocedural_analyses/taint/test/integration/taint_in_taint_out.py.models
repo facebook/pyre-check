@@ -1573,7 +1573,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "InferSelfTito" ]
   }
 }
 {

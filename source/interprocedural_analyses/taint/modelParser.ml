@@ -2898,7 +2898,9 @@ end = struct
           | ["SkipObscure"]
           | ["IgnoreDecorator"]
           | ["SkipModelBroadening"]
-          | ["CapturedVariables"] ->
+          | ["CapturedVariables"]
+          | ["InferSelfTito"]
+          | ["InferArgumentTito"] ->
               Either.First decorator
           | _ -> Either.Second decorator_expression)
     in
@@ -3773,6 +3775,8 @@ let rec parse_statement
           | "Entrypoint" -> Some (Either.Second (decorator_with_name "Entrypoint"))
           | "SkipModelBroadening" ->
               Some (Either.Second (decorator_with_name "SkipModelBroadening"))
+          | "InferSelfTito" -> Some (Either.Second (decorator_with_name "InferSelfTito"))
+          | "InferArgumentTito" -> Some (Either.Second (decorator_with_name "InferArgumentTito"))
           | name when String.is_prefix name ~prefix:"TaintSource[" -> Some (Either.First value)
           | _ -> None
         in

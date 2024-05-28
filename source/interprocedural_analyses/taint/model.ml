@@ -335,6 +335,8 @@ module Mode = struct
     | Entrypoint
     | IgnoreDecorator
     | SkipModelBroadening
+    | InferSelfTito (* Infer taint propagation from arguments to `self` for all methods. *)
+    | InferArgumentTito (* Infer taint propagation between arguments. *)
   [@@deriving compare, equal]
 
   let pp formatter = function
@@ -347,6 +349,8 @@ module Mode = struct
     | Entrypoint -> Format.fprintf formatter "Entrypoint"
     | IgnoreDecorator -> Format.fprintf formatter "IgnoreDecorator"
     | SkipModelBroadening -> Format.fprintf formatter "SkipModelBroadening"
+    | InferSelfTito -> Format.fprintf formatter "InferSelfTito"
+    | InferArgumentTito -> Format.fprintf formatter "InferArgumentTito"
 
 
   let show = Format.asprintf "%a" pp
@@ -363,6 +367,8 @@ module Mode = struct
     | "IgnoreDecorator" -> Some IgnoreDecorator
     | "SkipModelBroadening" -> Some SkipModelBroadening
     | "AnalyzeAllOverrides" -> Some AnalyzeAllOverrides
+    | "InferSelfTito" -> Some InferSelfTito
+    | "InferArgumentTito" -> Some InferArgumentTito
     | _ -> None
 end
 
