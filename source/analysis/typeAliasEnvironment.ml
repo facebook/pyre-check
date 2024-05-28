@@ -183,7 +183,7 @@ module IncomingDataComputation = struct
                 Some (TypeAlias { target = name; value })
               else
                 None
-          | ( (Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
+          | ( (BinaryOperator _ | Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
               Some
                 {
                   Node.value =
@@ -200,7 +200,7 @@ module IncomingDataComputation = struct
                         });
                   _;
                 } )
-          | (Subscript _ | Call _ | Name _), None -> (
+          | (BinaryOperator _ | Subscript _ | Call _ | Name _), None -> (
               match Type.Variable.parse_declaration (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->

@@ -1785,6 +1785,23 @@ let redirect_special_calls ~pyre_in_context call =
 
 
 let redirect_expressions ~pyre_in_context = function
+  | Expression.BinaryOperator { BinaryOperator.operator; left; right } ->
+      Expression.Call
+        {
+          Call.callee =
+            {
+              Node.location = Node.location left;
+              value =
+                Expression.Name
+                  (Name.Attribute
+                     {
+                       Name.Attribute.base = left;
+                       attribute = BinaryOperator.binary_operator_method operator;
+                       special = true;
+                     });
+            };
+          arguments = [{ Call.Argument.name = None; value = right }];
+        }
   | Expression.Subscript { Subscript.base; index } ->
       Expression.Call
         {

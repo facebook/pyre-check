@@ -113,6 +113,7 @@ let transform_string_annotation_expression ~relative =
           with
           | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
           | Ok [{ Node.value = Expression ({ Node.value = Subscript _; _ } as expression); _ }]
+          | Ok [{ Node.value = Expression ({ Node.value = BinaryOperator _; _ } as expression); _ }]
           | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
               Transform.map_location expression ~transform_location:(fun _ -> location)
               |> Node.value
@@ -3620,38 +3621,65 @@ let populate_unbound_names source =
 
 let replace_union_shorthand_in_annotation_expression =
   let rec transform_expression ({ Node.value; location } as expression) =
+    let flatten_typing_unions sofar part_of_union_expression =
+      match Node.value part_of_union_expression with
+      | Expression.Subscript
+          {
+            base =
+              {
+                value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "Union";
+                        special = false;
+                      });
+                _;
+              };
+            index = { Node.value = Tuple index_expressions; _ };
+          } ->
+          List.concat [sofar; index_expressions] |> List.rev
+      | _ -> part_of_union_expression :: sofar
+    in
     let value =
       match value with
+      (* TODO: remove after T101299882 is complete *)
       | Expression.Call
           {
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__or__"; _ }); _ };
             arguments;
           } ->
-          let flatten_typing_unions sofar part_of_union_expression =
-            match Node.value part_of_union_expression with
-            | Expression.Subscript
-                {
-                  base =
-                    {
-                      value =
-                        Name
-                          (Name.Attribute
-                            {
-                              base = { Node.value = Name (Name.Identifier "typing"); _ };
-                              attribute = "Union";
-                              special = false;
-                            });
-                      _;
-                    };
-                  index = { Node.value = Tuple index_expressions; _ };
-                } ->
-                List.concat [sofar; index_expressions] |> List.rev
-            | _ -> part_of_union_expression :: sofar
-          in
           let indices =
             let unpack_argument { Call.Argument.value; _ } = value in
             (* Form the raw index expressions *)
             base :: List.map ~f:unpack_argument arguments
+            (* Recursively transform them into `typing.Union[...]` form *)
+            |> List.map ~f:transform_expression
+            (* Flatten all of the inner `typing.Union`s (and use `rev` to preserve order) *)
+            |> List.fold ~init:[] ~f:flatten_typing_unions
+            |> List.rev
+          in
+          let index = { Node.value = Expression.Tuple indices; location } in
+          Expression.Subscript
+            {
+              base =
+                {
+                  Node.location;
+                  value =
+                    Name
+                      (Name.Attribute
+                         {
+                           base = { Node.location; value = Name (Name.Identifier "typing") };
+                           attribute = "Union";
+                           special = false;
+                         });
+                };
+              index;
+            }
+      | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right } ->
+          let indices =
+            [left; right]
             (* Recursively transform them into `typing.Union[...]` form *)
             |> List.map ~f:transform_expression
             (* Flatten all of the inner `typing.Union`s (and use `rev` to preserve order) *)

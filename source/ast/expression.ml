@@ -399,6 +399,10 @@ and BinaryOperator : sig
   val location_insensitive_compare : t -> t -> int
 
   val override : location:Location.t -> t -> Expression.t
+
+  val augmented_assign_operator : operator -> string
+
+  val binary_operator_method : operator -> string
 end = struct
   type operator =
     | Add
@@ -452,23 +456,41 @@ end = struct
         | _ -> Expression.location_insensitive_compare left.right right.right)
 
 
+  (* TODO: temporary T101299882 *)
+  let augmented_assign_operator = function
+    | Add -> "__iadd__"
+    | Sub -> "__isub__"
+    | Mult -> "__imul__"
+    | MatMult -> "__imatmul__"
+    | Div -> "__itruediv__"
+    | Mod -> "__imod__"
+    | Pow -> "__ipow__"
+    | LShift -> "__ilshift__"
+    | RShift -> "__irshift__"
+    | BitOr -> "__ior__"
+    | BitXor -> "__ixor__"
+    | BitAnd -> "__iand__"
+    | FloorDiv -> "__ifloordiv__"
+
+
+  (* TODO: temporary T101299882 *)
+  let binary_operator_method = function
+    | Add -> "__add__"
+    | Sub -> "__sub__"
+    | Mult -> "__mul__"
+    | MatMult -> "__matmul__"
+    | Div -> "__truediv__"
+    | Mod -> "__mod__"
+    | Pow -> "__pow__"
+    | LShift -> "__lshift__"
+    | RShift -> "__rshift__"
+    | BitOr -> "__or__"
+    | BitXor -> "__xor__"
+    | BitAnd -> "__and__"
+    | FloorDiv -> "__floordiv__"
+
+
   let override ~location { left; operator; right } =
-    let operator =
-      match operator with
-      | Add -> "__add__"
-      | Sub -> "__sub__"
-      | Mult -> "__mul__"
-      | MatMult -> "__matmul__"
-      | Div -> "__truediv__"
-      | Mod -> "__mod__"
-      | Pow -> "__pow__"
-      | LShift -> "__lshift__"
-      | RShift -> "__rshift__"
-      | BitOr -> "__or__"
-      | BitXor -> "__xor__"
-      | BitAnd -> "__and__"
-      | FloorDiv -> "__floordiv__"
-    in
     let arguments = [{ Call.Argument.name = None; value = right }] in
     Expression.Call
       {
@@ -477,7 +499,12 @@ end = struct
             Node.location;
             value =
               Expression.Name
-                (Name.Attribute { Name.Attribute.base = left; attribute = operator; special = true });
+                (Name.Attribute
+                   {
+                     Name.Attribute.base = left;
+                     attribute = binary_operator_method operator;
+                     special = true;
+                   });
           };
         arguments;
       }

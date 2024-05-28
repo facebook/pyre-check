@@ -1683,6 +1683,22 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
         Error (ModelVerificationError.FormatStringError.InvalidIdentifier identifier)
     | {
         Node.value =
+          Expression.BinaryOperator
+            { BinaryOperator.operator = (Add | Sub | Mult) as operator; left; right };
+        _;
+      } -> (
+        parse_integer_expression left
+        >>= fun left ->
+        parse_integer_expression right
+        >>| fun right ->
+        match operator with
+        | Add -> ModelQuery.FormatString.IntegerExpression.Add { left; right }
+        | Sub -> ModelQuery.FormatString.IntegerExpression.Sub { left; right }
+        | Mult -> ModelQuery.FormatString.IntegerExpression.Mul { left; right }
+        | _ -> failwith "unreachable")
+    (* TODO: remove after T101299882 is complete *)
+    | {
+        Node.value =
           Expression.Call
             {
               callee =
@@ -1772,6 +1788,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
           _;
         } ->
         Ok (ModelQuery.FormatString.Substring.Capture name)
+    (* TODO: remove after T101299882 is complete *)
     | Ast.Expression.Substring.Format
         {
           value =
@@ -1788,6 +1805,18 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
                       };
                     arguments = [_];
                   };
+              _;
+            } as expression;
+          _;
+        } ->
+        parse_integer_expression expression
+        >>| fun expression -> ModelQuery.FormatString.Substring.Integer expression
+    | Ast.Expression.Substring.Format
+        {
+          value =
+            {
+              Node.value =
+                Expression.BinaryOperator { BinaryOperator.operator = Add | Sub | Mult; _ };
               _;
             } as expression;
           _;
