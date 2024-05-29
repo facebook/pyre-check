@@ -2594,6 +2594,30 @@ let test_check_dataclasses =
              "Invalid inheritance [39]: Non-frozen dataclass `C` cannot inherit from frozen \
               dataclass `A`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import dataclass_transform
+
+            @dataclass_transform(frozen_default=False)
+            class Bar:
+                def __init_subclass__(
+                    cls,
+                    *,
+                    init: bool = True,
+                    frozen: bool = False,
+                ) -> None: ...
+
+            class Foo(Bar, frozen=False):
+                pass
+
+            class Baz(Foo, frozen=True):
+                pass
+         |}
+           [
+             "Invalid inheritance [39]: Frozen dataclass `Baz` cannot inherit from non-frozen \
+              dataclass `Foo`.";
+           ];
     ]
 
 

@@ -28,6 +28,7 @@ open Pyre
 open Ast
 open Expression
 open Statement
+open DataclassOptions
 module StatementDefine = Define
 module Error = AnalysisError
 
@@ -5556,53 +5557,51 @@ module State (Context : Context) = struct
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class class_statement ->
-        let class_name = Reference.show class_statement.name in
-        let is_class_frozen = Class.is_frozen class_statement in
+        let this_class_name = Reference.show class_statement.name in
+        let dataclass_options_from_decorator class_name =
+          match GlobalResolution.get_class_summary global_resolution class_name with
+          | Some summary -> begin
+              let extracted_options =
+                ExtractDataclassOptions.dataclass_options
+                  ~first_matching_class_decorator:
+                    (GlobalResolution.first_matching_class_decorator global_resolution)
+                  summary
+              in
+              match extracted_options with
+              | Some option -> Some option.frozen
+              | None -> None
+            end
+          | None -> None
+        in
 
+        let get_dataclass_options_from_metaclass class_name =
+          let extract_options =
+            ExtractDataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
+              ~get_class_summary:(GlobalResolution.get_class_summary global_resolution)
+              ~successors:(GlobalResolution.successors global_resolution)
+          in
+          let optional_summary = GlobalResolution.get_class_summary global_resolution class_name in
+          match optional_summary with
+          | Some summary -> begin
+              match extract_options summary with
+              | Some option -> Some option.frozen
+              | None -> None
+            end
+          | None -> None
+        in
+        let is_class_frozen =
+          Option.first_some
+            (dataclass_options_from_decorator this_class_name)
+            (get_dataclass_options_from_metaclass this_class_name)
+        in
         (* Check that variance isn't widened on inheritence. Don't check for other errors. Nested
            classes and functions are analyzed separately. *)
         let check_base errors base =
-          let base_class_summary =
-            GlobalResolution.get_class_summary global_resolution (Expression.show base)
-          in
-          let find_frozen arguments =
-            let rec helper = function
-              | [] -> false
-              | {
-                  Call.Argument.name = Some { Node.value = argument_name; _ };
-                  value = { Node.value; _ };
-                }
-                :: _
-                when String.equal (Identifier.sanitized argument_name) "frozen" -> begin
-                  match value with
-                  | Expression.Constant True -> true
-                  | _ -> false
-                end
-              | _ :: rest -> helper rest
-            in
-            helper arguments
-          in
-          (*TODO T178998636: Generalize this by brining in the logic from attributeResolution to
-            reason about dataclass transforms *)
+          let base_class_name = Expression.show base in
           let frozen_arg_value =
-            match base_class_summary with
-            | Some summary ->
-                let decorator_option =
-                  GlobalResolution.first_matching_class_decorator
-                    ~names:["dataclasses.dataclass"; "dataclass"]
-                    global_resolution
-                    summary
-                in
-                begin
-                  match decorator_option with
-                  | Some decorator -> begin
-                      match decorator with
-                      | { Decorator.arguments = Some arguments; _ } -> Some (find_frozen arguments)
-                      | _ -> None
-                    end
-                  | None -> None
-                end
-            | None -> None
+            Option.first_some
+              (dataclass_options_from_decorator base_class_name)
+              (get_dataclass_options_from_metaclass base_class_name)
           in
           let errors =
             begin
@@ -5616,8 +5615,8 @@ module State (Context : Context) = struct
                         (Error.InvalidInheritance
                            (FrozenDataclassInheritingFromNonFrozen
                               {
-                                frozen_child = class_name;
-                                non_frozen_parent = Expression.show base;
+                                frozen_child = this_class_name;
+                                non_frozen_parent = base_class_name;
                               }))
                   else if (not is_class_frozen) && frozen_arg_value then
                     emit_error
@@ -5627,8 +5626,8 @@ module State (Context : Context) = struct
                         (Error.InvalidInheritance
                            (NonFrozenDataclassInheritingFromFrozen
                               {
-                                non_frozen_child = class_name;
-                                frozen_parent = Expression.show base;
+                                non_frozen_child = this_class_name;
+                                frozen_parent = base_class_name;
                               }))
                   else
                     errors
