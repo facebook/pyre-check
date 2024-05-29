@@ -58,7 +58,7 @@ Notice the following:
 ### 2. Taint Config
 
 ```python
-# static_analysis_example/stubs/taint/taint.config
+# static_analysis_example/stubs/taint/core_privacy_security/taint.config
 
 {
   "sources": [
@@ -96,7 +96,7 @@ also tell Pysa that data flowing from a `UserControlled` source to a
 ### 3. Taint Models
 
 ```python
-# static_analysis_example/stubs/taint/general.pysa
+# static_analysis_example/stubs/taint/core_privacy_security/general.pysa
 
 # model for raw_input
 def input(__prompt) -> TaintSource[UserControlled]: ...
