@@ -11,6 +11,19 @@ open Taint
 open Pyre
 module Result = Core.Result
 
+let print_partial_sink_labels list =
+  list
+  |> List.map ~f:(fun (partial_sink, labels_per_rule) ->
+         Format.asprintf
+           "%s: [%s]"
+           partial_sink
+           (labels_per_rule
+           |> List.map ~f:(fun (label_1, label_2) -> [label_1; label_2])
+           |> List.concat
+           |> String.concat ~sep:","))
+  |> String.concat ~sep:"\n"
+
+
 let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
   let open Result in
   let configuration =
@@ -71,10 +84,10 @@ let assert_parse_error ~errors configuration =
 
 let assert_rules_equal ~actual ~expected =
   assert_equal
-    ~printer:(List.to_string ~f:Rule.show)
+    ~printer:(fun rules -> rules |> List.map ~f:Rule.show |> String.concat ~sep:"\n")
     ~cmp:(List.equal [%compare.equal: Rule.t])
-    actual
     expected
+    actual
 
 
 let without_locations sources_or_sinks =
@@ -401,7 +414,8 @@ let test_combined_source_rules _ =
       ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
   assert_equal
-    ["C", { TaintConfiguration.PartialSinkLabelsMap.main = "b"; secondary = "a" }]
+    ~printer:print_partial_sink_labels
+    ["C", ["b", "a"]]
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
   let configuration =
     assert_parse
@@ -427,8 +441,9 @@ let test_combined_source_rules _ =
   assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal configuration.sinks [];
   assert_equal
+    ~printer:print_partial_sink_labels
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
-    ["CombinedSink", { TaintConfiguration.PartialSinkLabelsMap.main = "a"; secondary = "b" }];
+    ["CombinedSink", ["a", "b"]];
   assert_rules_equal
     ~actual:configuration.rules
     ~expected:
@@ -473,31 +488,116 @@ let test_combined_source_rules _ =
         };
       ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
-  assert_parse_error
-    ~errors:[TaintConfiguration.Error.PartialSinkDuplicate "C"]
-    {|
+  (* Test using the same parital sink kind in multiple combined source rules *)
+  let configuration =
+    assert_parse
+      {|
       { "sources": [
           { "name": "A" },
-          { "name": "B" }
+          { "name": "B" },
+          { "name": "C" },
+          { "name": "D" }
         ],
         "combined_source_rules": [
           {
-             "name": "test combined rule",
+             "name": "test combined rule 1",
              "sources": {"a": "A", "b": "B"},
-             "partial_sink": "C",
+             "partial_sink": "TestSink",
              "code": 2001,
              "message_format": "some form"
           },
           {
-             "name": "test combined rule",
-             "sources": {"a": "A", "b": "B"},
-             "partial_sink": "C",
+             "name": "test combined rule 2",
+             "sources": {"a": "A", "b": "D"},
+             "partial_sink": "TestSink",
              "code": 2002,
              "message_format": "other form"
           }
         ]
       }
     |}
+  in
+  assert_rules_equal
+    ~actual:configuration.rules
+    ~expected:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "D"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "b" }];
+          transforms = [];
+          code = 2002;
+          message_format = "other form";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 20; column = 22 };
+                    stop = { line = 20; column = 25 };
+                  };
+              };
+          name = "test combined rule 2";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "a" }];
+          transforms = [];
+          code = 2002;
+          message_format = "other form";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 20; column = 22 };
+                    stop = { line = 20; column = 25 };
+                  };
+              };
+          name = "test combined rule 2";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "B"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "b" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 13; column = 22 };
+                    stop = { line = 13; column = 25 };
+                  };
+              };
+          name = "test combined rule 1";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "a" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 13; column = 22 };
+                    stop = { line = 13; column = 25 };
+                  };
+              };
+          name = "test combined rule 1";
+        };
+      ]
 
 
 let test_string_combine_rules _ =
@@ -580,10 +680,8 @@ let test_string_combine_rules _ =
   in
   assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal
-    [
-      ( "UserDefinedPartialSink",
-        { TaintConfiguration.PartialSinkLabelsMap.main = "main"; secondary = "secondary" } );
-    ]
+    ~printer:print_partial_sink_labels
+    ["UserDefinedPartialSink", ["main", "secondary"]]
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
   assert_rules_equal
     ~actual:configuration.rules
@@ -632,7 +730,121 @@ let test_string_combine_rules _ =
   assert_equal
     ~cmp:TaintConfiguration.StringOperationPartialSinks.equal
     configuration.string_combine_partial_sinks
-    (TaintConfiguration.StringOperationPartialSinks.singleton "UserDefinedPartialSink")
+    (TaintConfiguration.StringOperationPartialSinks.singleton "UserDefinedPartialSink");
+  (* Test using the same partial sink kind in multiple string combine rules *)
+  let configuration =
+    assert_parse
+      {|
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" },
+          { "name": "C" },
+          { "name": "D" }
+        ],
+        "string_combine_rules": [
+          {
+            "name": "rule name 1",
+            "main_sources": "A",
+            "secondary_sources": ["B", "C"],
+            "partial_sink": "UserDefinedPartialSink",
+            "code": 2001,
+            "message_format": "rule message 1"
+          },
+          {
+            "name": "rule name 2",
+            "main_sources": "A",
+            "secondary_sources": ["C", "D"],
+            "partial_sink": "UserDefinedPartialSink",
+            "code": 2002,
+            "message_format": "rule message 2"
+          }
+        ]
+      }
+    |}
+  in
+  assert_rules_equal
+    ~actual:configuration.rules
+    ~expected:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          transforms = [];
+          code = 2001;
+          message_format = "rule message 1";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 14; column = 21 };
+                    stop = { line = 14; column = 24 };
+                  };
+              };
+          name = "rule name 1";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
+          sinks =
+            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+          transforms = [];
+          code = 2001;
+          message_format = "rule message 1";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 14; column = 21 };
+                    stop = { line = 14; column = 24 };
+                  };
+              };
+          name = "rule name 1";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          transforms = [];
+          code = 2002;
+          message_format = "rule message 2";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 22; column = 21 };
+                    stop = { line = 22; column = 24 };
+                  };
+              };
+          name = "rule name 2";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "C"; Sources.NamedSource "D"];
+          sinks =
+            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+          transforms = [];
+          code = 2002;
+          message_format = "rule message 2";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 22; column = 21 };
+                    stop = { line = 22; column = 24 };
+                  };
+              };
+          name = "rule name 2";
+        };
+      ]
 
 
 let test_partial_sink_converter _ =

@@ -106,8 +106,7 @@ let set_up_environment
         transforms;
         features = ["special"];
         partial_sink_labels =
-          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn
-            ["Test", { TaintConfiguration.PartialSinkLabelsMap.secondary = "b"; main = "a" }];
+          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn ["Test", ["a", "b"]];
         rules;
         filtered_rule_codes = None;
         filtered_sources;
@@ -229,8 +228,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         features = ["featureA"; "featureB"];
         rules = [];
         partial_sink_labels =
-          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn
-            ["Test", { TaintConfiguration.PartialSinkLabelsMap.main = "a"; secondary = "b" }];
+          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn ["Test", ["a", "b"]];
       }
   in
   let error_message =

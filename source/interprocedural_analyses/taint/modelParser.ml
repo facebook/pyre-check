@@ -602,22 +602,24 @@ let rec parse_annotations
           index = { Node.value = Name (Name.Identifier label); _ };
         } -> (
         match
-          TaintConfiguration.PartialSinkLabelsMap.find_opt
-            kind
+          TaintConfiguration.PartialSinkLabelsMap.is_label_registered
+            ~partial_sink:kind
+            ~label
             taint_configuration.partial_sink_labels
         with
-        | Some { TaintConfiguration.PartialSinkLabelsMap.main; secondary } ->
-            if not (String.equal secondary label || String.equal main label) then
-              Error
-                (annotation_error
-                   (Format.sprintf
-                      "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
-                      label
-                      kind
-                      (String.concat [main; secondary] ~sep:", ")))
-            else
-              Ok (Sinks.PartialSink { kind; label })
-        | None -> Error (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
+        | Yes -> Ok (Sinks.PartialSink { kind; label })
+        | LabelNotRegistered registered_labels ->
+            Error
+              (annotation_error
+                 (Format.sprintf
+                    "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
+                    label
+                    kind
+                    (registered_labels
+                    |> Data_structures.SerializableStringSet.elements
+                    |> String.concat ~sep:", ")))
+        | PartialSinkNotRegistered ->
+            Error (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
     | _ -> invalid_annotation_error ()
   in
   let rec parse_annotation = function

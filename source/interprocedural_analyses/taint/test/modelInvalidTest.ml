@@ -59,8 +59,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         features = ["featureA"; "featureB"];
         rules = [];
         partial_sink_labels =
-          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn
-            ["Test", { TaintConfiguration.PartialSinkLabelsMap.main = "a"; secondary = "b" }];
+          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn ["Test", ["a", "b"; "c", "d"]];
       }
   in
   let error_message =
@@ -156,14 +155,18 @@ let test_invalid_models context =
     ~model_source:"def test.partial_sink(x: PartialSink[Test[first]], y: PartialSink[Test[b]]): ..."
     ~expect:
       "`PartialSink[Test[first]]` is an invalid taint annotation: Unrecognized label `first` for \
-       partial sink `Test` (choices: `a, b`)"
+       partial sink `Test` (choices: `a, b, c, d`)"
     ();
   assert_invalid_model
     ~model_source:
       "def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[second]]): ..."
     ~expect:
       "`PartialSink[Test[second]]` is an invalid taint annotation: Unrecognized label `second` for \
-       partial sink `Test` (choices: `a, b`)"
+       partial sink `Test` (choices: `a, b, c, d`)"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[d]]): ..."
+    ~expect:"no failure" (* TODO: TODO: Report error here *)
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
