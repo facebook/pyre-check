@@ -564,7 +564,7 @@ def test_tito_from_0_to_1():
     y = {}
     tito_from_0_to_1(x, y)
     _test_sink(x)  # Issue.
-    _test_sink(y)  # TODO(T174606751): False negative.
+    _test_sink(y)  # Issue.
 
 
 def complex_argument_tito(x, y):
@@ -583,7 +583,7 @@ def test_complex_argument_tito():
 
     y.bar = _test_source()
     complex_argument_tito(x, y)
-    _test_sink(x.foo)  # TODO(T174606751): False negative.
+    _test_sink(x.foo)  # Issue.
     _test_sink(x.bar)  # No issue.
     _test_sink(y.foo)  # Issue.
     _test_sink(y.bar)  # Issue.
@@ -593,5 +593,5 @@ def test_complex_argument_tito():
     complex_argument_tito(x.baz, y)
     _test_sink(x.foo)  # No issue.
     _test_sink(x.bar)  # No issue.
-    _test_sink(x.baz.foo)  # TODO(T174606751): False negative.
+    _test_sink(x.baz.foo)  # Issue.
     _test_sink(x.baz.bar)  # No issue.

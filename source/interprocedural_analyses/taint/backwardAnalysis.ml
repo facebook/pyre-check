@@ -199,6 +199,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let initial_taint =
     let {
       TaintConfiguration.Heap.infer_self_tito = configuration_infer_self_tito;
+      TaintConfiguration.Heap.infer_argument_tito = configuration_infer_argument_tito;
       analysis_model_constraints = { maximum_tito_collapse_depth; _ };
       _;
     }
@@ -207,6 +208,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let mode_infer_self_tito =
       Model.ModeSet.contains Model.Mode.InferSelfTito FunctionContext.existing_model.Model.modes
+    in
+    let mode_infer_argument_tito =
+      Model.ModeSet.contains Model.Mode.InferArgumentTito FunctionContext.existing_model.Model.modes
     in
     let make_tito_leaf kind =
       BackwardState.Tree.create_leaf
@@ -231,6 +235,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (make_tito_leaf (Sinks.ParameterUpdate self_parameter))
             BackwardState.bottom
       | _ -> BackwardState.bottom
+    in
+    let taint =
+      if configuration_infer_argument_tito || mode_infer_argument_tito then
+        (* Infer tito between arguments. *)
+        let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
+          FunctionContext.definition
+        in
+        parameters
+        |> AccessPath.normalize_parameters
+        |> List.fold
+             ~init:taint
+             ~f:(fun taint { AccessPath.NormalizedParameter.root; qualified_name; _ } ->
+               BackwardState.assign
+                 ~root:(AccessPath.Root.Variable qualified_name)
+                 ~path:[]
+                 (make_tito_leaf (Sinks.ParameterUpdate root))
+                 taint)
+      else
+        taint
     in
     BackwardState.assign
       ~root:AccessPath.Root.LocalResult

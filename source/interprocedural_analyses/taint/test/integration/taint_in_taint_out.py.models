@@ -650,6 +650,83 @@
     "callable": "taint_in_taint_out.test_complex_argument_tito",
     "callable_line": 574,
     "code": 5002,
+    "line": 596,
+    "start": 15,
+    "end": 24,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "baz" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 593, "start": 33, "end": 34 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 584,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 596,
+              "start": 15,
+              "end": 24
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "baz" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 10,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|10|formal(arg):00e0191c1657766d1a8c3654abe17be5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_complex_argument_tito",
+    "callable_line": 574,
+    "code": 5002,
     "line": 589,
     "start": 15,
     "end": 20,
@@ -788,6 +865,83 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|6|formal(arg):ad2a67cf72f264c002bf59e822e0c972"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_complex_argument_tito",
+    "callable_line": 574,
+    "code": 5002,
+    "line": 586,
+    "start": 15,
+    "end": 20,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 585, "start": 29, "end": 30 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 584,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 586,
+              "start": 15,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_complex_argument_tito:5002:0:Call|_test_sink|4|formal(arg):e5da9adc5537b799f9d9af8047ed246a"
   }
 }
 {
@@ -1177,6 +1331,83 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "taint_in_taint_out.test_tito_class_method:5002:0:Call|_test_sink|1|formal(arg):dfe7753c9b9fd28285d08404a1965ed5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_tito_from_0_to_1",
+    "callable_line": 562,
+    "code": 5002,
+    "line": 567,
+    "start": 15,
+    "end": 16,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 565, "start": 21, "end": 22 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 563,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 567,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.test_tito_from_0_to_1:5002:0:Call|_test_sink|1|formal(arg):4f9c249c5c6080dd4d47d886050da118"
   }
 }
 {
@@ -2623,6 +2854,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.complex_argument_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 570,
+    "tito": [
+      {
+        "port": "formal(y, position=1)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "ParameterUpdate[formal(x, position=0)]"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferArgumentTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.evaluate_lazy",
     "filename": "taint_in_taint_out.py",
     "callable_line": 169,
@@ -3847,6 +4103,31 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.tito_from_0_to_1",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 558,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 3 },
+                "kind": "ParameterUpdate[formal(y, position=1)]"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferArgumentTito" ]
   }
 }
 {

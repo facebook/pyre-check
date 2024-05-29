@@ -96,8 +96,8 @@ def list_setitem_wrapper(l: List[str], i: int, v: str) -> None:
 def test_list_setitem_wrapper():
     l = ["", "", ""]
     list_setitem_wrapper(l, 0, _test_source())
-    _test_sink(l[0])  # TODO(T174606751): False negative.
-    _test_sink(l[1])  # No issue.
+    _test_sink(l[0])  # Issue.
+    _test_sink(l[1])  # False positive.
 
 
 def list_append_wrapper(l: List[str], y: str) -> None:
@@ -107,7 +107,7 @@ def list_append_wrapper(l: List[str], y: str) -> None:
 def test_list_append_wrapper():
     l = []
     list_append_wrapper(l, _test_source())
-    _test_sink(l[0])  # TODO(T174606751): False negative.
+    _test_sink(l[0])  # Issue.
 
     l.append("")
-    _test_sink(l[1])  # No issue.
+    _test_sink(l[1])  # False positive.
