@@ -210,6 +210,65 @@ of `ReturnPath`. For instance:
 def MyClass.updates_foo(self, x: TaintInTaintOut[Updates[self], UpdatePath[_.foo]]): ...
 ```
 
+## Taint propagation from arguments to self
+
+By default, Pysa only infers taint propagation from arguments to self for
+constructors, property setters and the special `__setitem__` method.
+
+For instance:
+```python
+class Foo:
+  def __init__(self, x):
+    self.x = x
+
+  def set_x(self, x):
+    self.x = x
+
+def issue():
+  foo = Foo(source())
+  sink(foo)  # Issue found.
+
+  foo = Foo("")
+  foo.set_x(source())
+  sink(foo)  # Issue NOT found.
+```
+
+To enable the inference of propagations from arguments to self for all methods,
+one can provide the command line argument `--infer-self-tito` or use the taint
+annotation `@InferSelfTito` in a `.pysa` file:
+```python
+@InferSelfTito
+def my_module.Foo.set_x(): ...
+```
+Pysa would now find the second issue properly. Note that `--infer-self-tito` can
+significantly increase the analysis time as well as the amount of false positives.
+
+## Taint propagation between arguments
+
+By default, Pysa does NOT infer taint propagation between arguments. For short,
+it assumes that functions do not mutate their arguments.
+
+For instance, this flow will NOT be found:
+```python
+def append_wrapper(l: List[str], v: str) -> None:
+  l.append(v)
+
+def issue():
+  l = []
+  append_wrapper(l, source())
+  sink(l[0])  # Issue NOT found.
+```
+
+To enable the inference of propagations between arguments for all functions and
+methods, one can provide the command line argument `--infer-argument-tito` or
+use the taint annotation `@InferArgumentTito` in a `.pysa` file:
+```python
+@InferSelfTito
+def my_module.append_wrapper(): ...
+```
+Pysa would now find the issue properly. Note that `--infer-argument-tito` can
+significantly increase the analysis time as well as the amount of false positives.
+
 ## Taint broadening
 
 **Taint broadening** is an over-approximation performed by the taint analysis
