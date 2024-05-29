@@ -6,8 +6,8 @@
  *)
 
 (* The classHierarchy module contains an implementation of the C3 superclass linearization
-   algorithm. This algorithm (atopted in Python 2.3) is a way to determine an MRO (method resolution
-   order) which maintains certain properties. More can be found on
+   algorithm. This algorithm (adopted in Python 2.3) is a way to determine a method resolution order
+   (MRO) which maintains certain properties. More can be found on
    [wikipedia](https://en.wikipedia.org/wiki/C3_linearization) *)
 open Core
 open Ast
