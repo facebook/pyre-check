@@ -2705,6 +2705,32 @@ let test_check_dataclasses =
              "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
              "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
            ];
+      (* TODO: T190786456 We should not produce a type error here since Desc1 has a setter which
+         takes an int. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
+            from typing import Any, Generic, TypeVar, assert_type, overload
+
+            T = TypeVar("T")
+
+            class Desc1:
+
+                def __set__(self, __obj: object, __value: int) -> None:
+                    ...
+
+            @dataclass
+            class DC1:
+                y: Desc1 = Desc1()
+
+            dc1 = DC1(3)
+
+         |}
+           [
+             "Incompatible parameter type [6]: In call `DC1.__init__`, for 1st positional \
+              argument, expected `Desc1` but got `int`.";
+           ];
     ]
 
 
