@@ -2670,6 +2670,21 @@ let test_check_dataclasses =
               expected `typing.Callable[[str], int]` but got `BoundMethod[typing.Callable[[str], \
               int], DC6]`.";
            ];
+      (* TODO: T190780655 Report when dataclasses are not compatible with hashable protocol *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
+            from typing import Hashable
+
+
+            @dataclass
+            class DC1:
+                a: int
+            # This should generate an error because DC1 isn't hashable.
+            v1: Hashable = DC1(0)  # E
+         |}
+           [];
     ]
 
 
