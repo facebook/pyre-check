@@ -2731,6 +2731,36 @@ let test_check_dataclasses =
              "Incompatible parameter type [6]: In call `DC1.__init__`, for 1st positional \
               argument, expected `Desc1` but got `int`.";
            ];
+      (* TODO: T190786456 we do not understand that the implementation of create_model is also a
+         dataclass_transform. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+
+            from typing import Callable, TypeVar, dataclass_transform, overload, Optional, Type, Union
+            T = TypeVar('T')
+            @overload
+            @dataclass_transform()
+            def create_model(cls: Type[T]) -> Callable[[], T]:
+                ...
+
+
+            @overload
+            @dataclass_transform()
+            def create_model() -> Callable[[Type[T]], Callable[[], T]]:
+                ...
+
+
+            def create_model(cls: Optional[Type[T]] = None) -> Union[Callable[[], T], Callable[[Type[T]], Callable[[], T]]]:
+                ...
+
+         |}
+           [
+             "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the \
+              function's parameters.";
+             "Incompatible overload [43]: This definition does not have the same decorators as the \
+              preceding overload(s).";
+           ];
     ]
 
 
