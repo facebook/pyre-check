@@ -2685,6 +2685,26 @@ let test_check_dataclasses =
             v1: Hashable = DC1(0)  # E
          |}
            [];
+      (* TODO: T190780655 The error here should be that y is missing from the __post_init__ argument
+         list. We do not report anything about that. The existing errors are also incorrect. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass, InitVar
+
+              @dataclass
+              class DC1:
+                  x: InitVar[int]
+                  y: InitVar[str]
+
+                  def __post_init__(self, x: int) -> None:
+                      pass
+
+         |}
+           [
+             "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
+             "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
+           ];
     ]
 
 
