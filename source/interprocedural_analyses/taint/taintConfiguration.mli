@@ -56,6 +56,8 @@ module PartialSinkLabelsMap : sig
 
   val is_label_registered : partial_sink:string -> label:string -> t -> label_registration_result
 
+  val find_matching_labels : partial_sink:Sinks.partial_sink -> t -> label list option
+
   val of_alist_exn : (string * (label * label) list) list -> t
 
   val to_alist : t -> (string * (label * label) list) list

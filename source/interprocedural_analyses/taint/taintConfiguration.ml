@@ -323,6 +323,18 @@ module PartialSinkLabelsMap = struct
         else
           LabelNotRegistered registered_labels
     | None -> PartialSinkNotRegistered
+
+
+  let find_matching_labels ~partial_sink:{ Sinks.kind; label } map =
+    let extract_matching_label ~label (label_1, label_2) =
+      if String.equal label label_1 then
+        Some label_2
+      else if String.equal label label_2 then
+        Some label_1
+      else
+        None
+    in
+    find_opt kind map |> Option.map ~f:(List.filter_map ~f:(extract_matching_label ~label))
 end
 
 module PartialSinkConverter = struct

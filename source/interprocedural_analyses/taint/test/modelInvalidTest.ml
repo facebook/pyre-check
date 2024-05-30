@@ -25,6 +25,8 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
               def source() -> None: pass
               def taint(x, y) -> None: pass
               def partial_sink(x, y) -> None: pass
+              def partial_sink_3(x, y, z) -> None: pass
+              def partial_sink_4(w, x, y, z) -> None: pass
               def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
               def function_with_kwargs(normal_arg, **kwargs) -> None: pass
               def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
@@ -166,7 +168,34 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[d]]): ..."
-    ~expect:"no failure" (* TODO: TODO: Report error here *)
+    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y): ..."
+    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      def test.partial_sink_3(
+        x: PartialSink[Test[a]],
+        y: PartialSink[Test[b]],
+        z: PartialSink[Test[b]]
+      ): ...
+       |}
+    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[b]]`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      def test.partial_sink_4(
+        w: PartialSink[Test[a]],
+        x: PartialSink[Test[b]],
+        y: PartialSink[Test[c]],
+        z: PartialSink[Test[d]]
+      ): ...
+      |}
+    ~expect:"no failure"
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."

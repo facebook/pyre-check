@@ -2614,6 +2614,84 @@ let parse_parameter_taint
               ModelAnnotation.ParameterAnnotation { root; annotation; generation_if_source = false }))
 
 
+(* For each partial sink on a parameter, verify if there exists a least one matching partial sink on
+   another parameter. Return either the first pre-existing model verification error, or each
+   parameter's annotations when all partial sinks match, or the unmatched partial sink. *)
+let verify_matching_partial_sinks ~partial_sink_labels ~path ~location parameters_annotations =
+  let extract_partial_sink = function
+    | ModelAnnotation.ParameterAnnotation
+        { annotation = TaintAnnotation.Sink { sink = Sinks.PartialSink partial_sink; _ }; _ } ->
+        Some partial_sink
+    | _ -> None
+  in
+  let parameter_annotations_to_partial_sink parameter_annotations =
+    match List.filter_map ~f:extract_partial_sink parameter_annotations with
+    | [] -> None
+    | [partial_sink] -> Some partial_sink
+    | _ -> failwith "Expect each parameter to have zero or one single partial sink"
+  in
+  (* Remove the matching partial sink from `remaining`, and accumulate the unmatched ones in
+     `unmatched_in_reverse` in a reversed order. Return either `remaining` after removing the
+     matched partial sink, or the unmatched error. *)
+  let rec remove_matched_and_accumulate_unmatched ~is_matched ~unmatched_in_reverse remaining =
+    match remaining with
+    | [] -> Error ()
+    | head :: tail ->
+        if is_matched head then
+          Ok (List.rev_append unmatched_in_reverse tail)
+        else
+          remove_matched_and_accumulate_unmatched
+            ~is_matched
+            ~unmatched_in_reverse:(head :: unmatched_in_reverse)
+            tail
+  in
+  let unmatched_partial_sink_error partial_sink =
+    model_verification_error
+      ~path
+      ~location
+      (ModelVerificationError.UnmatchedPartialSinkKind partial_sink)
+  in
+  let remove_matching_partial_sink ~to_match ~to_remove_from
+      : (Sinks.partial_sink list, ModelVerificationError.t) result
+    =
+    match
+      ( to_remove_from,
+        TaintConfiguration.PartialSinkLabelsMap.find_matching_labels
+          ~partial_sink:to_match
+          partial_sink_labels )
+    with
+    | [], _
+    | _, None ->
+        Error (unmatched_partial_sink_error to_match)
+    | _, Some matching_labels ->
+        remove_matched_and_accumulate_unmatched
+          ~is_matched:(fun { Sinks.label; _ } -> List.mem matching_labels label ~equal:String.equal)
+          ~unmatched_in_reverse:[]
+          to_remove_from
+        |> (* Provide a more detailed error. *)
+        Result.map_error ~f:(fun _ -> unmatched_partial_sink_error to_match)
+  in
+  let rec remove_matching_partial_sinks
+      : Sinks.partial_sink list -> (unit, ModelVerificationError.t) result
+    = function
+    | [] -> Ok ()
+    | head :: tail -> (
+        match remove_matching_partial_sink ~to_match:head ~to_remove_from:tail with
+        | Ok remaining_partial_sinks -> remove_matching_partial_sinks remaining_partial_sinks
+        | Error _ as error -> error)
+  in
+  match
+    parameters_annotations
+    |> List.map ~f:(Result.map ~f:parameter_annotations_to_partial_sink)
+    |> Result.all
+  with
+  | Error _ as error -> (* Return the first pre-existing error, if any. *) error
+  | Ok partial_sinks -> (
+      match partial_sinks |> List.filter_opt |> remove_matching_partial_sinks with
+      | Ok () -> Result.all parameters_annotations
+      | Error _ as error -> (* Return the unmatched partial sink error, if any. *) error)
+
+
 let convert_return_into_self_annotation ~source_sink_filter annotation =
   let self_parameter =
     AccessPath.Root.PositionalParameter { name = "self"; position = 0; positional_only = false }
@@ -3487,8 +3565,12 @@ let create_model_from_signature
          ~taint_configuration
          ~parameters
          ~callable_parameter_names_to_roots)
-  |> all
-  >>| List.concat
+  |> fun parameters_annotations ->
+  verify_matching_partial_sinks
+    ~partial_sink_labels:taint_configuration.TaintConfiguration.Heap.partial_sink_labels
+    ~path
+    ~location
+    parameters_annotations
   >>= fun parameters_annotations ->
   return_annotation
   |> Option.map
@@ -3519,7 +3601,7 @@ let create_model_from_signature
   let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
   let all_annotations =
     return_annotations
-    |> List.rev_append parameters_annotations
+    |> List.rev_append (List.concat parameters_annotations)
     |> List.rev_append captured_variables_annotations
     |> List.rev_append decorator_annotations
     |> fix_constructors_and_property_setters_annotations ~callable:call_target ~source_sink_filter

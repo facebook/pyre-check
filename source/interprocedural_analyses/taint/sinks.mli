@@ -9,7 +9,7 @@ type partial_sink = {
   kind: string;
   label: string;
 }
-[@@deriving compare, show]
+[@@deriving compare, show, sexp, eq]
 
 type t =
   | Attach

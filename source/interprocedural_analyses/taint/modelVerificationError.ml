@@ -201,6 +201,7 @@ type kind =
       argument: string;
       error: FormatStringError.t;
     }
+  | UnmatchedPartialSinkKind of Sinks.partial_sink
 [@@deriving sexp, equal, compare, show]
 
 type t = {
@@ -533,6 +534,10 @@ let description error =
         "Invalid %s for CrossRepositoryTaintAnchor: %s"
         argument
         (FormatStringError.description error)
+  | UnmatchedPartialSinkKind partial_sink ->
+      Format.asprintf
+        "Cannot find any matching partial sink for `%s`"
+        (Sinks.show (Sinks.PartialSink partial_sink))
 
 
 let code { kind; _ } =
@@ -606,6 +611,7 @@ let code { kind; _ } =
   | UnsupportedComparisonOperator _ -> 70
   | InvalidCrossRepositoryTaintAnchorString _ -> 71
   | InvalidCrossRepositoryTaintAnchorFormatString _ -> 72
+  | UnmatchedPartialSinkKind _ -> 73
 
 
 let display { kind = error; path; location } =

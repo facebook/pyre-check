@@ -19,7 +19,7 @@ module T = struct
     kind: string;
     label: string;
   }
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, hash, sexp, eq]
 
   let show_partial_sink { kind; label } = Format.sprintf "%s[%s]" kind label
 

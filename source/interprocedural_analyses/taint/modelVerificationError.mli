@@ -188,6 +188,7 @@ type kind =
       argument: string;
       error: FormatStringError.t;
     }
+  | UnmatchedPartialSinkKind of Sinks.partial_sink
 [@@deriving sexp, equal, compare]
 
 type t = {
