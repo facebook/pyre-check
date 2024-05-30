@@ -1322,6 +1322,7 @@ let test_create_variadic_tuple _ =
 
 
 let test_create_readonly _ =
+  assert_create "typing._PyreReadOnly_[Foo]" (Type.ReadOnly.create (Type.Primitive "Foo"));
   assert_create "pyre_extensions.ReadOnly[Foo]" (Type.ReadOnly.create (Type.Primitive "Foo"));
   assert_create
     "pyre_extensions.ReadOnly[pyre_extensions.ReadOnly[Foo]]"

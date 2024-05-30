@@ -4145,7 +4145,12 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
         | "typing.Optional", Some [head] -> optional head
         | "typing.Union", Some parameters -> union parameters
-        | "pyre_extensions.ReadOnly", Some [head] -> ReadOnly.create head
+        (* We support a made-up, stubs-only `typing._PyreReadOnly_` class so that we can safely
+           patch the standard library with read-only methods without worrying about whether
+           `pyre_extensions` is part of a project. *)
+        | "typing._PyreReadOnly_", Some [head]
+        | "pyre_extensions.ReadOnly", Some [head] ->
+            ReadOnly.create head
         | _ -> result
       in
       match Hashtbl.find alternate_name_to_canonical_name_map name with

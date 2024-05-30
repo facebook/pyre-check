@@ -1835,6 +1835,31 @@ let test_allowlisted_generic_integer_classes context =
   ()
 
 
+let test_typing_PyreReadOnly context =
+  (* In order to safely patch typeshed so that some stdlib methods are read-only, we rely on a
+     made-up, stub-only `typing._PyreReadOnly_` class. This test verifies that it behaves
+     equivalently to (and interoperates with) `pyre_extensions.ReadOnly` *)
+  assert_type_errors
+    {|
+
+      from typing import _PyreReadOnly_
+      from pyre_extensions import ReadOnly
+
+      class Bar: ...
+
+      def foo(x: _PyreReadOnly_[Bar]) -> Bar:
+        y: Bar = x
+        z: ReadOnly[Bar] = y
+        return z
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+    ]
+    context;
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1857,5 +1882,6 @@ let () =
          "error_message_has_non_any_location" >:: test_error_message_has_non_any_location;
          "allowlisted_classes_are_not_readonly" >:: test_allowlisted_classes_are_not_readonly;
          "allowlisted_generic_integer_classes" >:: test_allowlisted_generic_integer_classes;
+         "typing_PyreReadOnly" >:: test_typing_PyreReadOnly;
        ]
   |> Test.run

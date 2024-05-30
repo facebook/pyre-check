@@ -1303,6 +1303,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T_contra = TypeVar('_T_contra', contravariant=True)
         _Self = TypeVar('_Self')
 
+        # Pyre injects a type into the `typing` stub so that we can safely rely on
+        # it to handle read-only methods on stdlib types in our patched typeshed.
+        class _PyreReadOnly_(Generic[_T]):
+            pass
+
+
         class Iterable(Protocol[_T_co]):
           def __iter__(self) -> Iterator[_T_co]: pass
         class Iterator(Iterable[_T_co], Protocol[_T_co]):
