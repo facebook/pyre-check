@@ -2641,6 +2641,35 @@ let test_check_dataclasses =
              "Too many arguments [19]: PositionalOnly call expects 0 positional arguments, 1 was \
               provided.";
            ];
+      (* TODO: T190778258 The only type error here should be that that default value cannot be
+         followed by non-default value*)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            import dataclasses
+            from typing import Callable, assert_type
+
+            @dataclasses.dataclass  # E[DC1]
+            class DC1:
+                a: dataclasses.InitVar[int] = 0
+                b: int  # E[DC1]: field with no default cannot follow field with default.
+
+            def f(s: str) -> int:
+                return int(s)
+
+            @dataclasses.dataclass
+            class DC6:
+                c: Callable[[str], int] = f
+
+            dc6 = DC6()
+            assert_type(dc6.c, Callable[[str], int])
+         |}
+           [
+             "Undefined attribute [16]: `typing.Type` has no attribute `a`.";
+             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
+              expected `typing.Callable[[str], int]` but got `BoundMethod[typing.Callable[[str], \
+              int], DC6]`.";
+           ];
     ]
 
 
