@@ -28,7 +28,7 @@ from ..find_directories import (
     CONFIGURATION_FILE,
     find_global_root,
     find_parent_directory_containing_file,
-    find_taint_models_directory,
+    find_taint_models_directories,
     find_typeshed,
     LOCAL_CONFIGURATION_FILE,
 )
@@ -182,14 +182,16 @@ def _get_configuration(
         LOG.info(f"Typeshed found at `{typeshed}``")
 
     if taint_models_directory_required:
-        taint_models_path = find_taint_models_directory()
-        if taint_models_path is None:
-            taint_models_path = Path(
-                log.get_input(
-                    "Unable to find taint models directory, please enter its root: "
-                )
-            ).resolve()
-        configuration["taint_models_path"] = str(taint_models_path)
+        taint_models_paths = find_taint_models_directories()
+        if taint_models_paths is None:
+            taint_models_paths = [
+                Path(
+                    log.get_input(
+                        "Unable to find taint models directory, please enter its root: "
+                    )
+                ).resolve()
+            ]
+        configuration["taint_models_path"] = [str(path) for path in taint_models_paths]
 
     source_directory_input = log.get_optional_input(
         "Which directory(ies) should pyre analyze?", "."

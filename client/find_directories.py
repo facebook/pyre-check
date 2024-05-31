@@ -312,14 +312,17 @@ def find_pyre_directory() -> Optional[Path]:
     return None
 
 
-def find_taint_models_directory() -> Optional[Path]:
+def find_taint_models_directories() -> Optional[List[Path]]:
     pyre_check_path = find_pyre_directory()
     if pyre_check_path is None:
         return None
     bundled_taint_models = pyre_check_path / "taint/"
-    if bundled_taint_models.is_dir():
-        return bundled_taint_models
-    return None
+    if not bundled_taint_models.is_dir():
+        return None
+    third_party_taint_models = pyre_check_path / "third_party_taint/"
+    if not third_party_taint_models.is_dir():
+        return None
+    return [bundled_taint_models, third_party_taint_models]
 
 
 def find_pysa_filters_directory() -> Optional[Path]:
