@@ -9,7 +9,7 @@
 action = "add"
 position = "top"
 content = '''
-from pyre_extensions import ReadOnly
+from pyre_extensions import Add, Multiply, Divide, ReadOnly
 
 from typing import TypeVar
 N1 = TypeVar("N1", bound=int)
@@ -40,6 +40,40 @@ parent = "object"
 name = "__repr__"
 content = '''
 def __repr__(self: ReadOnly[Self]) -> str: ...  # noqa: Y029
+'''
+
+# Define type-level arithmetic operations (used in shape types)
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__add__"
+content = '''
+def __add__(self: N1, __x: N2) -> Add[N1, N2]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__sub__"
+content = '''
+def __sub__(self: N1, __x: N2) -> Add[N1, Multiply[Literal[-1], N2]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__mul__"
+content = '''
+def __mul__(self: N1, __x: N2) -> Multiply[N1, N2]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__floordiv__"
+content = '''
+def __floordiv__(self: N1, __x: N2) -> Divide[N1, N2]: ...
 '''
 
 
