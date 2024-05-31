@@ -58,45 +58,19 @@
     let position = Location.create ~start ~stop:start in
     { position with Location.stop = stop }
 
-  type binary_operator =
-    | Add
-    | At
-    | BitAnd
-    | BitOr
-    | BitXor
-    | Divide
-    | FloorDivide
-    | LeftShift
-    | Modulo
-    | Multiply
-    | Power
-    | RightShift
-    | Subtract
-
   let binary_operator
-    ~compound
     ~left:({ Node.location; _ } as left)
     ~operator
     ~right:({ Node.location = { Location.stop; _ }; _ } as right) =
-    let name =
-      let name =
-        match operator with
-        | Add -> "add"
-        | At -> "matmul"
-        | BitAnd -> "and"
-        | BitOr -> "or"
-        | BitXor -> "xor"
-        | Divide -> "truediv"
-        | FloorDivide -> "floordiv"
-        | LeftShift -> "lshift"
-        | Modulo -> "mod"
-        | Multiply -> "mul"
-        | Power -> "pow"
-        | RightShift -> "rshift"
-        | Subtract -> "sub"
-      in
-      Format.asprintf "__%s%s__" (if compound then "i" else "") name
-    in
+    Expression.BinaryOperator { BinaryOperator.left; operator; right }
+    |> Node.create ~location:{ location with Location.stop }
+
+  (* TODO: T101299882 *)
+  let augmented_assign_binary_operator
+    ~left:({ Node.location; _ } as left)
+    ~operator
+    ~right:({ Node.location = { Location.stop; _ }; _ } as right) =
+    let name = AstExpression.BinaryOperator.augmented_assign_operator operator in
     let callee =
       Expression.Name (Name.Attribute { Name.Attribute.base = left; attribute = name; special = true })
       |> Node.create ~location
@@ -500,9 +474,9 @@ simple_statement:
 
 small_statement:
   | target = test_list;
-    compound = compound_operator;
+    operator = compound_operator;
     value = value {
-      let value = binary_operator ~compound:true ~left:target ~operator:compound ~right:value in
+      let value = augmented_assign_binary_operator ~left:target ~operator ~right:value in
       [{
         Node.location = {
           target.Node.location with Location.stop =
@@ -1409,7 +1383,7 @@ atom:
   | left = expression;
     operator = binary_operator;
     right = expression; {
-      binary_operator ~compound:false ~left ~operator ~right
+      binary_operator ~left ~operator ~right
     }
 
   | bytes = BYTES+ {
@@ -1809,19 +1783,19 @@ yield_form:
   ;
 
 %inline binary_operator:
-  | PLUS { Add }
-  | AT { At }
-  | AMPERSAND { BitAnd }
-  | BAR { BitOr }
-  | HAT { BitXor }
-  | SLASH; SLASH { FloorDivide }
-  | SLASH { Divide }
-  | LEFTANGLELEFTANGLE { LeftShift }
-  | PERCENT { Modulo }
-  | ASTERIKS; ASTERIKS { Power }
-  | ASTERIKS { Multiply }
-  | RIGHTANGLERIGHTANGLE { RightShift }
-  | MINUS { Subtract }
+  | PLUS { AstExpression.BinaryOperator.Add }
+  | AT { AstExpression.BinaryOperator.MatMult }
+  | AMPERSAND { AstExpression.BinaryOperator.BitAnd }
+  | BAR { AstExpression.BinaryOperator.BitOr }
+  | HAT { AstExpression.BinaryOperator.BitXor }
+  | SLASH; SLASH { AstExpression.BinaryOperator.FloorDiv }
+  | SLASH { AstExpression.BinaryOperator.Div }
+  | LEFTANGLELEFTANGLE { AstExpression.BinaryOperator.LShift }
+  | PERCENT { AstExpression.BinaryOperator.Mod }
+  | ASTERIKS; ASTERIKS { AstExpression.BinaryOperator.Pow }
+  | ASTERIKS { AstExpression.BinaryOperator.Mult }
+  | RIGHTANGLERIGHTANGLE { AstExpression.BinaryOperator.RShift }
+  | MINUS { AstExpression.BinaryOperator.Sub }
   ;
 
 comparison_operator:
@@ -1844,19 +1818,19 @@ comparison_operator:
   ;
 
 %inline compound_operator:
-  | PLUSEQUALS { Add }
-  | ATEQUALS { At }
-  | AMPERSANDEQUALS { BitAnd }
-  | BAREQUALS { BitOr }
-  | HATEQUALS { BitXor }
-  | SLASHSLASHEQUALS { FloorDivide }
-  | SLASHEQUALS { Divide }
-  | LEFTANGLELEFTANGLEEQUALS { LeftShift }
-  | PERCENTEQUALS { Modulo }
-  | ASTERIKSASTERIKSEQUALS { Power }
-  | ASTERIKSEQUALS { Multiply }
-  | RIGHTANGLERIGHTANGLEEQUALS { RightShift }
-  | MINUSEQUALS { Subtract }
+  | PLUSEQUALS { AstExpression.BinaryOperator.Add }
+  | ATEQUALS { AstExpression.BinaryOperator.MatMult }
+  | AMPERSANDEQUALS { AstExpression.BinaryOperator.BitAnd }
+  | BAREQUALS { AstExpression.BinaryOperator.BitOr }
+  | HATEQUALS { AstExpression.BinaryOperator.BitXor }
+  | SLASHSLASHEQUALS { AstExpression.BinaryOperator.FloorDiv }
+  | SLASHEQUALS { AstExpression.BinaryOperator.Div }
+  | LEFTANGLELEFTANGLEEQUALS { AstExpression.BinaryOperator.LShift }
+  | PERCENTEQUALS { AstExpression.BinaryOperator.Mod }
+  | ASTERIKSASTERIKSEQUALS { AstExpression.BinaryOperator.Pow }
+  | ASTERIKSEQUALS { AstExpression.BinaryOperator.Mult }
+  | RIGHTANGLERIGHTANGLEEQUALS { AstExpression.BinaryOperator.RShift }
+  | MINUSEQUALS { AstExpression.BinaryOperator.Sub }
   ;
 
 %inline unary_operator:

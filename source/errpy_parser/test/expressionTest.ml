@@ -1037,290 +1037,140 @@ let test_binary_operators =
       @@ assert_parsed
            "x + y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Add; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x - y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__sub__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Sub; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x * y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__mul__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Mult; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x @ y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__matmul__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.MatMult; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x / y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__truediv__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Div; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x % y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__mod__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Mod; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x ** y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__pow__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.Pow; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x >> y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__rshift__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.RShift; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x << y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__lshift__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.LShift; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x | y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__or__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.BitOr; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x ^ y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__xor__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.BitXor; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x & y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__and__"; special = true });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.BitAnd; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x // y"
            ~expected:
-             (+Expression.Call
-                 {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           {
-                             Name.Attribute.base = !"x";
-                             attribute = "__floordiv__";
-                             special = true;
-                           });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
-                 });
+             (+Expression.BinaryOperator
+                 { operator = BinaryOperator.FloorDiv; left = !"x"; right = !"y" });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x + y + z"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           {
-                             Name.Attribute.base =
-                               +Expression.Call
-                                  {
-                                    Call.callee =
-                                      +Expression.Name
-                                         (Name.Attribute
-                                            {
-                                              Name.Attribute.base = !"x";
-                                              attribute = "__add__";
-                                              special = true;
-                                            });
-                                    arguments = [{ Call.Argument.name = None; value = !"y" }];
-                                  };
-                             attribute = "__add__";
-                             special = true;
-                           });
-                   arguments = [{ Call.Argument.name = None; value = !"z" }];
+                   operator = BinaryOperator.Add;
+                   left =
+                     +Expression.BinaryOperator
+                        { operator = BinaryOperator.Add; left = !"x"; right = !"y" };
+                   right = !"z";
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x + (y + z)"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
-                   arguments =
-                     [
-                       {
-                         Call.Argument.name = None;
-                         value =
-                           +Expression.Call
-                              {
-                                Call.callee =
-                                  +Expression.Name
-                                     (Name.Attribute
-                                        {
-                                          Name.Attribute.base = !"y";
-                                          attribute = "__add__";
-                                          special = true;
-                                        });
-                                arguments = [{ Call.Argument.name = None; value = !"z" }];
-                              };
-                       };
-                     ];
+                   operator = BinaryOperator.Add;
+                   left = !"x";
+                   right =
+                     +Expression.BinaryOperator
+                        { operator = BinaryOperator.Add; left = !"y"; right = !"z" };
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x + y * z"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
-                   arguments =
-                     [
-                       {
-                         Call.Argument.name = None;
-                         value =
-                           +Expression.Call
-                              {
-                                Call.callee =
-                                  +Expression.Name
-                                     (Name.Attribute
-                                        {
-                                          Name.Attribute.base = !"y";
-                                          attribute = "__mul__";
-                                          special = true;
-                                        });
-                                arguments = [{ Call.Argument.name = None; value = !"z" }];
-                              };
-                       };
-                     ];
+                   operator = BinaryOperator.Add;
+                   left = !"x";
+                   right =
+                     +Expression.BinaryOperator
+                        { operator = BinaryOperator.Mult; left = !"y"; right = !"z" };
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x * -y"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__mul__"; special = true });
-                   arguments =
-                     [
-                       {
-                         Call.Argument.name = None;
-                         value =
-                           +Expression.UnaryOperator
-                              { UnaryOperator.operator = UnaryOperator.Negative; operand = !"y" };
-                       };
-                     ];
+                   operator = BinaryOperator.Mult;
+                   left = !"x";
+                   right =
+                     +Expression.UnaryOperator
+                        { UnaryOperator.operator = UnaryOperator.Negative; operand = !"y" };
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "x + y.z"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
+                   operator = BinaryOperator.Add;
+                   left = !"x";
+                   right =
                      +Expression.Name
                         (Name.Attribute
-                           { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
-                   arguments =
-                     [
-                       {
-                         Call.Argument.name = None;
-                         value =
-                           +Expression.Name
-                              (Name.Attribute
-                                 { Name.Attribute.base = !"y"; attribute = "z"; special = false });
-                       };
-                     ];
+                           { Name.Attribute.base = !"y"; attribute = "z"; special = false });
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
@@ -1331,18 +1181,8 @@ let test_binary_operators =
                    ComparisonOperator.left = !"x";
                    operator = ComparisonOperator.LessThan;
                    right =
-                     +Expression.Call
-                        {
-                          Call.callee =
-                            +Expression.Name
-                               (Name.Attribute
-                                  {
-                                    Name.Attribute.base = !"y";
-                                    attribute = "__add__";
-                                    special = true;
-                                  });
-                          arguments = [{ Call.Argument.name = None; value = !"z" }];
-                        };
+                     +Expression.BinaryOperator
+                        { operator = BinaryOperator.Add; left = !"y"; right = !"z" };
                  });
     ]
 
@@ -1862,22 +1702,16 @@ let test_call =
       @@ assert_parsed
            "foo(x) + y"
            ~expected:
-             (+Expression.Call
+             (+Expression.BinaryOperator
                  {
-                   Call.callee =
-                     +Expression.Name
-                        (Name.Attribute
-                           {
-                             Name.Attribute.base =
-                               +Expression.Call
-                                  {
-                                    Call.callee = !"foo";
-                                    arguments = [{ Call.Argument.name = None; value = !"x" }];
-                                  };
-                             attribute = "__add__";
-                             special = true;
-                           });
-                   arguments = [{ Call.Argument.name = None; value = !"y" }];
+                   operator = BinaryOperator.Add;
+                   left =
+                     +Expression.Call
+                        {
+                          Call.callee = !"foo";
+                          arguments = [{ Call.Argument.name = None; value = !"x" }];
+                        };
+                   right = !"y";
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed

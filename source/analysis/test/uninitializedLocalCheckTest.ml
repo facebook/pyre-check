@@ -215,8 +215,6 @@ let test_simple =
         x = Foo()
     |}
            [];
-      (* TODO(T94414920): binary operators desugar into method calls, which under the hood are
-         attribute reads *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_uninitialized_errors
            {|
@@ -229,7 +227,7 @@ let test_simple =
           b = a + 5
           print(b)
     |}
-           [];
+           ["Uninitialized local [61]: Local variable `a` is undefined, or not always defined."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_uninitialized_errors
            {|

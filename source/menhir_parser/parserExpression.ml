@@ -25,7 +25,21 @@ module Substring = struct
   }
 end
 
-module rec BooleanOperator : sig
+module rec BinaryOperator : sig
+  type t = {
+    left: Expression.t;
+    operator: AstExpression.BinaryOperator.operator;
+    right: Expression.t;
+  }
+end = struct
+  type t = {
+    left: Expression.t;
+    operator: AstExpression.BinaryOperator.operator;
+    right: Expression.t;
+  }
+end
+
+and BooleanOperator : sig
   type t = {
     left: Expression.t;
     operator: AstExpression.BooleanOperator.operator;
@@ -260,6 +274,7 @@ end
 and Expression : sig
   type expression =
     | Await of t
+    | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
@@ -288,6 +303,7 @@ and Expression : sig
 end = struct
   type expression =
     | Await of t
+    | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t

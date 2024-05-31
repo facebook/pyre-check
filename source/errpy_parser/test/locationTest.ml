@@ -2076,34 +2076,19 @@ let test_lambda_locations =
                               node
                                 ~start:(1, 17)
                                 ~stop:(1, 22)
-                                (Expression.Call
+                                (Expression.BinaryOperator
                                    {
-                                     Call.callee =
+                                     operator = BinaryOperator.Add;
+                                     left =
                                        node
                                          ~start:(1, 17)
                                          ~stop:(1, 18)
-                                         (Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 Name.Attribute.base =
-                                                   node
-                                                     ~start:(1, 17)
-                                                     ~stop:(1, 18)
-                                                     (Expression.Name (Name.Identifier "x"));
-                                                 attribute = "__add__";
-                                                 special = true;
-                                               }));
-                                     arguments =
-                                       [
-                                         {
-                                           Call.Argument.name = None;
-                                           value =
-                                             node
-                                               ~start:(1, 21)
-                                               ~stop:(1, 22)
-                                               (Expression.Constant (Constant.Integer 1));
-                                         };
-                                       ];
+                                         (Expression.Name (Name.Identifier "x"));
+                                     right =
+                                       node
+                                         ~start:(1, 21)
+                                         ~stop:(1, 22)
+                                         (Expression.Constant (Constant.Integer 1));
                                    });
                           })));
              ];
@@ -2540,34 +2525,19 @@ let test_operator_locations =
                     (node
                        ~start:(1, 0)
                        ~stop:(1, 6)
-                       (Expression.Call
+                       (Expression.BinaryOperator
                           {
-                            Call.callee =
+                            operator = BinaryOperator.FloorDiv;
+                            left =
                               node
                                 ~start:(1, 0)
                                 ~stop:(1, 1)
-                                (Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base =
-                                          node
-                                            ~start:(1, 0)
-                                            ~stop:(1, 1)
-                                            (Expression.Constant (Constant.Integer 1));
-                                        attribute = "__floordiv__";
-                                        special = true;
-                                      }));
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    node
-                                      ~start:(1, 5)
-                                      ~stop:(1, 6)
-                                      (Expression.Constant (Constant.Integer 2));
-                                };
-                              ];
+                                (Expression.Constant (Constant.Integer 1));
+                            right =
+                              node
+                                ~start:(1, 5)
+                                ~stop:(1, 6)
+                                (Expression.Constant (Constant.Integer 2));
                           })));
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2961,36 +2931,19 @@ let test_string_locations =
                     (node
                        ~start:(1, 0)
                        ~stop:(1, 17)
-                       (Expression.Call
+                       (Expression.BinaryOperator
                           {
-                            Call.callee =
+                            operator = BinaryOperator.Add;
+                            left =
                               node
                                 ~start:(1, 0)
                                 ~stop:(1, 7)
-                                (Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base =
-                                          node
-                                            ~start:(1, 0)
-                                            ~stop:(1, 7)
-                                            (Expression.Constant
-                                               (Constant.String (StringLiteral.create "a")));
-                                        attribute = "__add__";
-                                        special = true;
-                                      }));
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    node
-                                      ~start:(1, 10)
-                                      ~stop:(1, 17)
-                                      (Expression.Constant
-                                         (Constant.String (StringLiteral.create "b")));
-                                };
-                              ];
+                                (Expression.Constant (Constant.String (StringLiteral.create "a")));
+                            right =
+                              node
+                                ~start:(1, 10)
+                                ~stop:(1, 17)
+                                (Expression.Constant (Constant.String (StringLiteral.create "b")));
                           })));
              ];
     ]
@@ -3451,34 +3404,19 @@ let test_tuple_locations =
                             node
                               ~start:(1, 3)
                               ~stop:(1, 8)
-                              (Expression.Call
+                              (Expression.BinaryOperator
                                  {
-                                   Call.callee =
+                                   operator = BinaryOperator.Add;
+                                   left =
                                      node
                                        ~start:(1, 3)
                                        ~stop:(1, 4)
-                                       (Expression.Name
-                                          (Name.Attribute
-                                             {
-                                               Name.Attribute.base =
-                                                 node
-                                                   ~start:(1, 3)
-                                                   ~stop:(1, 4)
-                                                   (Expression.Constant (Constant.Integer 1));
-                                               attribute = "__add__";
-                                               special = true;
-                                             }));
-                                   arguments =
-                                     [
-                                       {
-                                         Call.Argument.name = None;
-                                         value =
-                                           node
-                                             ~start:(1, 7)
-                                             ~stop:(1, 8)
-                                             (Expression.Constant (Constant.Integer 1));
-                                       };
-                                     ];
+                                       (Expression.Constant (Constant.Integer 1));
+                                   right =
+                                     node
+                                       ~start:(1, 7)
+                                       ~stop:(1, 8)
+                                       (Expression.Constant (Constant.Integer 1));
                                  });
                           ])));
              ];

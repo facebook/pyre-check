@@ -805,8 +805,8 @@ let test_invalid_models context =
           ...
     |}
     ~expect:
-      "`TaintSink[(Test, Via[a.__sub__(feature)])]` is an invalid taint annotation: Invalid \
-       expression for breadcrumb: a.__sub__(feature)"
+      "`TaintSink[(Test, Via[a - feature])]` is an invalid taint annotation: Invalid expression \
+       for breadcrumb: a - feature"
     ();
   assert_invalid_model
     ~source:"def partial_sink(x, y) -> None: ..."

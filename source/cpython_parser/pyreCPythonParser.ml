@@ -59,20 +59,21 @@ let boolean_operator =
 
 
 let binary_operator =
+  let open Ast.Expression in
   PyreAst.TaglessFinal.BinaryOperator.make
-    ~add:"add"
-    ~sub:"sub"
-    ~mult:"mul"
-    ~matmult:"matmul"
-    ~div:"truediv"
-    ~mod_:"mod"
-    ~pow:"pow"
-    ~lshift:"lshift"
-    ~rshift:"rshift"
-    ~bitor:"or"
-    ~bitxor:"xor"
-    ~bitand:"and"
-    ~floordiv:"floordiv"
+    ~add:BinaryOperator.Add
+    ~sub:BinaryOperator.Sub
+    ~mult:BinaryOperator.Mult
+    ~matmult:BinaryOperator.MatMult
+    ~div:BinaryOperator.Div
+    ~mod_:BinaryOperator.Mod
+    ~pow:BinaryOperator.Pow
+    ~lshift:BinaryOperator.LShift
+    ~rshift:BinaryOperator.RShift
+    ~bitor:BinaryOperator.BitOr
+    ~bitxor:BinaryOperator.BitXor
+    ~bitand:BinaryOperator.BitAnd
+    ~floordiv:BinaryOperator.FloorDiv
     ()
 
 
@@ -323,16 +324,7 @@ let expression =
     Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
   in
   let bin_op ~location ~left ~op ~right =
-    (* TODO(T101299882): Avoid lowering binary operators in parsing phase. *)
-    let callee =
-      let dunder_name = Stdlib.Format.sprintf "__%s__" op in
-      Expression.Name
-        (Name.Attribute
-           { Name.Attribute.base = left; attribute = identifier dunder_name; special = true })
-      |> Node.create ~location:(Node.location left)
-    in
-    Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value = right }] }
-    |> Node.create ~location
+    Expression.BinaryOperator { BinaryOperator.left; operator = op; right } |> Node.create ~location
   in
   let unary_op ~location ~op ~operand =
     match op, operand with
@@ -887,8 +879,9 @@ let statement =
     List.map targets ~f:create_assign_for_target
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
+    (* TODO: T101299882 *)
     let callee =
-      let dunder_name = Stdlib.Format.sprintf "__i%s__" op in
+      let dunder_name = BinaryOperator.augmented_assign_operator op in
       Expression.Name
         (Name.Attribute
            { Name.Attribute.base = target; attribute = identifier dunder_name; special = true })

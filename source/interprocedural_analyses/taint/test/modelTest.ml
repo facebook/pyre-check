@@ -3676,9 +3676,7 @@ let test_access_path _ =
     ~expected:"`foo.bar` is an invalid access path: access path must start with `_`";
   assert_invalid_path
     ~source:"_.a-b"
-    ~expected:
-      "`_.a.__sub__(b)` is an invalid access path: unexpected method call `__sub__` (allowed: \
-       `keys`, `all`, `all_static_fields`, `parameter_name`)";
+    ~expected:"`_.a - b` is an invalid access path: unexpected expression";
   assert_invalid_path
     ~source:"_[a]"
     ~expected:

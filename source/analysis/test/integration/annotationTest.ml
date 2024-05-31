@@ -486,7 +486,7 @@ let test_check_invalid_type =
               def foo(x: int + str) -> None:
                 return
             |}
-           ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."];
+           ["Invalid type [31]: Expression `int + str` is not a valid type."];
       (* Using expressions of type meta-type: only OK in isinstance *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

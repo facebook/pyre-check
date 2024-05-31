@@ -2509,7 +2509,7 @@ let test_dump_call_graph context =
                     {
                       "path": "%s/foo.py",
                       "start": { "line": 4, "column": 9 },
-                      "stop": { "line": 4, "column": 16 }
+                      "stop": { "line": 4, "column": 26 }
                     }
                   ],
                   "kind": "method",

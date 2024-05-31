@@ -49,7 +49,7 @@ let test_reveal_type =
               def foo(x: int, y: int) -> None:
                 reveal_type(x + y)
             |}
-           ["Revealed type [-1]: Revealed type for `x.__add__(y)` is `int`."];
+           ["Revealed type [-1]: Revealed type for `x + y` is `int`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

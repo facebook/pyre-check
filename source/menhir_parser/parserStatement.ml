@@ -12,12 +12,21 @@ module Node = Ast.Node
 module Reference = Ast.Reference
 module Identifier = Ast.Identifier
 module AstStatement = Ast.Statement
+module AstExpression = Ast.Expression
 
 module Assign = struct
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
+  }
+end
+
+module AugmentedAssign = struct
+  type t = {
+    target: Expression.t;
+    operator: AstExpression.BinaryOperator.operator;
+    value: Expression.t;
   }
 end
 
@@ -211,6 +220,7 @@ and Statement : sig
   type statement =
     | Assign of Assign.t
     | Assert of Assert.t
+    | AugmentedAssign of AugmentedAssign.t
     | Break
     | Class of Class.t
     | Continue
@@ -234,6 +244,7 @@ end = struct
   type statement =
     | Assign of Assign.t
     | Assert of Assert.t
+    | AugmentedAssign of AugmentedAssign.t
     | Break
     | Class of Class.t
     | Continue

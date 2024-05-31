@@ -3741,27 +3741,21 @@ let test_call_graph_of_define =
            ~expected:
              [
                ( "3:9-3:15",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "__add__",
-                          ExpressionCallees.from_attribute_access AttributeAccessCallees.empty );
-                        ( "__str__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     ~implicit_receiver:true
-                                     (Target.Method
-                                        {
-                                          class_name = "BaseException";
-                                          method_name = "__str__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                      ]) );
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               ~implicit_receiver:true
+                               (Target.Method
+                                  {
+                                    class_name = "BaseException";
+                                    method_name = "__str__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ())) );
                ( "3:9-3:25",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call

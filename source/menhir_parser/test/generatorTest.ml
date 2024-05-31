@@ -165,23 +165,11 @@ let test_lexer =
            "1 +\\\n 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -189,23 +177,11 @@ let test_lexer =
            "1 + \\\n 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -213,23 +189,11 @@ let test_lexer =
            "(1 +\n 2)"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -237,23 +201,11 @@ let test_lexer =
            "(1 +\n 2)\n3"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
              +Statement.Expression (+Expression.Constant (Constant.Integer 3));
            ];
@@ -387,25 +339,13 @@ let test_await =
            "await foo() + 1"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Await
-                                     (+Expression.Call { Call.callee = !"foo"; arguments = [] });
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 1);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left =
+                        +Expression.Await
+                           (+Expression.Call { Call.callee = !"foo"; arguments = [] });
+                      right = +Expression.Constant (Constant.Integer 1);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -413,25 +353,13 @@ let test_await =
            "await foo() * 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Await
-                                     (+Expression.Call { Call.callee = !"foo"; arguments = [] });
-                                attribute = "__mul__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Mult;
+                      left =
+                        +Expression.Await
+                           (+Expression.Call { Call.callee = !"foo"; arguments = [] });
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
     ]
@@ -2504,23 +2432,11 @@ let test_binary_operator =
            "1 + 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2528,23 +2444,11 @@ let test_binary_operator =
            "1 ^ 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__xor__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.BitXor;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2552,23 +2456,11 @@ let test_binary_operator =
            "1 // 2"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__floordiv__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 2);
-                          };
-                        ];
+                      operator = BinaryOperator.FloorDiv;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2576,42 +2468,17 @@ let test_binary_operator =
            "1 >> 2 >> 3"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Call
-                                     {
-                                       Call.callee =
-                                         +Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 Name.Attribute.base =
-                                                   +Expression.Constant (Constant.Integer 1);
-                                                 attribute = "__rshift__";
-                                                 special = true;
-                                               });
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant (Constant.Integer 2);
-                                           };
-                                         ];
-                                     };
-                                attribute = "__rshift__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 3);
-                          };
-                        ];
+                      operator = BinaryOperator.RShift;
+                      left =
+                        +Expression.BinaryOperator
+                           {
+                             operator = BinaryOperator.RShift;
+                             left = +Expression.Constant (Constant.Integer 1);
+                             right = +Expression.Constant (Constant.Integer 2);
+                           };
+                      right = +Expression.Constant (Constant.Integer 3);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2619,26 +2486,14 @@ let test_binary_operator =
            "1 >> a.b"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
+                      operator = BinaryOperator.RShift;
+                      left = +Expression.Constant (Constant.Integer 1);
+                      right =
                         +Expression.Name
                            (Name.Attribute
-                              {
-                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                attribute = "__rshift__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    { Name.Attribute.base = !"a"; attribute = "b"; special = false });
-                          };
-                        ];
+                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2646,42 +2501,17 @@ let test_binary_operator =
            "1 - 2 + 3"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Call
-                                     {
-                                       Call.callee =
-                                         +Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 Name.Attribute.base =
-                                                   +Expression.Constant (Constant.Integer 1);
-                                                 attribute = "__sub__";
-                                                 special = true;
-                                               });
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant (Constant.Integer 2);
-                                           };
-                                         ];
-                                     };
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value = +Expression.Constant (Constant.Integer 3);
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left =
+                        +Expression.BinaryOperator
+                           {
+                             operator = BinaryOperator.Sub;
+                             left = +Expression.Constant (Constant.Integer 1);
+                             right = +Expression.Constant (Constant.Integer 2);
+                           };
+                      right = +Expression.Constant (Constant.Integer 3);
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2689,22 +2519,14 @@ let test_binary_operator =
            "a + b.c"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
+                      operator = BinaryOperator.Add;
+                      left = !"a";
+                      right =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "__add__"; special = true });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    { Name.Attribute.base = !"b"; attribute = "c"; special = false });
-                          };
-                        ];
+                              { Name.Attribute.base = !"b"; attribute = "c"; special = false });
                     });
            ];
     ]
@@ -2819,23 +2641,11 @@ let test_lambda =
                           +{ Parameter.name = "y"; value = None; annotation = None };
                         ];
                       body =
-                        +Expression.Call
+                        +Expression.BinaryOperator
                            {
-                             Call.callee =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       Name.Attribute.base = +Expression.Name (Name.Identifier "x");
-                                       attribute = "__add__";
-                                       special = true;
-                                     });
-                             arguments =
-                               [
-                                 {
-                                   Call.Argument.name = None;
-                                   value = +Expression.Constant (Constant.Integer 1);
-                                 };
-                               ];
+                             operator = BinaryOperator.Add;
+                             left = !"x";
+                             right = +Expression.Constant (Constant.Integer 1);
                            };
                     });
            ];
@@ -4220,25 +4030,11 @@ let test_string =
            "'a' + 'b'"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -4246,25 +4042,11 @@ let test_string =
            "\"a\" + \"b\""
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -4272,25 +4054,11 @@ let test_string =
            "'''a''' + '''b'''"
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -4298,25 +4066,11 @@ let test_string =
            "\"\"\"a\"\"\" + \"\"\"b\"\"\""
            [
              +Statement.Expression
-                (+Expression.Call
+                (+Expression.BinaryOperator
                     {
-                      Call.callee =
-                        +Expression.Name
-                           (Name.Attribute
-                              {
-                                Name.Attribute.base =
-                                  +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                attribute = "__add__";
-                                special = true;
-                              });
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                          };
-                        ];
+                      operator = BinaryOperator.Add;
+                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                     });
            ];
     ]
@@ -6011,23 +5765,11 @@ let test_tuple =
                 (+Expression.Tuple
                     [
                       +Expression.Constant (Constant.Integer 1);
-                      +Expression.Call
+                      +Expression.BinaryOperator
                          {
-                           Call.callee =
-                             +Expression.Name
-                                (Name.Attribute
-                                   {
-                                     Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                     attribute = "__add__";
-                                     special = true;
-                                   });
-                           arguments =
-                             [
-                               {
-                                 Call.Argument.name = None;
-                                 value = +Expression.Constant (Constant.Integer 1);
-                               };
-                             ];
+                           operator = BinaryOperator.Add;
+                           left = +Expression.Constant (Constant.Integer 1);
+                           right = +Expression.Constant (Constant.Integer 1);
                          };
                     ]);
            ];
@@ -6054,23 +5796,11 @@ let test_tuple =
              +Statement.Expression
                 (+Expression.Tuple
                     [
-                      +Expression.Call
+                      +Expression.BinaryOperator
                          {
-                           Call.callee =
-                             +Expression.Name
-                                (Name.Attribute
-                                   {
-                                     Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                     attribute = "__add__";
-                                     special = true;
-                                   });
-                           arguments =
-                             [
-                               {
-                                 Call.Argument.name = None;
-                                 value = +Expression.Constant (Constant.Integer 1);
-                               };
-                             ];
+                           operator = BinaryOperator.Add;
+                           left = +Expression.Constant (Constant.Integer 1);
+                           right = +Expression.Constant (Constant.Integer 1);
                          };
                       +Expression.Constant (Constant.Integer 1);
                     ]);
@@ -6612,24 +6342,11 @@ let test_walrus_operator =
                     {
                       WalrusOperator.target = !"a";
                       value =
-                        +Expression.Call
+                        +Expression.BinaryOperator
                            {
-                             Call.callee =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       Name.Attribute.base =
-                                         +Expression.Constant (Constant.Integer 1);
-                                       attribute = "__add__";
-                                       special = true;
-                                     });
-                             arguments =
-                               [
-                                 {
-                                   Call.Argument.name = None;
-                                   value = +Expression.Constant (Constant.Integer 2);
-                                 };
-                               ];
+                             operator = BinaryOperator.Add;
+                             left = +Expression.Constant (Constant.Integer 1);
+                             right = +Expression.Constant (Constant.Integer 2);
                            };
                     });
            ];
@@ -6819,23 +6536,11 @@ let test_format_string =
                {
                  format_spec = None;
                  value =
-                   +Expression.Call
+                   +Expression.BinaryOperator
                       {
-                        Call.callee =
-                          +Expression.Name
-                             (Name.Attribute
-                                {
-                                  Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                                  attribute = "__add__";
-                                  special = true;
-                                });
-                        arguments =
-                          [
-                            {
-                              Call.Argument.name = None;
-                              value = +Expression.Constant (Constant.Integer 2);
-                            };
-                          ];
+                        operator = BinaryOperator.Add;
+                        left = +Expression.Constant (Constant.Integer 1);
+                        right = +Expression.Constant (Constant.Integer 2);
                       };
                };
            ];

@@ -84,7 +84,7 @@ let test_show_error_traces context =
         b = 2
         reveal_type(a + b)
     |}
-    ["Revealed type [-1]: Revealed type for `a.__add__(b)` is `typing_extensions.Literal[3]`."];
+    ["Revealed type [-1]: Revealed type for `a + b` is `typing_extensions.Literal[3]`."];
   assert_type_errors
     {|
       from typing import List

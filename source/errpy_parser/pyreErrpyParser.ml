@@ -33,19 +33,19 @@ let translate_comparison_operator = function
 
 
 let translate_binary_operator = function
-  | Errpyast.Add -> "add"
-  | Errpyast.Sub -> "sub"
-  | Errpyast.Mult -> "mul"
-  | Errpyast.MatMult -> "matmul"
-  | Errpyast.Div -> "truediv"
-  | Errpyast.Mod -> "mod"
-  | Errpyast.Pow -> "pow"
-  | Errpyast.LShift -> "lshift"
-  | Errpyast.RShift -> "rshift"
-  | Errpyast.BitOr -> "or"
-  | Errpyast.BitXor -> "xor"
-  | Errpyast.BitAnd -> "and"
-  | Errpyast.FloorDiv -> "floordiv"
+  | Errpyast.Add -> BinaryOperator.Add
+  | Errpyast.Sub -> BinaryOperator.Sub
+  | Errpyast.Mult -> BinaryOperator.Mult
+  | Errpyast.MatMult -> BinaryOperator.MatMult
+  | Errpyast.Div -> BinaryOperator.Div
+  | Errpyast.Mod -> BinaryOperator.Mod
+  | Errpyast.Pow -> BinaryOperator.Pow
+  | Errpyast.LShift -> BinaryOperator.LShift
+  | Errpyast.RShift -> BinaryOperator.RShift
+  | Errpyast.BitOr -> BinaryOperator.BitOr
+  | Errpyast.BitXor -> BinaryOperator.BitXor
+  | Errpyast.BitAnd -> BinaryOperator.BitAnd
+  | Errpyast.FloorDiv -> BinaryOperator.FloorDiv
 
 
 let translate_unary_operator = function
@@ -206,17 +206,11 @@ let rec translate_expression (expression : Errpyast.expr) =
       let as_ast_expression =
         match expression_desc with
         | Errpyast.BinOp binop ->
-            let operator = Stdlib.Format.sprintf "__%s__" (translate_binary_operator binop.op) in
-            let base = translate_expression binop.left in
-            let callee =
-              Expression.Name (Name.Attribute { base; attribute = operator; special = true })
-              |> Node.create ~location:(Node.location base)
-            in
-            Expression.Call
+            Expression.BinaryOperator
               {
-                callee;
-                arguments =
-                  [{ Call.Argument.name = None; value = translate_expression binop.right }];
+                BinaryOperator.left = translate_expression binop.left;
+                operator = translate_binary_operator binop.op;
+                right = translate_expression binop.right;
               }
         | Errpyast.Name name -> Expression.Name (Name.Identifier name.id)
         | Errpyast.UnaryOp unaryop -> (
@@ -773,8 +767,9 @@ and translate_statements
       | Errpyast.AugAssign aug_assign ->
           let target = translate_expression aug_assign.target in
           let callee =
+            (* TODO: temporary T101299882 *)
             let dunder_name =
-              Stdlib.Format.sprintf "__i%s__" (translate_binary_operator aug_assign.op)
+              translate_binary_operator aug_assign.op |> BinaryOperator.augmented_assign_operator
             in
             Expression.Name
               (Name.Attribute { base = target; attribute = dunder_name; special = true })

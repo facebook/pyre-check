@@ -3066,28 +3066,14 @@ let test_lookup_expression context =
                    {
                      name = None;
                      value =
-                       Expression.Call
+                       Expression.BinaryOperator
                          {
-                           callee =
-                             Expression.Name
-                               (Name.Attribute
-                                  {
-                                    base =
-                                      Node.create_with_default_location
-                                        (Expression.Name (Name.Identifier "$parameter$x"));
-                                    attribute = "__add__";
-                                    special = true;
-                                  })
-                             |> Node.create_with_default_location;
-                           arguments =
-                             [
-                               {
-                                 name = None;
-                                 value =
-                                   Expression.Constant (Integer 1)
-                                   |> Node.create_with_default_location;
-                               };
-                             ];
+                           operator = BinaryOperator.Add;
+                           left =
+                             Node.create_with_default_location
+                               (Expression.Name (Name.Identifier "$parameter$x"));
+                           right =
+                             Expression.Constant (Integer 1) |> Node.create_with_default_location;
                          }
                        |> Node.create_with_default_location;
                    };
@@ -3098,26 +3084,13 @@ let test_lookup_expression context =
       ( Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location),
         Type.Any );
       ( Some
-          (Expression.Call
+          (Expression.BinaryOperator
              {
-               callee =
-                 Expression.Name
-                   (Name.Attribute
-                      {
-                        base =
-                          Node.create_with_default_location
-                            (Expression.Name (Name.Identifier "$parameter$x"));
-                        attribute = "__add__";
-                        special = true;
-                      })
-                 |> Node.create_with_default_location;
-               arguments =
-                 [
-                   {
-                     name = None;
-                     value = Expression.Constant (Integer 1) |> Node.create_with_default_location;
-                   };
-                 ];
+               operator = BinaryOperator.Add;
+               left =
+                 Node.create_with_default_location
+                   (Expression.Name (Name.Identifier "$parameter$x"));
+               right = Expression.Constant (Integer 1) |> Node.create_with_default_location;
              }
           |> Node.create_with_default_location),
         Type.Any );
@@ -3188,27 +3161,13 @@ let test_coverage_gaps_in_module context =
           {
             expression =
               Some
-                (Expression.Call
+                (Expression.BinaryOperator
                    {
-                     callee =
-                       Expression.Name
-                         (Name.Attribute
-                            {
-                              base =
-                                Node.create_with_default_location
-                                  (Expression.Name (Name.Identifier "$parameter$x"));
-                              attribute = "__add__";
-                              special = true;
-                            })
-                       |> Node.create_with_default_location;
-                     arguments =
-                       [
-                         {
-                           name = None;
-                           value =
-                             Expression.Constant (Integer 1) |> Node.create_with_default_location;
-                         };
-                       ];
+                     operator = BinaryOperator.Add;
+                     left =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$x"));
+                     right = Expression.Constant (Integer 1) |> Node.create_with_default_location;
                    }
                 |> Node.create_with_default_location);
             type_ = Type.Any;

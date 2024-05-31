@@ -436,8 +436,8 @@ let test_decorators =
             |}
            [
              "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-             "Invalid decoration [56]: Pyre was not able to infer the type of argument \
-              `1.__add__(\"foo\")` to decorator factory `test.my_decorator`.";
+             "Invalid decoration [56]: Pyre was not able to infer the type of argument `1 + \
+              \"foo\"` to decorator factory `test.my_decorator`.";
              "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -960,8 +960,8 @@ let test_decorator_factories =
              reveal_type(foo)
             |}
            [
-             "Invalid decoration [56]: Pyre was not able to infer the type of argument \
-              `3.__add__(4)` to decorator factory `test.decorator_factory`.";
+             "Invalid decoration [56]: Pyre was not able to infer the type of argument `3 + 4` to \
+              decorator factory `test.decorator_factory`.";
              "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1421,8 +1421,8 @@ let test_loosely_typed_decorators =
               reveal_type(f)
             |}
            [
-             "Invalid decoration [56]: Pyre was not able to infer the type of argument \
-              `1.__add__(\"foo\")` to decorator factory `test.my_decorator`.";
+             "Invalid decoration [56]: Pyre was not able to infer the type of argument `1 + \
+              \"foo\"` to decorator factory `test.my_decorator`.";
              "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
              "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
            ];

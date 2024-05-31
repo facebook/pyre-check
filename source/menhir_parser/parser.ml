@@ -277,6 +277,14 @@ module ParserToAst = struct
     match value with
     | Await expression ->
         AstExpression.Expression.Await (convert_expression expression) |> Node.create ~location
+    | BinaryOperator { BinaryOperator.left; operator; right } ->
+        AstExpression.Expression.BinaryOperator
+          {
+            AstExpression.BinaryOperator.left = convert_expression left;
+            operator;
+            right = convert_expression right;
+          }
+        |> Node.create ~location
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         AstExpression.Expression.BooleanOperator
           {
@@ -433,6 +441,13 @@ module ParserToAst = struct
               AstStatement.Assert.test = convert_expression test;
               message = message >>| convert_expression;
               origin = AstStatement.Assert.Origin.Assertion;
+            }
+      | AugmentedAssign { AugmentedAssign.target; operator; value } ->
+          AstStatement.Statement.AugmentedAssign
+            {
+              AstStatement.AugmentedAssign.target = convert_expression target;
+              operator;
+              value = convert_expression value;
             }
       | Break -> AstStatement.Statement.Break
       | Class { Class.name; base_arguments; body; decorators } ->
