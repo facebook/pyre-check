@@ -21,5 +21,6 @@ from .configuration import (  # noqa: F401
 from .exceptions import InvalidConfiguration, InvalidPythonVersion  # noqa: F401
 from .platform_aware import PlatformAware  # noqa: F401
 from .python_version import PythonVersion  # noqa: F401
+from .scheduler_policies import SchedulerPolicies  # noqa: F401
 from .shared_memory import SharedMemory  # noqa: F401
 from .unwatched import UnwatchedDependency, UnwatchedFiles  # noqa: F401

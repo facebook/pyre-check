@@ -79,6 +79,7 @@ class Arguments:
         dataclasses.field(default_factory=command_arguments.PysaSavedStateArguments)
     )
     compute_coverage: bool = False
+    scheduler_policies: Optional[configuration_module.SchedulerPolicies] = None
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -104,6 +105,7 @@ class Arguments:
         transform_filter = self.transform_filter
         save_results_to = self.save_results_to
         output_format = self.output_format
+        scheduler_policies = self.scheduler_policies
         return {
             **self.base_arguments.serialize(),
             **({} if dump_call_graph is None else {"dump_call_graph": dump_call_graph}),
@@ -206,6 +208,11 @@ class Arguments:
             "compact_ocaml_heap": self.compact_ocaml_heap,
             "saved_state": self.saved_state_arguments.serialize(),
             "compute_coverage": self.compute_coverage,
+            **(
+                {"scheduler_policies": scheduler_policies.to_json()}
+                if scheduler_policies is not None
+                else {}
+            ),
         }
 
 
@@ -250,6 +257,7 @@ def create_analyze_arguments(
     transform = analyze_arguments.transform
     taint_models_path = analyze_arguments.taint_models_path
     output_format = analyze_arguments.output_format
+    scheduler_policies_path = analyze_arguments.scheduler_policies_path
     if len(taint_models_path) == 0:
         taint_models_path = configuration.get_taint_models_path()
     repository_root = analyze_arguments.repository_root
@@ -315,6 +323,11 @@ def create_analyze_arguments(
         compact_ocaml_heap=analyze_arguments.compact_ocaml_heap,
         saved_state_arguments=analyze_arguments.saved_state_arguments,
         compute_coverage=analyze_arguments.compute_coverage,
+        scheduler_policies=(
+            configuration_module.SchedulerPolicies.from_path(scheduler_policies_path)
+            if scheduler_policies_path is not None
+            else None
+        ),
     )
 
 

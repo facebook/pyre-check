@@ -598,6 +598,12 @@ def pyre(
     default=False,
     help="Whether to compute the file, kind, and rule coverage.",
 )
+@click.option(
+    "--scheduler-policies",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    help="Path to a configuration file containing scheduler policies.",
+    hidden=True,
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -637,6 +643,7 @@ def analyze(
     limit_entrypoints: bool,
     compact_ocaml_heap: bool,
     compute_coverage: bool,
+    scheduler_policies: Optional[str],
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -700,6 +707,9 @@ def analyze(
             compact_ocaml_heap=compact_ocaml_heap,
             saved_state_arguments=command_arguments.PysaSavedStateArguments(),
             compute_coverage=compute_coverage,
+            scheduler_policies_path=(
+                Path(scheduler_policies) if scheduler_policies is not None else None
+            ),
         ),
     )
 

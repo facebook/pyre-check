@@ -325,6 +325,7 @@ class AnalyzeArguments:
         default_factory=PysaSavedStateArguments
     )
     compute_coverage: bool = False
+    scheduler_policies_path: Optional[Path] = None
 
 
 @dataclass(frozen=True)
