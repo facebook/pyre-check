@@ -254,7 +254,8 @@ type whole_program_overrides = {
     all concrete methods overriding them, and save it to shared memory. *)
 let build_whole_program_overrides
     ~scheduler
-    ~static_analysis_configuration
+    ~static_analysis_configuration:
+      ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
     ~pyre_api
     ~skip_overrides_targets
     ~maximum_overrides
@@ -273,14 +274,20 @@ let build_whole_program_overrides
           in
           Target.Map.Tree.merge_skewed ~combine overrides new_overrides
     in
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.OverrideGraph
+        ~default:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:50
+             ~preferred_chunks_per_worker:1
+             ())
+    in
     Scheduler.map_reduce
       scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:50
-           ~preferred_chunks_per_worker:1
-           ())
+      ~policy:scheduler_policy
       ~initial:Heap.empty
       ~map:(fun qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
       ~reduce:(Target.Map.Tree.merge_skewed ~combine)

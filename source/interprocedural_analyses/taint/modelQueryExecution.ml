@@ -952,6 +952,9 @@ module type QUERY_KIND = sig
 
   val query_kind_name : string
 
+  (* When using multiprocessing, this is the name of the scheduler. *)
+  val schedule_identifier : Configuration.ScheduleIdentifier.t
+
   val make_modelable : pyre_api:PyrePysaApi.ReadOnly.t -> Target.t -> Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
@@ -1210,6 +1213,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~verbose
       ~pyre_api
       ~scheduler
+      ~scheduler_policies
       ~class_hierarchy_graph
       ~targets
     = function
@@ -1223,14 +1227,20 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~targets
             write_to_cache_queries
         in
+        let scheduler_policy =
+          Scheduler.Policy.from_configuration_or_default
+            scheduler_policies
+            QueryKind.schedule_identifier
+            ~default:
+              (Scheduler.Policy.fixed_chunk_count
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:1000
+                 ~preferred_chunks_per_worker:1
+                 ())
+        in
         Scheduler.map_reduce
           scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:1000
-               ~preferred_chunks_per_worker:1
-               ())
+          ~policy:scheduler_policy
           ~initial:ReadWriteCache.empty
           ~map
           ~reduce:ReadWriteCache.merge
@@ -1288,6 +1298,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~verbose
       ~pyre_api
       ~scheduler
+      ~scheduler_policies
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1305,14 +1316,20 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~targets
             regular_queries
         in
+        let scheduler_policy =
+          Scheduler.Policy.from_configuration_or_default
+            scheduler_policies
+            QueryKind.schedule_identifier
+            ~default:
+              (Scheduler.Policy.fixed_chunk_count
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:1000
+                 ~preferred_chunks_per_worker:1
+                 ())
+        in
         Scheduler.map_reduce
           scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:1000
-               ~preferred_chunks_per_worker:1
-               ())
+          ~policy:scheduler_policy
           ~initial:ExecutionResult.empty
           ~map
           ~reduce:(ExecutionResult.merge ~model_join:Model.join_user_models)
@@ -1324,6 +1341,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~verbose
       ~pyre_api
       ~scheduler
+      ~scheduler_policies
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1351,6 +1369,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~verbose
           ~pyre_api
           ~scheduler
+          ~scheduler_policies
           ~class_hierarchy_graph
           ~targets
           write_to_cache_queries
@@ -1392,6 +1411,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~verbose
           ~pyre_api
           ~scheduler
+          ~scheduler_policies
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1417,6 +1437,8 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
   type annotation = ModelAnnotation.t
 
   let query_kind_name = "callable"
+
+  let schedule_identifier = Configuration.ScheduleIdentifier.CallableModelQueries
 
   let make_modelable ~pyre_api callable =
     let define =
@@ -1782,6 +1804,8 @@ module AttributeQueryExecutor = struct
 
     let query_kind_name = "attribute"
 
+    let schedule_identifier = Configuration.ScheduleIdentifier.AttributeModelQueries
+
     let make_modelable ~pyre_api target =
       let name = Target.object_name target in
       let type_annotation =
@@ -1854,6 +1878,8 @@ module GlobalVariableQueryExecutor = struct
 
     let query_kind_name = "global"
 
+    let schedule_identifier = Configuration.ScheduleIdentifier.GlobalModelQueries
+
     let make_modelable ~pyre_api target =
       let name = Target.object_name target in
       let type_annotation = lazy (get_type_annotation ~pyre_api name) in
@@ -1898,6 +1924,7 @@ end
 let generate_models_from_queries
     ~pyre_api
     ~scheduler
+    ~scheduler_policies
     ~class_hierarchy_graph
     ~source_sink_filter
     ~verbose
@@ -1927,6 +1954,7 @@ let generate_models_from_queries
         ~verbose
         ~pyre_api
         ~scheduler
+        ~scheduler_policies
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
@@ -1944,6 +1972,7 @@ let generate_models_from_queries
         ~verbose
         ~pyre_api
         ~scheduler
+        ~scheduler_policies
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
@@ -1962,6 +1991,7 @@ let generate_models_from_queries
         ~verbose
         ~pyre_api
         ~scheduler
+        ~scheduler_policies
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs

@@ -43,15 +43,21 @@ let union { files = files_left } { files = files_right } =
 
 
 (* Add the files that contain any of the given callables. *)
-let from_callables ~scheduler ~pyre_api ~resolve_module_path ~callables =
+let from_callables ~scheduler ~scheduler_policies ~pyre_api ~resolve_module_path ~callables =
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.TaintFileCoverage
+      ~default:
+        (Scheduler.Policy.fixed_chunk_size
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:50000
+           ~preferred_chunk_size:100000
+           ())
+  in
   Scheduler.map_reduce
     scheduler
-    ~policy:
-      (Scheduler.Policy.fixed_chunk_size
-         ~minimum_chunks_per_worker:1
-         ~minimum_chunk_size:50000
-         ~preferred_chunk_size:100000
-         ())
+    ~policy:scheduler_policy
     ~initial:empty
     ~map:(fun callables ->
       let files =

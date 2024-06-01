@@ -111,15 +111,21 @@ module SharedMemory = struct
     Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
 
 
-  let from_qualifiers ~handle ~scheduler ~pyre_api ~qualifiers =
+  let from_qualifiers ~handle ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.GlobalConstants
+        ~default:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:50
+             ~preferred_chunks_per_worker:1
+             ())
+    in
     Scheduler.map_reduce
       scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:50
-           ~preferred_chunks_per_worker:1
-           ())
+      ~policy:scheduler_policy
       ~initial:handle
       ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~pyre_api ~qualifiers))
       ~reduce:(fun smaller larger -> merge_same_handle ~smaller ~larger)

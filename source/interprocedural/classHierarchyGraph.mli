@@ -42,6 +42,7 @@ module Heap : sig
 
   val from_qualifiers
     :  scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
     pyre_api:PyrePysaApi.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t

@@ -608,7 +608,6 @@ module ScheduleIdentifier = struct
     | TaintCollectErrors
     | TaintFileCoverage
     | TaintKindCoverage
-    | TypeInference
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -628,7 +627,6 @@ module ScheduleIdentifier = struct
     | "taint_collect_errors" -> Some TaintCollectErrors
     | "taint_file_coverage" -> Some TaintFileCoverage
     | "taint_kind_coverage" -> Some TaintKindCoverage
-    | "type_inference" -> Some TypeInference
     | _ -> None
 
 
@@ -649,7 +647,6 @@ module ScheduleIdentifier = struct
     | TaintCollectErrors -> "taint_collect_errors"
     | TaintFileCoverage -> "taint_file_coverage"
     | TaintKindCoverage -> "taint_kind_coverage"
-    | TypeInference -> "type_inference"
 end
 
 module SchedulerPolicies = struct

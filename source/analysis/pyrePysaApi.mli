@@ -12,6 +12,7 @@ module ReadWrite : sig
 
   val create_with_cold_start
     :  scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
     configuration:Configuration.Analysis.t ->
     decorator_configuration:DecoratorPreprocessing.Configuration.t ->
     skip_type_checking_callables:Ast.Reference.SerializableSet.t ->

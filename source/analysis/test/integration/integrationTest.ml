@@ -10,7 +10,11 @@ open Core
 let type_check ~environment ~source =
   let { Ast.Source.module_path = { Ast.ModulePath.qualifier; _ }; _ } = source in
   let scheduler = Scheduler.create_sequential () in
-  Analysis.TypeEnvironment.populate_for_modules ~scheduler environment [qualifier];
+  Analysis.TypeEnvironment.populate_for_modules
+    ~scheduler
+    ~scheduler_policies:Configuration.SchedulerPolicies.empty
+    environment
+    [qualifier];
   Analysis.Postprocessing.run
     ~scheduler
     ~environment:(Analysis.TypeEnvironment.read_only environment)

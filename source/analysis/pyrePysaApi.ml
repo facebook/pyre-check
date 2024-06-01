@@ -35,7 +35,7 @@ module PysaTypeEnvironment = struct
     ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
 
 
-  let qualifiers_and_definitions ~scheduler type_environment =
+  let qualifiers_and_definitions ~scheduler ~scheduler_policies type_environment =
     Log.info "Starting type checking...";
     PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
     let qualifiers =
@@ -43,13 +43,21 @@ module PysaTypeEnvironment = struct
       |> GlobalModulePathsApi.type_check_qualifiers
     in
     Log.info "Found %d modules" (List.length qualifiers);
-    let definitions = TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers in
+    let definitions =
+      TypeEnvironment.collect_definitions ~scheduler ~scheduler_policies type_environment qualifiers
+    in
     Log.info "Found %d functions" (List.length definitions);
     qualifiers, definitions
 
 
-  let populate ~scheduler type_environment definitions =
-    let () = TypeEnvironment.populate_for_definitions ~scheduler type_environment definitions in
+  let populate ~scheduler ~scheduler_policies type_environment definitions =
+    let () =
+      TypeEnvironment.populate_for_definitions
+        ~scheduler
+        ~scheduler_policies
+        type_environment
+        definitions
+    in
     Statistics.event
       ~section:`Memory
       ~name:"shared memory size post-typecheck"
@@ -79,6 +87,7 @@ module ReadWrite = struct
 
   let create_with_cold_start
       ~scheduler
+      ~scheduler_policies
       ~configuration
       ~decorator_configuration
       ~skip_type_checking_callables
@@ -86,7 +95,7 @@ module ReadWrite = struct
     =
     let type_environment = PysaTypeEnvironment.create ~configuration ~decorator_configuration in
     let qualifiers, definitions =
-      PysaTypeEnvironment.qualifiers_and_definitions ~scheduler type_environment
+      PysaTypeEnvironment.qualifiers_and_definitions ~scheduler ~scheduler_policies type_environment
     in
     let () =
       callback_with_qualifiers_and_definitions
@@ -100,7 +109,7 @@ module ReadWrite = struct
           not (Ast.Reference.SerializableSet.mem define_name skip_type_checking_callables))
         definitions
     in
-    PysaTypeEnvironment.populate ~scheduler type_environment definitions;
+    PysaTypeEnvironment.populate ~scheduler ~scheduler_policies type_environment definitions;
     { type_environment }
 
 

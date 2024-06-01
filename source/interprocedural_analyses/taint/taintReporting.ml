@@ -63,7 +63,7 @@ let statistics ~model_verification_errors =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
-let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
+let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state =
   let extract_errors callables =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.map
@@ -74,14 +74,20 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
       callables
     |> List.concat_no_order
   in
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.TaintCollectErrors
+      ~default:
+        (Scheduler.Policy.fixed_chunk_size
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunk_size:2500
+           ())
+  in
   Scheduler.map_reduce
     scheduler
-    ~policy:
-      (Scheduler.Policy.fixed_chunk_size
-         ~minimum_chunks_per_worker:1
-         ~minimum_chunk_size:100
-         ~preferred_chunk_size:2500
-         ())
+    ~policy:scheduler_policy
     ~initial:[]
     ~map:extract_errors
     ~reduce:List.cons
@@ -274,7 +280,8 @@ let save_results_to_directory
 let produce_errors
     ~scheduler
     ~static_analysis_configuration:
-      Configuration.StaticAnalysis.{ configuration = { show_error_traces; _ }; _ }
+      Configuration.StaticAnalysis.
+        { configuration = { show_error_traces; _ }; scheduler_policies; _ }
     ~resolve_module_path
     ~taint_configuration
     ~callables
@@ -285,6 +292,7 @@ let produce_errors
     extract_errors
       ~taint_configuration
       ~scheduler
+      ~scheduler_policies
       ~callables:(Target.Set.elements callables)
       ~fixpoint_state
   in

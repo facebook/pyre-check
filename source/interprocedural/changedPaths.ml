@@ -43,7 +43,7 @@ let hash_of_content analysis_path =
   ArtifactPath.raw analysis_path |> File.create |> HashResult.from_file
 
 
-let save_current_paths ~scheduler ~configuration ~module_paths =
+let save_current_paths ~scheduler ~scheduler_policies ~configuration ~module_paths =
   let save_paths module_paths =
     let save_path module_path =
       let hash =
@@ -55,14 +55,20 @@ let save_current_paths ~scheduler ~configuration ~module_paths =
     in
     List.iter ~f:save_path module_paths
   in
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.SaveChangedPaths
+      ~default:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:1
+           ())
+  in
   Scheduler.map_reduce
     scheduler
-    ~policy:
-      (Scheduler.Policy.fixed_chunk_count
-         ~minimum_chunks_per_worker:1
-         ~minimum_chunk_size:100
-         ~preferred_chunks_per_worker:1
-         ())
+    ~policy:scheduler_policy
     ~initial:()
     ~map:save_paths
     ~reduce:(fun () () -> ())
@@ -82,7 +88,13 @@ end
 
 (* Return the list of paths to files that have changed between now and the previous call to
    `save_current_paths`. *)
-let compute_locally_changed_paths ~scheduler ~configuration ~old_module_paths ~new_module_paths =
+let compute_locally_changed_paths
+    ~scheduler
+    ~scheduler_policies
+    ~configuration
+    ~old_module_paths
+    ~new_module_paths
+  =
   let timer = Timer.start () in
   let changed_paths new_module_paths =
     let changed_path module_path =
@@ -96,15 +108,21 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_paths ~n
     in
     List.filter_map new_module_paths ~f:changed_path
   in
-  let changed_paths =
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.ComputeChangedPaths
+      ~default:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:1
            ())
+  in
+  let changed_paths =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )

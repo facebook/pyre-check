@@ -556,6 +556,7 @@ let initialize
           ModelQueryExecution.generate_models_from_queries
             ~pyre_api
             ~scheduler:(Test.mock_scheduler ())
+            ~scheduler_policies:Configuration.SchedulerPolicies.empty
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false

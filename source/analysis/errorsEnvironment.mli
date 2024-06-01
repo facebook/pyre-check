@@ -95,7 +95,12 @@ module Testing : sig
   end
 end
 
-val check_and_preprocess : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+val check_and_preprocess
+  :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  t ->
+  Ast.Reference.t list ->
+  unit
 
 (* Convenience function to create an AstEnvironment.t and use that for the
    UnannotatedGlobalEnvironment.CreateHandle.t *)

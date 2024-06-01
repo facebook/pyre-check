@@ -229,7 +229,6 @@ module ScheduleIdentifier : sig
     | TaintCollectErrors
     | TaintFileCoverage
     | TaintKindCoverage
-    | TypeInference
   [@@deriving sexp, compare, hash]
 
   val of_string : string -> t option

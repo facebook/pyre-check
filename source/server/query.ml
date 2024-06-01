@@ -546,12 +546,17 @@ let rec process_request_exn
       let initial_callables =
         Interprocedural.FetchCallables.from_qualifiers
           ~scheduler
+          ~scheduler_policies:Configuration.SchedulerPolicies.empty
           ~configuration
           ~pyre_api
           ~qualifiers
       in
       let class_hierarchy_graph =
-        Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers ~scheduler ~pyre_api ~qualifiers
+        Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+          ~scheduler
+          ~scheduler_policies:Configuration.SchedulerPolicies.empty
+          ~pyre_api
+          ~qualifiers
       in
       let stubs_shared_memory_handle =
         Interprocedural.Target.HashsetSharedMemory.from_heap
@@ -560,6 +565,7 @@ let rec process_request_exn
       Taint.ModelQueryExecution.generate_models_from_queries
         ~pyre_api
         ~scheduler
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~class_hierarchy_graph
         ~source_sink_filter:None
         ~verbose:false

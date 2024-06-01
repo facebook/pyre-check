@@ -20,6 +20,7 @@ type locally_changed_file = {
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
     let scheduler = Test.mock_scheduler () in
+    let scheduler_policies = Configuration.SchedulerPolicies.empty in
     let configuration, old_module_tracker =
       let sources =
         List.filter_map files ~f:(fun { relative; old_content; _ } ->
@@ -33,6 +34,7 @@ let test_compute_locally_changed_files context =
       let () =
         Interprocedural.ChangedPaths.save_current_paths
           ~scheduler
+          ~scheduler_policies
           ~configuration
           ~module_paths:(Analysis.ModuleTracker.module_paths module_tracker)
       in
@@ -53,6 +55,7 @@ let test_compute_locally_changed_files context =
     let actual =
       Interprocedural.ChangedPaths.compute_locally_changed_paths
         ~scheduler
+        ~scheduler_policies
         ~configuration
         ~old_module_paths:(Analysis.ModuleTracker.module_paths old_module_tracker)
         ~new_module_paths:(Analysis.ModuleTracker.module_paths new_module_tracker)

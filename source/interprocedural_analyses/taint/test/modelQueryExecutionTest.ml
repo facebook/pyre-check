@@ -37,6 +37,7 @@ let test_generated_annotations context =
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
@@ -62,6 +63,7 @@ let test_generated_annotations context =
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
@@ -88,6 +90,7 @@ let test_generated_annotations context =
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
@@ -4931,6 +4934,7 @@ let test_generated_cache context =
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]

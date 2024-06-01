@@ -101,7 +101,7 @@ module AssumeGlobalModuleListing = struct
     |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
 end
 
-let populate_for_definitions ~scheduler environment defines =
+let populate_for_definitions ~scheduler ~scheduler_policies environment defines =
   let timer = Timer.start () in
 
   let read_only = read_only environment in
@@ -119,15 +119,21 @@ let populate_for_definitions ~scheduler environment defines =
     Log.log ~section:`Progress "Processed %d of %d functions" number_defines number_of_defines;
     number_defines
   in
-  let _ =
-    SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
-      scheduler
-      ~policy:
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.TypeCheck
+      ~default:
         (Scheduler.Policy.fixed_chunk_size
            ~minimum_chunk_size:100
            ~minimum_chunks_per_worker:2
            ~preferred_chunk_size:5000
            ())
+  in
+  let _ =
+    SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
+      scheduler
+      ~policy:scheduler_policy
       ~initial:0
       ~map
       ~reduce
@@ -138,7 +144,7 @@ let populate_for_definitions ~scheduler environment defines =
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:CheckResultValue.description ~timer ()
 
 
-let collect_definitions ~scheduler environment qualifiers =
+let collect_definitions ~scheduler ~scheduler_policies environment qualifiers =
   let timer = Timer.start () in
   Log.info "Collecting all definitions...";
   let unannotated_global_environment =
@@ -152,15 +158,21 @@ let collect_definitions ~scheduler environment qualifiers =
           unannotated_global_environment
           qualifier)
   in
-  let defines =
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
+  let scheduler_policy =
+    Scheduler.Policy.from_configuration_or_default
+      scheduler_policies
+      Configuration.ScheduleIdentifier.CollectDefinitions
+      ~default:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:1
            ())
+  in
+  let defines =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
       ~initial:[]
       ~map
       ~reduce:List.append
@@ -175,10 +187,10 @@ let collect_definitions ~scheduler environment qualifiers =
   defines
 
 
-let populate_for_modules ~scheduler environment qualifiers =
+let populate_for_modules ~scheduler ~scheduler_policies environment qualifiers =
   PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-  let all_defines = collect_definitions ~scheduler environment qualifiers in
-  populate_for_definitions ~scheduler environment all_defines;
+  let all_defines = collect_definitions ~scheduler ~scheduler_policies environment qualifiers in
+  populate_for_definitions ~scheduler ~scheduler_policies environment all_defines;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"

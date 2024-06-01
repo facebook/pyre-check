@@ -3100,6 +3100,7 @@ let build_whole_program_call_graph
          Configuration.StaticAnalysis.save_results_to;
          output_format;
          dump_call_graph;
+         scheduler_policies;
          configuration = { local_root; _ };
          _;
        } as static_analysis_configuration)
@@ -3164,14 +3165,20 @@ let build_whole_program_call_graph
           right_whole_program_call_graph )
     in
     let define_call_graphs = DefineCallGraphSharedMemory.create () in
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.CallGraph
+        ~default:
+          (Scheduler.Policy.fixed_chunk_size
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:100
+             ~preferred_chunk_size:2000
+             ())
+    in
     Scheduler.map_reduce
       scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_size
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
-           ~preferred_chunk_size:2000
-           ())
+      ~policy:scheduler_policy
       ~initial:(define_call_graphs, WholeProgramCallGraph.empty)
       ~map:(fun definitions ->
         List.fold

@@ -3350,6 +3350,7 @@ module ScratchProject = struct
     type_check_qualifiers project
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
+         ~scheduler_policies:Configuration.SchedulerPolicies.empty
          type_environment
 
 

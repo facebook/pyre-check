@@ -160,6 +160,7 @@ let do_check configuration =
           Analysis.ErrorsEnvironment.check_and_preprocess
             read_write_environment
             ~scheduler
+            ~scheduler_policies:Configuration.SchedulerPolicies.empty
             type_check_qualifiers;
           Analysis.ErrorsEnvironment.read_only read_write_environment, type_check_qualifiers))
 

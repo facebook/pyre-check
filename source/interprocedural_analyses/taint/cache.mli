@@ -14,6 +14,7 @@ exception BuildCacheOnly
 
 val try_load
   :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
   saved_state:Configuration.StaticAnalysis.SavedState.t ->
   configuration:Configuration.Analysis.t ->
   decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->

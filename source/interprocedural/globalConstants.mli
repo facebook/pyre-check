@@ -31,6 +31,7 @@ module SharedMemory : sig
   val from_qualifiers
     :  handle:t ->
     scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
     pyre_api:PyrePysaApi.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t

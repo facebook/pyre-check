@@ -226,7 +226,10 @@ let initialize_server_state
       else
         Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers
-        |> Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
+        |> Analysis.ErrorsEnvironment.check_and_preprocess
+             environment
+             ~scheduler
+             ~scheduler_policies:Configuration.SchedulerPolicies.empty
     in
     let overlaid_environment = Analysis.OverlaidEnvironment.create environment in
     ServerState.create ~scheduler ~build_system ~overlaid_environment ()

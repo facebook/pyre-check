@@ -144,9 +144,10 @@ module ChangedFiles = struct
     not (is_pysa_model path || is_taint_config path)
 
 
-  let from_pyre_read_write_api ~scheduler pyre_read_write_api =
+  let from_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api =
     Interprocedural.ChangedPaths.compute_locally_changed_paths
       ~scheduler
+      ~scheduler_policies
       ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
       ~old_module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api)
       ~new_module_paths:(PyrePysaApi.ReadWrite.module_paths_from_disk pyre_read_write_api)
@@ -158,6 +159,7 @@ type t = {
   status: SharedMemoryStatus.t;
   save_cache: bool;
   scheduler: Scheduler.t;
+  scheduler_policies: Configuration.SchedulerPolicies.t;
   configuration: Configuration.Analysis.t;
   no_file_changes_reported_by_watchman: bool;
 }
@@ -334,6 +336,7 @@ let check_skip_type_checking_invalidation ~skip_type_checking_callables = functi
 
 let try_load
     ~scheduler
+    ~scheduler_policies
     ~saved_state
     ~configuration
     ~decorator_configuration
@@ -346,6 +349,7 @@ let try_load
       status = SharedMemoryStatus.Disabled;
       save_cache;
       scheduler;
+      scheduler_policies;
       configuration;
       no_file_changes_reported_by_watchman = false;
     }
@@ -391,7 +395,14 @@ let try_load
             in
             status
     in
-    { status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman }
+    {
+      status;
+      save_cache;
+      scheduler;
+      scheduler_policies;
+      configuration;
+      no_file_changes_reported_by_watchman;
+    }
 
 
 let load_pyre_read_write_api ~configuration =
@@ -402,7 +413,7 @@ let load_pyre_read_write_api ~configuration =
     ~f:(fun () -> Ok (PyrePysaApi.ReadWrite.load_from_cache ~configuration))
 
 
-let save_pyre_read_write_api ~scheduler pyre_read_write_api =
+let save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api =
   SaveLoadSharedMemory.exception_to_error
     ~error:()
     ~message:"saving type environment to cache"
@@ -410,6 +421,7 @@ let save_pyre_read_write_api ~scheduler pyre_read_write_api =
       Memory.SharedMemory.collect `aggressive;
       Interprocedural.ChangedPaths.save_current_paths
         ~scheduler
+        ~scheduler_policies
         ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
         ~module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api);
       PyrePysaApi.ReadWrite.save pyre_read_write_api;
@@ -418,13 +430,21 @@ let save_pyre_read_write_api ~scheduler pyre_read_write_api =
 
 
 let pyre_read_write_api
-    ({ status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman } as
-    cache)
+    ({
+       status;
+       save_cache;
+       scheduler;
+       scheduler_policies;
+       configuration;
+       no_file_changes_reported_by_watchman;
+     } as cache)
     f
   =
   let no_file_changes_detected_by_comparing_type_environments old_pyre_read_write_api =
     Log.info "Determining if source files have changed since cache was created.";
-    let changed_files = ChangedFiles.from_pyre_read_write_api ~scheduler old_pyre_read_write_api in
+    let changed_files =
+      ChangedFiles.from_pyre_read_write_api ~scheduler ~scheduler_policies old_pyre_read_write_api
+    in
     if List.is_empty changed_files then
       let () = Log.info "No source file change is detected." in
       true
@@ -437,7 +457,7 @@ let pyre_read_write_api
   let compute_and_save_pyre_read_write_api () =
     let pyre_read_write_api = f () in
     if save_cache then
-      save_pyre_read_write_api ~scheduler pyre_read_write_api |> ignore_result;
+      save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api |> ignore_result;
     pyre_read_write_api
   in
   let environment, status =

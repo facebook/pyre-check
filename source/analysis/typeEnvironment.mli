@@ -47,11 +47,26 @@ include
 
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
-val collect_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> Ast.Reference.t list
+val collect_definitions
+  :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  t ->
+  Ast.Reference.t list ->
+  Ast.Reference.t list
 
-val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+val populate_for_definitions
+  :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  t ->
+  Ast.Reference.t list ->
+  unit
 
-val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+val populate_for_modules
+  :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  t ->
+  Ast.Reference.t list ->
+  unit
 
 module AssumeGlobalModuleListing : sig
   val global_module_paths_api : t -> GlobalModulePathsApi.t

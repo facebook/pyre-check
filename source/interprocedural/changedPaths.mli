@@ -7,6 +7,7 @@
 
 val save_current_paths
   :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
   configuration:Configuration.Analysis.t ->
   module_paths:Ast.ModulePath.t list ->
   unit
@@ -15,6 +16,7 @@ val save_current_paths
    `save_current_paths`. *)
 val compute_locally_changed_paths
   :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
   configuration:Configuration.Analysis.t ->
   old_module_paths:Ast.ModulePath.t list ->
   new_module_paths:Ast.ModulePath.t list ->

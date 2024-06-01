@@ -177,6 +177,7 @@ end
 val generate_models_from_queries
   :  pyre_api:PyrePysaApi.ReadOnly.t ->
   scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   verbose:bool ->

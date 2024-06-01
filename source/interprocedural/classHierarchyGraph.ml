@@ -141,7 +141,7 @@ module Heap = struct
     { roots; edges }
 
 
-  let from_qualifiers ~scheduler ~pyre_api ~qualifiers =
+  let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
     let build_class_hierarchy_graph qualifiers =
       List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
           match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
@@ -150,14 +150,20 @@ module Heap = struct
               join accumulator graph
           | None -> accumulator)
     in
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.ClassHierarchyGraph
+        ~default:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:100
+             ~preferred_chunks_per_worker:1
+             ())
+    in
     Scheduler.map_reduce
       scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
-           ~preferred_chunks_per_worker:1
-           ())
+      ~policy:scheduler_policy
       ~initial:empty
       ~map:build_class_hierarchy_graph
       ~reduce:join
