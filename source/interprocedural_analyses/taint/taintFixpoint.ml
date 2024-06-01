@@ -241,4 +241,16 @@ module Analysis = struct
         ~get_callee_model
 end
 
+let get_scheduler_policy policies =
+  Scheduler.Policy.from_configuration_or_default
+    policies
+    Configuration.ScheduleIdentifier.TaintFixpoint
+    ~default:
+      (Scheduler.Policy.fixed_chunk_size
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:100
+         ~preferred_chunk_size:2500
+         ())
+
+
 include Interprocedural.FixpointAnalysis.Make (Analysis)

@@ -62,6 +62,7 @@ module AnalyzeConfiguration = struct
     compact_ocaml_heap: bool;
     saved_state: Configuration.StaticAnalysis.SavedState.t;
     compute_coverage: bool;
+    scheduler_policies: Configuration.SchedulerPolicies.t;
   }
   [@@deriving sexp, compare, hash]
 
@@ -134,6 +135,13 @@ module AnalyzeConfiguration = struct
           let limit_entrypoints = bool_member "limit_entrypoints" ~default:false json in
           let compact_ocaml_heap = bool_member "compact_ocaml_heap" ~default:false json in
           let compute_coverage = bool_member "compute_coverage" ~default:false json in
+          let scheduler_policies =
+            json
+            |> member "scheduler_policies"
+            |> function
+            | `Null -> Configuration.SchedulerPolicies.empty
+            | json -> Configuration.SchedulerPolicies.of_yojson json |> Result.ok_or_failwith
+          in
           (match Yojson.Safe.Util.member "saved_state" json with
           | `Null -> Result.Ok Configuration.StaticAnalysis.SavedState.empty
           | saved_state ->
@@ -190,6 +198,7 @@ module AnalyzeConfiguration = struct
               compact_ocaml_heap;
               saved_state;
               compute_coverage;
+              scheduler_policies;
             }
     with
     | Type_error (message, _)
@@ -263,6 +272,7 @@ module AnalyzeConfiguration = struct
         compact_ocaml_heap;
         saved_state;
         compute_coverage;
+        scheduler_policies;
       }
     =
     let configuration =
@@ -333,6 +343,7 @@ module AnalyzeConfiguration = struct
       compact_ocaml_heap;
       saved_state;
       compute_coverage;
+      scheduler_policies;
     }
 end
 

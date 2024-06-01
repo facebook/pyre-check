@@ -524,6 +524,176 @@ module Analysis = struct
     ()
 end
 
+(* Represents a scheduler policy, which can be converted into a `Scheduler.Policy` that can be used
+   by `Scheduler.map_reduce`. *)
+module SchedulerPolicy = struct
+  type t =
+    | FixedChunkSize of {
+        minimum_chunk_size: int option;
+        minimum_chunks_per_worker: int;
+        preferred_chunk_size: int;
+      }
+    | FixedChunkCount of {
+        minimum_chunks_per_worker: int option;
+        minimum_chunk_size: int;
+        preferred_chunks_per_worker: int;
+      }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open JsonParsing.YojsonUtils in
+    try
+      let positive_int_member key json =
+        let value = int_member key json in
+        if value < 1 then
+          raise
+            (Yojson.Safe.Util.Type_error
+               (Format.sprintf "Expected positive integer, got %d" value, json))
+        else
+          value
+      in
+      let optional_positive_int_member key json =
+        let value = optional_int_member key json in
+        match value with
+        | Some value when value < 1 ->
+            raise
+              (Yojson.Safe.Util.Type_error
+                 (Format.sprintf "Expected positive integer, got %d" value, json))
+        | _ -> value
+      in
+      let kind = string_member "kind" json in
+      match kind with
+      | "fixed_chunk_size" ->
+          let minimum_chunk_size = optional_positive_int_member "minimum_chunk_size" json in
+          let minimum_chunks_per_worker = positive_int_member "minimum_chunks_per_worker" json in
+          let preferred_chunk_size = positive_int_member "preferred_chunk_size" json in
+          Result.Ok
+            (FixedChunkSize { minimum_chunk_size; minimum_chunks_per_worker; preferred_chunk_size })
+      | "fixed_chunk_count" ->
+          let minimum_chunks_per_worker = optional_int_member "minimum_chunks_per_worker" json in
+          let minimum_chunk_size = positive_int_member "minimum_chunk_size" json in
+          let preferred_chunks_per_worker =
+            positive_int_member "preferred_chunks_per_worker" json
+          in
+          Result.Ok
+            (FixedChunkCount
+               { minimum_chunks_per_worker; minimum_chunk_size; preferred_chunks_per_worker })
+      | _ ->
+          Result.Error
+            (Format.sprintf
+               "Invalid scheduler policy: get `%s`, expected: fixed_chunk_size or fixed_chunk_count"
+               kind)
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
+end
+
+module ScheduleIdentifier = struct
+  type t =
+    | CollectDefinitions
+    | TypeCheck
+    | ComputeChangedPaths
+    | SaveChangedPaths
+    | TaintFetchCallables
+    | ClassHierarchyGraph
+    | CallableModelQueries
+    | AttributeModelQueries
+    | GlobalModelQueries
+    | GlobalConstants
+    | CallGraph
+    | OverrideGraph
+    | TaintFixpoint
+    | TaintCollectErrors
+    | TaintFileCoverage
+    | TaintKindCoverage
+    | TypeInference
+  [@@deriving sexp, compare, hash]
+
+  let of_string = function
+    | "collect_definitions" -> Some CollectDefinitions
+    | "type_check" -> Some TypeCheck
+    | "compute_changed_paths" -> Some ComputeChangedPaths
+    | "save_changed_paths" -> Some SaveChangedPaths
+    | "taint_fetch_callables" -> Some TaintFetchCallables
+    | "class_hierarchy_graph" -> Some ClassHierarchyGraph
+    | "callable_model_queries" -> Some CallableModelQueries
+    | "attribute_model_queries" -> Some AttributeModelQueries
+    | "global_model_queries" -> Some GlobalModelQueries
+    | "global_constants" -> Some GlobalConstants
+    | "call_graph" -> Some CallGraph
+    | "override_graph" -> Some OverrideGraph
+    | "taint_fixpoint" -> Some TaintFixpoint
+    | "taint_collect_errors" -> Some TaintCollectErrors
+    | "taint_file_coverage" -> Some TaintFileCoverage
+    | "taint_kind_coverage" -> Some TaintKindCoverage
+    | "type_inference" -> Some TypeInference
+    | _ -> None
+
+
+  let to_string = function
+    | CollectDefinitions -> "collect_definitions"
+    | TypeCheck -> "type_check"
+    | ComputeChangedPaths -> "compute_changed_paths"
+    | SaveChangedPaths -> "save_changed_paths"
+    | TaintFetchCallables -> "taint_fetch_callables"
+    | ClassHierarchyGraph -> "class_hierarchy_graph"
+    | CallableModelQueries -> "callable_model_queries"
+    | AttributeModelQueries -> "attribute_model_queries"
+    | GlobalModelQueries -> "global_model_queries"
+    | GlobalConstants -> "global_constants"
+    | CallGraph -> "call_graph"
+    | OverrideGraph -> "override_graph"
+    | TaintFixpoint -> "taint_fixpoint"
+    | TaintCollectErrors -> "taint_collect_errors"
+    | TaintFileCoverage -> "taint_file_coverage"
+    | TaintKindCoverage -> "taint_kind_coverage"
+    | TypeInference -> "type_inference"
+end
+
+module SchedulerPolicies = struct
+  module T = Map.Make (ScheduleIdentifier)
+
+  type t = SchedulerPolicy.t T.t [@@deriving compare]
+
+  let empty = T.empty
+
+  let of_alist_exn = T.of_alist_exn
+
+  let sexp_of_t = T.sexp_of_t SchedulerPolicy.sexp_of_t
+
+  let t_of_sexp = T.t_of_sexp SchedulerPolicy.t_of_sexp
+
+  let hash_fold_t state map =
+    map |> Map.to_alist |> [%hash_fold: (ScheduleIdentifier.t * SchedulerPolicy.t) list] state
+
+
+  let hash = Hash.run hash_fold_t
+
+  let get = Map.find
+
+  let of_yojson json =
+    let open Core.Result in
+    try
+      let parse_item (key, value) =
+        match ScheduleIdentifier.of_string key with
+        | None -> Result.Error (Format.sprintf "Unknown schedule identifier: `%s`" key)
+        | Some identifier ->
+            SchedulerPolicy.of_yojson value >>| fun scheduler_policy -> identifier, scheduler_policy
+      in
+      json
+      |> Yojson.Safe.Util.to_assoc
+      |> List.map ~f:parse_item
+      |> Core.Result.all
+      >>| T.of_alist_exn
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
+end
+
 module TaintOutputFormat = struct
   type t =
     | Json
@@ -602,6 +772,7 @@ module StaticAnalysis = struct
     compact_ocaml_heap: bool;
     saved_state: SavedState.t;
     compute_coverage: bool;
+    scheduler_policies: SchedulerPolicies.t;
   }
 
   let create
@@ -640,6 +811,7 @@ module StaticAnalysis = struct
       ?(compact_ocaml_heap = false)
       ?(saved_state = SavedState.empty)
       ?(compute_coverage = false)
+      ?(scheduler_policies = SchedulerPolicies.empty)
       ()
     =
     {
@@ -678,5 +850,6 @@ module StaticAnalysis = struct
       compact_ocaml_heap;
       saved_state;
       compute_coverage;
+      scheduler_policies;
     }
 end

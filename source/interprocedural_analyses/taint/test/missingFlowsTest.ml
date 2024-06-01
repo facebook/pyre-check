@@ -69,6 +69,7 @@ let assert_fixpoint
   let fixpoint_state =
     TaintFixpoint.compute
       ~scheduler:(Test.mock_scheduler ())
+      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~pyre_api
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)

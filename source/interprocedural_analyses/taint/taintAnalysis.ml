@@ -511,6 +511,7 @@ let run_taint_analysis
          compact_ocaml_heap = compact_ocaml_heap_flag;
          saved_state;
          compute_coverage = compute_coverage_flag;
+         scheduler_policies;
          _;
        } as static_analysis_configuration)
     ~lookup_source
@@ -795,6 +796,7 @@ let run_taint_analysis
   let fixpoint_state =
     Taint.TaintFixpoint.compute
       ~scheduler
+      ~scheduler_policy:(Taint.TaintFixpoint.get_scheduler_policy scheduler_policies)
       ~pyre_api
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph

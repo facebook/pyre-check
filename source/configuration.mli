@@ -192,6 +192,63 @@ module Analysis : sig
   val validate_paths : t -> unit
 end
 
+(* Represents a scheduler policy, which can be converted into a `Scheduler.Policy` that can be used
+   by `Scheduler.map_reduce`. *)
+module SchedulerPolicy : sig
+  type t =
+    | FixedChunkSize of {
+        minimum_chunk_size: int option;
+        minimum_chunks_per_worker: int;
+        preferred_chunk_size: int;
+      }
+    | FixedChunkCount of {
+        minimum_chunks_per_worker: int option;
+        minimum_chunk_size: int;
+        preferred_chunks_per_worker: int;
+      }
+  [@@deriving sexp, compare, hash]
+
+  val of_yojson : Yojson.Safe.t -> (t, string) result
+end
+
+module ScheduleIdentifier : sig
+  type t =
+    | CollectDefinitions
+    | TypeCheck
+    | ComputeChangedPaths
+    | SaveChangedPaths
+    | TaintFetchCallables
+    | ClassHierarchyGraph
+    | CallableModelQueries
+    | AttributeModelQueries
+    | GlobalModelQueries
+    | GlobalConstants
+    | CallGraph
+    | OverrideGraph
+    | TaintFixpoint
+    | TaintCollectErrors
+    | TaintFileCoverage
+    | TaintKindCoverage
+    | TypeInference
+  [@@deriving sexp, compare, hash]
+
+  val of_string : string -> t option
+
+  val to_string : t -> string
+end
+
+module SchedulerPolicies : sig
+  type t [@@deriving sexp, compare, hash]
+
+  val empty : t
+
+  val of_alist_exn : (ScheduleIdentifier.t * SchedulerPolicy.t) list -> t
+
+  val of_yojson : Yojson.Safe.t -> (t, string) result
+
+  val get : t -> ScheduleIdentifier.t -> SchedulerPolicy.t option
+end
+
 module TaintOutputFormat : sig
   type t =
     | Json
@@ -263,6 +320,7 @@ module StaticAnalysis : sig
     compact_ocaml_heap: bool;
     saved_state: SavedState.t;
     compute_coverage: bool;
+    scheduler_policies: SchedulerPolicies.t;
   }
 
   val create
@@ -301,6 +359,7 @@ module StaticAnalysis : sig
     ?compact_ocaml_heap:bool ->
     ?saved_state:SavedState.t ->
     ?compute_coverage:bool ->
+    ?scheduler_policies:SchedulerPolicies.t ->
     unit ->
     t
 end

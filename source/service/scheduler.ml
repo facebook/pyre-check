@@ -79,6 +79,26 @@ module Policy = struct
           fallback_chunk_count
         else
           1
+
+
+  let from_configuration = function
+    | Configuration.SchedulerPolicy.FixedChunkSize
+        { minimum_chunk_size; minimum_chunks_per_worker; preferred_chunk_size } ->
+        fixed_chunk_size ?minimum_chunk_size ~minimum_chunks_per_worker ~preferred_chunk_size ()
+    | Configuration.SchedulerPolicy.FixedChunkCount
+        { minimum_chunks_per_worker; minimum_chunk_size; preferred_chunks_per_worker } ->
+        fixed_chunk_count
+          ?minimum_chunks_per_worker
+          ~minimum_chunk_size
+          ~preferred_chunks_per_worker
+          ()
+
+
+  let from_configuration_or_default ~default policies identifier =
+    let open Option.Monad_infix in
+    Configuration.SchedulerPolicies.get policies identifier
+    >>| from_configuration
+    |> Option.value ~default
 end
 
 let create

@@ -180,6 +180,187 @@ let test_unwatched_dependency context =
   ()
 
 
+let test_scheduler_policies context =
+  let open Configuration in
+  let assert_parsed ~expected text =
+    match Yojson.Safe.from_string text |> SchedulerPolicies.of_yojson with
+    | Result.Ok actual ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: SchedulerPolicies.t]
+          ~printer:(fun wheel -> Sexp.to_string_hum ([%sexp_of: SchedulerPolicies.t] wheel))
+          expected
+          actual
+    | Result.Error message -> assert_failure message
+  in
+  let assert_not_parsed text =
+    match Yojson.Safe.from_string text |> SchedulerPolicies.of_yojson with
+    | Result.Error _ -> ()
+    | Result.Ok actual ->
+        let message =
+          Format.asprintf
+            "Unexpected parsing success: %a"
+            Sexp.pp_hum
+            (SchedulerPolicies.sexp_of_t actual)
+        in
+        assert_failure message
+  in
+  assert_not_parsed "42";
+  assert_not_parsed "[]";
+  assert_not_parsed
+    {|
+    {
+      "unknown_schedule_identifier": { "kind": "legacy_fixed_chunk_count" }
+    }
+    |};
+  assert_not_parsed
+    {|
+    {
+      "taint_fixpoint": { "kind": "unknown_schedule_policy" }
+    }
+    |};
+  assert_not_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size"
+      }
+    }
+    |};
+  assert_not_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size",
+        "minimum_chunk_size": "not_integer",
+        "preferred_chunk_size": 1000
+      }
+    }
+    |};
+  assert_not_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size",
+        "minimum_chunk_size": 1,
+        "preferred_chunk_size": 1000
+      }
+    }
+    |};
+  assert_not_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size",
+        "minimum_chunk_size": 1,
+        "minimum_chunks_per_worker": 0,
+        "preferred_chunk_size": 1000
+      }
+    }
+    |};
+
+  assert_parsed "{}" ~expected:SchedulerPolicies.empty;
+  assert_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size",
+        "minimum_chunk_size": 1,
+        "minimum_chunks_per_worker": 100,
+        "preferred_chunk_size": 1000
+      }
+    }
+    |}
+    ~expected:
+      (SchedulerPolicies.of_alist_exn
+         [
+           ( ScheduleIdentifier.TaintFixpoint,
+             SchedulerPolicy.FixedChunkSize
+               {
+                 minimum_chunk_size = Some 1;
+                 minimum_chunks_per_worker = 100;
+                 preferred_chunk_size = 1000;
+               } );
+         ]);
+  assert_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_size",
+        "minimum_chunks_per_worker": 100,
+        "preferred_chunk_size": 1000
+      }
+    }
+    |}
+    ~expected:
+      (SchedulerPolicies.of_alist_exn
+         [
+           ( ScheduleIdentifier.TaintFixpoint,
+             SchedulerPolicy.FixedChunkSize
+               {
+                 minimum_chunk_size = None;
+                 minimum_chunks_per_worker = 100;
+                 preferred_chunk_size = 1000;
+               } );
+         ]);
+  assert_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_count",
+        "minimum_chunks_per_worker": 10,
+        "minimum_chunk_size": 100,
+        "preferred_chunks_per_worker": 1000
+      }
+    }
+    |}
+    ~expected:
+      (SchedulerPolicies.of_alist_exn
+         [
+           ( ScheduleIdentifier.TaintFixpoint,
+             SchedulerPolicy.FixedChunkCount
+               {
+                 minimum_chunks_per_worker = Some 10;
+                 minimum_chunk_size = 100;
+                 preferred_chunks_per_worker = 1000;
+               } );
+         ]);
+  assert_parsed
+    {|
+    {
+      "taint_fixpoint": {
+        "kind": "fixed_chunk_count",
+        "minimum_chunk_size": 1,
+        "preferred_chunks_per_worker": 2
+      },
+      "call_graph": {
+        "kind": "fixed_chunk_count",
+        "minimum_chunk_size": 3,
+        "preferred_chunks_per_worker": 4
+      }
+    }
+    |}
+    ~expected:
+      (SchedulerPolicies.of_alist_exn
+         [
+           ( ScheduleIdentifier.TaintFixpoint,
+             SchedulerPolicy.FixedChunkCount
+               {
+                 minimum_chunks_per_worker = None;
+                 minimum_chunk_size = 1;
+                 preferred_chunks_per_worker = 2;
+               } );
+           ( ScheduleIdentifier.CallGraph,
+             SchedulerPolicy.FixedChunkCount
+               {
+                 minimum_chunks_per_worker = None;
+                 minimum_chunk_size = 3;
+                 preferred_chunks_per_worker = 4;
+               } );
+         ]);
+  ()
+
+
 let () =
   "configuration"
   >::: [
@@ -188,5 +369,6 @@ let () =
          "change_indicator" >:: test_change_indicator;
          "unwatched_files" >:: test_unwatched_files;
          "unwatched_dependency" >:: test_unwatched_dependency;
+         "scheduler_policies" >:: test_scheduler_policies;
        ]
   |> Test.run

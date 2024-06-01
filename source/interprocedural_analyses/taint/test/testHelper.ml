@@ -821,6 +821,7 @@ let end_to_end_integration_test path context =
     let fixpoint_state =
       TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
+        ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
         ~pyre_api
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph

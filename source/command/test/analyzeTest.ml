@@ -63,6 +63,7 @@ let test_json_parsing context =
       compact_ocaml_heap = false;
       saved_state = Configuration.StaticAnalysis.SavedState.empty;
       compute_coverage = false;
+      scheduler_policies = Configuration.SchedulerPolicies.empty;
     }
   in
 
@@ -224,6 +225,35 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("compute_coverage", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with compute_coverage = true };
+  assert_parsed
+    (`Assoc
+      (( "scheduler_policies",
+         `Assoc
+           [
+             ( "taint_fixpoint",
+               `Assoc
+                 [
+                   "kind", `String "fixed_chunk_size";
+                   "minimum_chunks_per_worker", `Int 10;
+                   "preferred_chunk_size", `Int 100;
+                 ] );
+           ] )
+      :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        scheduler_policies =
+          Configuration.SchedulerPolicies.of_alist_exn
+            [
+              ( Configuration.ScheduleIdentifier.TaintFixpoint,
+                Configuration.SchedulerPolicy.FixedChunkSize
+                  {
+                    minimum_chunk_size = None;
+                    minimum_chunks_per_worker = 10;
+                    preferred_chunk_size = 100;
+                  } );
+            ];
+      };
   ()
 
 

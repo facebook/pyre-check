@@ -55,6 +55,7 @@ module AnalyzeConfiguration : sig
     compact_ocaml_heap: bool;
     saved_state: Configuration.StaticAnalysis.SavedState.t;
     compute_coverage: bool;
+    scheduler_policies: Configuration.SchedulerPolicies.t;
   }
   [@@deriving sexp, compare, hash]
 

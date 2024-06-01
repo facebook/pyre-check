@@ -185,6 +185,7 @@ module Make (Analysis : ANALYSIS) : sig
 
   val compute
     :  scheduler:Scheduler.t ->
+    scheduler_policy:Scheduler.Policy.t ->
     pyre_api:PyrePysaApi.ReadOnly.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
     dependency_graph:DependencyGraph.t ->

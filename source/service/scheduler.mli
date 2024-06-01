@@ -40,6 +40,14 @@ module Policy : sig
     preferred_chunks_per_worker:int ->
     unit ->
     t
+
+  val from_configuration : Configuration.SchedulerPolicy.t -> t
+
+  val from_configuration_or_default
+    :  default:t ->
+    Configuration.SchedulerPolicies.t ->
+    Configuration.ScheduleIdentifier.t ->
+    t
 end
 
 type t
