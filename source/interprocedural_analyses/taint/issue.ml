@@ -452,61 +452,64 @@ let compute_triggered_flows
         ~init:[]
         source_tree
   in
+  let generate_issue_or_attach_subtraces ~call_info ~source ~partial_sink triggered_sink =
+    if TriggeredSinkHashMap.mem triggered_sinks_for_call partial_sink then
+      (* Since another flow has already been found, both flows are found and hence we emit an issue.
+         No need to add subtraces for the discovered flow, since it is already an issue. *)
+      let extra_traces =
+        TriggeredSinkHashMap.get_extra_traces triggered_sinks_for_call partial_sink
+      in
+      let sink_taint =
+        BackwardTaint.apply_call
+          ~pyre_in_context
+          ~location
+          ~callee:(Some callee)
+          ~arguments:[]
+          ~path:[]
+          ~element:
+            (BackwardTaint.singleton
+               CallInfo.declaration
+               (Sinks.TriggeredPartialSink partial_sink)
+               Frame.initial)
+          ~port
+          ~is_class_method:false
+          ~is_static_method:false
+          ~call_info_intervals:Domains.ClassIntervals.top
+        |> BackwardTaint.add_extra_traces ~extra_traces
+      in
+      Some
+        (generate_source_sink_matches
+           ~location
+           ~sink_handle
+           ~source_tree
+           ~sink_tree:(BackwardState.Tree.create_leaf sink_taint))
+    else (* Remember the discovered flow so that later it can be attached as a subtrace. *)
+      let extra_traces =
+        {
+          ExtraTraceFirstHop.call_info;
+          leaf_kind = Source source;
+          message = Some (Format.asprintf "Source trace for %s" (Sources.show source));
+        }
+        |> ExtraTraceFirstHop.Set.singleton
+      in
+      let () = TriggeredSinkHashMap.add triggered_sinks_for_call ~triggered_sink ~extra_traces in
+      None
+  in
   let check_source_sink_flows ~call_info ~source ~partial_sink =
-    TaintConfiguration.get_triggered_sink_if_matched taint_configuration ~partial_sink ~source
-    |> function
-    | Some (Sinks.TriggeredPartialSink triggered_sink) ->
-        (* One flow is found *)
-        if TriggeredSinkHashMap.mem triggered_sinks_for_call partial_sink then
-          (* Since another flow has already been found, both flows are found and hence we emit an
-             issue. No need to add subtraces for the discovered flow, since it is already an
-             issue. *)
-          let extra_traces =
-            TriggeredSinkHashMap.get_extra_traces triggered_sinks_for_call partial_sink
-          in
-          let sink_taint =
-            BackwardTaint.apply_call
-              ~pyre_in_context
-              ~location
-              ~callee:(Some callee)
-              ~arguments:[]
-              ~path:[]
-              ~element:
-                (BackwardTaint.singleton
-                   CallInfo.declaration
-                   (Sinks.TriggeredPartialSink partial_sink)
-                   Frame.initial)
-              ~port
-              ~is_class_method:false
-              ~is_static_method:false
-              ~call_info_intervals:Domains.ClassIntervals.top
-            |> BackwardTaint.add_extra_traces ~extra_traces
-          in
-          Some
-            (generate_source_sink_matches
-               ~location
-               ~sink_handle
-               ~source_tree
-               ~sink_tree:(BackwardState.Tree.create_leaf sink_taint))
-        else (* Remember the discovered flow so that later it can be attached as a subtrace. *)
-          let extra_traces =
-            {
-              ExtraTraceFirstHop.call_info;
-              leaf_kind = Source source;
-              message = Some (Format.asprintf "Source trace for %s" (Sources.show source));
-            }
-            |> ExtraTraceFirstHop.Set.singleton
-          in
-          let () =
-            TriggeredSinkHashMap.add triggered_sinks_for_call ~triggered_sink ~extra_traces
-          in
-          None
-    | _ -> None
+    TaintConfiguration.get_triggered_sinks_if_matched taint_configuration ~partial_sink ~source
+    |> Sinks.Set.elements
+    |> List.filter_map ~f:(function
+           | Sinks.TriggeredPartialSink triggered_sink ->
+               (* One flow is found. If both flows are present, turn the flow into an issue.
+                  Otherwise, record the flow so that it can be attached later. *)
+               generate_issue_or_attach_subtraces ~call_info ~source ~partial_sink triggered_sink
+           | _ -> failwith "Only expect triggered sinks")
   in
   partial_sinks
   |> List.cartesian_product call_infos_and_sources
-  |> List.filter_map ~f:(fun ((call_info, source), partial_sink) ->
+  |> List.map ~f:(fun ((call_info, source), partial_sink) ->
          check_source_sink_flows ~call_info ~source ~partial_sink)
+  |> List.concat
 
 
 module Candidates = struct

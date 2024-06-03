@@ -850,16 +850,13 @@ let test_string_combine_rules _ =
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     let configuration = assert_parse configuration in
-    TaintConfiguration.get_triggered_sink_if_matched configuration ~partial_sink ~source
-    |> assert_equal
-         ~cmp:(Option.equal Sinks.equal)
-         ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")
-         expected_sink
+    TaintConfiguration.get_triggered_sinks_if_matched configuration ~partial_sink ~source
+    |> assert_equal ~cmp:Sinks.Set.equal ~printer:Sinks.Set.show expected_sink
   in
   let configuration =
     {|
     {
-      "sources": [{ "name": "A" }, { "name": "B" }],
+      "sources": [{ "name": "A" }, { "name": "B" }, { "name": "D" }],
       "sinks": [],
       "combined_source_rules": [
         {
@@ -867,6 +864,13 @@ let test_partial_sink_converter _ =
            "sources": {"ca": "A", "cb": "B"},
            "partial_sink": "C",
            "code": 2001,
+           "message_format": "some form"
+        },
+        {
+           "name": "another rule",
+           "sources": {"ca": "A", "cd": "D"},
+           "partial_sink": "C",
+           "code": 2002,
            "message_format": "some form"
         }
       ]
@@ -877,22 +881,28 @@ let test_partial_sink_converter _ =
     configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
     ~source:(Sources.NamedSource "A")
-    ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cb" }));
+    ~expected_sink:
+      ([
+         Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cb" };
+         Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cd" };
+       ]
+      |> Sinks.Set.of_list);
   assert_triggered_sinks
     configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
     ~source:(Sources.NamedSource "B")
-    ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "ca" }));
+    ~expected_sink:
+      (Sinks.Set.singleton (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "ca" }));
   assert_triggered_sinks
     configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
     ~source:(Sources.NamedSource "B")
-    ~expected_sink:None;
+    ~expected_sink:Sinks.Set.empty;
   assert_triggered_sinks
     configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
     ~source:(Sources.NamedSource "A")
-    ~expected_sink:None
+    ~expected_sink:Sinks.Set.empty
 
 
 let test_multiple_configurations _ =

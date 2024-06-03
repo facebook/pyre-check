@@ -189,3 +189,61 @@ def false_negative_triggered_context(vc):
 def no_issue_with_wrapper_call_2():
     vc = permissive_context()
     false_negative_triggered_context(vc)
+
+
+# Share both partial sink kinds in multiple rules
+def c_source(): ...
+
+
+def d_source(): ...
+
+
+def e_source(): ...
+
+
+def multi_sink_share_both_sinks(x, y): ...
+
+
+def demonstrate_triggered_c_from_d_and_e(x):
+    multi_sink_share_both_sinks(x, d_source())
+    multi_sink_share_both_sinks(x, e_source())
+
+
+def issue_with_triggered_c_from_d_and_e():
+    # Should see two issues
+    demonstrate_triggered_c_from_d_and_e(c_source())
+
+
+def demonstrate_triggered_c_from_d(x):
+    multi_sink_share_both_sinks(x, d_source())
+
+
+def issue_with_triggered_c_from_d():
+    # TODO: Should see one issue
+    demonstrate_triggered_c_from_d(c_source())
+
+
+def demonstrate_triggered_c_from_d_or_e(x):
+    if 1 == 1:
+        multi_sink_share_both_sinks(x, d_source())
+    else:
+        multi_sink_share_both_sinks(x, e_source())
+
+
+def issue_with_triggered_c_from_d_or_e():
+    # Should see two issues
+    demonstrate_triggered_c_from_d_or_e(c_source())
+
+
+def demonstrate_triggered_d_and_e(y):
+    multi_sink_share_both_sinks(c_source(), y)
+
+
+def issue_with_triggered_d_and_e():
+    demonstrate_triggered_d_and_e(d_source())
+    demonstrate_triggered_d_and_e(e_source())
+
+
+def combine_c_d_and_c_e():
+    multi_sink_share_both_sinks(c_source(), d_source())
+    multi_sink_share_both_sinks(c_source(), e_source())

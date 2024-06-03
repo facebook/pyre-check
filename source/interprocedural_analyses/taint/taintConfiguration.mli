@@ -63,6 +63,8 @@ module PartialSinkLabelsMap : sig
   val to_alist : t -> (string * (label * label) list) list
 end
 
+(* A map from partial sinks, to the matching sources and the corresponding triggered sinks for each
+   match. *)
 module PartialSinkConverter : sig
   type t
 end
@@ -237,11 +239,11 @@ val literal_string_sinks : Heap.t -> literal_string_sink list
 
 val literal_string_sources : Heap.t -> literal_string_source list
 
-val get_triggered_sink_if_matched
+val get_triggered_sinks_if_matched
   :  Heap.t ->
   partial_sink:Sinks.partial_sink ->
   source:Sources.t ->
-  Sinks.t option
+  Sinks.Set.t
 
 val is_missing_flow_analysis : Heap.t -> Configuration.MissingFlowKind.t -> bool
 

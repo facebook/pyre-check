@@ -2,6 +2,164 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.combine_c_d_and_c_e",
+    "callable_line": 247,
+    "code": 4324,
+    "line": 249,
+    "start": 44,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 249,
+              "start": 44,
+              "end": 54
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestC",
+                "origin": { "line": 249, "start": 32, "end": 42 },
+                "leaf_kind": "TestC",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[right]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 249,
+              "start": 44,
+              "end": 54
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multi_sink_share_both_sinks",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.combine_c_d_and_c_e:4324:0:Call|multiple_sources.multi_sink_share_both_sinks|1|formal(y):8a6f4e482f2d5c4f054df35e90173fc0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.combine_c_d_and_c_e",
+    "callable_line": 247,
+    "code": 4323,
+    "line": 248,
+    "start": 44,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.d_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestD"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 248,
+              "start": 44,
+              "end": 54
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestC",
+                "origin": { "line": 248, "start": 32, "end": 42 },
+                "leaf_kind": "TestC",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[right]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 248,
+              "start": 44,
+              "end": 54
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multi_sink_share_both_sinks",
+      "index": 0,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.combine_c_d_and_c_e:4323:0:Call|multiple_sources.multi_sink_share_both_sinks|0|formal(y):9ab743ac884cbbf27abc1dfac6b70fd4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
     "callable_line": 29,
     "code": 4321,
@@ -315,6 +473,474 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d",
+    "callable_line": 221,
+    "code": 4324,
+    "line": 223,
+    "start": 35,
+    "end": 45,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 223,
+              "start": 35,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 223,
+                "start": 35,
+                "end": 45
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d|0|formal(x):b4eeb4eed4019556e17dc909f93906bc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d",
+    "callable_line": 221,
+    "code": 4323,
+    "line": 223,
+    "start": 35,
+    "end": 45,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 223,
+              "start": 35,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 223,
+                "start": 35,
+                "end": 45
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d|0|formal(x):3bfb83d48fbb62b1e004c6538076ea8a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+    "callable_line": 212,
+    "code": 4324,
+    "line": 214,
+    "start": 41,
+    "end": 51,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 214,
+              "start": 41,
+              "end": 51
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 214,
+                "start": 41,
+                "end": 51
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):f5167a0dfeda35ef3da24afdaf8b6f07"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+    "callable_line": 212,
+    "code": 4323,
+    "line": 214,
+    "start": 41,
+    "end": 51,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 214,
+              "start": 41,
+              "end": 51
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 214,
+                "start": 41,
+                "end": 51
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):e6b12820a65d3ff304bcf1fb05acc3d5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+    "callable_line": 233,
+    "code": 4324,
+    "line": 235,
+    "start": 40,
+    "end": 50,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 235,
+              "start": 40,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 235,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):98bbbe05fc248bb09ac039cf4933be0f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+    "callable_line": 233,
+    "code": 4323,
+    "line": 235,
+    "start": 40,
+    "end": 50,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 235,
+              "start": 40,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 235,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+              ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):42b083168991b29fa594514047a3bade"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.issue_with_triggered_context",
     "callable_line": 50,
     "code": 4321,
@@ -460,6 +1086,162 @@
       "parameter": "formal(vc)"
     },
     "master_handle": "multiple_sources.issue_with_triggered_context_more_hops:4321:0:Call|multiple_sources.demonstrate_triggered_context_more_hops|0|formal(vc):494878f9a90ba21acf31712e1fd155d0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_d_and_e",
+    "callable_line": 242,
+    "code": 4324,
+    "line": 244,
+    "start": 34,
+    "end": 44,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 244,
+              "start": 34,
+              "end": 44
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[right]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 244,
+                "start": 34,
+                "end": 44
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_d_and_e"
+              ],
+              "port": "formal(y, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_d_and_e|1|formal(y):a74247c595f7ff3150ed12b26bd46067"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_d_and_e",
+    "callable_line": 242,
+    "code": 4323,
+    "line": 243,
+    "start": 34,
+    "end": 44,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.d_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestD"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 243,
+              "start": 34,
+              "end": 44
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[ShareBothSinks[right]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 243,
+                "start": 34,
+                "end": 44
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_d_and_e"
+              ],
+              "port": "formal(y, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
+      "index": 0,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4323:0:Call|multiple_sources.demonstrate_triggered_d_and_e|0|formal(y):bedc991d7011883b0e49ccc554133f51"
   }
 }
 {
@@ -969,6 +1751,23 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources.c_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 195,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestC" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources.combines_tests_and_context",
     "filename": "multiple_sources.py",
     "callable_line": 76,
@@ -988,6 +1787,203 @@
           {
             "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ],
             "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.d_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 198,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestD" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d",
+    "filename": "multiple_sources.py",
+    "callable_line": 217,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestD",
+                "origin": { "line": 218, "start": 35, "end": 45 },
+                "leaf_kind": "TestD",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 218,
+              "start": 32,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 207,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestD",
+                "origin": { "line": 208, "start": 35, "end": 45 },
+                "leaf_kind": "TestD",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 208,
+              "start": 32,
+              "end": 33
+            }
+          },
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestE",
+                "origin": { "line": 209, "start": 35, "end": 45 },
+                "leaf_kind": "TestE",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 209,
+              "start": 32,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 226,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestD",
+                "origin": { "line": 228, "start": 39, "end": 49 },
+                "leaf_kind": "TestD",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 228,
+              "start": 36,
+              "end": 37
+            }
+          },
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestE",
+                "origin": { "line": 230, "start": 39, "end": 49 },
+                "leaf_kind": "TestE",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[left]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 230,
+              "start": 36,
+              "end": 37
+            }
           }
         ]
       }
@@ -1085,6 +2081,48 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources.demonstrate_triggered_d_and_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 238,
+    "sinks": [
+      {
+        "port": "formal(y, position=0)",
+        "taint": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace for TestC",
+                "origin": { "line": 239, "start": 32, "end": 42 },
+                "leaf_kind": "TestC",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "TriggeredPartialSink[ShareBothSinks[right]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 239,
+              "start": 44,
+              "end": 45
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources.demonstrate_triggered_input",
     "filename": "multiple_sources.py",
     "callable_line": 40,
@@ -1130,6 +2168,52 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.e_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 201,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestE" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.multi_sink_share_both_sinks",
+    "filename": "multiple_sources.py",
+    "callable_line": 204,
+    "sinks": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ShareBothSinks[right]]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ShareBothSinks[left]]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

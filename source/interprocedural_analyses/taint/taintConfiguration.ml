@@ -338,34 +338,41 @@ module PartialSinkLabelsMap = struct
 end
 
 module PartialSinkConverter = struct
-  type t = (Sources.t list * Sinks.t) SerializableStringMap.t
+  (* A map from partial sinks, to the matching sources and the corresponding triggered sinks for
+     each match. *)
+  type t = Sinks.Set.t Sources.Map.t SerializableStringMap.t
 
   let empty = SerializableStringMap.empty
 
+  let key = Sinks.show_partial_sink
+
   let add map ~first_sources ~first_sink ~second_sources ~second_sink =
+    (* For each new matching source, add the corresponding triggered sink. *)
+    let update_sources_to_triggered_sinks ~sources ~triggered_sink sources_to_triggered_sinks =
+      List.fold
+        sources
+        ~f:(fun so_far source ->
+          Sources.Map.update
+            source
+            (fun existing_triggered_sinks ->
+              Some
+                (existing_triggered_sinks
+                |> Option.value ~default:Sinks.Set.empty
+                |> Sinks.Set.add triggered_sink))
+            so_far)
+        ~init:sources_to_triggered_sinks
+    in
     (* Trigger second sink when the first sink matches a source, and vice versa. *)
     let add_entry sink sources triggered_sink map =
-      let sink = Sinks.show_partial_sink sink in
-      let triggered_sink = Sinks.TriggeredPartialSink triggered_sink in
       SerializableStringMap.update
-        sink
-        (function
-          | Some (existing_sources, existing_triggered_sink) ->
-              if not (Sinks.equal existing_triggered_sink triggered_sink) then
-                (* TODO: Allow multiple partial sink kinds in a rule. *)
-                Format.asprintf
-                  "Expect partial sink %s to pair with %a, but got %a"
-                  sink
-                  Sinks.pp
-                  existing_triggered_sink
-                  Sinks.pp
-                  triggered_sink
-                |> failwith
-              else
-                (* Since we allow a partial sink kind to be used in multiple rules, it can be
-                   matched against sources in all those rules. *)
-                Some (List.rev_append sources existing_sources, triggered_sink)
-          | None -> Some (sources, triggered_sink))
+        (key sink)
+        (fun existing_sources_to_triggered_sinks ->
+          Some
+            (existing_sources_to_triggered_sinks
+            |> Option.value ~default:Sources.Map.empty
+            |> update_sources_to_triggered_sinks
+                 ~sources
+                 ~triggered_sink:(Sinks.TriggeredPartialSink triggered_sink)))
         map
     in
     map
@@ -390,13 +397,12 @@ module PartialSinkConverter = struct
       right
 
 
-  let get_triggered_sink_if_matched sink_to_sources ~partial_sink ~source =
-    let source = Sources.discard_sanitize_transforms source in
-    match SerializableStringMap.find_opt (Sinks.show_partial_sink partial_sink) sink_to_sources with
-    | Some (supported_sources, triggered_sink)
-      when List.exists supported_sources ~f:(Sources.equal source) ->
-        Some triggered_sink
-    | _ -> None
+  let get_triggered_sinks_if_matched ~partial_sink ~source converter =
+    let open Option.Monad_infix in
+    converter
+    |> SerializableStringMap.find_opt (key partial_sink)
+    >>= Sources.Map.find_opt (Sources.discard_sanitize_transforms source)
+    |> Option.value ~default:Sinks.Set.empty
 end
 
 module StringOperationPartialSinks = struct
@@ -2018,8 +2024,8 @@ let literal_string_sinks { Heap.implicit_sinks = { literal_string_sinks; _ }; _ 
   literal_string_sinks
 
 
-let get_triggered_sink_if_matched { Heap.partial_sink_converter; _ } ~partial_sink ~source =
-  PartialSinkConverter.get_triggered_sink_if_matched partial_sink_converter ~partial_sink ~source
+let get_triggered_sinks_if_matched { Heap.partial_sink_converter; _ } ~partial_sink ~source =
+  PartialSinkConverter.get_triggered_sinks_if_matched ~partial_sink ~source partial_sink_converter
 
 
 let is_missing_flow_analysis { Heap.find_missing_flows; _ } kind =

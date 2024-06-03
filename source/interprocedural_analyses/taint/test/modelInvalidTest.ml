@@ -175,6 +175,10 @@ let test_invalid_models context =
     ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
     ();
   assert_invalid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[a]]): ..."
+    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ();
+  assert_invalid_model
     ~model_source:
       {|
       def test.partial_sink_3(
