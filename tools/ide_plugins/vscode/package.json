@@ -1,6 +1,6 @@
 {
   "name": "pyre-vscode",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "fb-pyre-check",
   "engines": {
     "vscode": "^1.15.0"
@@ -26,15 +26,18 @@
     "lint": "tslint --force -p ."
   },
   "dependencies": {
-    "vscode-languageclient": "^3.5.0"
+    "@vscode/python-extension": "^1.0.5",
+    "vscode-languageclient": "^3.5.0",
+    "which": "^4.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.44",
     "@types/node": "^8.0.53",
+    "@types/which": "^3.0.4",
     "cson": "^4.1.0",
     "tslint": "^5.8.0",
     "tslint-microsoft-contrib": "^5.0.1",
-    "typescript": "^2.6.1",
+    "typescript": "^3.7",
     "vscode": "^1.1.7"
   }
 }
