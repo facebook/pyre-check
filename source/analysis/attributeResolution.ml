@@ -1668,6 +1668,7 @@ let apply
           keyword_only = class_level_keyword_only;
           has_slots;
           frozen;
+          _;
         } ->
         let is_class_var attribute =
           match Node.value attribute with

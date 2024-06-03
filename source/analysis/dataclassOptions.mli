@@ -56,6 +56,7 @@ module ExtractDataclassOptions : sig
     keyword_only: bool;
     has_slots: bool;
     frozen: bool;
+    unsafe_hash: bool;
   }
 
   (** This is necessary as an abstraction over AnnotatedAttribute to determine which attributes are

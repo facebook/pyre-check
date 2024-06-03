@@ -61,6 +61,7 @@ module ExtractDataclassOptions = struct
     keyword_only: bool;
     has_slots: bool;
     frozen: bool;
+    unsafe_hash: bool;
   }
 
   (** This is necessary as an abstraction over AnnotatedAttribute to determine which attributes are
@@ -72,7 +73,18 @@ module ExtractDataclassOptions = struct
     keyword_only: bool;
   }
 
-  let extract_options ~default ~init ~repr ~eq ~order ~keyword_only ~has_slots ~frozen decorator =
+  let extract_options
+      ~default
+      ~init
+      ~repr
+      ~eq
+      ~order
+      ~keyword_only
+      ~has_slots
+      ~frozen
+      ~unsafe_hash
+      decorator
+    =
     let open Expression in
     let extract_options_from_arguments =
       let apply_arguments default argument =
@@ -143,6 +155,12 @@ module ExtractDataclassOptions = struct
               else
                 default
             in
+            let default =
+              if String.equal argument_name unsafe_hash then
+                { default with unsafe_hash = recognize_value value ~default:default.unsafe_hash }
+              else
+                default
+            in
 
             default
         | _ -> default
@@ -171,6 +189,7 @@ module ExtractDataclassOptions = struct
               keyword_only = false;
               has_slots = false;
               frozen = false;
+              unsafe_hash = false;
             }
           ~init:"init"
           ~repr:"repr"
@@ -179,6 +198,7 @@ module ExtractDataclassOptions = struct
           ~keyword_only:"kw_only"
           ~has_slots:"slots"
           ~frozen:"frozen"
+          ~unsafe_hash:"unsafe_hash"
 
 
   let attrs_attributes ~first_matching_class_decorator class_summary =
@@ -195,6 +215,7 @@ module ExtractDataclassOptions = struct
               keyword_only = false;
               has_slots = false;
               frozen = false;
+              unsafe_hash = false;
             }
           ~init:"init"
           ~repr:"repr"
@@ -203,6 +224,7 @@ module ExtractDataclassOptions = struct
           ~keyword_only:"kw_only"
           ~has_slots:"slots"
           ~frozen:"frozen"
+          ~unsafe_hash:"unsafe_hash"
 
 
   (* Is a decorator one of the spec-defined dataclass transform decorators.
@@ -239,6 +261,7 @@ module ExtractDataclassOptions = struct
         keyword_only = false;
         has_slots = false;
         frozen = false;
+        unsafe_hash = false;
       }
     in
     extract_options
@@ -250,6 +273,7 @@ module ExtractDataclassOptions = struct
       ~keyword_only:"kw_only_default"
       ~has_slots:"slots"
       ~frozen:"frozen_default"
+      ~unsafe_hash:""
       decorator
 
 
@@ -273,6 +297,7 @@ module ExtractDataclassOptions = struct
       ~keyword_only:"kw_only"
       ~has_slots:"slots"
       ~frozen:"frozen"
+      ~unsafe_hash:"unsafe_hash"
       decorator
 
 
