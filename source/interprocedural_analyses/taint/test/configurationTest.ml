@@ -375,7 +375,11 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "C"; label = "a" }; triggering_source = "B" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -394,7 +398,11 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "B"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "C"; label = "b" }; triggering_source = "A" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -450,7 +458,11 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "CombinedSink"; label = "b" }; triggering_source = "A" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -469,7 +481,13 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "CombinedSink"; label = "a" }; triggering_source = "B" };
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "CombinedSink"; label = "a" }; triggering_source = "C" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -523,7 +541,11 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "D"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "TestSink"; label = "b" }; triggering_source = "A" };
+            ];
           transforms = [];
           code = 2002;
           message_format = "other form";
@@ -542,7 +564,11 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "TestSink"; label = "a" }; triggering_source = "D" };
+            ];
           transforms = [];
           code = 2002;
           message_format = "other form";
@@ -561,7 +587,11 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "B"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "TestSink"; label = "b" }; triggering_source = "A" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -580,7 +610,11 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "TestSink"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "TestSink"; label = "a" }; triggering_source = "B" };
+            ];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -689,7 +723,19 @@ let test_string_combine_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "B";
+                };
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "C";
+                };
+            ];
           transforms = [];
           code = 2001;
           message_format = "rule message";
@@ -709,7 +755,13 @@ let test_string_combine_rules _ =
         {
           Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
           sinks =
-            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
+                  triggering_source = "A";
+                };
+            ];
           transforms = [];
           code = 2001;
           message_format = "rule message";
@@ -768,7 +820,19 @@ let test_string_combine_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "B";
+                };
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "C";
+                };
+            ];
           transforms = [];
           code = 2001;
           message_format = "rule message 1";
@@ -788,7 +852,13 @@ let test_string_combine_rules _ =
         {
           Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
           sinks =
-            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
+                  triggering_source = "A";
+                };
+            ];
           transforms = [];
           code = 2001;
           message_format = "rule message 1";
@@ -807,7 +877,19 @@ let test_string_combine_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "C";
+                };
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
+                  triggering_source = "D";
+                };
+            ];
           transforms = [];
           code = 2002;
           message_format = "rule message 2";
@@ -827,7 +909,13 @@ let test_string_combine_rules _ =
         {
           Rule.sources = [Sources.NamedSource "C"; Sources.NamedSource "D"];
           sinks =
-            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+            [
+              Sinks.TriggeredPartialSink
+                {
+                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
+                  triggering_source = "A";
+                };
+            ];
           transforms = [];
           code = 2002;
           message_format = "rule message 2";
@@ -850,7 +938,10 @@ let test_string_combine_rules _ =
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     let configuration = assert_parse configuration in
-    TaintConfiguration.get_triggered_sinks_if_matched configuration ~partial_sink ~source
+    TaintConfiguration.PartialSinkConverter.get_triggered_sinks_if_matched
+      configuration.TaintConfiguration.Heap.partial_sink_converter
+      ~partial_sink
+      ~source
     |> assert_equal ~cmp:Sinks.Set.equal ~printer:Sinks.Set.show expected_sink
   in
   let configuration =
@@ -883,8 +974,10 @@ let test_partial_sink_converter _ =
     ~source:(Sources.NamedSource "A")
     ~expected_sink:
       ([
-         Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cb" };
-         Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cd" };
+         Sinks.TriggeredPartialSink
+           { partial_sink = { Sinks.kind = "C"; label = "cb" }; triggering_source = "A" };
+         Sinks.TriggeredPartialSink
+           { partial_sink = { Sinks.kind = "C"; label = "cd" }; triggering_source = "A" };
        ]
       |> Sinks.Set.of_list);
   assert_triggered_sinks
@@ -892,7 +985,9 @@ let test_partial_sink_converter _ =
     ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
     ~source:(Sources.NamedSource "B")
     ~expected_sink:
-      (Sinks.Set.singleton (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "ca" }));
+      (Sinks.Set.singleton
+         (Sinks.TriggeredPartialSink
+            { partial_sink = { Sinks.kind = "C"; label = "ca" }; triggering_source = "B" }));
   assert_triggered_sinks
     configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
@@ -1848,19 +1943,28 @@ let test_matching_kinds _ =
         ( Sources.NamedSource "A",
           Sinks.Set.of_list
             [
-              Sinks.TriggeredPartialSink { kind = "PartialSink1"; label = "a" };
-              Sinks.TriggeredPartialSink { kind = "PartialSink3"; label = "a" };
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "PartialSink1"; label = "a" }; triggering_source = "B" };
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "PartialSink3"; label = "a" }; triggering_source = "D" };
             ] );
         ( Sources.NamedSource "B",
-          Sinks.Set.of_list [Sinks.TriggeredPartialSink { kind = "PartialSink1"; label = "b" }] );
+          Sinks.Set.of_list
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "PartialSink1"; label = "b" }; triggering_source = "A" };
+            ] );
       ]
     ~matching_sources:
       [
-        ( Sinks.TriggeredPartialSink { kind = "PartialSink1"; label = "a" },
+        ( Sinks.TriggeredPartialSink
+            { partial_sink = { kind = "PartialSink1"; label = "a" }; triggering_source = "B" },
           Sources.Set.of_list [Sources.NamedSource "A"] );
-        ( Sinks.TriggeredPartialSink { kind = "PartialSink1"; label = "b" },
+        ( Sinks.TriggeredPartialSink
+            { partial_sink = { kind = "PartialSink1"; label = "b" }; triggering_source = "A" },
           Sources.Set.of_list [Sources.NamedSource "B"] );
-        ( Sinks.TriggeredPartialSink { kind = "PartialSink3"; label = "a" },
+        ( Sinks.TriggeredPartialSink
+            { partial_sink = { kind = "PartialSink3"; label = "a" }; triggering_source = "D" },
           Sources.Set.of_list [Sources.NamedSource "A"] );
       ]
     ~possible_tito_transforms:[TaintTransforms.empty]

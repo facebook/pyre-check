@@ -62,3 +62,12 @@ val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 val get_named_transforms : t -> TaintTransform.t list
 
 val contains_sanitize_transforms : t -> SanitizeTransformSet.t -> bool
+
+(* A source that can result in creating triggered sinks. *)
+module TriggeringSource : sig
+  type t = string
+
+  module Map : Data_structures.SerializableMap.S with type key = t
+end
+
+val as_triggering_source : t -> TriggeringSource.t option

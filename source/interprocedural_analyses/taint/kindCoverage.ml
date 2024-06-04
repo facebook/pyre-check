@@ -22,19 +22,32 @@ end
 module Sinks = struct
   include Sinks
 
-  let rec from_sink = function
+  let rec from_sink ~partial_sink_converter = function
     | Sinks.Attach -> None
     | Sinks.PartialSink partial_sink ->
         (* Rules only match sources against `TriggeredPartialSink` *)
-        Some (Sinks.TriggeredPartialSink partial_sink)
-    | Sinks.TriggeredPartialSink _ as sink -> Some sink
+        Some
+          (TaintConfiguration.PartialSinkConverter.all_triggered_sinks
+             ~partial_sink
+             partial_sink_converter)
+    | Sinks.TriggeredPartialSink _ as sink -> Some (Set.singleton sink)
     | Sinks.LocalReturn -> None
-    | Sinks.NamedSink _ as sink -> Some sink
-    | Sinks.ParametricSink { sink_name; _ } -> Some (Sinks.NamedSink sink_name)
+    | Sinks.NamedSink _ as sink -> Some (Set.singleton sink)
+    | Sinks.ParametricSink { sink_name; _ } -> Some (Set.singleton (Sinks.NamedSink sink_name))
     | Sinks.ParameterUpdate _ -> None
     | Sinks.AddFeatureToArgument -> None
-    | Sinks.Transform _ as sink -> from_sink (Sinks.discard_transforms sink)
+    | Sinks.Transform _ as sink -> from_sink ~partial_sink_converter (Sinks.discard_transforms sink)
     | Sinks.ExtraTraceSink -> None
+
+
+  let from_sinks ~partial_sink_converter sinks =
+    List.fold
+      ~f:(fun so_far sink ->
+        match from_sink ~partial_sink_converter sink with
+        | Some sinks -> Sinks.Set.union so_far sinks
+        | None -> so_far)
+      sinks
+      ~init:Sinks.Set.empty
 end
 
 module Transforms = struct
@@ -63,6 +76,7 @@ let empty =
 
 
 let from_model
+    ~partial_sink_converter
     {
       Model.forward = { generations };
       Model.backward = { taint_in_taint_out; sink_taint };
@@ -109,15 +123,15 @@ let from_model
   in
   {
     sources = sources |> Sources.Set.filter_map Sources.from_source;
-    sinks = sinks |> Sinks.Set.filter_map Sinks.from_sink;
+    sinks = sinks |> Sinks.Set.elements |> Sinks.from_sinks ~partial_sink_converter;
     transforms = Transforms.Set.union source_transforms sink_transforms;
   }
 
 
-let from_rule { Rule.sources; sinks; transforms; _ } =
+let from_rule ~partial_sink_converter { Rule.sources; sinks; transforms; _ } =
   {
     sources = sources |> Sources.Set.of_list |> Sources.Set.filter_map Sources.from_source;
-    sinks = sinks |> Sinks.Set.of_list |> Sinks.Set.filter_map Sinks.from_sink;
+    sinks = Sinks.from_sinks ~partial_sink_converter sinks;
     transforms =
       (* Not consider transforms from sources or sinks, since those should not have transforms. *)
       Transforms.Set.of_list transforms;

@@ -446,6 +446,7 @@ let compute_coverage
     ~all_callables
     ~rules
     ~fixpoint_state
+    ~partial_sink_converter
   =
   Log.info "Computing file coverage...";
   let timer = Timer.start () in
@@ -469,7 +470,7 @@ let compute_coverage
     callables
     |> List.filter_map ~f:(fun callable ->
            match TaintFixpoint.get_model fixpoint_state callable with
-           | Some model -> Some (KindCoverage.from_model model)
+           | Some model -> Some (KindCoverage.from_model ~partial_sink_converter model)
            | None -> None)
     |> Algorithms.fold_balanced ~f:KindCoverage.union ~init:KindCoverage.empty
   in
@@ -502,7 +503,7 @@ let compute_coverage
 
   Log.info "Computing rule coverage...";
   let timer = Timer.start () in
-  let rule_coverage = RuleCoverage.from_rules ~kind_coverage rules in
+  let rule_coverage = RuleCoverage.from_rules ~partial_sink_converter ~kind_coverage rules in
   Statistics.performance
     ~name:"Finished computing rule coverage"
     ~phase_name:"Computing rule coverage"
@@ -848,6 +849,7 @@ let run_taint_analysis
         ~all_callables
         ~rules:taint_configuration.TaintConfiguration.Heap.rules
         ~fixpoint_state
+        ~partial_sink_converter:taint_configuration.TaintConfiguration.Heap.partial_sink_converter
   in
 
   let callables = Target.Set.of_list all_callables in

@@ -51,10 +51,10 @@ val to_json
 
 val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
-(* A map from triggered sink kinds (which is a string) to the source traces of the flows that are
-   detected when creating these triggered sinks. Such flows will be shown as subtraces. A triggered
-   sink here means we found one source, and must find the other source, in order to file an issue
-   for a multi-source. *)
+(* A map from triggered sink kinds (which is a string) to the sources that triggered them, along
+   with the source traces. Such flows will be shown as subtraces. A triggered sink here means we
+   found one source, and must find the other source, in order to file an issue for a
+   multi-source. *)
 module TriggeredSinkHashMap : sig
   type t
 
@@ -62,9 +62,13 @@ module TriggeredSinkHashMap : sig
 
   val is_empty : t -> bool
 
-  val mem : t -> Sinks.partial_sink -> bool
-
-  val find : t -> Sinks.partial_sink -> Domains.ExtraTraceFirstHop.Set.t option
+  (* Turn the given partial sink into a triggered sink taint, based on what has triggered this
+     partial sink. *)
+  val create_triggered_sink_taint
+    :  call_info:CallInfo.t ->
+    partial_sink:Sinks.partial_sink ->
+    t ->
+    BackwardTaint.t
 end
 
 (* A map from locations to a backward taint of triggered sinks.

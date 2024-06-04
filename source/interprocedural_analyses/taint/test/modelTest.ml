@@ -3066,7 +3066,11 @@ let test_partial_sinks context =
       [
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "Test"; label = "a" }; triggering_source = "TestTest" };
+            ];
           transforms = [];
           code = 4321;
           message_format = "";
@@ -3076,7 +3080,11 @@ let test_partial_sinks context =
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "Test"; label = "b" }; triggering_source = "TestTest" };
+            ];
           transforms = [];
           code = 4321;
           message_format = "";
@@ -3216,7 +3224,11 @@ let test_filter_by_rules context =
       [
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "a" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "Test"; label = "a" }; triggering_source = "TestTest" };
+            ];
           transforms = [];
           code = 4321;
           message_format = "";
@@ -3226,7 +3238,11 @@ let test_filter_by_rules context =
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "b" }];
+          sinks =
+            [
+              Sinks.TriggeredPartialSink
+                { partial_sink = { kind = "Test"; label = "b" }; triggering_source = "TestTest" };
+            ];
           transforms = [];
           code = 4321;
           message_format = "";

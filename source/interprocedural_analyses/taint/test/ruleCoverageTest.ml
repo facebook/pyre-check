@@ -11,19 +11,26 @@ open Taint
 
 let test_covered_rule _ =
   let open RuleCoverage in
-  let assert_covered_rule ~expected ~actual =
-    assert_equal
-      ~cmp:(Option.equal CoveredRule.equal)
-      ~printer:(Option.value_map ~default:"None" ~f:CoveredRule.show)
-      expected
-      actual
-  in
   let kind_coverage =
     {
       KindCoverage.sources = KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
       sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
       transforms = KindCoverage.Transforms.Set.of_list [TaintTransform.Named "TransformX"];
     }
+  in
+  let assert_covered_rule
+      ?(kind_coverage = kind_coverage)
+      ?(partial_sink_converter = TaintConfiguration.PartialSinkConverter.empty)
+      ~expected
+      ~actual
+      ()
+    =
+    let actual = CoveredRule.is_covered ~partial_sink_converter ~kind_coverage actual in
+    assert_equal
+      ~cmp:(Option.equal CoveredRule.equal)
+      ~printer:(Option.value_map ~default:"None" ~f:CoveredRule.show)
+      expected
+      actual
   in
 
   (* Not covered because the source is not used. *)
@@ -39,9 +46,7 @@ let test_covered_rule _ =
       location = None;
     }
   in
-  assert_covered_rule
-    ~expected:None
-    ~actual:(CoveredRule.is_covered ~kind_coverage source_not_covered);
+  assert_covered_rule ~expected:None ~actual:source_not_covered ();
 
   (* Not covered because the sink is not used. *)
   let sink_not_covered =
@@ -56,9 +61,7 @@ let test_covered_rule _ =
       location = None;
     }
   in
-  assert_covered_rule
-    ~expected:None
-    ~actual:(CoveredRule.is_covered ~kind_coverage sink_not_covered);
+  assert_covered_rule ~expected:None ~actual:sink_not_covered ();
 
   (* Not covered because the transform is not used. *)
   let transform_not_covered =
@@ -73,9 +76,7 @@ let test_covered_rule _ =
       location = None;
     }
   in
-  assert_covered_rule
-    ~expected:None
-    ~actual:(CoveredRule.is_covered ~kind_coverage transform_not_covered);
+  assert_covered_rule ~expected:None ~actual:transform_not_covered ();
 
   let covered_rule =
     {
@@ -91,7 +92,8 @@ let test_covered_rule _ =
   in
   assert_covered_rule
     ~expected:(Some { CoveredRule.rule_code = 1234; kind_coverage })
-    ~actual:(CoveredRule.is_covered ~kind_coverage covered_rule);
+    ~actual:covered_rule
+    ();
 
   (* Don't have taint transforms, but is still considered as covered. *)
   let another_covered_rule =
@@ -119,7 +121,8 @@ let test_covered_rule _ =
                transforms = KindCoverage.Transforms.Set.empty;
              };
          })
-    ~actual:(CoveredRule.is_covered ~kind_coverage another_covered_rule)
+    ~actual:another_covered_rule
+    ()
 
 
 let test_rule_coverage _ =
@@ -136,8 +139,16 @@ let test_rule_coverage _ =
         KindCoverage.Sinks.Set.of_list
           [
             Sinks.NamedSink "SinkA";
-            Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_1" };
-            Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_2" };
+            Sinks.TriggeredPartialSink
+              {
+                partial_sink = { kind = "SinkC"; label = "label_1" };
+                triggering_source = "SourceD";
+              };
+            Sinks.TriggeredPartialSink
+              {
+                partial_sink = { kind = "SinkC"; label = "label_2" };
+                triggering_source = "SourceC";
+              };
           ];
       transforms = KindCoverage.Transforms.Set.of_list [TaintTransform.Named "TransformX"];
     }
@@ -195,7 +206,11 @@ let test_rule_coverage _ =
   let multi_source_rule_part_1 =
     {
       Rule.sources = [Sources.NamedSource "SourceC"];
-      sinks = [Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_1" }];
+      sinks =
+        [
+          Sinks.TriggeredPartialSink
+            { partial_sink = { kind = "SinkC"; label = "label_1" }; triggering_source = "SourceD" };
+        ];
       transforms = [];
       code = 1003;
       name = "Rule 4";
@@ -207,7 +222,11 @@ let test_rule_coverage _ =
   let multi_source_rule_part_2 =
     {
       Rule.sources = [Sources.NamedSource "SourceD"];
-      sinks = [Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_2" }];
+      sinks =
+        [
+          Sinks.TriggeredPartialSink
+            { partial_sink = { kind = "SinkC"; label = "label_2" }; triggering_source = "SourceC" };
+        ];
       transforms = [];
       code = 1003;
       name = "Rule 4";
@@ -218,6 +237,7 @@ let test_rule_coverage _ =
   in
   let actual_category_coverage =
     RuleCoverage.from_rules
+      ~partial_sink_converter:(TaintConfiguration.PartialSinkConverter.of_alist_exn [])
       ~kind_coverage
       [
         covered_rule_1;
@@ -264,8 +284,16 @@ let test_rule_coverage _ =
                   sinks =
                     KindCoverage.Sinks.Set.of_list
                       [
-                        Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_1" };
-                        Sinks.TriggeredPartialSink { kind = "SinkC"; label = "label_2" };
+                        Sinks.TriggeredPartialSink
+                          {
+                            partial_sink = { kind = "SinkC"; label = "label_1" };
+                            triggering_source = "SourceD";
+                          };
+                        Sinks.TriggeredPartialSink
+                          {
+                            partial_sink = { kind = "SinkC"; label = "label_2" };
+                            triggering_source = "SourceC";
+                          };
                       ];
                   transforms = KindCoverage.Transforms.Set.empty;
                 };

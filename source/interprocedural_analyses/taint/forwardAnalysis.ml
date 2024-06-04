@@ -239,19 +239,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let gather_triggered_sinks_to_propagate ~triggered_sinks ~path (root, taint_tree) taint_so_far =
     let transform_into_triggered_sinks_and_collect_extra_traces sink so_far =
       match Sinks.extract_partial_sink sink with
-      | Some partial_sink -> (
-          match Issue.TriggeredSinkHashMap.find triggered_sinks partial_sink with
-          | Some extra_traces ->
-              BackwardTaint.singleton
-                CallInfo.declaration (* The triggered sink is "declared" here *)
-                (Sinks.TriggeredPartialSink partial_sink)
-                Frame.initial
-              |> BackwardTaint.transform
-                   ExtraTraceFirstHop.Set.Self
-                   Map
-                   ~f:(ExtraTraceFirstHop.Set.join extra_traces)
-              |> BackwardTaint.join so_far
-          | None -> so_far)
+      | Some partial_sink ->
+          Issue.TriggeredSinkHashMap.create_triggered_sink_taint
+            ~call_info:CallInfo.declaration (* The triggered sink is "declared" here *)
+            ~partial_sink
+            triggered_sinks
+          |> BackwardTaint.join so_far
       | None -> so_far
     in
     let taint_tree =

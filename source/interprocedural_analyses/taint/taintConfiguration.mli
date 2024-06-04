@@ -67,6 +67,23 @@ end
    match. *)
 module PartialSinkConverter : sig
   type t
+
+  val empty : t
+
+  val get_triggered_sinks_if_matched
+    :  partial_sink:Sinks.partial_sink ->
+    source:Sources.t ->
+    t ->
+    Sinks.Set.t
+
+  val all_triggered_sinks : partial_sink:Sinks.partial_sink -> t -> Sinks.Set.t
+
+  (* For test purpose only. *)
+  type key
+
+  val key : Sinks.partial_sink -> key
+
+  val of_alist_exn : (key * Sinks.Set.t Sources.TriggeringSource.Map.t) list -> t
 end
 
 module StringOperationPartialSinks : sig
@@ -238,12 +255,6 @@ val conditional_test_sinks : Heap.t -> Sinks.t list
 val literal_string_sinks : Heap.t -> literal_string_sink list
 
 val literal_string_sources : Heap.t -> literal_string_source list
-
-val get_triggered_sinks_if_matched
-  :  Heap.t ->
-  partial_sink:Sinks.partial_sink ->
-  source:Sources.t ->
-  Sinks.Set.t
 
 val is_missing_flow_analysis : Heap.t -> Configuration.MissingFlowKind.t -> bool
 

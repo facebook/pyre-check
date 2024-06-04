@@ -219,7 +219,7 @@ def demonstrate_triggered_c_from_d(x):
 
 
 def issue_with_triggered_c_from_d():
-    # TODO: Should see one issue
+    # Should see one issue
     demonstrate_triggered_c_from_d(c_source())
 
 

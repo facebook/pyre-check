@@ -11,10 +11,18 @@ type partial_sink = {
 }
 [@@deriving compare, show, sexp, eq]
 
+type triggered_sink = {
+  partial_sink: partial_sink;
+  triggering_source: string;
+      (* The source kind that has flowed into the other partial sink, which results in creating this
+         triggered sink. *)
+}
+[@@deriving compare, show, sexp, eq]
+
 type t =
   | Attach
   | PartialSink of partial_sink
-  | TriggeredPartialSink of partial_sink
+  | TriggeredPartialSink of triggered_sink
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | NamedSink of string
   | ParametricSink of {

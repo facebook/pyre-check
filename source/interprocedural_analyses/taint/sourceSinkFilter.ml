@@ -193,7 +193,7 @@ let possible_tito_transforms_from_rules ~rules =
 
 let add_matching_partial_sinks ~rules matching_sources =
   let add_partial_sink matching_sources = function
-    | Sinks.TriggeredPartialSink partial_sink ->
+    | Sinks.TriggeredPartialSink { partial_sink; _ } ->
         Sinks.Map.add
           (Sinks.PartialSink partial_sink)
           MatchingSanitizeTransforms.unsanitizable

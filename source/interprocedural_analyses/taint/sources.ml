@@ -171,3 +171,15 @@ let contains_sanitize_transforms source sanitize_transforms =
   SanitizeTransformSet.less_or_equal
     ~left:sanitize_transforms
     ~right:(extract_sanitize_transforms source)
+
+
+(* A source that can result in creating triggered sinks. *)
+module TriggeringSource = struct
+  type t = string
+
+  module Map = Data_structures.SerializableMap.Make (Core.String)
+end
+
+let as_triggering_source = function
+  | NamedSource source -> Some source
+  | _ -> None

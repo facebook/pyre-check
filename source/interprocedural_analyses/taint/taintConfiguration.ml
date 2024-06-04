@@ -340,27 +340,31 @@ end
 module PartialSinkConverter = struct
   (* A map from partial sinks, to the matching sources and the corresponding triggered sinks for
      each match. *)
-  type t = Sinks.Set.t Sources.Map.t SerializableStringMap.t
+  type t = Sinks.Set.t Sources.TriggeringSource.Map.t SerializableStringMap.t
 
   let empty = SerializableStringMap.empty
+
+  let of_alist_exn = SerializableStringMap.of_alist_exn
+
+  type key = string
 
   let key = Sinks.show_partial_sink
 
   let add map ~first_sources ~first_sink ~second_sources ~second_sink =
+    let update_triggering_source ~triggered_sink so_far triggering_source =
+      Sources.TriggeringSource.Map.update
+        triggering_source
+        (fun existing_triggered_sinks ->
+          Some
+            (existing_triggered_sinks
+            |> Option.value ~default:Sinks.Set.empty
+            |> Sinks.Set.add
+                 (Sinks.TriggeredPartialSink { partial_sink = triggered_sink; triggering_source })))
+        so_far
+    in
     (* For each new matching source, add the corresponding triggered sink. *)
-    let update_sources_to_triggered_sinks ~sources ~triggered_sink sources_to_triggered_sinks =
-      List.fold
-        sources
-        ~f:(fun so_far source ->
-          Sources.Map.update
-            source
-            (fun existing_triggered_sinks ->
-              Some
-                (existing_triggered_sinks
-                |> Option.value ~default:Sinks.Set.empty
-                |> Sinks.Set.add triggered_sink))
-            so_far)
-        ~init:sources_to_triggered_sinks
+    let update_triggering_sources ~triggering_sources ~triggered_sink map =
+      List.fold ~f:(update_triggering_source ~triggered_sink) ~init:map triggering_sources
     in
     (* Trigger second sink when the first sink matches a source, and vice versa. *)
     let add_entry sink sources triggered_sink map =
@@ -369,10 +373,10 @@ module PartialSinkConverter = struct
         (fun existing_sources_to_triggered_sinks ->
           Some
             (existing_sources_to_triggered_sinks
-            |> Option.value ~default:Sources.Map.empty
-            |> update_sources_to_triggered_sinks
-                 ~sources
-                 ~triggered_sink:(Sinks.TriggeredPartialSink triggered_sink)))
+            |> Option.value ~default:Sources.TriggeringSource.Map.empty
+            |> update_triggering_sources
+                 ~triggering_sources:(List.filter_map ~f:Sources.as_triggering_source sources)
+                 ~triggered_sink))
         map
     in
     map
@@ -399,9 +403,24 @@ module PartialSinkConverter = struct
 
   let get_triggered_sinks_if_matched ~partial_sink ~source converter =
     let open Option.Monad_infix in
+    source
+    |> Sources.discard_sanitize_transforms
+    |> Sources.as_triggering_source
+    >>= (fun triggering_source ->
+          converter
+          |> SerializableStringMap.find_opt (key partial_sink)
+          >>= Sources.TriggeringSource.Map.find_opt triggering_source)
+    |> Option.value ~default:Sinks.Set.empty
+
+
+  let all_triggered_sinks ~partial_sink converter =
+    let open Option.Monad_infix in
     converter
     |> SerializableStringMap.find_opt (key partial_sink)
-    >>= Sources.Map.find_opt (Sources.discard_sanitize_transforms source)
+    >>| (fun sources_to_triggered_sinks ->
+          sources_to_triggered_sinks
+          |> Sources.TriggeringSource.Map.data
+          |> Algorithms.fold_balanced ~f:Sinks.Set.union ~init:Sinks.Set.empty)
     |> Option.value ~default:Sinks.Set.empty
 end
 
@@ -1343,10 +1362,18 @@ let from_json_list source_json_list =
      create_partial_sink secondary_label partial_sink
      >>| fun secondary_sink -> main_sink, secondary_sink)
     >>= fun (main_sink, secondary_sink) ->
+    let create_triggered_sinks ~partial_sink =
+      List.map ~f:(fun source ->
+          source
+          |> Sources.as_triggering_source
+          |> Option.value_exn
+               ~message:(Format.asprintf "Expect %a to be a triggering source" Sources.pp source)
+          |> fun triggering_source -> Sinks.TriggeredPartialSink { partial_sink; triggering_source })
+    in
     let main_rule =
       {
         Rule.sources = secondary_sources;
-        sinks = [Sinks.TriggeredPartialSink secondary_sink];
+        sinks = create_triggered_sinks ~partial_sink:secondary_sink main_sources;
         transforms = [];
         name;
         code;
@@ -1358,7 +1385,7 @@ let from_json_list source_json_list =
     let secondary_rule =
       {
         Rule.sources = main_sources;
-        sinks = [Sinks.TriggeredPartialSink main_sink];
+        sinks = create_triggered_sinks ~partial_sink:main_sink secondary_sources;
         transforms = [];
         name;
         code;
@@ -2022,10 +2049,6 @@ let conditional_test_sinks { Heap.implicit_sinks = { conditional_test; _ }; _ } 
 
 let literal_string_sinks { Heap.implicit_sinks = { literal_string_sinks; _ }; _ } =
   literal_string_sinks
-
-
-let get_triggered_sinks_if_matched { Heap.partial_sink_converter; _ } ~partial_sink ~source =
-  PartialSinkConverter.get_triggered_sinks_if_matched ~partial_sink ~source partial_sink_converter
 
 
 let is_missing_flow_analysis { Heap.find_missing_flows; _ } kind =
