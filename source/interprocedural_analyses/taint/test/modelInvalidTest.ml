@@ -60,8 +60,14 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
             ["X"; "Y"; "Test"];
         features = ["featureA"; "featureB"];
         rules = [];
-        partial_sink_labels =
-          TaintConfiguration.PartialSinkLabelsMap.of_alist_exn ["Test", ["a", "b"; "c", "d"]];
+        registered_partial_sinks =
+          TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+            [
+              "Test[a]", ["Test[b]"];
+              "Test[b]", ["Test[a]"];
+              "Test[c]", ["Test[d]"];
+              "Test[d]", ["Test[c]"];
+            ];
       }
   in
   let error_message =
@@ -156,15 +162,15 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[first]], y: PartialSink[Test[b]]): ..."
     ~expect:
-      "`PartialSink[Test[first]]` is an invalid taint annotation: Unrecognized label `first` for \
-       partial sink `Test` (choices: `a, b, c, d`)"
+      "`PartialSink[Test[first]]` is an invalid taint annotation: Unrecognized partial sink \
+       `Test[first]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
     ();
   assert_invalid_model
     ~model_source:
       "def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[second]]): ..."
     ~expect:
-      "`PartialSink[Test[second]]` is an invalid taint annotation: Unrecognized label `second` for \
-       partial sink `Test` (choices: `a, b, c, d`)"
+      "`PartialSink[Test[second]]` is an invalid taint annotation: Unrecognized partial sink \
+       `Test[second]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[d]]): ..."
@@ -203,7 +209,9 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
-    ~expect:"`PartialSink[X[a]]` is an invalid taint annotation: Unrecognized partial sink `X`."
+    ~expect:
+      "`PartialSink[X[a]]` is an invalid taint annotation: Unrecognized partial sink `X[a]` \
+       (choices: `Test[a], Test[b], Test[c], Test[d]`)"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
@@ -818,7 +826,7 @@ let test_invalid_models context =
       "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
     ~expect:
       "`PartialSink[Nonexistent[a]]` is an invalid taint annotation: Unrecognized partial sink \
-       `Nonexistent`."
+       `Nonexistent[a]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."

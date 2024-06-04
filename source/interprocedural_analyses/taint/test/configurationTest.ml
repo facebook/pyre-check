@@ -11,19 +11,6 @@ open Taint
 open Pyre
 module Result = Core.Result
 
-let print_partial_sink_labels list =
-  list
-  |> List.map ~f:(fun (partial_sink, labels_per_rule) ->
-         Format.asprintf
-           "%s: [%s]"
-           partial_sink
-           (labels_per_rule
-           |> List.map ~f:(fun (label_1, label_2) -> [label_1; label_2])
-           |> List.concat
-           |> String.concat ~sep:","))
-  |> String.concat ~sep:"\n"
-
-
 let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
   let open Result in
   let configuration =
@@ -375,11 +362,7 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "C"; label = "a" }; triggering_source = "B" };
-            ];
+          sinks = [Sinks.TriggeredPartialSink { partial_sink = "C[a]"; triggering_source = "B" }];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -398,11 +381,7 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "B"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "C"; label = "b" }; triggering_source = "A" };
-            ];
+          sinks = [Sinks.TriggeredPartialSink { partial_sink = "C[b]"; triggering_source = "A" }];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -422,9 +401,10 @@ let test_combined_source_rules _ =
       ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
   assert_equal
-    ~printer:print_partial_sink_labels
-    ["C", ["b", "a"]]
-    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
+    ~printer:TaintConfiguration.RegisteredPartialSinks.show
+    ~cmp:TaintConfiguration.RegisteredPartialSinks.equal
+    (TaintConfiguration.RegisteredPartialSinks.of_alist_exn ["C[a]", ["C[b]"]; "C[b]", ["C[a]"]])
+    configuration.registered_partial_sinks;
   let configuration =
     assert_parse
       {|
@@ -449,9 +429,11 @@ let test_combined_source_rules _ =
   assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal configuration.sinks [];
   assert_equal
-    ~printer:print_partial_sink_labels
-    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
-    ["CombinedSink", ["a", "b"]];
+    ~printer:TaintConfiguration.RegisteredPartialSinks.show
+    ~cmp:TaintConfiguration.RegisteredPartialSinks.equal
+    (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+       ["CombinedSink[a]", ["CombinedSink[b]"]; "CombinedSink[b]", ["CombinedSink[a]"]])
+    configuration.registered_partial_sinks;
   assert_rules_equal
     ~actual:configuration.rules
     ~expected:
@@ -461,7 +443,7 @@ let test_combined_source_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "CombinedSink"; label = "b" }; triggering_source = "A" };
+                { partial_sink = "CombinedSink[b]"; triggering_source = "A" };
             ];
           transforms = [];
           code = 2001;
@@ -484,9 +466,9 @@ let test_combined_source_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "CombinedSink"; label = "a" }; triggering_source = "B" };
+                { partial_sink = "CombinedSink[a]"; triggering_source = "B" };
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "CombinedSink"; label = "a" }; triggering_source = "C" };
+                { partial_sink = "CombinedSink[a]"; triggering_source = "C" };
             ];
           transforms = [];
           code = 2001;
@@ -542,10 +524,7 @@ let test_combined_source_rules _ =
         {
           Rule.sources = [Sources.NamedSource "D"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "TestSink"; label = "b" }; triggering_source = "A" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestSink[b]"; triggering_source = "A" }];
           transforms = [];
           code = 2002;
           message_format = "other form";
@@ -565,10 +544,7 @@ let test_combined_source_rules _ =
         {
           Rule.sources = [Sources.NamedSource "A"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "TestSink"; label = "a" }; triggering_source = "D" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestSink[a]"; triggering_source = "D" }];
           transforms = [];
           code = 2002;
           message_format = "other form";
@@ -588,10 +564,7 @@ let test_combined_source_rules _ =
         {
           Rule.sources = [Sources.NamedSource "B"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "TestSink"; label = "b" }; triggering_source = "A" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestSink[b]"; triggering_source = "A" }];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -611,10 +584,7 @@ let test_combined_source_rules _ =
         {
           Rule.sources = [Sources.NamedSource "A"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "TestSink"; label = "a" }; triggering_source = "B" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestSink[a]"; triggering_source = "B" }];
           transforms = [];
           code = 2001;
           message_format = "some form";
@@ -714,9 +684,14 @@ let test_string_combine_rules _ =
   in
   assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal
-    ~printer:print_partial_sink_labels
-    ["UserDefinedPartialSink", ["main", "secondary"]]
-    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
+    ~printer:TaintConfiguration.RegisteredPartialSinks.show
+    ~cmp:TaintConfiguration.RegisteredPartialSinks.equal
+    (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+       [
+         "UserDefinedPartialSink[main]", ["UserDefinedPartialSink[secondary]"];
+         "UserDefinedPartialSink[secondary]", ["UserDefinedPartialSink[main]"];
+       ])
+    configuration.registered_partial_sinks;
   assert_rules_equal
     ~actual:configuration.rules
     ~expected:
@@ -726,15 +701,9 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "B";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "B" };
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "C";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "C" };
             ];
           transforms = [];
           code = 2001;
@@ -757,10 +726,7 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
-                  triggering_source = "A";
-                };
+                { partial_sink = "UserDefinedPartialSink[secondary]"; triggering_source = "A" };
             ];
           transforms = [];
           code = 2001;
@@ -823,15 +789,9 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "B";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "B" };
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "C";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "C" };
             ];
           transforms = [];
           code = 2001;
@@ -854,10 +814,7 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
-                  triggering_source = "A";
-                };
+                { partial_sink = "UserDefinedPartialSink[secondary]"; triggering_source = "A" };
             ];
           transforms = [];
           code = 2001;
@@ -880,15 +837,9 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "C";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "C" };
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "main" };
-                  triggering_source = "D";
-                };
+                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "D" };
             ];
           transforms = [];
           code = 2002;
@@ -911,10 +862,7 @@ let test_string_combine_rules _ =
           sinks =
             [
               Sinks.TriggeredPartialSink
-                {
-                  partial_sink = { kind = "UserDefinedPartialSink"; label = "secondary" };
-                  triggering_source = "A";
-                };
+                { partial_sink = "UserDefinedPartialSink[secondary]"; triggering_source = "A" };
             ];
           transforms = [];
           code = 2002;
@@ -970,32 +918,29 @@ let test_partial_sink_converter _ =
   in
   assert_triggered_sinks
     configuration
-    ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
+    ~partial_sink:"C[ca]"
     ~source:(Sources.NamedSource "A")
     ~expected_sink:
       ([
-         Sinks.TriggeredPartialSink
-           { partial_sink = { Sinks.kind = "C"; label = "cb" }; triggering_source = "A" };
-         Sinks.TriggeredPartialSink
-           { partial_sink = { Sinks.kind = "C"; label = "cd" }; triggering_source = "A" };
+         Sinks.TriggeredPartialSink { partial_sink = "C[cb]"; triggering_source = "A" };
+         Sinks.TriggeredPartialSink { partial_sink = "C[cd]"; triggering_source = "A" };
        ]
       |> Sinks.Set.of_list);
   assert_triggered_sinks
     configuration
-    ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
+    ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "B")
     ~expected_sink:
       (Sinks.Set.singleton
-         (Sinks.TriggeredPartialSink
-            { partial_sink = { Sinks.kind = "C"; label = "ca" }; triggering_source = "B" }));
+         (Sinks.TriggeredPartialSink { partial_sink = "C[ca]"; triggering_source = "B" }));
   assert_triggered_sinks
     configuration
-    ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
+    ~partial_sink:"C[ca]"
     ~source:(Sources.NamedSource "B")
     ~expected_sink:Sinks.Set.empty;
   assert_triggered_sinks
     configuration
-    ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
+    ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "A")
     ~expected_sink:Sinks.Set.empty
 
@@ -1944,27 +1889,24 @@ let test_matching_kinds _ =
           Sinks.Set.of_list
             [
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "PartialSink1"; label = "a" }; triggering_source = "B" };
+                { partial_sink = "PartialSink1[a]"; triggering_source = "B" };
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "PartialSink3"; label = "a" }; triggering_source = "D" };
+                { partial_sink = "PartialSink3[a]"; triggering_source = "D" };
             ] );
         ( Sources.NamedSource "B",
           Sinks.Set.of_list
             [
               Sinks.TriggeredPartialSink
-                { partial_sink = { kind = "PartialSink1"; label = "b" }; triggering_source = "A" };
+                { partial_sink = "PartialSink1[b]"; triggering_source = "A" };
             ] );
       ]
     ~matching_sources:
       [
-        ( Sinks.TriggeredPartialSink
-            { partial_sink = { kind = "PartialSink1"; label = "a" }; triggering_source = "B" },
+        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink1[a]"; triggering_source = "B" },
           Sources.Set.of_list [Sources.NamedSource "A"] );
-        ( Sinks.TriggeredPartialSink
-            { partial_sink = { kind = "PartialSink1"; label = "b" }; triggering_source = "A" },
+        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink1[b]"; triggering_source = "A" },
           Sources.Set.of_list [Sources.NamedSource "B"] );
-        ( Sinks.TriggeredPartialSink
-            { partial_sink = { kind = "PartialSink3"; label = "a" }; triggering_source = "D" },
+        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink3[a]"; triggering_source = "D" },
           Sources.Set.of_list [Sources.NamedSource "A"] );
       ]
     ~possible_tito_transforms:[TaintTransforms.empty]

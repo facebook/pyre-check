@@ -379,9 +379,7 @@ module TriggeredSinkHashMap = struct
 
   let is_empty map = Core.Hashtbl.is_empty map
 
-  let key = Sinks.show_partial_sink
-
-  let mem map partial_sink = Core.Hashtbl.mem map (key partial_sink)
+  let mem map partial_sink = Core.Hashtbl.mem map partial_sink
 
   let add map ~triggered_sink:{ Sinks.partial_sink; triggering_source } ~extra_traces =
     let merge_extra_traces = function
@@ -394,7 +392,7 @@ module TriggeredSinkHashMap = struct
           Sources.TriggeringSource.Map.update triggering_source merge_extra_traces existing_map
       | None -> Sources.TriggeringSource.Map.singleton triggering_source extra_traces
     in
-    Core.Hashtbl.update map (key partial_sink) ~f:update
+    Core.Hashtbl.update map partial_sink ~f:update
 
 
   let create_triggered_sink_taint ~call_info ~partial_sink map =
@@ -408,7 +406,7 @@ module TriggeredSinkHashMap = struct
            Map
            ~f:(ExtraTraceFirstHop.Set.join extra_traces)
     in
-    Core.Hashtbl.find map (key partial_sink)
+    Core.Hashtbl.find map partial_sink
     >>| Sources.TriggeringSource.Map.bindings
     >>| List.map ~f:(fun (triggering_source, extra_traces) ->
             create_taint call_info partial_sink triggering_source extra_traces)

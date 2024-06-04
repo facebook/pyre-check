@@ -15,15 +15,7 @@ open Core
 let name = "sink"
 
 module T = struct
-  type partial_sink = {
-    kind: string;
-    label: string;
-  }
-  [@@deriving compare, hash, sexp, eq]
-
-  let pp_partial_sink format { kind; label } = Format.fprintf format "%s[%s]" kind label
-
-  let show_partial_sink = Format.asprintf "%a" pp_partial_sink
+  type partial_sink = string [@@deriving compare, hash, sexp, eq, show]
 
   type triggered_sink = {
     partial_sink: partial_sink;
@@ -33,8 +25,8 @@ module T = struct
   }
   [@@deriving compare, hash, sexp, eq]
 
-  let pp_triggered_sink format { partial_sink = { kind; label }; triggering_source } =
-    Format.fprintf format "%s[%s: %s]" kind label triggering_source
+  let pp_triggered_sink format { partial_sink; triggering_source } =
+    Format.fprintf format "%s: %s" partial_sink triggering_source
 
 
   let show_triggered_sink = Format.asprintf "%a" pp_triggered_sink
@@ -65,15 +57,9 @@ module T = struct
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
-    | PartialSink partial_sink ->
-        Format.fprintf formatter "PartialSink[%s]" (show_partial_sink partial_sink)
+    | PartialSink partial_sink -> Format.fprintf formatter "PartialSink[%s]" partial_sink
     | TriggeredPartialSink { partial_sink; triggering_source } ->
-        Format.fprintf
-          formatter
-          "TriggeredPartialSink[%a, %s]]"
-          pp_partial_sink
-          partial_sink
-          triggering_source
+        Format.fprintf formatter "TriggeredPartialSink[%s, %s]]" partial_sink triggering_source
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind

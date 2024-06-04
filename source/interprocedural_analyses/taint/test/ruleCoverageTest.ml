@@ -140,15 +140,9 @@ let test_rule_coverage _ =
           [
             Sinks.NamedSink "SinkA";
             Sinks.TriggeredPartialSink
-              {
-                partial_sink = { kind = "SinkC"; label = "label_1" };
-                triggering_source = "SourceD";
-              };
+              { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
             Sinks.TriggeredPartialSink
-              {
-                partial_sink = { kind = "SinkC"; label = "label_2" };
-                triggering_source = "SourceC";
-              };
+              { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
           ];
       transforms = KindCoverage.Transforms.Set.of_list [TaintTransform.Named "TransformX"];
     }
@@ -209,7 +203,7 @@ let test_rule_coverage _ =
       sinks =
         [
           Sinks.TriggeredPartialSink
-            { partial_sink = { kind = "SinkC"; label = "label_1" }; triggering_source = "SourceD" };
+            { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
         ];
       transforms = [];
       code = 1003;
@@ -225,7 +219,7 @@ let test_rule_coverage _ =
       sinks =
         [
           Sinks.TriggeredPartialSink
-            { partial_sink = { kind = "SinkC"; label = "label_2" }; triggering_source = "SourceC" };
+            { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
         ];
       transforms = [];
       code = 1003;
@@ -285,15 +279,9 @@ let test_rule_coverage _ =
                     KindCoverage.Sinks.Set.of_list
                       [
                         Sinks.TriggeredPartialSink
-                          {
-                            partial_sink = { kind = "SinkC"; label = "label_1" };
-                            triggering_source = "SourceD";
-                          };
+                          { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
                         Sinks.TriggeredPartialSink
-                          {
-                            partial_sink = { kind = "SinkC"; label = "label_2" };
-                            triggering_source = "SourceC";
-                          };
+                          { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
                       ];
                   transforms = KindCoverage.Transforms.Set.empty;
                 };

@@ -5,11 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type partial_sink = {
-  kind: string;
-  label: string;
-}
-[@@deriving compare, show, sexp, eq]
+type partial_sink = string [@@deriving compare, show, sexp, eq]
 
 type triggered_sink = {
   partial_sink: partial_sink;
