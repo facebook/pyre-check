@@ -473,7 +473,6 @@ end = struct
     | FloorDiv -> "__ifloordiv__"
 
 
-  (* TODO: temporary T101299882 *)
   let binary_operator_method = function
     | Add -> "__add__"
     | Sub -> "__sub__"

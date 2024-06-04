@@ -2587,7 +2587,7 @@ struct
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
-        | Expression.BinaryOperator _ -> failwith "T101299882"
+        | Expression.BinaryOperator _ -> failwith "T191035448"
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->

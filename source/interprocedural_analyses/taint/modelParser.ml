@@ -1698,7 +1698,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
         | Sub -> ModelQuery.FormatString.IntegerExpression.Sub { left; right }
         | Mult -> ModelQuery.FormatString.IntegerExpression.Mul { left; right }
         | _ -> failwith "unreachable")
-    (* TODO: remove after T101299882 is complete *)
+    (* TODO: remove after T191035448 is complete *)
     | {
         Node.value =
           Expression.Call
@@ -1790,7 +1790,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
           _;
         } ->
         Ok (ModelQuery.FormatString.Substring.Capture name)
-    (* TODO: remove after T101299882 is complete *)
+    (* TODO: remove after T191035448 is complete *)
     | Ast.Expression.Substring.Format
         {
           value =

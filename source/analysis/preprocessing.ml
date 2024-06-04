@@ -3644,39 +3644,6 @@ let replace_union_shorthand_in_annotation_expression =
     in
     let value =
       match value with
-      (* TODO: remove after T101299882 is complete *)
-      | Expression.Call
-          {
-            callee = { Node.value = Name (Name.Attribute { base; attribute = "__or__"; _ }); _ };
-            arguments;
-          } ->
-          let indices =
-            let unpack_argument { Call.Argument.value; _ } = value in
-            (* Form the raw index expressions *)
-            base :: List.map ~f:unpack_argument arguments
-            (* Recursively transform them into `typing.Union[...]` form *)
-            |> List.map ~f:transform_expression
-            (* Flatten all of the inner `typing.Union`s (and use `rev` to preserve order) *)
-            |> List.fold ~init:[] ~f:flatten_typing_unions
-            |> List.rev
-          in
-          let index = { Node.value = Expression.Tuple indices; location } in
-          Expression.Subscript
-            {
-              base =
-                {
-                  Node.location;
-                  value =
-                    Name
-                      (Name.Attribute
-                         {
-                           base = { Node.location; value = Name (Name.Identifier "typing") };
-                           attribute = "Union";
-                           special = false;
-                         });
-                };
-              index;
-            }
       | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right } ->
           let indices =
             [left; right]
