@@ -381,7 +381,11 @@ module TriggeredSinkHashMap = struct
 
   let mem map partial_sink = Core.Hashtbl.mem map partial_sink
 
-  let add map ~triggered_sink:{ Sinks.partial_sink; triggering_source } ~extra_traces =
+  let add
+      map
+      ~triggered_sink:{ Sinks.PartialSink.Triggered.partial_sink; triggering_source }
+      ~extra_traces
+    =
     let merge_extra_traces = function
       | Some existing_extra_traces ->
           Some (Domains.ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces)
@@ -516,13 +520,10 @@ let compute_triggered_flows
       ~partial_sink
       ~source
       partial_sink_converter
-    |> Sinks.Set.elements
-    |> List.filter_map ~f:(function
-           | Sinks.TriggeredPartialSink triggered_sink ->
-               (* One flow is found. If both flows are present, turn the flow into an issue.
-                  Otherwise, record the flow so that it can be attached later. *)
-               generate_issue_or_attach_subtraces ~call_info ~source ~partial_sink triggered_sink
-           | _ -> failwith "Only expect triggered sinks")
+    |> Sinks.PartialSink.Triggered.Set.elements
+    (* One flow is found. If both flows are present, turn the flow into an issue. Otherwise, record
+       the flow so that it can be attached later. *)
+    |> List.filter_map ~f:(generate_issue_or_attach_subtraces ~call_info ~source ~partial_sink)
   in
   partial_sinks
   |> List.cartesian_product call_infos_and_sources

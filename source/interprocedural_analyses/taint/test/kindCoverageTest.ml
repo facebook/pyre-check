@@ -53,10 +53,12 @@ let test_from_sink _ =
           Sources.TriggeringSource.Map.of_alist_exn
             [
               ( "SourceB",
-                Sinks.Set.of_list
+                Sinks.PartialSink.Triggered.Set.of_list
                   [
-                    Sinks.TriggeredPartialSink
-                      { partial_sink = "SinkC[label_3]"; triggering_source = "SourceB" };
+                    {
+                      Sinks.PartialSink.Triggered.partial_sink = "SinkC[label_3]";
+                      triggering_source = "SourceB";
+                    };
                   ] );
             ] );
       ]

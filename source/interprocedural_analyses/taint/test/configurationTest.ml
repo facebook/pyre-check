@@ -890,7 +890,10 @@ let test_partial_sink_converter _ =
       configuration.TaintConfiguration.Heap.partial_sink_converter
       ~partial_sink
       ~source
-    |> assert_equal ~cmp:Sinks.Set.equal ~printer:Sinks.Set.show expected_sink
+    |> assert_equal
+         ~cmp:Sinks.PartialSink.Triggered.Set.equal
+         ~printer:Sinks.PartialSink.Triggered.Set.show
+         expected_sink
   in
   let configuration =
     {|
@@ -922,27 +925,27 @@ let test_partial_sink_converter _ =
     ~source:(Sources.NamedSource "A")
     ~expected_sink:
       ([
-         Sinks.TriggeredPartialSink { partial_sink = "C[cb]"; triggering_source = "A" };
-         Sinks.TriggeredPartialSink { partial_sink = "C[cd]"; triggering_source = "A" };
+         { Sinks.PartialSink.Triggered.partial_sink = "C[cb]"; triggering_source = "A" };
+         { Sinks.PartialSink.Triggered.partial_sink = "C[cd]"; triggering_source = "A" };
        ]
-      |> Sinks.Set.of_list);
+      |> Sinks.PartialSink.Triggered.Set.of_list);
   assert_triggered_sinks
     configuration
     ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "B")
     ~expected_sink:
-      (Sinks.Set.singleton
-         (Sinks.TriggeredPartialSink { partial_sink = "C[ca]"; triggering_source = "B" }));
+      (Sinks.PartialSink.Triggered.Set.singleton
+         { Sinks.PartialSink.Triggered.partial_sink = "C[ca]"; triggering_source = "B" });
   assert_triggered_sinks
     configuration
     ~partial_sink:"C[ca]"
     ~source:(Sources.NamedSource "B")
-    ~expected_sink:Sinks.Set.empty;
+    ~expected_sink:Sinks.PartialSink.Triggered.Set.empty;
   assert_triggered_sinks
     configuration
     ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "A")
-    ~expected_sink:Sinks.Set.empty
+    ~expected_sink:Sinks.PartialSink.Triggered.Set.empty
 
 
 let test_multiple_configurations _ =

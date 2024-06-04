@@ -614,9 +614,8 @@ let rec parse_annotations
                  (Format.sprintf
                     "Unrecognized partial sink `%s` (choices: `%s`)"
                     partial_sink
-                    (registered_sinks
-                    |> Data_structures.SerializableStringSet.elements
-                    |> String.concat ~sep:", "))))
+                    (registered_sinks |> Sinks.PartialSink.Set.elements |> String.concat ~sep:", ")))
+        )
     | _ -> invalid_annotation_error ()
   in
   let rec parse_annotation = function
@@ -2648,7 +2647,7 @@ let verify_matching_partial_sinks ~registered_partial_sinks ~path ~location para
       (ModelVerificationError.UnmatchedPartialSinkKind partial_sink)
   in
   let remove_matching_partial_sink ~to_match ~to_remove_from
-      : (Sinks.partial_sink list, ModelVerificationError.t) result
+      : (Sinks.PartialSink.t list, ModelVerificationError.t) result
     =
     match
       ( to_remove_from,
@@ -2659,15 +2658,14 @@ let verify_matching_partial_sinks ~registered_partial_sinks ~path ~location para
         Error (unmatched_partial_sink_error to_match)
     | _, Some matching_sinks ->
         remove_matched_and_accumulate_unmatched
-          ~is_matched:(fun partial_sink ->
-            Data_structures.SerializableStringSet.mem partial_sink matching_sinks)
+          ~is_matched:(fun partial_sink -> Sinks.PartialSink.Set.mem partial_sink matching_sinks)
           ~unmatched_in_reverse:[]
           to_remove_from
         |> (* Provide a more detailed error. *)
         Result.map_error ~f:(fun _ -> unmatched_partial_sink_error to_match)
   in
   let rec remove_matching_partial_sinks
-      : Sinks.partial_sink list -> (unit, ModelVerificationError.t) result
+      : Sinks.PartialSink.t list -> (unit, ModelVerificationError.t) result
     = function
     | [] -> Ok ()
     | head :: tail -> (

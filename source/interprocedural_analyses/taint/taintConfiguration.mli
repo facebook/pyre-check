@@ -47,15 +47,15 @@ end
 module RegisteredPartialSinks : sig
   type t [@@deriving compare, show, equal]
 
-  val from_kind_label : kind:string -> label:string -> Sinks.partial_sink
+  val from_kind_label : kind:string -> label:string -> Sinks.PartialSink.t
 
   type registration_result =
     | Yes
-    | No of Data_structures.SerializableStringSet.t (* The set of registered labels *)
+    | No of Sinks.PartialSink.Set.t (* The set of registered labels *)
 
-  val is_registered : partial_sink:Sinks.partial_sink -> t -> registration_result
+  val is_registered : partial_sink:Sinks.PartialSink.t -> t -> registration_result
 
-  val find_matches : Sinks.partial_sink -> t -> Data_structures.SerializableStringSet.t option
+  val find_matches : Sinks.PartialSink.t -> t -> Sinks.PartialSink.Set.t option
 
   (* For test purpose only. *)
   val of_alist_exn : (string * string list) list -> t
@@ -69,15 +69,20 @@ module PartialSinkConverter : sig
   val empty : t
 
   val get_triggered_sinks_if_matched
-    :  partial_sink:Sinks.partial_sink ->
+    :  partial_sink:Sinks.PartialSink.t ->
     source:Sources.t ->
     t ->
-    Sinks.Set.t
+    Sinks.PartialSink.Triggered.Set.t
 
-  val all_triggered_sinks : partial_sink:Sinks.partial_sink -> t -> Sinks.Set.t
+  val all_triggered_sinks
+    :  partial_sink:Sinks.PartialSink.t ->
+    t ->
+    Sinks.PartialSink.Triggered.Set.t
 
   (* For test purpose only. *)
-  val of_alist_exn : (Sinks.partial_sink * Sinks.Set.t Sources.TriggeringSource.Map.t) list -> t
+  val of_alist_exn
+    :  (Sinks.PartialSink.t * Sinks.PartialSink.Triggered.Set.t Sources.TriggeringSource.Map.t) list ->
+    t
 end
 
 module StringOperationPartialSinks : sig
@@ -85,7 +90,7 @@ module StringOperationPartialSinks : sig
 
   val equal : t -> t -> bool
 
-  val singleton : string -> t
+  val singleton : Sinks.PartialSink.t -> t
 
   val get_partial_sinks : t -> Sinks.t list
 end
@@ -158,7 +163,7 @@ module Error : sig
     | UnexpectedCombinedSourceRule of JsonParsing.JsonAst.Json.t
     | InvalidMultiSink of {
         sink: string;
-        registered: Data_structures.SerializableStringSet.t;
+        registered: Sinks.PartialSink.Set.t;
       }
     | RuleCodeDuplicate of {
         code: int;

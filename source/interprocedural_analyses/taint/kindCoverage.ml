@@ -27,9 +27,11 @@ module Sinks = struct
     | Sinks.PartialSink partial_sink ->
         (* Rules only match sources against `TriggeredPartialSink` *)
         Some
-          (TaintConfiguration.PartialSinkConverter.all_triggered_sinks
-             ~partial_sink
-             partial_sink_converter)
+          (partial_sink_converter
+          |> TaintConfiguration.PartialSinkConverter.all_triggered_sinks ~partial_sink
+          |> Sinks.PartialSink.Triggered.Set.elements
+          |> List.map ~f:(fun triggered -> Sinks.TriggeredPartialSink triggered)
+          |> Set.of_list)
     | Sinks.TriggeredPartialSink _ as sink -> Some (Set.singleton sink)
     | Sinks.LocalReturn -> None
     | Sinks.NamedSink _ as sink -> Some (Set.singleton sink)

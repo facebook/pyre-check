@@ -201,7 +201,7 @@ type kind =
       argument: string;
       error: FormatStringError.t;
     }
-  | UnmatchedPartialSinkKind of Sinks.partial_sink
+  | UnmatchedPartialSinkKind of Sinks.PartialSink.t
 [@@deriving sexp, equal, compare, show]
 
 type t = {

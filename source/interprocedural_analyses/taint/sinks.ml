@@ -14,27 +14,44 @@ open Core
 
 let name = "sink"
 
+module PartialSink = struct
+  module T = struct
+    type t = string [@@deriving compare, hash, sexp, equal, show]
+
+    let show = Fn.id
+  end
+
+  include T
+  module Set = Data_structures.SerializableSet.Make (T)
+  module Map = Data_structures.SerializableMap.Make (T)
+
+  module TriggeredT = struct
+    type t = {
+      partial_sink: T.t;
+      triggering_source: string;
+          (* The source kind that has flowed into the other partial sink, which results in creating
+             this triggered sink. *)
+    }
+    [@@deriving compare, hash, sexp, eq]
+
+    let pp format { partial_sink; triggering_source } =
+      Format.fprintf format "%s, %s" partial_sink triggering_source
+
+
+    let show = Format.asprintf "%a" pp
+  end
+
+  module Triggered = struct
+    include TriggeredT
+    module Set = Data_structures.SerializableSet.Make (TriggeredT)
+  end
+end
+
 module T = struct
-  type partial_sink = string [@@deriving compare, hash, sexp, eq, show]
-
-  type triggered_sink = {
-    partial_sink: partial_sink;
-    triggering_source: string;
-        (* The source kind that has flowed into the other partial sink, which results in creating
-           this triggered sink. *)
-  }
-  [@@deriving compare, hash, sexp, eq]
-
-  let pp_triggered_sink format { partial_sink; triggering_source } =
-    Format.fprintf format "%s: %s" partial_sink triggering_source
-
-
-  let show_triggered_sink = Format.asprintf "%a" pp_triggered_sink
-
   type t =
     | Attach
-    | PartialSink of partial_sink
-    | TriggeredPartialSink of triggered_sink
+    | PartialSink of PartialSink.t
+    | TriggeredPartialSink of PartialSink.Triggered.t
     | LocalReturn (* Special marker to describe function in-out behavior *)
     | NamedSink of string
     | ParametricSink of {
@@ -58,8 +75,8 @@ module T = struct
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
     | PartialSink partial_sink -> Format.fprintf formatter "PartialSink[%s]" partial_sink
-    | TriggeredPartialSink { partial_sink; triggering_source } ->
-        Format.fprintf formatter "TriggeredPartialSink[%s, %s]]" partial_sink triggering_source
+    | TriggeredPartialSink triggered ->
+        Format.fprintf formatter "TriggeredPartialSink[%a]]" PartialSink.Triggered.pp triggered
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind

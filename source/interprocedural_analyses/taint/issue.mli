@@ -66,7 +66,7 @@ module TriggeredSinkHashMap : sig
      partial sink. *)
   val create_triggered_sink_taint
     :  call_info:CallInfo.t ->
-    partial_sink:Sinks.partial_sink ->
+    partial_sink:Sinks.PartialSink.t ->
     t ->
     BackwardTaint.t
 end

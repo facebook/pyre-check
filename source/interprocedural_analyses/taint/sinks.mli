@@ -5,20 +5,30 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type partial_sink = string [@@deriving compare, show, sexp, eq]
+module PartialSink : sig
+  type t = string [@@deriving compare, hash, sexp, eq, show]
 
-type triggered_sink = {
-  partial_sink: partial_sink;
-  triggering_source: string;
-      (* The source kind that has flowed into the other partial sink, which results in creating this
-         triggered sink. *)
-}
-[@@deriving compare, show, sexp, eq]
+  module Set : Data_structures.SerializableSet.S with type elt = t
+
+  module Map : Data_structures.SerializableMap.S with type key = t
+
+  module Triggered : sig
+    type nonrec t = {
+      partial_sink: t;
+      triggering_source: string;
+          (* The source kind that has flowed into the other partial sink, which results in creating
+             this triggered sink. *)
+    }
+    [@@deriving compare, show, sexp, eq]
+
+    module Set : Data_structures.SerializableSet.S with type elt = t
+  end
+end
 
 type t =
   | Attach
-  | PartialSink of partial_sink
-  | TriggeredPartialSink of triggered_sink
+  | PartialSink of PartialSink.t
+  | TriggeredPartialSink of PartialSink.Triggered.t
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | NamedSink of string
   | ParametricSink of {
@@ -77,7 +87,7 @@ val from_sanitized_sink : SanitizeTransform.Sink.t -> t
 
 val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
-val extract_partial_sink : t -> partial_sink option
+val extract_partial_sink : t -> PartialSink.t option
 
 val get_named_transforms : t -> TaintTransform.t list
 
