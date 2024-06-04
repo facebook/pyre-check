@@ -968,7 +968,6 @@ let rec class_names_from_annotation = function
   | Type.NoneType
   | Type.TypeOperation _
   | Type.Variable _
-  | Type.IntExpression _
   | Type.RecursiveType _
   | Type.ParameterVariadicComponent _ ->
       []

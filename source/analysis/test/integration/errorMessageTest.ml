@@ -97,7 +97,7 @@ let test_show_error_traces =
         b = 2
         reveal_type(a + b)
     |}
-           ["Revealed type [-1]: Revealed type for `a + b` is `typing_extensions.Literal[3]`."];
+           ["Revealed type [-1]: Revealed type for `a + b` is `int`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

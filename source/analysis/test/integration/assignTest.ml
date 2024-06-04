@@ -49,11 +49,7 @@ let test_check_assign =
                 x = 1
                 x += 'asdf'
             |}
-           [
-             "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `x` \
-              is incomplete, add an explicit annotation.";
-             "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
-           ];
+           ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
       (* Prune `undeclared` from assignments. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

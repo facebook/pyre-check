@@ -190,15 +190,6 @@ module OrderImplementation = struct
                     | joined -> joined :: tail)
               in
               Type.union (List.fold ~f:flat_join ~init:[] (other :: elements))
-        | Type.IntExpression (Data polynomial), other when Type.Polynomial.is_base_case polynomial
-          ->
-            join order other (Type.polynomial_to_type polynomial)
-        | other, Type.IntExpression (Data polynomial) when Type.Polynomial.is_base_case polynomial
-          ->
-            join order other (Type.polynomial_to_type polynomial)
-        | Type.IntExpression _, other
-        | other, Type.IntExpression _ ->
-            join order other (Type.Primitive "int")
         | _, Type.Variable _
         | Type.Variable _, _ ->
             union
@@ -578,8 +569,6 @@ module OrderImplementation = struct
         | Type.Callable _, _
         | _, Type.Callable _ ->
             Bottom
-        | (Type.IntExpression _ as int_expression), other
-        | other, (Type.IntExpression _ as int_expression)
         | (Type.Literal _ as int_expression), other
         | other, (Type.Literal _ as int_expression) ->
             if always_less_or_equal order ~left:int_expression ~right:other then

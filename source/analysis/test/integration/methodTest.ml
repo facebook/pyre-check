@@ -334,8 +334,6 @@ let test_check_inverse_operator =
             |}
            [
              "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
-             "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `y` \
-              is incomplete, add an explicit annotation.";
              "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__

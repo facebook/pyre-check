@@ -67,8 +67,6 @@ module Record : sig
 
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation record_broadcast [@@deriving compare, eq, sexp, show, hash]
-
       val pp_unpackable
         :  pp_type:(Format.formatter -> 'annotation -> unit) ->
         Format.formatter ->
@@ -105,42 +103,6 @@ module Record : sig
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
         'annotation ->
-        'annotation t
-
-      val create_unpackable_from_concrete_against_concatenation
-        :  concrete:'annotation list ->
-        concatenation:'annotation t ->
-        'annotation record_unpackable
-
-      val create_unpackable_from_concatenation_against_concatenation
-        :  compare_t:('annotation -> 'annotation -> int) ->
-        'annotation t ->
-        'annotation t ->
-        'annotation record_unpackable
-
-      val create_from_concrete_against_concrete
-        :  ?prefix:'annotation list ->
-        ?suffix:'annotation list ->
-        compare_t:('annotation -> 'annotation -> int) ->
-        left:'annotation list ->
-        right:'annotation list ->
-        unit ->
-        'annotation t
-
-      val create_from_concrete_against_concatenation
-        :  ?prefix:'annotation list ->
-        ?suffix:'annotation list ->
-        concrete:'annotation list ->
-        concatenation:'annotation t ->
-        unit ->
-        'annotation t
-
-      val create_from_concatenation_against_concatenation
-        :  ?prefix:'annotation list ->
-        ?suffix:'annotation list ->
-        compare_t:('annotation -> 'annotation -> int) ->
-        'annotation t ->
-        'annotation t ->
         'annotation t
     end
 
@@ -269,67 +231,6 @@ module Record : sig
   end
 end
 
-module Monomial : sig
-  module Operation : sig
-    type 'a t
-  end
-
-  type 'a variable [@@deriving compare, eq, sexp, show, hash]
-
-  type 'a t [@@deriving eq, sexp, compare, hash, show]
-
-  val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
-
-  val create_product : 'a Record.OrderedTypes.Concatenation.record_unpackable -> 'a variable
-end
-
-module Polynomial : sig
-  type 'a t [@@deriving compare, eq, sexp, hash, show]
-
-  val is_base_case : 'a t -> bool
-
-  val show_normal
-    :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
-    show_type:(Format.formatter -> 'a -> unit) ->
-    'a t ->
-    string
-
-  val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
-
-  val create_from_int : int -> 'a t
-
-  val create_from_operation : 'a Monomial.Operation.t -> 'a t
-
-  val create_from_variables_list
-    :  compare_t:('a -> 'a -> int) ->
-    (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
-    'a t
-
-  val create_from_monomial_variables_list
-    :  compare_t:('a -> 'a -> int) ->
-    (int * ('a Monomial.variable * int) list) list ->
-    'a t
-
-  val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
-
-  val subtract : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
-
-  val multiply : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
-
-  val divide : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
-
-  val replace
-    :  compare_t:('a -> 'a -> int) ->
-    'a t ->
-    by:'a t ->
-    variable:'a Monomial.variable ->
-    'a t
-end
-
-module RecordIntExpression : sig
-  type 'a t = private Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
-end
-
 module Primitive : sig
   type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
@@ -373,23 +274,9 @@ and t =
   | TypeOperation of t Record.TypeOperation.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
-  | IntExpression of t RecordIntExpression.t
 [@@deriving compare, eq, sexp, show, hash]
 
-module IntExpression : sig
-  val create : t Polynomial.t -> t
-end
-
 type type_t = t [@@deriving compare, eq, sexp, show]
-
-val polynomial_to_type : t Polynomial.t -> t
-
-val solve_less_or_equal_polynomial
-  :  left:t ->
-  right:t ->
-  solve:(left:t -> right:t -> 'a) ->
-  impossible:'a ->
-  'a
 
 module Map : Map.S with type Key.t = t
 
@@ -796,8 +683,6 @@ module OrderedTypes : sig
     :  parse_annotation:(Expression.t -> type_t) ->
     Expression.t ->
     type_t Concatenation.t option
-
-  val broadcast : type_t -> type_t -> type_t
 
   val coalesce_ordered_types : type_t record list -> type_t record option
 end
