@@ -1198,7 +1198,7 @@ let test_resolve_definition_for_symbol =
                return 42
          |}
            (* This points to builtins.pyi. *)
-           (Some ":111:0-212:35");
+           (Some ":122:0-223:35");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition_with_location_string
            ~source:
@@ -1210,7 +1210,7 @@ let test_resolve_definition_for_symbol =
                # No definition found.
          |}
            (* This points to builtins.pyi. *)
-           (Some ":394:0-422:31");
+           (Some ":405:0-433:31");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition
            {|
@@ -1279,7 +1279,7 @@ let test_resolve_definition_for_symbol =
                           # ^- cursor
          |}
            (* This points to builtins.pyi. *)
-           (Some ":335:2-335:34");
+           (Some ":346:2-346:34");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition
            {|
@@ -1431,7 +1431,7 @@ let test_resolve_definition_for_symbol =
                              # ^- cursor
          |}
            (* This points to builtins.pyi. *)
-           (Some ":410:2-410:46");
+           (Some ":421:2-421:46");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition_with_location_string
            ~source:

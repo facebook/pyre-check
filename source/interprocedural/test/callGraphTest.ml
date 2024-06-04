@@ -2306,7 +2306,11 @@ let test_call_graph_of_define =
                              CallTarget.create
                                ~implicit_receiver:true
                                (Target.Method
-                                  { class_name = "object"; method_name = "__init__"; kind = Normal });
+                                  {
+                                    class_name = "BaseException";
+                                    method_name = "__init__";
+                                    kind = Normal;
+                                  });
                            ]
                          ())) );
                ( "10:4-10:10",

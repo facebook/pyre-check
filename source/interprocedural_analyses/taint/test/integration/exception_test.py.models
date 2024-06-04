@@ -69,6 +69,19 @@
 {
   "kind": "model",
   "data": {
+    "callable": "BaseException.__init__",
+    "sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "BaseException.__repr__",
     "sources": [
       {
@@ -299,6 +312,26 @@
       {
         "port": "result",
         "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "BaseException.__init__", "port": "leaf:self" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 15, "start": 15, "end": 17 } ],
+            "origin": {
+              "filename": "exception_test.py",
+              "line": 14,
+              "start": 9,
+              "end": 29
+            }
+          },
           {
             "kinds": [
               {

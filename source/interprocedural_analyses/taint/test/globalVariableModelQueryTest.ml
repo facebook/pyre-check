@@ -63,6 +63,7 @@ let test_find_globals =
         !&"_Self_int__";
         !&"_Self_list__";
         !&"_Self_set__";
+        !&"_BaseExceptionT_co";
       ]
     in
     let project =
