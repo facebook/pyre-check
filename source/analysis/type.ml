@@ -1234,13 +1234,6 @@ and pp_concise format annotation =
 
 and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 
-and polynomial_show_variable variable = show_concise (Variable variable)
-
-let serialize = function
-  | Bottom -> "$bottom"
-  | annotation -> Format.asprintf "%a" pp annotation
-
-
 let parametric name parameters = Parametric { name; parameters }
 
 let awaitable parameter = Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }

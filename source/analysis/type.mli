@@ -292,8 +292,6 @@ val pp_typed_dictionary_field
   t Record.TypedDictionary.typed_dictionary_field ->
   unit
 
-val polynomial_show_variable : type_t Record.Variable.RecordUnary.record -> string
-
 val pp_concise : Format.formatter -> t -> unit
 
 module Parameter : sig
@@ -315,8 +313,6 @@ val pp_parameters
   unit
 
 val show_concise : t -> string
-
-val serialize : t -> string
 
 val parametric : string -> Parameter.t list -> t
 
