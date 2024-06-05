@@ -1354,6 +1354,20 @@ module Constructors = struct
 
 
   let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
+
+  let rec read_only = function
+    | ReadOnly _ as type_ -> type_
+    | NoneType -> NoneType
+    | Union elements -> Union (List.map ~f:read_only elements)
+    | (Primitive class_name as type_)
+    | (Parametric { name = class_name; _ } as type_)
+      when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
+        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
+           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
+           users. *)
+        type_
+    | Any -> Any
+    | type_ -> ReadOnly type_
 end
 
 let alternate_name_to_canonical_name_map =
@@ -1555,21 +1569,6 @@ let rec expression annotation =
   Node.create_with_default_location value
 
 
-let rec create_readonly = function
-  | ReadOnly _ as type_ -> type_
-  | NoneType -> NoneType
-  | Union elements -> Union (List.map ~f:create_readonly elements)
-  | (Primitive class_name as type_)
-  | (Parametric { name = class_name; _ } as type_)
-    when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
-      (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
-         reduce noisy errors on classes that are never mutated and reduces the adoption burden on
-         users. *)
-      type_
-  | Any -> Any
-  | type_ -> ReadOnly type_
-
-
 module Transform = struct
   type 'state visit_result = {
     transformed_annotation: t;
@@ -1656,7 +1655,7 @@ module Transform = struct
                   Unpacked (UnboundedElements (visit_annotation annotation ~state))
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
-        | ReadOnly type_ -> create_readonly (visit_annotation type_ ~state)
+        | ReadOnly type_ -> Constructors.read_only (visit_annotation type_ ~state)
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
@@ -2413,7 +2412,7 @@ module TypeOperation = struct
 end
 
 module ReadOnly = struct
-  let create = create_readonly
+  let create = Constructors.read_only
 
   let unpack_readonly = function
     | ReadOnly type_ -> Some type_
@@ -2908,7 +2907,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
            `pyre_extensions` is part of a project. *)
         | "typing._PyreReadOnly_", Some [head]
         | "pyre_extensions.ReadOnly", Some [head] ->
-            ReadOnly.create head
+            Constructors.read_only head
         | _ -> result
       in
       match Hashtbl.find alternate_name_to_canonical_name_map name with
