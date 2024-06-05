@@ -55,7 +55,7 @@
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
               }
             ],
             "origin": {
@@ -134,7 +134,7 @@
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
               }
             ],
             "origin": {
@@ -210,7 +210,7 @@
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -289,7 +289,7 @@
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]"
               }
             ],
             "origin": {
@@ -368,7 +368,7 @@
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestB]]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestB]"
               }
             ],
             "origin": {
@@ -447,7 +447,7 @@
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]"
               }
             ],
             "origin": {
@@ -519,7 +519,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "call": {
@@ -597,7 +597,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
               }
             ],
             "call": {
@@ -675,7 +675,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "call": {
@@ -753,7 +753,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
               }
             ],
             "call": {
@@ -831,7 +831,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "call": {
@@ -906,7 +906,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "call": {
@@ -981,7 +981,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "call": {
@@ -1059,7 +1059,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
               }
             ],
             "call": {
@@ -1137,7 +1137,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
               }
             ],
             "call": {
@@ -1220,7 +1220,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]"
               }
             ],
             "call": {
@@ -1309,7 +1309,7 @@
                     "port": "leaf:permissive_context"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -1388,7 +1388,7 @@
                     "port": "leaf:permissive_context"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -1457,7 +1457,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "call": {
@@ -1759,7 +1759,7 @@
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "origin": {
@@ -1801,7 +1801,7 @@
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "origin": {
@@ -1828,7 +1828,7 @@
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
               }
             ],
             "origin": {
@@ -1870,7 +1870,7 @@
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
               }
             ],
             "origin": {
@@ -1897,7 +1897,7 @@
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
               }
             ],
             "origin": {
@@ -1936,7 +1936,7 @@
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -1983,7 +1983,7 @@
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -2027,7 +2027,7 @@
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]]"
+                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
               }
             ],
             "origin": {
@@ -2069,7 +2069,7 @@
                     "port": "leaf:self"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]"
               }
             ],
             "local_features": [
@@ -2162,7 +2162,7 @@
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {
@@ -2188,7 +2188,7 @@
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]]"
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
               }
             ],
             "origin": {

@@ -76,7 +76,7 @@ module T = struct
     | Attach -> Format.fprintf formatter "Attach"
     | PartialSink partial_sink -> Format.fprintf formatter "PartialSink[%s]" partial_sink
     | TriggeredPartialSink triggered ->
-        Format.fprintf formatter "TriggeredPartialSink[%a]]" PartialSink.Triggered.pp triggered
+        Format.fprintf formatter "TriggeredPartialSink[%a]" PartialSink.Triggered.pp triggered
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
