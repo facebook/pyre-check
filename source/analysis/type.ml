@@ -1023,32 +1023,37 @@ let rec is_truthy = function
   | _ -> false
 
 
-let reverse_substitute name =
-  match name with
-  | "collections.defaultdict" -> "typing.DefaultDict"
-  | "dict" -> "typing.Dict"
-  | "frozenset" -> "typing.FrozenSet"
-  | "list" -> "typing.List"
-  | "set" -> "typing.Set"
-  | "type" -> "typing.Type"
-  | _ -> name
+(* The Cannonicalization module contains logic related to representing types. Pretty printing uses
+   the cannonicalizations, but so does some other logic like the `Type.t -> Expression.t`
+   conversion. *)
+module Cannonicalization = struct
+  let reverse_substitute name =
+    match name with
+    | "collections.defaultdict" -> "typing.DefaultDict"
+    | "dict" -> "typing.Dict"
+    | "frozenset" -> "typing.FrozenSet"
+    | "list" -> "typing.List"
+    | "set" -> "typing.Set"
+    | "type" -> "typing.Type"
+    | _ -> name
 
 
-let parameter_variable_type_representation = function
-  | { head = []; variable = { name; _ } } -> Primitive name
-  | { head; variable = { name; _ } } ->
-      let concretes = head @ [Primitive name] in
-      Parametric
-        {
-          name = List.hd_exn Record.OrderedTypes.concatenate_public_names;
-          parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
-        }
-
+  let parameter_variable_type_representation = function
+    | { head = []; variable = { name; _ } } -> Primitive name
+    | { head; variable = { name; _ } } ->
+        let concretes = head @ [Primitive name] in
+        Parametric
+          {
+            name = List.hd_exn Record.OrderedTypes.concatenate_public_names;
+            parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
+          }
+end
 
 let show_callable_parameters ~pp_type = function
   | Record.Callable.Undefined -> "..."
   | ParameterVariadicTypeVariable variable ->
-      parameter_variable_type_representation variable |> Format.asprintf "%a" pp_type
+      Cannonicalization.parameter_variable_type_representation variable
+      |> Format.asprintf "%a" pp_type
   | Defined parameters ->
       List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
       |> String.concat ~sep:", "
@@ -1120,7 +1125,7 @@ let rec pp format annotation =
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
   | Parametric { name; parameters } ->
-      let name = reverse_substitute name in
+      let name = Cannonicalization.reverse_substitute name in
       Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
@@ -1156,7 +1161,8 @@ and pp_concise format annotation =
       match parameters with
       | Undefined -> "..."
       | ParameterVariadicTypeVariable variable ->
-          parameter_variable_type_representation variable |> Format.asprintf "%a" pp_concise
+          Cannonicalization.parameter_variable_type_representation variable
+          |> Format.asprintf "%a" pp_concise
       | Defined parameters ->
           let parameter = function
             | CallableParameter.PositionalOnly { annotation; default; _ } ->
@@ -1202,7 +1208,7 @@ and pp_concise format annotation =
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
   | Parametric { name; parameters } ->
-      let name = strip_qualification (reverse_substitute name) in
+      let name = strip_qualification (Cannonicalization.reverse_substitute name) in
       Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
@@ -1458,7 +1464,7 @@ let rec expression annotation =
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
     | ParameterVariadicTypeVariable variable ->
-        parameter_variable_type_representation variable |> expression
+        Cannonicalization.parameter_variable_type_representation variable |> expression
   in
   let convert_annotation annotation =
     let convert_ordered_type ordered_type =
@@ -1540,7 +1546,7 @@ let rec expression annotation =
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
-        subscript (reverse_substitute name) parameters
+        subscript (Cannonicalization.reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
         let attribute =
           Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
@@ -4639,7 +4645,11 @@ let dequalify map annotation =
             Parametric
               { name = dequalify_string "typing.Optional"; parameters = [Single parameter] }
         | Parametric { name; parameters } ->
-            Parametric { name = dequalify_identifier map (reverse_substitute name); parameters }
+            Parametric
+              {
+                name = dequalify_identifier map (Cannonicalization.reverse_substitute name);
+                parameters;
+              }
         | Union parameters ->
             Parametric
               {
