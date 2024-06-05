@@ -1388,24 +1388,6 @@ module Constructors = struct
     | type_ -> ReadOnly type_
 end
 
-let alternate_name_to_canonical_name_map =
-  [
-    "typing.ChainMap", "collections.ChainMap";
-    "typing.Counter", "collections.Counter";
-    "typing.DefaultDict", "collections.defaultdict";
-    "typing.Deque", "collections.deque";
-    "typing.Dict", "dict";
-    "typing.FrozenSet", "frozenset";
-    "typing.List", "list";
-    "typing.Set", "set";
-    "typing.Type", "type";
-    "typing_extensions.Protocol", "typing.Protocol";
-    "pyre_extensions.Generic", "typing.Generic";
-    "pyre_extensions.generic.Generic", "typing.Generic";
-  ]
-  |> Identifier.Table.of_alist_exn
-
-
 let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
 
 let rec expression annotation =
@@ -2449,6 +2431,24 @@ module ReadOnly = struct
     >>| (fun inner_type -> create (make_container inner_type))
     |> Option.value ~default:(make_container element_type)
 end
+
+let alternate_name_to_canonical_name_map =
+  [
+    "typing.ChainMap", "collections.ChainMap";
+    "typing.Counter", "collections.Counter";
+    "typing.DefaultDict", "collections.defaultdict";
+    "typing.Deque", "collections.deque";
+    "typing.Dict", "dict";
+    "typing.FrozenSet", "frozenset";
+    "typing.List", "list";
+    "typing.Set", "set";
+    "typing.Type", "type";
+    "typing_extensions.Protocol", "typing.Protocol";
+    "pyre_extensions.Generic", "typing.Generic";
+    "pyre_extensions.generic.Generic", "typing.Generic";
+  ]
+  |> Identifier.Table.of_alist_exn
+
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
