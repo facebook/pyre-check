@@ -1821,6 +1821,15 @@ let redirect_expressions ~pyre_in_context = function
 
 let redirect_assignments = function
   | {
+      Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
+      location;
+    } ->
+      let call = AugmentedAssign.lower ~location augmented_assignment in
+      {
+        Node.location;
+        value = Statement.Assign { Assign.target; annotation = None; value = Some call };
+      }
+  | {
       Node.value =
         Statement.Assign
           {

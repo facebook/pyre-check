@@ -955,7 +955,7 @@ module State (Context : Context) = struct
     |> Resolution.with_parent ~parent
 
 
-  let forward ~statement_key state ~statement:{ Node.value; _ } =
+  let forward ~statement_key state ~statement:{ Node.value; location } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
@@ -969,7 +969,19 @@ module State (Context : Context) = struct
     match value with
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
-    | AugmentedAssign { value; target; _ }
+    | AugmentedAssign ({ target; _ } as augmented_assignment) ->
+        let lowered_call = AugmentedAssign.lower ~location augmented_assignment in
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:lowered_call
+        in
+        let annotation = Resolution.resolve_expression_to_type resolution lowered_call in
+        forward_assign
+          ~state
+          ~resolution
+          ~annotation
+          ~expression:lowered_call
+          ~awaitable_expressions_in_value:nested_awaitable_expressions
+          ~target
     | Assign { value = Some value; target; _ } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:value

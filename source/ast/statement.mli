@@ -29,6 +29,8 @@ module AugmentedAssign : sig
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val lower : location:Location.t -> t -> Expression.t
 end
 
 module Import : sig

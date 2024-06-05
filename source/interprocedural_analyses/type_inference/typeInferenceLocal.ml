@@ -819,68 +819,64 @@ module State (Context : Context) = struct
     Type.Variable.Namespace.reset ();
     let global_resolution = Resolution.global_resolution resolution in
     let resolution =
+      (* Get the annotations of the targets and set the 'value' to be the meet *)
+      let rec propagate_assign statement resolution target_type value =
+        let state = { state with resolution } in
+        match Node.value value with
+        | Expression.Name (Name.Identifier identifier) ->
+            let resolution =
+              let resolved = forward_expression ~state value in
+              inferred_type_for_rhs_variable ~global_resolution ~target_type resolved
+              >>| (fun refined ->
+                    Resolution.refine_local
+                      resolution
+                      ~reference:(Reference.create identifier)
+                      ~annotation:(Annotation.create_mutable refined))
+              |> Option.value ~default:resolution
+            in
+            infer_argument_types_using_parameter_types ~state ~resolution statement
+        | Call
+            {
+              callee =
+                {
+                  value =
+                    Name
+                      (Name.Attribute
+                        { attribute = "__iadd__"; base = { Node.value = Name name; _ }; _ });
+                  _;
+                };
+              arguments = [{ Call.Argument.value; _ }];
+            } ->
+            let resolution =
+              forward_expression ~state value
+              |> inferred_type_for_rhs_variable ~global_resolution ~target_type
+              >>| (fun refined ->
+                    refine_local ~resolution ~name ~annotation:(Annotation.create_mutable refined))
+              |> Option.value ~default:resolution
+            in
+            infer_argument_types_using_parameter_types ~state ~resolution statement
+        | Call _
+        | Name _ ->
+            infer_argument_types_using_parameter_types ~state ~resolution statement
+        (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
+        | Tuple values ->
+            let parameters =
+              match target_type with
+              | Type.Tuple (Concrete parameters) -> parameters
+              | Type.Tuple (Concatenation concatenation) ->
+                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                  >>| (fun annotation -> List.map values ~f:(fun _ -> annotation))
+                  |> Option.value ~default:[]
+              | _ -> []
+            in
+            if List.length values = List.length parameters then
+              List.fold2_exn ~init:resolution ~f:(propagate_assign statement) parameters values
+            else
+              resolution
+        | _ -> resolution
+      in
       match Node.value statement with
       | Statement.Assign { Assign.target; value; _ } -> (
-          (* Get the annotations of the targets and set the 'value' to be the meet *)
-          let rec propagate_assign resolution target_type value =
-            let state = { state with resolution } in
-            match Node.value value with
-            | Expression.Name (Name.Identifier identifier) ->
-                let resolution =
-                  let resolved = forward_expression ~state value in
-                  inferred_type_for_rhs_variable ~global_resolution ~target_type resolved
-                  >>| (fun refined ->
-                        Resolution.refine_local
-                          resolution
-                          ~reference:(Reference.create identifier)
-                          ~annotation:(Annotation.create_mutable refined))
-                  |> Option.value ~default:resolution
-                in
-                infer_argument_types_using_parameter_types ~state ~resolution statement
-            | Call
-                {
-                  callee =
-                    {
-                      value =
-                        Name
-                          (Name.Attribute
-                            { attribute = "__iadd__"; base = { Node.value = Name name; _ }; _ });
-                      _;
-                    };
-                  arguments = [{ Call.Argument.value; _ }];
-                } ->
-                let resolution =
-                  forward_expression ~state value
-                  |> inferred_type_for_rhs_variable ~global_resolution ~target_type
-                  >>| (fun refined ->
-                        refine_local
-                          ~resolution
-                          ~name
-                          ~annotation:(Annotation.create_mutable refined))
-                  |> Option.value ~default:resolution
-                in
-                infer_argument_types_using_parameter_types ~state ~resolution statement
-            | Call _
-            | Name _ ->
-                infer_argument_types_using_parameter_types ~state ~resolution statement
-            (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
-            | Tuple values ->
-                let parameters =
-                  match target_type with
-                  | Type.Tuple (Concrete parameters) -> parameters
-                  | Type.Tuple (Concatenation concatenation) ->
-                      Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
-                        concatenation
-                      >>| (fun annotation -> List.map values ~f:(fun _ -> annotation))
-                      |> Option.value ~default:[]
-                  | _ -> []
-                in
-                if List.length values = List.length parameters then
-                  List.fold2_exn ~init:resolution ~f:propagate_assign parameters values
-                else
-                  resolution
-            | _ -> resolution
-          in
           match Node.value target, value >>| Node.value with
           | Tuple targets, Some (Tuple values) when List.length targets = List.length values ->
               let target_annotations =
@@ -889,12 +885,24 @@ module State (Context : Context) = struct
                 in
                 List.map targets ~f:resolve
               in
-              List.fold2_exn ~init:resolution ~f:propagate_assign target_annotations values
+              List.fold2_exn
+                ~init:resolution
+                ~f:(propagate_assign statement)
+                target_annotations
+                values
           | _, _ -> (
               let resolved = forward_expression ~state:{ state with resolution } target in
               match value with
-              | Some value -> propagate_assign resolution resolved value
+              | Some value -> (propagate_assign statement) resolution resolved value
               | None -> resolution))
+      | AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assign) ->
+          let resolved = forward_expression ~state:{ state with resolution } target in
+          let call = AugmentedAssign.lower ~location:(Node.location statement) augmented_assign in
+          let lowered_assignment =
+            Statement.Assign { Assign.annotation = None; target; value = Some call }
+            |> Node.create ~location:(Node.location statement)
+          in
+          propagate_assign lowered_assignment resolution resolved call
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
           let return_annotation =
@@ -929,6 +937,7 @@ module State (Context : Context) = struct
          annotation to snapshot_resolution to be joined into the final inferred type in the end. *)
       match Node.value statement with
       | Statement.Assign { target = { Node.value = Name name; _ } as target; _ }
+      | AugmentedAssign { target = { Node.value = Name name; _ } as target; _ }
         when is_simple_name name ->
           let target_reference = Ast.Expression.name_to_reference_exn name in
           let wiped_resolution = Resolution.unset_local resolution ~reference:target_reference in

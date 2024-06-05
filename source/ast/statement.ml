@@ -65,6 +65,44 @@ module AugmentedAssign = struct
         match [%compare: Expression.BinaryOperator.operator] left.operator right.operator with
         | x when not (Int.equal x 0) -> x
         | _ -> Expression.location_insensitive_compare left.value right.value)
+
+
+  let lower ~location { target; operator; value } =
+    let open Expression in
+    let open BinaryOperator in
+    let augmented_assign_method = function
+      | Add -> "__iadd__"
+      | Sub -> "__isub__"
+      | Mult -> "__imul__"
+      | MatMult -> "__imatmul__"
+      | Div -> "__itruediv__"
+      | Mod -> "__imod__"
+      | Pow -> "__ipow__"
+      | LShift -> "__ilshift__"
+      | RShift -> "__irshift__"
+      | BitOr -> "__ior__"
+      | BitXor -> "__ixor__"
+      | BitAnd -> "__iand__"
+      | FloorDiv -> "__ifloordiv__"
+    in
+    let arguments = [{ Call.Argument.name = None; value }] in
+    Expression.Call
+      {
+        Call.callee =
+          {
+            Node.location;
+            value =
+              Expression.Name
+                (Name.Attribute
+                   {
+                     Name.Attribute.base = target;
+                     attribute = augmented_assign_method operator;
+                     special = true;
+                   });
+          };
+        arguments;
+      }
+    |> Node.create ~location
 end
 
 module Import = struct
