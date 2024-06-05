@@ -1234,122 +1234,127 @@ and pp_concise format annotation =
 
 and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 
-let parametric name parameters = Parametric { name; parameters }
+module Constructors = struct
+  let parametric name parameters = Parametric { name; parameters }
 
-let awaitable parameter = Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }
-
-let coroutine parameters = Parametric { name = "typing.Coroutine"; parameters }
-
-let bool = Primitive "bool"
-
-let bytes = Primitive "bytes"
-
-let complex = Primitive "complex"
-
-let dictionary ~key ~value = Parametric { name = "dict"; parameters = [Single key; Single value] }
-
-let mapping_primitive = "typing.Mapping"
-
-let enumeration = Primitive "enum.Enum"
-
-let float = Primitive "float"
-
-let number = Primitive "numbers.Number"
-
-let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
-  Parametric
-    {
-      name = "typing.Generator";
-      parameters = [Single yield_type; Single send_type; Single return_type];
-    }
+  let awaitable parameter =
+    Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }
 
 
-let generator_expression yield_type =
-  generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
+  let coroutine parameters = Parametric { name = "typing.Coroutine"; parameters }
+
+  let bool = Primitive "bool"
+
+  let bytes = Primitive "bytes"
+
+  let complex = Primitive "complex"
+
+  let dictionary ~key ~value = Parametric { name = "dict"; parameters = [Single key; Single value] }
+
+  let mapping_primitive = "typing.Mapping"
+
+  let enumeration = Primitive "enum.Enum"
+
+  let float = Primitive "float"
+
+  let number = Primitive "numbers.Number"
+
+  let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
+    Parametric
+      {
+        name = "typing.Generator";
+        parameters = [Single yield_type; Single send_type; Single return_type];
+      }
 
 
-let async_generator ?(yield_type = Any) ?(send_type = Any) () =
-  Parametric { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
+  let generator_expression yield_type =
+    generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
 
 
-let generic_primitive = Primitive "typing.Generic"
-
-let integer = Primitive "int"
-
-let literal_integer literal = Literal (Integer literal)
-
-let iterable parameter = Parametric { name = "typing.Iterable"; parameters = [Single parameter] }
-
-let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [Single parameter] }
-
-let async_iterator parameter =
-  Parametric { name = "typing.AsyncIterator"; parameters = [Single parameter] }
+  let async_generator ?(yield_type = Any) ?(send_type = Any) () =
+    Parametric
+      { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
 
 
-let list parameter = Parametric { name = "list"; parameters = [Single parameter] }
+  let generic_primitive = Primitive "typing.Generic"
 
-let meta annotation = Parametric { name = "type"; parameters = [Single annotation] }
+  let integer = Primitive "int"
 
-let extract_meta = function
-  | Parametric { name = "type"; parameters = [Single annotation] } -> Some annotation
-  | _ -> None
+  let literal_integer literal = Literal (Integer literal)
+
+  let iterable parameter = Parametric { name = "typing.Iterable"; parameters = [Single parameter] }
+
+  let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [Single parameter] }
+
+  let async_iterator parameter =
+    Parametric { name = "typing.AsyncIterator"; parameters = [Single parameter] }
 
 
-let named_tuple = Primitive "typing.NamedTuple"
+  let list parameter = Parametric { name = "list"; parameters = [Single parameter] }
 
-let none = NoneType
+  let meta annotation = Parametric { name = "type"; parameters = [Single annotation] }
 
-let object_primitive = Primitive "object"
+  let extract_meta = function
+    | Parametric { name = "type"; parameters = [Single annotation] } -> Some annotation
+    | _ -> None
 
-let sequence parameter = Parametric { name = "typing.Sequence"; parameters = [Single parameter] }
 
-let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
+  let named_tuple = Primitive "typing.NamedTuple"
 
-let string = Primitive "str"
+  let none = NoneType
 
-let literal_string literal = Literal (String (LiteralValue literal))
+  let object_primitive = Primitive "object"
 
-let literal_bytes literal = Literal (Bytes literal)
+  let sequence parameter = Parametric { name = "typing.Sequence"; parameters = [Single parameter] }
 
-let literal_any_string = Literal (String AnyLiteral)
+  let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
 
-let tuple parameters = Tuple (Concrete parameters)
+  let string = Primitive "str"
 
-let union parameters =
-  let parameters =
-    let parameter_set = Hash_set.create () in
-    let rec add_parameter = function
-      | Union parameters -> List.iter parameters ~f:add_parameter
-      | Bottom -> ()
-      | parameter -> Base.Hash_set.add parameter_set parameter
+  let literal_string literal = Literal (String (LiteralValue literal))
+
+  let literal_bytes literal = Literal (Bytes literal)
+
+  let literal_any_string = Literal (String AnyLiteral)
+
+  let tuple parameters = Tuple (Concrete parameters)
+
+  let union parameters =
+    let parameters =
+      let parameter_set = Hash_set.create () in
+      let rec add_parameter = function
+        | Union parameters -> List.iter parameters ~f:add_parameter
+        | Bottom -> ()
+        | parameter -> Base.Hash_set.add parameter_set parameter
+      in
+      List.iter parameters ~f:add_parameter;
+      Base.Hash_set.to_list parameter_set |> List.sort ~compare
     in
-    List.iter parameters ~f:add_parameter;
-    Base.Hash_set.to_list parameter_set |> List.sort ~compare
-  in
-  if List.exists ~f:is_top parameters then
-    Top
-  else if List.exists ~f:is_any parameters then
-    Any
-  else
-    match parameters with
-    | [] -> Bottom
-    | [parameter] -> parameter
-    | parameters -> Union parameters
+    if List.exists ~f:is_top parameters then
+      Top
+    else if List.exists ~f:is_any parameters then
+      Any
+    else
+      match parameters with
+      | [] -> Bottom
+      | [parameter] -> parameter
+      | parameters -> Union parameters
 
 
-let optional parameter =
-  match parameter with
-  | Top -> Top
-  | Any -> Any
-  | Bottom -> Bottom
-  | _ -> union [NoneType; parameter]
+  let optional parameter =
+    match parameter with
+    | Top -> Top
+    | Any -> Any
+    | Bottom -> Bottom
+    | _ -> union [NoneType; parameter]
 
 
-let variable ?constraints ?variance name =
-  Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
+  let variable ?constraints ?variance name =
+    Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
 
 
-let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
+  let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
+end
 
 let alternate_name_to_canonical_name_map =
   [
@@ -1657,7 +1662,8 @@ module Transform = struct
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
         | TypeOperation (Compose ordered_type) ->
             TypeOperation (Compose (visit_ordered_types ordered_type))
-        | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
+        | Union annotations ->
+            Constructors.union (List.map annotations ~f:(visit_annotation ~state))
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
@@ -2078,7 +2084,7 @@ let primitive_substitution_map =
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     "PathLike", Primitive "_PathLike";
-    "TSelf", variable "_PathLike";
+    "TSelf", Constructors.variable "_PathLike";
     (* This inherits from Any, and is expected to act just like Any *)
     "_NotImplementedType", Any;
     "typing_extensions.LiteralString", Literal (String AnyLiteral);
@@ -2112,7 +2118,7 @@ let create_literal = function
                     member_name = attribute;
                   }))
       | _ -> None)
-  | Expression.Constant Constant.NoneLiteral -> Some none
+  | Expression.Constant Constant.NoneLiteral -> Some Constructors.none
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
@@ -2200,10 +2206,10 @@ module OrderedTypes = struct
   let pp_concise = pp_concise ~pp_type
 
   let union_upper_bound = function
-    | Concrete concretes -> union concretes
+    | Concrete concretes -> Constructors.union concretes
     | Concatenation { prefix; middle = UnboundedElements unbounded; suffix } ->
-        union (unbounded :: (prefix @ suffix))
-    | Concatenation _ -> object_primitive
+        Constructors.union (unbounded :: (prefix @ suffix))
+    | Concatenation _ -> Constructors.object_primitive
 
 
   let concatenation_from_parameters parameters =
@@ -2236,7 +2242,7 @@ module OrderedTypes = struct
     | { Concatenation.prefix = []; middle; suffix = [] } ->
         Concatenation.unpackable_to_expression ~expression ~location:Location.any middle
     | concatenation ->
-        parametric
+        Constructors.parametric
           (List.hd_exn Record.OrderedTypes.unpack_public_names)
           (to_parameters (Concatenation concatenation))
         |> expression
@@ -2328,14 +2334,14 @@ module OrderedTypes = struct
         (* There are multiple unpacked tuples. Coalesce them into a single tuple with a common
            iterable type so that we can compare it to an expected tuple type. *)
         let extract_common_type = function
-          | Concrete items -> Some (union items)
+          | Concrete items -> Some (Constructors.union items)
           | Concatenation { middle = UnboundedElements item_type; prefix; suffix } ->
-              union (item_type :: (prefix @ suffix)) |> Option.some
+              Constructors.union (item_type :: (prefix @ suffix)) |> Option.some
           | Concatenation { middle = Variadic _; _ } -> None
         in
         List.map middle_items ~f:extract_common_type
         |> Option.all
-        >>| union
+        >>| Constructors.union
         >>| (fun item_type ->
               concrete_tuples_prefix
               @ [Concatenation (Concatenation.create_from_unbounded_element item_type)]
@@ -2761,7 +2767,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         arguments
         >>| List.map ~f:create_literal
         >>= Option.all
-        >>| union
+        >>| Constructors.union
         |> Option.value ~default:Top
     | _, _ -> (
         match parse_callable_if_appropriate ~location ~base ~subscript_index with
@@ -2831,7 +2837,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
           List.find_map arguments ~f:variance_definition
           |> Option.value ~default:Record.Variable.Invariant
         in
-        variable value ~constraints ~variance
+        Constructors.variable value ~constraints ~variance
     | Call
         {
           callee;
@@ -2845,10 +2851,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             ];
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
-        variable value ~constraints:LiteralIntegers
+        Constructors.variable value ~constraints:LiteralIntegers
     | Subscript { base; index = subscript_index } ->
         create_from_subscript ~location:(Node.location base) ~base ~subscript_index
-    | Constant Constant.NoneLiteral -> none
+    | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
         Primitive sanitized |> resolve_aliases
@@ -2895,8 +2901,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       let replace_with_special_form ~name parameters =
         match name, Parameter.all_singles parameters with
         | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
-        | "typing.Optional", Some [head] -> optional head
-        | "typing.Union", Some parameters -> union parameters
+        | "typing.Optional", Some [head] -> Constructors.optional head
+        | "typing.Union", Some parameters -> Constructors.union parameters
         (* We support a made-up, stubs-only `typing._PyreReadOnly_` class so that we can safely
            patch the standard library with read-only methods without worrying about whether
            `pyre_extensions` is part of a project. *)
@@ -2908,7 +2914,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       match Hashtbl.find alternate_name_to_canonical_name_map name with
       | Some name -> Parametric { name; parameters }
       | None -> replace_with_special_form ~name parameters)
-  | Union elements -> union elements
+  | Union elements -> Constructors.union elements
   | Callable ({ implementation; overloads; _ } as callable) ->
       let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
         match parameters with
@@ -3119,7 +3125,7 @@ let type_parameters_for_bounded_tuple_union = function
       List.map annotations ~f:bounded_tuple_parameters
       |> Option.all
       >>= List.transpose
-      >>| List.map ~f:union
+      >>| List.map ~f:Constructors.union
   | _ -> None
 
 
@@ -3129,6 +3135,7 @@ let single_parameter = function
 
 
 let weaken_literals annotation =
+  let open Constructors in
   let type_map = function
     | Literal (Integer _) -> Some integer
     | Literal (String _) -> Some string
@@ -3141,7 +3148,9 @@ let weaken_literals annotation =
 
 
 (* Weaken specific literal to arbitrary literal before weakening to `str`. *)
-let weaken_to_arbitrary_literal_if_possible = function
+let weaken_to_arbitrary_literal_if_possible =
+  let open Constructors in
+  function
   | Literal (Integer _) -> integer
   | Literal (String (LiteralValue _)) -> Literal (String AnyLiteral)
   | Literal (String AnyLiteral) -> string
@@ -3195,7 +3204,7 @@ let class_name annotation =
     Reference.create_from_list identifiers
 
 
-let class_variable annotation = parametric "typing.ClassVar" [Single annotation]
+let class_variable annotation = Constructors.parametric "typing.ClassVar" [Single annotation]
 
 let class_variable_value = function
   | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } -> Some parameter
@@ -3546,6 +3555,7 @@ end = struct
     let mark_as_bound variable = { variable with state = InFunction }
 
     let upper_bound { constraints; _ } =
+      let open Constructors in
       match constraints with
       | Unconstrained -> object_primitive
       | Bound bound -> bound
@@ -4298,7 +4308,7 @@ end = struct
                 | Variable variable -> not (Unary.is_escaped_and_free variable)
                 | _ -> true
               in
-              List.filter parameters ~f:not_escaped_free_variable |> union
+              List.filter parameters ~f:not_escaped_free_variable |> Constructors.union
           | _ -> annotation
         in
         { Transform.transformed_annotation; new_state }
@@ -4387,7 +4397,7 @@ end = struct
                          variable_pair = TupleVariadicPair (variadic, Variadic.Tuple.any);
                          received_parameter =
                            Single
-                             (parametric
+                             (Constructors.parametric
                                 Variadic.Tuple.synthetic_class_name_for_error
                                 parameters_middle);
                        }
@@ -4748,9 +4758,12 @@ module TypedDictionary = struct
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [
-          { annotation = none; parameters = field_named_parameters ~class_name:name fields };
           {
-            annotation = none;
+            annotation = Constructors.none;
+            parameters = field_named_parameters ~class_name:name fields;
+          };
+          {
+            annotation = Constructors.none;
             parameters =
               Defined
                 [
@@ -4792,7 +4805,8 @@ module TypedDictionary = struct
   }
 
   let key_parameter name =
-    CallableParameter.Named { name = "k"; annotation = literal_string name; default = false }
+    CallableParameter.Named
+      { name = "k"; annotation = Constructors.literal_string name; default = false }
 
 
   let common_special_methods ~class_name =
@@ -4805,7 +4819,7 @@ module TypedDictionary = struct
     let setitem_overloads =
       let overload { name; annotation; _ } =
         {
-          annotation = none;
+          annotation = Constructors.none;
           parameters =
             Defined
               [
@@ -4821,7 +4835,7 @@ module TypedDictionary = struct
       let overloads { name; annotation; _ } =
         [
           {
-            annotation = union [annotation; NoneType];
+            annotation = Constructors.union [annotation; NoneType];
             parameters = Defined [self_parameter class_name; key_parameter name];
           };
           {
@@ -4861,11 +4875,11 @@ module TypedDictionary = struct
     let update_overloads fields =
       [
         {
-          annotation = none;
+          annotation = Constructors.none;
           parameters = field_named_parameters ~all_default:true ~class_name fields;
         };
         {
-          annotation = none;
+          annotation = Constructors.none;
           parameters =
             Defined
               [
@@ -4918,7 +4932,7 @@ module TypedDictionary = struct
         Option.some_if
           (not required)
           {
-            annotation = none;
+            annotation = Constructors.none;
             parameters = Defined [self_parameter class_name; key_parameter name];
           }
       in
@@ -4999,10 +5013,13 @@ module TypedDictionary = struct
     let common_methods =
       [
         define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy";
-        define ~self_parameter:t_self_expression ~return_annotation:(expression integer) "__len__";
         define
           ~self_parameter:t_self_expression
-          ~return_annotation:(expression (iterator string))
+          ~return_annotation:(expression Constructors.integer)
+          "__len__";
+        define
+          ~self_parameter:t_self_expression
+          ~return_annotation:(expression (Constructors.iterator Constructors.string))
           "__iter__";
       ]
       @ List.map (common_special_methods ~class_name) ~f:(fun { name; _ } -> define name)
@@ -5067,15 +5084,18 @@ let infer_transform annotation =
             let implementation = { implementation with parameters = Defined parameters } in
             Callable { callable with implementation }
         | Parametric { name = "typing.Dict"; parameters = [Single Bottom; Single Bottom] } ->
-            dictionary ~key:Any ~value:Any
-        | Parametric { name = "List" | "typing.List"; parameters = [Single Bottom] } -> list Any
+            Constructors.dictionary ~key:Any ~value:Any
+        | Parametric { name = "List" | "typing.List"; parameters = [Single Bottom] } ->
+            Constructors.list Any
         (* This is broken in typeshed:
            https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
         | Primitive "_PathLike" -> Primitive "PathLike"
         | Parametric { name = "_PathLike"; parameters } ->
             Parametric { name = "PathLike"; parameters }
         | Parametric { name = "Union" | "typing.Union"; parameters } ->
-            Parameter.all_singles parameters >>| union |> Option.value ~default:annotation
+            Parameter.all_singles parameters
+            >>| Constructors.union
+            |> Option.value ~default:annotation
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }
@@ -5261,3 +5281,6 @@ let equivalent_for_assert_type left right =
     snd (Canonicalize.visit () original_type)
   in
   equal (canonicalize left) (canonicalize right)
+
+
+include Constructors
