@@ -765,29 +765,16 @@ and translate_statements
               ();
           ]
       | Errpyast.AugAssign aug_assign ->
-          let target = translate_expression aug_assign.target in
-          let callee =
-            (* TODO: temporary T101299882 *)
-            let dunder_name =
-              translate_binary_operator aug_assign.op |> BinaryOperator.augmented_assign_operator
-            in
-            Expression.Name
-              (Name.Attribute { base = target; attribute = dunder_name; special = true })
-            |> Node.create ~location:(Node.location target)
-          in
-          let value =
-            Expression.Call
+          [
+            Statement.AugmentedAssign
               {
-                callee;
-                arguments =
-                  [{ Call.Argument.name = None; value = translate_expression aug_assign.value }];
-              }
-            |> Node.create ~location
-          in
-          [create_assign ~target ~annotation:None ~value:(Some value) ()]
+                AugmentedAssign.target = translate_expression aug_assign.target;
+                operator = translate_binary_operator aug_assign.op;
+                value = translate_expression aug_assign.value;
+              };
+          ]
       | Errpyast.Assign assign ->
           let value = translate_expression assign.value in
-
           (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
           let create_assign_for_target (target : Errpyast.expr) =
             let target = translate_expression target in

@@ -3485,32 +3485,11 @@ let test_yield =
       @@ assert_parsed_equal
            "x += yield 1"
            [
-             +Statement.Assign
+             +Statement.AugmentedAssign
                 {
-                  Assign.target = !"x";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base = !"x";
-                                      attribute = "__iadd__";
-                                      special = true;
-                                    });
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    +Expression.Yield
-                                       (Some (+Expression.Constant (Constant.Integer 1)));
-                                };
-                              ];
-                          });
+                  AugmentedAssign.target = !"x";
+                  operator = BinaryOperator.Add;
+                  value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
                 };
            ];
     ]
@@ -4639,70 +4618,25 @@ let test_assign =
       @@ assert_parsed_equal
            "a += 1"
            [
-             +Statement.Assign
+             +Statement.AugmentedAssign
                 {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base = !"a";
-                                      attribute = "__iadd__";
-                                      special = true;
-                                    });
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value = +Expression.Constant (Constant.Integer 1);
-                                };
-                              ];
-                          });
+                  AugmentedAssign.target = !"a";
+                  value = +Expression.Constant (Constant.Integer 1);
+                  operator = BinaryOperator.Add;
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "a.b += 1"
            [
-             +Statement.Assign
+             +Statement.AugmentedAssign
                 {
-                  Assign.target =
+                  AugmentedAssign.target =
                     +Expression.Name
                        (Name.Attribute
                           { Name.Attribute.base = !"a"; attribute = "b"; special = false });
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base =
-                                        +Expression.Name
-                                           (Name.Attribute
-                                              {
-                                                Name.Attribute.base = !"a";
-                                                attribute = "b";
-                                                special = false;
-                                              });
-                                      attribute = "__iadd__";
-                                      special = true;
-                                    });
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value = +Expression.Constant (Constant.Integer 1);
-                                };
-                              ];
-                          });
+                  operator = BinaryOperator.Add;
+                  value = +Expression.Constant (Constant.Integer 1);
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -6136,32 +6070,12 @@ let test_setitem =
       @@ assert_parsed_equal
            "i[j] += 3"
            [
-             +Statement.Assign
+             +Statement.AugmentedAssign
                 {
-                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
-                  value =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base =
-                                        +Expression.Subscript
-                                           { Subscript.base = !"i"; index = !"j" };
-                                      attribute = "__iadd__";
-                                      special = true;
-                                    });
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value = +Expression.Constant (Constant.Integer 3);
-                                };
-                              ];
-                          });
-                  annotation = None;
+                  AugmentedAssign.target =
+                    +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                  value = +Expression.Constant (Constant.Integer 3);
+                  operator = BinaryOperator.Add;
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__

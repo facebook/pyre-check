@@ -252,44 +252,12 @@ let test_assign_locations _ =
       node
         ~start:(1, 0)
         ~stop:(1, 6)
-        (Statement.Assign
+        (Statement.AugmentedAssign
            {
-             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
-             annotation = None;
-             value =
-               Some
-                 (node
-                    ~start:(1, 0)
-                    ~stop:(1, 6)
-                    (Expression.Call
-                       {
-                         Call.callee =
-                           node
-                             ~start:(1, 0)
-                             ~stop:(1, 1)
-                             (Expression.Name
-                                (Name.Attribute
-                                   {
-                                     Name.Attribute.base =
-                                       node
-                                         ~start:(1, 0)
-                                         ~stop:(1, 1)
-                                         (Expression.Name (Name.Identifier "a"));
-                                     attribute = "__iadd__";
-                                     special = true;
-                                   }));
-                         arguments =
-                           [
-                             {
-                               Call.Argument.name = None;
-                               value =
-                                 node
-                                   ~start:(1, 5)
-                                   ~stop:(1, 6)
-                                   (Expression.Constant (Constant.Integer 1));
-                             };
-                           ];
-                       }));
+             AugmentedAssign.target =
+               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             operator = BinaryOperator.Add;
+             value = node ~start:(1, 5) ~stop:(1, 6) (Expression.Constant (Constant.Integer 1));
            });
     ]
 

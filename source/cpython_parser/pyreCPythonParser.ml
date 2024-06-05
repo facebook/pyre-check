@@ -879,19 +879,10 @@ let statement =
     List.map targets ~f:create_assign_for_target
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
-    (* TODO: T101299882 *)
-    let callee =
-      let dunder_name = BinaryOperator.augmented_assign_operator op in
-      Expression.Name
-        (Name.Attribute
-           { Name.Attribute.base = target; attribute = identifier dunder_name; special = true })
-      |> Node.create ~location:(Node.location target)
-    in
-    let value =
-      Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value }] }
-      |> Node.create ~location
-    in
-    [create_assign ~location ~target ~annotation:None ~value:(Some value) ()]
+    [
+      Statement.AugmentedAssign { AugmentedAssign.target; operator = op; value }
+      |> Ast.Node.create ~location;
+    ]
   in
   let ann_assign ~location ~target ~annotation ~value ~simple:_ ~context:_ =
     [create_assign ~location ~target ~annotation:(Some annotation) ~value ()]

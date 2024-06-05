@@ -149,8 +149,6 @@ and BinaryOperator : sig
 
   val override : location:Location.t -> t -> Expression.t
 
-  val augmented_assign_operator : operator -> string
-
   val binary_operator_method : operator -> string
 end
 

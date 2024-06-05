@@ -65,19 +65,6 @@
     Expression.BinaryOperator { BinaryOperator.left; operator; right }
     |> Node.create ~location:{ location with Location.stop }
 
-  (* TODO: T101299882 *)
-  let augmented_assign_binary_operator
-    ~left:({ Node.location; _ } as left)
-    ~operator
-    ~right:({ Node.location = { Location.stop; _ }; _ } as right) =
-    let name = AstExpression.BinaryOperator.augmented_assign_operator operator in
-    let callee =
-      Expression.Name (Name.Attribute { Name.Attribute.base = left; attribute = name; special = true })
-      |> Node.create ~location
-    in
-    Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value = right }] }
-    |> Node.create ~location:{ location with Location.stop }
-
   let slice ~lower ~upper ~step ~bound_colon ~step_colon =
     let increment { Location.start; stop; _ } =
       let increment ({ Location.column; _ } as position) =
@@ -476,16 +463,15 @@ small_statement:
   | target = test_list;
     operator = compound_operator;
     value = value {
-      let value = augmented_assign_binary_operator ~left:target ~operator ~right:value in
       [{
         Node.location = {
           target.Node.location with Location.stop =
             value.Node.location.Location.stop;
         };
-        value = Statement.Assign {
-          Assign.target = target;
-          annotation = None;
-          value = Some value;
+        value = Statement.AugmentedAssign {
+          AugmentedAssign.target = target;
+          operator;
+          value;
         };
       }]
     }

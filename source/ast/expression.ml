@@ -400,8 +400,6 @@ and BinaryOperator : sig
 
   val override : location:Location.t -> t -> Expression.t
 
-  val augmented_assign_operator : operator -> string
-
   val binary_operator_method : operator -> string
 end = struct
   type operator =
@@ -454,23 +452,6 @@ end = struct
         match [%compare: operator] left.operator right.operator with
         | x when not (Int.equal x 0) -> x
         | _ -> Expression.location_insensitive_compare left.right right.right)
-
-
-  (* TODO: temporary T101299882 *)
-  let augmented_assign_operator = function
-    | Add -> "__iadd__"
-    | Sub -> "__isub__"
-    | Mult -> "__imul__"
-    | MatMult -> "__imatmul__"
-    | Div -> "__itruediv__"
-    | Mod -> "__imod__"
-    | Pow -> "__ipow__"
-    | LShift -> "__ilshift__"
-    | RShift -> "__irshift__"
-    | BitOr -> "__ior__"
-    | BitXor -> "__ixor__"
-    | BitAnd -> "__iand__"
-    | FloorDiv -> "__ifloordiv__"
 
 
   let binary_operator_method = function

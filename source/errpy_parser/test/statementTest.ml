@@ -1121,30 +1121,11 @@ let test_assign =
            "a += 1"
            ~expected:
              [
-               +Statement.Assign
+               +Statement.AugmentedAssign
                   {
-                    Assign.target = !"a";
-                    annotation = None;
-                    value =
-                      Some
-                        (+Expression.Call
-                            {
-                              Call.callee =
-                                +Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base = !"a";
-                                        attribute = "__iadd__";
-                                        special = true;
-                                      });
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.name = None;
-                                    value = +Expression.Constant (Constant.Integer 1);
-                                  };
-                                ];
-                            });
+                    AugmentedAssign.target = !"a";
+                    operator = BinaryOperator.Add;
+                    value = +Expression.Constant (Constant.Integer 1);
                   };
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1152,40 +1133,14 @@ let test_assign =
            "a.b += 1"
            ~expected:
              [
-               +Statement.Assign
+               +Statement.AugmentedAssign
                   {
-                    Assign.target =
+                    AugmentedAssign.target =
                       +Expression.Name
                          (Name.Attribute
                             { Name.Attribute.base = !"a"; attribute = "b"; special = false });
-                    annotation = None;
-                    value =
-                      Some
-                        (+Expression.Call
-                            {
-                              Call.callee =
-                                +Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base =
-                                          +Expression.Name
-                                             (Name.Attribute
-                                                {
-                                                  Name.Attribute.base = !"a";
-                                                  attribute = "b";
-                                                  special = false;
-                                                });
-                                        attribute = "__iadd__";
-                                        special = true;
-                                      });
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.name = None;
-                                    value = +Expression.Constant (Constant.Integer 1);
-                                  };
-                                ];
-                            });
+                    operator = BinaryOperator.Add;
+                    value = +Expression.Constant (Constant.Integer 1);
                   };
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1222,32 +1177,12 @@ let test_assign =
            "i[j] += 3"
            ~expected:
              [
-               +Statement.Assign
+               +Statement.AugmentedAssign
                   {
-                    Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
-                    value =
-                      Some
-                        (+Expression.Call
-                            {
-                              Call.callee =
-                                +Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base =
-                                          +Expression.Subscript
-                                             { Subscript.base = !"i"; index = !"j" };
-                                        attribute = "__iadd__";
-                                        special = true;
-                                      });
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.name = None;
-                                    value = +Expression.Constant (Constant.Integer 3);
-                                  };
-                                ];
-                            });
-                    annotation = None;
+                    AugmentedAssign.target =
+                      +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                    operator = BinaryOperator.Add;
+                    value = +Expression.Constant (Constant.Integer 3);
                   };
              ];
       labeled_test_case __FUNCTION__ __LINE__
