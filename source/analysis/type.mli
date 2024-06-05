@@ -286,14 +286,6 @@ module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
-val pp_typed_dictionary_field
-  :  pp_type:(Format.formatter -> type_t -> unit) ->
-  Format.formatter ->
-  t Record.TypedDictionary.typed_dictionary_field ->
-  unit
-
-val pp_concise : Format.formatter -> t -> unit
-
 module Parameter : sig
   include module type of struct
     include Record.Parameter
@@ -305,6 +297,14 @@ module Parameter : sig
 
   val to_variable : t -> type_t Record.Variable.record option
 end
+
+val pp_typed_dictionary_field
+  :  pp_type:(Format.formatter -> type_t -> unit) ->
+  Format.formatter ->
+  t Record.TypedDictionary.typed_dictionary_field ->
+  unit
+
+val pp_concise : Format.formatter -> t -> unit
 
 val pp_parameters
   :  pp_type:(Format.formatter -> type_t -> unit) ->

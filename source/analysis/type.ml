@@ -1049,196 +1049,208 @@ module Cannonicalization = struct
           }
 end
 
-let show_callable_parameters ~pp_type = function
-  | Record.Callable.Undefined -> "..."
-  | ParameterVariadicTypeVariable variable ->
-      Cannonicalization.parameter_variable_type_representation variable
-      |> Format.asprintf "%a" pp_type
-  | Defined parameters ->
-      List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
-      |> String.concat ~sep:", "
-      |> fun parameters -> Format.asprintf "[%s]" parameters
+module PrettyPrinting = struct
+  let show_callable_parameters ~pp_type = function
+    | Record.Callable.Undefined -> "..."
+    | ParameterVariadicTypeVariable variable ->
+        Cannonicalization.parameter_variable_type_representation variable
+        |> Format.asprintf "%a" pp_type
+    | Defined parameters ->
+        List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
+        |> String.concat ~sep:", "
+        |> fun parameters -> Format.asprintf "[%s]" parameters
 
 
-let pp_parameters ~pp_type format = function
-  | parameters
-    when List.for_all parameters ~f:(function
-             | Record.Parameter.Single parameter -> is_unbound parameter || is_top parameter
-             | _ -> false) ->
-      Format.fprintf format ""
-  | parameters ->
-      let s format = function
-        | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
-        | CallableParameters parameters ->
-            Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
-        | Unpacked unpackable ->
-            Format.fprintf
-              format
-              "%a"
-              (Record.OrderedTypes.Concatenation.pp_unpackable ~pp_type)
-              unpackable
-      in
-      Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") s format parameters
+  let pp_parameters ~pp_type format = function
+    | parameters
+      when List.for_all parameters ~f:(function
+               | Record.Parameter.Single parameter -> is_unbound parameter || is_top parameter
+               | _ -> false) ->
+        Format.fprintf format ""
+    | parameters ->
+        let s format = function
+          | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
+          | CallableParameters parameters ->
+              Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
+          | Unpacked unpackable ->
+              Format.fprintf
+                format
+                "%a"
+                (Record.OrderedTypes.Concatenation.pp_unpackable ~pp_type)
+                unpackable
+        in
+        Format.pp_print_list
+          ~pp_sep:(fun format () -> Format.fprintf format ", ")
+          s
+          format
+          parameters
 
 
-let pp_typed_dictionary_field ~pp_type format { Record.TypedDictionary.name; annotation; required } =
-  Format.fprintf format "%s%s: %a" name (if required then "" else "?") pp_type annotation
+  let pp_typed_dictionary_field
+      ~pp_type
+      format
+      { Record.TypedDictionary.name; annotation; required }
+    =
+    Format.fprintf format "%s%s: %a" name (if required then "" else "?") pp_type annotation
 
 
-let rec pp format annotation =
-  let pp_ordered_type ordered_type =
-    match ordered_type with
-    | Record.OrderedTypes.Concatenation
-        { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
-        Format.asprintf "%a, ..." pp annotation
-    | ordered_type -> Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
-  in
-  match annotation with
-  | Bottom -> Format.fprintf format "undefined"
-  | Callable { kind; implementation; overloads; _ } ->
-      let kind =
-        match kind with
-        | Anonymous -> ""
-        | Named name -> Format.asprintf "(%a)" Reference.pp name
-      in
-      let signature_to_string { annotation; parameters; _ } =
-        Format.asprintf "%s, %a" (show_callable_parameters parameters ~pp_type:pp) pp annotation
-      in
-      let implementation = signature_to_string implementation in
-      let overloads =
-        let overloads = List.map overloads ~f:signature_to_string in
-        if List.is_empty overloads then
-          ""
-        else
-          String.concat ~sep:"][" overloads |> Format.sprintf "[[%s]]"
-      in
-      Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
-  | Any -> Format.fprintf format "typing.Any"
-  | Literal (Boolean literal) ->
-      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
-  | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
-  | Literal (String (LiteralValue literal)) ->
-      Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
-  | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
-  | Literal (EnumerationMember { enumeration_type; member_name }) ->
-      Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
-  | NoneType -> Format.fprintf format "None"
-  | Parametric { name; parameters } ->
-      let name = Cannonicalization.reverse_substitute name in
-      Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
-  | ParameterVariadicComponent component ->
-      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
-  | Primitive name -> Format.fprintf format "%s" name
-  | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
-  | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
-  | Top -> Format.fprintf format "unknown"
-  | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
-  | TypeOperation (Compose ordered_type) ->
-      Format.fprintf format "pyre_extensions.Compose[%s]" (pp_ordered_type ordered_type)
-  | Union [NoneType; parameter]
-  | Union [parameter; NoneType] ->
-      Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Union parameters ->
-      Format.fprintf
-        format
-        "typing.Union[%s]"
-        (List.map parameters ~f:show |> String.concat ~sep:", ")
-  | Variable unary -> Record.Variable.RecordUnary.pp_concise format unary ~pp_type:pp
-
-
-and show annotation = Format.asprintf "%a" pp annotation
-
-and pp_concise format annotation =
-  let pp_comma_separated =
-    Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_concise
-  in
-  let strip_qualification identifier =
-    String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
-  in
-  let signature_to_string { annotation; parameters; _ } =
-    let parameters =
-      match parameters with
-      | Undefined -> "..."
-      | ParameterVariadicTypeVariable variable ->
-          Cannonicalization.parameter_variable_type_representation variable
-          |> Format.asprintf "%a" pp_concise
-      | Defined parameters ->
-          let parameter = function
-            | CallableParameter.PositionalOnly { annotation; default; _ } ->
-                if default then
-                  Format.asprintf "%a=..." pp_concise annotation
-                else
-                  Format.asprintf "%a" pp_concise annotation
-            | KeywordOnly { name; annotation; default }
-            | Named { name; annotation; default } ->
-                let name = Identifier.sanitized name in
-                if default then
-                  Format.asprintf "%s: %a = ..." name pp_concise annotation
-                else
-                  Format.asprintf "%s: %a" name pp_concise annotation
-            | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
-            | Variable (Concatenation concatenation) ->
-                Format.asprintf
-                  "*(%a)"
-                  (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
-                  concatenation
-            | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
-          in
-          List.map parameters ~f:parameter |> String.concat ~sep:", "
+  let rec pp format annotation =
+    let pp_ordered_type ordered_type =
+      match ordered_type with
+      | Record.OrderedTypes.Concatenation
+          { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
+          Format.asprintf "%a, ..." pp annotation
+      | ordered_type ->
+          Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
     in
-    Format.asprintf "(%s) -> %a" parameters pp_concise annotation
-  in
-  match annotation with
-  | Bottom -> Format.fprintf format "?"
-  | Callable { implementation; _ } ->
-      Format.fprintf format "%s" (signature_to_string implementation)
-  | Parametric
-      { name = "BoundMethod"; parameters = [Single (Callable { implementation; _ }); Single _] } ->
-      Format.fprintf format "%s" (signature_to_string implementation)
-  | Any -> Format.fprintf format "Any"
-  | Literal (Boolean literal) ->
-      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
-  | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
-  | Literal (String (LiteralValue literal)) ->
-      Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
-  | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
-  | Literal (EnumerationMember { enumeration_type; member_name }) ->
-      Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
-  | NoneType -> Format.fprintf format "None"
-  | Parametric { name; parameters } ->
-      let name = strip_qualification (Cannonicalization.reverse_substitute name) in
-      Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
-  | ParameterVariadicComponent component ->
-      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
-  | Primitive "..." -> Format.fprintf format "..."
-  | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
-  | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
-  | RecursiveType { name; _ } -> Format.fprintf format "%s" name
-  | Top -> Format.fprintf format "unknown"
-  | Tuple (Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] }) ->
-      Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
-  | Tuple ordered_type ->
-      Format.fprintf
-        format
-        "Tuple[%a]"
-        (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
-        ordered_type
-  | TypeOperation (Compose ordered_type) ->
-      Format.fprintf
-        format
-        "Compose[%a]"
-        (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
-        ordered_type
-  | Union [NoneType; parameter]
-  | Union [parameter; NoneType] ->
-      Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Union parameters -> Format.fprintf format "Union[%a]" pp_comma_separated parameters
-  | Variable { variable; _ } -> Format.fprintf format "%s" (strip_qualification variable)
+    match annotation with
+    | Bottom -> Format.fprintf format "undefined"
+    | Callable { kind; implementation; overloads; _ } ->
+        let kind =
+          match kind with
+          | Anonymous -> ""
+          | Named name -> Format.asprintf "(%a)" Reference.pp name
+        in
+        let signature_to_string { annotation; parameters; _ } =
+          Format.asprintf "%s, %a" (show_callable_parameters parameters ~pp_type:pp) pp annotation
+        in
+        let implementation = signature_to_string implementation in
+        let overloads =
+          let overloads = List.map overloads ~f:signature_to_string in
+          if List.is_empty overloads then
+            ""
+          else
+            String.concat ~sep:"][" overloads |> Format.sprintf "[[%s]]"
+        in
+        Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
+    | Any -> Format.fprintf format "typing.Any"
+    | Literal (Boolean literal) ->
+        Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
+    | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
+    | Literal (String (LiteralValue literal)) ->
+        Format.fprintf format "typing_extensions.Literal['%s']" literal
+    | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
+    | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
+    | Literal (EnumerationMember { enumeration_type; member_name }) ->
+        Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
+    | NoneType -> Format.fprintf format "None"
+    | Parametric { name; parameters } ->
+        let name = Cannonicalization.reverse_substitute name in
+        Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
+    | ParameterVariadicComponent component ->
+        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
+    | Primitive name -> Format.fprintf format "%s" name
+    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
+    | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
+    | Top -> Format.fprintf format "unknown"
+    | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
+    | TypeOperation (Compose ordered_type) ->
+        Format.fprintf format "pyre_extensions.Compose[%s]" (pp_ordered_type ordered_type)
+    | Union [NoneType; parameter]
+    | Union [parameter; NoneType] ->
+        Format.fprintf format "typing.Optional[%a]" pp parameter
+    | Union parameters ->
+        Format.fprintf
+          format
+          "typing.Union[%s]"
+          (List.map parameters ~f:show |> String.concat ~sep:", ")
+    | Variable unary -> Record.Variable.RecordUnary.pp_concise format unary ~pp_type:pp
 
 
-and show_concise annotation = Format.asprintf "%a" pp_concise annotation
+  and show annotation = Format.asprintf "%a" pp annotation
+
+  and pp_concise format annotation =
+    let pp_comma_separated =
+      Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_concise
+    in
+    let strip_qualification identifier =
+      String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
+    in
+    let signature_to_string { annotation; parameters; _ } =
+      let parameters =
+        match parameters with
+        | Undefined -> "..."
+        | ParameterVariadicTypeVariable variable ->
+            Cannonicalization.parameter_variable_type_representation variable
+            |> Format.asprintf "%a" pp_concise
+        | Defined parameters ->
+            let parameter = function
+              | CallableParameter.PositionalOnly { annotation; default; _ } ->
+                  if default then
+                    Format.asprintf "%a=..." pp_concise annotation
+                  else
+                    Format.asprintf "%a" pp_concise annotation
+              | KeywordOnly { name; annotation; default }
+              | Named { name; annotation; default } ->
+                  let name = Identifier.sanitized name in
+                  if default then
+                    Format.asprintf "%s: %a = ..." name pp_concise annotation
+                  else
+                    Format.asprintf "%s: %a" name pp_concise annotation
+              | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
+              | Variable (Concatenation concatenation) ->
+                  Format.asprintf
+                    "*(%a)"
+                    (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
+                    concatenation
+              | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
+            in
+            List.map parameters ~f:parameter |> String.concat ~sep:", "
+      in
+      Format.asprintf "(%s) -> %a" parameters pp_concise annotation
+    in
+    match annotation with
+    | Bottom -> Format.fprintf format "?"
+    | Callable { implementation; _ } ->
+        Format.fprintf format "%s" (signature_to_string implementation)
+    | Parametric
+        { name = "BoundMethod"; parameters = [Single (Callable { implementation; _ }); Single _] }
+      ->
+        Format.fprintf format "%s" (signature_to_string implementation)
+    | Any -> Format.fprintf format "Any"
+    | Literal (Boolean literal) ->
+        Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
+    | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
+    | Literal (String (LiteralValue literal)) ->
+        Format.fprintf format "typing_extensions.Literal['%s']" literal
+    | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
+    | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
+    | Literal (EnumerationMember { enumeration_type; member_name }) ->
+        Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
+    | NoneType -> Format.fprintf format "None"
+    | Parametric { name; parameters } ->
+        let name = strip_qualification (Cannonicalization.reverse_substitute name) in
+        Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
+    | ParameterVariadicComponent component ->
+        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
+    | Primitive "..." -> Format.fprintf format "..."
+    | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
+    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
+    | RecursiveType { name; _ } -> Format.fprintf format "%s" name
+    | Top -> Format.fprintf format "unknown"
+    | Tuple (Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] }) ->
+        Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
+    | Tuple ordered_type ->
+        Format.fprintf
+          format
+          "Tuple[%a]"
+          (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
+          ordered_type
+    | TypeOperation (Compose ordered_type) ->
+        Format.fprintf
+          format
+          "Compose[%a]"
+          (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
+          ordered_type
+    | Union [NoneType; parameter]
+    | Union [parameter; NoneType] ->
+        Format.fprintf format "Optional[%a]" pp_concise parameter
+    | Union parameters -> Format.fprintf format "Union[%a]" pp_comma_separated parameters
+    | Variable { variable; _ } -> Format.fprintf format "%s" (strip_qualification variable)
+
+
+  and show_concise annotation = Format.asprintf "%a" pp_concise annotation
+end
 
 module Constructors = struct
   let parametric name parameters = Parametric { name; parameters }
@@ -1765,8 +1777,6 @@ let contains_unknown annotation = exists annotation ~predicate:is_top
 
 let contains_undefined annotation = exists annotation ~predicate:is_unbound
 
-let pp_type = pp
-
 module Callable = struct
   module Parameter = struct
     include Record.Callable.RecordParameter
@@ -1821,7 +1831,7 @@ module Callable = struct
       |> snd
 
 
-    let show_concise = show_concise ~pp_type
+    let show_concise = show_concise ~pp_type:PrettyPrinting.pp
 
     let default = function
       | PositionalOnly { default; _ }
@@ -2208,7 +2218,7 @@ module OrderedTypes = struct
 
   type ordered_types_t = t
 
-  let pp_concise = pp_concise ~pp_type
+  let pp_concise = pp_concise ~pp_type:PrettyPrinting.pp
 
   let union_upper_bound = function
     | Concrete concretes -> Constructors.union concretes
@@ -4163,8 +4173,6 @@ end = struct
     module TupleVariadic = Make (Variadic.Tuple)
   end
 
-  let pp_type = pp
-
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
@@ -4182,7 +4190,7 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash]
 
   let pp_concise format = function
-    | Unary variable -> Unary.pp_concise format variable ~pp_type
+    | Unary variable -> Unary.pp_concise format variable ~pp_type:PrettyPrinting.pp
     | ParameterVariadic { name; _ } ->
         Format.fprintf format "CallableParameterTypeVariable[%s]" name
     | TupleVariadic { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
@@ -5136,8 +5144,6 @@ let contains_prohibited_any annotation =
   fst (Exists.visit false annotation)
 
 
-let to_yojson annotation = `String (show annotation)
-
 type class_data_for_attribute_lookup = {
   class_name: Primitive.t;
   instantiated: t;
@@ -5293,3 +5299,7 @@ let equivalent_for_assert_type left right =
 
 
 include Constructors
+include PrettyPrinting
+
+(* We always send types in the pretty printed form *)
+let to_yojson annotation = `String (PrettyPrinting.show annotation)
