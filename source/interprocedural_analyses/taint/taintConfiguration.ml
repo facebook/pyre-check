@@ -336,9 +336,7 @@ module PartialSinkConverter = struct
 
   let empty = PartialSink.Map.empty
 
-  let of_alist_exn = PartialSink.Map.of_alist_exn
-
-  let add map ~first_sources ~first_sink ~second_sources ~second_sink =
+  let add ~first_sources ~first_sink ~second_sources ~second_sink map =
     let update_triggering_source ~triggered_sink so_far triggering_source =
       TriggeringSource.Map.update
         triggering_source
@@ -401,17 +399,19 @@ module PartialSinkConverter = struct
     |> Option.value ~default:PartialSink.Triggered.Set.empty
 
 
-  let all_triggered_sinks ~partial_sink converter =
-    let open Option.Monad_infix in
+  (* Convert the given partial sink into all possible triggered sinks -- any triggered sink that has
+     the same partial sink kind. *)
+  let to_triggered_sinks ~partial_sink converter =
     converter
-    |> PartialSink.Map.find_opt partial_sink
-    >>| (fun sources_to_triggered_sinks ->
-          sources_to_triggered_sinks
-          |> TriggeringSource.Map.data
-          |> Algorithms.fold_balanced
-               ~f:PartialSink.Triggered.Set.union
-               ~init:PartialSink.Triggered.Set.empty)
-    |> Option.value ~default:PartialSink.Triggered.Set.empty
+    |> PartialSink.Map.data
+    |> List.map ~f:TriggeringSource.Map.data
+    |> List.concat
+    |> Algorithms.fold_balanced
+         ~f:PartialSink.Triggered.Set.union
+         ~init:PartialSink.Triggered.Set.empty
+    |> PartialSink.Triggered.Set.filter
+         (fun { Sinks.PartialSink.Triggered.partial_sink = triggered; _ } ->
+           Sinks.PartialSink.equal partial_sink triggered)
 end
 
 module StringOperationPartialSinks = struct
@@ -1354,11 +1354,11 @@ let from_json_list source_json_list =
     in
     let partial_sink_converter =
       PartialSinkConverter.add
-        partial_sink_converter
         ~first_sources:main_sources
         ~first_sink:main_sink
         ~second_sources:secondary_sources
         ~second_sink:secondary_sink
+        partial_sink_converter
     in
     let registered_partial_sinks =
       RegisteredPartialSinks.add main_sink secondary_sink registered_partial_sinks

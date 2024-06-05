@@ -197,6 +197,14 @@ let test_rule_coverage _ =
       location = None;
     }
   in
+  let partial_sink_converter =
+    TaintConfiguration.PartialSinkConverter.add
+      ~first_sources:[Sources.NamedSource "SourceC"]
+      ~first_sink:"SinkC[label_1]"
+      ~second_sources:[Sources.NamedSource "SourceD"]
+      ~second_sink:"SinkC[label_2]"
+      TaintConfiguration.PartialSinkConverter.empty
+  in
   let multi_source_rule_part_1 =
     {
       Rule.sources = [Sources.NamedSource "SourceC"];
@@ -231,7 +239,7 @@ let test_rule_coverage _ =
   in
   let actual_category_coverage =
     RuleCoverage.from_rules
-      ~partial_sink_converter:(TaintConfiguration.PartialSinkConverter.of_alist_exn [])
+      ~partial_sink_converter
       ~kind_coverage
       [
         covered_rule_1;

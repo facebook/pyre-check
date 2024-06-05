@@ -47,21 +47,12 @@ let test_from_source _ =
 
 let test_from_sink _ =
   let partial_sink_converter =
-    TaintConfiguration.PartialSinkConverter.of_alist_exn
-      [
-        ( "SinkB[label_1]",
-          Sources.TriggeringSource.Map.of_alist_exn
-            [
-              ( "SourceB",
-                Sinks.PartialSink.Triggered.Set.of_list
-                  [
-                    {
-                      Sinks.PartialSink.Triggered.partial_sink = "SinkC[label_3]";
-                      triggering_source = "SourceB";
-                    };
-                  ] );
-            ] );
-      ]
+    TaintConfiguration.PartialSinkConverter.add
+      ~first_sources:[Sources.NamedSource "SourceB"]
+      ~first_sink:"SinkB[label_1]"
+      ~second_sources:[Sources.NamedSource "SourceC"]
+      ~second_sink:"SinkC[label_3]"
+      TaintConfiguration.PartialSinkConverter.empty
   in
   let assert_sinks ?(partial_sink_converter = partial_sink_converter) ~expected ~actual () =
     let actual = KindCoverage.Sinks.from_sink ~partial_sink_converter actual in
@@ -79,9 +70,12 @@ let test_from_sink _ =
   assert_sinks
     ~expected:
       (Some
-         (Sinks.TriggeredPartialSink
-            { partial_sink = "SinkC[label_3]"; triggering_source = "SourceB" }
-         |> Sinks.Set.singleton))
+         ([
+            Sinks.PartialSink "SinkB[label_1]";
+            Sinks.TriggeredPartialSink
+              { partial_sink = "SinkB[label_1]"; triggering_source = "SourceC" };
+          ]
+         |> Sinks.Set.of_list))
     ~actual:sink
     ();
   let sink =
@@ -281,7 +275,7 @@ let test_from_rule _ =
   in
   let actual_used_taint =
     KindCoverage.from_rule
-      ~partial_sink_converter:(TaintConfiguration.PartialSinkConverter.of_alist_exn [])
+      ~partial_sink_converter:TaintConfiguration.PartialSinkConverter.empty
       rule
   in
   let expected_used_taint =

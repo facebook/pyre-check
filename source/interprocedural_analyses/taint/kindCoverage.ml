@@ -24,14 +24,15 @@ module Sinks = struct
 
   let rec from_sink ~partial_sink_converter = function
     | Sinks.Attach -> None
-    | Sinks.PartialSink partial_sink ->
-        (* Rules only match sources against `TriggeredPartialSink` *)
+    | Sinks.PartialSink partial_sink as sink ->
         Some
           (partial_sink_converter
-          |> TaintConfiguration.PartialSinkConverter.all_triggered_sinks ~partial_sink
+          |> TaintConfiguration.PartialSinkConverter.to_triggered_sinks ~partial_sink
+          (* Any triggered sink that has the same partial sink kind. *)
           |> Sinks.PartialSink.Triggered.Set.elements
           |> List.map ~f:(fun triggered -> Sinks.TriggeredPartialSink triggered)
-          |> Set.of_list)
+          |> Set.of_list
+          |> Set.add sink (* The partial sink itself is also covered. *))
     | Sinks.TriggeredPartialSink _ as sink -> Some (Set.singleton sink)
     | Sinks.LocalReturn -> None
     | Sinks.NamedSink _ as sink -> Some (Set.singleton sink)
