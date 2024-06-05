@@ -485,7 +485,7 @@ let compute_coverage
            ~preferred_chunk_size:100000
            ())
   in
-  let kind_coverage =
+  let kind_coverage_from_models =
     Scheduler.map_reduce
       scheduler
       ~policy:scheduler_policy
@@ -503,7 +503,9 @@ let compute_coverage
 
   Log.info "Computing rule coverage...";
   let timer = Timer.start () in
-  let rule_coverage = RuleCoverage.from_rules ~partial_sink_converter ~kind_coverage rules in
+  let rule_coverage =
+    RuleCoverage.from_rules ~kind_coverage_from_models ~partial_sink_converter rules
+  in
   Statistics.performance
     ~name:"Finished computing rule coverage"
     ~phase_name:"Computing rule coverage"

@@ -13,8 +13,8 @@ module CoveredRule : sig
   [@@deriving eq, show]
 
   val is_covered
-    :  partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
-    kind_coverage:KindCoverage.t ->
+    :  kind_coverage_from_models:KindCoverage.t ->
+    partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
     Rule.t ->
     t option
 
@@ -34,8 +34,8 @@ val empty : t
 val is_empty : t -> bool
 
 val from_rules
-  :  partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
-  kind_coverage:KindCoverage.t ->
+  :  kind_coverage_from_models:KindCoverage.t ->
+  partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
   Rule.t list ->
   t
 

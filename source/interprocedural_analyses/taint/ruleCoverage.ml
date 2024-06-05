@@ -19,7 +19,7 @@ module CoveredRule = struct
 
   include T
 
-  let is_covered ~partial_sink_converter ~kind_coverage ({ Rule.code; _ } as rule) =
+  let is_covered ~kind_coverage_from_models ~partial_sink_converter ({ Rule.code; _ } as rule) =
     let ({ KindCoverage.sources = _; sinks = _; transforms = transforms_from_rule } as from_rule) =
       KindCoverage.from_rule ~partial_sink_converter rule
     in
@@ -29,7 +29,7 @@ module CoveredRule = struct
            transforms = intersected_transforms;
          } as intersected)
       =
-      KindCoverage.intersect from_rule kind_coverage
+      KindCoverage.intersect from_rule kind_coverage_from_models
     in
     let open KindCoverage in
     if
@@ -65,7 +65,7 @@ let is_empty { covered_rules; uncovered_rule_codes } =
   CoveredRule.Set.is_empty covered_rules && IntSet.is_empty uncovered_rule_codes
 
 
-let from_rules ~partial_sink_converter ~kind_coverage rules =
+let from_rules ~kind_coverage_from_models ~partial_sink_converter rules =
   let module RuleMap = Stdlib.Map.Make (Int) in
   (* Group rules by code. *)
   let rule_map =
@@ -81,15 +81,17 @@ let from_rules ~partial_sink_converter ~kind_coverage rules =
       (fun code rules (covered_rules, uncovered_rule_codes) ->
         match rules with
         | [rule] -> (
-            match CoveredRule.is_covered ~partial_sink_converter ~kind_coverage rule with
+            match
+              CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule
+            with
             | Some covered_rule ->
                 CoveredRule.Set.add covered_rule covered_rules, uncovered_rule_codes
             | None -> covered_rules, IntSet.add code uncovered_rule_codes)
         | [rule_1; rule_2] -> (
             (* A multi-source rule is covered, only if both sub-rules are covered. *)
             match
-              ( CoveredRule.is_covered ~partial_sink_converter ~kind_coverage rule_1,
-                CoveredRule.is_covered ~partial_sink_converter ~kind_coverage rule_2 )
+              ( CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule_1,
+                CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule_2 )
             with
             | ( Some { CoveredRule.kind_coverage = kind_coverage_1; _ },
                 Some { CoveredRule.kind_coverage = kind_coverage_2; _ } ) ->

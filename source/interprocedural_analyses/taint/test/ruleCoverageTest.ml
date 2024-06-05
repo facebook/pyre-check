@@ -11,7 +11,7 @@ open Taint
 
 let test_covered_rule _ =
   let open RuleCoverage in
-  let kind_coverage =
+  let kind_coverage_from_models =
     {
       KindCoverage.sources = KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
       sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
@@ -19,13 +19,13 @@ let test_covered_rule _ =
     }
   in
   let assert_covered_rule
-      ?(kind_coverage = kind_coverage)
+      ?(kind_coverage_from_models = kind_coverage_from_models)
       ?(partial_sink_converter = TaintConfiguration.PartialSinkConverter.empty)
       ~expected
       ~actual
       ()
     =
-    let actual = CoveredRule.is_covered ~partial_sink_converter ~kind_coverage actual in
+    let actual = CoveredRule.is_covered ~partial_sink_converter ~kind_coverage_from_models actual in
     assert_equal
       ~cmp:(Option.equal CoveredRule.equal)
       ~printer:(Option.value_map ~default:"None" ~f:CoveredRule.show)
@@ -91,7 +91,7 @@ let test_covered_rule _ =
     }
   in
   assert_covered_rule
-    ~expected:(Some { CoveredRule.rule_code = 1234; kind_coverage })
+    ~expected:(Some { CoveredRule.rule_code = 1234; kind_coverage = kind_coverage_from_models })
     ~actual:covered_rule
     ();
 
@@ -126,7 +126,7 @@ let test_covered_rule _ =
 
 
 let test_rule_coverage _ =
-  let kind_coverage =
+  let kind_coverage_from_models =
     {
       KindCoverage.sources =
         KindCoverage.Sources.Set.of_list
@@ -240,7 +240,7 @@ let test_rule_coverage _ =
   let actual_category_coverage =
     RuleCoverage.from_rules
       ~partial_sink_converter
-      ~kind_coverage
+      ~kind_coverage_from_models
       [
         covered_rule_1;
         covered_rule_2;
