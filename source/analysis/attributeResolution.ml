@@ -2418,13 +2418,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         expression =
       let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
-        | Type.TypeAlias alias ->
+        | Type.Alias.TypeAlias alias ->
             self#check_invalid_type_parameters
               ?replace_unbound_parameters_with_any
               alias
               ~assumptions
             |> snd
-            |> fun alias -> Type.TypeAlias alias
+            |> fun alias -> Type.Alias.TypeAlias alias
         | result -> result
       in
       let allow_untracked =

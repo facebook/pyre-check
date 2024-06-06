@@ -23,7 +23,7 @@ module Queries = struct
     exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
     class_exists: string -> bool;
     parse_annotation_without_validating_type_parameters:
-      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
+      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
       ?allow_untracked:bool ->
       Ast.Expression.t ->
       Type.t;

@@ -19,8 +19,8 @@ let test_simple_registration =
       ScratchProject.errors_environment project
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
-    let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
-    let printer v = v >>| Type.show_alias |> Option.value ~default:"none" in
+    let expected = expected >>| fun expected -> Type.Alias.TypeAlias (Type.Primitive expected) in
+    let printer v = v >>| Type.Alias.show |> Option.value ~default:"none" in
     assert_equal ~printer expected (TypeAliasEnvironment.ReadOnly.get_type_alias read_only name)
   in
   test_list
@@ -79,7 +79,7 @@ let test_harder_registrations =
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
     let printer alias =
-      alias >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
+      alias >>| Type.Alias.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
     assert_equal
       ~printer
@@ -90,11 +90,11 @@ let test_harder_registrations =
     let parser expression =
       parse_single_expression expression |> Type.create ~aliases:Type.empty_aliases
     in
-    let expected_alias = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
+    let expected_alias = expected >>| parser >>| fun alias -> Type.Alias.TypeAlias alias in
     assert_registers ~expected_alias source name
   in
   let unparsed_assert_registers source name expected =
-    let expected_alias = expected >>| fun alias -> Type.TypeAlias alias in
+    let expected_alias = expected >>| fun alias -> Type.Alias.TypeAlias alias in
     assert_registers ~expected_alias source name
   in
   test_list
@@ -159,7 +159,7 @@ let test_harder_registrations =
              Y: typing_extensions.TypeAlias = "X"
            |}
            "test.Y"
-           ~expected_alias:(Some (Type.TypeAlias Type.integer));
+           ~expected_alias:(Some (Type.Alias.TypeAlias Type.integer));
       (* Recursive alias. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
@@ -171,7 +171,7 @@ let test_harder_registrations =
            "test.Tree"
            ~expected_alias:
              (Some
-                (Type.TypeAlias
+                (Type.Alias.TypeAlias
                    (Type.RecursiveType.create
                       ~name:"test.Tree"
                       ~body:
@@ -228,7 +228,7 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (Type.TypeAlias
+                (Type.Alias.TypeAlias
                    (Type.list
                       (Type.RecursiveType.create
                          ~name:"test.X"
@@ -247,7 +247,7 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (Type.TypeAlias
+                (Type.Alias.TypeAlias
                    (Type.union
                       [
                         Type.integer;
@@ -277,7 +277,7 @@ let test_harder_registrations =
            "test.Z"
            ~expected_alias:
              (Some
-                (Type.TypeAlias
+                (Type.Alias.TypeAlias
                    (Type.list
                       (Type.union
                          [
@@ -310,7 +310,7 @@ let test_harder_registrations =
            "test.FloatTensor"
            ~expected_alias:
              (Some
-                (Type.TypeAlias
+                (Type.Alias.TypeAlias
                    (Type.parametric
                       "test.Tensor"
                       [
@@ -335,7 +335,7 @@ let test_harder_registrations =
           |}
            "test.F"
            ~expected_alias:
-             (Some (Type.TypeAlias (Type.Callable.create ~annotation:Type.integer ())));
+             (Some (Type.Alias.TypeAlias (Type.Callable.create ~annotation:Type.integer ())));
       (* Allow the union syntax in type aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
@@ -372,13 +372,13 @@ let test_updates context =
     in
     let execute_action (alias_name, dependency, expectation) =
       let printer v =
-        v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
+        v >>| Type.Alias.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"none"
       in
       let expectation =
         expectation
         >>| parse_single_expression
         >>| Type.create ~aliases:Type.empty_aliases
-        >>| fun alias -> Type.TypeAlias alias
+        >>| fun alias -> Type.Alias.TypeAlias alias
       in
       TypeAliasEnvironment.ReadOnly.get_type_alias read_only ~dependency alias_name
       |> assert_equal ~printer expectation

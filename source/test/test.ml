@@ -3096,7 +3096,7 @@ let mock_define =
 
 let create_type_alias_table type_aliases =
   let aliases ?replace_unbound_parameters_with_any:_ primitive =
-    type_aliases primitive >>| fun alias -> Type.TypeAlias alias
+    type_aliases primitive >>| fun alias -> Type.Alias.TypeAlias alias
   in
   aliases
 

@@ -30,9 +30,9 @@ module IncomingDataComputation = struct
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
       get_type_alias:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Alias.t option;
       parse_annotation_without_validating_type_parameters:
-        ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
+        ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;

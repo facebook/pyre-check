@@ -1784,7 +1784,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1793,7 +1793,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1802,7 +1802,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
     "typing.Tuple[typing_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"

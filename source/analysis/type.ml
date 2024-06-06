@@ -2435,6 +2435,13 @@ module ReadOnly = struct
     |> Option.value ~default:(make_container element_type)
 end
 
+module Alias = struct
+  type t =
+    | TypeAlias of T.t
+    | VariableAlias of T.t Record.Variable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 let lambda ~parameters ~return_annotation =
   let parameters =
     List.map parameters ~f:(fun (name, annotation) ->
@@ -2508,11 +2515,6 @@ let create_literal = function
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
-
-type alias =
-  | TypeAlias of t
-  | VariableAlias of t Record.Variable.record
-[@@deriving compare, eq, sexp, show, hash]
 
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
@@ -3355,12 +3357,12 @@ module Variable : sig
 
       val parse_instance_annotation
         :  create_type:
-             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
              Expression.t ->
              T.t) ->
         variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
         t option
 
       module Components : sig
@@ -3760,7 +3762,7 @@ end = struct
         =
         let get_variable name =
           match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-          | Some (VariableAlias (ParameterVariadic variable)) -> Some variable
+          | Some (Alias.VariableAlias (ParameterVariadic variable)) -> Some variable
           | _ -> None
         in
         let open Record.Variable.RecordVariadic.RecordParameters.RecordComponents in
@@ -4867,7 +4869,7 @@ let resolve_aliases ~aliases annotation =
           match annotation with
           | Primitive name -> (
               match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-              | Some (TypeAlias alias) ->
+              | Some (Alias.TypeAlias alias) ->
                   let alias =
                     match alias with
                     (* Type variables are stored as `_T aliases to _T`. Don't replace them. *)
@@ -4933,7 +4935,7 @@ let resolve_aliases ~aliases annotation =
                    We will not find any free type variables in Foo[Any] and simply resolve it as
                    Foo[Any]. *)
                 match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-                | Some (TypeAlias uninstantiated_alias_annotation) ->
+                | Some (Alias.TypeAlias uninstantiated_alias_annotation) ->
                     instantiate ~given_parameters uninstantiated_alias_annotation
                 | _ -> annotation
               in
@@ -4954,7 +4956,7 @@ let resolve_aliases ~aliases annotation =
 let create ~aliases =
   let variable_aliases name =
     match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-    | Some (VariableAlias variable) -> Some variable
+    | Some (Alias.VariableAlias variable) -> Some variable
     | _ -> None
   in
   create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases

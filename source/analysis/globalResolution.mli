@@ -57,11 +57,11 @@ val get_type_alias
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
   Type.Primitive.t ->
-  Type.alias option
+  Type.Alias.t option
 
 val parse_annotation_without_validating_type_parameters
   :  t ->
-  ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
+  ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
   ?allow_untracked:bool ->
   Expression.t ->
   Type.t

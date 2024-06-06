@@ -419,6 +419,13 @@ val collect_types : t -> predicate:(t -> bool) -> t list
 
 val apply_type_map : ?visit_children_before:bool -> t -> type_map:(t -> t option) -> t
 
+module Alias : sig
+  type t =
+    | TypeAlias of type_t
+    | VariableAlias of type_t Record.Variable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 module Callable : sig
   module Parameter : sig
     include module type of struct
@@ -498,22 +505,17 @@ module Callable : sig
   val name : t -> Reference.t option
 end
 
-type alias =
-  | TypeAlias of t
-  | VariableAlias of t Record.Variable.record
-[@@deriving compare, eq, sexp, show, hash]
-
 val resolve_aliases
-  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> alias option) ->
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> Alias.t option) ->
   t ->
   t
 
 val create
-  :  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
   Expression.t ->
   t
 
-val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option
+val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option
 
 module RecursiveType : sig
   include module type of struct
@@ -802,12 +804,12 @@ module Variable : sig
 
       val parse_instance_annotation
         :  create_type:
-             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
              Expression.t ->
              type_t) ->
         variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
         t option
 
       module Components : sig
