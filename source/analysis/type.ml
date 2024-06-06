@@ -836,10 +836,6 @@ module T = struct
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-include T
-
-let _ = show (* shadowed below *)
-
 module Containers = struct
   module Map = Map.Make (T)
   module Set = Set.Make (T)
@@ -847,6 +843,8 @@ module Containers = struct
 end
 
 module Constructors = struct
+  open T
+
   let parametric name parameters = Parametric { name; parameters }
 
   let awaitable parameter =
@@ -991,6 +989,8 @@ module Constructors = struct
 end
 
 module VisitWithTransform = struct
+  open T
+
   type 'state visit_result = {
     transformed_annotation: t;
     new_state: 'state;
@@ -1131,6 +1131,8 @@ module VisitWithTransform = struct
 end
 
 module Visitors = struct
+  open T
+
   let exists annotation ~predicate =
     let module ExistsVisitor = VisitWithTransform.Make (struct
       type state = bool
@@ -1232,6 +1234,7 @@ module Visitors = struct
 end
 
 module Parameter = struct
+  open T
   include Record.Parameter
 
   type t = T.t record [@@deriving compare, eq, sexp, show, hash]
@@ -1253,6 +1256,8 @@ end
 
 (* Helper functions that extract an inner type if the outer type matches some pattern *)
 module Extractions = struct
+  open T
+
   let optional_value = function
     | Union [NoneType; annotation]
     | Union [annotation; NoneType] ->
@@ -1287,6 +1292,8 @@ module Extractions = struct
 end
 
 module Predicates = struct
+  open T
+
   let is_any = function
     | Any -> true
     | _ -> false
@@ -1533,6 +1540,8 @@ end
    the cannonicalizations, but so does some other logic like the `Type.t -> Expression.t`
    conversion. *)
 module Cannonicalization = struct
+  open T
+
   let reverse_substitute name =
     match name with
     | "collections.defaultdict" -> "typing.DefaultDict"
@@ -1556,6 +1565,8 @@ module Cannonicalization = struct
 end
 
 module PrettyPrinting = struct
+  open T
+
   let show_callable_parameters ~pp_type = function
     | Record.Callable.Undefined -> "..."
     | ParameterVariadicTypeVariable variable ->
@@ -1788,6 +1799,8 @@ module Transforms = struct
 end
 
 module Callable = struct
+  open T
+
   module Parameter = struct
     include Record.Callable.RecordParameter
 
@@ -2074,11 +2087,12 @@ module Callable = struct
 end
 
 module RecursiveType = struct
+  open T
   include Record.RecursiveType
 
   let contains_recursive_type_with_name ~name =
     Visitors.exists ~predicate:(function
-        | RecursiveType { name = inner_name; _ } -> Identifier.equal inner_name name
+        | T.RecursiveType { name = inner_name; _ } -> Identifier.equal inner_name name
         | _ -> false)
 
 
@@ -2140,6 +2154,7 @@ module RecursiveType = struct
 end
 
 module OrderedTypes = struct
+  open T
   include Record.OrderedTypes
 
   type t = T.t record [@@deriving compare, eq, sexp, show, hash]
@@ -2294,6 +2309,7 @@ module OrderedTypes = struct
 end
 
 module TypeOperation = struct
+  open T
   include Record.TypeOperation
 
   module Compose = struct
@@ -2356,6 +2372,8 @@ module TypeOperation = struct
 end
 
 module ReadOnly = struct
+  open T
+
   let create = Constructors.read_only
 
   let unpack_readonly = function
@@ -2600,6 +2618,8 @@ module Variable : sig
 
   val to_parameter : t -> Parameter.t
 end = struct
+  open T
+
   module Namespace = struct
     include Record.Variable.RecordNamespace
 
@@ -3617,6 +3637,8 @@ end = struct
 end
 
 module ToExpression = struct
+  open T
+
   let location = Location.any
 
   let subscript = subscript ~location
@@ -3803,6 +3825,7 @@ module ToExpression = struct
 end
 
 module TypedDictionary = struct
+  open T
   open Record.TypedDictionary
 
   let anonymous fields = { name = "$anonymous"; fields }
@@ -4165,6 +4188,10 @@ module TypedDictionary = struct
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
 end
+
+include T
+
+let _ = show (* shadowed below *)
 
 let lambda ~parameters ~return_annotation =
   let parameters =
