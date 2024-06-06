@@ -825,9 +825,11 @@ include T
 
 let _ = show (* shadowed below *)
 
-module Map = Map.Make (T)
-module Set = Set.Make (T)
-include Hashable.Make (T)
+module Containers = struct
+  module Map = Map.Make (T)
+  module Set = Set.Make (T)
+  include Hashable.Make (T)
+end
 
 module Constructors = struct
   let parametric name parameters = Parametric { name; parameters }
@@ -916,7 +918,7 @@ module Constructors = struct
 
   let union parameters =
     let parameters =
-      let parameter_set = Hash_set.create () in
+      let parameter_set = Containers.Hash_set.create () in
       let rec add_parameter = function
         | Union parameters -> List.iter parameters ~f:add_parameter
         | Bottom -> ()
@@ -4484,7 +4486,7 @@ end = struct
 end
 
 let resolve_aliases ~aliases annotation =
-  let visited = Hash_set.create () in
+  let visited = Containers.Hash_set.create () in
   let module ResolveAliasesTransform = VisitWithTransform.Make (struct
     type state = unit
 
@@ -5310,6 +5312,7 @@ let collect_names = Visitors.collect_names
 
 let apply_type_map = Transforms.apply_type_map
 
+include Containers
 include Constructors
 include PrettyPrinting
 include Predicates
