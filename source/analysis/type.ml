@@ -2564,727 +2564,6 @@ module Alias = struct
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-let lambda ~parameters ~return_annotation =
-  let parameters =
-    List.map parameters ~f:(fun (name, annotation) ->
-        { CallableParameter.name; annotation; default = false })
-    |> Callable.Parameter.create
-  in
-  Callable
-    {
-      kind = Anonymous;
-      implementation = { annotation = return_annotation; parameters = Defined parameters };
-      overloads = [];
-    }
-
-
-let primitive_substitution_map =
-  [
-    "$bottom", Bottom;
-    "$unknown", Top;
-    "function", Callable.create ~annotation:Any ();
-    "typing.Any", Any;
-    "typing.ChainMap", Primitive "collections.ChainMap";
-    "typing.Counter", Primitive "collections.Counter";
-    "typing.DefaultDict", Primitive "collections.defaultdict";
-    "typing.Deque", Primitive "collections.deque";
-    "typing.Dict", Primitive "dict";
-    "typing.FrozenSet", Primitive "frozenset";
-    "typing.List", Primitive "list";
-    "typing.OrderedDict", Primitive "collections.OrderedDict";
-    "typing.Set", Primitive "set";
-    "typing.Tuple", Primitive "tuple";
-    "typing.Type", Primitive "type";
-    "typing_extensions.Protocol", Primitive "typing.Protocol";
-    (* This is broken in typeshed:
-       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-    "PathLike", Primitive "_PathLike";
-    "TSelf", Constructors.variable "_PathLike";
-    (* This inherits from Any, and is expected to act just like Any *)
-    "_NotImplementedType", Any;
-    "typing_extensions.LiteralString", Literal (String AnyLiteral);
-    "typing.LiteralString", Literal (String AnyLiteral);
-  ]
-  |> Identifier.Table.of_alist_exn
-
-
-let primitive_name = function
-  | Primitive name -> Some name
-  | _ -> None
-
-
-let create_literal = function
-  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
-  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
-  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
-      Some (Literal (String (LiteralValue value)))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
-      Some (Literal (Bytes value))
-  | Expression.Name
-      (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
-      match name_to_reference base_name with
-      | Some reference ->
-          Some
-            (Literal
-               (EnumerationMember
-                  {
-                    enumeration_type = Primitive (Reference.show_sanitized reference);
-                    member_name = attribute;
-                  }))
-      | _ -> None)
-  | Expression.Constant Constant.NoneLiteral -> Some Constructors.none
-  | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
-  | _ -> None
-
-
-let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
-
-let alternate_name_to_canonical_name_map =
-  [
-    "typing.ChainMap", "collections.ChainMap";
-    "typing.Counter", "collections.Counter";
-    "typing.DefaultDict", "collections.defaultdict";
-    "typing.Deque", "collections.deque";
-    "typing.Dict", "dict";
-    "typing.FrozenSet", "frozenset";
-    "typing.List", "list";
-    "typing.Set", "set";
-    "typing.Type", "type";
-    "typing_extensions.Protocol", "typing.Protocol";
-    "pyre_extensions.Generic", "typing.Generic";
-    "pyre_extensions.generic.Generic", "typing.Generic";
-  ]
-  |> Identifier.Table.of_alist_exn
-
-
-let parameters_from_unpacked_annotation annotation ~variable_aliases =
-  let open Record.OrderedTypes.Concatenation in
-  let unpacked_variadic_to_parameter = function
-    | Primitive variable_name -> (
-        match variable_aliases variable_name with
-        | Some (Record.Variable.TupleVariadic variadic) ->
-            Some (Parameter.Unpacked (Variadic variadic))
-        | _ -> None)
-    | _ -> None
-  in
-  match annotation with
-  | Parametric { name; parameters = [Single (Primitive _ as element)] }
-    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
-      unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
-  | Parametric { name; parameters = [Single (Tuple ordered_type)] }
-    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
-      OrderedTypes.to_parameters ordered_type |> Option.some
-  | _ -> None
-
-
-let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
-  let create_logic = create_logic ~resolve_aliases ~variable_aliases in
-  let substitute_parameter_variadic = function
-    | Primitive name -> (
-        match variable_aliases name with
-        | Some (Record.Variable.ParameterVariadic variable) ->
-            Some { Record.Callable.variable; head = [] }
-        | _ -> None)
-    | Parametric { name; parameters }
-      when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.concatenate_public_names -> (
-        match List.rev parameters with
-        | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
-          :: reversed_head ->
-            Parameter.all_singles reversed_head
-            >>| List.rev
-            >>| fun head -> { Record.Callable.variable; head }
-        | _ -> None)
-    | _ -> None
-  in
-  let extract_parameter index parameter =
-    match Node.value parameter with
-    | Expression.Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
-        let arguments =
-          List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
-        in
-        match name, arguments with
-        | "PositionalOnly", annotation :: tail ->
-            let default =
-              match tail with
-              | [Name (Name.Identifier "default")] -> true
-              | _ -> false
-            in
-            CallableParameter.PositionalOnly
-              {
-                index;
-                annotation = create_logic (Node.create_with_default_location annotation);
-                default;
-              }
-        | "Named", Name (Name.Identifier name) :: annotation :: tail ->
-            let default =
-              match tail with
-              | [Name (Name.Identifier "default")] -> true
-              | _ -> false
-            in
-            Named
-              {
-                name;
-                annotation = create_logic (Node.create_with_default_location annotation);
-                default;
-              }
-        | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
-            let default =
-              match tail with
-              | [Name (Name.Identifier "default")] -> true
-              | _ -> false
-            in
-            KeywordOnly
-              {
-                name;
-                annotation = create_logic (Node.create_with_default_location annotation);
-                default;
-              }
-        | "Variable", tail ->
-            let callable_parameter =
-              match tail with
-              | head :: _ ->
-                  let elements =
-                    List.map tail ~f:(fun annotation ->
-                        create_logic (Node.create_with_default_location annotation))
-                  in
-                  OrderedTypes.concatenation_from_annotations ~variable_aliases elements
-                  >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
-                  |> Option.value
-                       ~default:
-                         (CallableParameter.Concrete
-                            (create_logic (Node.create_with_default_location head)))
-              | _ -> CallableParameter.Concrete Top
-            in
-            CallableParameter.Variable callable_parameter
-        | "Keywords", tail ->
-            let annotation =
-              match tail with
-              | annotation :: _ -> create_logic (Node.create_with_default_location annotation)
-              | _ -> Top
-            in
-            Keywords annotation
-        | _ -> PositionalOnly { index; annotation = Top; default = false })
-    | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
-  in
-  let create_ordered_type_from_parameters parameters =
-    match Parameter.all_singles parameters with
-    | Some [annotation; Primitive "..."] ->
-        Some (OrderedTypes.create_unbounded_concatenation annotation)
-    | Some singles -> Some (Concrete singles)
-    | None -> OrderedTypes.concatenation_from_parameters parameters
-  in
-  (* Determine whether a subscripted type expression involves a Callable type (this is nontrivial
-     because we support Callable type aliases, so we have to resolve aliases to be sure). If so,
-     return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
-     caller will then parse the expression as a normal parametric type). *)
-  let parse_callable_if_appropriate ~location ~base ~subscript_index =
-    let rec resolve_base base =
-      match Node.value base with
-      | Expression.Name
-          (Name.Attribute
-            {
-              base = { Node.value = Name (Name.Identifier "typing"); _ };
-              attribute = "Callable";
-              _;
-            }) ->
-          base
-      | Name base_name ->
-          Ast.Expression.name_to_reference base_name
-          >>| Reference.show
-          >>| (fun resolved_base_name ->
-                match resolve_aliases (Primitive resolved_base_name) with
-                | Primitive "typing.Callable"
-                | Callable
-                    {
-                      implementation = { parameters = Undefined; annotation = Any };
-                      overloads = [];
-                      _;
-                    } ->
-                    {
-                      base with
-                      Node.value =
-                        Expression.Name
-                          (Name.Attribute
-                             {
-                               base = { Node.value = Name (Name.Identifier "typing"); location };
-                               attribute = "Callable";
-                               special = false;
-                             });
-                    }
-                | _ -> base)
-          |> Option.value ~default:base
-      | Subscript ({ base = inner_base; _ } as subscript) ->
-          { base with Node.value = Subscript { subscript with base = resolve_base inner_base } }
-      | Call ({ callee; _ } as call) ->
-          { base with Node.value = Call { call with callee = resolve_base callee } }
-      | _ -> base
-    in
-    let rec is_typing_callable base =
-      match Node.value base with
-      | Expression.Name
-          (Name.Attribute
-            {
-              base = { Node.value = Name (Name.Identifier "typing"); _ };
-              attribute = "Callable";
-              _;
-            }) ->
-          true
-      | Name (Name.Attribute { base; _ }) -> is_typing_callable base
-      | Subscript { base; _ } -> is_typing_callable base
-      | Call { callee; _ } -> is_typing_callable callee
-      | _ -> false
-    in
-    let parse_callable ~resolved_base ~subscript_index =
-      let modifiers, implementation_signature, overload_signatures =
-        let get_from_base base implementation_argument overloads_argument =
-          match Node.value base with
-          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
-              Some arguments, implementation_argument, overloads_argument
-          | Name
-              (Name.Attribute
-                {
-                  base = { Node.value = Name (Name.Identifier "typing"); _ };
-                  attribute = "Callable";
-                  _;
-                }) ->
-              None, implementation_argument, overloads_argument
-          | _ ->
-              (* Invalid base. *)
-              None, None, None
-        in
-        match Node.value resolved_base, subscript_index with
-        (* There are two layers of subscripts, this is how we represent overloads in closed
-           expression form *)
-        | Expression.Subscript { base = inner_base; index = inner_subscript_index }, overloads_index
-          ->
-            get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
-        (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
-           type *)
-        | _, _ -> get_from_base resolved_base (Some subscript_index) None
-      in
-      let kind =
-        match modifiers with
-        | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
-            Ast.Expression.name_to_reference name
-            >>| (fun name -> Named name)
-            |> Option.value ~default:Anonymous
-        | Some
-            ({
-               Call.Argument.value =
-                 {
-                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
-                   _;
-                 };
-               _;
-             }
-            :: _) ->
-            Named (Reference.create value)
-        | _ -> Anonymous
-      in
-      let undefined = { annotation = Top; parameters = Undefined } in
-      let get_signature = function
-        | Expression.Tuple [parameters; annotation] -> (
-            let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
-            match Node.value parameters with
-            | List parameters ->
-                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
-            | _ -> (
-                let parsed = create_logic parameters in
-                match substitute_parameter_variadic parsed with
-                | Some variable ->
-                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
-                | _ -> (
-                    match parsed with
-                    | Primitive "..." -> make_signature ~parameters:Undefined
-                    | _ -> undefined)))
-        | _ -> undefined
-      in
-      let implementation =
-        match implementation_signature with
-        | Some signature -> get_signature (Node.value signature)
-        | None -> undefined
-      in
-      let overloads =
-        let rec parse_overloads = function
-          | Expression.List arguments -> [get_signature (Tuple arguments)]
-          | Subscript { base; index } ->
-              get_signature (Node.value index) :: parse_overloads (Node.value base)
-          | _ -> [undefined]
-        in
-        match overload_signatures with
-        | Some signatures -> List.rev (parse_overloads (Node.value signatures))
-        | None -> []
-      in
-      Callable { kind; implementation; overloads }
-    in
-    let resolved_base = resolve_base base in
-    if is_typing_callable resolved_base then
-      Some (parse_callable ~resolved_base ~subscript_index)
-    else
-      None
-  in
-  let create_from_subscript
-      ~location
-      ~base
-      ~subscript_index:({ Node.value = index_value; _ } as subscript_index)
-    =
-    let create_parametric ~base ~subscript_index =
-      let parametric name =
-        let parameters =
-          let element_to_parameters = function
-            | { Node.value = Expression.List elements; _ } ->
-                [
-                  Record.Parameter.CallableParameters
-                    (Defined (List.mapi ~f:extract_parameter elements));
-                ]
-            | element -> (
-                let parsed = create_logic element in
-                match parameters_from_unpacked_annotation ~variable_aliases parsed with
-                | Some parameters -> parameters
-                | None -> (
-                    match substitute_parameter_variadic parsed with
-                    | Some variable ->
-                        [
-                          Record.Parameter.CallableParameters
-                            (ParameterVariadicTypeVariable variable);
-                        ]
-                    | _ -> [Record.Parameter.Single parsed]))
-          in
-          match subscript_index with
-          | { Node.value = Expression.Tuple elements; _ } ->
-              List.concat_map elements ~f:element_to_parameters
-          | element -> element_to_parameters element
-        in
-        Parametric { name; parameters } |> resolve_aliases
-      in
-      match create_logic base, Node.value base with
-      | Primitive name, _ -> parametric name
-      | _, Name _ -> parametric (Expression.show base)
-      | _ -> Top
-    in
-    match base, index_value with
-    | ( {
-          Node.value =
-            Expression.Name
-              (Name.Attribute
-                {
-                  base =
-                    {
-                      Node.value =
-                        Expression.Name
-                          (Name.Identifier "typing" | Name.Identifier "typing_extensions");
-                      _;
-                    };
-                  attribute = "Literal";
-                  _;
-                });
-          _;
-        },
-        _ ) ->
-        let arguments =
-          match index_value with
-          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
-          | argument -> Some [argument]
-        in
-        arguments
-        >>| List.map ~f:create_literal
-        >>= Option.all
-        >>| Constructors.union
-        |> Option.value ~default:Top
-    | _, _ -> (
-        match parse_callable_if_appropriate ~location ~base ~subscript_index with
-        | Some callable_type -> callable_type
-        | None ->
-            (* This is actually the case that almost all parametric type annotations eventually hit;
-               everything above is just special-casing some unusual scenarios where we customize
-               behavior.
-
-               TODO(T84854853): Add back support for `Length` and `Product`. *)
-            create_parametric ~base ~subscript_index)
-  in
-  let result =
-    match expression with
-    | Call
-        {
-          callee;
-          arguments =
-            {
-              Call.Argument.value =
-                { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
-              _;
-            }
-            :: arguments;
-        }
-      when name_is ~name:"typing.TypeVar" callee ->
-        let constraints =
-          let explicits =
-            let explicit = function
-              | { Call.Argument.name = None; value } -> Some (create_logic value)
-              | _ -> None
-            in
-            List.filter_map ~f:explicit arguments
-          in
-          let bound =
-            let bound = function
-              | { Call.Argument.value; name = Some { Node.value = bound; _ } }
-                when String.equal (Identifier.sanitized bound) "bound" ->
-                  Some (create_logic value)
-              | _ -> None
-            in
-            List.find_map ~f:bound arguments
-          in
-          if not (List.is_empty explicits) then
-            Record.Variable.Explicit explicits
-          else if Option.is_some bound then
-            Bound (Option.value_exn bound)
-          else
-            Unconstrained
-        in
-        let variance =
-          let variance_definition = function
-            | {
-                Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = Constant Constant.True; _ };
-              }
-              when String.equal (Identifier.sanitized name) "covariant" ->
-                Some Record.Variable.Covariant
-            | {
-                Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = Constant Constant.True; _ };
-              }
-              when String.equal (Identifier.sanitized name) "contravariant" ->
-                Some Contravariant
-            | _ -> None
-          in
-          List.find_map arguments ~f:variance_definition
-          |> Option.value ~default:Record.Variable.Invariant
-        in
-        Constructors.variable value ~constraints ~variance
-    | Call
-        {
-          callee;
-          arguments =
-            [
-              {
-                Call.Argument.value =
-                  { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"typing_extensions.IntVar" callee ->
-        Constructors.variable value ~constraints:LiteralIntegers
-    | Subscript { base; index = subscript_index } ->
-        create_from_subscript ~location:(Node.location base) ~base ~subscript_index
-    | Constant Constant.NoneLiteral -> Constructors.none
-    | Name (Name.Identifier identifier) ->
-        let sanitized = Identifier.sanitized identifier in
-        Primitive sanitized |> resolve_aliases
-    | Name (Name.Attribute { base; attribute; _ }) -> (
-        let attribute = Identifier.sanitized attribute in
-        match create_logic base with
-        | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
-        | _ -> Primitive (Expression.show base ^ "." ^ attribute))
-    | Constant Constant.Ellipsis -> Primitive "..."
-    | Constant (Constant.String { StringLiteral.value; _ }) ->
-        let expression =
-          try
-            let parsed =
-              PyreMenhirParser.Parser.parse_exn [value] |> Source.create |> Source.statements
-            in
-            match parsed with
-            | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
-            | _ -> None
-          with
-          | _ -> None
-        in
-        expression
-        >>| Node.create_with_default_location
-        >>| create_logic
-        |> Option.value ~default:(Primitive value)
-    | _ -> Top
-  in
-  (* Substitutions. *)
-  match result with
-  | Primitive name -> (
-      match Hashtbl.find primitive_substitution_map name with
-      | Some substitute -> substitute
-      | None -> result)
-  | Parametric { name = "typing.Tuple"; parameters }
-  | Parametric { name = "tuple"; parameters } ->
-      Option.value
-        ~default:Top
-        (create_ordered_type_from_parameters parameters >>| fun result -> Tuple result)
-  | Parametric { name = "pyre_extensions.Compose"; parameters } ->
-      Option.value
-        ~default:Top
-        (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
-  | Parametric { name; parameters } -> (
-      let replace_with_special_form ~name parameters =
-        match name, Parameter.all_singles parameters with
-        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
-        | "typing.Optional", Some [head] -> Constructors.optional head
-        | "typing.Union", Some parameters -> Constructors.union parameters
-        (* We support a made-up, stubs-only `typing._PyreReadOnly_` class so that we can safely
-           patch the standard library with read-only methods without worrying about whether
-           `pyre_extensions` is part of a project. *)
-        | "typing._PyreReadOnly_", Some [head]
-        | "pyre_extensions.ReadOnly", Some [head] ->
-            Constructors.read_only head
-        | _ -> result
-      in
-      match Hashtbl.find alternate_name_to_canonical_name_map name with
-      | Some name -> Parametric { name; parameters }
-      | None -> replace_with_special_form ~name parameters)
-  | Union elements -> Constructors.union elements
-  | Callable ({ implementation; overloads; _ } as callable) ->
-      let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
-        match parameters with
-        | Defined parameters ->
-            let all_positional_only_parameters =
-              List.map parameters ~f:(function
-                  | PositionalOnly { annotation; _ } -> Some annotation
-                  | _ -> None)
-              |> Option.all
-            in
-            all_positional_only_parameters
-            >>= OrderedTypes.concatenation_from_annotations ~variable_aliases
-            >>| (fun concatenation ->
-                  { overload with parameters = Defined [Variable (Concatenation concatenation)] })
-            |> Option.value ~default:overload
-        | _ -> overload
-      in
-      Callable
-        {
-          callable with
-          implementation = collect_unpacked_parameters_if_any implementation;
-          overloads = List.map overloads ~f:collect_unpacked_parameters_if_any;
-        }
-  | _ -> result
-
-
-(* Check if there is a literal Any provided, not including type aliases to Any. *)
-let expression_contains_any expression =
-  let primitives_with_any_map =
-    Hashtbl.filter ~f:Predicates.contains_any primitive_substitution_map
-  in
-  Visit.collect_non_generic_type_names expression
-  |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
-
-
-let typeguard_annotation = function
-  | Parametric
-      {
-        name = "typing.TypeGuard" | "typing_extensions.TypeGuard";
-        parameters = [Single guard_type];
-      } ->
-      Some guard_type
-  | _ -> None
-
-
-let parameters = function
-  | Parametric { parameters; _ } -> Some parameters
-  | _ -> None
-
-
-let type_parameters_for_bounded_tuple_union = function
-  | Union annotations ->
-      let bounded_tuple_parameters = function
-        | Tuple (Concrete parameters) -> Some parameters
-        | _ -> None
-      in
-      List.map annotations ~f:bounded_tuple_parameters
-      |> Option.all
-      >>= List.transpose
-      >>| List.map ~f:Constructors.union
-  | _ -> None
-
-
-let single_parameter = function
-  | Parametric { parameters = [Single parameter]; _ } -> parameter
-  | _ -> failwith "Type does not have single parameter"
-
-
-let weaken_literals annotation =
-  let open Constructors in
-  let type_map = function
-    | Literal (Integer _) -> Some integer
-    | Literal (String _) -> Some string
-    | Literal (Bytes _) -> Some bytes
-    | Literal (Boolean _) -> Some bool
-    | Literal (EnumerationMember { enumeration_type; _ }) -> Some enumeration_type
-    | _ -> None
-  in
-  Transforms.apply_type_map ~type_map annotation
-
-
-(* Weaken specific literal to arbitrary literal before weakening to `str`. *)
-let weaken_to_arbitrary_literal_if_possible =
-  let open Constructors in
-  function
-  | Literal (Integer _) -> integer
-  | Literal (String (LiteralValue _)) -> Literal (String AnyLiteral)
-  | Literal (String AnyLiteral) -> string
-  | Literal (Bytes _) -> bytes
-  | Literal (Boolean _) -> bool
-  | Literal (EnumerationMember { enumeration_type; _ }) -> enumeration_type
-  | annotation -> annotation
-
-
-let split annotation =
-  let open Record.Parameter in
-  match annotation with
-  | Union [NoneType; parameter]
-  | Union [parameter; NoneType] ->
-      Primitive "typing.Optional", [Single parameter]
-  | Parametric { name; parameters } -> Primitive name, parameters
-  | Tuple tuple ->
-      (* We want to return a type `typing.tuple[X]` where X is the type that would make `given_tuple
-         <: Tuple[X, ...]`. *)
-      let parameters =
-        match tuple with
-        | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
-            [Single parameter]
-        | ordered_type -> [Single (OrderedTypes.union_upper_bound ordered_type)]
-      in
-      Primitive "tuple", parameters
-  | Literal _ as literal -> weaken_literals literal, []
-  | Callable _ -> Primitive "typing.Callable", []
-  | annotation -> annotation, []
-
-
-let class_name annotation =
-  let strip_calls =
-    let rec collect_identifiers identifiers = function
-      | { Node.value = Expression.Subscript { base; _ }; _ } -> collect_identifiers identifiers base
-      | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
-      | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-          collect_identifiers (attribute :: identifiers) base
-      | _ -> identifiers
-    in
-    collect_identifiers []
-  in
-  split annotation
-  |> fst
-  |> expression
-  |> strip_calls
-  |> fun identifiers ->
-  if List.is_empty identifiers then
-    Reference.create "typing.Any"
-  else
-    Reference.create_from_list identifiers
-
-
-let class_variable annotation = Constructors.parametric "typing.ClassVar" [Single annotation]
-
-(* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
-   See T22792667. *)
-let assume_any = function
-  | Top -> Any
-  | annotation -> annotation
-
-
 module Variable : sig
   module Namespace : sig
     include module type of struct
@@ -4871,6 +4150,727 @@ module TypedDictionary = struct
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
 end
+
+let lambda ~parameters ~return_annotation =
+  let parameters =
+    List.map parameters ~f:(fun (name, annotation) ->
+        { CallableParameter.name; annotation; default = false })
+    |> Callable.Parameter.create
+  in
+  Callable
+    {
+      kind = Anonymous;
+      implementation = { annotation = return_annotation; parameters = Defined parameters };
+      overloads = [];
+    }
+
+
+let primitive_substitution_map =
+  [
+    "$bottom", Bottom;
+    "$unknown", Top;
+    "function", Callable.create ~annotation:Any ();
+    "typing.Any", Any;
+    "typing.ChainMap", Primitive "collections.ChainMap";
+    "typing.Counter", Primitive "collections.Counter";
+    "typing.DefaultDict", Primitive "collections.defaultdict";
+    "typing.Deque", Primitive "collections.deque";
+    "typing.Dict", Primitive "dict";
+    "typing.FrozenSet", Primitive "frozenset";
+    "typing.List", Primitive "list";
+    "typing.OrderedDict", Primitive "collections.OrderedDict";
+    "typing.Set", Primitive "set";
+    "typing.Tuple", Primitive "tuple";
+    "typing.Type", Primitive "type";
+    "typing_extensions.Protocol", Primitive "typing.Protocol";
+    (* This is broken in typeshed:
+       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+    "PathLike", Primitive "_PathLike";
+    "TSelf", Constructors.variable "_PathLike";
+    (* This inherits from Any, and is expected to act just like Any *)
+    "_NotImplementedType", Any;
+    "typing_extensions.LiteralString", Literal (String AnyLiteral);
+    "typing.LiteralString", Literal (String AnyLiteral);
+  ]
+  |> Identifier.Table.of_alist_exn
+
+
+let primitive_name = function
+  | Primitive name -> Some name
+  | _ -> None
+
+
+let create_literal = function
+  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
+  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
+  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+      Some (Literal (String (LiteralValue value)))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+      Some (Literal (Bytes value))
+  | Expression.Name
+      (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
+      match name_to_reference base_name with
+      | Some reference ->
+          Some
+            (Literal
+               (EnumerationMember
+                  {
+                    enumeration_type = Primitive (Reference.show_sanitized reference);
+                    member_name = attribute;
+                  }))
+      | _ -> None)
+  | Expression.Constant Constant.NoneLiteral -> Some Constructors.none
+  | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
+  | _ -> None
+
+
+let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
+
+let alternate_name_to_canonical_name_map =
+  [
+    "typing.ChainMap", "collections.ChainMap";
+    "typing.Counter", "collections.Counter";
+    "typing.DefaultDict", "collections.defaultdict";
+    "typing.Deque", "collections.deque";
+    "typing.Dict", "dict";
+    "typing.FrozenSet", "frozenset";
+    "typing.List", "list";
+    "typing.Set", "set";
+    "typing.Type", "type";
+    "typing_extensions.Protocol", "typing.Protocol";
+    "pyre_extensions.Generic", "typing.Generic";
+    "pyre_extensions.generic.Generic", "typing.Generic";
+  ]
+  |> Identifier.Table.of_alist_exn
+
+
+let parameters_from_unpacked_annotation annotation ~variable_aliases =
+  let open Record.OrderedTypes.Concatenation in
+  let unpacked_variadic_to_parameter = function
+    | Primitive variable_name -> (
+        match variable_aliases variable_name with
+        | Some (Record.Variable.TupleVariadic variadic) ->
+            Some (Parameter.Unpacked (Variadic variadic))
+        | _ -> None)
+    | _ -> None
+  in
+  match annotation with
+  | Parametric { name; parameters = [Single (Primitive _ as element)] }
+    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
+      unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
+  | Parametric { name; parameters = [Single (Tuple ordered_type)] }
+    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
+      OrderedTypes.to_parameters ordered_type |> Option.some
+  | _ -> None
+
+
+let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
+  let create_logic = create_logic ~resolve_aliases ~variable_aliases in
+  let substitute_parameter_variadic = function
+    | Primitive name -> (
+        match variable_aliases name with
+        | Some (Record.Variable.ParameterVariadic variable) ->
+            Some { Record.Callable.variable; head = [] }
+        | _ -> None)
+    | Parametric { name; parameters }
+      when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.concatenate_public_names -> (
+        match List.rev parameters with
+        | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
+          :: reversed_head ->
+            Parameter.all_singles reversed_head
+            >>| List.rev
+            >>| fun head -> { Record.Callable.variable; head }
+        | _ -> None)
+    | _ -> None
+  in
+  let extract_parameter index parameter =
+    match Node.value parameter with
+    | Expression.Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
+        let arguments =
+          List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
+        in
+        match name, arguments with
+        | "PositionalOnly", annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            CallableParameter.PositionalOnly
+              {
+                index;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "Named", Name (Name.Identifier name) :: annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            Named
+              {
+                name;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            KeywordOnly
+              {
+                name;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "Variable", tail ->
+            let callable_parameter =
+              match tail with
+              | head :: _ ->
+                  let elements =
+                    List.map tail ~f:(fun annotation ->
+                        create_logic (Node.create_with_default_location annotation))
+                  in
+                  OrderedTypes.concatenation_from_annotations ~variable_aliases elements
+                  >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
+                  |> Option.value
+                       ~default:
+                         (CallableParameter.Concrete
+                            (create_logic (Node.create_with_default_location head)))
+              | _ -> CallableParameter.Concrete Top
+            in
+            CallableParameter.Variable callable_parameter
+        | "Keywords", tail ->
+            let annotation =
+              match tail with
+              | annotation :: _ -> create_logic (Node.create_with_default_location annotation)
+              | _ -> Top
+            in
+            Keywords annotation
+        | _ -> PositionalOnly { index; annotation = Top; default = false })
+    | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
+  in
+  let create_ordered_type_from_parameters parameters =
+    match Parameter.all_singles parameters with
+    | Some [annotation; Primitive "..."] ->
+        Some (OrderedTypes.create_unbounded_concatenation annotation)
+    | Some singles -> Some (Concrete singles)
+    | None -> OrderedTypes.concatenation_from_parameters parameters
+  in
+  (* Determine whether a subscripted type expression involves a Callable type (this is nontrivial
+     because we support Callable type aliases, so we have to resolve aliases to be sure). If so,
+     return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
+     caller will then parse the expression as a normal parametric type). *)
+  let parse_callable_if_appropriate ~location ~base ~subscript_index =
+    let rec resolve_base base =
+      match Node.value base with
+      | Expression.Name
+          (Name.Attribute
+            {
+              base = { Node.value = Name (Name.Identifier "typing"); _ };
+              attribute = "Callable";
+              _;
+            }) ->
+          base
+      | Name base_name ->
+          Ast.Expression.name_to_reference base_name
+          >>| Reference.show
+          >>| (fun resolved_base_name ->
+                match resolve_aliases (Primitive resolved_base_name) with
+                | Primitive "typing.Callable"
+                | Callable
+                    {
+                      implementation = { parameters = Undefined; annotation = Any };
+                      overloads = [];
+                      _;
+                    } ->
+                    {
+                      base with
+                      Node.value =
+                        Expression.Name
+                          (Name.Attribute
+                             {
+                               base = { Node.value = Name (Name.Identifier "typing"); location };
+                               attribute = "Callable";
+                               special = false;
+                             });
+                    }
+                | _ -> base)
+          |> Option.value ~default:base
+      | Subscript ({ base = inner_base; _ } as subscript) ->
+          { base with Node.value = Subscript { subscript with base = resolve_base inner_base } }
+      | Call ({ callee; _ } as call) ->
+          { base with Node.value = Call { call with callee = resolve_base callee } }
+      | _ -> base
+    in
+    let rec is_typing_callable base =
+      match Node.value base with
+      | Expression.Name
+          (Name.Attribute
+            {
+              base = { Node.value = Name (Name.Identifier "typing"); _ };
+              attribute = "Callable";
+              _;
+            }) ->
+          true
+      | Name (Name.Attribute { base; _ }) -> is_typing_callable base
+      | Subscript { base; _ } -> is_typing_callable base
+      | Call { callee; _ } -> is_typing_callable callee
+      | _ -> false
+    in
+    let parse_callable ~resolved_base ~subscript_index =
+      let modifiers, implementation_signature, overload_signatures =
+        let get_from_base base implementation_argument overloads_argument =
+          match Node.value base with
+          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
+              Some arguments, implementation_argument, overloads_argument
+          | Name
+              (Name.Attribute
+                {
+                  base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  attribute = "Callable";
+                  _;
+                }) ->
+              None, implementation_argument, overloads_argument
+          | _ ->
+              (* Invalid base. *)
+              None, None, None
+        in
+        match Node.value resolved_base, subscript_index with
+        (* There are two layers of subscripts, this is how we represent overloads in closed
+           expression form *)
+        | Expression.Subscript { base = inner_base; index = inner_subscript_index }, overloads_index
+          ->
+            get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
+        (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
+           type *)
+        | _, _ -> get_from_base resolved_base (Some subscript_index) None
+      in
+      let kind =
+        match modifiers with
+        | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
+            Ast.Expression.name_to_reference name
+            >>| (fun name -> Named name)
+            |> Option.value ~default:Anonymous
+        | Some
+            ({
+               Call.Argument.value =
+                 {
+                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                   _;
+                 };
+               _;
+             }
+            :: _) ->
+            Named (Reference.create value)
+        | _ -> Anonymous
+      in
+      let undefined = { annotation = Top; parameters = Undefined } in
+      let get_signature = function
+        | Expression.Tuple [parameters; annotation] -> (
+            let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
+            match Node.value parameters with
+            | List parameters ->
+                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
+            | _ -> (
+                let parsed = create_logic parameters in
+                match substitute_parameter_variadic parsed with
+                | Some variable ->
+                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
+                | _ -> (
+                    match parsed with
+                    | Primitive "..." -> make_signature ~parameters:Undefined
+                    | _ -> undefined)))
+        | _ -> undefined
+      in
+      let implementation =
+        match implementation_signature with
+        | Some signature -> get_signature (Node.value signature)
+        | None -> undefined
+      in
+      let overloads =
+        let rec parse_overloads = function
+          | Expression.List arguments -> [get_signature (Tuple arguments)]
+          | Subscript { base; index } ->
+              get_signature (Node.value index) :: parse_overloads (Node.value base)
+          | _ -> [undefined]
+        in
+        match overload_signatures with
+        | Some signatures -> List.rev (parse_overloads (Node.value signatures))
+        | None -> []
+      in
+      Callable { kind; implementation; overloads }
+    in
+    let resolved_base = resolve_base base in
+    if is_typing_callable resolved_base then
+      Some (parse_callable ~resolved_base ~subscript_index)
+    else
+      None
+  in
+  let create_from_subscript
+      ~location
+      ~base
+      ~subscript_index:({ Node.value = index_value; _ } as subscript_index)
+    =
+    let create_parametric ~base ~subscript_index =
+      let parametric name =
+        let parameters =
+          let element_to_parameters = function
+            | { Node.value = Expression.List elements; _ } ->
+                [
+                  Record.Parameter.CallableParameters
+                    (Defined (List.mapi ~f:extract_parameter elements));
+                ]
+            | element -> (
+                let parsed = create_logic element in
+                match parameters_from_unpacked_annotation ~variable_aliases parsed with
+                | Some parameters -> parameters
+                | None -> (
+                    match substitute_parameter_variadic parsed with
+                    | Some variable ->
+                        [
+                          Record.Parameter.CallableParameters
+                            (ParameterVariadicTypeVariable variable);
+                        ]
+                    | _ -> [Record.Parameter.Single parsed]))
+          in
+          match subscript_index with
+          | { Node.value = Expression.Tuple elements; _ } ->
+              List.concat_map elements ~f:element_to_parameters
+          | element -> element_to_parameters element
+        in
+        Parametric { name; parameters } |> resolve_aliases
+      in
+      match create_logic base, Node.value base with
+      | Primitive name, _ -> parametric name
+      | _, Name _ -> parametric (Expression.show base)
+      | _ -> Top
+    in
+    match base, index_value with
+    | ( {
+          Node.value =
+            Expression.Name
+              (Name.Attribute
+                {
+                  base =
+                    {
+                      Node.value =
+                        Expression.Name
+                          (Name.Identifier "typing" | Name.Identifier "typing_extensions");
+                      _;
+                    };
+                  attribute = "Literal";
+                  _;
+                });
+          _;
+        },
+        _ ) ->
+        let arguments =
+          match index_value with
+          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
+          | argument -> Some [argument]
+        in
+        arguments
+        >>| List.map ~f:create_literal
+        >>= Option.all
+        >>| Constructors.union
+        |> Option.value ~default:Top
+    | _, _ -> (
+        match parse_callable_if_appropriate ~location ~base ~subscript_index with
+        | Some callable_type -> callable_type
+        | None ->
+            (* This is actually the case that almost all parametric type annotations eventually hit;
+               everything above is just special-casing some unusual scenarios where we customize
+               behavior.
+
+               TODO(T84854853): Add back support for `Length` and `Product`. *)
+            create_parametric ~base ~subscript_index)
+  in
+  let result =
+    match expression with
+    | Call
+        {
+          callee;
+          arguments =
+            {
+              Call.Argument.value =
+                { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+              _;
+            }
+            :: arguments;
+        }
+      when name_is ~name:"typing.TypeVar" callee ->
+        let constraints =
+          let explicits =
+            let explicit = function
+              | { Call.Argument.name = None; value } -> Some (create_logic value)
+              | _ -> None
+            in
+            List.filter_map ~f:explicit arguments
+          in
+          let bound =
+            let bound = function
+              | { Call.Argument.value; name = Some { Node.value = bound; _ } }
+                when String.equal (Identifier.sanitized bound) "bound" ->
+                  Some (create_logic value)
+              | _ -> None
+            in
+            List.find_map ~f:bound arguments
+          in
+          if not (List.is_empty explicits) then
+            Record.Variable.Explicit explicits
+          else if Option.is_some bound then
+            Bound (Option.value_exn bound)
+          else
+            Unconstrained
+        in
+        let variance =
+          let variance_definition = function
+            | {
+                Call.Argument.name = Some { Node.value = name; _ };
+                value = { Node.value = Constant Constant.True; _ };
+              }
+              when String.equal (Identifier.sanitized name) "covariant" ->
+                Some Record.Variable.Covariant
+            | {
+                Call.Argument.name = Some { Node.value = name; _ };
+                value = { Node.value = Constant Constant.True; _ };
+              }
+              when String.equal (Identifier.sanitized name) "contravariant" ->
+                Some Contravariant
+            | _ -> None
+          in
+          List.find_map arguments ~f:variance_definition
+          |> Option.value ~default:Record.Variable.Invariant
+        in
+        Constructors.variable value ~constraints ~variance
+    | Call
+        {
+          callee;
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                _;
+              };
+            ];
+        }
+      when name_is ~name:"typing_extensions.IntVar" callee ->
+        Constructors.variable value ~constraints:LiteralIntegers
+    | Subscript { base; index = subscript_index } ->
+        create_from_subscript ~location:(Node.location base) ~base ~subscript_index
+    | Constant Constant.NoneLiteral -> Constructors.none
+    | Name (Name.Identifier identifier) ->
+        let sanitized = Identifier.sanitized identifier in
+        Primitive sanitized |> resolve_aliases
+    | Name (Name.Attribute { base; attribute; _ }) -> (
+        let attribute = Identifier.sanitized attribute in
+        match create_logic base with
+        | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
+        | _ -> Primitive (Expression.show base ^ "." ^ attribute))
+    | Constant Constant.Ellipsis -> Primitive "..."
+    | Constant (Constant.String { StringLiteral.value; _ }) ->
+        let expression =
+          try
+            let parsed =
+              PyreMenhirParser.Parser.parse_exn [value] |> Source.create |> Source.statements
+            in
+            match parsed with
+            | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
+            | _ -> None
+          with
+          | _ -> None
+        in
+        expression
+        >>| Node.create_with_default_location
+        >>| create_logic
+        |> Option.value ~default:(Primitive value)
+    | _ -> Top
+  in
+  (* Substitutions. *)
+  match result with
+  | Primitive name -> (
+      match Hashtbl.find primitive_substitution_map name with
+      | Some substitute -> substitute
+      | None -> result)
+  | Parametric { name = "typing.Tuple"; parameters }
+  | Parametric { name = "tuple"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters >>| fun result -> Tuple result)
+  | Parametric { name = "pyre_extensions.Compose"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
+  | Parametric { name; parameters } -> (
+      let replace_with_special_form ~name parameters =
+        match name, Parameter.all_singles parameters with
+        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
+        | "typing.Optional", Some [head] -> Constructors.optional head
+        | "typing.Union", Some parameters -> Constructors.union parameters
+        (* We support a made-up, stubs-only `typing._PyreReadOnly_` class so that we can safely
+           patch the standard library with read-only methods without worrying about whether
+           `pyre_extensions` is part of a project. *)
+        | "typing._PyreReadOnly_", Some [head]
+        | "pyre_extensions.ReadOnly", Some [head] ->
+            Constructors.read_only head
+        | _ -> result
+      in
+      match Hashtbl.find alternate_name_to_canonical_name_map name with
+      | Some name -> Parametric { name; parameters }
+      | None -> replace_with_special_form ~name parameters)
+  | Union elements -> Constructors.union elements
+  | Callable ({ implementation; overloads; _ } as callable) ->
+      let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
+        match parameters with
+        | Defined parameters ->
+            let all_positional_only_parameters =
+              List.map parameters ~f:(function
+                  | PositionalOnly { annotation; _ } -> Some annotation
+                  | _ -> None)
+              |> Option.all
+            in
+            all_positional_only_parameters
+            >>= OrderedTypes.concatenation_from_annotations ~variable_aliases
+            >>| (fun concatenation ->
+                  { overload with parameters = Defined [Variable (Concatenation concatenation)] })
+            |> Option.value ~default:overload
+        | _ -> overload
+      in
+      Callable
+        {
+          callable with
+          implementation = collect_unpacked_parameters_if_any implementation;
+          overloads = List.map overloads ~f:collect_unpacked_parameters_if_any;
+        }
+  | _ -> result
+
+
+(* Check if there is a literal Any provided, not including type aliases to Any. *)
+let expression_contains_any expression =
+  let primitives_with_any_map =
+    Hashtbl.filter ~f:Predicates.contains_any primitive_substitution_map
+  in
+  Visit.collect_non_generic_type_names expression
+  |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
+
+
+let typeguard_annotation = function
+  | Parametric
+      {
+        name = "typing.TypeGuard" | "typing_extensions.TypeGuard";
+        parameters = [Single guard_type];
+      } ->
+      Some guard_type
+  | _ -> None
+
+
+let parameters = function
+  | Parametric { parameters; _ } -> Some parameters
+  | _ -> None
+
+
+let type_parameters_for_bounded_tuple_union = function
+  | Union annotations ->
+      let bounded_tuple_parameters = function
+        | Tuple (Concrete parameters) -> Some parameters
+        | _ -> None
+      in
+      List.map annotations ~f:bounded_tuple_parameters
+      |> Option.all
+      >>= List.transpose
+      >>| List.map ~f:Constructors.union
+  | _ -> None
+
+
+let single_parameter = function
+  | Parametric { parameters = [Single parameter]; _ } -> parameter
+  | _ -> failwith "Type does not have single parameter"
+
+
+let weaken_literals annotation =
+  let open Constructors in
+  let type_map = function
+    | Literal (Integer _) -> Some integer
+    | Literal (String _) -> Some string
+    | Literal (Bytes _) -> Some bytes
+    | Literal (Boolean _) -> Some bool
+    | Literal (EnumerationMember { enumeration_type; _ }) -> Some enumeration_type
+    | _ -> None
+  in
+  Transforms.apply_type_map ~type_map annotation
+
+
+(* Weaken specific literal to arbitrary literal before weakening to `str`. *)
+let weaken_to_arbitrary_literal_if_possible =
+  let open Constructors in
+  function
+  | Literal (Integer _) -> integer
+  | Literal (String (LiteralValue _)) -> Literal (String AnyLiteral)
+  | Literal (String AnyLiteral) -> string
+  | Literal (Bytes _) -> bytes
+  | Literal (Boolean _) -> bool
+  | Literal (EnumerationMember { enumeration_type; _ }) -> enumeration_type
+  | annotation -> annotation
+
+
+let split annotation =
+  let open Record.Parameter in
+  match annotation with
+  | Union [NoneType; parameter]
+  | Union [parameter; NoneType] ->
+      Primitive "typing.Optional", [Single parameter]
+  | Parametric { name; parameters } -> Primitive name, parameters
+  | Tuple tuple ->
+      (* We want to return a type `typing.tuple[X]` where X is the type that would make `given_tuple
+         <: Tuple[X, ...]`. *)
+      let parameters =
+        match tuple with
+        | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+            [Single parameter]
+        | ordered_type -> [Single (OrderedTypes.union_upper_bound ordered_type)]
+      in
+      Primitive "tuple", parameters
+  | Literal _ as literal -> weaken_literals literal, []
+  | Callable _ -> Primitive "typing.Callable", []
+  | annotation -> annotation, []
+
+
+let class_name annotation =
+  let strip_calls =
+    let rec collect_identifiers identifiers = function
+      | { Node.value = Expression.Subscript { base; _ }; _ } -> collect_identifiers identifiers base
+      | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
+      | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+          collect_identifiers (attribute :: identifiers) base
+      | _ -> identifiers
+    in
+    collect_identifiers []
+  in
+  split annotation
+  |> fst
+  |> expression
+  |> strip_calls
+  |> fun identifiers ->
+  if List.is_empty identifiers then
+    Reference.create "typing.Any"
+  else
+    Reference.create_from_list identifiers
+
+
+let class_variable annotation = Constructors.parametric "typing.ClassVar" [Single annotation]
+
+(* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
+   See T22792667. *)
+let assume_any = function
+  | Top -> Any
+  | annotation -> annotation
+
 
 let resolve_aliases ~aliases annotation =
   let visited = Containers.Hash_set.create () in
