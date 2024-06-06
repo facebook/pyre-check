@@ -2673,16 +2673,12 @@ let verify_matching_partial_sinks ~registered_partial_sinks ~path ~location para
         | Ok remaining_partial_sinks -> remove_matching_partial_sinks remaining_partial_sinks
         | Error _ as error -> error)
   in
-  match
-    parameters_annotations
-    |> List.map ~f:(Result.map ~f:parameter_annotations_to_partial_sink)
-    |> Result.all
-  with
-  | Error _ as error -> (* Return the first pre-existing error, if any. *) error
-  | Ok partial_sinks -> (
-      match partial_sinks |> List.filter_opt |> remove_matching_partial_sinks with
-      | Ok () -> Result.all parameters_annotations
-      | Error _ as error -> (* Return the unmatched partial sink error, if any. *) error)
+  let open Core.Result in
+  parameters_annotations
+  |> List.map ~f:parameter_annotations_to_partial_sink
+  |> List.filter_opt
+  |> remove_matching_partial_sinks
+  >>| fun () -> parameters_annotations
 
 
 let convert_return_into_self_annotation ~source_sink_filter annotation =
@@ -3558,12 +3554,12 @@ let create_model_from_signature
          ~taint_configuration
          ~parameters
          ~callable_parameter_names_to_roots)
-  |> fun parameters_annotations ->
-  verify_matching_partial_sinks
-    ~registered_partial_sinks:taint_configuration.TaintConfiguration.Heap.registered_partial_sinks
-    ~path
-    ~location
-    parameters_annotations
+  |> Result.all
+  >>= verify_matching_partial_sinks
+        ~registered_partial_sinks:
+          taint_configuration.TaintConfiguration.Heap.registered_partial_sinks
+        ~path
+        ~location
   >>= fun parameters_annotations ->
   return_annotation
   |> Option.map
