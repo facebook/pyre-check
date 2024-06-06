@@ -2130,87 +2130,6 @@ module Callable = struct
     | _ -> None
 end
 
-let lambda ~parameters ~return_annotation =
-  let parameters =
-    List.map parameters ~f:(fun (name, annotation) ->
-        { CallableParameter.name; annotation; default = false })
-    |> Callable.Parameter.create
-  in
-  Callable
-    {
-      kind = Anonymous;
-      implementation = { annotation = return_annotation; parameters = Defined parameters };
-      overloads = [];
-    }
-
-
-let primitive_substitution_map =
-  [
-    "$bottom", Bottom;
-    "$unknown", Top;
-    "function", Callable.create ~annotation:Any ();
-    "typing.Any", Any;
-    "typing.ChainMap", Primitive "collections.ChainMap";
-    "typing.Counter", Primitive "collections.Counter";
-    "typing.DefaultDict", Primitive "collections.defaultdict";
-    "typing.Deque", Primitive "collections.deque";
-    "typing.Dict", Primitive "dict";
-    "typing.FrozenSet", Primitive "frozenset";
-    "typing.List", Primitive "list";
-    "typing.OrderedDict", Primitive "collections.OrderedDict";
-    "typing.Set", Primitive "set";
-    "typing.Tuple", Primitive "tuple";
-    "typing.Type", Primitive "type";
-    "typing_extensions.Protocol", Primitive "typing.Protocol";
-    (* This is broken in typeshed:
-       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-    "PathLike", Primitive "_PathLike";
-    "TSelf", Constructors.variable "_PathLike";
-    (* This inherits from Any, and is expected to act just like Any *)
-    "_NotImplementedType", Any;
-    "typing_extensions.LiteralString", Literal (String AnyLiteral);
-    "typing.LiteralString", Literal (String AnyLiteral);
-  ]
-  |> Identifier.Table.of_alist_exn
-
-
-let primitive_name = function
-  | Primitive name -> Some name
-  | _ -> None
-
-
-let create_literal = function
-  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
-  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
-  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
-      Some (Literal (String (LiteralValue value)))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
-      Some (Literal (Bytes value))
-  | Expression.Name
-      (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
-      match name_to_reference base_name with
-      | Some reference ->
-          Some
-            (Literal
-               (EnumerationMember
-                  {
-                    enumeration_type = Primitive (Reference.show_sanitized reference);
-                    member_name = attribute;
-                  }))
-      | _ -> None)
-  | Expression.Constant Constant.NoneLiteral -> Some Constructors.none
-  | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
-  | _ -> None
-
-
-type alias =
-  | TypeAlias of t
-  | VariableAlias of t Record.Variable.record
-[@@deriving compare, eq, sexp, show, hash]
-
-let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
-
 module RecursiveType = struct
   include Record.RecursiveType
 
@@ -2515,6 +2434,87 @@ module ReadOnly = struct
     >>| (fun inner_type -> create (make_container inner_type))
     |> Option.value ~default:(make_container element_type)
 end
+
+let lambda ~parameters ~return_annotation =
+  let parameters =
+    List.map parameters ~f:(fun (name, annotation) ->
+        { CallableParameter.name; annotation; default = false })
+    |> Callable.Parameter.create
+  in
+  Callable
+    {
+      kind = Anonymous;
+      implementation = { annotation = return_annotation; parameters = Defined parameters };
+      overloads = [];
+    }
+
+
+let primitive_substitution_map =
+  [
+    "$bottom", Bottom;
+    "$unknown", Top;
+    "function", Callable.create ~annotation:Any ();
+    "typing.Any", Any;
+    "typing.ChainMap", Primitive "collections.ChainMap";
+    "typing.Counter", Primitive "collections.Counter";
+    "typing.DefaultDict", Primitive "collections.defaultdict";
+    "typing.Deque", Primitive "collections.deque";
+    "typing.Dict", Primitive "dict";
+    "typing.FrozenSet", Primitive "frozenset";
+    "typing.List", Primitive "list";
+    "typing.OrderedDict", Primitive "collections.OrderedDict";
+    "typing.Set", Primitive "set";
+    "typing.Tuple", Primitive "tuple";
+    "typing.Type", Primitive "type";
+    "typing_extensions.Protocol", Primitive "typing.Protocol";
+    (* This is broken in typeshed:
+       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+    "PathLike", Primitive "_PathLike";
+    "TSelf", Constructors.variable "_PathLike";
+    (* This inherits from Any, and is expected to act just like Any *)
+    "_NotImplementedType", Any;
+    "typing_extensions.LiteralString", Literal (String AnyLiteral);
+    "typing.LiteralString", Literal (String AnyLiteral);
+  ]
+  |> Identifier.Table.of_alist_exn
+
+
+let primitive_name = function
+  | Primitive name -> Some name
+  | _ -> None
+
+
+let create_literal = function
+  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
+  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
+  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+      Some (Literal (String (LiteralValue value)))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+      Some (Literal (Bytes value))
+  | Expression.Name
+      (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
+      match name_to_reference base_name with
+      | Some reference ->
+          Some
+            (Literal
+               (EnumerationMember
+                  {
+                    enumeration_type = Primitive (Reference.show_sanitized reference);
+                    member_name = attribute;
+                  }))
+      | _ -> None)
+  | Expression.Constant Constant.NoneLiteral -> Some Constructors.none
+  | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
+  | _ -> None
+
+
+type alias =
+  | TypeAlias of t
+  | VariableAlias of t Record.Variable.record
+[@@deriving compare, eq, sexp, show, hash]
+
+let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 let alternate_name_to_canonical_name_map =
   [
@@ -4485,212 +4485,6 @@ end = struct
     | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
 end
 
-let resolve_aliases ~aliases annotation =
-  let visited = Containers.Hash_set.create () in
-  let module ResolveAliasesTransform = VisitWithTransform.Make (struct
-    type state = unit
-
-    let visit_children_before _ _ = false
-
-    let visit_children_after = true
-
-    let visit _ annotation =
-      let resolve annotation =
-        if Core.Hash_set.mem visited annotation then
-          annotation
-        else (
-          Core.Hash_set.add visited annotation;
-          let mark_recursive_alias_as_visited = function
-            | RecursiveType { name; _ } ->
-                (* Don't resolve the inner reference to the type. *)
-                Core.Hash_set.add visited (Primitive name)
-            | _ -> ()
-          in
-          match annotation with
-          | Primitive name -> (
-              match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-              | Some (TypeAlias alias) ->
-                  let alias =
-                    match alias with
-                    (* Type variables are stored as `_T aliases to _T`. Don't replace them. *)
-                    | Variable _ as variable -> variable
-                    | alias ->
-                        alias
-                        |> Variable.GlobalTransforms.Unary.replace_all (fun _ ->
-                               Some Variable.Unary.any)
-                        |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
-                               Some Variable.Variadic.Parameters.any)
-                        |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
-                               Some Variable.Variadic.Tuple.any)
-                  in
-                  mark_recursive_alias_as_visited alias;
-                  alias
-              | _ -> annotation)
-          | Parametric { name = alias_name; parameters = given_parameters } ->
-              let deduplicate_preserving_order list =
-                List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
-                    if Core.Set.mem seen_set x then
-                      sofar, seen_set
-                    else
-                      x :: sofar, Core.Set.add seen_set x)
-                |> fst
-                |> List.rev
-              in
-              let instantiate ~given_parameters uninstantiated_alias_annotation =
-                let variable_pairs =
-                  Variable.zip_variables_with_parameters
-                    ~parameters:given_parameters
-                    (Variable.all_free_variables uninstantiated_alias_annotation
-                    |> deduplicate_preserving_order)
-                in
-                match variable_pairs with
-                | Some variable_pairs ->
-                    uninstantiated_alias_annotation
-                    |> Variable.GlobalTransforms.Unary.replace_all (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | UnaryPair (variable, replacement)
-                                 when [%equal: Variable.unary_t] variable given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                    |> Variable.GlobalTransforms.ParameterVariadic.replace_all
-                         (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | ParameterVariadicPair (variable, replacement)
-                                 when [%equal: Variable.parameter_variadic_t]
-                                        variable
-                                        given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                    |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | TupleVariadicPair (variable, replacement)
-                                 when [%equal: Variable.tuple_variadic_t] variable given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                | _ -> uninstantiated_alias_annotation
-              in
-              let resolved =
-                (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
-                   (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T].
-                   We will not find any free type variables in Foo[Any] and simply resolve it as
-                   Foo[Any]. *)
-                match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-                | Some (TypeAlias uninstantiated_alias_annotation) ->
-                    instantiate ~given_parameters uninstantiated_alias_annotation
-                | _ -> annotation
-              in
-              mark_recursive_alias_as_visited resolved;
-              resolved
-          | RecursiveType _ ->
-              mark_recursive_alias_as_visited annotation;
-              annotation
-          | _ -> annotation)
-      in
-      let transformed_annotation = resolve annotation in
-      { VisitWithTransform.transformed_annotation; new_state = () }
-  end)
-  in
-  snd (ResolveAliasesTransform.visit () annotation)
-
-
-let create ~aliases =
-  let variable_aliases name =
-    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-    | Some (VariableAlias variable) -> Some variable
-    | _ -> None
-  in
-  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases
-
-
-let namespace_insensitive_compare left right =
-  compare
-    (Variable.converge_all_variable_namespaces left)
-    (Variable.converge_all_variable_namespaces right)
-
-
-let is_concrete annotation =
-  let module ConcreteVisitor = VisitWithTransform.Make (struct
-    type state = bool
-
-    let visit_children_before _ = function
-      | NoneType -> false
-      | Parametric { name = "typing.Optional" | "Optional"; parameters = [Single Bottom] } -> false
-      | _ -> true
-
-
-    let visit_children_after = false
-
-    let visit sofar annotation =
-      let new_state =
-        match annotation with
-        | Bottom
-        | Top
-        | Any ->
-            false
-        | _ -> sofar
-      in
-      { VisitWithTransform.transformed_annotation = annotation; new_state }
-  end)
-  in
-  fst (ConcreteVisitor.visit true annotation)
-  && not (Variable.contains_escaped_free_variable annotation)
-
-
-let dequalify map annotation =
-  let dequalify_string string = string |> dequalify_identifier map in
-  let module DequalifyTransform = VisitWithTransform.Make (struct
-    type state = unit
-
-    let visit_children_before _ _ = true
-
-    let visit_children_after = false
-
-    let visit _ annotation =
-      let transformed_annotation =
-        match annotation with
-        | NoneType -> NoneType
-        | Union [NoneType; parameter]
-        | Union [parameter; NoneType] ->
-            Parametric
-              { name = dequalify_string "typing.Optional"; parameters = [Single parameter] }
-        | Parametric { name; parameters } ->
-            Parametric
-              {
-                name = dequalify_identifier map (Cannonicalization.reverse_substitute name);
-                parameters;
-              }
-        | Union parameters ->
-            Parametric
-              {
-                name = dequalify_string "typing.Union";
-                parameters =
-                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
-              }
-        | Tuple (Concrete parameters) ->
-            Parametric
-              {
-                name = dequalify_string "typing.Tuple";
-                parameters =
-                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
-              }
-        | Primitive name -> Primitive (dequalify_identifier map name)
-        | Variable ({ variable = name; _ } as annotation) ->
-            Variable { annotation with variable = dequalify_identifier map name }
-        | Callable ({ kind; _ } as callable) ->
-            let kind =
-              match kind with
-              | Anonymous -> kind
-              | Named reference -> Named (dequalify_reference map reference)
-            in
-            Callable { callable with kind }
-        | _ -> annotation
-      in
-      { VisitWithTransform.transformed_annotation; new_state = () }
-  end)
-  in
-  snd (DequalifyTransform.visit () annotation)
-
-
 module TypedDictionary = struct
   open Record.TypedDictionary
 
@@ -5048,6 +4842,212 @@ module TypedDictionary = struct
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
 end
+
+let resolve_aliases ~aliases annotation =
+  let visited = Containers.Hash_set.create () in
+  let module ResolveAliasesTransform = VisitWithTransform.Make (struct
+    type state = unit
+
+    let visit_children_before _ _ = false
+
+    let visit_children_after = true
+
+    let visit _ annotation =
+      let resolve annotation =
+        if Core.Hash_set.mem visited annotation then
+          annotation
+        else (
+          Core.Hash_set.add visited annotation;
+          let mark_recursive_alias_as_visited = function
+            | RecursiveType { name; _ } ->
+                (* Don't resolve the inner reference to the type. *)
+                Core.Hash_set.add visited (Primitive name)
+            | _ -> ()
+          in
+          match annotation with
+          | Primitive name -> (
+              match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+              | Some (TypeAlias alias) ->
+                  let alias =
+                    match alias with
+                    (* Type variables are stored as `_T aliases to _T`. Don't replace them. *)
+                    | Variable _ as variable -> variable
+                    | alias ->
+                        alias
+                        |> Variable.GlobalTransforms.Unary.replace_all (fun _ ->
+                               Some Variable.Unary.any)
+                        |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
+                               Some Variable.Variadic.Parameters.any)
+                        |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
+                               Some Variable.Variadic.Tuple.any)
+                  in
+                  mark_recursive_alias_as_visited alias;
+                  alias
+              | _ -> annotation)
+          | Parametric { name = alias_name; parameters = given_parameters } ->
+              let deduplicate_preserving_order list =
+                List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
+                    if Core.Set.mem seen_set x then
+                      sofar, seen_set
+                    else
+                      x :: sofar, Core.Set.add seen_set x)
+                |> fst
+                |> List.rev
+              in
+              let instantiate ~given_parameters uninstantiated_alias_annotation =
+                let variable_pairs =
+                  Variable.zip_variables_with_parameters
+                    ~parameters:given_parameters
+                    (Variable.all_free_variables uninstantiated_alias_annotation
+                    |> deduplicate_preserving_order)
+                in
+                match variable_pairs with
+                | Some variable_pairs ->
+                    uninstantiated_alias_annotation
+                    |> Variable.GlobalTransforms.Unary.replace_all (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | UnaryPair (variable, replacement)
+                                 when [%equal: Variable.unary_t] variable given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                    |> Variable.GlobalTransforms.ParameterVariadic.replace_all
+                         (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | ParameterVariadicPair (variable, replacement)
+                                 when [%equal: Variable.parameter_variadic_t]
+                                        variable
+                                        given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                    |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | TupleVariadicPair (variable, replacement)
+                                 when [%equal: Variable.tuple_variadic_t] variable given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                | _ -> uninstantiated_alias_annotation
+              in
+              let resolved =
+                (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
+                   (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T].
+                   We will not find any free type variables in Foo[Any] and simply resolve it as
+                   Foo[Any]. *)
+                match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
+                | Some (TypeAlias uninstantiated_alias_annotation) ->
+                    instantiate ~given_parameters uninstantiated_alias_annotation
+                | _ -> annotation
+              in
+              mark_recursive_alias_as_visited resolved;
+              resolved
+          | RecursiveType _ ->
+              mark_recursive_alias_as_visited annotation;
+              annotation
+          | _ -> annotation)
+      in
+      let transformed_annotation = resolve annotation in
+      { VisitWithTransform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (ResolveAliasesTransform.visit () annotation)
+
+
+let create ~aliases =
+  let variable_aliases name =
+    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+    | Some (VariableAlias variable) -> Some variable
+    | _ -> None
+  in
+  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases
+
+
+let namespace_insensitive_compare left right =
+  compare
+    (Variable.converge_all_variable_namespaces left)
+    (Variable.converge_all_variable_namespaces right)
+
+
+let is_concrete annotation =
+  let module ConcreteVisitor = VisitWithTransform.Make (struct
+    type state = bool
+
+    let visit_children_before _ = function
+      | NoneType -> false
+      | Parametric { name = "typing.Optional" | "Optional"; parameters = [Single Bottom] } -> false
+      | _ -> true
+
+
+    let visit_children_after = false
+
+    let visit sofar annotation =
+      let new_state =
+        match annotation with
+        | Bottom
+        | Top
+        | Any ->
+            false
+        | _ -> sofar
+      in
+      { VisitWithTransform.transformed_annotation = annotation; new_state }
+  end)
+  in
+  fst (ConcreteVisitor.visit true annotation)
+  && not (Variable.contains_escaped_free_variable annotation)
+
+
+let dequalify map annotation =
+  let dequalify_string string = string |> dequalify_identifier map in
+  let module DequalifyTransform = VisitWithTransform.Make (struct
+    type state = unit
+
+    let visit_children_before _ _ = true
+
+    let visit_children_after = false
+
+    let visit _ annotation =
+      let transformed_annotation =
+        match annotation with
+        | NoneType -> NoneType
+        | Union [NoneType; parameter]
+        | Union [parameter; NoneType] ->
+            Parametric
+              { name = dequalify_string "typing.Optional"; parameters = [Single parameter] }
+        | Parametric { name; parameters } ->
+            Parametric
+              {
+                name = dequalify_identifier map (Cannonicalization.reverse_substitute name);
+                parameters;
+              }
+        | Union parameters ->
+            Parametric
+              {
+                name = dequalify_string "typing.Union";
+                parameters =
+                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
+              }
+        | Tuple (Concrete parameters) ->
+            Parametric
+              {
+                name = dequalify_string "typing.Tuple";
+                parameters =
+                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
+              }
+        | Primitive name -> Primitive (dequalify_identifier map name)
+        | Variable ({ variable = name; _ } as annotation) ->
+            Variable { annotation with variable = dequalify_identifier map name }
+        | Callable ({ kind; _ } as callable) ->
+            let kind =
+              match kind with
+              | Anonymous -> kind
+              | Named reference -> Named (dequalify_reference map reference)
+            in
+            Callable { callable with kind }
+        | _ -> annotation
+      in
+      { VisitWithTransform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (DequalifyTransform.visit () annotation)
+
 
 (* Transform tuples and callables so they are printed correctly when running infer and click to
    fix. *)
