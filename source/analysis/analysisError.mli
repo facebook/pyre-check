@@ -400,6 +400,8 @@ and kind =
       expression: Expression.t;
       annotation: Type.t;
     }
+  | InvalidExceptionHandler of Type.t
+  | InvalidExceptionGroupHandler of Type.t
   | InvalidMethodSignature of {
       annotation: Type.t option;
       name: Identifier.t;

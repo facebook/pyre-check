@@ -746,6 +746,8 @@ and kind =
       expression: Expression.t;
       annotation: Type.t;
     }
+  | InvalidExceptionHandler of Type.t
+  | InvalidExceptionGroupHandler of Type.t
   | InvalidMethodSignature of {
       annotation: Type.t option;
       name: Identifier.t;
@@ -945,6 +947,8 @@ let code_of_kind = function
   | SuppressionCommentWithoutErrorCode _ -> 63
   | InconsistentMethodResolutionOrder _ -> 64
   | DuplicateParameter _ -> 65
+  | InvalidExceptionHandler _ -> 66
+  | InvalidExceptionGroupHandler _ -> 67
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -982,6 +986,8 @@ let name_of_kind = function
   | InvalidClassInstantiation _ -> "Invalid class instantiation"
   | InvalidDecoration _ -> "Invalid decoration"
   | InvalidException _ -> "Invalid Exception"
+  | InvalidExceptionHandler _ -> "Invalid except clause"
+  | InvalidExceptionGroupHandler _ -> "Invalid except* clause"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
@@ -1816,6 +1822,20 @@ let rec messages ~concise ~signature location kind =
         Format.asprintf
           "Expression `%s` has type `%a` but must extend BaseException."
           (show_sanitized_expression expression)
+          pp_type
+          annotation;
+      ]
+  | InvalidExceptionHandler annotation ->
+      [
+        Format.asprintf
+          "Exception handler type annotation `%a` must extend BaseException."
+          pp_type
+          annotation;
+      ]
+  | InvalidExceptionGroupHandler annotation ->
+      [
+        Format.asprintf
+          "Exception group handler type annotation `%a` may not extend BaseExceptionGroup."
           pp_type
           annotation;
       ]
@@ -3172,6 +3192,8 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidArgument (VariableArgumentsWithUnpackableType _)
   | InvalidDecoration _
+  | InvalidExceptionHandler _
+  | InvalidExceptionGroupHandler _
   | InvalidMethodSignature _
   | InvalidTypeParameters _
   | InvalidTypeVariable _
@@ -3493,6 +3515,10 @@ let join ~resolution left right =
             expression = left.expression;
             annotation = GlobalResolution.join resolution left.annotation right.annotation;
           }
+    | InvalidExceptionHandler left, InvalidExceptionHandler right ->
+        InvalidExceptionHandler (GlobalResolution.join resolution left right)
+    | InvalidExceptionGroupHandler left, InvalidExceptionGroupHandler right ->
+        InvalidExceptionGroupHandler (GlobalResolution.join resolution left right)
     | InvalidMethodSignature left, InvalidMethodSignature right
       when Identifier.equal left.name right.name ->
         InvalidMethodSignature
@@ -3691,6 +3717,8 @@ let join ~resolution left right =
     | InvalidArgument _, _
     | InvalidDecoration _, _
     | InvalidException _, _
+    | InvalidExceptionHandler _, _
+    | InvalidExceptionGroupHandler _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
     | InvalidTypeParameters _, _
@@ -4164,6 +4192,8 @@ let dequalify
         InvalidArgument (VariableArgumentsWithUnpackableType { variable; mismatch })
     | InvalidException { expression; annotation } ->
         InvalidException { expression; annotation = dequalify annotation }
+    | InvalidExceptionHandler annotation -> InvalidExceptionHandler (dequalify annotation)
+    | InvalidExceptionGroupHandler annotation -> InvalidExceptionGroupHandler (dequalify annotation)
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
         InvalidMethodSignature { kind with annotation = annotation >>| dequalify }
     | InvalidType (InvalidType { annotation; expected }) ->
