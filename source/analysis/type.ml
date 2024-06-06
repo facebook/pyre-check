@@ -1245,167 +1245,177 @@ module Parameter = struct
     | _ -> false
 end
 
-let is_any = function
-  | Any -> true
-  | _ -> false
+module Predicates = struct
+  let is_any = function
+    | Any -> true
+    | _ -> false
 
 
-let is_async_iterator = function
-  | Parametric { name = "typing.AsyncIterator"; _ } -> true
-  | _ -> false
+  let is_async_iterator = function
+    | Parametric { name = "typing.AsyncIterator"; _ } -> true
+    | _ -> false
 
 
-let is_callable = function
-  | Callable _ -> true
-  | _ -> false
+  let is_callable = function
+    | Callable _ -> true
+    | _ -> false
 
 
-let is_dictionary ?(with_key = None) = function
-  | Parametric { name = "dict"; parameters } -> (
-      match with_key, parameters with
-      | Some key, [Single key_parameter; _] -> equal key key_parameter
-      | _ -> true)
-  | _ -> false
+  let is_dictionary ?(with_key = None) = function
+    | Parametric { name = "dict"; parameters } -> (
+        match with_key, parameters with
+        | Some key, [Single key_parameter; _] -> equal key key_parameter
+        | _ -> true)
+    | _ -> false
 
 
-let is_dictionary_or_mapping = function
-  | Parametric { name = "typing.Mapping" | "dict"; _ } -> true
-  | _ -> false
+  let is_dictionary_or_mapping = function
+    | Parametric { name = "typing.Mapping" | "dict"; _ } -> true
+    | _ -> false
 
 
-let is_ellipsis = function
-  | Primitive "..." -> true
-  | _ -> false
+  let is_ellipsis = function
+    | Primitive "..." -> true
+    | _ -> false
 
 
-let is_generic_primitive = function
-  | Primitive "typing.Generic" -> true
-  | _ -> false
+  let is_generic_primitive = function
+    | Primitive "typing.Generic" -> true
+    | _ -> false
 
 
-let is_iterable = function
-  | Parametric { name = "typing.Iterable"; _ } -> true
-  | _ -> false
+  let is_iterable = function
+    | Parametric { name = "typing.Iterable"; _ } -> true
+    | _ -> false
 
 
-let is_iterator = function
-  | Parametric { name = "typing.Iterator"; _ } -> true
-  | _ -> false
+  let is_iterator = function
+    | Parametric { name = "typing.Iterator"; _ } -> true
+    | _ -> false
 
 
-let is_list = function
-  | Parametric { name = "list"; _ } -> true
-  | _ -> false
+  let is_list = function
+    | Parametric { name = "list"; _ } -> true
+    | _ -> false
 
 
-let is_meta = function
-  | Parametric { name = "type"; _ } -> true
-  | _ -> false
+  let is_meta = function
+    | Parametric { name = "type"; _ } -> true
+    | _ -> false
 
 
-let is_none = function
-  | NoneType -> true
-  | _ -> false
+  let is_none = function
+    | NoneType -> true
+    | _ -> false
 
 
-let is_noreturn_or_never = function
-  | Primitive "typing.NoReturn"
-  | Primitive "NoReturn"
-  | Primitive "Never"
-  | Primitive "typing_extensions.Never"
-  | Primitive "typing.Never" ->
-      true
-  | _ -> false
+  let is_noreturn_or_never = function
+    | Primitive "typing.NoReturn"
+    | Primitive "NoReturn"
+    | Primitive "Never"
+    | Primitive "typing_extensions.Never"
+    | Primitive "typing.Never" ->
+        true
+    | _ -> false
 
 
-let is_object = function
-  | Primitive "object" -> true
-  | _ -> false
+  let is_object = function
+    | Primitive "object" -> true
+    | _ -> false
 
 
-let is_optional = function
-  | Union [NoneType; _]
-  | Union [_; NoneType] ->
-      true
-  | Parametric { name = "typing.Optional" | "Optional"; _ } -> true
-  | _ -> false
+  let is_optional = function
+    | Union [NoneType; _]
+    | Union [_; NoneType] ->
+        true
+    | Parametric { name = "typing.Optional" | "Optional"; _ } -> true
+    | _ -> false
 
 
-let is_optional_primitive = function
-  | Primitive "typing.Optional" -> true
-  | _ -> false
+  let is_optional_primitive = function
+    | Primitive "typing.Optional" -> true
+    | _ -> false
 
 
-let is_primitive = function
-  | Primitive _ -> true
-  | _ -> false
+  let is_primitive = function
+    | Primitive _ -> true
+    | _ -> false
 
 
-let is_primitive_string = function
-  | Primitive "str" -> true
-  | _ -> false
+  let is_primitive_string = function
+    | Primitive "str" -> true
+    | _ -> false
 
 
-let is_literal_string = function
-  | Literal (String _) -> true
-  | _ -> false
+  let is_literal_string = function
+    | Literal (String _) -> true
+    | _ -> false
 
 
-let is_top = function
-  | Top -> true
-  | _ -> false
+  let is_top = function
+    | Top -> true
+    | _ -> false
 
 
-let is_tuple = function
-  | Tuple _ -> true
-  | Parametric { name = "typing.Tuple" | "Tuple"; _ } -> true
-  | _ -> false
+  let is_tuple = function
+    | Tuple _ -> true
+    | Parametric { name = "typing.Tuple" | "Tuple"; _ } -> true
+    | _ -> false
 
 
-let is_type_alias = function
-  | Primitive "typing_extensions.TypeAlias" -> true
-  | _ -> false
+  let is_type_alias = function
+    | Primitive "typing_extensions.TypeAlias" -> true
+    | _ -> false
 
 
-let is_unbound = function
-  | Bottom -> true
-  | _ -> false
+  let is_unbound = function
+    | Bottom -> true
+    | _ -> false
 
 
-let is_union = function
-  | Union _ -> true
-  | _ -> false
+  let is_union = function
+    | Union _ -> true
+    | _ -> false
 
 
-let is_variable = function
-  | Variable _ -> true
-  | _ -> false
+  let is_variable = function
+    | Variable _ -> true
+    | _ -> false
 
 
-let rec is_falsy = function
-  | NoneType
-  | Literal (Boolean false)
-  | Literal (Integer 0)
-  | Literal (String (LiteralValue ""))
-  | Literal (Bytes "") ->
-      true
-  | ReadOnly annotated -> is_falsy annotated
-  | Union types -> List.for_all types ~f:is_falsy
-  | _ -> false
+  let rec is_falsy = function
+    | NoneType
+    | Literal (Boolean false)
+    | Literal (Integer 0)
+    | Literal (String (LiteralValue ""))
+    | Literal (Bytes "") ->
+        true
+    | ReadOnly annotated -> is_falsy annotated
+    | Union types -> List.for_all types ~f:is_falsy
+    | _ -> false
 
 
-let rec is_truthy = function
-  | Literal (Boolean true)
-  | Callable _ ->
-      true
-  | Literal (Integer i) -> not (Int.equal i 0)
-  | Literal (String (LiteralValue value))
-  | Literal (Bytes value) ->
-      not (String.is_empty value)
-  | ReadOnly annotated -> is_truthy annotated
-  | Union types -> List.for_all types ~f:is_truthy
-  | _ -> false
+  let rec is_truthy = function
+    | Literal (Boolean true)
+    | Callable _ ->
+        true
+    | Literal (Integer i) -> not (Int.equal i 0)
+    | Literal (String (LiteralValue value))
+    | Literal (Bytes value) ->
+        not (String.is_empty value)
+    | ReadOnly annotated -> is_truthy annotated
+    | Union types -> List.for_all types ~f:is_truthy
+    | _ -> false
 
+
+  let contains_callable annotation = Visitors.exists annotation ~predicate:is_callable
+
+  let contains_any annotation = Visitors.exists annotation ~predicate:is_any
+
+  let contains_unknown annotation = Visitors.exists annotation ~predicate:is_top
+
+  let contains_undefined annotation = Visitors.exists annotation ~predicate:is_unbound
+end
 
 (* The Cannonicalization module contains logic related to representing types. Pretty printing uses
    the cannonicalizations, but so does some other logic like the `Type.t -> Expression.t`
@@ -1448,7 +1458,8 @@ module PrettyPrinting = struct
   let pp_parameters ~pp_type format = function
     | parameters
       when List.for_all parameters ~f:(function
-               | Record.Parameter.Single parameter -> is_unbound parameter || is_top parameter
+               | Record.Parameter.Single parameter ->
+                   Predicates.is_unbound parameter || Predicates.is_top parameter
                | _ -> false) ->
         Format.fprintf format ""
     | parameters ->
@@ -1845,14 +1856,6 @@ module Transforms = struct
     snd (ApplyTypeMapTransform.visit () annotation)
 end
 
-let contains_callable annotation = Visitors.exists annotation ~predicate:is_callable
-
-let contains_any annotation = Visitors.exists annotation ~predicate:is_any
-
-let contains_unknown annotation = Visitors.exists annotation ~predicate:is_top
-
-let contains_undefined annotation = Visitors.exists annotation ~predicate:is_unbound
-
 module Callable = struct
   module Parameter = struct
     include Record.Callable.RecordParameter
@@ -2033,7 +2036,7 @@ module Callable = struct
 
     let is_undefined { parameters; annotation; _ } =
       match parameters with
-      | Undefined -> contains_unknown annotation
+      | Undefined -> Predicates.contains_unknown annotation
       | _ -> false
   end
 
@@ -3052,7 +3055,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
 
 (* Check if there is a literal Any provided, not including type aliases to Any. *)
 let expression_contains_any expression =
-  let primitives_with_any_map = Hashtbl.filter ~f:contains_any primitive_substitution_map in
+  let primitives_with_any_map =
+    Hashtbl.filter ~f:Predicates.contains_any primitive_substitution_map
+  in
   Visit.collect_non_generic_type_names expression
   |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
 
@@ -3105,7 +3110,7 @@ let is_untyped = function
 
 let is_partially_typed annotation = Visitors.exists annotation ~predicate:is_untyped
 
-let contains_variable = Visitors.exists ~predicate:is_variable
+let contains_variable = Visitors.exists ~predicate:Predicates.is_variable
 
 let optional_value = function
   | Union [NoneType; annotation]
@@ -5151,7 +5156,7 @@ let contains_prohibited_any annotation =
     let visit sofar annotation =
       {
         VisitWithTransform.transformed_annotation = annotation;
-        new_state = sofar || is_any annotation;
+        new_state = sofar || Predicates.is_any annotation;
       }
   end)
   in
@@ -5234,7 +5239,7 @@ let class_data_for_attribute_lookup type_ =
                       instantiated;
                 })
     | ReadOnly type_ -> extract_class_data ~meta ~accessed_through_readonly:true type_
-    | type_ when is_meta type_ ->
+    | type_ when Predicates.is_meta type_ ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)
         single_parameter type_ |> extract_class_data ~meta:true ~accessed_through_readonly
@@ -5324,6 +5329,7 @@ let apply_type_map = Transforms.apply_type_map
 
 include Constructors
 include PrettyPrinting
+include Predicates
 
 (* We always send types in the pretty printed form *)
 let to_yojson annotation = `String (PrettyPrinting.show annotation)

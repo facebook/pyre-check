@@ -555,8 +555,6 @@ module TypeOperation : sig
   type t = type_t Record.TypeOperation.record
 end
 
-val contains_callable : t -> bool
-
 val is_any : t -> bool
 
 val is_async_iterator : t -> bool
@@ -608,6 +606,8 @@ val is_union : t -> bool
 val is_falsy : t -> bool
 
 val is_truthy : t -> bool
+
+val contains_callable : t -> bool
 
 val contains_any : t -> bool
 
