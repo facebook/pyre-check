@@ -1759,185 +1759,6 @@ module PrettyPrinting = struct
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 end
 
-let rec expression annotation =
-  let location = Location.any in
-  let create_name name = Expression.Name (create_name ~location name) in
-  let subscript = subscript ~location in
-  let concatenation_to_expressions
-      { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
-    =
-    List.map ~f:expression prefix
-    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable]
-    @ List.map ~f:expression suffix
-  in
-  let callable_parameters_expression = function
-    | Defined parameters ->
-        let convert_parameter parameter =
-          let call ?(default = false) ?name kind annotation =
-            let arguments =
-              let annotation = [{ Call.Argument.name = None; value = annotation }] in
-              let default =
-                if default then
-                  [
-                    {
-                      Call.Argument.name = None;
-                      value = Node.create ~location (create_name "default");
-                    };
-                  ]
-                else
-                  []
-              in
-              let name =
-                name
-                >>| (fun name ->
-                      [
-                        {
-                          Call.Argument.name = None;
-                          value = Node.create ~location (create_name name);
-                        };
-                      ])
-                |> Option.value ~default:[]
-              in
-              name @ annotation @ default
-            in
-            Expression.Call
-              { callee = Node.create ~location (Expression.Name (Name.Identifier kind)); arguments }
-            |> Node.create ~location
-          in
-          match parameter with
-          | CallableParameter.PositionalOnly { annotation; default; _ } ->
-              call ~default "PositionalOnly" (expression annotation)
-          | Keywords annotation -> call "Keywords" (expression annotation)
-          | Named { name; annotation; default } ->
-              call ~default ~name "Named" (expression annotation)
-          | KeywordOnly { name; annotation; default } ->
-              call ~default ~name "KeywordOnly" (expression annotation)
-          | Variable (Concrete annotation) -> call "Variable" (expression annotation)
-          | Variable (Concatenation concatenation) ->
-              Expression.Call
-                {
-                  callee = Node.create ~location (Expression.Name (Name.Identifier "Variable"));
-                  arguments =
-                    concatenation_to_expressions concatenation
-                    |> List.map ~f:(fun annotation ->
-                           { Call.Argument.name = None; value = annotation });
-                }
-              |> Node.create ~location
-        in
-        Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
-    | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
-    | ParameterVariadicTypeVariable variable ->
-        Cannonicalization.parameter_variable_type_representation variable |> expression
-  in
-  let convert_annotation annotation =
-    let convert_ordered_type ordered_type =
-      match ordered_type with
-      | Record.OrderedTypes.Concatenation
-          { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
-          List.map ~f:expression [parameter; Primitive "..."]
-      | Concatenation concatenation -> concatenation_to_expressions concatenation
-      | Concrete parameters -> List.map ~f:expression parameters
-    in
-    match annotation with
-    | Bottom -> create_name "$bottom"
-    | Callable { implementation; overloads; _ } -> (
-        (* Pyre currently allows writing (and pretty-printing) overload types using a closed-form
-           expression written like `Callable[[Any], Any][[[str], str][[int],int]]`. *)
-        let convert_signature_as_leftmost_overload { annotation; parameters; _ } =
-          Node.create
-            ~location
-            (Expression.List [callable_parameters_expression parameters; expression annotation])
-        in
-        let convert_signature_as_index { annotation; parameters; _ } =
-          Node.create
-            ~location
-            (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
-        in
-        let base_value =
-          Expression.Subscript
-            {
-              base = { Node.location; value = create_name "typing.Callable" };
-              index = convert_signature_as_index implementation;
-            }
-        in
-        let overloads =
-          let convert_overload sofar overload =
-            match sofar with
-            | None -> Some (convert_signature_as_leftmost_overload overload)
-            | Some expression ->
-                Expression.Subscript
-                  { base = expression; index = convert_signature_as_index overload }
-                |> Node.create ~location
-                |> Option.some
-          in
-          List.fold ~init:None ~f:convert_overload overloads
-        in
-        match overloads with
-        | Some overloads ->
-            Expression.Subscript { base = { Node.location; value = base_value }; index = overloads }
-        | None -> base_value)
-    | Any -> create_name "typing.Any"
-    | Literal literal ->
-        let literal =
-          match literal with
-          | Boolean true -> Expression.Constant Constant.True
-          | Boolean false -> Expression.Constant Constant.False
-          | Integer literal -> Expression.Constant (Constant.Integer literal)
-          | String (LiteralValue literal) ->
-              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.String })
-          | String AnyLiteral -> create_name "str"
-          | Bytes literal ->
-              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.Bytes })
-          | EnumerationMember { enumeration_type; member_name } ->
-              Expression.Name
-                (Attribute
-                   { base = expression enumeration_type; attribute = member_name; special = false })
-        in
-        subscript "typing_extensions.Literal" [Node.create ~location literal]
-    | NoneType -> Expression.Constant Constant.NoneLiteral
-    | Parametric { name; parameters } ->
-        let parameters =
-          let expression_of_parameter = function
-            | Record.Parameter.Single single -> expression single
-            | CallableParameters parameters -> callable_parameters_expression parameters
-            | Unpacked unpackable ->
-                Record.OrderedTypes.Concatenation.unpackable_to_expression
-                  ~expression
-                  ~location
-                  unpackable
-          in
-          match parameters with
-          | parameters -> List.map parameters ~f:expression_of_parameter
-        in
-        subscript (Cannonicalization.reverse_substitute name) parameters
-    | ParameterVariadicComponent { component; variable_name; _ } ->
-        let attribute =
-          Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
-        in
-        Expression.Name
-          (Attribute { base = expression (Primitive variable_name); attribute; special = false })
-    | Primitive name -> create_name name
-    | ReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
-    | RecursiveType { name; _ } -> create_name name
-    | Top -> create_name "$unknown"
-    | Tuple (Concrete []) -> subscript "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
-    | Tuple ordered_type -> subscript "typing.Tuple" (convert_ordered_type ordered_type)
-    | TypeOperation (Compose ordered_type) ->
-        subscript "pyre_extensions.Compose" (convert_ordered_type ordered_type)
-    | Union [NoneType; parameter]
-    | Union [parameter; NoneType] ->
-        subscript "typing.Optional" [expression parameter]
-    | Union parameters -> subscript "typing.Union" (List.map ~f:expression parameters)
-    | Variable { variable; _ } -> create_name variable
-  in
-  let value =
-    match annotation with
-    | Primitive "..." -> Expression.Constant Constant.Ellipsis
-    | _ -> convert_annotation annotation
-  in
-  Node.create_with_default_location value
-
-
 module Transforms = struct
   (* Apply a `type_map` that replaces some types with other types recursively. Use cases of this
      include applying constraint solver results for type variables and replacing types coming from
@@ -3793,6 +3614,192 @@ end = struct
     | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
 end
 
+module ToExpression = struct
+  let location = Location.any
+
+  let subscript = subscript ~location
+
+  let create_name name = Expression.Name (create_name ~location name)
+
+  let rec callable_parameters_expression = function
+    | Defined parameters ->
+        let convert_parameter parameter =
+          let call ?(default = false) ?name kind annotation =
+            let arguments =
+              let annotation = [{ Call.Argument.name = None; value = annotation }] in
+              let default =
+                if default then
+                  [
+                    {
+                      Call.Argument.name = None;
+                      value = Node.create ~location (create_name "default");
+                    };
+                  ]
+                else
+                  []
+              in
+              let name =
+                name
+                >>| (fun name ->
+                      [
+                        {
+                          Call.Argument.name = None;
+                          value = Node.create ~location (create_name name);
+                        };
+                      ])
+                |> Option.value ~default:[]
+              in
+              name @ annotation @ default
+            in
+            Expression.Call
+              { callee = Node.create ~location (Expression.Name (Name.Identifier kind)); arguments }
+            |> Node.create ~location
+          in
+          match parameter with
+          | CallableParameter.PositionalOnly { annotation; default; _ } ->
+              call ~default "PositionalOnly" (expression annotation)
+          | Keywords annotation -> call "Keywords" (expression annotation)
+          | Named { name; annotation; default } ->
+              call ~default ~name "Named" (expression annotation)
+          | KeywordOnly { name; annotation; default } ->
+              call ~default ~name "KeywordOnly" (expression annotation)
+          | Variable (Concrete annotation) -> call "Variable" (expression annotation)
+          | Variable (Concatenation concatenation) ->
+              Expression.Call
+                {
+                  callee = Node.create ~location (Expression.Name (Name.Identifier "Variable"));
+                  arguments =
+                    concatenation_to_expressions concatenation
+                    |> List.map ~f:(fun annotation ->
+                           { Call.Argument.name = None; value = annotation });
+                }
+              |> Node.create ~location
+        in
+        Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
+    | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
+    | ParameterVariadicTypeVariable variable ->
+        Cannonicalization.parameter_variable_type_representation variable |> expression
+
+
+  and concatenation_to_expressions
+      { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
+    =
+    List.map ~f:expression prefix
+    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable]
+    @ List.map ~f:expression suffix
+
+
+  and convert_type annotation =
+    let convert_ordered_type ordered_type =
+      match ordered_type with
+      | Record.OrderedTypes.Concatenation
+          { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+          List.map ~f:expression [parameter; Primitive "..."]
+      | Concatenation concatenation -> concatenation_to_expressions concatenation
+      | Concrete parameters -> List.map ~f:expression parameters
+    in
+    match annotation with
+    | Bottom -> create_name "$bottom"
+    | Callable { implementation; overloads; _ } -> (
+        (* Pyre currently allows writing (and pretty-printing) overload types using a closed-form
+           expression written like `Callable[[Any], Any][[[str], str][[int],int]]`. *)
+        let convert_signature_as_leftmost_overload { annotation; parameters; _ } =
+          Node.create
+            ~location
+            (Expression.List [callable_parameters_expression parameters; expression annotation])
+        in
+        let convert_signature_as_index { annotation; parameters; _ } =
+          Node.create
+            ~location
+            (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
+        in
+        let base_value =
+          Expression.Subscript
+            {
+              base = { Node.location; value = create_name "typing.Callable" };
+              index = convert_signature_as_index implementation;
+            }
+        in
+        let overloads =
+          let convert_overload sofar overload =
+            match sofar with
+            | None -> Some (convert_signature_as_leftmost_overload overload)
+            | Some expression ->
+                Expression.Subscript
+                  { base = expression; index = convert_signature_as_index overload }
+                |> Node.create ~location
+                |> Option.some
+          in
+          List.fold ~init:None ~f:convert_overload overloads
+        in
+        match overloads with
+        | Some overloads ->
+            Expression.Subscript { base = { Node.location; value = base_value }; index = overloads }
+        | None -> base_value)
+    | Any -> create_name "typing.Any"
+    | Literal literal ->
+        let literal =
+          match literal with
+          | Boolean true -> Expression.Constant Constant.True
+          | Boolean false -> Expression.Constant Constant.False
+          | Integer literal -> Expression.Constant (Constant.Integer literal)
+          | String (LiteralValue literal) ->
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.String })
+          | String AnyLiteral -> create_name "str"
+          | Bytes literal ->
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.Bytes })
+          | EnumerationMember { enumeration_type; member_name } ->
+              Expression.Name
+                (Attribute
+                   { base = expression enumeration_type; attribute = member_name; special = false })
+        in
+        subscript "typing_extensions.Literal" [Node.create ~location literal]
+    | NoneType -> Expression.Constant Constant.NoneLiteral
+    | Parametric { name; parameters } ->
+        let parameters =
+          let expression_of_parameter = function
+            | Record.Parameter.Single single -> expression single
+            | CallableParameters parameters -> callable_parameters_expression parameters
+            | Unpacked unpackable ->
+                Record.OrderedTypes.Concatenation.unpackable_to_expression
+                  ~expression
+                  ~location
+                  unpackable
+          in
+          match parameters with
+          | parameters -> List.map parameters ~f:expression_of_parameter
+        in
+        subscript (Cannonicalization.reverse_substitute name) parameters
+    | ParameterVariadicComponent { component; variable_name; _ } ->
+        let attribute =
+          Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
+        in
+        Expression.Name
+          (Attribute { base = expression (Primitive variable_name); attribute; special = false })
+    | Primitive name -> create_name name
+    | ReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
+    | RecursiveType { name; _ } -> create_name name
+    | Top -> create_name "$unknown"
+    | Tuple (Concrete []) -> subscript "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
+    | Tuple ordered_type -> subscript "typing.Tuple" (convert_ordered_type ordered_type)
+    | TypeOperation (Compose ordered_type) ->
+        subscript "pyre_extensions.Compose" (convert_ordered_type ordered_type)
+    | Union [NoneType; parameter]
+    | Union [parameter; NoneType] ->
+        subscript "typing.Optional" [expression parameter]
+    | Union parameters -> subscript "typing.Union" (List.map ~f:expression parameters)
+    | Variable { variable; _ } -> create_name variable
+
+
+  and expression annotation =
+    let value =
+      match annotation with
+      | Primitive "..." -> Expression.Constant Constant.Ellipsis
+      | _ -> convert_type annotation
+    in
+    Node.create_with_default_location value
+end
+
 module TypedDictionary = struct
   open Record.TypedDictionary
 
@@ -4135,11 +4142,11 @@ module TypedDictionary = struct
         define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy";
         define
           ~self_parameter:t_self_expression
-          ~return_annotation:(expression Constructors.integer)
+          ~return_annotation:(ToExpression.expression Constructors.integer)
           "__len__";
         define
           ~self_parameter:t_self_expression
-          ~return_annotation:(expression (Constructors.iterator Constructors.string))
+          ~return_annotation:(ToExpression.expression (Constructors.iterator Constructors.string))
           "__iter__";
       ]
       @ List.map (common_special_methods ~class_name) ~f:(fun { name; _ } -> define name)
@@ -4854,7 +4861,7 @@ let class_name annotation =
   in
   split annotation
   |> fst
-  |> expression
+  |> ToExpression.expression
   |> strip_calls
   |> fun identifiers ->
   if List.is_empty identifiers then
@@ -5325,3 +5332,5 @@ include Predicates
 let to_yojson annotation = `String (PrettyPrinting.show annotation)
 
 type type_t = T.t [@@deriving compare, eq, sexp, show, hash]
+
+let expression = ToExpression.expression
