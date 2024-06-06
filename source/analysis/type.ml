@@ -781,7 +781,6 @@ module Record = struct
   end
 end
 
-open Record.Callable
 module CallableParameter = Record.Callable.RecordParameter
 
 module Primitive = struct
@@ -1028,6 +1027,7 @@ module VisitWithTransform = struct
           | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
         in
         let visit_parameters parameter =
+          let open Record.Callable in
           let visit_defined = function
             | RecordParameter.Named ({ annotation; _ } as named) ->
                 RecordParameter.Named { named with annotation = visit_annotation annotation ~state }
@@ -1545,7 +1545,7 @@ module Cannonicalization = struct
 
 
   let parameter_variable_type_representation = function
-    | { head = []; variable = { name; _ } } -> Primitive name
+    | { Record.Callable.head = []; variable = { name; _ } } -> Primitive name
     | { head; variable = { name; _ } } ->
         let concretes = head @ [Primitive name] in
         Parametric
@@ -1618,7 +1618,7 @@ module PrettyPrinting = struct
           | Anonymous -> ""
           | Named name -> Format.asprintf "(%a)" Reference.pp name
         in
-        let signature_to_string { annotation; parameters; _ } =
+        let signature_to_string { Record.Callable.annotation; parameters; _ } =
           Format.asprintf "%s, %a" (show_callable_parameters parameters ~pp_type:pp) pp annotation
         in
         let implementation = signature_to_string implementation in
@@ -1673,7 +1673,7 @@ module PrettyPrinting = struct
     let strip_qualification identifier =
       String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
     in
-    let signature_to_string { annotation; parameters; _ } =
+    let signature_to_string { Record.Callable.annotation; parameters; _ } =
       let parameters =
         match parameters with
         | Undefined -> "..."
@@ -2773,7 +2773,8 @@ end = struct
 
       let local_replace replacement annotation =
         let map = function
-          | ParameterVariadicTypeVariable { head; variable } ->
+          | Record.Callable.ParameterVariadicTypeVariable { head; variable } ->
+              let open Record.Callable in
               let apply_head ~head = function
                 | ParameterVariadicTypeVariable { head = inner_head; variable } ->
                     ParameterVariadicTypeVariable { head = head @ inner_head; variable }
@@ -2810,7 +2811,8 @@ end = struct
       let local_collect = function
         | Callable { implementation; overloads; _ } ->
             let extract = function
-              | { parameters = ParameterVariadicTypeVariable { variable; _ }; _ } -> Some variable
+              | { Record.Callable.parameters = ParameterVariadicTypeVariable { variable; _ }; _ } ->
+                  Some variable
               | _ -> None
             in
             List.filter_map (implementation :: overloads) ~f:extract
@@ -3019,7 +3021,7 @@ end = struct
         | Tuple (Concatenation { middle = unpackable; _ }) -> collect_unpackable unpackable
         | Callable { implementation; overloads; _ } ->
             let extract = function
-              | { parameters = Defined parameters; _ } ->
+              | { Record.Callable.parameters = Defined parameters; _ } ->
                   List.find_map parameters ~f:(function
                       | Variable (Concatenation { middle = unpackable; _ }) ->
                           Some (collect_unpackable unpackable)
@@ -3122,9 +3124,9 @@ end = struct
               |> Result.map ~f:(fun result -> List.rev_append result parameters_so_far)
             in
             let map_defined = function
-              | Defined parameters ->
+              | Record.Callable.Defined parameters ->
                   Result.map
-                    ~f:(fun result -> Defined (List.rev result))
+                    ~f:(fun result -> Record.Callable.Defined (List.rev result))
                     (List.fold_result ~init:[] ~f:replace_variadic parameters)
               | parameters -> Ok parameters
             in
@@ -3622,7 +3624,7 @@ module ToExpression = struct
   let create_name name = Expression.Name (create_name ~location name)
 
   let rec callable_parameters_expression = function
-    | Defined parameters ->
+    | Record.Callable.Defined parameters ->
         let convert_parameter parameter =
           let call ?(default = false) ?name kind annotation =
             let arguments =
@@ -3703,12 +3705,12 @@ module ToExpression = struct
     | Callable { implementation; overloads; _ } -> (
         (* Pyre currently allows writing (and pretty-printing) overload types using a closed-form
            expression written like `Callable[[Any], Any][[[str], str][[int],int]]`. *)
-        let convert_signature_as_leftmost_overload { annotation; parameters; _ } =
+        let convert_signature_as_leftmost_overload { Record.Callable.annotation; parameters; _ } =
           Node.create
             ~location
             (Expression.List [callable_parameters_expression parameters; expression annotation])
         in
-        let convert_signature_as_index { annotation; parameters; _ } =
+        let convert_signature_as_index { Record.Callable.annotation; parameters; _ } =
           Node.create
             ~location
             (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
@@ -3876,7 +3878,7 @@ module TypedDictionary = struct
     in
     required_fields @ non_required_fields
     |> List.map ~f:field_to_argument
-    |> fun parameters -> Defined (self_parameter class_name :: parameters)
+    |> fun parameters -> Record.Callable.Defined (self_parameter class_name :: parameters)
 
 
   let constructor ~name ~fields =
@@ -3939,14 +3941,17 @@ module TypedDictionary = struct
   let common_special_methods ~class_name =
     let getitem_overloads =
       let overload { name; annotation; _ } =
-        { annotation; parameters = Defined [self_parameter class_name; key_parameter name] }
+        {
+          Record.Callable.annotation;
+          parameters = Defined [self_parameter class_name; key_parameter name];
+        }
       in
       List.map ~f:overload
     in
     let setitem_overloads =
       let overload { name; annotation; _ } =
         {
-          annotation = Constructors.none;
+          Record.Callable.annotation = Constructors.none;
           parameters =
             Defined
               [
@@ -3962,7 +3967,7 @@ module TypedDictionary = struct
       let overloads { name; annotation; _ } =
         [
           {
-            annotation = Constructors.union [annotation; NoneType];
+            Record.Callable.annotation = Constructors.union [annotation; NoneType];
             parameters = Defined [self_parameter class_name; key_parameter name];
           };
           {
@@ -3987,7 +3992,7 @@ module TypedDictionary = struct
     let setdefault_overloads =
       let overload { name; annotation; _ } =
         {
-          annotation;
+          Record.Callable.annotation;
           parameters =
             Defined
               [
@@ -4002,7 +4007,7 @@ module TypedDictionary = struct
     let update_overloads fields =
       [
         {
-          annotation = Constructors.none;
+          Record.Callable.annotation = Constructors.none;
           parameters = field_named_parameters ~all_default:true ~class_name fields;
         };
         {
@@ -4034,7 +4039,10 @@ module TypedDictionary = struct
           []
         else
           [
-            { annotation; parameters = Defined [self_parameter class_name; key_parameter name] };
+            {
+              Record.Callable.annotation;
+              parameters = Defined [self_parameter class_name; key_parameter name];
+            };
             {
               annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
               parameters =
@@ -4059,7 +4067,7 @@ module TypedDictionary = struct
         Option.some_if
           (not required)
           {
-            annotation = Constructors.none;
+            Record.Callable.annotation = Constructors.none;
             parameters = Defined [self_parameter class_name; key_parameter name];
           }
       in
@@ -4430,6 +4438,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | _ -> false
     in
     let parse_callable ~resolved_base ~subscript_index =
+      let open Record.Callable in
       let modifiers, implementation_signature, overload_signatures =
         let get_from_base base implementation_argument overloads_argument =
           match Node.value base with
@@ -4733,7 +4742,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | None -> replace_with_special_form ~name parameters)
   | Union elements -> Constructors.union elements
   | Callable ({ implementation; overloads; _ } as callable) ->
-      let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
+      let collect_unpacked_parameters_if_any ({ Record.Callable.parameters; _ } as overload) =
         match parameters with
         | Defined parameters ->
             let all_positional_only_parameters =
