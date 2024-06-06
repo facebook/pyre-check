@@ -1635,8 +1635,6 @@ module PrettyPrinting = struct
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 end
 
-let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
-
 let rec expression annotation =
   let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
@@ -4716,7 +4714,7 @@ module TypedDictionary = struct
     { name; annotation; required }
 
 
-  let are_fields_total = are_fields_total
+  let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
 
   let same_name { name = left_name; required = _; _ } { name = right_name; required = _; _ } =
     String.equal left_name right_name
