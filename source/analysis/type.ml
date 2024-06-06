@@ -841,6 +841,390 @@ let default_to_bottom map keys =
 module Set = Set.Make (T)
 include Hashable.Make (T)
 
+module Constructors = struct
+  let parametric name parameters = Parametric { name; parameters }
+
+  let awaitable parameter =
+    Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }
+
+
+  let coroutine parameters = Parametric { name = "typing.Coroutine"; parameters }
+
+  let bool = Primitive "bool"
+
+  let bytes = Primitive "bytes"
+
+  let complex = Primitive "complex"
+
+  let dictionary ~key ~value = Parametric { name = "dict"; parameters = [Single key; Single value] }
+
+  let mapping_primitive = "typing.Mapping"
+
+  let enumeration = Primitive "enum.Enum"
+
+  let float = Primitive "float"
+
+  let number = Primitive "numbers.Number"
+
+  let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
+    Parametric
+      {
+        name = "typing.Generator";
+        parameters = [Single yield_type; Single send_type; Single return_type];
+      }
+
+
+  let generator_expression yield_type =
+    generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
+
+
+  let async_generator ?(yield_type = Any) ?(send_type = Any) () =
+    Parametric
+      { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
+
+
+  let generic_primitive = Primitive "typing.Generic"
+
+  let integer = Primitive "int"
+
+  let literal_integer literal = Literal (Integer literal)
+
+  let iterable parameter = Parametric { name = "typing.Iterable"; parameters = [Single parameter] }
+
+  let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [Single parameter] }
+
+  let async_iterator parameter =
+    Parametric { name = "typing.AsyncIterator"; parameters = [Single parameter] }
+
+
+  let list parameter = Parametric { name = "list"; parameters = [Single parameter] }
+
+  let meta annotation = Parametric { name = "type"; parameters = [Single annotation] }
+
+  let extract_meta = function
+    | Parametric { name = "type"; parameters = [Single annotation] } -> Some annotation
+    | _ -> None
+
+
+  let named_tuple = Primitive "typing.NamedTuple"
+
+  let none = NoneType
+
+  let object_primitive = Primitive "object"
+
+  let sequence parameter = Parametric { name = "typing.Sequence"; parameters = [Single parameter] }
+
+  let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
+
+  let string = Primitive "str"
+
+  let literal_string literal = Literal (String (LiteralValue literal))
+
+  let literal_bytes literal = Literal (Bytes literal)
+
+  let literal_any_string = Literal (String AnyLiteral)
+
+  let tuple parameters = Tuple (Concrete parameters)
+
+  let union parameters =
+    let parameters =
+      let parameter_set = Hash_set.create () in
+      let rec add_parameter = function
+        | Union parameters -> List.iter parameters ~f:add_parameter
+        | Bottom -> ()
+        | parameter -> Base.Hash_set.add parameter_set parameter
+      in
+      List.iter parameters ~f:add_parameter;
+      Base.Hash_set.to_list parameter_set |> List.sort ~compare
+    in
+    let is_top = function
+      | Top -> true
+      | _ -> false
+    in
+    let is_any = function
+      | Any -> true
+      | _ -> false
+    in
+    if List.exists ~f:is_top parameters then
+      Top
+    else if List.exists ~f:is_any parameters then
+      Any
+    else
+      match parameters with
+      | [] -> Bottom
+      | [parameter] -> parameter
+      | parameters -> Union parameters
+
+
+  let optional parameter =
+    match parameter with
+    | Top -> Top
+    | Any -> Any
+    | Bottom -> Bottom
+    | _ -> union [NoneType; parameter]
+
+
+  let variable ?constraints ?variance name =
+    Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
+
+
+  let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
+
+  let rec read_only = function
+    | ReadOnly _ as type_ -> type_
+    | NoneType -> NoneType
+    | Union elements -> Union (List.map ~f:read_only elements)
+    | (Primitive class_name as type_)
+    | (Parametric { name = class_name; _ } as type_)
+      when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
+        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
+           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
+           users. *)
+        type_
+    | Any -> Any
+    | type_ -> ReadOnly type_
+end
+
+module VisitWithTransform = struct
+  type 'state visit_result = {
+    transformed_annotation: t;
+    new_state: 'state;
+  }
+
+  module type Implementation = sig
+    type state
+
+    val visit : state -> t -> state visit_result
+
+    val visit_children_before : state -> t -> bool
+
+    val visit_children_after : bool
+  end
+
+  module Make (Implementation : Implementation) = struct
+    let rec visit_annotation ~state annotation =
+      let visit_children annotation =
+        let visit_all = List.map ~f:(visit_annotation ~state) in
+        let rec visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
+          {
+            Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
+            middle = visit_unpackable middle;
+            suffix = visit_all suffix;
+          }
+        and visit_unpackable middle =
+          match middle with
+          | Variadic _ -> middle
+          | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
+        and visit_ordered_types ordered_types =
+          match ordered_types with
+          | Record.OrderedTypes.Concrete concretes ->
+              Record.OrderedTypes.Concrete (visit_all concretes)
+          | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
+        in
+        let visit_parameters parameter =
+          let visit_defined = function
+            | RecordParameter.Named ({ annotation; _ } as named) ->
+                RecordParameter.Named { named with annotation = visit_annotation annotation ~state }
+            | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
+                RecordParameter.KeywordOnly
+                  { named with annotation = visit_annotation annotation ~state }
+            | RecordParameter.Variable (Concrete annotation) ->
+                RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
+            | RecordParameter.Variable (Concatenation concatenation) ->
+                RecordParameter.Variable (Concatenation (visit_concatenation concatenation))
+            | RecordParameter.Keywords annotation ->
+                RecordParameter.Keywords (visit_annotation annotation ~state)
+            | RecordParameter.PositionalOnly ({ annotation; _ } as anonymous) ->
+                RecordParameter.PositionalOnly
+                  { anonymous with annotation = visit_annotation annotation ~state }
+          in
+          match parameter with
+          | Defined defined -> Defined (List.map defined ~f:visit_defined)
+          | ParameterVariadicTypeVariable { head; variable } ->
+              ParameterVariadicTypeVariable
+                { head = List.map head ~f:(visit_annotation ~state); variable }
+          | parameter -> parameter
+        in
+        match annotation with
+        | NoneType -> NoneType
+        | Callable ({ implementation; overloads; _ } as callable) ->
+            let open Record.Callable in
+            let visit_overload { annotation; parameters; _ } =
+              {
+                annotation = visit_annotation annotation ~state;
+                parameters = visit_parameters parameters;
+              }
+            in
+            Callable
+              {
+                callable with
+                implementation = visit_overload implementation;
+                overloads = List.map overloads ~f:visit_overload;
+              }
+        | Parametric { name; parameters } ->
+            let visit = function
+              | Record.Parameter.Single single ->
+                  Record.Parameter.Single (visit_annotation single ~state)
+              | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
+              | Unpacked (Variadic _) as unpacked -> unpacked
+              | Unpacked (UnboundedElements annotation) ->
+                  Unpacked (UnboundedElements (visit_annotation annotation ~state))
+            in
+            Parametric { name; parameters = List.map parameters ~f:visit }
+        | ReadOnly type_ -> Constructors.read_only (visit_annotation type_ ~state)
+        | RecursiveType { name; body } ->
+            RecursiveType { name; body = visit_annotation ~state body }
+        | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
+        | TypeOperation (Compose ordered_type) ->
+            TypeOperation (Compose (visit_ordered_types ordered_type))
+        | Union annotations ->
+            Constructors.union (List.map annotations ~f:(visit_annotation ~state))
+        | Variable ({ constraints; _ } as variable) ->
+            let constraints =
+              match constraints with
+              | Record.Variable.Bound bound -> Record.Variable.Bound (visit_annotation bound ~state)
+              | Explicit constraints -> Explicit (List.map constraints ~f:(visit_annotation ~state))
+              | Unconstrained -> Unconstrained
+              | LiteralIntegers -> LiteralIntegers
+            in
+            Variable { variable with constraints }
+        | Literal (EnumerationMember ({ enumeration_type; _ } as enumeration_member)) ->
+            Literal
+              (EnumerationMember
+                 {
+                   enumeration_member with
+                   enumeration_type = visit_annotation ~state enumeration_type;
+                 })
+        | ParameterVariadicComponent _
+        | Literal _
+        | Bottom
+        | Top
+        | Any
+        | Primitive _ ->
+            annotation
+      in
+      let annotation =
+        if Implementation.visit_children_before !state annotation then
+          visit_children annotation
+        else
+          annotation
+      in
+      let { transformed_annotation; new_state } = Implementation.visit !state annotation in
+      state := new_state;
+      if Implementation.visit_children_after then
+        visit_children transformed_annotation
+      else
+        transformed_annotation
+
+
+    let visit state annotation =
+      let state = ref state in
+      let transformed_annotation = visit_annotation ~state annotation in
+      !state, transformed_annotation
+  end
+end
+
+module Visitors = struct
+  let exists annotation ~predicate =
+    let module ExistsVisitor = VisitWithTransform.Make (struct
+      type state = bool
+
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        let new_state = sofar || predicate annotation in
+        { VisitWithTransform.transformed_annotation = annotation; new_state }
+    end)
+    in
+    fst (ExistsVisitor.visit false annotation)
+
+
+  let collect_types annotation ~predicate =
+    let module TypeCollector = VisitWithTransform.Make (struct
+      type state = t list
+
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        let new_state = if predicate annotation then sofar @ [annotation] else sofar in
+        { VisitWithTransform.transformed_annotation = annotation; new_state }
+    end)
+    in
+    fst (TypeCollector.visit [] annotation)
+
+
+  let collect_primitive_types annotation =
+    let predicate = function
+      | Primitive _ -> true
+      | _ -> false
+    in
+    collect_types annotation ~predicate
+
+
+  let collect_names annotation =
+    let module NameCollectorImplementation = struct
+      type state = {
+        names: Primitive.t list;
+        recursive_type_names: Primitive.t list;
+      }
+
+      let visit_children_before _ _ =
+        match annotation with
+        | Literal _ -> false
+        | _ -> true
+
+
+      let visit_children_after = false
+
+      let visit { names = sofar; recursive_type_names } annotation =
+        let names, recursive_type_names =
+          match annotation with
+          | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
+          | Literal literal ->
+              let sofar =
+                match literal with
+                | String AnyLiteral -> "str" :: sofar
+                | _ -> sofar
+              in
+              "typing_extensions.Literal" :: sofar, recursive_type_names
+          | Union [NoneType; _]
+          | Union [_; NoneType] ->
+              "typing.Optional" :: sofar, recursive_type_names
+          | Parametric { name; _ } -> name :: sofar, recursive_type_names
+          | Primitive annotation -> annotation :: sofar, recursive_type_names
+          | Tuple _ -> "tuple" :: sofar, recursive_type_names
+          | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
+          | Union _ -> "typing.Union" :: sofar, recursive_type_names
+          | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
+          | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
+          | ParameterVariadicComponent _
+          | Bottom
+          | Any
+          | Top
+          | NoneType
+          | Variable _ ->
+              sofar, recursive_type_names
+        in
+        {
+          VisitWithTransform.transformed_annotation = annotation;
+          new_state = { names; recursive_type_names };
+        }
+    end
+    in
+    let module NameCollector = VisitWithTransform.Make (NameCollectorImplementation) in
+    let { NameCollectorImplementation.names; recursive_type_names } =
+      fst (NameCollector.visit { names = []; recursive_type_names = [] } annotation)
+    in
+    let name_set = Identifier.Set.of_list recursive_type_names in
+    (* The recursive alias name is untracked, which would lead to spurious "Annotation is not
+       defined" errors. So, filter out any references to it. consider the name as an "element". *)
+    List.filter names ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
+end
+
 module Parameter = struct
   include Record.Parameter
 
@@ -1252,142 +1636,6 @@ module PrettyPrinting = struct
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 end
 
-module Constructors = struct
-  let parametric name parameters = Parametric { name; parameters }
-
-  let awaitable parameter =
-    Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }
-
-
-  let coroutine parameters = Parametric { name = "typing.Coroutine"; parameters }
-
-  let bool = Primitive "bool"
-
-  let bytes = Primitive "bytes"
-
-  let complex = Primitive "complex"
-
-  let dictionary ~key ~value = Parametric { name = "dict"; parameters = [Single key; Single value] }
-
-  let mapping_primitive = "typing.Mapping"
-
-  let enumeration = Primitive "enum.Enum"
-
-  let float = Primitive "float"
-
-  let number = Primitive "numbers.Number"
-
-  let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
-    Parametric
-      {
-        name = "typing.Generator";
-        parameters = [Single yield_type; Single send_type; Single return_type];
-      }
-
-
-  let generator_expression yield_type =
-    generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
-
-
-  let async_generator ?(yield_type = Any) ?(send_type = Any) () =
-    Parametric
-      { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
-
-
-  let generic_primitive = Primitive "typing.Generic"
-
-  let integer = Primitive "int"
-
-  let literal_integer literal = Literal (Integer literal)
-
-  let iterable parameter = Parametric { name = "typing.Iterable"; parameters = [Single parameter] }
-
-  let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [Single parameter] }
-
-  let async_iterator parameter =
-    Parametric { name = "typing.AsyncIterator"; parameters = [Single parameter] }
-
-
-  let list parameter = Parametric { name = "list"; parameters = [Single parameter] }
-
-  let meta annotation = Parametric { name = "type"; parameters = [Single annotation] }
-
-  let extract_meta = function
-    | Parametric { name = "type"; parameters = [Single annotation] } -> Some annotation
-    | _ -> None
-
-
-  let named_tuple = Primitive "typing.NamedTuple"
-
-  let none = NoneType
-
-  let object_primitive = Primitive "object"
-
-  let sequence parameter = Parametric { name = "typing.Sequence"; parameters = [Single parameter] }
-
-  let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
-
-  let string = Primitive "str"
-
-  let literal_string literal = Literal (String (LiteralValue literal))
-
-  let literal_bytes literal = Literal (Bytes literal)
-
-  let literal_any_string = Literal (String AnyLiteral)
-
-  let tuple parameters = Tuple (Concrete parameters)
-
-  let union parameters =
-    let parameters =
-      let parameter_set = Hash_set.create () in
-      let rec add_parameter = function
-        | Union parameters -> List.iter parameters ~f:add_parameter
-        | Bottom -> ()
-        | parameter -> Base.Hash_set.add parameter_set parameter
-      in
-      List.iter parameters ~f:add_parameter;
-      Base.Hash_set.to_list parameter_set |> List.sort ~compare
-    in
-    if List.exists ~f:is_top parameters then
-      Top
-    else if List.exists ~f:is_any parameters then
-      Any
-    else
-      match parameters with
-      | [] -> Bottom
-      | [parameter] -> parameter
-      | parameters -> Union parameters
-
-
-  let optional parameter =
-    match parameter with
-    | Top -> Top
-    | Any -> Any
-    | Bottom -> Bottom
-    | _ -> union [NoneType; parameter]
-
-
-  let variable ?constraints ?variance name =
-    Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
-
-
-  let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
-
-  let rec read_only = function
-    | ReadOnly _ as type_ -> type_
-    | NoneType -> NoneType
-    | Union elements -> Union (List.map ~f:read_only elements)
-    | (Primitive class_name as type_)
-    | (Parametric { name = class_name; _ } as type_)
-      when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
-        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
-           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
-           users. *)
-        type_
-    | Any -> Any
-    | type_ -> ReadOnly type_
-end
-
 let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
 
 let rec expression annotation =
@@ -1568,246 +1816,6 @@ let rec expression annotation =
   in
   Node.create_with_default_location value
 
-
-module VisitWithTransform = struct
-  type 'state visit_result = {
-    transformed_annotation: t;
-    new_state: 'state;
-  }
-
-  module type Implementation = sig
-    type state
-
-    val visit : state -> t -> state visit_result
-
-    val visit_children_before : state -> t -> bool
-
-    val visit_children_after : bool
-  end
-
-  module Make (Implementation : Implementation) = struct
-    let rec visit_annotation ~state annotation =
-      let visit_children annotation =
-        let visit_all = List.map ~f:(visit_annotation ~state) in
-        let rec visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
-          {
-            Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
-            middle = visit_unpackable middle;
-            suffix = visit_all suffix;
-          }
-        and visit_unpackable middle =
-          match middle with
-          | Variadic _ -> middle
-          | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
-        and visit_ordered_types ordered_types =
-          match ordered_types with
-          | Record.OrderedTypes.Concrete concretes ->
-              Record.OrderedTypes.Concrete (visit_all concretes)
-          | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
-        in
-        let visit_parameters parameter =
-          let visit_defined = function
-            | RecordParameter.Named ({ annotation; _ } as named) ->
-                RecordParameter.Named { named with annotation = visit_annotation annotation ~state }
-            | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
-                RecordParameter.KeywordOnly
-                  { named with annotation = visit_annotation annotation ~state }
-            | RecordParameter.Variable (Concrete annotation) ->
-                RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
-            | RecordParameter.Variable (Concatenation concatenation) ->
-                RecordParameter.Variable (Concatenation (visit_concatenation concatenation))
-            | RecordParameter.Keywords annotation ->
-                RecordParameter.Keywords (visit_annotation annotation ~state)
-            | RecordParameter.PositionalOnly ({ annotation; _ } as anonymous) ->
-                RecordParameter.PositionalOnly
-                  { anonymous with annotation = visit_annotation annotation ~state }
-          in
-          match parameter with
-          | Defined defined -> Defined (List.map defined ~f:visit_defined)
-          | ParameterVariadicTypeVariable { head; variable } ->
-              ParameterVariadicTypeVariable
-                { head = List.map head ~f:(visit_annotation ~state); variable }
-          | parameter -> parameter
-        in
-        match annotation with
-        | NoneType -> NoneType
-        | Callable ({ implementation; overloads; _ } as callable) ->
-            let open Record.Callable in
-            let visit_overload { annotation; parameters; _ } =
-              {
-                annotation = visit_annotation annotation ~state;
-                parameters = visit_parameters parameters;
-              }
-            in
-            Callable
-              {
-                callable with
-                implementation = visit_overload implementation;
-                overloads = List.map overloads ~f:visit_overload;
-              }
-        | Parametric { name; parameters } ->
-            let visit = function
-              | Record.Parameter.Single single ->
-                  Record.Parameter.Single (visit_annotation single ~state)
-              | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
-              | Unpacked (Variadic _) as unpacked -> unpacked
-              | Unpacked (UnboundedElements annotation) ->
-                  Unpacked (UnboundedElements (visit_annotation annotation ~state))
-            in
-            Parametric { name; parameters = List.map parameters ~f:visit }
-        | ReadOnly type_ -> Constructors.read_only (visit_annotation type_ ~state)
-        | RecursiveType { name; body } ->
-            RecursiveType { name; body = visit_annotation ~state body }
-        | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
-        | TypeOperation (Compose ordered_type) ->
-            TypeOperation (Compose (visit_ordered_types ordered_type))
-        | Union annotations ->
-            Constructors.union (List.map annotations ~f:(visit_annotation ~state))
-        | Variable ({ constraints; _ } as variable) ->
-            let constraints =
-              match constraints with
-              | Record.Variable.Bound bound -> Record.Variable.Bound (visit_annotation bound ~state)
-              | Explicit constraints -> Explicit (List.map constraints ~f:(visit_annotation ~state))
-              | Unconstrained -> Unconstrained
-              | LiteralIntegers -> LiteralIntegers
-            in
-            Variable { variable with constraints }
-        | Literal (EnumerationMember ({ enumeration_type; _ } as enumeration_member)) ->
-            Literal
-              (EnumerationMember
-                 {
-                   enumeration_member with
-                   enumeration_type = visit_annotation ~state enumeration_type;
-                 })
-        | ParameterVariadicComponent _
-        | Literal _
-        | Bottom
-        | Top
-        | Any
-        | Primitive _ ->
-            annotation
-      in
-      let annotation =
-        if Implementation.visit_children_before !state annotation then
-          visit_children annotation
-        else
-          annotation
-      in
-      let { transformed_annotation; new_state } = Implementation.visit !state annotation in
-      state := new_state;
-      if Implementation.visit_children_after then
-        visit_children transformed_annotation
-      else
-        transformed_annotation
-
-
-    let visit state annotation =
-      let state = ref state in
-      let transformed_annotation = visit_annotation ~state annotation in
-      !state, transformed_annotation
-  end
-end
-
-module Visitors = struct
-  let exists annotation ~predicate =
-    let module ExistsVisitor = VisitWithTransform.Make (struct
-      type state = bool
-
-      let visit_children_before _ _ = true
-
-      let visit_children_after = false
-
-      let visit sofar annotation =
-        let new_state = sofar || predicate annotation in
-        { VisitWithTransform.transformed_annotation = annotation; new_state }
-    end)
-    in
-    fst (ExistsVisitor.visit false annotation)
-
-
-  let collect_types annotation ~predicate =
-    let module TypeCollector = VisitWithTransform.Make (struct
-      type state = t list
-
-      let visit_children_before _ _ = true
-
-      let visit_children_after = false
-
-      let visit sofar annotation =
-        let new_state = if predicate annotation then sofar @ [annotation] else sofar in
-        { VisitWithTransform.transformed_annotation = annotation; new_state }
-    end)
-    in
-    fst (TypeCollector.visit [] annotation)
-
-
-  let collect_primitive_types annotation =
-    let predicate = function
-      | Primitive _ -> true
-      | _ -> false
-    in
-    collect_types annotation ~predicate
-
-
-  let collect_names annotation =
-    let module NameCollectorImplementation = struct
-      type state = {
-        names: Primitive.t list;
-        recursive_type_names: Primitive.t list;
-      }
-
-      let visit_children_before _ _ =
-        match annotation with
-        | Literal _ -> false
-        | _ -> true
-
-
-      let visit_children_after = false
-
-      let visit { names = sofar; recursive_type_names } annotation =
-        let names, recursive_type_names =
-          match annotation with
-          | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
-          | Literal literal ->
-              let sofar =
-                match literal with
-                | String AnyLiteral -> "str" :: sofar
-                | _ -> sofar
-              in
-              "typing_extensions.Literal" :: sofar, recursive_type_names
-          | Union [NoneType; _]
-          | Union [_; NoneType] ->
-              "typing.Optional" :: sofar, recursive_type_names
-          | Parametric { name; _ } -> name :: sofar, recursive_type_names
-          | Primitive annotation -> annotation :: sofar, recursive_type_names
-          | Tuple _ -> "tuple" :: sofar, recursive_type_names
-          | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
-          | Union _ -> "typing.Union" :: sofar, recursive_type_names
-          | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
-          | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
-          | ParameterVariadicComponent _
-          | Bottom
-          | Any
-          | Top
-          | NoneType
-          | Variable _ ->
-              sofar, recursive_type_names
-        in
-        {
-          VisitWithTransform.transformed_annotation = annotation;
-          new_state = { names; recursive_type_names };
-        }
-    end
-    in
-    let module NameCollector = VisitWithTransform.Make (NameCollectorImplementation) in
-    let { NameCollectorImplementation.names; recursive_type_names } =
-      fst (NameCollector.visit { names = []; recursive_type_names = [] } annotation)
-    in
-    let name_set = Identifier.Set.of_list recursive_type_names in
-    (* The recursive alias name is untracked, which would lead to spurious "Annotation is not
-       defined" errors. So, filter out any references to it. consider the name as an "element". *)
-    List.filter names ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
-end
 
 module Transforms = struct
   (* Apply a `type_map` that replaces some types with other types recursively. Use cases of this
