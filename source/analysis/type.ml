@@ -1536,10 +1536,10 @@ module Predicates = struct
     fst (ProhibitedAnyCollector.visit false annotation)
 end
 
-(* The Cannonicalization module contains logic related to representing types. Pretty printing uses
+(* The Canonicalization module contains logic related to representing types. Pretty printing uses
    the cannonicalizations, but so does some other logic like the `Type.t -> Expression.t`
    conversion. *)
-module Cannonicalization = struct
+module Canonicalization = struct
   open T
 
   let reverse_substitute name =
@@ -1570,7 +1570,7 @@ module PrettyPrinting = struct
   let show_callable_parameters ~pp_type = function
     | Record.Callable.Undefined -> "..."
     | ParameterVariadicTypeVariable variable ->
-        Cannonicalization.parameter_variable_type_representation variable
+        Canonicalization.parameter_variable_type_representation variable
         |> Format.asprintf "%a" pp_type
     | Defined parameters ->
         List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
@@ -1653,7 +1653,7 @@ module PrettyPrinting = struct
         Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
     | NoneType -> Format.fprintf format "None"
     | Parametric { name; parameters } ->
-        let name = Cannonicalization.reverse_substitute name in
+        let name = Canonicalization.reverse_substitute name in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
         Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
@@ -1689,7 +1689,7 @@ module PrettyPrinting = struct
         match parameters with
         | Undefined -> "..."
         | ParameterVariadicTypeVariable variable ->
-            Cannonicalization.parameter_variable_type_representation variable
+            Canonicalization.parameter_variable_type_representation variable
             |> Format.asprintf "%a" pp_concise
         | Defined parameters ->
             let parameter = function
@@ -1737,7 +1737,7 @@ module PrettyPrinting = struct
         Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
     | NoneType -> Format.fprintf format "None"
     | Parametric { name; parameters } ->
-        let name = strip_qualification (Cannonicalization.reverse_substitute name) in
+        let name = strip_qualification (Canonicalization.reverse_substitute name) in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
         Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
@@ -3702,7 +3702,7 @@ module ToExpression = struct
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
     | ParameterVariadicTypeVariable variable ->
-        Cannonicalization.parameter_variable_type_representation variable |> expression
+        Canonicalization.parameter_variable_type_representation variable |> expression
 
 
   and concatenation_to_expressions
@@ -3793,7 +3793,7 @@ module ToExpression = struct
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
-        subscript (Cannonicalization.reverse_substitute name) parameters
+        subscript (Canonicalization.reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
         let attribute =
           Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
@@ -5058,7 +5058,7 @@ let dequalify map annotation =
         | Parametric { name; parameters } ->
             Parametric
               {
-                name = dequalify_identifier map (Cannonicalization.reverse_substitute name);
+                name = dequalify_identifier map (Canonicalization.reverse_substitute name);
                 parameters;
               }
         | Union parameters ->
@@ -5274,7 +5274,7 @@ let callable_name = function
 
 let equivalent_for_assert_type left right =
   let canonicalize original_type =
-    let module CannonicalizeForAssertType = VisitWithTransform.Make (struct
+    let module CanonicalizeForAssertType = VisitWithTransform.Make (struct
       type state = unit
 
       let visit_children_before _ _ = true
@@ -5315,7 +5315,7 @@ let equivalent_for_assert_type left right =
         { VisitWithTransform.transformed_annotation; new_state }
     end)
     in
-    snd (CannonicalizeForAssertType.visit () original_type)
+    snd (CanonicalizeForAssertType.visit () original_type)
   in
   equal (canonicalize left) (canonicalize right)
 
