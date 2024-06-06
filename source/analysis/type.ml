@@ -15,6 +15,22 @@ open Expression
 open Pyre
 module ExpressionParameter = Parameter
 
+let dequalify_reference map reference =
+  let rec fold accumulator reference =
+    if Core.Map.mem map reference then
+      Reference.combine (Core.Map.find_exn map reference) (Reference.create_from_list accumulator)
+    else
+      match Reference.prefix reference with
+      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
+      | None -> Reference.create_from_list accumulator
+  in
+  fold [] reference
+
+
+let dequalify_identifier map identifier =
+  Reference.create identifier |> dequalify_reference map |> Reference.show
+
+
 module Record = struct
   module Variable = struct
     type state =
@@ -3240,22 +3256,6 @@ let is_class_variable annotation =
 let assume_any = function
   | Top -> Any
   | annotation -> annotation
-
-
-let dequalify_reference map reference =
-  let rec fold accumulator reference =
-    if Core.Map.mem map reference then
-      Reference.combine (Core.Map.find_exn map reference) (Reference.create_from_list accumulator)
-    else
-      match Reference.prefix reference with
-      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
-      | None -> Reference.create_from_list accumulator
-  in
-  fold [] reference
-
-
-let dequalify_identifier map identifier =
-  Reference.create identifier |> dequalify_reference map |> Reference.show
 
 
 module Variable : sig
