@@ -826,16 +826,6 @@ include T
 let _ = show (* shadowed below *)
 
 module Map = Map.Make (T)
-
-let default_to_bottom map keys =
-  let to_bottom solution key =
-    Core.Map.update solution key ~f:(function
-        | None -> Bottom
-        | Some value -> value)
-  in
-  List.fold keys ~f:to_bottom ~init:map
-
-
 module Set = Set.Make (T)
 include Hashable.Make (T)
 

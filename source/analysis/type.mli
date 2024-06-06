@@ -280,8 +280,6 @@ type type_t = t [@@deriving compare, eq, sexp, show]
 
 module Map : Map.S with type Key.t = t
 
-val default_to_bottom : t Map.t -> t list -> t Map.t
-
 module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
