@@ -490,7 +490,7 @@ module State (Context : Context) = struct
               not (GlobalResolution.class_exists resolution full_name)
         in
         let add_untracked_errors errors =
-          Type.elements annotation
+          Type.collect_names annotation
           |> List.dedup_and_sort ~compare:String.compare
           |> List.filter ~f:is_untracked_name
           |> List.fold ~init:errors ~f:(fun errors name ->
@@ -505,7 +505,7 @@ module State (Context : Context) = struct
               | Type.Literal (Type.EnumerationMember _) -> true
               | _ -> false
             in
-            Type.collect annotation ~predicate:is_literal_enumeration
+            Type.collect_types annotation ~predicate:is_literal_enumeration
           in
           let add_literal_error errors literal =
             match literal with
@@ -2569,7 +2569,7 @@ module State (Context : Context) = struct
                       true
                   | _ -> false
                 in
-                match Type.collect resolved ~predicate:is_broadcast_error with
+                match Type.collect_types resolved ~predicate:is_broadcast_error with
                 | [] -> input
                 | broadcast_errors ->
                     let new_errors =
@@ -5385,7 +5385,7 @@ module State (Context : Context) = struct
             not (is_enumeration && is_member_of_enumeration)
         | _ -> false
       in
-      Type.collect annotation ~predicate:is_invalid_enumeration_member
+      Type.collect_types annotation ~predicate:is_invalid_enumeration_member
     in
     List.fold invalid_enumeration_literals ~init:errors ~f:(fun errors annotation ->
         emit_error

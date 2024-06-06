@@ -1194,7 +1194,7 @@ end
 
 let simplify_mismatch ({ actual; expected; _ } as mismatch) =
   let collect_references annotation =
-    let module CollectIdentifiers = Type.Transform.Make (struct
+    let module CollectIdentifiers = Type.VisitWithTransform.Make (struct
       type state = Identifier.t list
 
       let visit_children_before _ _ = true
@@ -1210,7 +1210,7 @@ let simplify_mismatch ({ actual; expected; _ } as mismatch) =
               name :: sofar
           | _ -> sofar
         in
-        { Type.Transform.transformed_annotation = annotation; new_state = updated }
+        { Type.VisitWithTransform.transformed_annotation = annotation; new_state = updated }
     end)
     in
     fst (CollectIdentifiers.visit [] annotation) |> List.map ~f:Reference.create

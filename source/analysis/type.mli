@@ -390,13 +390,13 @@ val yield : t -> t
 
 val expression : t -> Expression.t
 
-module Transform : sig
+module VisitWithTransform : sig
   type 'state visit_result = {
     transformed_annotation: t;
     new_state: 'state;
   }
 
-  module type Transformer = sig
+  module type Implementation = sig
     type state
 
     val visit : state -> t -> state visit_result
@@ -406,12 +406,20 @@ module Transform : sig
     val visit_children_after : bool
   end
 
-  module Make (Transformer : Transformer) : sig
-    val visit : Transformer.state -> t -> Transformer.state * t
+  module Make (Implementation : Implementation) : sig
+    val visit : Implementation.state -> t -> Implementation.state * t
   end
 end
 
 val exists : t -> predicate:(t -> bool) -> bool
+
+val collect_primitive_types : t -> t list
+
+val collect_names : t -> Primitive.t list
+
+val collect_types : t -> predicate:(t -> bool) -> t list
+
+val apply_type_map : ?visit_children_before:bool -> t -> type_map:(t -> t option) -> t
 
 module Callable : sig
   module Parameter : sig
@@ -614,17 +622,11 @@ val is_not_instantiated : t -> bool
 
 val contains_literal : t -> bool
 
-val collect : t -> predicate:(t -> bool) -> t list
-
 val contains_final : t -> bool
 
 val primitive_name : t -> Identifier.t option
 
 val create_literal : Expression.expression -> t option
-
-val primitives : t -> t list
-
-val elements : t -> Primitive.t list
 
 val is_partially_typed : t -> bool
 
@@ -645,8 +647,6 @@ val parameters : t -> Parameter.t list option
 val type_parameters_for_bounded_tuple_union : t -> t list option
 
 val single_parameter : t -> t
-
-val apply_type_map : ?visit_children_before:bool -> t -> type_map:(t -> t option) -> t
 
 val weaken_literals : t -> t
 

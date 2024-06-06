@@ -75,7 +75,7 @@ module IncomingDataComputation = struct
       =
       let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
       let dependencies = String.Hash_set.create () in
-      let module TrackedTransform = Type.Transform.Make (struct
+      let module TrackedTransform = Type.VisitWithTransform.Make (struct
         type state = unit
 
         let visit_children_before _ = function
@@ -109,7 +109,7 @@ module IncomingDataComputation = struct
                   (), annotation
             | _ -> (), annotation
           in
-          { Type.Transform.transformed_annotation; new_state }
+          { Type.VisitWithTransform.transformed_annotation; new_state }
       end)
       in
       let _, annotation = TrackedTransform.visit () value_annotation in
@@ -300,7 +300,7 @@ module OutgoingDataComputation = struct
   end
 
   let type_contains_untracked_name Queries.{ class_exists; _ } annotation =
-    List.exists ~f:(fun class_name -> not (class_exists class_name)) (Type.elements annotation)
+    List.exists ~f:(fun class_name -> not (class_exists class_name)) (Type.collect_names annotation)
 
 
   let parse_annotation_without_validating_type_parameters

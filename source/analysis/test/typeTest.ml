@@ -1212,95 +1212,104 @@ let test_union _ =
 
 
 let test_primitives _ =
-  assert_equal [] (Type.primitives (Type.Callable.create ~annotation:Type.Top ()));
-  assert_equal [Type.integer] (Type.primitives (Type.Callable.create ~annotation:Type.integer ()));
-  assert_equal [] (Type.primitives (Type.optional Type.Top));
-  assert_equal [Type.integer] (Type.primitives (Type.optional Type.integer));
+  assert_equal [] (Type.collect_primitive_types (Type.Callable.create ~annotation:Type.Top ()));
+  assert_equal
+    [Type.integer]
+    (Type.collect_primitive_types (Type.Callable.create ~annotation:Type.integer ()));
+  assert_equal [] (Type.collect_primitive_types (Type.optional Type.Top));
+  assert_equal [Type.integer] (Type.collect_primitive_types (Type.optional Type.integer));
   assert_equal
     []
-    (Type.primitives (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
+    (Type.collect_primitive_types
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
+    (Type.collect_primitive_types
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_equal
     []
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+    (Type.collect_primitive_types
+       (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+    (Type.collect_primitive_types
+       (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.parametric "parametric" ![Type.integer; Type.Top]));
+    (Type.collect_primitive_types (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_equal
     [Type.integer; Type.string]
-    (Type.primitives (Type.parametric "parametric" ![Type.integer; Type.string]));
-  assert_equal [Type.string] (Type.primitives (Type.tuple [Type.Top; Type.string]));
+    (Type.collect_primitive_types (Type.parametric "parametric" ![Type.integer; Type.string]));
+  assert_equal [Type.string] (Type.collect_primitive_types (Type.tuple [Type.Top; Type.string]));
   assert_equal
     [Type.integer; Type.string]
-    (Type.primitives (Type.tuple [Type.integer; Type.string]));
+    (Type.collect_primitive_types (Type.tuple [Type.integer; Type.string]));
   assert_equal
     [Type.integer; Type.string]
-    (Type.primitives (Type.union [Type.integer; Type.string]));
-  assert_equal [] (Type.primitives Type.Top);
-  assert_equal [] (Type.primitives Type.Bottom);
-  assert_equal [Type.integer] (Type.primitives Type.integer);
-  assert_equal [] (Type.primitives Type.Any);
+    (Type.collect_primitive_types (Type.union [Type.integer; Type.string]));
+  assert_equal [] (Type.collect_primitive_types Type.Top);
+  assert_equal [] (Type.collect_primitive_types Type.Bottom);
+  assert_equal [Type.integer] (Type.collect_primitive_types Type.integer);
+  assert_equal [] (Type.collect_primitive_types Type.Any);
   ()
 
 
 let test_elements _ =
   let assert_equal = assert_equal ~printer:(List.to_string ~f:Fn.id) in
-  assert_equal ["typing.Callable"] (Type.elements (Type.Callable.create ~annotation:Type.Top ()));
+  assert_equal
+    ["typing.Callable"]
+    (Type.collect_names (Type.Callable.create ~annotation:Type.Top ()));
   assert_equal
     ["int"; "typing.Callable"]
-    (Type.elements (Type.Callable.create ~annotation:Type.integer ()));
-  assert_equal ["int"; "typing.Optional"] (Type.elements (Type.optional Type.integer));
+    (Type.collect_names (Type.Callable.create ~annotation:Type.integer ()));
+  assert_equal ["int"; "typing.Optional"] (Type.collect_names (Type.optional Type.integer));
   assert_equal
     ["tuple"]
-    (Type.elements (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
+    (Type.collect_names (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
   assert_equal
     ["int"; "tuple"]
-    (Type.elements (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
+    (Type.collect_names
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_equal
     []
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+    (Type.collect_names (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     ["int"]
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+    (Type.collect_names (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_equal
     ["int"; "parametric"]
-    (Type.elements (Type.parametric "parametric" ![Type.integer; Type.Top]));
+    (Type.collect_names (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_equal
     ["int"; "str"; "parametric"]
-    (Type.elements (Type.parametric "parametric" ![Type.integer; Type.string]));
-  assert_equal ["str"; "tuple"] (Type.elements (Type.tuple [Type.Top; Type.string]));
-  assert_equal ["int"; "str"; "tuple"] (Type.elements (Type.tuple [Type.integer; Type.string]));
+    (Type.collect_names (Type.parametric "parametric" ![Type.integer; Type.string]));
+  assert_equal ["str"; "tuple"] (Type.collect_names (Type.tuple [Type.Top; Type.string]));
+  assert_equal ["int"; "str"; "tuple"] (Type.collect_names (Type.tuple [Type.integer; Type.string]));
   assert_equal
     ["int"; "str"; "typing.Union"]
-    (Type.elements (Type.union [Type.integer; Type.string]));
-  assert_equal [] (Type.elements Type.Top);
-  assert_equal [] (Type.elements Type.Bottom);
-  assert_equal ["int"] (Type.elements Type.integer);
-  assert_equal [] (Type.elements Type.Any);
+    (Type.collect_names (Type.union [Type.integer; Type.string]));
+  assert_equal [] (Type.collect_names Type.Top);
+  assert_equal [] (Type.collect_names Type.Bottom);
+  assert_equal ["int"] (Type.collect_names Type.integer);
+  assert_equal [] (Type.collect_names Type.Any);
   assert_equal
     ["int"; "tuple"]
-    (Type.elements
+    (Type.collect_names
        (Type.RecursiveType.create
           ~name:"Tree"
           ~body:(Type.tuple [Type.integer; Type.Primitive "Tree"])));
   ();
   assert_equal
     ["typing_extensions.Literal"]
-    (Type.elements
+    (Type.collect_names
        (Type.Literal
           (Type.EnumerationMember
              { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })));
   assert_equal
     ["str"; "typing_extensions.Literal"]
-    (Type.elements (Type.Literal (Type.String AnyLiteral)));
+    (Type.collect_names (Type.Literal (Type.String AnyLiteral)));
   assert_equal
     ["int"; "list"; "pyre_extensions.ReadOnly"]
-    (Type.elements (Type.ReadOnly (Type.list Type.integer)));
+    (Type.collect_names (Type.ReadOnly (Type.list Type.integer)));
   ()
 
 
@@ -1830,11 +1839,11 @@ let test_visit _ =
   let assert_types_equal annotation expected =
     assert_equal ~printer:Type.show ~cmp:Type.equal expected annotation
   in
-  let module CountTransform = Type.Transform.Make (struct
+  let module CountTransform = Type.VisitWithTransform.Make (struct
     type state = int
 
     let visit state _ =
-      { Type.Transform.transformed_annotation = Type.integer; new_state = state + 1 }
+      { Type.VisitWithTransform.transformed_annotation = Type.integer; new_state = state + 1 }
 
 
     let visit_children_before _ _ = true
@@ -1871,7 +1880,7 @@ let test_visit _ =
   in
   assert_equal ~printer:string_of_int 7 end_state;
 
-  let module SubstitutionTransform = Type.Transform.Make (struct
+  let module SubstitutionTransform = Type.VisitWithTransform.Make (struct
     type state = int
 
     let visit state annotation =
@@ -1881,7 +1890,7 @@ let test_visit _ =
             state - 1, Type.string
         | _ -> state, annotation
       in
-      { Type.Transform.transformed_annotation; new_state }
+      { Type.VisitWithTransform.transformed_annotation; new_state }
 
 
     let visit_children_before _ = function
@@ -1904,7 +1913,7 @@ let test_visit _ =
   in
   assert_types_equal transformed (create "typing.Callable[[typing.Optional[int], str], int]");
   assert_equal ~printer:string_of_int 0 end_state;
-  let module ConcatenateTransform = Type.Transform.Make (struct
+  let module ConcatenateTransform = Type.VisitWithTransform.Make (struct
     type state = string
 
     let visit state annotation =
@@ -1914,7 +1923,7 @@ let test_visit _ =
         | Type.Parametric { name; parameters } -> "", Type.parametric (name ^ state) parameters
         | _ -> state, annotation
       in
-      { Type.Transform.transformed_annotation; new_state }
+      { Type.VisitWithTransform.transformed_annotation; new_state }
 
 
     let visit_children_before _ _ = true
@@ -1929,7 +1938,7 @@ let test_visit _ =
     transformed
     (create "Foo[BarBazBop[Baz, Bop], BroLoopLand[Loop, typing.Optional[Land]]]");
   assert_equal "" end_state;
-  let module TopDownConcatenateTransform = Type.Transform.Make (struct
+  let module TopDownConcatenateTransform = Type.VisitWithTransform.Make (struct
     type state = string
 
     let visit state annotation =
@@ -1939,7 +1948,7 @@ let test_visit _ =
         | Type.Parametric { name; parameters } -> state ^ name, Type.parametric name parameters
         | _ -> state, annotation
       in
-      { Type.Transform.transformed_annotation; new_state }
+      { Type.VisitWithTransform.transformed_annotation; new_state }
 
 
     let visit_children_before _ _ = false
@@ -1952,11 +1961,14 @@ let test_visit _ =
   in
   assert_types_equal transformed (create "Foo[Bar[Bro[typing.Optional[FooBarBroLand]]]]");
   assert_equal "" end_state;
-  let module CollectAnnotations = Type.Transform.Make (struct
+  let module CollectAnnotations = Type.VisitWithTransform.Make (struct
     type state = Type.t list
 
     let visit state annotation =
-      { Type.Transform.transformed_annotation = annotation; new_state = annotation :: state }
+      {
+        Type.VisitWithTransform.transformed_annotation = annotation;
+        new_state = annotation :: state;
+      }
 
 
     let visit_children_before _ _ = false

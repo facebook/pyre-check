@@ -998,7 +998,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                      underapproximate and determine conformance in the worst case *)
                   let desanitize_map, sanitized_candidate =
                     let namespace = Type.Variable.Namespace.create_fresh () in
-                    let module SanitizeTransform = Type.Transform.Make (struct
+                    let module SanitizeTransform = Type.VisitWithTransform.Make (struct
                       type state = Type.Variable.pair list
 
                       let visit_children_before _ _ = true
@@ -1012,7 +1012,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                               |> Type.Variable.Unary.mark_as_bound
                             in
                             {
-                              Type.Transform.transformed_annotation =
+                              Type.VisitWithTransform.transformed_annotation =
                                 Type.Variable transformed_variable;
                               new_state =
                                 Type.Variable.UnaryPair
@@ -1020,7 +1020,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                                 :: sofar;
                             }
                         | transformed_annotation ->
-                            { Type.Transform.transformed_annotation; new_state = sofar }
+                            { Type.VisitWithTransform.transformed_annotation; new_state = sofar }
                     end)
                     in
                     SanitizeTransform.visit [] candidate

@@ -1569,13 +1569,13 @@ let rec expression annotation =
   Node.create_with_default_location value
 
 
-module Transform = struct
+module VisitWithTransform = struct
   type 'state visit_result = {
     transformed_annotation: t;
     new_state: 'state;
   }
 
-  module type Transformer = sig
+  module type Implementation = sig
     type state
 
     val visit : state -> t -> state visit_result
@@ -1585,7 +1585,7 @@ module Transform = struct
     val visit_children_after : bool
   end
 
-  module Make (Transformer : Transformer) = struct
+  module Make (Implementation : Implementation) = struct
     let rec visit_annotation ~state annotation =
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
@@ -1688,14 +1688,14 @@ module Transform = struct
             annotation
       in
       let annotation =
-        if Transformer.visit_children_before !state annotation then
+        if Implementation.visit_children_before !state annotation then
           visit_children annotation
         else
           annotation
       in
-      let { transformed_annotation; new_state } = Transformer.visit !state annotation in
+      let { transformed_annotation; new_state } = Implementation.visit !state annotation in
       state := new_state;
-      if Transformer.visit_children_after then
+      if Implementation.visit_children_after then
         visit_children transformed_annotation
       else
         transformed_annotation
@@ -1708,56 +1708,142 @@ module Transform = struct
   end
 end
 
-let exists annotation ~predicate =
-  let module ExistsTransform = Transform.Make (struct
-    type state = bool
+module Visitors = struct
+  let exists annotation ~predicate =
+    let module ExistsVisitor = VisitWithTransform.Make (struct
+      type state = bool
 
-    let visit_children_before _ _ = true
+      let visit_children_before _ _ = true
 
-    let visit_children_after = false
+      let visit_children_after = false
 
-    let visit sofar annotation =
-      let new_state = sofar || predicate annotation in
-      { Transform.transformed_annotation = annotation; new_state }
-  end)
-  in
-  fst (ExistsTransform.visit false annotation)
-
-
-(* Apply a `type_map` that replaces some types with other types recursively. Use cases of this
-   include applying constraint solver results for type variables and replacing types coming from
-   empty stubs with `Any`. The `visit_children_before` flag controls whether we apply the mapping to
-   inner types before attempting to map a complex type. If it is false, we'll try both before and
-   after mapping inner types (preferring the before case if both produce results). *)
-let apply_type_map ?(visit_children_before = false) annotation ~type_map =
-  let module ApplyTypeMapTransform = Transform.Make (struct
-    type state = unit
-
-    let visit_children_before _ annotation =
-      visit_children_before || type_map annotation |> Option.is_none
+      let visit sofar annotation =
+        let new_state = sofar || predicate annotation in
+        { VisitWithTransform.transformed_annotation = annotation; new_state }
+    end)
+    in
+    fst (ExistsVisitor.visit false annotation)
 
 
-    let visit_children_after = false
+  let collect_types annotation ~predicate =
+    let module TypeCollector = VisitWithTransform.Make (struct
+      type state = t list
 
-    let visit _ annotation =
-      let transformed_annotation =
-        match type_map annotation with
-        | Some replacement -> replacement
-        | None -> annotation
-      in
-      { Transform.transformed_annotation; new_state = () }
-  end)
-  in
-  snd (ApplyTypeMapTransform.visit () annotation)
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        let new_state = if predicate annotation then sofar @ [annotation] else sofar in
+        { VisitWithTransform.transformed_annotation = annotation; new_state }
+    end)
+    in
+    fst (TypeCollector.visit [] annotation)
 
 
-let contains_callable annotation = exists annotation ~predicate:is_callable
+  let collect_primitive_types annotation =
+    let predicate = function
+      | Primitive _ -> true
+      | _ -> false
+    in
+    collect_types annotation ~predicate
 
-let contains_any annotation = exists annotation ~predicate:is_any
 
-let contains_unknown annotation = exists annotation ~predicate:is_top
+  let collect_names annotation =
+    let module NameCollectorImplementation = struct
+      type state = {
+        names: Primitive.t list;
+        recursive_type_names: Primitive.t list;
+      }
 
-let contains_undefined annotation = exists annotation ~predicate:is_unbound
+      let visit_children_before _ _ =
+        match annotation with
+        | Literal _ -> false
+        | _ -> true
+
+
+      let visit_children_after = false
+
+      let visit { names = sofar; recursive_type_names } annotation =
+        let names, recursive_type_names =
+          match annotation with
+          | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
+          | Literal literal ->
+              let sofar =
+                match literal with
+                | String AnyLiteral -> "str" :: sofar
+                | _ -> sofar
+              in
+              "typing_extensions.Literal" :: sofar, recursive_type_names
+          | Union [NoneType; _]
+          | Union [_; NoneType] ->
+              "typing.Optional" :: sofar, recursive_type_names
+          | Parametric { name; _ } -> name :: sofar, recursive_type_names
+          | Primitive annotation -> annotation :: sofar, recursive_type_names
+          | Tuple _ -> "tuple" :: sofar, recursive_type_names
+          | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
+          | Union _ -> "typing.Union" :: sofar, recursive_type_names
+          | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
+          | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
+          | ParameterVariadicComponent _
+          | Bottom
+          | Any
+          | Top
+          | NoneType
+          | Variable _ ->
+              sofar, recursive_type_names
+        in
+        {
+          VisitWithTransform.transformed_annotation = annotation;
+          new_state = { names; recursive_type_names };
+        }
+    end
+    in
+    let module NameCollector = VisitWithTransform.Make (NameCollectorImplementation) in
+    let { NameCollectorImplementation.names; recursive_type_names } =
+      fst (NameCollector.visit { names = []; recursive_type_names = [] } annotation)
+    in
+    let name_set = Identifier.Set.of_list recursive_type_names in
+    (* The recursive alias name is untracked, which would lead to spurious "Annotation is not
+       defined" errors. So, filter out any references to it. consider the name as an "element". *)
+    List.filter names ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
+end
+
+module Transforms = struct
+  (* Apply a `type_map` that replaces some types with other types recursively. Use cases of this
+     include applying constraint solver results for type variables and replacing types coming from
+     empty stubs with `Any`. The `visit_children_before` flag controls whether we apply the mapping
+     to inner types before attempting to map a complex type. If it is false, we'll try both before
+     and after mapping inner types (preferring the before case if both produce results). *)
+  let apply_type_map ?(visit_children_before = false) annotation ~type_map =
+    let module ApplyTypeMapTransform = VisitWithTransform.Make (struct
+      type state = unit
+
+      let visit_children_before _ annotation =
+        visit_children_before || type_map annotation |> Option.is_none
+
+
+      let visit_children_after = false
+
+      let visit _ annotation =
+        let transformed_annotation =
+          match type_map annotation with
+          | Some replacement -> replacement
+          | None -> annotation
+        in
+        { VisitWithTransform.transformed_annotation; new_state = () }
+    end)
+    in
+    snd (ApplyTypeMapTransform.visit () annotation)
+end
+
+let contains_callable annotation = Visitors.exists annotation ~predicate:is_callable
+
+let contains_any annotation = Visitors.exists annotation ~predicate:is_any
+
+let contains_unknown annotation = Visitors.exists annotation ~predicate:is_top
+
+let contains_undefined annotation = Visitors.exists annotation ~predicate:is_unbound
 
 module Callable = struct
   module Parameter = struct
@@ -2131,7 +2217,7 @@ module RecursiveType = struct
   include Record.RecursiveType
 
   let contains_recursive_type_with_name ~name =
-    exists ~predicate:(function
+    Visitors.exists ~predicate:(function
         | RecursiveType { name = inner_name; _ } -> Identifier.equal inner_name name
         | _ -> false)
 
@@ -2143,7 +2229,7 @@ module RecursiveType = struct
 
 
   let is_recursive_alias_reference ~alias_name =
-    exists ~predicate:(function
+    Visitors.exists ~predicate:(function
         | Primitive name
         | Parametric { name; _ }
           when Identifier.equal name alias_name ->
@@ -2154,7 +2240,7 @@ module RecursiveType = struct
   (* We assume that recursive alias names are unique. So, we don't need to worry about accidentally
      renaming a nested recursive type here. *)
   let unfold_recursive_type { name; body } =
-    apply_type_map
+    Transforms.apply_type_map
       ~type_map:(function
         | Primitive primitive_name when Identifier.equal primitive_name name ->
             Some (RecursiveType { name; body })
@@ -2163,7 +2249,7 @@ module RecursiveType = struct
 
 
   let body_with_replaced_name ~new_name { name; body } =
-    apply_type_map
+    Transforms.apply_type_map
       ~type_map:(function
         | Primitive primitive_name when Identifier.equal primitive_name name ->
             Some (Primitive new_name)
@@ -2172,7 +2258,7 @@ module RecursiveType = struct
 
 
   let replace_references_with_recursive_type ~recursive_type:{ name; body } =
-    apply_type_map ~type_map:(function
+    Transforms.apply_type_map ~type_map:(function
         | Primitive primitive_name when Identifier.equal primitive_name name ->
             Some (RecursiveType { name; body })
         | _ -> None)
@@ -2419,9 +2505,9 @@ module ReadOnly = struct
 
   let is_readonly type_ = unpack_readonly type_ |> Option.is_some
 
-  let strip_readonly type_ = apply_type_map type_ ~type_map:unpack_readonly
+  let strip_readonly type_ = Transforms.apply_type_map type_ ~type_map:unpack_readonly
 
-  let contains_readonly type_ = exists type_ ~predicate:is_readonly
+  let contains_readonly type_ = Visitors.exists type_ ~predicate:is_readonly
 
   (* Lift `ReadOnly` from `element_type` to the overall container.
 
@@ -2969,7 +3055,7 @@ let is_not_instantiated annotation =
     | Variable { constraints = Unconstrained; _ } -> true
     | _ -> false
   in
-  exists annotation ~predicate
+  Visitors.exists annotation ~predicate
 
 
 let contains_literal annotation =
@@ -2977,7 +3063,7 @@ let contains_literal annotation =
     | Literal _ -> true
     | _ -> false
   in
-  exists annotation ~predicate
+  Visitors.exists annotation ~predicate
 
 
 let rec final_value = function
@@ -2998,92 +3084,7 @@ let contains_final annotation =
         true
     | `NotFinal -> false
   in
-  exists annotation ~predicate
-
-
-let collect annotation ~predicate =
-  let module CollectorTransform = Transform.Make (struct
-    type state = t list
-
-    let visit_children_before _ _ = true
-
-    let visit_children_after = false
-
-    let visit sofar annotation =
-      let new_state = if predicate annotation then sofar @ [annotation] else sofar in
-      { Transform.transformed_annotation = annotation; new_state }
-  end)
-  in
-  fst (CollectorTransform.visit [] annotation)
-
-
-let primitives annotation =
-  let predicate = function
-    | Primitive _ -> true
-    | _ -> false
-  in
-  collect annotation ~predicate
-
-
-type elements_state = {
-  elements: Primitive.t list;
-  recursive_type_names: Primitive.t list;
-}
-
-let elements annotation =
-  let module CollectorTransform = Transform.Make (struct
-    type state = elements_state
-
-    let visit_children_before _ _ =
-      match annotation with
-      | Literal _ -> false
-      | _ -> true
-
-
-    let visit_children_after = false
-
-    let visit { elements = sofar; recursive_type_names } annotation =
-      let elements, recursive_type_names =
-        match annotation with
-        | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
-        | Literal literal ->
-            let sofar =
-              match literal with
-              | String AnyLiteral -> "str" :: sofar
-              | _ -> sofar
-            in
-            "typing_extensions.Literal" :: sofar, recursive_type_names
-        | Union [NoneType; _]
-        | Union [_; NoneType] ->
-            "typing.Optional" :: sofar, recursive_type_names
-        | Parametric { name; _ } -> name :: sofar, recursive_type_names
-        | Primitive annotation -> annotation :: sofar, recursive_type_names
-        | Tuple _ -> "tuple" :: sofar, recursive_type_names
-        | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
-        | Union _ -> "typing.Union" :: sofar, recursive_type_names
-        | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
-        | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
-        | ParameterVariadicComponent _
-        | Bottom
-        | Any
-        | Top
-        | NoneType
-        | Variable _ ->
-            sofar, recursive_type_names
-      in
-      {
-        Transform.transformed_annotation = annotation;
-        new_state = { elements; recursive_type_names };
-      }
-  end)
-  in
-  let { elements; recursive_type_names } =
-    fst (CollectorTransform.visit { elements = []; recursive_type_names = [] } annotation)
-  in
-  let name_set = Identifier.Set.of_list recursive_type_names in
-  (* The recursive alias name is untracked, which would lead to spurious "Annotation is not defined"
-     errors. So, filter out any references to it. consider the name as an "element". *)
-  List.filter elements ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
+  Visitors.exists annotation ~predicate
 
 
 let is_untyped = function
@@ -3094,9 +3095,9 @@ let is_untyped = function
   | _ -> false
 
 
-let is_partially_typed annotation = exists annotation ~predicate:is_untyped
+let is_partially_typed annotation = Visitors.exists annotation ~predicate:is_untyped
 
-let contains_variable = exists ~predicate:is_variable
+let contains_variable = Visitors.exists ~predicate:is_variable
 
 let optional_value = function
   | Union [NoneType; annotation]
@@ -3159,7 +3160,7 @@ let weaken_literals annotation =
     | Literal (EnumerationMember { enumeration_type; _ }) -> Some enumeration_type
     | _ -> None
   in
-  apply_type_map ~type_map annotation
+  Transforms.apply_type_map ~type_map annotation
 
 
 (* Weaken specific literal to arbitrary literal before weakening to `str`. *)
@@ -4065,7 +4066,9 @@ end = struct
       include Variable
 
       let replace_all operation =
-        apply_type_map ~visit_children_before:true ~type_map:(Variable.local_replace operation)
+        Transforms.apply_type_map
+          ~visit_children_before:true
+          ~type_map:(Variable.local_replace operation)
 
 
       let map operation =
@@ -4137,7 +4140,7 @@ end = struct
 
 
       let collect_all annotation =
-        let module CollectorTransform = Transform.Make (struct
+        let module Collector = VisitWithTransform.Make (struct
           type state = Variable.t list
 
           let visit_children_before _ _ = true
@@ -4146,10 +4149,10 @@ end = struct
 
           let visit sofar annotation =
             let new_state = Variable.local_collect annotation @ sofar in
-            { Transform.transformed_annotation = annotation; new_state }
+            { VisitWithTransform.transformed_annotation = annotation; new_state }
         end)
         in
-        fst (CollectorTransform.visit [] annotation) |> List.rev
+        fst (Collector.visit [] annotation) |> List.rev
 
 
       let all_free_variables annotation = collect_all annotation |> List.filter ~f:Variable.is_free
@@ -4306,7 +4309,7 @@ end = struct
 
 
   let collapse_all_escaped_variable_unions annotation =
-    let module ConcreteTransform = Transform.Make (struct
+    let module ConcreteTransform = VisitWithTransform.Make (struct
       type state = unit
 
       let visit_children_before _ _ = true
@@ -4324,7 +4327,7 @@ end = struct
               List.filter parameters ~f:not_escaped_free_variable |> Constructors.union
           | _ -> annotation
         in
-        { Transform.transformed_annotation; new_state }
+        { VisitWithTransform.transformed_annotation; new_state }
     end)
     in
     snd (ConcreteTransform.visit () annotation)
@@ -4486,7 +4489,7 @@ end
 
 let resolve_aliases ~aliases annotation =
   let visited = Hash_set.create () in
-  let module ResolveTransform = Transform.Make (struct
+  let module ResolveAliasesTransform = VisitWithTransform.Make (struct
     type state = unit
 
     let visit_children_before _ _ = false
@@ -4586,10 +4589,10 @@ let resolve_aliases ~aliases annotation =
           | _ -> annotation)
       in
       let transformed_annotation = resolve annotation in
-      { Transform.transformed_annotation; new_state = () }
+      { VisitWithTransform.transformed_annotation; new_state = () }
   end)
   in
-  snd (ResolveTransform.visit () annotation)
+  snd (ResolveAliasesTransform.visit () annotation)
 
 
 let create ~aliases =
@@ -4608,7 +4611,7 @@ let namespace_insensitive_compare left right =
 
 
 let is_concrete annotation =
-  let module ConcreteTransform = Transform.Make (struct
+  let module ConcreteVisitor = VisitWithTransform.Make (struct
     type state = bool
 
     let visit_children_before _ = function
@@ -4628,16 +4631,16 @@ let is_concrete annotation =
             false
         | _ -> sofar
       in
-      { Transform.transformed_annotation = annotation; new_state }
+      { VisitWithTransform.transformed_annotation = annotation; new_state }
   end)
   in
-  fst (ConcreteTransform.visit true annotation)
+  fst (ConcreteVisitor.visit true annotation)
   && not (Variable.contains_escaped_free_variable annotation)
 
 
 let dequalify map annotation =
   let dequalify_string string = string |> dequalify_identifier map in
-  let module DequalifyTransform = Transform.Make (struct
+  let module DequalifyTransform = VisitWithTransform.Make (struct
     type state = unit
 
     let visit_children_before _ _ = true
@@ -4684,7 +4687,7 @@ let dequalify map annotation =
             Callable { callable with kind }
         | _ -> annotation
       in
-      { Transform.transformed_annotation; new_state = () }
+      { VisitWithTransform.transformed_annotation; new_state = () }
   end)
   in
   snd (DequalifyTransform.visit () annotation)
@@ -5051,7 +5054,7 @@ end
 (* Transform tuples and callables so they are printed correctly when running infer and click to
    fix. *)
 let infer_transform annotation =
-  let module InferTransform = Transform.Make (struct
+  let module InferTransform = VisitWithTransform.Make (struct
     type state = unit
 
     let visit_children_before _ _ = true
@@ -5115,7 +5118,7 @@ let infer_transform annotation =
             |> Option.value ~default:annotation
         | _ -> annotation
       in
-      { Transform.transformed_annotation; new_state = () }
+      { VisitWithTransform.transformed_annotation; new_state = () }
   end)
   in
   snd (InferTransform.visit () annotation)
@@ -5130,7 +5133,7 @@ let contains_prohibited_any annotation =
         true
     | _ -> false
   in
-  let module Exists = Transform.Make (struct
+  let module ProhibitedAnyCollector = VisitWithTransform.Make (struct
     type state = bool
 
     let visit_children_before _ annotation = not (is_string_to_any_mapping annotation)
@@ -5138,10 +5141,13 @@ let contains_prohibited_any annotation =
     let visit_children_after = false
 
     let visit sofar annotation =
-      { Transform.transformed_annotation = annotation; new_state = sofar || is_any annotation }
+      {
+        VisitWithTransform.transformed_annotation = annotation;
+        new_state = sofar || is_any annotation;
+      }
   end)
   in
-  fst (Exists.visit false annotation)
+  fst (ProhibitedAnyCollector.visit false annotation)
 
 
 type class_data_for_attribute_lookup = {
@@ -5252,7 +5258,7 @@ let callable_name = function
 
 let equivalent_for_assert_type left right =
   let canonicalize original_type =
-    let module Canonicalize = Transform.Make (struct
+    let module CannonicalizeForAssertType = VisitWithTransform.Make (struct
       type state = unit
 
       let visit_children_before _ _ = true
@@ -5290,13 +5296,23 @@ let equivalent_for_assert_type left right =
               Callable (simplify_callable_in_bound_method callable)
           | needs_no_changes -> needs_no_changes
         in
-        { Transform.transformed_annotation; new_state }
+        { VisitWithTransform.transformed_annotation; new_state }
     end)
     in
-    snd (Canonicalize.visit () original_type)
+    snd (CannonicalizeForAssertType.visit () original_type)
   in
   equal (canonicalize left) (canonicalize right)
 
+
+let exists = Visitors.exists
+
+let collect_types = Visitors.collect_types
+
+let collect_primitive_types = Visitors.collect_primitive_types
+
+let collect_names = Visitors.collect_names
+
+let apply_type_map = Transforms.apply_type_map
 
 include Constructors
 include PrettyPrinting

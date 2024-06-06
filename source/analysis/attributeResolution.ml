@@ -2246,7 +2246,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         annotation =
       let Queries.{ variables; _ } = queries in
       let open TypeParameterValidationTypes in
-      let module InvalidTypeParametersTransform = Type.Transform.Make (struct
+      let module InvalidTypeParametersTransform = Type.VisitWithTransform.Make (struct
         type state = type_parameters_mismatch list
 
         let visit_children_before _ _ = false
@@ -2407,7 +2407,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 invalid_type_parameters ~name ~given:parameters
             | _ -> annotation, sofar
           in
-          { Type.Transform.transformed_annotation; new_state }
+          { Type.VisitWithTransform.transformed_annotation; new_state }
       end)
       in
       InvalidTypeParametersTransform.visit [] annotation
