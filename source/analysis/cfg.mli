@@ -20,7 +20,7 @@ module Node : sig
     | For of For.t
     | If of If.t
     | Join
-    | Try of Try.t
+    | Try of Statement.t
     | With of With.t
     | While of While.t
   [@@deriving compare, show, sexp]

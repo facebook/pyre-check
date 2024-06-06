@@ -79,7 +79,6 @@ let test_scheduling =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      class Exception: pass
       try:
         pass
       except Exception:
@@ -121,7 +120,6 @@ let test_check_excepts =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      class Exception: pass
       def takes_exception(e: Exception) -> None: pass
       def foo() -> None:
         try:
@@ -133,7 +131,6 @@ let test_check_excepts =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      class Exception: pass
       class Foo(Exception): pass
       class Bar(Exception): pass
       def foo() -> None:

@@ -380,23 +380,6 @@ let test_check_isinstance context =
       "Revealed type [-1]: Revealed type for `Bar` is `typing.Any`.";
       "Undefined attribute [16]: Module `enum` has no attribute `NonExistent`.";
     ];
-  (* A try-except block desugars to branches with `isinstance` checks at the start. *)
-  assert_type_errors
-    {|
-      from typing import Any, Tuple, Type
-      import enum
-
-      # pyre-fixme[5]: Ignore the lack of annotation for Bar.
-      # pyre-fixme[16]: Intentionally using a nonexistent class from enum.
-      Bar = enum.NonExistent
-
-      def foo() -> None:
-        try:
-          print("hello")
-        except Bar as exception:
-          print(exception)
-    |}
-    [];
   (* TODO(T95581122): `y` should be narrowed to `int`. *)
   assert_type_errors
     {|

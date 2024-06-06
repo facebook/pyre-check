@@ -275,7 +275,7 @@ module Node = struct
     | For of For.t
     | If of If.t
     | Join
-    | Try of Try.t
+    | Try of Ast.Statement.t
     | With of With.t
     | While of While.t
   [@@deriving compare, show, sexp]
@@ -296,7 +296,7 @@ module Node = struct
           List.equal (compare_equal Statement.location_insensitive_compare) left right
       | For left, For right -> compare_equal For.location_insensitive_compare left right
       | If left, If right -> compare_equal If.location_insensitive_compare left right
-      | Try left, Try right -> compare_equal Try.location_insensitive_compare left right
+      | Try left, Try right -> compare_equal Statement.location_insensitive_compare left right
       | With left, With right -> compare_equal With.location_insensitive_compare left right
       | While left, While right -> compare_equal While.location_insensitive_compare left right
       | _ -> [%compare.equal: kind] left right
@@ -341,6 +341,7 @@ module Node = struct
   let statements { kind; _ } =
     match kind with
     | Block statements -> statements
+    | Try try_ -> [try_]
     | _ -> []
 
 
@@ -381,7 +382,7 @@ module Node = struct
     | For statement -> Statement.For statement |> process_statement
     | If statement -> Statement.If statement |> process_statement
     | Join -> "Join"
-    | Try statement -> Statement.Try statement |> process_statement
+    | Try statement -> Node.value statement |> process_statement
     | With statement -> Statement.With statement |> process_statement
     | While statement -> Statement.While statement |> process_statement
 end
@@ -545,11 +546,10 @@ let create define =
         let final_else = List.fold cases ~init:predecessor ~f:from_case in
         if match_cases_refutable cases then Node.connect final_else join;
         create statements jumps join
-    | {
-        Ast.Node.value =
-          Try ({ Try.body; orelse; finally; handlers; handles_exception_group = _ } as block);
-        _;
-      }
+    | ({
+         Ast.Node.value = Try { Try.body; orelse; finally; handlers; handles_exception_group = _ };
+         _;
+       } as block)
       :: statements ->
         (* We need to add edges to the "finally" block for all paths, because that block is always
            executed, regardless of the exit path (normal, return, or error), and we need to

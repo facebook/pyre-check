@@ -297,9 +297,12 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let forward ~statement_key state ~statement =
-    match state with
-    | Bottom -> Bottom
-    | Value state ->
+    match state, statement with
+    (* try statements are only included in the CFG to check the annotations of their exception
+       handlers *)
+    | _, { Node.value = Statement.Try _; _ } -> state
+    | Bottom, _ -> Bottom
+    | Value state, _ ->
         let union ~key:_ = function
           | `Both
               ( ({ Scope.Binding.location = left_location; _ } as left),

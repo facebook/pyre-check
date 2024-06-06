@@ -564,7 +564,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2];
       node 6 (Node.Block [!!"fall-through"]) [7] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -585,7 +585,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       (* split *)
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block [!!"finally"]) [7; 8] [1];
@@ -613,7 +613,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block [!!"finally"]) [7; 8] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -635,7 +635,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block []) [7; 8] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -657,7 +657,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8; 9];
       node 6 (Node.Block []) [7; 8; 9] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -681,7 +681,7 @@ let test_try _ =
       node 1 Node.Normal [6; 7] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block []) [8] [1];
       node 7 (Node.Block [!!"body"; return]) [4] [1];
@@ -704,7 +704,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4; 7] [2; 8];
       node 6 (Node.Block []) [8] [1];
       node 7 (Node.Block [!!"body"; error]) [4] [5];
@@ -726,7 +726,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5; 7] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block []) [8] [1];
       node 7 (Node.Block [!!"body"; !!"orelse"; error]) [4] [2];
@@ -748,7 +748,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2];
       node 6 (Node.Block [!!"finally"]) [7] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -769,7 +769,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2];
       node
         6
@@ -795,7 +795,7 @@ let test_try _ =
       node 1 Node.Normal [] [3];
       node 2 Node.Error [5; 6] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2];
       node 6 (Node.Block [error]) [7] [2];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -820,7 +820,7 @@ let test_try _ =
       node 1 Node.Normal [6] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 8];
       node 6 (Node.Block []) [7; 8] [1];
       node 7 (Node.Block [!!"body"]) [4] [6];
@@ -842,7 +842,7 @@ let test_try _ =
       node 1 Node.Normal [7] [3];
       node 2 Node.Error [5; 6] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 6];
       node 6 (Node.Block [!!"finally"]) [5] [2];
       node 7 (Node.Block [+Statement.Return { is_implicit = false; expression = None }]) [4] [1];
@@ -871,7 +871,7 @@ let test_try _ =
       node 1 Node.Normal [6; 7] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 (Node.Try block) [0] [5; 7];
+      node 4 (Node.Try (+Statement.Try block)) [0] [5; 7];
       node 5 Node.Dispatch [4] [2; 6];
       node
         6

@@ -509,10 +509,87 @@ let test_check_invalid_type =
            {|
               import typing
               def takes_exception(x: Exception) -> None: ...
-              def f(e: typing.Type[Exception]) -> None:
+              def f(exception_type: typing.Type[Exception]) -> None:
                try:
                  pass
-               except e as myexception:
+               except exception_type as myexception:
+                 takes_exception(myexception)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              def takes_exception(x: Exception) -> None: ...
+              def f(int_type: typing.Type[int]) -> None:
+               try:
+                 pass
+               except int_type as myexception:
+                 takes_exception(myexception)
+            |}
+           [
+             "Invalid except clause [66]: Exception handler type annotation `int` must extend \
+              BaseException.";
+             "Incompatible parameter type [6]: In call `takes_exception`, for 1st positional \
+              argument, expected `Exception` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              def takes_exception(x: BaseException) -> None: ...
+              def f(exception_group_type: typing.Type[ExceptionGroup]) -> None:
+               try:
+                 pass
+               except exception_group_type as myexception:
+                 takes_exception(myexception)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              def takes_exception(x: BaseException) -> None: ...
+              def f(exception_group_type: typing.Type[ExceptionGroup]) -> None:
+               try:
+                 pass
+               except* exception_group_type as myexception:
+                 takes_exception(myexception)
+            |}
+           [
+             "Invalid except* clause [67]: Exception group handler type annotation \
+              `ExceptionGroup` may not extend BaseExceptionGroup.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              def takes_exception(x: BaseException) -> None: ...
+              def f(exception_types: typing.Tuple[typing.Type[Exception]]) -> None:
+               try:
+                 pass
+               except exception_types as myexceptions:
+                 takes_exception(myexceptions)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import ClassVar, Tuple, Type
+              class Foo:
+                EXCEPTIONS: ClassVar[Tuple[Type[Exception]]] = (KeyError,)
+                VARIADIC_EXCEPTIONS: ClassVar[Tuple[Type[Exception], ...]] = ...
+                VALUE_ERROR: ClassVar[Type[Exception]] = ValueError
+
+              def takes_exception(x: BaseException) -> None: ...
+              def f() -> None:
+               try:
+                 pass
+               except Foo.EXCEPTIONS as myexception:
+                 takes_exception(myexception)
+               except Foo.VARIADIC_EXCEPTIONS as myexception:
+                 takes_exception(myexception)
+               except Foo.VALUE_ERROR as myexception:
                  takes_exception(myexception)
             |}
            [];

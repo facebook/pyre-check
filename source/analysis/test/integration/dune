@@ -31,6 +31,7 @@
   deleteTest
   enumerationTest
   errorMessageTest
+  exceptionTest
   finalTest
   formatStringTest
   generatorTest
