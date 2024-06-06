@@ -823,8 +823,6 @@ end
 
 include T
 
-type type_t = t [@@deriving compare, eq, sexp, show, hash]
-
 let _ = show (* shadowed below *)
 
 module Map = Map.Make (T)
@@ -1228,7 +1226,7 @@ end
 module Parameter = struct
   include Record.Parameter
 
-  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
   let all_singles parameters = List.map parameters ~f:is_single |> Option.all
 
@@ -1860,7 +1858,7 @@ module Callable = struct
   module Parameter = struct
     include Record.Callable.RecordParameter
 
-    type parameter = type_t t [@@deriving compare, eq, sexp, show, hash]
+    type parameter = T.t t [@@deriving compare, eq, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
       type t = parameter [@@deriving compare, sexp]
@@ -2018,10 +2016,9 @@ module Callable = struct
 
   include Record.Callable
 
-  type t = type_t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
 
-  type parameters = type_t Record.Callable.record_parameters
-  [@@deriving compare, eq, sexp, show, hash]
+  type parameters = T.t Record.Callable.record_parameters [@@deriving compare, eq, sexp, show, hash]
 
   module Overload = struct
     let parameters { parameters; _ } =
@@ -2293,7 +2290,7 @@ end
 module OrderedTypes = struct
   include Record.OrderedTypes
 
-  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
   type ordered_types_t = t
 
@@ -2450,7 +2447,7 @@ module TypeOperation = struct
   module Compose = struct
     include Record.TypeOperation.Compose
 
-    type t = type_t Record.TypeOperation.Compose.t
+    type t = T.t Record.TypeOperation.Compose.t
 
     let flatten_record input =
       let record_to_list = function
@@ -2503,7 +2500,7 @@ module TypeOperation = struct
       >>| fun result -> TypeOperation (Compose result)
   end
 
-  type t = type_t Record.TypeOperation.record
+  type t = T.t Record.TypeOperation.record
 end
 
 module ReadOnly = struct
@@ -3280,20 +3277,19 @@ module Variable : sig
     val create_fresh : unit -> t
   end
 
-  type unary_t = type_t Record.Variable.RecordUnary.record
-  [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = T.t Record.Variable.RecordUnary.record [@@deriving compare, eq, sexp, show, hash]
 
-  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
+  type unary_domain = T.t [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
+  type parameter_variadic_t = T.t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
+  type tuple_variadic_t = T.t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+  type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -3301,7 +3297,7 @@ module Variable : sig
     | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
   [@@deriving compare, eq, sexp, show, hash]
 
-  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
 
@@ -3340,10 +3336,10 @@ module Variable : sig
       include Record.Variable.RecordUnary
     end
 
-    include VariableKind with type t = unary_t and type domain = type_t
+    include VariableKind with type t = unary_t and type domain = T.t
 
     val create
-      :  ?constraints:type_t Record.Variable.constraints ->
+      :  ?constraints:T.t Record.Variable.constraints ->
       ?variance:Record.Variable.variance ->
       string ->
       t
@@ -3352,7 +3348,7 @@ module Variable : sig
 
     val is_covariant : t -> bool
 
-    val upper_bound : t -> type_t
+    val upper_bound : t -> T.t
 
     val is_escaped_and_free : t -> bool
 
@@ -3371,7 +3367,7 @@ module Variable : sig
         :  create_type:
              (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
              Expression.t ->
-             type_t) ->
+             T.t) ->
         variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
         aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
@@ -3383,8 +3379,8 @@ module Variable : sig
         end
 
         type decomposition = {
-          positional_component: type_t;
-          keyword_component: type_t;
+          positional_component: T.t;
+          keyword_component: T.t;
         }
 
         val combine : decomposition -> parameter_variadic_t option
@@ -3412,18 +3408,18 @@ module Variable : sig
 
       type domain
 
-      val replace_all : (t -> domain option) -> type_t -> type_t
+      val replace_all : (t -> domain option) -> T.t -> T.t
 
-      val collect_all : type_t -> t list
+      val collect_all : T.t -> t list
     end
 
-    module Unary : S with type t = unary_t and type domain = type_t
+    module Unary : S with type t = unary_t and type domain = T.t
 
     module ParameterVariadic :
       S with type t = parameter_variadic_t and type domain = Callable.parameters
 
     module TupleVariadic :
-      S with type t = tuple_variadic_t and type domain = type_t OrderedTypes.record
+      S with type t = tuple_variadic_t and type domain = T.t OrderedTypes.record
   end
 
   include module type of struct
@@ -3446,27 +3442,27 @@ module Variable : sig
 
   val namespace : t -> namespace:Namespace.t -> t
 
-  val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
+  val mark_all_variables_as_bound : ?specific:t list -> T.t -> T.t
 
-  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
+  val mark_all_variables_as_free : ?specific:t list -> T.t -> T.t
 
   val mark_as_bound : t -> t
 
-  val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
+  val namespace_all_free_variables : T.t -> namespace:Namespace.t -> T.t
 
-  val all_free_variables : type_t -> t list
+  val all_free_variables : T.t -> t list
 
-  val all_variables_are_resolved : type_t -> bool
+  val all_variables_are_resolved : T.t -> bool
 
-  val mark_all_free_variables_as_escaped : ?specific:t list -> type_t -> type_t
+  val mark_all_free_variables_as_escaped : ?specific:t list -> T.t -> T.t
 
-  val collapse_all_escaped_variable_unions : type_t -> type_t
+  val collapse_all_escaped_variable_unions : T.t -> T.t
 
-  val contains_escaped_free_variable : type_t -> bool
+  val contains_escaped_free_variable : T.t -> bool
 
-  val convert_all_escaped_free_variables_to_anys : type_t -> type_t
+  val convert_all_escaped_free_variables_to_anys : T.t -> T.t
 
-  val converge_all_variable_namespaces : type_t -> type_t
+  val converge_all_variable_namespaces : T.t -> T.t
 
   val zip_variables_with_parameters : parameters:Parameter.t list -> t list -> pair list option
 
@@ -3498,20 +3494,19 @@ end = struct
       namespace
   end
 
-  type unary_t = type_t Record.Variable.RecordUnary.record
-  [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = T.t Record.Variable.RecordUnary.record [@@deriving compare, eq, sexp, show, hash]
 
-  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
+  type unary_domain = T.t [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
+  type parameter_variadic_t = T.t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
+  type tuple_variadic_t = T.t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+  type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -3550,12 +3545,12 @@ end = struct
   module Unary = struct
     include Record.Variable.RecordUnary
 
-    type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+    type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
-    type domain = type_t [@@deriving compare, eq, sexp, show, hash]
+    type domain = T.t [@@deriving compare, eq, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
-      type t = type_t record [@@deriving compare, sexp]
+      type t = T.t record [@@deriving compare, sexp]
     end)
 
     let any = Any
@@ -3627,12 +3622,12 @@ end = struct
     module Parameters = struct
       include Record.Variable.RecordVariadic.RecordParameters
 
-      type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+      type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
       type domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
-        type t = type_t record [@@deriving compare, sexp]
+        type t = T.t record [@@deriving compare, sexp]
       end)
 
       let name { name; _ } = name
@@ -3812,8 +3807,8 @@ end = struct
         include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
 
         type decomposition = {
-          positional_component: type_t;
-          keyword_component: type_t;
+          positional_component: T.t;
+          keyword_component: T.t;
         }
 
         let combine { positional_component; keyword_component } =
@@ -3852,12 +3847,12 @@ end = struct
     module Tuple = struct
       include Record.Variable.RecordVariadic.Tuple
 
-      type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+      type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
-      type domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+      type domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
-        type t = type_t record [@@deriving compare, sexp]
+        type t = T.t record [@@deriving compare, sexp]
       end)
 
       let synthetic_class_name_for_error = "$synthetic_class_for_variadic_error"
@@ -4070,9 +4065,9 @@ end = struct
       include VariableKind
 
       (* We don't want these to be part of the public interface for Unary or Variadic.Parameters *)
-      val local_replace : (t -> domain option) -> type_t -> type_t option
+      val local_replace : (t -> domain option) -> T.t -> T.t option
 
-      val local_collect : type_t -> t list
+      val local_collect : T.t -> t list
     end
 
     module Make (Variable : VariableKind) = struct
@@ -4179,9 +4174,9 @@ end = struct
 
       type domain
 
-      val replace_all : (t -> domain option) -> type_t -> type_t
+      val replace_all : (t -> domain option) -> T.t -> T.t
 
-      val collect_all : type_t -> t list
+      val collect_all : T.t -> t list
     end
 
     module Unary = Make (Unary)
@@ -4189,14 +4184,14 @@ end = struct
     module TupleVariadic = Make (Variadic.Tuple)
   end
 
-  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
 
   include Record.Variable
 
   module Set = Core.Set.Make (struct
-    type t = type_t Record.Variable.record [@@deriving compare, sexp]
+    type t = T.t Record.Variable.record [@@deriving compare, sexp]
   end)
 
   type variable_zip_result = {
@@ -5333,3 +5328,5 @@ include Predicates
 
 (* We always send types in the pretty printed form *)
 let to_yojson annotation = `String (PrettyPrinting.show annotation)
+
+type type_t = T.t [@@deriving compare, eq, sexp, show, hash]
