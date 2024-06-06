@@ -555,6 +555,16 @@ module TypeOperation : sig
   type t = type_t Record.TypeOperation.record
 end
 
+val optional_value : t -> t option
+
+val awaitable_value : t -> t option
+
+val coroutine_value : t -> t option
+
+val class_variable_value : t -> t option
+
+val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
+
 val is_any : t -> bool
 
 val is_async_iterator : t -> bool
@@ -634,12 +644,6 @@ val is_untyped : t -> bool
 
 val contains_variable : t -> bool
 
-val optional_value : t -> t option
-
-val awaitable_value : t -> t option
-
-val coroutine_value : t -> t option
-
 val typeguard_annotation : t -> t option
 
 val parameters : t -> Parameter.t list option
@@ -689,11 +693,7 @@ val class_name : t -> Reference.t
 
 val class_variable : t -> t
 
-val class_variable_value : t -> t option
-
 val is_class_variable : t -> bool
-
-val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
 
 val assume_any : t -> t
 

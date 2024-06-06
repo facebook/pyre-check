@@ -1251,6 +1251,41 @@ module Parameter = struct
     | _ -> false
 end
 
+(* Helper functions that extract an inner type if the outer type matches some pattern *)
+module Extractions = struct
+  let optional_value = function
+    | Union [NoneType; annotation]
+    | Union [annotation; NoneType] ->
+        Some annotation
+    | _ -> None
+
+
+  let awaitable_value = function
+    | Parametric { name = "typing.Awaitable"; parameters = [Single parameter] } -> Some parameter
+    | _ -> None
+
+
+  let coroutine_value = function
+    | Parametric { name = "typing.Coroutine"; parameters = [_; _; Single parameter] } ->
+        Some parameter
+    | _ -> None
+
+
+  let class_variable_value = function
+    | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } -> Some parameter
+    | _ -> None
+
+
+  let rec final_value = function
+    | Parametric
+        { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
+        `Ok parameter
+    | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } ->
+        final_value parameter
+    | Primitive ("typing.Final" | "typing_extensions.Final") -> `NoParameter
+    | _ -> `NotFinal
+end
+
 module Predicates = struct
   let is_any = function
     | Any -> true
@@ -1414,6 +1449,31 @@ module Predicates = struct
     | _ -> false
 
 
+  let is_not_instantiated annotation =
+    let predicate = function
+      | Bottom -> true
+      | Variable { constraints = Unconstrained; _ } -> true
+      | _ -> false
+    in
+    Visitors.exists annotation ~predicate
+
+
+  let is_untyped = function
+    | Any
+    | Bottom
+    | Top ->
+        true
+    | _ -> false
+
+
+  let is_partially_typed annotation = Visitors.exists annotation ~predicate:is_untyped
+
+  let is_class_variable annotation =
+    match Extractions.class_variable_value annotation with
+    | Some _ -> true
+    | None -> false
+
+
   let contains_callable annotation = Visitors.exists annotation ~predicate:is_callable
 
   let contains_any annotation = Visitors.exists annotation ~predicate:is_any
@@ -1421,6 +1481,52 @@ module Predicates = struct
   let contains_unknown annotation = Visitors.exists annotation ~predicate:is_top
 
   let contains_undefined annotation = Visitors.exists annotation ~predicate:is_unbound
+
+  let contains_literal annotation =
+    let predicate = function
+      | Literal _ -> true
+      | _ -> false
+    in
+    Visitors.exists annotation ~predicate
+
+
+  let contains_final annotation =
+    let predicate annotation =
+      match Extractions.final_value annotation with
+      | `Ok _
+      | `NoParameter ->
+          true
+      | `NotFinal -> false
+    in
+    Visitors.exists annotation ~predicate
+
+
+  let contains_variable = Visitors.exists ~predicate:is_variable
+
+  let contains_prohibited_any annotation =
+    let is_string_to_any_mapping
+      = (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
+      function
+      | Parametric { name = "typing.Mapping"; parameters = [Single (Primitive "str"); Single Any] }
+      | Parametric { name = "dict"; parameters = [Single (Primitive "str"); Single Any] } ->
+          true
+      | _ -> false
+    in
+    let module ProhibitedAnyCollector = VisitWithTransform.Make (struct
+      type state = bool
+
+      let visit_children_before _ annotation = not (is_string_to_any_mapping annotation)
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        {
+          VisitWithTransform.transformed_annotation = annotation;
+          new_state = sofar || is_any annotation;
+        }
+    end)
+    in
+    fst (ProhibitedAnyCollector.visit false annotation)
 end
 
 (* The Cannonicalization module contains logic related to representing types. Pretty printing uses
@@ -3067,74 +3173,6 @@ let expression_contains_any expression =
   |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
 
 
-let is_not_instantiated annotation =
-  let predicate = function
-    | Bottom -> true
-    | Variable { constraints = Unconstrained; _ } -> true
-    | _ -> false
-  in
-  Visitors.exists annotation ~predicate
-
-
-let contains_literal annotation =
-  let predicate = function
-    | Literal _ -> true
-    | _ -> false
-  in
-  Visitors.exists annotation ~predicate
-
-
-let rec final_value = function
-  | Parametric
-      { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
-      `Ok parameter
-  | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } ->
-      final_value parameter
-  | Primitive ("typing.Final" | "typing_extensions.Final") -> `NoParameter
-  | _ -> `NotFinal
-
-
-let contains_final annotation =
-  let predicate annotation =
-    match final_value annotation with
-    | `Ok _
-    | `NoParameter ->
-        true
-    | `NotFinal -> false
-  in
-  Visitors.exists annotation ~predicate
-
-
-let is_untyped = function
-  | Any
-  | Bottom
-  | Top ->
-      true
-  | _ -> false
-
-
-let is_partially_typed annotation = Visitors.exists annotation ~predicate:is_untyped
-
-let contains_variable = Visitors.exists ~predicate:Predicates.is_variable
-
-let optional_value = function
-  | Union [NoneType; annotation]
-  | Union [annotation; NoneType] ->
-      Some annotation
-  | _ -> None
-
-
-let awaitable_value = function
-  | Parametric { name = "typing.Awaitable"; parameters = [Single parameter] } -> Some parameter
-  | _ -> None
-
-
-let coroutine_value = function
-  | Parametric { name = "typing.Coroutine"; parameters = [_; _; Single parameter] } ->
-      Some parameter
-  | _ -> None
-
-
 let typeguard_annotation = function
   | Parametric
       {
@@ -3239,17 +3277,6 @@ let class_name annotation =
 
 
 let class_variable annotation = Constructors.parametric "typing.ClassVar" [Single annotation]
-
-let class_variable_value = function
-  | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } -> Some parameter
-  | _ -> None
-
-
-let is_class_variable annotation =
-  match class_variable_value annotation with
-  | Some _ -> true
-  | None -> false
-
 
 (* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
    See T22792667. *)
@@ -3587,8 +3614,8 @@ end = struct
     let contains_subvariable { constraints; _ } =
       match constraints with
       | Unconstrained -> false
-      | Bound bound -> contains_variable bound
-      | Explicit explicits -> List.exists explicits ~f:contains_variable
+      | Bound bound -> Predicates.contains_variable bound
+      | Explicit explicits -> List.exists explicits ~f:Predicates.contains_variable
       | LiteralIntegers -> false
 
 
@@ -4968,34 +4995,6 @@ let namespace_insensitive_compare left right =
     (Variable.converge_all_variable_namespaces right)
 
 
-let is_concrete annotation =
-  let module ConcreteVisitor = VisitWithTransform.Make (struct
-    type state = bool
-
-    let visit_children_before _ = function
-      | NoneType -> false
-      | Parametric { name = "typing.Optional" | "Optional"; parameters = [Single Bottom] } -> false
-      | _ -> true
-
-
-    let visit_children_after = false
-
-    let visit sofar annotation =
-      let new_state =
-        match annotation with
-        | Bottom
-        | Top
-        | Any ->
-            false
-        | _ -> sofar
-      in
-      { VisitWithTransform.transformed_annotation = annotation; new_state }
-  end)
-  in
-  fst (ConcreteVisitor.visit true annotation)
-  && not (Variable.contains_escaped_free_variable annotation)
-
-
 let dequalify map annotation =
   let dequalify_string string = string |> dequalify_identifier map in
   let module DequalifyTransform = VisitWithTransform.Make (struct
@@ -5122,32 +5121,6 @@ let infer_transform annotation =
   end)
   in
   snd (InferTransform.visit () annotation)
-
-
-let contains_prohibited_any annotation =
-  let is_string_to_any_mapping
-    = (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
-    function
-    | Parametric { name = "typing.Mapping"; parameters = [Single (Primitive "str"); Single Any] }
-    | Parametric { name = "dict"; parameters = [Single (Primitive "str"); Single Any] } ->
-        true
-    | _ -> false
-  in
-  let module ProhibitedAnyCollector = VisitWithTransform.Make (struct
-    type state = bool
-
-    let visit_children_before _ annotation = not (is_string_to_any_mapping annotation)
-
-    let visit_children_after = false
-
-    let visit sofar annotation =
-      {
-        VisitWithTransform.transformed_annotation = annotation;
-        new_state = sofar || Predicates.is_any annotation;
-      }
-  end)
-  in
-  fst (ProhibitedAnyCollector.visit false annotation)
 
 
 type class_data_for_attribute_lookup = {
@@ -5304,6 +5277,34 @@ let equivalent_for_assert_type left right =
   equal (canonicalize left) (canonicalize right)
 
 
+let is_concrete annotation =
+  let module ConcreteVisitor = VisitWithTransform.Make (struct
+    type state = bool
+
+    let visit_children_before _ = function
+      | NoneType -> false
+      | Parametric { name = "typing.Optional" | "Optional"; parameters = [Single Bottom] } -> false
+      | _ -> true
+
+
+    let visit_children_after = false
+
+    let visit sofar annotation =
+      let new_state =
+        match annotation with
+        | Bottom
+        | Top
+        | Any ->
+            false
+        | _ -> sofar
+      in
+      { VisitWithTransform.transformed_annotation = annotation; new_state }
+  end)
+  in
+  fst (ConcreteVisitor.visit true annotation)
+  && not (Variable.contains_escaped_free_variable annotation)
+
+
 let exists = Visitors.exists
 
 let collect_types = Visitors.collect_types
@@ -5317,6 +5318,7 @@ let apply_type_map = Transforms.apply_type_map
 include Containers
 include Constructors
 include PrettyPrinting
+include Extractions
 include Predicates
 
 (* We always send types in the pretty printed form *)
