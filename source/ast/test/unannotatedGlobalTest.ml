@@ -87,6 +87,13 @@ let test_collection context =
          import y
     |}
     ~expected:["x"; "y"];
+  assert_collected_names {|
+       x, y, z = (1, 2, 3)
+    |} ~expected:["x"; "y"; "z"];
+  (* TODO(T191635350): Pyre's global scope analysis cannot handle nested target patterns. *)
+  assert_collected_names {|
+       x, (y, z) = (1, (2, 3))
+    |} ~expected:[];
   ()
 
 
