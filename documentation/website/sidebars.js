@@ -61,9 +61,17 @@ module.exports = {
         ...fbInternalOnly(['fb/tooling-integration']),
       ],
     },
-    ...fbContent({
-      external: ['contributing'],
-      internal: ['fb/contributing'],
+    fbContent({
+      external: {
+        type: 'link',
+        label: 'Contributing',
+        href: 'https://github.com/facebook/pyre-check/blob/main/CONTRIBUTING.md'
+      },
+      internal: {
+        type: 'doc',
+        label: 'Contributing',
+        id: 'fb/development-getting-started'
+      },
     }),
     'pyre-faq',
   ],
