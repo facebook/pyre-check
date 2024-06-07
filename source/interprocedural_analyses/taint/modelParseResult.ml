@@ -659,13 +659,16 @@ module ModelQuery = struct
 
     let show = Format.asprintf "%a" pp
 
-    let less_or_equal left right =
-      Model.less_or_equal ~left:left.model ~right:right.model
+    let equal left right =
+      Model.equal left.model right.model
       && Target.equal left.target right.target
       && String.equal left.model_source right.model_source
 
 
-    let equal left right = less_or_equal left right && less_or_equal right left
+    let less_or_equal left right =
+      Model.less_or_equal ~left:left.model ~right:right.model
+      && Target.equal left.target right.target
+      && String.equal left.model_source right.model_source
   end
 
   module Model = struct

@@ -122,6 +122,8 @@ val join_user_models : t -> t -> t
 
 val widen : iteration:int -> previous:t -> next:t -> t
 
+val equal : t -> t -> bool
+
 val less_or_equal : left:t -> right:t -> bool
 
 val for_override_model : callable:Target.t -> t -> t

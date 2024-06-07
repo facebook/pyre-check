@@ -192,7 +192,8 @@ module Label = struct
   let common_prefix left right =
     let rec common_prefix_reversed left right so_far =
       match left, right with
-      | left_element :: left_rest, right_element :: right_rest when left_element = right_element ->
+      | left_element :: left_rest, right_element :: right_rest
+        when T.equal left_element right_element ->
           common_prefix_reversed left_rest right_rest (left_element :: so_far)
       | _ -> so_far
     in
@@ -201,7 +202,7 @@ module Label = struct
 
   let rec is_prefix ~prefix path =
     match prefix, path with
-    | prefix_head :: prefix_rest, path_head :: path_rest when prefix_head = path_head ->
+    | prefix_head :: prefix_rest, path_head :: path_rest when T.equal prefix_head path_head ->
         is_prefix ~prefix:prefix_rest path_rest
     | [], _ -> true
     | _ -> false
@@ -524,6 +525,13 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     match value with
     | None -> LabelMap.remove key map
     | Some data -> LabelMap.add ~key ~data map
+
+
+  let rec equal
+      { element = left_element; children = left_children }
+      { element = right_element; children = right_children }
+    =
+    Element.equal left_element right_element && LabelMap.equal equal left_children right_children
 
 
   (** Widen differs from join in that right side does not extend trees, and Element uses widen.
@@ -1191,6 +1199,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     let pp = pp
 
     type _ part += Self : t part
+
+    let equal = equal
 
     let join = join
 

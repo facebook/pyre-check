@@ -27,7 +27,7 @@ module Sink : sig
         index: int;
         parameter_index: int;
       }
-  [@@deriving compare, hash, sexp, show]
+  [@@deriving compare, equal, hash, sexp, show]
 
   val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
 
@@ -41,7 +41,7 @@ type t = {
   callable: Target.t;
   sink: Sink.t;
 }
-[@@deriving compare, show]
+[@@deriving compare, equal, show]
 
 val master_handle : t -> string
 

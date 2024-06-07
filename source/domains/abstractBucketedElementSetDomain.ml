@@ -76,6 +76,8 @@ module Make (Element : BUCKETED_ELEMENT) = struct
       Map.widen ~iteration ~prev ~next |> elements |> Element.widen |> of_list
 
 
+    let equal = Map.equal
+
     let less_or_equal = Map.less_or_equal
 
     let subtract = Map.subtract

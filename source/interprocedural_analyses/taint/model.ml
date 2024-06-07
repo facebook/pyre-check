@@ -99,6 +99,8 @@ module Forward = struct
     { generations = ForwardState.widen ~iteration ~prev ~next }
 
 
+  let equal { generations = left } { generations = right } = ForwardState.equal left right
+
   let less_or_equal ~left:{ generations = left } ~right:{ generations = right } =
     ForwardState.less_or_equal ~left ~right
 end
@@ -179,6 +181,13 @@ module Backward = struct
     { sink_taint; taint_in_taint_out }
 
 
+  let equal
+      { sink_taint = sink_taint_left; taint_in_taint_out = tito_left }
+      { sink_taint = sink_taint_right; taint_in_taint_out = tito_right }
+    =
+    BackwardState.equal sink_taint_left sink_taint_right && BackwardState.equal tito_left tito_right
+
+
   let less_or_equal
       ~left:{ sink_taint = sink_taint_left; taint_in_taint_out = tito_left }
       ~right:{ sink_taint = sink_taint_right; taint_in_taint_out = tito_right }
@@ -235,6 +244,10 @@ module ParameterSources = struct
 
   let widen ~iteration ~previous:{ parameter_sources = prev } ~next:{ parameter_sources = next } =
     { parameter_sources = ForwardState.widen ~iteration ~prev ~next }
+
+
+  let equal { parameter_sources = left } { parameter_sources = right } =
+    ForwardState.equal left right
 
 
   let less_or_equal ~left:{ parameter_sources = left } ~right:{ parameter_sources = right } =
@@ -380,7 +393,7 @@ module ModeSet = struct
 
   let is_empty = T.is_bottom
 
-  let equal left right = T.less_or_equal ~left ~right && T.less_or_equal ~left:right ~right:left
+  let equal = T.equal
 
   let to_json modes = `List (modes |> T.elements |> List.map ~f:Mode.to_json)
 
@@ -533,6 +546,14 @@ let widen ~iteration ~previous ~next =
     sanitizers = Sanitizers.widen ~iteration ~previous:previous.sanitizers ~next:next.sanitizers;
     modes = ModeSet.widen ~iteration ~prev:previous.modes ~next:next.modes;
   }
+
+
+let equal left right =
+  Forward.equal left.forward right.forward
+  && Backward.equal left.backward right.backward
+  && ParameterSources.equal left.parameter_sources right.parameter_sources
+  && Sanitizers.equal left.sanitizers right.sanitizers
+  && ModeSet.equal left.modes right.modes
 
 
 let less_or_equal ~left ~right =

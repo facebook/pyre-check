@@ -314,7 +314,7 @@ module ExtraTraceFirstHop = struct
     type leaf_kind =
       | Source of Sources.t
       | Sink of Sinks.t
-    [@@deriving compare]
+    [@@deriving compare, equal]
 
     let show_leaf_kind = function
       | Source source -> Sources.show source
@@ -331,7 +331,7 @@ module ExtraTraceFirstHop = struct
       (* The text to show in the SAPP frames *)
       message: string option;
     }
-    [@@deriving compare, show]
+    [@@deriving compare, equal, show]
 
     let name = "extra trace"
 

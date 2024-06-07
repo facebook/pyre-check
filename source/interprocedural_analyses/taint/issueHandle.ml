@@ -27,7 +27,7 @@ module Sink = struct
         index: int;
         parameter_index: int;
       }
-  [@@deriving compare, hash, sexp, show]
+  [@@deriving compare, equal, hash, sexp, show]
 
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
@@ -87,7 +87,7 @@ module T = struct
     callable: Target.t;
     sink: Sink.t;
   }
-  [@@deriving compare, hash, sexp, show]
+  [@@deriving compare, equal, hash, sexp, show]
 
   let master_handle { code; callable; sink = sink_handle; _ } =
     let version = 0 (* Increment the version on format change. *) in

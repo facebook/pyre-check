@@ -195,6 +195,20 @@ module Make (Config : PRODUCT_CONFIG) = struct
         Array.map merge slots
 
 
+    let equal left right =
+      let equal_slot (Slot slot) =
+        let module D = (val Config.slot_domain slot) in
+        let left = get slot left in
+        let right = get slot right in
+        if not (D.equal left right) then raise_notrace Exit
+      in
+      try
+        Array.iter equal_slot slots;
+        true
+      with
+      | Exit -> false
+
+
     let less_or_equal ~left ~right =
       let less_or_equal_slot (Slot slot) =
         let module D = (val Config.slot_domain slot) in

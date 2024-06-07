@@ -73,6 +73,13 @@ module Make (Element : ELEMENT) = struct
         make set
 
 
+    let equal left right =
+      match left, right with
+      | Top, Top -> true
+      | ASet a, ASet b when Set.equal a b -> true
+      | _ -> false
+
+
     let join left right =
       match left, right with
       | ASet left_set, ASet right_set ->

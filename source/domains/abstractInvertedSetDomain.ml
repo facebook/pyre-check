@@ -62,6 +62,13 @@ module Make (Element : ELEMENT) = struct
 
     let is_bottom s = s = Universe
 
+    let equal left right =
+      match left, right with
+      | Universe, Universe -> true
+      | InvertedSet left, InvertedSet right when Set.equal left right -> true
+      | _ -> false
+
+
     let join left right =
       (* logically intersection *)
       match left, right with

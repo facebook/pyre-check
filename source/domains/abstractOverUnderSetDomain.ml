@@ -63,7 +63,10 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
 
     let empty = BiSet { over = Set.empty; under = Set.empty }
 
-    let is_bottom biset = biset = Bottom
+    let is_bottom = function
+      | Bottom -> true
+      | _ -> false
+
 
     let inject element = { element; in_under = true }
 
@@ -100,6 +103,16 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
 
 
     let pp formatter set = Format.fprintf formatter "%s" (show set)
+
+    let equal left right =
+      match left, right with
+      | Bottom, Bottom -> true
+      | ( BiSet { over = left_over; under = left_under },
+          BiSet { over = right_over; under = right_under } )
+        when Set.equal left_over right_over && Set.equal left_under right_under ->
+          true
+      | _ -> false
+
 
     let join left right =
       if left == right then

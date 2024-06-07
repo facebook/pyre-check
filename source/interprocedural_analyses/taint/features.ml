@@ -168,7 +168,7 @@ end
 module TitoPosition = struct
   let name = "tito positions"
 
-  type t = Location.t [@@deriving show, compare]
+  type t = Location.t [@@deriving show, compare, equal]
 
   let max_count =
     let on_first_call =

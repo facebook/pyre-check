@@ -82,6 +82,8 @@ module type S = sig
 
   val is_bottom : t -> bool
 
+  val equal : t -> t -> bool
+
   val join : t -> t -> t
 
   (* meet a b is an over-approximation of the intersection of 'a' and 'b' *)

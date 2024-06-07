@@ -11,6 +11,8 @@ module type ELEMENT = sig
   val name : string
 
   val show : t -> string
+
+  val equal : t -> t -> bool
 end
 
 module Make (Element : ELEMENT) : sig

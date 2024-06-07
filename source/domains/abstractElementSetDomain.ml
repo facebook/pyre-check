@@ -57,6 +57,8 @@ module Make (Element : ELEMENT) = struct
 
     let is_bottom = Set.is_empty
 
+    let equal = Set.equal
+
     let join left right =
       if left == right || is_bottom right then
         left

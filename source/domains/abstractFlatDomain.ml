@@ -15,6 +15,8 @@ module type ELEMENT = sig
   val name : string
 
   val show : t -> string
+
+  val equal : t -> t -> bool
 end
 
 module Make (Element : ELEMENT) = struct
@@ -25,11 +27,14 @@ module Make (Element : ELEMENT) = struct
 
   let top = Top
 
-  let is_top v = v = Top
+  let is_top = function
+    | Top -> true
+    | _ -> false
+
 
   let is_equal t v =
     match t with
-    | Concrete e -> e = v
+    | Concrete e when Element.equal e v -> true
     | _ -> false
 
 
@@ -44,7 +49,10 @@ module Make (Element : ELEMENT) = struct
 
     let bottom = Bottom
 
-    let is_bottom v = v = Bottom
+    let is_bottom = function
+      | Bottom -> true
+      | _ -> false
+
 
     let show value =
       match value with
@@ -53,18 +61,27 @@ module Make (Element : ELEMENT) = struct
       | Bottom -> "Bottom"
 
 
+    let equal left right =
+      match left, right with
+      | Bottom, Bottom
+      | Top, Top ->
+          true
+      | Concrete left, Concrete right when Element.equal left right -> true
+      | _ -> false
+
+
     let pp formatter value = Format.fprintf formatter "%s" (show value)
 
     let less_or_equal ~left ~right =
       match left, right with
       | Bottom, _ -> true
       | _, Top -> true
-      | Concrete e1, Concrete e2 -> e1 = e2
+      | Concrete left, Concrete right -> Element.equal left right
       | _ -> false
 
 
     let join a b =
-      if a = b then
+      if equal a b then
         a
       else
         match a, b with
@@ -74,7 +91,7 @@ module Make (Element : ELEMENT) = struct
 
 
     let meet a b =
-      if a = b then
+      if equal a b then
         a
       else
         match a, b with
@@ -93,7 +110,7 @@ module Make (Element : ELEMENT) = struct
           | Bottom, Add -> Concrete f
           | Bottom, _ -> p
           | Top, _ -> p
-          | Concrete e, Add -> if e = f then p else Top
+          | Concrete e, Add -> if Element.equal e f then p else Top
           | Concrete e, Map -> Concrete (f e)
           | Concrete e, Filter -> if f e then p else Bottom
           | Concrete e, FilterMap -> (

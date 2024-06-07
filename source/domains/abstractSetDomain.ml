@@ -97,6 +97,8 @@ module MakeWithSet (Set : SET) = struct
 
     let contains = Set.mem
 
+    let equal = Set.equal
+
     let join left right =
       if left == right then
         left

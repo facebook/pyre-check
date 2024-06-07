@@ -103,6 +103,8 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
     type _ part += Self : t part
 
+    let equal = Map.equal Element.equal
+
     let join x y =
       if x == y || is_bottom y then
         x
