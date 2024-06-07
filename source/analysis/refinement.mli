@@ -7,7 +7,7 @@
 
 open Ast
 
-module Unit : sig
+module LocalOrGlobal : sig
   type t [@@deriving eq, show]
 
   val empty : t
@@ -46,8 +46,8 @@ end
 
 module Store : sig
   type t = {
-    annotations: Unit.t Reference.Map.Tree.t;
-    temporary_annotations: Unit.t Reference.Map.Tree.t;
+    annotations: LocalOrGlobal.t Reference.Map.Tree.t;
+    temporary_annotations: LocalOrGlobal.t Reference.Map.Tree.t;
   }
   [@@deriving eq, show]
 

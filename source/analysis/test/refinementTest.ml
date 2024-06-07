@@ -10,8 +10,8 @@ open OUnit2
 open Analysis
 open Test
 
-module Unit = struct
-  open Refinement.Unit
+module LocalOrGlobal = struct
+  open Refinement.LocalOrGlobal
 
   let test_create _ =
     let assert_create ~refinement_unit ~expected =
@@ -250,4 +250,4 @@ module Unit = struct
     ]
 end
 
-let () = "Refinement.Unit" >::: Unit.suite |> Test.run
+let () = "Refinement.LocalOrGlobal" >::: LocalOrGlobal.suite |> Test.run

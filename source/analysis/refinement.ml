@@ -35,7 +35,7 @@ open Ast
 open Annotation
 open LatticeOfMaps
 
-module Unit = struct
+module LocalOrGlobal = struct
   type t = {
     base: Annotation.t option;
     attributes: t Identifier.Map.Tree.t;
@@ -201,8 +201,8 @@ end
 
 module Store = struct
   type t = {
-    annotations: Unit.t Reference.Map.Tree.t;
-    temporary_annotations: Unit.t Reference.Map.Tree.t;
+    annotations: LocalOrGlobal.t Reference.Map.Tree.t;
+    temporary_annotations: LocalOrGlobal.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
@@ -210,7 +210,7 @@ module Store = struct
 
   let pp format { annotations; temporary_annotations } =
     let show_annotation (reference, unit) =
-      Format.asprintf "%a -> %a" Reference.pp reference Unit.pp unit
+      Format.asprintf "%a -> %a" Reference.pp reference LocalOrGlobal.pp unit
     in
     Reference.Map.Tree.to_alist annotations
     |> List.map ~f:show_annotation
@@ -238,7 +238,7 @@ module Store = struct
       | Some _ -> temporary
       | None -> ReferenceMap.find annotations name
     in
-    Option.value ~default:Unit.empty found
+    Option.value ~default:LocalOrGlobal.empty found
 
 
   (** Map an operation over what's at a given name. If there's nothing already existing, use
@@ -261,23 +261,23 @@ module Store = struct
       {
         annotations;
         temporary_annotations =
-          map_over_reference_map ~fallback:(Some Unit.empty) temporary_annotations;
+          map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) temporary_annotations;
       }
     else
       {
-        annotations = map_over_reference_map ~fallback:(Some Unit.empty) annotations;
+        annotations = map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) annotations;
         temporary_annotations = map_over_reference_map ~fallback:None temporary_annotations;
       }
 
 
-  let get_base ~name store = get_unit ~name store |> Unit.base
+  let get_base ~name store = get_unit ~name store |> LocalOrGlobal.base
 
   let get_annotation ~name ~attribute_path store =
-    get_unit ~name store |> Unit.get_annotation ~attribute_path
+    get_unit ~name store |> LocalOrGlobal.get_annotation ~attribute_path
 
 
   let set_base ?(temporary = false) ~name ~base store =
-    map_over_name ~temporary ~name ~f:(Unit.set_base ~base) store
+    map_over_name ~temporary ~name ~f:(LocalOrGlobal.set_base ~base) store
 
 
   let new_as_base ?(temporary = false) ~name ~base { annotations; temporary_annotations } =
@@ -285,11 +285,11 @@ module Store = struct
       {
         annotations;
         temporary_annotations =
-          ReferenceMap.set temporary_annotations ~key:name ~data:(Unit.create base);
+          ReferenceMap.set temporary_annotations ~key:name ~data:(LocalOrGlobal.create base);
       }
     else
       {
-        annotations = ReferenceMap.set annotations ~key:name ~data:(Unit.create base);
+        annotations = ReferenceMap.set annotations ~key:name ~data:(LocalOrGlobal.create base);
         temporary_annotations = ReferenceMap.remove temporary_annotations name;
       }
 
@@ -305,14 +305,14 @@ module Store = struct
     =
     let set_unit_annotation unit =
       unit
-      |> Unit.set_annotation ~wipe_subtree ~attribute_path ~annotation
-      |> Unit.set_base_if_none ~base:base_annotation
+      |> LocalOrGlobal.set_annotation ~wipe_subtree ~attribute_path ~annotation
+      |> LocalOrGlobal.set_base_if_none ~base:base_annotation
     in
     map_over_name ~temporary ~name ~f:set_unit_annotation store
 
 
   let less_or_equal ~global_resolution ~left ~right =
-    let less_or_equal_one = Unit.less_or_equal ~global_resolution in
+    let less_or_equal_one = LocalOrGlobal.less_or_equal ~global_resolution in
     ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
     && ReferenceMap.less_or_equal
          ~less_or_equal_one
@@ -324,7 +324,7 @@ module Store = struct
       computation by only checking for equality pointwise, which doesn't require type ordering
       operations *)
   let less_or_equal_monotone ~left ~right =
-    let less_or_equal_one ~left ~right = Unit.equal left right in
+    let less_or_equal_one ~left ~right = LocalOrGlobal.equal left right in
     ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
     && ReferenceMap.less_or_equal
          ~less_or_equal_one
@@ -333,7 +333,7 @@ module Store = struct
 
 
   let meet ~global_resolution left right =
-    let meet_one = Unit.meet ~global_resolution in
+    let meet_one = LocalOrGlobal.meet ~global_resolution in
     {
       annotations = ReferenceMap.meet ~meet_one left.annotations right.annotations;
       temporary_annotations =
@@ -345,7 +345,7 @@ module Store = struct
       join) but permissive about variables that might only be instantiated on one side.
 
       This can be done as either a join or a widen depending whether we set `widening_threshod`,
-      which is applied at the `Refinement.Unit` level. *)
+      which is applied at the `Refinement.LocalOrGlobal` level. *)
   let widen_or_join ~merge_one left right =
     {
       (* Newly-instantiated locals live in `annotations`, so we merge with join *)
@@ -357,12 +357,12 @@ module Store = struct
 
 
   let outer_join ~global_resolution =
-    let merge_one = Unit.join ~global_resolution in
+    let merge_one = LocalOrGlobal.join ~global_resolution in
     widen_or_join ~merge_one
 
 
   let outer_widen ~global_resolution ~iteration ~widening_threshold =
-    let merge_one = Unit.widen ~global_resolution ~iteration ~widening_threshold in
+    let merge_one = LocalOrGlobal.widen ~global_resolution ~iteration ~widening_threshold in
     widen_or_join ~merge_one
 
 
@@ -382,7 +382,7 @@ module Store = struct
   let update_with_filter ~old_store ~new_store ~filter =
     let update_map old_map new_map =
       let f ~key ~data sofar =
-        if Unit.base data |> Option.map ~f:(filter key) |> Option.value ~default:false then
+        if LocalOrGlobal.base data |> Option.map ~f:(filter key) |> Option.value ~default:false then
           sofar |> ReferenceMap.set ~key ~data
         else
           sofar

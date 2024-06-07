@@ -1790,7 +1790,7 @@ module State (Context : Context) = struct
               in
               tail_annotations
               |> Algorithms.fold_balanced
-                   ~f:(Refinement.Unit.join_annotations ~global_resolution)
+                   ~f:(Refinement.LocalOrGlobal.join_annotations ~global_resolution)
                    ~init:head_annotation
               |> apply_local_override
             in
@@ -2037,7 +2037,9 @@ module State (Context : Context) = struct
         let from_annotation (reference, unit) =
           let name = reference in
           let annotation =
-            Option.value ~default:(Annotation.create_mutable Type.Any) (Refinement.Unit.base unit)
+            Option.value
+              ~default:(Annotation.create_mutable Type.Any)
+              (Refinement.LocalOrGlobal.base unit)
           in
           { Error.name; annotation }
         in
