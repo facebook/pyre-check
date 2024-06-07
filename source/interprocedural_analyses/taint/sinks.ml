@@ -32,7 +32,7 @@ module PartialSink = struct
           (* The source kind that has flowed into the other partial sink, which results in creating
              this triggered sink. *)
     }
-    [@@deriving compare, hash, sexp, eq]
+    [@@deriving compare, hash, sexp, equal]
 
     let pp format { partial_sink; triggering_source } =
       Format.fprintf format "%s, %s" partial_sink triggering_source

@@ -2623,28 +2623,25 @@ let verify_matching_partial_sinks ~registered_partial_sinks ~path ~location para
     match List.filter_map ~f:extract_partial_sink parameter_annotations with
     | [] -> None
     | [partial_sink] -> Some partial_sink
-    | _ -> failwith "Expect each parameter to have zero or one single partial sink"
-  in
-  (* Remove the matching partial sink from `remaining`, and accumulate the unmatched ones in
-     `unmatched_in_reverse` in a reversed order. Return either `remaining` after removing the
-     matched partial sink, or the unmatched error. *)
-  let rec remove_matched_and_accumulate_unmatched ~is_matched ~unmatched_in_reverse remaining =
-    match remaining with
-    | [] -> Error ()
-    | head :: tail ->
-        if is_matched head then
-          Ok (List.rev_append unmatched_in_reverse tail)
-        else
-          remove_matched_and_accumulate_unmatched
-            ~is_matched
-            ~unmatched_in_reverse:(head :: unmatched_in_reverse)
-            tail
+    | partial_sink :: _ as partial_sinks ->
+        let () =
+          Log.warning
+            "Model has two partial sink annotations on a single argument: %s. This is not \
+             recommended."
+            (String.concat ~sep:"," partial_sinks)
+        in
+        Some partial_sink
   in
   let unmatched_partial_sink_error partial_sink =
     model_verification_error
       ~path
       ~location
       (ModelVerificationError.UnmatchedPartialSinkKind partial_sink)
+  in
+  let remove_matching_partial_sink ~is_matched partial_sinks =
+    match List.findi partial_sinks ~f:(fun _ -> is_matched) with
+    | Some (index, _) -> Ok (List.filteri ~f:(fun i _ -> not (Int.equal i index)) partial_sinks)
+    | None -> Error ()
   in
   let remove_matching_partial_sink ~to_match ~to_remove_from
       : (Sinks.PartialSink.t list, ModelVerificationError.t) result
@@ -2657,21 +2654,20 @@ let verify_matching_partial_sinks ~registered_partial_sinks ~path ~location para
     | _, None ->
         Error (unmatched_partial_sink_error to_match)
     | _, Some matching_sinks ->
-        remove_matched_and_accumulate_unmatched
-          ~is_matched:(fun partial_sink -> Sinks.PartialSink.Set.mem partial_sink matching_sinks)
-          ~unmatched_in_reverse:[]
-          to_remove_from
-        |> (* Provide a more detailed error. *)
+        to_remove_from
+        |> remove_matching_partial_sink ~is_matched:(fun partial_sink ->
+               Sinks.PartialSink.Set.mem partial_sink matching_sinks)
+        |> (* Convert into a more detailed error. *)
         Result.map_error ~f:(fun _ -> unmatched_partial_sink_error to_match)
   in
   let rec remove_matching_partial_sinks
       : Sinks.PartialSink.t list -> (unit, ModelVerificationError.t) result
     = function
     | [] -> Ok ()
-    | head :: tail -> (
-        match remove_matching_partial_sink ~to_match:head ~to_remove_from:tail with
-        | Ok remaining_partial_sinks -> remove_matching_partial_sinks remaining_partial_sinks
-        | Error _ as error -> error)
+    | head :: tail ->
+        let open Result.Monad_infix in
+        remove_matching_partial_sink ~to_match:head ~to_remove_from:tail
+        >>= remove_matching_partial_sinks
   in
   let open Core.Result in
   parameters_annotations

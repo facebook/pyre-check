@@ -6,7 +6,7 @@
  *)
 
 module PartialSink : sig
-  type t = string [@@deriving compare, hash, sexp, eq, show]
+  type t = string [@@deriving compare, hash, sexp, equal, show]
 
   module Set : Data_structures.SerializableSet.S with type elt = t
 
@@ -19,7 +19,7 @@ module PartialSink : sig
           (* The source kind that has flowed into the other partial sink, which results in creating
              this triggered sink. *)
     }
-    [@@deriving compare, show, sexp, eq]
+    [@@deriving compare, show, sexp, equal]
 
     module Set : Data_structures.SerializableSet.S with type elt = t
   end
