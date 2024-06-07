@@ -111,9 +111,15 @@ let error_and_location_from_typed_dictionary_mismatch
   define_location, Error.TypedDictionaryInitializationError mismatch
 
 
-let incompatible_annotation_with_attribute_error ~define ~explicit ~original_annotation attribute =
-  match original_annotation, AnnotatedAttribute.initialized attribute with
-  | Some original, AnnotatedAttribute.OnClass when explicit && Define.is_constructor define ->
+let incompatible_annotation_with_attribute_error
+    ~define
+    ~has_explicit_annotation
+    ~unwrapped_annotation_type
+    attribute
+  =
+  match unwrapped_annotation_type, AnnotatedAttribute.initialized attribute with
+  | Some original, AnnotatedAttribute.OnClass
+    when has_explicit_annotation && Define.is_constructor define ->
       let class_annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
       if not (Type.equal original class_annotation) then
         Some
@@ -4190,7 +4196,7 @@ module State (Context : Context) = struct
       add_annotation_errors errors |> add_type_variable_errors |> add_prohibited_any_errors )
 
 
-  (* Step forward across an assignment statement, tracking type context in
+  (* Step forward across an assignment, tracking type context in
    * `Resolution.t` as well as errors. This is also used within `forward_expression`
    * for "synthetic" assignments, such as
    * - handling walrus operators
@@ -4217,14 +4223,1061 @@ module State (Context : Context) = struct
    *   - otherwise, we will try to match the RHS and the LHS, e.g. `a, b = 5, "s"`.
    *
    * TODO(T146934909): At the moment this function never handles the subscript
-   * case. For single subscrpted assignments our AST lowering turns them into
+   * case. For single subscripted assignments our AST lowering turns them into
    * `__setitem__` calls, and we just silently ignore type errors if subscripts
    * occur in multi-assignments.
    *)
-  and forward_assignment ~resolution ~location ~target ~annotation ~value =
+  and forward_value_assignment
+      ~resolution
+      ~errors
+      ~target:({ Node.location; value = target_value } as target)
+      ~annotation
+      ~unwrapped_annotation_type
+      ~guide_annotation_type
+      ~resolved_value
+      ~is_final
+      value
+    =
     let { Node.value = { Define.signature = { parent; _ }; _ } as define; _ } = Context.define in
     let global_resolution = Resolution.global_resolution resolution in
-    let errors, is_final, original_annotation =
+    let uniform_sequence_parameter annotation =
+      let unbounded_annotation =
+        match annotation with
+        | Type.Tuple (Concatenation concatenation) ->
+            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+        | _ -> None
+      in
+      match unbounded_annotation with
+      | Some annotation -> annotation
+      | None -> (
+          match
+            GlobalResolution.extract_type_parameters
+              global_resolution
+              ~target:"typing.Iterable"
+              ~source:annotation
+          with
+          | Some [element_type] -> element_type
+          | _ -> Type.Any)
+    in
+    let nonuniform_sequence_parameters expected_size annotation =
+      match annotation with
+      | Type.Tuple (Concrete parameters) -> Some parameters
+      | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
+          NamedTuple.field_annotations ~global_resolution annotation
+      | annotation ->
+          let parameters_from_getitem () =
+            (* Simulate __getitem__ in the fallback. *)
+            let synthetic = "$getitem_host" in
+            let resolution =
+              Resolution.new_local
+                resolution
+                ~reference:(Reference.create synthetic)
+                ~annotation:(Annotation.create_mutable annotation)
+            in
+            let getitem_type =
+              let callee =
+                let base =
+                  Node.create_with_default_location (Expression.Name (Name.Identifier synthetic))
+                in
+                Node.create_with_default_location
+                  (Expression.Name
+                     (Name.Attribute { base; attribute = "__getitem__"; special = true }))
+              in
+
+              Resolution.resolve_expression_to_type
+                resolution
+                (Node.create_with_default_location
+                   (Expression.Call
+                      {
+                        callee;
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                Node.create_with_default_location
+                                  (Expression.Constant (Constant.Integer 0));
+                              name = None;
+                            };
+                          ];
+                      }))
+            in
+            match getitem_type with
+            | Type.Top
+            | Type.Any ->
+                None
+            | getitem_annotation -> Some (List.init ~f:(fun _ -> getitem_annotation) expected_size)
+          in
+          Option.first_some
+            (Type.type_parameters_for_bounded_tuple_union annotation)
+            (parameters_from_getitem ())
+    in
+    let is_uniform_sequence annotation =
+      match annotation with
+      | Type.Tuple (Concatenation concatenation)
+        when Type.OrderedTypes.Concatenation.is_fully_unbounded concatenation ->
+          true
+      (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
+      | Type.Tuple _ -> false
+      | Type.Union (Type.Tuple _ :: _)
+        when Option.is_some (Type.type_parameters_for_bounded_tuple_union annotation) ->
+          false
+      | _ ->
+          (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
+          && Option.is_some (GlobalResolution.type_of_iteration_value global_resolution annotation)
+    in
+    let has_explicit_annotation = Option.is_some annotation in
+    match target_value with
+    | Expression.Name name -> (
+        let inner_assignment resolution errors resolved_base =
+          let reference, attribute, target_annotation =
+            match resolved_base with
+            | `Identifier identifier ->
+                let reference = Reference.create identifier in
+
+                ( Some reference,
+                  None,
+                  from_reference ~location:Location.any reference |> resolve_expression ~resolution
+                )
+            | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
+                let name = attribute in
+                let parent, accessed_through_class, accessed_through_readonly =
+                  match Type.ReadOnly.unpack_readonly resolved, Type.is_meta resolved with
+                  | Some resolved, _ -> resolved, false, true
+                  | None, true -> Type.single_parameter resolved, true, false
+                  | _ -> resolved, false, false
+                in
+                let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
+                let reference =
+                  match base with
+                  | { Node.value = Name name; _ } when is_simple_name name ->
+                      Some (Reference.create ~prefix:(name_to_reference_exn name) attribute)
+                  | _ ->
+                      parent_class_name
+                      >>| Reference.create
+                      >>| fun prefix -> Reference.create ~prefix attribute
+                in
+                let attribute =
+                  parent_class_name
+                  >>= GlobalResolution.attribute_from_class_name
+                        global_resolution
+                        ~name:attribute
+                        ~instantiated:parent
+                        ~transitive:true
+                        ~accessed_through_class
+                        ~accessed_through_readonly
+                  >>| fun annotated -> annotated, attribute
+                in
+                let target_annotation =
+                  match attribute with
+                  | Some (attribute, _) -> AnnotatedAttribute.annotation attribute
+                  | _ ->
+                      (* The reason why we need to do resolve_expression on the entire target again
+                         is to deal with imported globals. To fix it, we ought to stop representing
+                         imported globals as `Expression.Name.Attribute`. *)
+                      resolve_expression ~resolution target
+                in
+                begin
+                  match attribute with
+                  | Some (attribute, _)
+                    when AnnotatedAttribute.property attribute
+                         && AnnotatedAttribute.(
+                              [%compare.equal: visibility] (visibility attribute) ReadWrite) ->
+                      Context.Builder.add_property_setter_callees
+                        ~attribute
+                        ~instantiated_parent:parent
+                        ~name
+                        ~location:
+                          (Location.with_module ~module_reference:Context.qualifier location)
+                  | _ -> ()
+                end;
+                reference, attribute, target_annotation
+          in
+          let expected, is_immutable =
+            match unwrapped_annotation_type, target_annotation with
+            | Some original, _ when not (Type.is_type_alias original) -> original, true
+            | _, target_annotation when Annotation.is_immutable target_annotation ->
+                Annotation.original target_annotation, true
+            | _ -> Type.Top, false
+          in
+          let find_getattr parent =
+            let attribute =
+              match Type.class_data_for_attribute_lookup parent with
+              | Some [{ instantiated; class_name; _ }] ->
+                  GlobalResolution.attribute_from_class_name
+                    global_resolution
+                    class_name
+                    ~accessed_through_class:false
+                    ~transitive:true
+                    ~name:"__getattr__"
+                    ~instantiated
+              | _ -> None
+            in
+            match attribute with
+            | Some attribute when AnnotatedAttribute.defined attribute -> (
+                match AnnotatedAttribute.annotation attribute |> Annotation.annotation with
+                | Type.Parametric { name = "BoundMethod"; parameters = [Single (Callable _); _] }
+                | Type.Callable _ ->
+                    Some attribute
+                | _ -> None)
+            | _ -> None
+          in
+          let check_errors ~name_reference errors resolved =
+            match reference with
+            | Some reference ->
+                let check_assignment_compatibility errors =
+                  let is_valid_enumeration_assignment =
+                    let parent_annotation =
+                      match parent with
+                      | None -> Type.Top
+                      | Some reference -> Type.Primitive (Reference.show reference)
+                    in
+                    let compatible =
+                      if has_explicit_annotation then
+                        GlobalResolution.less_or_equal
+                          global_resolution
+                          ~left:expected
+                          ~right:resolved
+                      else
+                        true
+                    in
+                    GlobalResolution.less_or_equal
+                      global_resolution
+                      ~left:parent_annotation
+                      ~right:Type.enumeration
+                    && compatible
+                  in
+                  let is_incompatible =
+                    let expression_is_ellipses =
+                      match value with
+                      | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> true
+                      | _ -> false
+                    in
+                    is_immutable
+                    && (not expression_is_ellipses)
+                    && (not
+                          (GlobalResolution.constraints_solution_exists
+                             global_resolution
+                             ~get_typed_dictionary_override:(fun _ -> None)
+                             ~left:resolved
+                             ~right:expected))
+                    && not is_valid_enumeration_assignment
+                  in
+                  match attribute with
+                  | Some (attribute, name) when is_incompatible ->
+                      Error.IncompatibleAttributeType
+                        {
+                          parent = Primitive (AnnotatedAttribute.parent attribute);
+                          incompatible_type =
+                            {
+                              Error.name = Reference.create name;
+                              mismatch =
+                                Error.create_mismatch
+                                  ~resolution:global_resolution
+                                  ~actual:resolved
+                                  ~expected
+                                  ~covariant:true;
+                            };
+                        }
+                      |> fun kind -> emit_error ~errors ~location ~kind
+                  | None when is_incompatible ->
+                      incompatible_variable_type_error_kind
+                        ~global_resolution
+                        {
+                          Error.name = reference;
+                          mismatch =
+                            Error.create_mismatch
+                              ~resolution:global_resolution
+                              ~actual:resolved
+                              ~expected
+                              ~covariant:true;
+                        }
+                      |> fun kind -> emit_error ~errors ~location ~kind
+                  | _ -> errors
+                in
+                let check_assign_class_variable_on_instance errors =
+                  match
+                    ( resolved_base,
+                      attribute >>| fst >>| AnnotatedAttribute.class_variable,
+                      attribute >>| fst >>| AnnotatedAttribute.name )
+                  with
+                  | `Attribute (_, parent), Some true, Some class_variable
+                    when Option.is_none unwrapped_annotation_type && not (Type.is_meta parent) ->
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.InvalidAssignment
+                             (ClassVariable { class_name = Type.show parent; class_variable }))
+                  | _ -> errors
+                in
+                let check_undefined_attribute_target errors =
+                  match resolved_base, attribute with
+                  | `Attribute (_, parent), Some (attribute, _)
+                    when not (AnnotatedAttribute.defined attribute) ->
+                      let is_meta_typed_dictionary =
+                        Type.is_meta parent
+                        && GlobalResolution.is_typed_dictionary
+                             global_resolution
+                             (Type.single_parameter parent)
+                      in
+                      let is_getattr_returning_any_defined =
+                        match
+                          find_getattr parent
+                          >>| AnnotatedAttribute.annotation
+                          >>| Annotation.annotation
+                        with
+                        | Some
+                            (Type.Parametric
+                              {
+                                name = "BoundMethod";
+                                parameters =
+                                  [Single (Callable { implementation = { annotation; _ }; _ }); _];
+                              })
+                        | Some (Type.Callable { implementation = { annotation; _ }; _ }) ->
+                            Type.is_any annotation
+                        | _ -> false
+                      in
+                      if is_meta_typed_dictionary || is_getattr_returning_any_defined then
+                        (* Ignore the error from the attribute declaration `Movie.name = ...`, which
+                           would raise an error because `name` was removed as an attribute from the
+                           TypedDictionary. *)
+                        errors
+                      else
+                        (* TODO(T64156088): To catch errors against the implicit call to a custom
+                           definition of `__setattr__`, we should run signature select against the
+                           value type. *)
+                        let parent_module_path = module_path_of_type ~global_resolution parent in
+                        emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.UndefinedAttribute
+                               {
+                                 attribute = AnnotatedAttribute.public_name attribute;
+                                 origin =
+                                   Error.Class
+                                     { class_origin = ClassType parent; parent_module_path };
+                               })
+                  | _ -> errors
+                in
+                let check_nested_explicit_type_alias errors =
+                  match name, unwrapped_annotation_type with
+                  | Name.Identifier identifier, Some annotation
+                    when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:(Error.InvalidType (NestedAlias identifier))
+                  | _ -> errors
+                in
+                let check_enumeration_literal errors =
+                  unwrapped_annotation_type
+                  >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
+                  |> Option.value ~default:errors
+                in
+                let check_previously_annotated errors =
+                  match name with
+                  | Name.Identifier identifier ->
+                      let is_defined =
+                        Option.is_some
+                          (Resolution.get_local
+                             ~global_fallback:true
+                             ~reference:(Reference.create identifier)
+                             resolution)
+                      in
+                      let is_reannotation_with_same_type =
+                        (* TODO(T77219514): special casing for re-annotation in loops can be removed
+                           when fixpoint is gone *)
+                        Annotation.is_immutable target_annotation
+                        && Type.equal expected (Annotation.original target_annotation)
+                      in
+                      if
+                        has_explicit_annotation
+                        && (not (Define.is_toplevel define))
+                        && is_defined
+                        && not is_reannotation_with_same_type
+                      then
+                        emit_error
+                          ~errors
+                          ~location
+                          ~kind:(Error.IllegalAnnotationTarget { target; kind = Reassignment })
+                      else
+                        errors
+                  | _ -> errors
+                in
+                let check_assignment_to_readonly_type errors =
+                  let is_readonly_attribute =
+                    target_annotation |> Annotation.annotation |> Type.ReadOnly.is_readonly
+                  in
+                  match attribute, resolved_base with
+                  | Some (_, attribute_name), `Attribute (_, resolved_base_type)
+                    when is_readonly_attribute
+                         && Type.ReadOnly.is_readonly resolved_base_type
+                         && not (Define.is_class_toplevel define) ->
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.ReadOnlynessMismatch
+                             (AssigningToReadOnlyAttribute { attribute_name }))
+                  | _ -> errors
+                in
+                let errors =
+                  let modifying_read_only_error =
+                    let is_locally_initialized =
+                      name_reference
+                      >>| (fun reference ->
+                            Resolution.has_nontemporary_annotation ~reference resolution)
+                      |> Option.value ~default:false
+                    in
+                    match attribute, unwrapped_annotation_type with
+                    | None, _ when is_locally_initialized || not has_explicit_annotation ->
+                        Option.some_if
+                          (Annotation.is_final target_annotation)
+                          (AnalysisError.FinalAttribute reference)
+                    | None, _ -> None
+                    | Some _, Some _ ->
+                        (* We presume assignments to annotated targets are valid re: Finality *)
+                        None
+                    | Some (attribute, _), None -> (
+                        let open AnnotatedAttribute in
+                        match visibility attribute, property attribute, initialized attribute with
+                        | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define ->
+                            None
+                        | ReadOnly _, false, OnClass when Define.is_class_toplevel define -> None
+                        | ReadOnly _, false, _ -> Some (AnalysisError.FinalAttribute reference)
+                        | ReadOnly _, true, _ -> Some (ReadOnly reference)
+                        | _ -> None)
+                  in
+                  match modifying_read_only_error with
+                  | Some error -> emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
+                  | None ->
+                      (* Check compatibility only when we're not already erroring about Final
+                         reassignment. *)
+                      check_assignment_compatibility errors
+                in
+                check_assign_class_variable_on_instance errors
+                |> check_undefined_attribute_target
+                |> check_nested_explicit_type_alias
+                |> check_enumeration_literal
+                |> check_previously_annotated
+                |> check_assignment_to_readonly_type
+            | _ -> errors
+          in
+          let check_for_missing_annotations errors resolved =
+            let insufficiently_annotated, thrown_at_source =
+              let is_reassignment =
+                (* Special-casing re-use of typed parameters as attributes *)
+                match name, value with
+                | ( Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier self); _ };
+                        attribute;
+                        _;
+                      },
+                    Some ({ Node.value = Expression.Name _; _ } as value) )
+                  when String.equal (Identifier.sanitized self) "self" ->
+                    let sanitized = Ast.Transform.sanitize_expression value |> Expression.show in
+                    is_immutable
+                    && (not (Type.contains_unknown expected))
+                    && (String.equal attribute sanitized || String.equal attribute ("_" ^ sanitized))
+                | _ -> false
+              in
+              match annotation with
+              | Some annotation when Type.expression_contains_any annotation ->
+                  unwrapped_annotation_type
+                  >>| Type.contains_prohibited_any
+                  |> Option.value ~default:false
+                  |> fun insufficient -> insufficient, true
+              | None when is_immutable && not is_reassignment ->
+                  let thrown_at_source =
+                    match define, attribute with
+                    | _, None -> Define.is_toplevel define
+                    | ( { StatementDefine.signature = { parent = Some parent; _ }; _ },
+                        Some (attribute, _) ) ->
+                        Type.Primitive.equal
+                          (Reference.show parent)
+                          (AnnotatedAttribute.parent attribute)
+                        && (Define.is_class_toplevel define || Define.is_constructor define)
+                    | _ -> false
+                  in
+                  ( Type.equal expected Type.Top || Type.contains_prohibited_any expected,
+                    thrown_at_source )
+              | _ -> false, false
+            in
+            let actual_annotation = if Type.is_top resolved then None else Some resolved in
+            let is_illegal_attribute_annotation attribute =
+              let attribute_parent = AnnotatedAttribute.parent attribute in
+              let parent_annotation =
+                match parent with
+                | None -> Type.Top
+                | Some reference -> Type.Primitive (Reference.show reference)
+              in
+              has_explicit_annotation
+              (* [Movie.items: int] would raise an error because [Mapping] also has [items]. *)
+              && (not (GlobalResolution.is_typed_dictionary global_resolution parent_annotation))
+              && not (Type.equal parent_annotation (Primitive attribute_parent))
+            in
+            let parent_class =
+              match resolved_base with
+              | `Attribute (_, base_type) -> Type.class_data_for_attribute_lookup base_type
+              | _ -> None
+            in
+            match name, parent_class with
+            | Name.Identifier identifier, _ ->
+                let reference = Reference.create identifier in
+                if Resolution.is_global ~reference resolution && insufficiently_annotated then
+                  let location_of_global =
+                    Reference.delocalize reference
+                    |> GlobalResolution.location_of_global global_resolution
+                    >>| Location.strip_module
+                    |> Option.value ~default:location
+                  in
+                  ( emit_error
+                      ~errors
+                      ~location:location_of_global
+                      ~kind:
+                        (Error.MissingGlobalAnnotation
+                           {
+                             Error.name = reference;
+                             annotation = actual_annotation;
+                             given_annotation = Option.some_if is_immutable expected;
+                             thrown_at_source;
+                           }),
+                    true )
+                else if has_explicit_annotation && insufficiently_annotated then
+                  ( emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.ProhibitedAny
+                           {
+                             missing_annotation =
+                               {
+                                 Error.name = reference;
+                                 annotation = actual_annotation;
+                                 given_annotation = Option.some_if is_immutable expected;
+                                 thrown_at_source = true;
+                               };
+                             annotation_kind = Annotation;
+                           }),
+                    true )
+                else
+                  errors, true
+            | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
+              when is_simple_name base && insufficiently_annotated ->
+                (* Module *)
+                let reference = name_to_reference_exn base in
+                if
+                  has_explicit_annotation
+                  && not (GlobalResolution.module_exists global_resolution reference)
+                then
+                  ( emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.ProhibitedAny
+                           {
+                             missing_annotation =
+                               {
+                                 Error.name = Reference.create ~prefix:reference attribute;
+                                 annotation = actual_annotation;
+                                 given_annotation = Option.some_if is_immutable expected;
+                                 thrown_at_source = true;
+                               };
+                             annotation_kind = Annotation;
+                           }),
+                    true )
+                else
+                  errors, true
+            | ( Name.Attribute { attribute; _ },
+                Some ({ Type.instantiated; accessed_through_class; class_name; _ } :: _) ) -> (
+                (* Instance *)
+                let reference = Reference.create attribute in
+                let attribute =
+                  GlobalResolution.attribute_from_class_name
+                    global_resolution
+                    ~name:attribute
+                    ~instantiated
+                    ~accessed_through_class
+                    ~transitive:true
+                    class_name
+                in
+                match attribute with
+                | Some attribute -> (
+                    if is_illegal_attribute_annotation attribute then
+                      (* Non-self attributes may not be annotated. *)
+                      ( emit_error
+                          ~errors
+                          ~location
+                          ~kind:(Error.IllegalAnnotationTarget { target; kind = InvalidExpression }),
+                        false )
+                    else if
+                      AnnotatedAttribute.defined attribute
+                      && (not (AnnotatedAttribute.property attribute))
+                      && insufficiently_annotated
+                    then
+                      ( emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.MissingAttributeAnnotation
+                               {
+                                 parent = Primitive (AnnotatedAttribute.parent attribute);
+                                 missing_annotation =
+                                   {
+                                     Error.name = reference;
+                                     annotation = actual_annotation;
+                                     given_annotation = Option.some_if is_immutable expected;
+                                     thrown_at_source;
+                                   };
+                               }),
+                        true )
+                    else if insufficiently_annotated && has_explicit_annotation then
+                      ( emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.ProhibitedAny
+                               {
+                                 missing_annotation =
+                                   {
+                                     Error.name = reference;
+                                     annotation = actual_annotation;
+                                     given_annotation = Option.some_if is_immutable expected;
+                                     thrown_at_source = true;
+                                   };
+                                 annotation_kind = Annotation;
+                               }),
+                        true )
+                    else
+                      match
+                        incompatible_annotation_with_attribute_error
+                          ~define
+                          ~has_explicit_annotation
+                          ~unwrapped_annotation_type
+                          attribute
+                      with
+                      | Some inconsistent_constructor_annotation ->
+                          ( emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.IllegalAnnotationTarget
+                                   { target; kind = inconsistent_constructor_annotation }),
+                            false )
+                      | None -> errors, true)
+                | None ->
+                    if
+                      insufficiently_annotated
+                      && GlobalResolution.is_typed_dictionary
+                           global_resolution
+                           (Type.Primitive class_name)
+                    then
+                      ( emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.ProhibitedAny
+                               {
+                                 missing_annotation =
+                                   {
+                                     Error.name = reference;
+                                     annotation = actual_annotation;
+                                     given_annotation = Option.some_if is_immutable expected;
+                                     thrown_at_source = true;
+                                   };
+                                 annotation_kind = Annotation;
+                               }),
+                        true )
+                    else
+                      errors, true)
+            | _ ->
+                if has_explicit_annotation then
+                  ( emit_error
+                      ~errors
+                      ~location
+                      ~kind:(Error.IllegalAnnotationTarget { target; kind = InvalidExpression }),
+                    false )
+                else
+                  errors, true
+          in
+          let propagate_annotations
+              ~errors
+              ~is_valid_annotation
+              ~resolved_value_weakened
+              name_reference
+            =
+            let is_global =
+              name_reference
+              >>| (fun reference -> Resolution.is_global resolution ~reference)
+              |> Option.value ~default:false
+            in
+            let is_not_local = is_global && not (Define.is_toplevel Context.define.value) in
+            let refine_annotation annotation refined =
+              GlobalResolution.refine global_resolution annotation refined
+            in
+            let annotation =
+              (* Do not refine targets explicitly annotated as 'Any' to allow for escape hatch *)
+              (* Do not refine targets with invariance mismatch as we cannot keep the inferred type
+                 up to date for mutable containers *)
+              let invariance_mismatch =
+                GlobalResolution.is_invariance_mismatch
+                  global_resolution
+                  ~right:expected
+                  ~left:resolved_value
+              in
+              if has_explicit_annotation && is_valid_annotation then
+                let guide_annotation =
+                  Annotation.create_immutable ~final:is_final guide_annotation_type
+                in
+                if
+                  Type.is_concrete resolved_value
+                  && (not (Type.is_any guide_annotation_type))
+                  && not invariance_mismatch
+                then
+                  refine_annotation guide_annotation resolved_value
+                else
+                  guide_annotation
+              else if is_immutable then
+                if Type.is_any (Annotation.original target_annotation) || invariance_mismatch then
+                  target_annotation
+                else
+                  refine_annotation target_annotation guide_annotation_type
+              else
+                Annotation.create_mutable guide_annotation_type
+            in
+            let errors, annotation =
+              if
+                (not has_explicit_annotation)
+                && Type.Variable.contains_escaped_free_variable (Annotation.annotation annotation)
+              then
+                let kind =
+                  Error.IncompleteType
+                    {
+                      target = { Node.location; value = target_value };
+                      annotation = resolved_value_weakened;
+                      attempted_action = Naming;
+                    }
+                in
+                let converted =
+                  Type.Variable.convert_all_escaped_free_variables_to_anys
+                    (Annotation.annotation annotation)
+                in
+                emit_error ~errors ~location ~kind, { annotation with annotation = converted }
+              else
+                errors, annotation
+            in
+            let resolution =
+              match name with
+              | Identifier identifier ->
+                  Resolution.new_local
+                    resolution
+                    ~temporary:is_not_local
+                    ~reference:(Reference.create identifier)
+                    ~annotation
+              | Attribute _ as name when is_simple_name name -> (
+                  match resolved_base, attribute with
+                  | `Attribute (_, parent), Some (attribute, _)
+                    when not
+                           (AnnotatedAttribute.property attribute
+                           || Option.is_some (find_getattr parent)) ->
+                      let { name; attribute_path; base_annotation } =
+                        partition_name ~resolution name
+                      in
+                      Resolution.new_local_with_attributes
+                        ~temporary:(is_not_local || AnnotatedAttribute.defined attribute)
+                        resolution
+                        ~name
+                        ~attribute_path
+                        ~base_annotation
+                        ~annotation
+                  | _ -> resolution)
+              | _ -> resolution
+            in
+            resolution, errors
+          in
+          let resolved_value_weakened =
+            GlobalResolution.resolve_mutable_literals
+              global_resolution
+              ~resolve:(resolve_expression_type ~resolution)
+              ~expression:value
+              ~resolved:resolved_value
+              ~expected
+          in
+          let name_reference =
+            match name with
+            | Identifier identifier -> Reference.create identifier |> Option.some
+            | Attribute _ as name when is_simple_name name ->
+                name_to_reference_exn name |> Option.some
+            | _ -> None
+          in
+          match resolved_value_weakened with
+          | { resolved = resolved_value_weakened; typed_dictionary_errors = [] } ->
+              let errors = check_errors ~name_reference errors resolved_value_weakened in
+              let errors, is_valid_annotation =
+                check_for_missing_annotations errors resolved_value_weakened
+              in
+              propagate_annotations
+                ~errors
+                ~is_valid_annotation
+                ~resolved_value_weakened
+                name_reference
+          | { typed_dictionary_errors; _ } ->
+              propagate_annotations
+                ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
+                ~is_valid_annotation:false
+                ~resolved_value_weakened:Type.Top
+                name_reference
+        in
+        let resolved_base =
+          match name with
+          | Name.Identifier identifier -> `Identifier identifier
+          | Name.Attribute attribute ->
+              let resolved = resolve_expression_type ~resolution attribute.base in
+              `Attribute (attribute, resolved)
+        in
+        match resolved_base with
+        | `Attribute (attribute, Type.Union types) ->
+            (* Union[A,B].attr is valid iff A.attr and B.attr is valid
+
+               TODO(T130377746): Use `Type.class_data_for_attribute_lookup` here to avoid
+               duplicating the logic of how to figure out the attribute type for various types.
+               Right now, we're duplicating some of the logic (for unions) but missing others. We're
+               also hackily extracting `accessed_through_class` later on by checking if the
+               top-level type is `Type[...]` instead of doing it for all possible elements of a
+               union, etc. *)
+            let propagate (resolution, errors) t =
+              inner_assignment resolution errors (`Attribute (attribute, t))
+            in
+            let _, errors = List.fold types ~init:(resolution, errors) ~f:propagate in
+            (* We process type as union again to populate resolution *)
+            propagate (resolution, errors) (Union types)
+        | resolved -> inner_assignment resolution errors resolved)
+    | Expression.Subscript { Subscript.base; index } ->
+        let {
+          Resolved.errors = callee_errors;
+          resolved = resolved_setitem_type;
+          base = resolved_setitem_base;
+          resolution = resolution_after_callee;
+          _;
+        }
+          =
+          let setitem_callee_expression =
+            {
+              Node.value =
+                Expression.Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+              Node.location;
+            }
+          in
+          forward_expression ~resolution setitem_callee_expression
+        in
+        (* TODO(T187163267): Try to deduplicate some of this code with the forward_expression logic
+           for resolving a callee. *)
+        let setitem_callee =
+          Callee.Attribute
+            {
+              base =
+                {
+                  expression = base;
+                  resolved_base =
+                    Resolved.resolved_base_type resolved_setitem_base
+                    |> Option.value ~default:Type.Top;
+                };
+              attribute = { name = "__setitem__"; resolved = resolved_setitem_type };
+              (* TODO(T187163267) We need a placeholder expression; use the base of the subscript
+                 for now and eventually try to find a way of relaxing this requirement. *)
+              expression = base;
+            }
+        in
+        (* resolve the index, then combine it with the value *)
+        let resolution_after_index, base_and_callee_errors, setitem_arguments =
+          let updated_resolution, base_and_callee_errors, index_argument =
+            forward_argument
+              ~resolution:resolution_after_callee
+              ~errors:callee_errors
+              { Call.Argument.value = index; name = None }
+          in
+          let value_argument =
+            {
+              AttributeResolution.Argument.kind = Call.Argument.Positional;
+              expression = value;
+              resolved = guide_annotation_type;
+            }
+          in
+          updated_resolution, base_and_callee_errors, [index_argument; value_argument]
+        in
+        let target, dynamic =
+          if Type.is_meta resolved_setitem_type then
+            Some (Type.single_parameter resolved_setitem_type), false
+          else
+            match resolved_setitem_base with
+            | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
+                Some resolved, true
+            | Some (Resolved.Class resolved) when not (Type.is_top resolved) -> Some resolved, false
+            | Some (Resolved.Super resolved) when not (Type.is_top resolved) -> Some resolved, false
+            | _ -> None, false
+        in
+        let { Resolved.resolution; errors = setitem_errors; _ } =
+          forward_call
+            ~resolution:resolution_after_index
+            ~location
+            ~errors:base_and_callee_errors
+            ~target
+            ~dynamic
+            ~callee:setitem_callee
+            ~arguments:setitem_arguments
+        in
+        resolution, setitem_errors @ errors
+    | List elements
+    | Tuple elements
+      when is_uniform_sequence guide_annotation_type ->
+        let propagate (resolution, errors) element =
+          match Node.value element with
+          | Expression.Starred (Starred.Once target) ->
+              let guide_annotation_type =
+                uniform_sequence_parameter guide_annotation_type |> Type.list
+              in
+              let resolved_value = uniform_sequence_parameter resolved_value |> Type.list in
+              forward_value_assignment
+                ~resolution
+                ~errors
+                ~target
+                ~annotation
+                ~unwrapped_annotation_type
+                ~guide_annotation_type
+                ~resolved_value
+                ~is_final
+                None
+          | _ ->
+              let guide_annotation_type = uniform_sequence_parameter guide_annotation_type in
+              let resolved_value = uniform_sequence_parameter resolved_value in
+              forward_value_assignment
+                ~resolution
+                ~errors
+                ~target:element
+                ~annotation
+                ~unwrapped_annotation_type
+                ~guide_annotation_type
+                ~resolved_value
+                ~is_final
+                None
+        in
+        List.fold elements ~init:(resolution, errors) ~f:propagate
+    | List elements
+    | Tuple elements ->
+        let left, starred, right =
+          let is_starred { Node.value; _ } =
+            match value with
+            | Expression.Starred (Starred.Once _) -> true
+            | _ -> false
+          in
+          let left, tail = List.split_while elements ~f:(fun element -> not (is_starred element)) in
+          let starred, right =
+            let starred, right = List.split_while tail ~f:is_starred in
+            let starred =
+              match starred with
+              | [{ Node.value = Starred (Starred.Once starred); _ }] -> [starred]
+              | _ -> []
+            in
+            starred, right
+          in
+          left, starred, right
+        in
+        let assignees = left @ starred @ right in
+        let errors, annotations =
+          match guide_annotation_type with
+          | Type.Any -> errors, List.map assignees ~f:(fun _ -> Type.Any)
+          | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Any)
+          | _ -> (
+              match
+                nonuniform_sequence_parameters (List.length assignees) guide_annotation_type
+              with
+              | None ->
+                  let errors =
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.Unpack
+                           {
+                             expected_count = List.length assignees;
+                             unpack_problem = UnacceptableType guide_annotation_type;
+                           })
+                  in
+                  errors, List.map assignees ~f:(fun _ -> Type.Any)
+              | Some annotations ->
+                  let annotations =
+                    let has_starred_assignee = not (List.is_empty starred) in
+                    let left, tail = List.split_n annotations (List.length left) in
+                    let starred, right = List.split_n tail (List.length tail - List.length right) in
+                    let starred =
+                      if not (List.is_empty starred) then
+                        let annotation =
+                          List.fold
+                            starred
+                            ~init:Type.Bottom
+                            ~f:(GlobalResolution.join global_resolution)
+                          |> Type.list
+                        in
+                        [annotation]
+                      else if has_starred_assignee then
+                        [Type.tuple []]
+                      else
+                        []
+                    in
+                    left @ starred @ right
+                  in
+                  if List.length annotations <> List.length assignees then
+                    let errors =
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.Unpack
+                             {
+                               expected_count = List.length assignees;
+                               unpack_problem = CountMismatch (List.length annotations);
+                             })
+                    in
+                    errors, List.map assignees ~f:(fun _ -> Type.Any)
+                  else
+                    errors, annotations)
+        in
+        List.zip_exn assignees annotations
+        |> List.fold
+             ~init:(resolution, errors)
+             ~f:(fun (resolution, errors) (target, guide_annotation_type) ->
+               forward_value_assignment
+                 ~resolution
+                 ~errors
+                 ~target
+                 ~annotation
+                 ~unwrapped_annotation_type
+                 ~guide_annotation_type
+                 ~resolved_value:guide_annotation_type
+                 ~is_final
+                 None)
+    | _ ->
+        (* This branch should only be hit when a LHS is subscripted; currently Pyre won't check that
+           case if it's part of a multi-assignment, because we only handle the cases the parser
+           could eagerly convert to `__setitem__` calls.
+
+           All other cases should be impossible - the AST types can't rule them out, but the grammer
+           / parser won't allow anything else here *)
+        if Option.is_some annotation then
+          ( resolution,
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.IllegalAnnotationTarget { target; kind = InvalidExpression }) )
+        else
+          resolution, errors
+
+
+  and forward_assignment ~resolution ~location ~target ~annotation ~value =
+    let global_resolution = Resolution.global_resolution resolution in
+    let errors, is_final, unwrapped_annotation_type =
       match annotation with
       | None -> [], false, None
       | Some annotation ->
@@ -4279,1057 +5332,23 @@ module State (Context : Context) = struct
               resolution, List.append new_errors errors, resolved
           | None -> resolution, errors, Type.Any
         in
-        let guide =
-          (* This is the annotation determining how we recursively break up the assignment. *)
-          match original_annotation with
+        (* This is the annotation determining how we recursively break up the assignment. *)
+        let guide_annotation_type =
+          match unwrapped_annotation_type with
           | Some annotation when not (Type.contains_unknown annotation) -> annotation
           | _ -> resolved_value
         in
-
-        let explicit = Option.is_some annotation in
-        let rec forward_assign
+        let resolution, errors =
+          forward_value_assignment
             ~resolution
             ~errors
-            ~target:({ Node.location; value = target_value } as target)
-            ~guide
+            ~target
+            ~annotation
+            ~unwrapped_annotation_type
+            ~guide_annotation_type
             ~resolved_value
-            expression
-          =
-          let uniform_sequence_parameter annotation =
-            let unbounded_annotation =
-              match annotation with
-              | Type.Tuple (Concatenation concatenation) ->
-                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-              | _ -> None
-            in
-            match unbounded_annotation with
-            | Some annotation -> annotation
-            | None -> (
-                match
-                  GlobalResolution.extract_type_parameters
-                    global_resolution
-                    ~target:"typing.Iterable"
-                    ~source:annotation
-                with
-                | Some [element_type] -> element_type
-                | _ -> Type.Any)
-          in
-          let nonuniform_sequence_parameters expected_size annotation =
-            match annotation with
-            | Type.Tuple (Concrete parameters) -> Some parameters
-            | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
-                NamedTuple.field_annotations ~global_resolution annotation
-            | annotation ->
-                let parameters_from_getitem () =
-                  (* Simulate __getitem__ in the fallback. *)
-                  let synthetic = "$getitem_host" in
-                  let resolution =
-                    Resolution.new_local
-                      resolution
-                      ~reference:(Reference.create synthetic)
-                      ~annotation:(Annotation.create_mutable annotation)
-                  in
-                  let getitem_type =
-                    let callee =
-                      let base =
-                        Node.create_with_default_location
-                          (Expression.Name (Name.Identifier synthetic))
-                      in
-                      Node.create_with_default_location
-                        (Expression.Name
-                           (Name.Attribute { base; attribute = "__getitem__"; special = true }))
-                    in
-
-                    Resolution.resolve_expression_to_type
-                      resolution
-                      (Node.create_with_default_location
-                         (Expression.Call
-                            {
-                              callee;
-                              arguments =
-                                [
-                                  {
-                                    Call.Argument.value =
-                                      Node.create_with_default_location
-                                        (Expression.Constant (Constant.Integer 0));
-                                    name = None;
-                                  };
-                                ];
-                            }))
-                  in
-                  match getitem_type with
-                  | Type.Top
-                  | Type.Any ->
-                      None
-                  | getitem_annotation ->
-                      Some (List.init ~f:(fun _ -> getitem_annotation) expected_size)
-                in
-                Option.first_some
-                  (Type.type_parameters_for_bounded_tuple_union annotation)
-                  (parameters_from_getitem ())
-          in
-          let is_uniform_sequence annotation =
-            match annotation with
-            | Type.Tuple (Concatenation concatenation)
-              when Type.OrderedTypes.Concatenation.is_fully_unbounded concatenation ->
-                true
-            (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
-            | Type.Tuple _ -> false
-            | Type.Union (Type.Tuple _ :: _)
-              when Option.is_some (Type.type_parameters_for_bounded_tuple_union annotation) ->
-                false
-            | _ ->
-                (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
-                && Option.is_some
-                     (GlobalResolution.type_of_iteration_value global_resolution annotation)
-          in
-          match target_value with
-          | Expression.Name name -> (
-              let inner_assignment resolution errors resolved_base =
-                let reference, attribute, target_annotation =
-                  match resolved_base with
-                  | `Identifier identifier ->
-                      let reference = Reference.create identifier in
-
-                      ( Some reference,
-                        None,
-                        from_reference ~location:Location.any reference
-                        |> resolve_expression ~resolution )
-                  | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
-                      let name = attribute in
-                      let parent, accessed_through_class, accessed_through_readonly =
-                        match Type.ReadOnly.unpack_readonly resolved, Type.is_meta resolved with
-                        | Some resolved, _ -> resolved, false, true
-                        | None, true -> Type.single_parameter resolved, true, false
-                        | _ -> resolved, false, false
-                      in
-                      let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
-                      let reference =
-                        match base with
-                        | { Node.value = Name name; _ } when is_simple_name name ->
-                            Some (Reference.create ~prefix:(name_to_reference_exn name) attribute)
-                        | _ ->
-                            parent_class_name
-                            >>| Reference.create
-                            >>| fun prefix -> Reference.create ~prefix attribute
-                      in
-                      let attribute =
-                        parent_class_name
-                        >>= GlobalResolution.attribute_from_class_name
-                              global_resolution
-                              ~name:attribute
-                              ~instantiated:parent
-                              ~transitive:true
-                              ~accessed_through_class
-                              ~accessed_through_readonly
-                        >>| fun annotated -> annotated, attribute
-                      in
-                      let target_annotation =
-                        match attribute with
-                        | Some (attribute, _) -> AnnotatedAttribute.annotation attribute
-                        | _ ->
-                            (* The reason why we need to do resolve_expression on the entire target
-                               again is to deal with imported globals. To fix it, we ought to stop
-                               representing imported globals as `Expression.Name.Attribute`. *)
-                            resolve_expression ~resolution target
-                      in
-                      begin
-                        match attribute with
-                        | Some (attribute, _)
-                          when AnnotatedAttribute.property attribute
-                               && AnnotatedAttribute.(
-                                    [%compare.equal: visibility] (visibility attribute) ReadWrite)
-                          ->
-                            Context.Builder.add_property_setter_callees
-                              ~attribute
-                              ~instantiated_parent:parent
-                              ~name
-                              ~location:
-                                (Location.with_module ~module_reference:Context.qualifier location)
-                        | _ -> ()
-                      end;
-                      reference, attribute, target_annotation
-                in
-                let expected, is_immutable =
-                  match original_annotation, target_annotation with
-                  | Some original, _ when not (Type.is_type_alias original) -> original, true
-                  | _, target_annotation when Annotation.is_immutable target_annotation ->
-                      Annotation.original target_annotation, true
-                  | _ -> Type.Top, false
-                in
-                let find_getattr parent =
-                  let attribute =
-                    match Type.class_data_for_attribute_lookup parent with
-                    | Some [{ instantiated; class_name; _ }] ->
-                        GlobalResolution.attribute_from_class_name
-                          global_resolution
-                          class_name
-                          ~accessed_through_class:false
-                          ~transitive:true
-                          ~name:"__getattr__"
-                          ~instantiated
-                    | _ -> None
-                  in
-                  match attribute with
-                  | Some attribute when AnnotatedAttribute.defined attribute -> (
-                      match AnnotatedAttribute.annotation attribute |> Annotation.annotation with
-                      | Type.Parametric
-                          { name = "BoundMethod"; parameters = [Single (Callable _); _] }
-                      | Type.Callable _ ->
-                          Some attribute
-                      | _ -> None)
-                  | _ -> None
-                in
-                let check_errors ~name_reference errors resolved =
-                  match reference with
-                  | Some reference ->
-                      let check_assignment_compatibility errors =
-                        let is_valid_enumeration_assignment =
-                          let parent_annotation =
-                            match parent with
-                            | None -> Type.Top
-                            | Some reference -> Type.Primitive (Reference.show reference)
-                          in
-                          let compatible =
-                            if explicit then
-                              GlobalResolution.less_or_equal
-                                global_resolution
-                                ~left:expected
-                                ~right:resolved
-                            else
-                              true
-                          in
-                          GlobalResolution.less_or_equal
-                            global_resolution
-                            ~left:parent_annotation
-                            ~right:Type.enumeration
-                          && compatible
-                        in
-                        let is_incompatible =
-                          let expression_is_ellipses =
-                            match expression with
-                            | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> true
-                            | _ -> false
-                          in
-                          is_immutable
-                          && (not expression_is_ellipses)
-                          && (not
-                                (GlobalResolution.constraints_solution_exists
-                                   global_resolution
-                                   ~get_typed_dictionary_override:(fun _ -> None)
-                                   ~left:resolved
-                                   ~right:expected))
-                          && not is_valid_enumeration_assignment
-                        in
-                        match attribute with
-                        | Some (attribute, name) when is_incompatible ->
-                            Error.IncompatibleAttributeType
-                              {
-                                parent = Primitive (AnnotatedAttribute.parent attribute);
-                                incompatible_type =
-                                  {
-                                    Error.name = Reference.create name;
-                                    mismatch =
-                                      Error.create_mismatch
-                                        ~resolution:global_resolution
-                                        ~actual:resolved
-                                        ~expected
-                                        ~covariant:true;
-                                  };
-                              }
-                            |> fun kind -> emit_error ~errors ~location ~kind
-                        | None when is_incompatible ->
-                            incompatible_variable_type_error_kind
-                              ~global_resolution
-                              {
-                                Error.name = reference;
-                                mismatch =
-                                  Error.create_mismatch
-                                    ~resolution:global_resolution
-                                    ~actual:resolved
-                                    ~expected
-                                    ~covariant:true;
-                              }
-                            |> fun kind -> emit_error ~errors ~location ~kind
-                        | _ -> errors
-                      in
-                      let check_assign_class_variable_on_instance errors =
-                        match
-                          ( resolved_base,
-                            attribute >>| fst >>| AnnotatedAttribute.class_variable,
-                            attribute >>| fst >>| AnnotatedAttribute.name )
-                        with
-                        | `Attribute (_, parent), Some true, Some class_variable
-                          when Option.is_none original_annotation && not (Type.is_meta parent) ->
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:
-                                (Error.InvalidAssignment
-                                   (ClassVariable { class_name = Type.show parent; class_variable }))
-                        | _ -> errors
-                      in
-                      let check_undefined_attribute_target errors =
-                        match resolved_base, attribute with
-                        | `Attribute (_, parent), Some (attribute, _)
-                          when not (AnnotatedAttribute.defined attribute) ->
-                            let is_meta_typed_dictionary =
-                              Type.is_meta parent
-                              && GlobalResolution.is_typed_dictionary
-                                   global_resolution
-                                   (Type.single_parameter parent)
-                            in
-                            let is_getattr_returning_any_defined =
-                              match
-                                find_getattr parent
-                                >>| AnnotatedAttribute.annotation
-                                >>| Annotation.annotation
-                              with
-                              | Some
-                                  (Type.Parametric
-                                    {
-                                      name = "BoundMethod";
-                                      parameters =
-                                        [
-                                          Single (Callable { implementation = { annotation; _ }; _ });
-                                          _;
-                                        ];
-                                    })
-                              | Some (Type.Callable { implementation = { annotation; _ }; _ }) ->
-                                  Type.is_any annotation
-                              | _ -> false
-                            in
-                            if is_meta_typed_dictionary || is_getattr_returning_any_defined then
-                              (* Ignore the error from the attribute declaration `Movie.name = ...`,
-                                 which would raise an error because `name` was removed as an
-                                 attribute from the TypedDictionary. *)
-                              errors
-                            else
-                              (* TODO(T64156088): To catch errors against the implicit call to a
-                                 custom definition of `__setattr__`, we should run signature select
-                                 against the value type. *)
-                              let parent_module_path =
-                                module_path_of_type ~global_resolution parent
-                              in
-                              emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.UndefinedAttribute
-                                     {
-                                       attribute = AnnotatedAttribute.public_name attribute;
-                                       origin =
-                                         Error.Class
-                                           { class_origin = ClassType parent; parent_module_path };
-                                     })
-                        | _ -> errors
-                      in
-                      let check_nested_explicit_type_alias errors =
-                        match name, original_annotation with
-                        | Name.Identifier identifier, Some annotation
-                          when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:(Error.InvalidType (NestedAlias identifier))
-                        | _ -> errors
-                      in
-                      let check_enumeration_literal errors =
-                        original_annotation
-                        >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
-                        |> Option.value ~default:errors
-                      in
-                      let check_previously_annotated errors =
-                        match name with
-                        | Name.Identifier identifier ->
-                            let is_defined =
-                              Option.is_some
-                                (Resolution.get_local
-                                   ~global_fallback:true
-                                   ~reference:(Reference.create identifier)
-                                   resolution)
-                            in
-                            let is_reannotation_with_same_type =
-                              (* TODO(T77219514): special casing for re-annotation in loops can be
-                                 removed when fixpoint is gone *)
-                              Annotation.is_immutable target_annotation
-                              && Type.equal expected (Annotation.original target_annotation)
-                            in
-                            if
-                              explicit
-                              && (not (Define.is_toplevel define))
-                              && is_defined
-                              && not is_reannotation_with_same_type
-                            then
-                              emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.IllegalAnnotationTarget { target; kind = Reassignment })
-                            else
-                              errors
-                        | _ -> errors
-                      in
-                      let check_assignment_to_readonly_type errors =
-                        let is_readonly_attribute =
-                          target_annotation |> Annotation.annotation |> Type.ReadOnly.is_readonly
-                        in
-                        match attribute, resolved_base with
-                        | Some (_, attribute_name), `Attribute (_, resolved_base_type)
-                          when is_readonly_attribute
-                               && Type.ReadOnly.is_readonly resolved_base_type
-                               && not (Define.is_class_toplevel define) ->
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:
-                                (Error.ReadOnlynessMismatch
-                                   (AssigningToReadOnlyAttribute { attribute_name }))
-                        | _ -> errors
-                      in
-                      let errors =
-                        let modifying_read_only_error =
-                          let is_locally_initialized =
-                            name_reference
-                            >>| (fun reference ->
-                                  Resolution.has_nontemporary_annotation ~reference resolution)
-                            |> Option.value ~default:false
-                          in
-                          match attribute, original_annotation with
-                          | None, _ when is_locally_initialized || not explicit ->
-                              Option.some_if
-                                (Annotation.is_final target_annotation)
-                                (AnalysisError.FinalAttribute reference)
-                          | None, _ -> None
-                          | Some _, Some _ ->
-                              (* We presume assignments to annotated targets are valid re:
-                                 Finality *)
-                              None
-                          | Some (attribute, _), None -> (
-                              let open AnnotatedAttribute in
-                              match
-                                visibility attribute, property attribute, initialized attribute
-                              with
-                              | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define
-                                ->
-                                  None
-                              | ReadOnly _, false, OnClass when Define.is_class_toplevel define ->
-                                  None
-                              | ReadOnly _, false, _ ->
-                                  Some (AnalysisError.FinalAttribute reference)
-                              | ReadOnly _, true, _ -> Some (ReadOnly reference)
-                              | _ -> None)
-                        in
-                        match modifying_read_only_error with
-                        | Some error ->
-                            emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
-                        | None ->
-                            (* Check compatibility only when we're not already erroring about Final
-                               reassignment. *)
-                            check_assignment_compatibility errors
-                      in
-                      check_assign_class_variable_on_instance errors
-                      |> check_undefined_attribute_target
-                      |> check_nested_explicit_type_alias
-                      |> check_enumeration_literal
-                      |> check_previously_annotated
-                      |> check_assignment_to_readonly_type
-                  | _ -> errors
-                in
-                let check_for_missing_annotations errors resolved =
-                  let insufficiently_annotated, thrown_at_source =
-                    let is_reassignment =
-                      (* Special-casing re-use of typed parameters as attributes *)
-                      match name, value with
-                      | ( Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier self); _ }; attribute; _ },
-                          Some ({ Node.value = Name _; _ } as value) )
-                        when String.equal (Identifier.sanitized self) "self" ->
-                          let sanitized =
-                            Ast.Transform.sanitize_expression value |> Expression.show
-                          in
-                          is_immutable
-                          && (not (Type.contains_unknown expected))
-                          && (String.equal attribute sanitized
-                             || String.equal attribute ("_" ^ sanitized))
-                      | _ -> false
-                    in
-                    match annotation with
-                    | Some annotation when Type.expression_contains_any annotation ->
-                        original_annotation
-                        >>| Type.contains_prohibited_any
-                        |> Option.value ~default:false
-                        |> fun insufficient -> insufficient, true
-                    | None when is_immutable && not is_reassignment ->
-                        let thrown_at_source =
-                          match define, attribute with
-                          | _, None -> Define.is_toplevel define
-                          | ( { StatementDefine.signature = { parent = Some parent; _ }; _ },
-                              Some (attribute, _) ) ->
-                              Type.Primitive.equal
-                                (Reference.show parent)
-                                (AnnotatedAttribute.parent attribute)
-                              && (Define.is_class_toplevel define || Define.is_constructor define)
-                          | _ -> false
-                        in
-                        ( Type.equal expected Type.Top || Type.contains_prohibited_any expected,
-                          thrown_at_source )
-                    | _ -> false, false
-                  in
-                  let actual_annotation = if Type.is_top resolved then None else Some resolved in
-                  let is_illegal_attribute_annotation attribute =
-                    let attribute_parent = AnnotatedAttribute.parent attribute in
-                    let parent_annotation =
-                      match parent with
-                      | None -> Type.Top
-                      | Some reference -> Type.Primitive (Reference.show reference)
-                    in
-                    explicit
-                    (* [Movie.items: int] would raise an error because [Mapping] also has
-                       [items]. *)
-                    && (not
-                          (GlobalResolution.is_typed_dictionary global_resolution parent_annotation))
-                    && not (Type.equal parent_annotation (Primitive attribute_parent))
-                  in
-                  let parent_class =
-                    match resolved_base with
-                    | `Attribute (_, base_type) -> Type.class_data_for_attribute_lookup base_type
-                    | _ -> None
-                  in
-                  match name, parent_class with
-                  | Name.Identifier identifier, _ ->
-                      let reference = Reference.create identifier in
-                      if Resolution.is_global ~reference resolution && insufficiently_annotated then
-                        let location_of_global =
-                          Reference.delocalize reference
-                          |> GlobalResolution.location_of_global global_resolution
-                          >>| Location.strip_module
-                          |> Option.value ~default:location
-                        in
-                        ( emit_error
-                            ~errors
-                            ~location:location_of_global
-                            ~kind:
-                              (Error.MissingGlobalAnnotation
-                                 {
-                                   Error.name = reference;
-                                   annotation = actual_annotation;
-                                   given_annotation = Option.some_if is_immutable expected;
-                                   thrown_at_source;
-                                 }),
-                          true )
-                      else if explicit && insufficiently_annotated then
-                        ( emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.ProhibitedAny
-                                 {
-                                   missing_annotation =
-                                     {
-                                       Error.name = reference;
-                                       annotation = actual_annotation;
-                                       given_annotation = Option.some_if is_immutable expected;
-                                       thrown_at_source = true;
-                                     };
-                                   annotation_kind = Annotation;
-                                 }),
-                          true )
-                      else
-                        errors, true
-                  | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
-                    when is_simple_name base && insufficiently_annotated ->
-                      (* Module *)
-                      let reference = name_to_reference_exn base in
-                      if
-                        explicit && not (GlobalResolution.module_exists global_resolution reference)
-                      then
-                        ( emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.ProhibitedAny
-                                 {
-                                   missing_annotation =
-                                     {
-                                       Error.name = Reference.create ~prefix:reference attribute;
-                                       annotation = actual_annotation;
-                                       given_annotation = Option.some_if is_immutable expected;
-                                       thrown_at_source = true;
-                                     };
-                                   annotation_kind = Annotation;
-                                 }),
-                          true )
-                      else
-                        errors, true
-                  | ( Name.Attribute { attribute; _ },
-                      Some ({ Type.instantiated; accessed_through_class; class_name; _ } :: _) )
-                    -> (
-                      (* Instance *)
-                      let reference = Reference.create attribute in
-                      let attribute =
-                        GlobalResolution.attribute_from_class_name
-                          global_resolution
-                          ~name:attribute
-                          ~instantiated
-                          ~accessed_through_class
-                          ~transitive:true
-                          class_name
-                      in
-                      match attribute with
-                      | Some attribute -> (
-                          if is_illegal_attribute_annotation attribute then
-                            (* Non-self attributes may not be annotated. *)
-                            ( emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.IllegalAnnotationTarget
-                                     { target; kind = InvalidExpression }),
-                              false )
-                          else if
-                            AnnotatedAttribute.defined attribute
-                            && (not (AnnotatedAttribute.property attribute))
-                            && insufficiently_annotated
-                          then
-                            ( emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.MissingAttributeAnnotation
-                                     {
-                                       parent = Primitive (AnnotatedAttribute.parent attribute);
-                                       missing_annotation =
-                                         {
-                                           Error.name = reference;
-                                           annotation = actual_annotation;
-                                           given_annotation = Option.some_if is_immutable expected;
-                                           thrown_at_source;
-                                         };
-                                     }),
-                              true )
-                          else if insufficiently_annotated && explicit then
-                            ( emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.ProhibitedAny
-                                     {
-                                       missing_annotation =
-                                         {
-                                           Error.name = reference;
-                                           annotation = actual_annotation;
-                                           given_annotation = Option.some_if is_immutable expected;
-                                           thrown_at_source = true;
-                                         };
-                                       annotation_kind = Annotation;
-                                     }),
-                              true )
-                          else
-                            match
-                              incompatible_annotation_with_attribute_error
-                                ~define
-                                ~explicit
-                                ~original_annotation
-                                attribute
-                            with
-                            | Some inconsistent_constructor_annotation ->
-                                ( emit_error
-                                    ~errors
-                                    ~location
-                                    ~kind:
-                                      (Error.IllegalAnnotationTarget
-                                         { target; kind = inconsistent_constructor_annotation }),
-                                  false )
-                            | None -> errors, true)
-                      | None ->
-                          if
-                            insufficiently_annotated
-                            && GlobalResolution.is_typed_dictionary
-                                 global_resolution
-                                 (Type.Primitive class_name)
-                          then
-                            ( emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.ProhibitedAny
-                                     {
-                                       missing_annotation =
-                                         {
-                                           Error.name = reference;
-                                           annotation = actual_annotation;
-                                           given_annotation = Option.some_if is_immutable expected;
-                                           thrown_at_source = true;
-                                         };
-                                       annotation_kind = Annotation;
-                                     }),
-                              true )
-                          else
-                            errors, true)
-                  | _ ->
-                      if explicit then
-                        ( emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.IllegalAnnotationTarget { target; kind = InvalidExpression }),
-                          false )
-                      else
-                        errors, true
-                in
-                let propagate_annotations
-                    ~errors
-                    ~is_valid_annotation
-                    ~resolved_value_weakened
-                    name_reference
-                  =
-                  let is_global =
-                    name_reference
-                    >>| (fun reference -> Resolution.is_global resolution ~reference)
-                    |> Option.value ~default:false
-                  in
-                  let is_not_local = is_global && not (Define.is_toplevel Context.define.value) in
-                  let refine_annotation annotation refined =
-                    GlobalResolution.refine global_resolution annotation refined
-                  in
-                  let annotation =
-                    (* Do not refine targets explicitly annotated as 'Any' to allow for escape
-                       hatch *)
-                    (* Do not refine targets with invariance mismatch as we cannot keep the inferred
-                       type up to date for mutable containers *)
-                    let invariance_mismatch =
-                      GlobalResolution.is_invariance_mismatch
-                        global_resolution
-                        ~right:expected
-                        ~left:resolved_value
-                    in
-                    if explicit && is_valid_annotation then
-                      let guide_annotation = Annotation.create_immutable ~final:is_final guide in
-                      if
-                        Type.is_concrete resolved_value
-                        && (not (Type.is_any guide))
-                        && not invariance_mismatch
-                      then
-                        refine_annotation guide_annotation resolved_value
-                      else
-                        guide_annotation
-                    else if is_immutable then
-                      if Type.is_any (Annotation.original target_annotation) || invariance_mismatch
-                      then
-                        target_annotation
-                      else
-                        refine_annotation target_annotation guide
-                    else
-                      Annotation.create_mutable guide
-                  in
-                  let errors, annotation =
-                    if
-                      (not explicit)
-                      && Type.Variable.contains_escaped_free_variable
-                           (Annotation.annotation annotation)
-                    then
-                      let kind =
-                        Error.IncompleteType
-                          {
-                            target = { Node.location; value = target_value };
-                            annotation = resolved_value_weakened;
-                            attempted_action = Naming;
-                          }
-                      in
-                      let converted =
-                        Type.Variable.convert_all_escaped_free_variables_to_anys
-                          (Annotation.annotation annotation)
-                      in
-                      emit_error ~errors ~location ~kind, { annotation with annotation = converted }
-                    else
-                      errors, annotation
-                  in
-                  let resolution =
-                    match name with
-                    | Identifier identifier ->
-                        Resolution.new_local
-                          resolution
-                          ~temporary:is_not_local
-                          ~reference:(Reference.create identifier)
-                          ~annotation
-                    | Attribute _ as name when is_simple_name name -> (
-                        match resolved_base, attribute with
-                        | `Attribute (_, parent), Some (attribute, _)
-                          when not
-                                 (AnnotatedAttribute.property attribute
-                                 || Option.is_some (find_getattr parent)) ->
-                            let { name; attribute_path; base_annotation } =
-                              partition_name ~resolution name
-                            in
-                            Resolution.new_local_with_attributes
-                              ~temporary:(is_not_local || AnnotatedAttribute.defined attribute)
-                              resolution
-                              ~name
-                              ~attribute_path
-                              ~base_annotation
-                              ~annotation
-                        | _ -> resolution)
-                    | _ -> resolution
-                  in
-                  resolution, errors
-                in
-                let resolved_value_weakened =
-                  GlobalResolution.resolve_mutable_literals
-                    global_resolution
-                    ~resolve:(resolve_expression_type ~resolution)
-                    ~expression
-                    ~resolved:resolved_value
-                    ~expected
-                in
-                let name_reference =
-                  match name with
-                  | Identifier identifier -> Reference.create identifier |> Option.some
-                  | Attribute _ as name when is_simple_name name ->
-                      name_to_reference_exn name |> Option.some
-                  | _ -> None
-                in
-                match resolved_value_weakened with
-                | { resolved = resolved_value_weakened; typed_dictionary_errors = [] } ->
-                    let errors = check_errors ~name_reference errors resolved_value_weakened in
-                    let errors, is_valid_annotation =
-                      check_for_missing_annotations errors resolved_value_weakened
-                    in
-                    propagate_annotations
-                      ~errors
-                      ~is_valid_annotation
-                      ~resolved_value_weakened
-                      name_reference
-                | { typed_dictionary_errors; _ } ->
-                    propagate_annotations
-                      ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
-                      ~is_valid_annotation:false
-                      ~resolved_value_weakened:Type.Top
-                      name_reference
-              in
-              let resolved_base =
-                match name with
-                | Name.Identifier identifier -> `Identifier identifier
-                | Name.Attribute attribute ->
-                    let resolved = resolve_expression_type ~resolution attribute.base in
-                    `Attribute (attribute, resolved)
-              in
-              match resolved_base with
-              | `Attribute (attribute, Type.Union types) ->
-                  (* Union[A,B].attr is valid iff A.attr and B.attr is valid
-
-                     TODO(T130377746): Use `Type.class_data_for_attribute_lookup` here to avoid
-                     duplicating the logic of how to figure out the attribute type for various
-                     types. Right now, we're duplicating some of the logic (for unions) but missing
-                     others. We're also hackily extracting `accessed_through_class` later on by
-                     checking if the top-level type is `Type[...]` instead of doing it for all
-                     possible elements of a union, etc. *)
-                  let propagate (resolution, errors) t =
-                    inner_assignment resolution errors (`Attribute (attribute, t))
-                  in
-                  let _, errors = List.fold types ~init:(resolution, errors) ~f:propagate in
-                  (* We process type as union again to populate resolution *)
-                  propagate (resolution, errors) (Union types)
-              | resolved -> inner_assignment resolution errors resolved)
-          | Expression.Subscript { Subscript.base; index } ->
-              let {
-                Resolved.errors = callee_errors;
-                resolved = resolved_setitem_type;
-                base = resolved_setitem_base;
-                resolution = resolution_after_callee;
-                _;
-              }
-                =
-                let setitem_callee_expression =
-                  {
-                    Node.value =
-                      Expression.Name
-                        (Name.Attribute { base; attribute = "__setitem__"; special = true });
-                    Node.location;
-                  }
-                in
-                forward_expression ~resolution setitem_callee_expression
-              in
-              (* TODO(T187163267): Try to deduplicate some of this code with the forward_expression
-                 logic for resolving a callee. *)
-              let setitem_callee =
-                Callee.Attribute
-                  {
-                    base =
-                      {
-                        expression = base;
-                        resolved_base =
-                          Resolved.resolved_base_type resolved_setitem_base
-                          |> Option.value ~default:Type.Top;
-                      };
-                    attribute = { name = "__setitem__"; resolved = resolved_setitem_type };
-                    (* TODO(T187163267) We need a placeholder expression; use the base of the
-                       subscript for now and eventually try to find a way of relaxing this
-                       requirement. *)
-                    expression = base;
-                  }
-              in
-              (* resolve the index, then combine it with the value *)
-              let resolution_after_index, base_and_callee_errors, setitem_arguments =
-                let updated_resolution, base_and_callee_errors, index_argument =
-                  forward_argument
-                    ~resolution:resolution_after_callee
-                    ~errors:callee_errors
-                    { Call.Argument.value = index; name = None }
-                in
-                let value_argument =
-                  {
-                    AttributeResolution.Argument.kind = Call.Argument.Positional;
-                    expression;
-                    resolved = guide;
-                  }
-                in
-                updated_resolution, base_and_callee_errors, [index_argument; value_argument]
-              in
-              let target, dynamic =
-                if Type.is_meta resolved_setitem_type then
-                  Some (Type.single_parameter resolved_setitem_type), false
-                else
-                  match resolved_setitem_base with
-                  | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
-                      Some resolved, true
-                  | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
-                      Some resolved, false
-                  | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
-                      Some resolved, false
-                  | _ -> None, false
-              in
-              let { Resolved.resolution; errors = setitem_errors; _ } =
-                forward_call
-                  ~resolution:resolution_after_index
-                  ~location
-                  ~errors:base_and_callee_errors
-                  ~target
-                  ~dynamic
-                  ~callee:setitem_callee
-                  ~arguments:setitem_arguments
-              in
-              resolution, setitem_errors @ errors
-          | List elements
-          | Tuple elements
-            when is_uniform_sequence guide ->
-              let propagate (resolution, errors) element =
-                match Node.value element with
-                | Expression.Starred (Starred.Once target) ->
-                    let guide = uniform_sequence_parameter guide |> Type.list in
-                    let resolved_value = uniform_sequence_parameter resolved_value |> Type.list in
-                    forward_assign ~resolution ~errors ~target ~guide ~resolved_value None
-                | _ ->
-                    let guide = uniform_sequence_parameter guide in
-                    let resolved_value = uniform_sequence_parameter resolved_value in
-                    forward_assign ~resolution ~errors ~target:element ~guide ~resolved_value None
-              in
-              List.fold elements ~init:(resolution, errors) ~f:propagate
-          | List elements
-          | Tuple elements ->
-              let left, starred, right =
-                let is_starred { Node.value; _ } =
-                  match value with
-                  | Expression.Starred (Starred.Once _) -> true
-                  | _ -> false
-                in
-                let left, tail =
-                  List.split_while elements ~f:(fun element -> not (is_starred element))
-                in
-                let starred, right =
-                  let starred, right = List.split_while tail ~f:is_starred in
-                  let starred =
-                    match starred with
-                    | [{ Node.value = Starred (Starred.Once starred); _ }] -> [starred]
-                    | _ -> []
-                  in
-                  starred, right
-                in
-                left, starred, right
-              in
-              let assignees = left @ starred @ right in
-              let errors, annotations =
-                match guide with
-                | Type.Any -> errors, List.map assignees ~f:(fun _ -> Type.Any)
-                | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Any)
-                | _ -> (
-                    match nonuniform_sequence_parameters (List.length assignees) guide with
-                    | None ->
-                        let errors =
-                          emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.Unpack
-                                 {
-                                   expected_count = List.length assignees;
-                                   unpack_problem = UnacceptableType guide;
-                                 })
-                        in
-                        errors, List.map assignees ~f:(fun _ -> Type.Any)
-                    | Some annotations ->
-                        let annotations =
-                          let has_starred_assignee = not (List.is_empty starred) in
-                          let left, tail = List.split_n annotations (List.length left) in
-                          let starred, right =
-                            List.split_n tail (List.length tail - List.length right)
-                          in
-                          let starred =
-                            if not (List.is_empty starred) then
-                              let annotation =
-                                List.fold
-                                  starred
-                                  ~init:Type.Bottom
-                                  ~f:(GlobalResolution.join global_resolution)
-                                |> Type.list
-                              in
-                              [annotation]
-                            else if has_starred_assignee then
-                              [Type.tuple []]
-                            else
-                              []
-                          in
-                          left @ starred @ right
-                        in
-                        if List.length annotations <> List.length assignees then
-                          let errors =
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:
-                                (Error.Unpack
-                                   {
-                                     expected_count = List.length assignees;
-                                     unpack_problem = CountMismatch (List.length annotations);
-                                   })
-                          in
-                          errors, List.map assignees ~f:(fun _ -> Type.Any)
-                        else
-                          errors, annotations)
-              in
-              List.zip_exn assignees annotations
-              |> List.fold
-                   ~init:(resolution, errors)
-                   ~f:(fun (resolution, errors) (target, guide) ->
-                     forward_assign ~resolution ~errors ~target ~guide ~resolved_value:guide None)
-          | _ ->
-              (* This branch should only be hit when a LHS is subscripted; currently Pyre won't
-                 check that case if it's part of a multi-assignment, because we only handle the
-                 cases the parser could eagerly convert to `__setitem__` calls.
-
-                 All other cases should be impossible - the AST types can't rule them out, but the
-                 grammer / parser won't allow anything else here *)
-              if Option.is_some annotation then
-                ( resolution,
-                  emit_error
-                    ~errors
-                    ~location
-                    ~kind:(Error.IllegalAnnotationTarget { target; kind = InvalidExpression }) )
-              else
-                resolution, errors
-        in
-        let resolution, errors =
-          forward_assign ~resolution ~errors ~target ~guide ~resolved_value value
+            ~is_final
+            value
         in
         Value resolution, errors
 
