@@ -4124,6 +4124,72 @@ module State (Context : Context) = struct
     resolution, errors
 
 
+  and forward_type_alias_definition ~resolution ~location ~errors ~target ~value =
+    let global_resolution = Resolution.global_resolution resolution in
+    let parsed =
+      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
+    in
+    (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
+    let add_annotation_errors errors =
+      add_invalid_type_parameters_errors ~resolution:global_resolution ~location ~errors parsed
+      |> fun (errors, _) ->
+      let errors =
+        List.append
+          errors
+          (get_untracked_annotation_errors ~resolution:global_resolution ~location parsed)
+      in
+      errors
+    in
+    let add_type_variable_errors errors =
+      match parsed with
+      | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
+          emit_error
+            ~errors
+            ~location
+            ~kind:
+              (AnalysisError.InvalidType
+                 (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)))
+      | Variable { constraints = Explicit [explicit]; _ } ->
+          emit_error
+            ~errors
+            ~location
+            ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
+      | _ -> errors
+    in
+    let add_prohibited_any_errors errors =
+      let reference =
+        match target.Node.value with
+        | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
+        | _ -> failwith "not possible"
+      in
+      let annotation_kind =
+        match parsed with
+        | Variable _ -> Error.TypeVariable
+        | _ -> Error.TypeAlias
+      in
+      if Type.expression_contains_any value && Type.contains_prohibited_any parsed then
+        emit_error
+          ~errors
+          ~location
+          ~kind:
+            (Error.ProhibitedAny
+               {
+                 missing_annotation =
+                   {
+                     Error.name = reference;
+                     annotation = None;
+                     given_annotation = Some parsed;
+                     thrown_at_source = true;
+                   };
+                 annotation_kind;
+               })
+      else
+        errors
+    in
+    ( Value resolution,
+      add_annotation_errors errors |> add_type_variable_errors |> add_prohibited_any_errors )
+
+
   (* Step forward across an assignment statement, tracking type context in
    * `Resolution.t` as well as errors. This is also used within `forward_expression`
    * for "synthetic" assignments, such as
@@ -4201,69 +4267,7 @@ module State (Context : Context) = struct
            |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)
-        let parsed =
-          GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
-        in
-
-        (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
-        let add_annotation_errors errors =
-          add_invalid_type_parameters_errors ~resolution:global_resolution ~location ~errors parsed
-          |> fun (errors, _) ->
-          let errors =
-            List.append
-              errors
-              (get_untracked_annotation_errors ~resolution:global_resolution ~location parsed)
-          in
-          errors
-        in
-        let add_type_variable_errors errors =
-          match parsed with
-          | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (AnalysisError.InvalidType
-                     (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)))
-          | Variable { constraints = Explicit [explicit]; _ } ->
-              emit_error
-                ~errors
-                ~location
-                ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
-          | _ -> errors
-        in
-        let add_prohibited_any_errors errors =
-          let reference =
-            match target.value with
-            | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
-            | _ -> failwith "not possible"
-          in
-          let annotation_kind =
-            match parsed with
-            | Variable _ -> Error.TypeVariable
-            | _ -> Error.TypeAlias
-          in
-          if Type.expression_contains_any value && Type.contains_prohibited_any parsed then
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.ProhibitedAny
-                   {
-                     missing_annotation =
-                       {
-                         Error.name = reference;
-                         annotation = None;
-                         given_annotation = Some parsed;
-                         thrown_at_source = true;
-                       };
-                     annotation_kind;
-                   })
-          else
-            errors
-        in
-        ( Value resolution,
-          add_annotation_errors errors |> add_type_variable_errors |> add_prohibited_any_errors )
+        forward_type_alias_definition ~resolution ~location ~errors ~target ~value
     | _ ->
         (* Processing actual value assignments. *)
         let resolution, errors, resolved_value =
