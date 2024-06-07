@@ -12,6 +12,8 @@ module type ELEMENT = sig
 
   val bottom : t
 
+  val equal : t -> t -> bool
+
   val join : t -> t -> t
 
   val meet : t -> t -> t

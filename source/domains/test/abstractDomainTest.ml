@@ -1914,6 +1914,7 @@ module PathDomain = struct
     type t =
       | Bottom
       | Path of string
+    [@@deriving eq]
 
     let name = "path"
 

@@ -104,7 +104,7 @@ module MakeSet (Kind : TAINT_KIND) = struct
   type elt = Kind.t
 
   include Abstract.SimpleDomain.Make (struct
-    type t = set [@@deriving show]
+    type t = set [@@deriving show, equal]
 
     let name = Format.sprintf "sanitize %ss" Kind.name
 

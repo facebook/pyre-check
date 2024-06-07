@@ -16,6 +16,8 @@ module type ELEMENT = sig
 
   val bottom : t
 
+  val equal : t -> t -> bool
+
   val join : t -> t -> t
 
   val meet : t -> t -> t
@@ -33,7 +35,7 @@ module Make (Element : ELEMENT) = struct
   and Domain : (S with type t = Element.t) = struct
     include Element
 
-    let is_bottom v = v = Element.bottom
+    let is_bottom v = Element.equal v Element.bottom
 
     let widen ~iteration:_ ~prev ~next = join prev next
 
@@ -66,7 +68,7 @@ module Make (Element : ELEMENT) = struct
 
 
     let subtract to_remove ~from =
-      if to_remove == from then
+      if Element.equal to_remove from then
         bottom
       else
         from
