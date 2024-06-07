@@ -18,6 +18,8 @@ module type ELEMENT = sig
 
   val less_or_equal : left:t -> right:t -> bool
 
+  val pp : Format.formatter -> t -> unit
+
   val show : t -> string
 end
 

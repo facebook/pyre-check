@@ -22,6 +22,8 @@ module type ELEMENT = sig
 
   val less_or_equal : left:t -> right:t -> bool
 
+  val pp : Format.formatter -> t -> unit
+
   val show : t -> string
 end
 
@@ -30,8 +32,6 @@ module Make (Element : ELEMENT) = struct
 
   and Domain : (S with type t = Element.t) = struct
     include Element
-
-    let pp formatter value = Format.fprintf formatter "%s" (Element.show value)
 
     let is_bottom v = v = Element.bottom
 

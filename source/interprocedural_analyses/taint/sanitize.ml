@@ -19,7 +19,7 @@ type sanitize = {
 
 module T = struct
   include Abstract.SimpleDomain.Make (struct
-    type t = sanitize
+    type t = sanitize [@@deriving show]
 
     let name = "sanitize"
 

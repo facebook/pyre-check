@@ -38,9 +38,7 @@ let pp_sets formatter { sources; sinks } =
 let show_sets = Format.asprintf "%a" pp_sets
 
 include Abstract.SimpleDomain.Make (struct
-  type t = sets
-
-  let show = show_sets
+  type t = sets [@@deriving show]
 
   let name = "sanitize tito"
 

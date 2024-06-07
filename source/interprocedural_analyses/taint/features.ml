@@ -521,7 +521,14 @@ Abstract.SimpleDomain.Make (struct
 
   let bottom = Int.max_value
 
-  let show length = if Int.equal length Int.min_value then "<bottom>" else string_of_int length
+  let pp formatter length =
+    if Int.equal length Int.min_value then
+      Format.fprintf formatter "<bottom>"
+    else
+      Format.fprintf formatter "%d" length
+
+
+  let show = Format.asprintf "%a" pp
 end)
 
 module CollapseDepth = struct
