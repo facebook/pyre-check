@@ -62,7 +62,7 @@ let save_current_paths ~scheduler ~scheduler_policies ~configuration ~module_pat
       ~default:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
+           ~minimum_chunk_size:1
            ~preferred_chunks_per_worker:1
            ())
   in
@@ -115,7 +115,7 @@ let compute_locally_changed_paths
       ~default:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
+           ~minimum_chunk_size:1
            ~preferred_chunks_per_worker:1
            ())
   in

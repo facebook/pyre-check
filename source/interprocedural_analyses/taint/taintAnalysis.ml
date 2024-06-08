@@ -481,7 +481,7 @@ let compute_coverage
       ~default:
         (Scheduler.Policy.fixed_chunk_size
            ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:50000
+           ~minimum_chunk_size:1
            ~preferred_chunk_size:100000
            ())
   in

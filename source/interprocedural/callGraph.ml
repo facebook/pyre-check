@@ -3181,7 +3181,7 @@ let build_whole_program_call_graph
         ~default:
           (Scheduler.Policy.fixed_chunk_size
              ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:100
+             ~minimum_chunk_size:1
              ~preferred_chunk_size:2000
              ())
     in

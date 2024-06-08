@@ -1013,7 +1013,7 @@ let rec process_request_exn
                 ~policy:
                   (Scheduler.Policy.fixed_chunk_count
                      ~minimum_chunks_per_worker:1
-                     ~minimum_chunk_size:100
+                     ~minimum_chunk_size:1
                      ~preferred_chunks_per_worker:5
                      ())
                 ~f:load_modules

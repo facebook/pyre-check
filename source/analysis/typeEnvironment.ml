@@ -125,7 +125,7 @@ let populate_for_definitions ~scheduler ~scheduler_policies environment defines 
       Configuration.ScheduleIdentifier.TypeCheck
       ~default:
         (Scheduler.Policy.fixed_chunk_size
-           ~minimum_chunk_size:100
+           ~minimum_chunk_size:1
            ~minimum_chunks_per_worker:2
            ~preferred_chunk_size:5000
            ())
@@ -165,7 +165,7 @@ let collect_definitions ~scheduler ~scheduler_policies environment qualifiers =
       ~default:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
+           ~minimum_chunk_size:1
            ~preferred_chunks_per_worker:1
            ())
   in
