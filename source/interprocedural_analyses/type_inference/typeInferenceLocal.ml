@@ -188,7 +188,7 @@ module State (Context : Context) = struct
         ~errors:ErrorMap.Map.empty
         ~resolution
         ~snapshot_resolution:
-          (Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty)
+          (Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty)
 
 
   let errors = function
@@ -218,7 +218,7 @@ module State (Context : Context) = struct
         errors_subset
         &&
         let global_resolution = Resolution.global_resolution left.resolution in
-        Refinement.Store.less_or_equal
+        TypeInfo.Store.less_or_equal
           ~global_resolution
           ~left:(Resolution.annotation_store left.resolution)
           ~right:(Resolution.annotation_store right.resolution)
@@ -283,7 +283,7 @@ module State (Context : Context) = struct
           in
           Resolution.update_refinements_with_filter
             ~old_resolution:
-              (Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty)
+              (Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty)
             ~new_resolution:resolution
             ~filter
         in
@@ -430,7 +430,7 @@ module State (Context : Context) = struct
               Annotation.create_mutable
                 (AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser)
             in
-            Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
+            Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty
             |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
           in
           let filter name (annotation : Annotation.t) =

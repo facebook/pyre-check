@@ -34,14 +34,14 @@ let assert_backward ~resolution precondition statement postcondition =
         let annotify (name, annotation) =
           let annotation =
             let create annotation =
-              Refinement.LocalOrGlobal.create (Annotation.create_mutable annotation)
+              TypeInfo.LocalOrGlobal.create (Annotation.create_mutable annotation)
             in
             create annotation
           in
           !&name, annotation
         in
         {
-          Refinement.Store.annotations =
+          TypeInfo.Store.annotations =
             List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
           temporary_annotations = Reference.Map.Tree.empty;
         }

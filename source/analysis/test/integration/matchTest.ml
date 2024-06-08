@@ -288,7 +288,7 @@ let test_pattern =
              "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
              "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
            ];
-      (* TODO(T105331662): Refinement on length needed. *)
+      (* TODO(T105331662): TypeInfo on length needed. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -305,7 +305,7 @@ let test_pattern =
              "Revealed type [-1]: Revealed type for `y` is `str`.";
              "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
            ];
-      (* TODO(T105331662): Refinement on length needed. *)
+      (* TODO(T105331662): TypeInfo on length needed. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

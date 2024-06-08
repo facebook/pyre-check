@@ -948,7 +948,7 @@ module State (Context : Context) = struct
     let annotation_store =
       local_annotations
       >>= LocalAnnotationMap.ReadOnly.get_precondition ~statement_key
-      |> Option.value ~default:Refinement.Store.empty
+      |> Option.value ~default:TypeInfo.Store.empty
     in
     resolution
     |> Resolution.with_annotation_store ~annotation_store

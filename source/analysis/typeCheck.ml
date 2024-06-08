@@ -633,7 +633,7 @@ module State (Context : Context) = struct
     | Unreachable, _ -> true
     | _, Unreachable -> false
     | Value left_resolution, Value right_resolution ->
-        Refinement.Store.less_or_equal_monotone
+        TypeInfo.Store.less_or_equal_monotone
           ~left:(Resolution.annotation_store left_resolution)
           ~right:(Resolution.annotation_store right_resolution)
 
@@ -1796,7 +1796,7 @@ module State (Context : Context) = struct
               in
               tail_annotations
               |> Algorithms.fold_balanced
-                   ~f:(Refinement.LocalOrGlobal.join_annotations ~global_resolution)
+                   ~f:(TypeInfo.LocalOrGlobal.join_annotations ~global_resolution)
                    ~init:head_annotation
               |> apply_local_override
             in
@@ -2045,7 +2045,7 @@ module State (Context : Context) = struct
           let annotation =
             Option.value
               ~default:(Annotation.create_mutable Type.Any)
-              (Refinement.LocalOrGlobal.base unit)
+              (TypeInfo.LocalOrGlobal.base unit)
           in
           { Error.name; annotation }
         in
@@ -7148,7 +7148,7 @@ end
 
 let resolution
     global_resolution
-    ?(annotation_store = Refinement.Store.empty)
+    ?(annotation_store = TypeInfo.Store.empty)
     (module Context : Context)
   =
   let module State = State (Context) in
@@ -7901,7 +7901,7 @@ let exit_state ~resolution (module Context : Context) =
        let precondition { Fixpoint.preconditions; _ } id =
          match Hashtbl.find preconditions id with
          | Some (State.Value exit_resolution) ->
-             Resolution.annotation_store exit_resolution |> Refinement.Store.show
+             Resolution.annotation_store exit_resolution |> TypeInfo.Store.show
          | _ -> ""
        in
        Log.dump

@@ -33,7 +33,7 @@
   overlaidEnvironmentTest
   preprocessingTest
   pyrePysaApiTest
-  refinementTest
+  typeInfoTest
   resolutionTest
   resolvedCallableTest
   scopeTest

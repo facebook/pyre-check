@@ -16,8 +16,8 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 
 val set
-  :  ?precondition:Refinement.Store.t ->
-  ?postcondition:Refinement.Store.t ->
+  :  ?precondition:TypeInfo.Store.t ->
+  ?postcondition:TypeInfo.Store.t ->
   statement_key:int ->
   t ->
   unit
@@ -25,9 +25,9 @@ val set
 module ReadOnly : sig
   type t [@@deriving equal]
 
-  val get_precondition : t -> statement_key:int -> Refinement.Store.t option
+  val get_precondition : t -> statement_key:int -> TypeInfo.Store.t option
 
-  val get_postcondition : t -> statement_key:int -> Refinement.Store.t option
+  val get_postcondition : t -> statement_key:int -> TypeInfo.Store.t option
 end
 
 val read_only : t -> ReadOnly.t

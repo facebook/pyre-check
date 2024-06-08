@@ -36,17 +36,16 @@ let create_annotation_store ?(immutables = []) annotations =
       let create annotation =
         match Map.find immutables name with
         | Some original ->
-            Refinement.LocalOrGlobal.create
+            TypeInfo.LocalOrGlobal.create
               (Annotation.create_immutable ~original:(Some original) annotation)
-        | _ -> Refinement.LocalOrGlobal.create (Annotation.create_mutable annotation)
+        | _ -> TypeInfo.LocalOrGlobal.create (Annotation.create_mutable annotation)
       in
       create annotation
     in
     !&name, annotation
   in
   {
-    Refinement.Store.annotations =
-      List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
+    TypeInfo.Store.annotations = List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
     temporary_annotations = Reference.Map.Tree.empty;
   }
 
@@ -55,21 +54,21 @@ let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
   let compare_annotation_store
       {
-        Refinement.Store.annotations = left_annotations;
+        TypeInfo.Store.annotations = left_annotations;
         temporary_annotations = left_temporary_annotations;
       }
       {
-        Refinement.Store.annotations = right_annotations;
+        TypeInfo.Store.annotations = right_annotations;
         temporary_annotations = right_temporary_annotations;
       }
     =
-    let equal_map = Reference.Map.Tree.equal [%equal: Refinement.LocalOrGlobal.t] in
+    let equal_map = Reference.Map.Tree.equal [%equal: TypeInfo.LocalOrGlobal.t] in
     equal_map left_annotations right_annotations
     && equal_map left_temporary_annotations right_temporary_annotations
   in
-  let pp_annotation_store formatter { Refinement.Store.annotations; temporary_annotations } =
+  let pp_annotation_store formatter { TypeInfo.Store.annotations; temporary_annotations } =
     let annotation_to_string (name, refinement_unit) =
-      Format.asprintf "%a -> %a" Reference.pp name Refinement.LocalOrGlobal.pp refinement_unit
+      Format.asprintf "%a -> %a" Reference.pp name TypeInfo.LocalOrGlobal.pp refinement_unit
     in
     let printed_annotations =
       Reference.Map.Tree.to_alist annotations

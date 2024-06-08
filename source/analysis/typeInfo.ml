@@ -20,7 +20,7 @@
    We store the above for arbitrary chains of attributes starting from the base expression `foo`,
    leading to a tree of attributes (`foo -> bar -> baz`, `foo -> hello -> world`, etc.).
 
-   Refinement.Store: This stores two types of refinements: permanent and temporary.
+   TypeInfo.Store: This stores two types of refinements: permanent and temporary.
 
    For example, if we know that an attribute `bar` is final (e.g., it has type `Final[...]` or is
    part of a frozen dataclass), then it is safe to permanently refine `foo.bar` as non-`None`, since
@@ -345,7 +345,7 @@ module Store = struct
       join) but permissive about variables that might only be instantiated on one side.
 
       This can be done as either a join or a widen depending whether we set `widening_threshod`,
-      which is applied at the `Refinement.LocalOrGlobal` level. *)
+      which is applied at the `TypeInfo.LocalOrGlobal` level. *)
   let widen_or_join ~merge_one left right =
     {
       (* Newly-instantiated locals live in `annotations`, so we merge with join *)

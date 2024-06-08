@@ -416,9 +416,9 @@ let create_of_module type_environment qualifier =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
         ( LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
-          |> Option.value ~default:Refinement.Store.empty,
+          |> Option.value ~default:TypeInfo.Store.empty,
           LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
-          |> Option.value ~default:Refinement.Store.empty )
+          |> Option.value ~default:TypeInfo.Store.empty )
       in
       let pre_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
@@ -996,10 +996,10 @@ let resolution_from_cfg_data
     let statement_key = [%hash: int * int] (node_id, statement_index) in
     if use_postcondition_info then
       LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
-      |> Option.value ~default:Refinement.Store.empty
+      |> Option.value ~default:TypeInfo.Store.empty
     else
       LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
-      |> Option.value ~default:Refinement.Store.empty
+      |> Option.value ~default:TypeInfo.Store.empty
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
   TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)

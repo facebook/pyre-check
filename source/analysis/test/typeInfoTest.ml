@@ -11,7 +11,7 @@ open Analysis
 open Test
 
 module LocalOrGlobal = struct
-  open Refinement.LocalOrGlobal
+  open TypeInfo.LocalOrGlobal
 
   let test_create _ =
     let assert_create ~refinement_unit ~expected =
@@ -250,4 +250,4 @@ module LocalOrGlobal = struct
     ]
 end
 
-let () = "Refinement.LocalOrGlobal" >::: LocalOrGlobal.suite |> Test.run
+let () = "TypeInfo.LocalOrGlobal" >::: LocalOrGlobal.suite |> Test.run

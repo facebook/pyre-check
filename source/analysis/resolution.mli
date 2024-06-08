@@ -18,7 +18,7 @@ type resolve_statement_result_t =
 
 val create
   :  global_resolution:GlobalResolution.t ->
-  annotation_store:Refinement.Store.t ->
+  annotation_store:TypeInfo.Store.t ->
   resolve_expression:(resolution:t -> Expression.t -> t * Annotation.t) ->
   resolve_statement:(resolution:t -> Statement.t -> resolve_statement_result_t) ->
   ?parent:Reference.t ->
@@ -93,7 +93,7 @@ val type_variable_exists : t -> variable:Type.Variable.t -> bool
 
 val all_type_variables_in_scope : t -> Type.Variable.t list
 
-val annotation_store : t -> Refinement.Store.t
+val annotation_store : t -> TypeInfo.Store.t
 
 val refinements_equal : t -> t -> bool
 
@@ -111,7 +111,7 @@ val update_refinements_with_filter
   filter:(Reference.t -> Annotation.t -> bool) ->
   t
 
-val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
+val with_annotation_store : t -> annotation_store:TypeInfo.Store.t -> t
 
 val parent : t -> Reference.t option
 

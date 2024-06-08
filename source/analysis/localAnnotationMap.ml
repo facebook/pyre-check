@@ -13,8 +13,8 @@ open Pyre
 
 module Annotations = struct
   type annotation_store = {
-    annotations: Refinement.LocalOrGlobal.t Reference.Map.Tree.t;
-    temporary_annotations: Refinement.LocalOrGlobal.t Reference.Map.Tree.t;
+    annotations: TypeInfo.LocalOrGlobal.t Reference.Map.Tree.t;
+    temporary_annotations: TypeInfo.LocalOrGlobal.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
@@ -32,7 +32,7 @@ module Annotations = struct
         "\"%a\": \"%a\"%s, "
         Reference.pp
         key
-        Refinement.LocalOrGlobal.pp
+        TypeInfo.LocalOrGlobal.pp
         data
         temporary_suffix
     in
@@ -76,15 +76,15 @@ let show map = Format.asprintf "%a" pp map
 
 let set
     ?(precondition =
-      Refinement.Store.
+      TypeInfo.Store.
         { annotations = Reference.Map.Tree.empty; temporary_annotations = Reference.Map.Tree.empty })
     ?(postcondition =
-      Refinement.Store.
+      TypeInfo.Store.
         { annotations = Reference.Map.Tree.empty; temporary_annotations = Reference.Map.Tree.empty })
     ~statement_key
     local_annotations
   =
-  let convert_to_tree Refinement.Store.{ annotations; temporary_annotations } =
+  let convert_to_tree TypeInfo.Store.{ annotations; temporary_annotations } =
     { Annotations.annotations; temporary_annotations }
   in
   Hashtbl.set
@@ -112,7 +112,7 @@ module ReadOnly = struct
   type t = Annotations.t StatementIdMap.t [@@deriving equal]
 
   let convert_to_map { Annotations.annotations; temporary_annotations } =
-    Refinement.Store.{ annotations; temporary_annotations }
+    TypeInfo.Store.{ annotations; temporary_annotations }
 
 
   let get_precondition local_annotations ~statement_key =
