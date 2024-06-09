@@ -1582,7 +1582,9 @@ module SignatureSelection = struct
       get_match overloads
 end
 
-let apply
+(* This function mutably updates an UninstantiatedAttributeTable.t if a class has any dataclass
+   transforms (including @dataclass itself) applied to it. *)
+let apply_dataclass_transforms_to_table
     ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
     ~definition
     create_attribute
@@ -2790,7 +2792,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           add_placeholder_stub_inheritances ();
         let () =
           if include_generated_attributes then
-            apply
+            apply_dataclass_transforms_to_table
               ~queries
               ~definition:parent
               (self#create_attribute ~assumptions)
