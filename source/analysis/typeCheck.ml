@@ -28,7 +28,6 @@ open Pyre
 open Ast
 open Expression
 open Statement
-open DataclassOptions
 module StatementDefine = Define
 module Error = AnalysisError
 
@@ -5589,7 +5588,7 @@ module State (Context : Context) = struct
           match GlobalResolution.get_class_summary global_resolution class_name with
           | Some summary -> begin
               let extracted_options =
-                ExtractDataclassOptions.dataclass_options
+                DataclassOptions.dataclass_options
                   ~first_matching_class_decorator:
                     (GlobalResolution.first_matching_class_decorator global_resolution)
                   summary
@@ -5603,7 +5602,7 @@ module State (Context : Context) = struct
 
         let get_dataclass_options_from_metaclass class_name =
           let extract_options =
-            ExtractDataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
+            DataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
               ~get_class_summary:(GlobalResolution.get_class_summary global_resolution)
               ~successors:(GlobalResolution.successors global_resolution)
           in

@@ -45,7 +45,45 @@ open Ast
 open Statement
 open Assumptions
 open ClassSummary
-open DataclassOptions
+
+module Queries = struct
+  type t = {
+    controls: EnvironmentControls.t;
+    resolve_exports: ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option;
+    is_protocol: Type.t -> bool;
+    get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
+    get_class_summary: string -> ClassSummary.t Ast.Node.t option;
+    first_matching_class_decorator:
+      names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
+    exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
+    class_exists: string -> bool;
+    parse_annotation_without_validating_type_parameters:
+      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
+      ?allow_untracked:bool ->
+      Ast.Expression.t ->
+      Type.t;
+    parse_as_parameter_specification_instance_annotation:
+      variable_parameter_annotation:Ast.Expression.t ->
+      keywords_parameter_annotation:Ast.Expression.t ->
+      unit ->
+      Type.Variable.Variadic.Parameters.t option;
+    class_hierarchy: unit -> (module ClassHierarchy.Handler);
+    variables:
+      ?default:Type.Variable.t list option -> Type.Primitive.t -> Type.Variable.t list option;
+    successors: Type.Primitive.t -> string list;
+    get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
+    is_typed_dictionary: Type.Primitive.t -> bool;
+    has_transitive_successor:
+      placeholder_subclass_extends_all:bool ->
+      successor:Type.Primitive.t ->
+      Type.Primitive.t ->
+      bool;
+    least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
+  }
+
+  let class_summary_for_outer_type { get_class_summary; _ } annotation =
+    Type.split annotation |> fst |> Type.primitive_name >>= get_class_summary
+end
 
 module Global = struct
   type t = {
@@ -1658,7 +1696,7 @@ let apply_dataclass_transforms_to_table
     | None -> []
     | Some
         {
-          ExtractDataclassOptions.init;
+          DataclassOptions.init;
           repr;
           eq;
           order;
@@ -1816,11 +1854,10 @@ let apply_dataclass_transforms_to_table
         let split_parameters_by_keyword_only parameters =
           let keyword_only, not_keyword_only =
             List.partition_tf parameters ~f:(function
-                | { ExtractDataclassOptions.name = _; annotation = _; default = _; keyword_only } ->
+                | { DataclassOptions.name = _; annotation = _; default = _; keyword_only } ->
                 keyword_only)
           in
-          let dataclass_constructor_to_named
-              { ExtractDataclassOptions.name; annotation; default; _ }
+          let dataclass_constructor_to_named { DataclassOptions.name; annotation; default; _ }
               : Type.t Callable.RecordParameter.named
             =
             { name; annotation; default }
@@ -1862,13 +1899,13 @@ let apply_dataclass_transforms_to_table
                 in
                 let rec override_existing_parameters
                     (unchecked_parameters :
-                      Type.t ExtractDataclassOptions.dataclass_constructor_parameter list)
+                      Type.t DataclassOptions.dataclass_constructor_parameter list)
                   =
                   match unchecked_parameters with
                   | [] ->
                       [
                         {
-                          ExtractDataclassOptions.name;
+                          DataclassOptions.name;
                           annotation;
                           default = Option.is_some init_value;
                           keyword_only;
@@ -2025,26 +2062,24 @@ let apply_dataclass_transforms_to_table
     let Queries.{ first_matching_class_decorator; _ } = queries in
 
     generate_attributes
-      ~options:(ExtractDataclassOptions.dataclass_options ~first_matching_class_decorator)
+      ~options:(DataclassOptions.dataclass_options ~first_matching_class_decorator)
   in
   let attrs_attributes () =
     (* TODO (T41039225): Add support for other methods
      * TODO (T129741558): support type annotations in attr *)
     let Queries.{ first_matching_class_decorator; _ } = queries in
-    generate_attributes
-      ~options:(ExtractDataclassOptions.attrs_attributes ~first_matching_class_decorator)
+    generate_attributes ~options:(DataclassOptions.attrs_attributes ~first_matching_class_decorator)
   in
   let dataclass_transform_attributes () =
     let Queries.{ get_unannotated_global; _ } = queries in
     generate_attributes
       ~options:
-        (ExtractDataclassOptions.options_from_custom_dataclass_transform_decorator
-           ~get_unannotated_global)
+        (DataclassOptions.options_from_custom_dataclass_transform_decorator ~get_unannotated_global)
   in
   let dataclass_transform_class_attributes () =
     generate_attributes
       ~options:
-        (ExtractDataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
+        (DataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
            ~get_class_summary
            ~successors)
   in
@@ -3708,7 +3743,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           original)
         =
         let open Expression in
-        let open DataclassOptions in
         let parse_annotation = self#parse_annotation ~assumptions ?validation:None in
         let metaclass_candidates =
           let explicit_metaclass = metaclass >>| parse_annotation in
@@ -3795,7 +3829,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
-        |> DataclassOptions.Queries.class_summary_for_outer_type queries
+        |> Queries.class_summary_for_outer_type queries
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
         >>= variables ~default:(Some [])
         >>| List.is_empty
