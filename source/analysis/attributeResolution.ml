@@ -1594,9 +1594,6 @@ let apply_dataclass_transforms_to_table
   =
   let open Expression in
   let { Node.value = { ClassSummary.name; _ }; _ } = definition in
-  let parent_dataclasses =
-    Reference.show name |> successors |> List.filter_map ~f:get_class_summary
-  in
   let generate_attributes ~options =
     let already_in_table name =
       UninstantiatedAttributeTable.lookup_name table name |> Option.is_some
@@ -1738,7 +1735,9 @@ let apply_dataclass_transforms_to_table
         in
 
         let attribute_tables =
-          (parent_dataclasses
+          (Reference.show name
+          |> successors
+          |> List.filter_map ~f:get_class_summary
           |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
           |> List.rev
           |> List.map ~f:get_table_from_classsummary)
