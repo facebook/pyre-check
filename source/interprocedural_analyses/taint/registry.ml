@@ -21,7 +21,7 @@ let targets_with_mode models ~mode =
   in
   fold ~init:[] ~f:collect models
 
-
+  
 let skip_overrides models =
   targets_with_mode models ~mode:Model.Mode.SkipOverrides
   |> List.filter ~f:Target.is_function_or_method
@@ -38,3 +38,15 @@ let skip_analysis models =
 
 
 let entrypoints models = targets_with_mode models ~mode:Model.Mode.Entrypoint
+
+let pp pp_value formatter map =
+  let pp_pairs formatter pairs =
+    let pp_pair formatter (key, value) =
+      Format.fprintf formatter "@[<hv 2>%a -> %a@]" Target.pp key pp_value value
+    in
+    Format.pp_print_list pp_pair formatter (Target.Map.bindings map)
+  in
+  Format.fprintf formatter "@[<v 2>{%a}@]" pp_pairs
+
+let show pp_value map =
+  Format.asprintf "%a" (pp pp_value) map
