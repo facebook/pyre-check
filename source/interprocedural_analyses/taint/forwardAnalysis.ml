@@ -2390,6 +2390,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let string_literal_taint =
       CallModel.StringFormatCall.implicit_string_literal_sources
+        ~pyre_in_context
         ~implicit_sources:FunctionContext.taint_configuration.implicit_sources
         ~module_reference:FunctionContext.qualifier
         string_literal

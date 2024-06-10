@@ -399,7 +399,14 @@
         "name": "forward",
         "roots": [
           {
-            "kinds": [ { "kind": "StringMayBeSQL" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "StringMayBeSQL"
+              }
+            ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 83,
@@ -999,7 +1006,14 @@
         "name": "forward",
         "roots": [
           {
-            "kinds": [ { "kind": "StringMayBeSQL" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "StringMayBeSQL"
+              }
+            ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 35, "start": 22, "end": 27 } ],
             "origin": {

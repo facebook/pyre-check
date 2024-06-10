@@ -327,6 +327,8 @@ module StringCombineArtificialTargets = struct
   let str_mod = Object "<str.__mod__>"
 
   let str_format = Object "<str.format>"
+
+  let str_literal = Object "<literal-string>"
 end
 
 module SharedMemoryKey = struct

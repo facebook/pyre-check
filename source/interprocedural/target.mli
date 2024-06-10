@@ -153,6 +153,8 @@ module StringCombineArtificialTargets : sig
   val str_mod : t
 
   val str_format : t
+
+  val str_literal : t
 end
 
 module SharedMemoryKey : sig

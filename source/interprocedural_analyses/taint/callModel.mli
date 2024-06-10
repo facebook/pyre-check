@@ -152,13 +152,15 @@ module StringFormatCall : sig
     BackwardState.Tree.t
 
   val implicit_string_literal_sources
-    :  implicit_sources:TaintConfiguration.implicit_sources ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
+    implicit_sources:TaintConfiguration.implicit_sources ->
     module_reference:Reference.t ->
     string_literal ->
     ForwardTaint.t
 
   val implicit_string_literal_sinks
-    :  implicit_sinks:TaintConfiguration.implicit_sinks ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
+    implicit_sinks:TaintConfiguration.implicit_sinks ->
     module_reference:Reference.t ->
     string_literal ->
     BackwardTaint.t

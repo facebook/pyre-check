@@ -2116,6 +2116,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
       CallModel.StringFormatCall.implicit_string_literal_sinks
+        ~pyre_in_context
         ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
         ~module_reference:FunctionContext.qualifier
         string_literal

@@ -506,7 +506,12 @@ module StringFormatCall = struct
     location: Location.t;
   }
 
-  let implicit_string_literal_sources ~implicit_sources ~module_reference { value; location } =
+  let implicit_string_literal_sources
+      ~pyre_in_context
+      ~implicit_sources
+      ~module_reference
+      { value; location }
+    =
     let literal_string_regular_expressions = implicit_sources.TaintConfiguration.literal_strings in
     if String.is_empty value || List.is_empty literal_string_regular_expressions then
       ForwardTaint.bottom
@@ -514,7 +519,17 @@ module StringFormatCall = struct
       let value_location = Location.with_module ~module_reference location in
       let add_matching_source_kind so_far { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
-          ForwardTaint.singleton (CallInfo.origin value_location) kind Frame.initial
+          ForwardTaint.singleton CallInfo.declaration kind Frame.initial
+          |> ForwardTaint.apply_call
+               ~pyre_in_context
+               ~location:value_location
+               ~callee:(Some Target.StringCombineArtificialTargets.str_literal)
+               ~arguments:[]
+               ~port:AccessPath.Root.LocalResult
+               ~path:[]
+               ~is_class_method:false
+               ~is_static_method:false
+               ~call_info_intervals:Domains.ClassIntervals.top
           |> ForwardTaint.join so_far
         else
           so_far
@@ -525,7 +540,12 @@ module StringFormatCall = struct
         ~init:ForwardTaint.bottom
 
 
-  let implicit_string_literal_sinks ~implicit_sinks ~module_reference { value; location } =
+  let implicit_string_literal_sinks
+      ~pyre_in_context
+      ~implicit_sinks
+      ~module_reference
+      { value; location }
+    =
     let literal_string_regular_expressions =
       implicit_sinks.TaintConfiguration.literal_string_sinks
     in
@@ -535,7 +555,17 @@ module StringFormatCall = struct
       let value_location = Location.with_module ~module_reference location in
       let add_matching_sink_kind so_far { TaintConfiguration.pattern; sink_kind } =
         if Re2.matches pattern value then
-          BackwardTaint.singleton (CallInfo.origin value_location) sink_kind Frame.initial
+          BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
+          |> BackwardTaint.apply_call
+               ~pyre_in_context
+               ~location:value_location
+               ~callee:(Some Target.StringCombineArtificialTargets.str_literal)
+               ~arguments:[]
+               ~port:AccessPath.Root.LocalResult
+               ~path:[]
+               ~is_class_method:false
+               ~is_static_method:false
+               ~call_info_intervals:Domains.ClassIntervals.top
           |> BackwardTaint.join so_far
         else
           so_far

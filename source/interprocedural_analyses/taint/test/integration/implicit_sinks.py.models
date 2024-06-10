@@ -421,6 +421,9 @@
                 "features": [
                   { "always-via": "format-string" }, { "always-via": "tito" }
                 ],
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -490,7 +493,15 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 52, "start": 18, "end": 19 } ],
             "origin": {
@@ -516,7 +527,15 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -544,7 +563,14 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -572,7 +598,15 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
@@ -600,7 +634,15 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -628,7 +670,15 @@
         "port": "formal(a, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
@@ -656,7 +706,15 @@
         "port": "formal(template, position=0)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],

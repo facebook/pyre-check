@@ -479,20 +479,16 @@ let compute_triggered_flows
           ~call_info:CallInfo.declaration
           ~partial_sink
           triggered_sinks_for_call
-      in
-      let triggered_sink_taint =
-        (* Provide proper call info *)
-        BackwardTaint.apply_call
-          ~pyre_in_context
-          ~location
-          ~callee:(Some callee)
-          ~arguments:[]
-          ~path:[]
-          ~element:triggered_sink_taint
-          ~port
-          ~is_class_method:false
-          ~is_static_method:false
-          ~call_info_intervals:Domains.ClassIntervals.top
+        |> BackwardTaint.apply_call
+             ~pyre_in_context
+             ~location
+             ~callee:(Some callee)
+             ~arguments:[]
+             ~path:[]
+             ~port
+             ~is_class_method:false
+             ~is_static_method:false
+             ~call_info_intervals:Domains.ClassIntervals.top
       in
       if BackwardTaint.is_bottom triggered_sink_taint then
         None

@@ -562,10 +562,10 @@ module type TAINT_DOMAIN = sig
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
     path:AccessPath.Path.t ->
-    element:t ->
     is_class_method:bool ->
     is_static_method:bool ->
     call_info_intervals:ClassIntervals.t ->
+    t ->
     t
 
   val for_override_model
@@ -1171,10 +1171,10 @@ end = struct
       ~arguments
       ~port
       ~path
-      ~element:taint
       ~is_class_method
       ~is_static_method
       ~call_info_intervals
+      taint
     =
     let callees =
       match callee with
@@ -1443,10 +1443,10 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
           ~arguments
           ~port
           ~path
-          ~element:tip
           ~is_class_method
           ~is_static_method
-          ~call_info_intervals )
+          ~call_info_intervals
+          tip )
     in
     transform Path Map ~f:transform_path taint_tree
 
