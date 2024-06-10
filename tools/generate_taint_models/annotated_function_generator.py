@@ -42,16 +42,14 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         root: str,
         annotation_specifications: List[DecoratorAnnotationSpecification],
         paths: Optional[List[str]] = None,
-        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
-        exclude_paths: Optional[List[re.Pattern]] = None,
+        exclude_paths: Optional[List[Union[str, re.Pattern[str]]]] = None,
     ) -> None:
         self._paths: Optional[List[str]] = paths
-        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
-        self.exclude_paths: List[re.Pattern] = exclude_paths or []
+        self.exclude_paths: List[Union[str, re.Pattern[str]]] = exclude_paths or []
         self.root = root
-        self.annotation_specifications: List[
-            DecoratorAnnotationSpecification
-        ] = annotation_specifications
+        self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
+            annotation_specifications
+        )
 
     @property
     def paths(self) -> List[str]:
@@ -59,10 +57,15 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         if paths is None:
             paths = list(find_all_paths(self.root))
             self._paths = paths
+        # TODO(T191766251): Remove the support for re.Pattern in self.exclude_paths
+        exclude_paths: List[re.Pattern[str]] = [
+            re.compile(path) if isinstance(path, str) else path
+            for path in self.exclude_paths
+        ]
         return [
             path
             for path in paths
-            if all(not exclude.search(path) for exclude in self.exclude_paths)
+            if all(not exclude.search(path) for exclude in exclude_paths)
         ]
 
     @abstractmethod
