@@ -20,8 +20,7 @@ let test_partition_call_map context =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in
   let callee =
-    Some
-      (Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal })
+    Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
   in
   let call_taint1 =
     ForwardTaint.apply_call

@@ -740,7 +740,7 @@ let type_breadcrumbs_from_annotation ~pyre_api type_ =
   |> type_breadcrumbs
 
 
-let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
+let expand_via_features ~pyre_in_context ~callee ~arguments via_features =
   let expand_via_feature via_feature breadcrumbs =
     let match_all_arguments_to_parameter parameter =
       AccessPath.match_actuals_to_formals arguments [parameter]
@@ -761,8 +761,8 @@ let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
         BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments ()) breadcrumbs
     | ViaFeature.ViaTypeOf { parameter; tag } ->
         let breadcrumb =
-          match callees with
-          | [Interprocedural.Target.Object object_target] ->
+          match callee with
+          | Interprocedural.Target.Object object_target ->
               ViaFeature.via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target ()
           | _ ->
               ViaFeature.via_type_of_breadcrumb
@@ -773,8 +773,8 @@ let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
         in
         BreadcrumbSet.add breadcrumb breadcrumbs
     | ViaFeature.ViaAttributeName { tag } -> (
-        match callees with
-        | [Interprocedural.Target.Object object_target] ->
+        match callee with
+        | Interprocedural.Target.Object object_target ->
             let breadcrumb =
               ViaFeature.via_attribute_name_breadcrumb_for_object ?tag ~object_target ()
             in

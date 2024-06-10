@@ -338,29 +338,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~pyre_in_context
         ~triggered_sinks
         ~parameter_index
-        ~call_target
+        ~call_target:{ CallGraph.CallTarget.target; index; _ }
         ~location
         ~string_combine_partial_sink_tree
         source_tree
       =
-      match call_target with
-      | Some { CallGraph.CallTarget.target; index; _ } ->
-          let location =
-            Location.with_module ~module_reference:FunctionContext.qualifier location
-          in
-          let sink_handle =
-            IssueHandle.Sink.StringFormat { callee = target; index; parameter_index }
-          in
-          check_triggered_flows
-            ~pyre_in_context
-            ~triggered_sinks_for_call:triggered_sinks
-            ~sink_handle
-            ~location
-            ~source_tree
-            ~sink_tree:string_combine_partial_sink_tree
-            ~callee:target
-            ~port:AccessPath.Root.sink_port_in_string_combine_functions
-      | None -> ()
+      let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
+      let sink_handle = IssueHandle.Sink.StringFormat { callee = target; index; parameter_index } in
+      check_triggered_flows
+        ~pyre_in_context
+        ~triggered_sinks_for_call:triggered_sinks
+        ~sink_handle
+        ~location
+        ~source_tree
+        ~sink_tree:string_combine_partial_sink_tree
+        ~callee:target
+        ~port:AccessPath.Root.sink_port_in_string_combine_functions
   end
 
   let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
@@ -699,7 +692,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~pyre_in_context
              ~location:
                (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
-             ~callee:(Some target)
+             ~callee:target
              ~arguments
              ~port:AccessPath.Root.LocalResult
              ~is_class_method
@@ -2079,11 +2072,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       } ->
         let nested_expressions = List.map ~f:(fun call_argument -> call_argument.value) arguments in
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2112,12 +2103,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        ];
     } ->
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallGraph.CallTarget.create
-                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create
+                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2149,12 +2139,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments = [{ Call.Argument.value = expression; name = None }];
     } ->
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallGraph.CallTarget.create
-                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create
+                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2187,11 +2176,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> Features.BreadcrumbSet.empty
         in
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
         in
         let nested_expressions =
           arguments
@@ -2383,7 +2370,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     let string_combine_partial_sink_tree =
       CallModel.StringFormatCall.apply_call
-        ~callee_target:call_target
+        ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
         FunctionContext.string_combine_partial_sink_tree
@@ -2547,6 +2534,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call { callee; arguments } ->
           analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments
       | Constant (Constant.String { StringLiteral.value; _ }) ->
+          let call_target =
+            CallGraph.CallTarget.create
+              Interprocedural.Target.StringCombineArtificialTargets.str_literal
+          in
           analyze_joined_string
             ~pyre_in_context
             ~state
@@ -2554,7 +2545,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             {
               CallModel.StringFormatCall.nested_expressions = [];
               string_literal = { value; location };
-              call_target = None;
+              call_target;
               location;
             }
       | Constant _ -> ForwardState.Tree.empty, state
@@ -2599,6 +2590,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* Reanalyze expression with global identifier replaced by assigned string *)
             match global_string with
             | Some global_string ->
+                let call_target =
+                  CallGraph.CallTarget.create
+                    Interprocedural.Target.StringCombineArtificialTargets.str_literal
+                in
                 analyze_joined_string
                   ~pyre_in_context
                   ~state
@@ -2606,7 +2601,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   {
                     CallModel.StringFormatCall.nested_expressions = [];
                     string_literal = { value = global_string.value; location };
-                    call_target = None;
+                    call_target;
                     location;
                   }
             | None -> ForwardState.Tree.empty, state
@@ -2680,7 +2675,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             {
               CallModel.StringFormatCall.nested_expressions;
               string_literal = { value = string_literal; location };
-              call_target = Some call_target;
+              call_target;
               location;
             }
       | Ternary { target; test; alternative } ->
@@ -2980,7 +2975,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> ForwardState.Tree.apply_call
            ~pyre_in_context
            ~location
-           ~callee:(Some FunctionContext.callable)
+           ~callee:FunctionContext.callable
              (* Provide leaf callable names when sources originate from parameters. *)
            ~arguments:[]
            ~port:root

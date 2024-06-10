@@ -482,7 +482,7 @@ let compute_triggered_flows
         |> BackwardTaint.apply_call
              ~pyre_in_context
              ~location
-             ~callee:(Some callee)
+             ~callee
              ~arguments:[]
              ~path:[]
              ~port

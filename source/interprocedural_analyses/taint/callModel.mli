@@ -133,7 +133,7 @@ module StringFormatCall : sig
   type t = {
     nested_expressions: Ast.Expression.Expression.t list;
     string_literal: string_literal;
-    call_target: CallGraph.CallTarget.t option;
+    call_target: CallGraph.CallTarget.t;
     location: Location.t;
   }
 
@@ -145,7 +145,7 @@ module StringFormatCall : sig
     CallGraph.StringFormatCallees.t option
 
   val apply_call
-    :  callee_target:CallGraph.CallTarget.t option ->
+    :  callee:Target.t ->
     pyre_in_context:PyrePysaApi.InContext.t ->
     location:Location.WithModule.t ->
     BackwardState.Tree.t ->

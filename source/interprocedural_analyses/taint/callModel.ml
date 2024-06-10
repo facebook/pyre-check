@@ -33,7 +33,7 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
         let expand_frame_via_features frame =
           let breadcrumbs =
             Frame.get Frame.Slots.ViaFeature frame
-            |> Features.expand_via_features ~pyre_in_context ~callees:[call_target] ~arguments
+            |> Features.expand_via_features ~pyre_in_context ~callee:call_target ~arguments
           in
           Frame.add_propagated_breadcrumbs breadcrumbs frame
         in
@@ -353,7 +353,7 @@ let sink_trees_of_argument
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
            ~location
-           ~callee:(Some target)
+           ~callee:target
            ~arguments
            ~port:root
            ~is_class_method
@@ -386,7 +386,7 @@ let source_tree_of_argument
   |> ForwardState.Tree.apply_call
        ~pyre_in_context
        ~location
-       ~callee:(Some target)
+       ~callee:target
        ~arguments
        ~port:root
        ~is_class_method
@@ -501,7 +501,7 @@ module StringFormatCall = struct
     string_literal: string_literal;
     (* If a triggered flow exists on any expression used in the string formatting, this is the
        responsible call site. *)
-    call_target: CallGraph.CallTarget.t option;
+    call_target: CallGraph.CallTarget.t;
     (* Location of the string formatting operation. *)
     location: Location.t;
   }
@@ -523,7 +523,7 @@ module StringFormatCall = struct
           |> ForwardTaint.apply_call
                ~pyre_in_context
                ~location:value_location
-               ~callee:(Some Target.StringCombineArtificialTargets.str_literal)
+               ~callee:Target.StringCombineArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
                ~path:[]
@@ -559,7 +559,7 @@ module StringFormatCall = struct
           |> BackwardTaint.apply_call
                ~pyre_in_context
                ~location:value_location
-               ~callee:(Some Target.StringCombineArtificialTargets.str_literal)
+               ~callee:Target.StringCombineArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
                ~path:[]
@@ -589,15 +589,7 @@ module StringFormatCall = struct
     CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
 
 
-  let apply_call ~callee_target ~pyre_in_context ~location =
-    let callee =
-      match callee_target with
-      | Some call_target -> Some call_target.CallGraph.CallTarget.target
-      | None ->
-          (* TODO(T190129382): Disallow this because without a callee, the UI can't show where the
-             sinks originate from. *)
-          None
-    in
+  let apply_call ~callee ~pyre_in_context ~location =
     BackwardState.Tree.apply_call
       ~pyre_in_context
       ~location
@@ -662,7 +654,7 @@ let return_sink ~pyre_in_context ~location ~callee ~sink_model =
     |> BackwardState.Tree.apply_call
          ~pyre_in_context
          ~location
-         ~callee:(Some callee)
+         ~callee
            (* When the source and sink meet at the return statement, we want the leaf callable to be
               non-empty, to provide more information about the flow. *)
          ~arguments:[]

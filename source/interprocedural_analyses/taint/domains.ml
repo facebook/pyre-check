@@ -558,7 +558,7 @@ module type TAINT_DOMAIN = sig
   val apply_call
     :  pyre_in_context:PyrePysaApi.InContext.t ->
     location:Location.WithModule.t ->
-    callee:Target.t option ->
+    callee:Target.t ->
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
     path:AccessPath.Path.t ->
@@ -1176,11 +1176,6 @@ end = struct
       ~call_info_intervals
       taint
     =
-    let callees =
-      match callee with
-      | Some callee -> [callee]
-      | None -> []
-    in
     let apply (call_info, local_taint) =
       let local_taint =
         local_taint
@@ -1194,7 +1189,7 @@ end = struct
           ~f:Features.ViaFeatureSet.add
           ~init:Features.ViaFeatureSet.bottom
           local_taint
-        |> Features.expand_via_features ~pyre_in_context ~callees ~arguments
+        |> Features.expand_via_features ~pyre_in_context ~callee ~arguments
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -1242,12 +1237,11 @@ end = struct
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
       let class_intervals, local_taint =
         match callee with
-        | None
-        | Some (Target.Object _)
-        | Some (Target.Function _) ->
+        | Target.Object _
+        | Target.Function _ ->
             call_info_intervals, local_taint
-        | Some (Target.Method _)
-        | Some (Target.Override _) ->
+        | Target.Method _
+        | Target.Override _ ->
             let class_intervals = CallInfo.class_intervals call_info in
             apply_class_interval
               ~callee_class_interval:class_intervals.ClassIntervals.caller_interval
@@ -1259,7 +1253,9 @@ end = struct
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
-          let call_info = CallInfo.CallSite { location; callees; port; path; class_intervals } in
+          let call_info =
+            CallInfo.CallSite { location; callees = [callee]; port; path; class_intervals }
+          in
           let local_taint =
             local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
           in
@@ -1271,11 +1267,10 @@ end = struct
               Features.LeafNameSet.bottom
             else
               let open Features in
-              let make_leaf_name callee =
-                let port = LeafPort.from_access_path ~root:port ~path in
-                LeafName.{ leaf = Target.external_name callee; port } |> LeafNameInterned.intern
-              in
-              List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
+              let port = LeafPort.from_access_path ~root:port ~path in
+              LeafName.{ leaf = Target.external_name callee; port }
+              |> LeafNameInterned.intern
+              |> Features.LeafNameSet.singleton
           in
           let local_taint =
             LocalTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names local_taint

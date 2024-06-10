@@ -73,7 +73,7 @@ let get_source { models; pyre_in_context; location; interval } =
     |> ForwardState.Tree.apply_call
          ~pyre_in_context
          ~location
-         ~callee:(Some target)
+         ~callee:target
          ~arguments:[]
          ~port:AccessPath.Root.LocalResult
          ~is_class_method:false
@@ -97,7 +97,7 @@ let get_sinks { models; pyre_in_context; location; interval } =
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
            ~location
-           ~callee:(Some target)
+           ~callee:target
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
            ~is_class_method:false
