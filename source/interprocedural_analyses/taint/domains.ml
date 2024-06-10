@@ -390,12 +390,6 @@ module ExtraTraceFirstHop = struct
   end
 end
 
-module IssueHandleSet = struct
-  include Abstract.SetDomain.Make (IssueHandle)
-
-  let to_json set = elements set |> List.map ~f:(fun e -> `String (IssueHandle.master_handle e))
-end
-
 module RootSelector = struct
   type t =
     | All (* All roots *)
