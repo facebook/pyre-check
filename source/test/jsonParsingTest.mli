@@ -1,8 +1,8 @@
 (*
- * copyright (c) meta platforms, inc. and affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * this source code is licensed under the mit license found in the
- * license file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *)
 
 (* blank to catch unused tests *)

@@ -78,21 +78,29 @@ module JsonAst = struct
       line: int;
       column: int;
     }
-    [@@deriving equal, show, compare]
+    [@@deriving equal, compare]
 
     and t = {
       start: position;
       stop: position;
     }
-    [@@deriving equal, show, compare]
+    [@@deriving equal, compare]
+
+    let pp_position formatter { line; column } = Format.fprintf formatter "%d:%d" line column
+
+    let show_position = Format.asprintf "%a" pp_position
 
     let null_position = { line = -1; column = -1 }
 
     let null_location = { start = null_position; stop = null_position }
 
-    let pp_start formatter { start = { line; column }; _ } =
-      Format.fprintf formatter "%d:%d" line column
+    let pp_start formatter { start; _ } = Format.fprintf formatter "%a" pp_position start
 
+    let pp formatter { start; stop } =
+      Format.fprintf formatter "%a-%a" pp_position start pp_position stop
+
+
+    let show = Format.asprintf "%a" pp
 
     let from_decoded_range range =
       let (start_line, start_column), (end_line, end_column) = range in
@@ -144,7 +152,52 @@ module JsonAst = struct
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show, compare]
+    and t = expression Node.t [@@deriving equal, compare]
+
+    module PrettyPrint = struct
+      let rec pp_expression_t formatter { Node.value = expression; location } =
+        Format.fprintf formatter "%a (loc: %a)" pp_expression expression Location.pp location
+
+
+      and pp_expression formatter = function
+        | `Null -> Format.fprintf formatter "Null"
+        | `Bool value -> Format.fprintf formatter "%b" value
+        | `String value -> Format.fprintf formatter "\"%s\"" value
+        | `Float value -> Format.fprintf formatter "%f" value
+        | `Int value -> Format.fprintf formatter "%d" value
+        | `List values -> Format.fprintf formatter "%a" pp_value_list values
+        | `Assoc values -> Format.fprintf formatter "%a" pp_assoc_value_list values
+
+
+      and pp_value_list formatter = function
+        | [] -> ()
+        | [element] -> Format.fprintf formatter "[%a]" pp_expression_t element
+        | elements ->
+            let pp_element formatter element =
+              Format.fprintf formatter "@,%a" pp_expression_t element
+            in
+            let pp_elements formatter = List.iter ~f:(pp_element formatter) in
+            Format.fprintf formatter "[@[<v 2>%a@]@,]" pp_elements elements
+
+
+      and pp_assoc_value_list formatter = function
+        | [] -> ()
+        | [(key, value)] -> Format.fprintf formatter "{\"%s\" -> %a}" key pp_expression_t value
+        | pairs ->
+            let pp_pair formatter (key, value) =
+              Format.fprintf formatter "@,\"%s\" -> %a" key pp_expression_t value
+            in
+            let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+            Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
+    end
+
+    let pp_expression = PrettyPrint.pp_expression
+
+    let show_expression = Format.asprintf "%a" pp_expression
+
+    let pp = PrettyPrint.pp_expression_t
+
+    let show = Format.asprintf "%a" pp
 
     exception
       TypeError of {

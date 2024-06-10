@@ -1,3 +1,10 @@
+(*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
 open Core
 open OUnit2
 
@@ -123,4 +130,167 @@ let test_parser _ =
     }
 
 
-let () = "jsonParsing" >::: ["parser" >:: test_parser] |> Test.run
+let test_pretty_print _ =
+  let assert_equal ~expected ~actual =
+    assert_equal
+      ~cmp:String.equal
+      ~printer:Fn.id
+      expected
+      (Format.asprintf "%a" JsonParsing.JsonAst.Json.pp actual)
+  in
+  let line_1 =
+    {
+      JsonParsing.JsonAst.Location.start = { JsonParsing.JsonAst.Location.line = 1; column = 12 };
+      stop = { JsonParsing.JsonAst.Location.line = 1; column = 13 };
+    }
+  in
+  let line_2 =
+    {
+      JsonParsing.JsonAst.Location.start = { JsonParsing.JsonAst.Location.line = 2; column = 12 };
+      stop = { JsonParsing.JsonAst.Location.line = 2; column = 14 };
+    }
+  in
+  let line_3 =
+    {
+      JsonParsing.JsonAst.Location.start = { JsonParsing.JsonAst.Location.line = 3; column = 12 };
+      stop = { JsonParsing.JsonAst.Location.line = 3; column = 15 };
+    }
+  in
+  assert_equal
+    ~expected:"Null (loc: 1:12-1:13)"
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_1; value = `Null };
+  assert_equal
+    ~expected:"true (loc: 1:12-1:13)"
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_1; value = `Bool true };
+  assert_equal
+    ~expected:"\"test\" (loc: 1:12-1:13)"
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_1; value = `String "test" };
+  assert_equal
+    ~expected:"1.200000 (loc: 1:12-1:13)"
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_1; value = `Float 1.2 };
+  assert_equal
+    ~expected:"5 (loc: 1:12-1:13)"
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_1; value = `Int 5 };
+  let json_list =
+    [
+      { JsonParsing.JsonAst.Node.location = line_1; value = `Int 1 };
+      { JsonParsing.JsonAst.Node.location = line_2; value = `Int 2 };
+    ]
+  in
+  assert_equal
+    ~expected:{|[
+   1 (loc: 1:12-1:13)
+   2 (loc: 2:12-2:14)
+] (loc: 3:12-3:15)|}
+    ~actual:{ JsonParsing.JsonAst.Node.location = line_3; value = `List json_list };
+  assert_equal
+    ~expected:{|{
+   "a" -> 1 (loc: 1:12-1:13)
+   "b" -> 2 (loc: 2:12-2:14)
+} (loc: 3:12-3:15)|}
+    ~actual:
+      {
+        JsonParsing.JsonAst.Node.location = line_3;
+        value =
+          `Assoc
+            [
+              "a", { JsonParsing.JsonAst.Node.location = line_1; value = `Int 1 };
+              "b", { JsonParsing.JsonAst.Node.location = line_2; value = `Int 2 };
+            ];
+      };
+  assert_equal
+    ~expected:
+      {|[
+   [
+      1 (loc: 1:12-1:13)
+      2 (loc: 2:12-2:14)
+   ] (loc: 1:12-1:13)
+   [
+      1 (loc: 1:12-1:13)
+      2 (loc: 2:12-2:14)
+   ] (loc: 2:12-2:14)
+] (loc: 3:12-3:15)|}
+    ~actual:
+      {
+        JsonParsing.JsonAst.Node.location = line_3;
+        value =
+          `List
+            [
+              { JsonParsing.JsonAst.Node.location = line_1; value = `List json_list };
+              { JsonParsing.JsonAst.Node.location = line_2; value = `List json_list };
+            ];
+      };
+  assert_equal
+    ~expected:
+      {|[
+   {"a" -> 1 (loc: 1:12-1:13)} (loc: 1:12-1:13)
+   {"b" -> 2 (loc: 1:12-1:13)} (loc: 1:12-1:13)
+] (loc: 3:12-3:15)|}
+    ~actual:
+      {
+        JsonParsing.JsonAst.Node.location = line_3;
+        value =
+          `List
+            [
+              {
+                JsonParsing.JsonAst.Node.location = line_1;
+                value = `Assoc ["a", { JsonParsing.JsonAst.Node.location = line_1; value = `Int 1 }];
+              };
+              {
+                JsonParsing.JsonAst.Node.location = line_1;
+                value = `Assoc ["b", { JsonParsing.JsonAst.Node.location = line_1; value = `Int 2 }];
+              };
+            ];
+      };
+  assert_equal
+    ~expected:
+      {|{
+   "a" -> [
+             1 (loc: 1:12-1:13)
+             2 (loc: 2:12-2:14)
+   ] (loc: 1:12-1:13)
+   "b" -> [
+             1 (loc: 1:12-1:13)
+             2 (loc: 2:12-2:14)
+   ] (loc: 2:12-2:14)
+} (loc: 3:12-3:15)|}
+    ~actual:
+      {
+        JsonParsing.JsonAst.Node.location = line_3;
+        value =
+          `Assoc
+            [
+              "a", { JsonParsing.JsonAst.Node.location = line_1; value = `List json_list };
+              "b", { JsonParsing.JsonAst.Node.location = line_2; value = `List json_list };
+            ];
+      };
+  assert_equal
+    ~expected:
+      {|{
+   "a1" -> {"a2" -> 1 (loc: 1:12-1:13)} (loc: 1:12-1:13)
+   "b1" -> {"a2" -> 3 (loc: 1:12-1:13)} (loc: 1:12-1:13)
+} (loc: 3:12-3:15)|}
+    ~actual:
+      {
+        JsonParsing.JsonAst.Node.location = line_3;
+        value =
+          `Assoc
+            [
+              ( "a1",
+                {
+                  JsonParsing.JsonAst.Node.location = line_1;
+                  value =
+                    `Assoc ["a2", { JsonParsing.JsonAst.Node.location = line_1; value = `Int 1 }];
+                } );
+              ( "b1",
+                {
+                  JsonParsing.JsonAst.Node.location = line_1;
+                  value =
+                    `Assoc ["a2", { JsonParsing.JsonAst.Node.location = line_1; value = `Int 3 }];
+                } );
+            ];
+      }
+
+
+let () =
+  "jsonParsing" >::: ["parser" >:: test_parser; "pretty_print" >:: test_pretty_print] |> Test.run
