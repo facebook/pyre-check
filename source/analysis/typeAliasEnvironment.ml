@@ -131,58 +131,6 @@ module IncomingDataComputation = struct
             Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
-          | ( _,
-              Some
-                {
-                  Node.value =
-                    Subscript
-                      {
-                        base =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Attribute
-                                  {
-                                    base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                    attribute = "Type";
-                                    _;
-                                  });
-                            _;
-                          };
-                        index =
-                          {
-                            Node.value =
-                              Subscript
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          (Name.Attribute
-                                            {
-                                              base =
-                                                {
-                                                  Node.value =
-                                                    Name (Name.Identifier "mypy_extensions");
-                                                  _;
-                                                };
-                                              attribute = "TypedDict";
-                                              _;
-                                            });
-                                      _;
-                                    };
-                                  _;
-                                };
-                            _;
-                          };
-                      };
-                  _;
-                } ) ->
-              if not (Type.is_top target_annotation) then
-                let value = delocalize value in
-                Some (TypeAlias { target = name; value })
-              else
-                None
           | ( (BinaryOperator _ | Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
               Some
                 {
