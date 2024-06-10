@@ -523,7 +523,7 @@ module StringFormatCall = struct
           |> ForwardTaint.apply_call
                ~pyre_in_context
                ~location:value_location
-               ~callee:Target.StringCombineArtificialTargets.str_literal
+               ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
                ~path:[]
@@ -559,7 +559,7 @@ module StringFormatCall = struct
           |> BackwardTaint.apply_call
                ~pyre_in_context
                ~location:value_location
-               ~callee:Target.StringCombineArtificialTargets.str_literal
+               ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
                ~path:[]
@@ -611,9 +611,9 @@ module StringFormatCall = struct
     let from_function_name string_function_name =
       CallGraph.CallTarget.create
         (match string_function_name with
-        | "__add__" -> Target.StringCombineArtificialTargets.str_add
-        | "__mod__" -> Target.StringCombineArtificialTargets.str_mod
-        | "format" -> Target.StringCombineArtificialTargets.str_format
+        | "__add__" -> Target.ArtificialTargets.str_add
+        | "__mod__" -> Target.ArtificialTargets.str_mod
+        | "format" -> Target.ArtificialTargets.str_format
         | _ -> failwith "Expect either `__add__` or `__mod__` or `format`")
 
 
@@ -626,8 +626,7 @@ module StringFormatCall = struct
       create
         ~call_targets
         ~default_target:
-          (CallGraph.CallTarget.create
-             Interprocedural.Target.StringCombineArtificialTargets.format_string)
+          (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.format_string)
   end
 end
 

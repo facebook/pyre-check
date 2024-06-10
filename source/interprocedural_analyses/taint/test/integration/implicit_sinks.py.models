@@ -40,7 +40,12 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [ { "name": "str.format", "port": "leaf:return" } ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 27,
@@ -99,7 +104,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 17,
@@ -178,7 +190,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 66,
@@ -237,7 +256,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 61,
@@ -299,7 +325,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "str.__mod__", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 36,
@@ -361,7 +394,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "str.__add__", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 45,
@@ -777,7 +817,12 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [ { "name": "str.format", "port": "leaf:return" } ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 95,
@@ -786,7 +831,14 @@
             }
           },
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 99,

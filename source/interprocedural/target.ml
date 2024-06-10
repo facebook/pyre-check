@@ -319,7 +319,7 @@ let resolve_method ~pyre_api ~class_type ~method_name =
   | _ -> None
 
 
-module StringCombineArtificialTargets = struct
+module ArtificialTargets = struct
   let format_string = Object "<format-string>"
 
   let str_add = Object "<str.__add__>"
@@ -329,6 +329,8 @@ module StringCombineArtificialTargets = struct
   let str_format = Object "<str.format>"
 
   let str_literal = Object "<literal-string>"
+
+  let condition = Object "<condition>"
 end
 
 module SharedMemoryKey = struct

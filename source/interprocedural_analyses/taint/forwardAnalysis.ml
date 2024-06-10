@@ -301,7 +301,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   module StringFormatCall = struct
     let check_flow_implicit_string_literal_sinks
+        ~pyre_in_context
         ~string_literal:{ CallModel.StringFormatCall.value; location }
+        ~call_target
         taint
       =
       (* We try to be a bit clever about bailing out early and not computing the matches. *)
@@ -319,10 +321,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern value then
               let sink_tree =
-                BackwardTaint.singleton
-                  (CallInfo.origin value_location_with_module)
-                  sink_kind
-                  Frame.initial
+                BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
+                |> BackwardTaint.apply_call
+                     ~pyre_in_context
+                     ~location:value_location_with_module
+                     ~callee:call_target.CallGraph.CallTarget.target
+                     ~arguments:[]
+                     ~port:AccessPath.Root.LocalResult
+                     ~path:[]
+                     ~is_class_method:false
+                     ~is_static_method:false
+                     ~call_info_intervals:Domains.ClassIntervals.top
                 |> BackwardState.Tree.create_leaf
               in
               check_flow
@@ -2106,8 +2115,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
             ~default_target:
-              (CallGraph.CallTarget.create
-                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2142,8 +2150,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
             ~default_target:
-              (CallGraph.CallTarget.create
-                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2492,7 +2499,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~sink_tree:string_combine_partial_sink_tree
       nested_expressions;
     (* Compute flows to literal string sinks if applicable. *)
-    StringFormatCall.check_flow_implicit_string_literal_sinks ~string_literal taint;
+    StringFormatCall.check_flow_implicit_string_literal_sinks
+      ~pyre_in_context
+      ~string_literal
+      ~call_target
+      taint;
     ForwardState.Tree.create_leaf taint, state
 
 
@@ -2535,8 +2546,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments
       | Constant (Constant.String { StringLiteral.value; _ }) ->
           let call_target =
-            CallGraph.CallTarget.create
-              Interprocedural.Target.StringCombineArtificialTargets.str_literal
+            CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_literal
           in
           analyze_joined_string
             ~pyre_in_context
@@ -2591,8 +2601,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             match global_string with
             | Some global_string ->
                 let call_target =
-                  CallGraph.CallTarget.create
-                    Interprocedural.Target.StringCombineArtificialTargets.str_literal
+                  CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_literal
                 in
                 analyze_joined_string
                   ~pyre_in_context
@@ -2817,7 +2826,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       FunctionContext.taint_configuration.implicit_sinks.conditional_test
       |> List.iter ~f:(fun sink_kind ->
              let sink_tree =
-               BackwardTaint.singleton (CallInfo.origin location) sink_kind Frame.initial
+               BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
+               |> BackwardTaint.apply_call
+                    ~pyre_in_context
+                    ~location
+                    ~callee:Interprocedural.Target.ArtificialTargets.condition
+                    ~arguments:[]
+                    ~port:
+                      (AccessPath.Root.PositionalParameter
+                         { position = 0; name = "condition"; positional_only = false })
+                    ~path:[]
+                    ~is_class_method:false
+                    ~is_static_method:false
+                    ~call_info_intervals:Domains.ClassIntervals.top
                |> BackwardState.Tree.create_leaf
              in
              check_flow

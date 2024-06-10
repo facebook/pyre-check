@@ -1929,8 +1929,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
             ~default_target:
-              (CallGraph.CallTarget.create
-                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -1967,8 +1966,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
             ~default_target:
-              (CallGraph.CallTarget.create
-                 Interprocedural.Target.StringCombineArtificialTargets.str_add)
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context

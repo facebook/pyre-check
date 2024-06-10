@@ -2612,7 +2612,7 @@ struct
                 call_indexer
                 ~implicit_dunder_call:false
                 ~return_type:None
-                Target.StringCombineArtificialTargets.format_string
+                Target.ArtificialTargets.format_string
             in
             let callees =
               ExpressionCallees.from_string_format

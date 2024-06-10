@@ -40,7 +40,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "InTest" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<condition>}", "port": "leaf:condition" }
+                ],
+                "kind": "InTest"
+              }
+            ],
             "origin": {
               "filename": "conditional.py",
               "line": 24,
@@ -97,7 +104,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "InTest" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<condition>}", "port": "leaf:condition" }
+                ],
+                "kind": "InTest"
+              }
+            ],
             "origin": {
               "filename": "conditional.py",
               "line": 30,
