@@ -1476,6 +1476,265 @@ module State (Context : Context) = struct
     forward_call ~resolution ~location ~errors ~target ~dynamic ~callee ~arguments
 
 
+  and resolve_attribute_access
+      ~base_resolved:{ Resolved.resolution; errors; resolved = resolved_base; base = super_base; _ }
+      ~location
+      ~base
+      ~special
+      ~attribute
+      ~has_default
+    =
+    let global_resolution = Resolution.global_resolution resolution in
+    let name = Name.Attribute { base; special; attribute } in
+    let reference = name_to_reference name in
+    let access_as_attribute () =
+      let find_attribute
+          ({ Type.instantiated; accessed_through_class; class_name; accessed_through_readonly } as
+          class_data)
+        =
+        let name = attribute in
+        match
+          GlobalResolution.attribute_from_class_name
+            global_resolution
+            class_name
+            ~transitive:true
+            ~accessed_through_class
+            ~accessed_through_readonly
+            ~special_method:special
+            ~name
+            ~instantiated
+        with
+        | Some attribute ->
+            let attribute =
+              if not (AnnotatedAttribute.defined attribute) then
+                Resolution.fallback_attribute
+                  class_name
+                  ~instantiated:(Some resolved_base)
+                  ~accessed_through_class
+                  ~resolution
+                  ~name
+                |> Option.value ~default:attribute
+              else
+                attribute
+            in
+            let undefined_target =
+              if AnnotatedAttribute.defined attribute then
+                None
+              else
+                Some instantiated
+            in
+            (* Collect @property's in the call graph. *)
+            Some (class_data, attribute, undefined_target)
+        | None -> None
+      in
+      match
+        Type.class_data_for_attribute_lookup resolved_base
+        >>| List.map ~f:find_attribute
+        >>= Option.all
+      with
+      | None ->
+          let errors =
+            if has_default then
+              errors
+            else
+              emit_error
+                ~errors
+                ~location
+                ~kind:
+                  (Error.UndefinedAttribute
+                     {
+                       attribute;
+                       origin =
+                         Error.Class
+                           {
+                             class_origin = ClassType resolved_base;
+                             parent_module_path =
+                               module_path_of_type ~global_resolution resolved_base;
+                           };
+                     })
+          in
+          {
+            Resolved.resolution;
+            errors;
+            resolved = Type.Top;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Some [] ->
+          {
+            Resolved.resolution;
+            errors;
+            resolved = Type.Top;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Some (head_attribute_info :: tail_attributes_info) ->
+          let add_attributes_to_context attribute_info =
+            let get_instantiated { Type.instantiated; _ } = instantiated in
+            let attributes_with_instantiated =
+              List.map attribute_info ~f:(fun (class_data, attribute, _) ->
+                  attribute, get_instantiated class_data)
+            in
+            Context.Builder.add_property_callees
+              ~global_resolution
+              ~resolved_base
+              ~attributes:attributes_with_instantiated
+              ~location
+              ~qualifier:Context.qualifier
+              ~name:attribute
+          in
+          add_attributes_to_context (head_attribute_info :: tail_attributes_info);
+
+          let _, head_attribute, _ = head_attribute_info in
+          let _, tail_attributes, _ = List.unzip3 tail_attributes_info in
+
+          let errors =
+            let attribute_name, target =
+              match
+                List.find
+                  (head_attribute_info :: tail_attributes_info)
+                  ~f:(fun (_, _, undefined_target) -> Option.is_some undefined_target)
+              with
+              | Some (_, attribute, Some target) ->
+                  AnnotatedAttribute.public_name attribute, Some target
+              | Some (_, attribute, _) -> AnnotatedAttribute.public_name attribute, None
+              | _ -> attribute, None
+            in
+            match target with
+            | Some target ->
+                if has_default then
+                  errors
+                else if Option.is_some (inverse_operator attribute) then
+                  (* Defer any missing attribute error until the inverse operator has been
+                     typechecked. *)
+                  errors
+                else
+                  let class_origin =
+                    match resolved_base with
+                    | Type.Union [Type.NoneType; _]
+                    | Union [_; Type.NoneType] ->
+                        Error.ClassType target
+                    | Union unions ->
+                        List.findi ~f:(fun _ element -> Type.equal element target) unions
+                        >>| (fun (index, _) -> Error.ClassInUnion { unions; index })
+                        |> Option.value ~default:(Error.ClassType target)
+                    | _ -> Error.ClassType target
+                  in
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.UndefinedAttribute
+                         {
+                           attribute = attribute_name;
+                           origin =
+                             Error.Class
+                               {
+                                 class_origin;
+                                 parent_module_path = module_path_of_type ~global_resolution target;
+                               };
+                         })
+            | _ -> errors
+          in
+
+          let head_annotation = AnnotatedAttribute.annotation head_attribute in
+          let tail_annotations = List.map ~f:AnnotatedAttribute.annotation tail_attributes in
+
+          let resolved_annotation =
+            let apply_local_override global_annotation =
+              let local_override =
+                reference
+                >>= fun reference ->
+                let { name; attribute_path; _ } =
+                  partition_name
+                    ~resolution
+                    (create_name_from_reference ~location:Location.any reference)
+                in
+                Resolution.get_local_with_attributes
+                  resolution
+                  ~name
+                  ~attribute_path
+                  ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
+              in
+              match local_override with
+              | Some local_annotation -> local_annotation
+              | None -> global_annotation
+            in
+            tail_annotations
+            |> Algorithms.fold_balanced
+                 ~f:(TypeInfo.LocalOrGlobal.join_annotations ~global_resolution)
+                 ~init:head_annotation
+            |> apply_local_override
+          in
+          {
+            resolution;
+            errors;
+            resolved = Annotation.annotation resolved_annotation;
+            resolved_annotation = Some resolved_annotation;
+            base = None;
+          }
+    in
+    let resolved =
+      match resolved_base with
+      (* Global or local. *)
+      | Type.Top ->
+          reference
+          >>| forward_reference ~resolution ~location ~errors
+          |> Option.value
+               ~default:
+                 {
+                   Resolved.resolution;
+                   errors;
+                   resolved = Type.Top;
+                   resolved_annotation = None;
+                   base = None;
+                 }
+      (* TODO(T63892020): We need to fix up qualification so nested classes and functions are just
+         normal locals rather than attributes of the enclosing function, which they really are
+         not *)
+      | Type.Parametric { name = "BoundMethod"; _ }
+      | Type.Callable _ -> (
+          let resolved =
+            reference >>= fun reference -> Resolution.get_local resolution ~reference
+          in
+          match resolved with
+          | Some annotation ->
+              {
+                resolution;
+                errors;
+                resolved = Annotation.annotation annotation;
+                resolved_annotation = Some annotation;
+                base = None;
+              }
+          | None -> access_as_attribute ())
+      | _ ->
+          (* Attribute access. *)
+          access_as_attribute ()
+    in
+    let base =
+      match super_base with
+      | Some (Resolved.Super _) -> super_base
+      | _ ->
+          let is_global_meta =
+            let is_global () =
+              match base with
+              | { Node.value = Name name; _ } ->
+                  name_to_identifiers name
+                  >>| Reference.create_from_list
+                  >>= GlobalResolution.global global_resolution
+                  |> Option.is_some
+              | _ -> false
+            in
+            Type.is_meta resolved_base && is_global ()
+          in
+          if is_global_meta then
+            Some (Resolved.Class resolved_base)
+          else
+            Some (Resolved.Instance resolved_base)
+    in
+    { resolved with base }
+
+
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
@@ -1608,264 +1867,6 @@ module State (Context : Context) = struct
              base = None;
            })
       |> correct_bottom
-    in
-    let resolve_attribute_access
-        ~base_resolved:
-          { Resolved.resolution; errors; resolved = resolved_base; base = super_base; _ }
-        ~base
-        ~special
-        ~attribute
-        ~has_default
-      =
-      let name = Name.Attribute { base; special; attribute } in
-      let reference = name_to_reference name in
-      let access_as_attribute () =
-        let find_attribute
-            ({ Type.instantiated; accessed_through_class; class_name; accessed_through_readonly } as
-            class_data)
-          =
-          let name = attribute in
-          match
-            GlobalResolution.attribute_from_class_name
-              global_resolution
-              class_name
-              ~transitive:true
-              ~accessed_through_class
-              ~accessed_through_readonly
-              ~special_method:special
-              ~name
-              ~instantiated
-          with
-          | Some attribute ->
-              let attribute =
-                if not (AnnotatedAttribute.defined attribute) then
-                  Resolution.fallback_attribute
-                    class_name
-                    ~instantiated:(Some resolved_base)
-                    ~accessed_through_class
-                    ~resolution
-                    ~name
-                  |> Option.value ~default:attribute
-                else
-                  attribute
-              in
-              let undefined_target =
-                if AnnotatedAttribute.defined attribute then
-                  None
-                else
-                  Some instantiated
-              in
-              (* Collect @property's in the call graph. *)
-              Some (class_data, attribute, undefined_target)
-          | None -> None
-        in
-        match
-          Type.class_data_for_attribute_lookup resolved_base
-          >>| List.map ~f:find_attribute
-          >>= Option.all
-        with
-        | None ->
-            let errors =
-              if has_default then
-                errors
-              else
-                emit_error
-                  ~errors
-                  ~location
-                  ~kind:
-                    (Error.UndefinedAttribute
-                       {
-                         attribute;
-                         origin =
-                           Error.Class
-                             {
-                               class_origin = ClassType resolved_base;
-                               parent_module_path =
-                                 module_path_of_type ~global_resolution resolved_base;
-                             };
-                       })
-            in
-            {
-              Resolved.resolution;
-              errors;
-              resolved = Type.Top;
-              resolved_annotation = None;
-              base = None;
-            }
-        | Some [] ->
-            {
-              Resolved.resolution;
-              errors;
-              resolved = Type.Top;
-              resolved_annotation = None;
-              base = None;
-            }
-        | Some (head_attribute_info :: tail_attributes_info) ->
-            let add_attributes_to_context attribute_info =
-              let get_instantiated { Type.instantiated; _ } = instantiated in
-              let attributes_with_instantiated =
-                List.map attribute_info ~f:(fun (class_data, attribute, _) ->
-                    attribute, get_instantiated class_data)
-              in
-              Context.Builder.add_property_callees
-                ~global_resolution
-                ~resolved_base
-                ~attributes:attributes_with_instantiated
-                ~location
-                ~qualifier:Context.qualifier
-                ~name:attribute
-            in
-            add_attributes_to_context (head_attribute_info :: tail_attributes_info);
-
-            let _, head_attribute, _ = head_attribute_info in
-            let _, tail_attributes, _ = List.unzip3 tail_attributes_info in
-
-            let errors =
-              let attribute_name, target =
-                match
-                  List.find
-                    (head_attribute_info :: tail_attributes_info)
-                    ~f:(fun (_, _, undefined_target) -> Option.is_some undefined_target)
-                with
-                | Some (_, attribute, Some target) ->
-                    AnnotatedAttribute.public_name attribute, Some target
-                | Some (_, attribute, _) -> AnnotatedAttribute.public_name attribute, None
-                | _ -> attribute, None
-              in
-              match target with
-              | Some target ->
-                  if has_default then
-                    errors
-                  else if Option.is_some (inverse_operator attribute) then
-                    (* Defer any missing attribute error until the inverse operator has been
-                       typechecked. *)
-                    errors
-                  else
-                    let class_origin =
-                      match resolved_base with
-                      | Type.Union [Type.NoneType; _]
-                      | Union [_; Type.NoneType] ->
-                          Error.ClassType target
-                      | Union unions ->
-                          List.findi ~f:(fun _ element -> Type.equal element target) unions
-                          >>| (fun (index, _) -> Error.ClassInUnion { unions; index })
-                          |> Option.value ~default:(Error.ClassType target)
-                      | _ -> Error.ClassType target
-                    in
-                    emit_error
-                      ~errors
-                      ~location
-                      ~kind:
-                        (Error.UndefinedAttribute
-                           {
-                             attribute = attribute_name;
-                             origin =
-                               Error.Class
-                                 {
-                                   class_origin;
-                                   parent_module_path =
-                                     module_path_of_type ~global_resolution target;
-                                 };
-                           })
-              | _ -> errors
-            in
-
-            let head_annotation = AnnotatedAttribute.annotation head_attribute in
-            let tail_annotations = List.map ~f:AnnotatedAttribute.annotation tail_attributes in
-
-            let resolved_annotation =
-              let apply_local_override global_annotation =
-                let local_override =
-                  reference
-                  >>= fun reference ->
-                  let { name; attribute_path; _ } =
-                    partition_name
-                      ~resolution
-                      (create_name_from_reference ~location:Location.any reference)
-                  in
-                  Resolution.get_local_with_attributes
-                    resolution
-                    ~name
-                    ~attribute_path
-                    ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
-                in
-                match local_override with
-                | Some local_annotation -> local_annotation
-                | None -> global_annotation
-              in
-              tail_annotations
-              |> Algorithms.fold_balanced
-                   ~f:(TypeInfo.LocalOrGlobal.join_annotations ~global_resolution)
-                   ~init:head_annotation
-              |> apply_local_override
-            in
-            {
-              resolution;
-              errors;
-              resolved = Annotation.annotation resolved_annotation;
-              resolved_annotation = Some resolved_annotation;
-              base = None;
-            }
-      in
-      let resolved =
-        match resolved_base with
-        (* Global or local. *)
-        | Type.Top ->
-            reference
-            >>| forward_reference ~resolution ~location ~errors
-            |> Option.value
-                 ~default:
-                   {
-                     Resolved.resolution;
-                     errors;
-                     resolved = Type.Top;
-                     resolved_annotation = None;
-                     base = None;
-                   }
-        (* TODO(T63892020): We need to fix up qualification so nested classes and functions are just
-           normal locals rather than attributes of the enclosing function, which they really are
-           not *)
-        | Type.Parametric { name = "BoundMethod"; _ }
-        | Type.Callable _ -> (
-            let resolved =
-              reference >>= fun reference -> Resolution.get_local resolution ~reference
-            in
-            match resolved with
-            | Some annotation ->
-                {
-                  resolution;
-                  errors;
-                  resolved = Annotation.annotation annotation;
-                  resolved_annotation = Some annotation;
-                  base = None;
-                }
-            | None -> access_as_attribute ())
-        | _ ->
-            (* Attribute access. *)
-            access_as_attribute ()
-      in
-      let base =
-        match super_base with
-        | Some (Resolved.Super _) -> super_base
-        | _ ->
-            let is_global_meta =
-              let is_global () =
-                match base with
-                | { Node.value = Name name; _ } ->
-                    name_to_identifiers name
-                    >>| Reference.create_from_list
-                    >>= GlobalResolution.global global_resolution
-                    |> Option.is_some
-                | _ -> false
-              in
-              Type.is_meta resolved_base && is_global ()
-            in
-            if is_global_meta then
-              Some (Resolved.Class resolved_base)
-            else
-              Some (Resolved.Instance resolved_base)
-      in
-      { resolved with base }
     in
     match value with
     | Await expression -> (
@@ -2480,6 +2481,7 @@ module State (Context : Context) = struct
         | Type.Literal (String (LiteralValue attribute)) ->
             resolve_attribute_access
               ~base_resolved:{ base_resolved with Resolved.resolution; errors }
+              ~location
               ~base
               ~special:false
               ~attribute
@@ -3214,6 +3216,7 @@ module State (Context : Context) = struct
             in
             resolve_attribute_access
               ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
+              ~location
               ~base
               ~special
               ~attribute
