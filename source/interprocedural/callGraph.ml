@@ -3182,7 +3182,7 @@ let build_whole_program_call_graph
           (Scheduler.Policy.fixed_chunk_size
              ~minimum_chunks_per_worker:1
              ~minimum_chunk_size:1
-             ~preferred_chunk_size:2000
+             ~preferred_chunk_size:6000
              ())
     in
     Scheduler.map_reduce
