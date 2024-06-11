@@ -514,6 +514,25 @@ let test_forward_expression context =
     assert_annotation_store ~expected:(create_annotation_store postcondition) new_resolution;
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved
   in
+  let dictionary_set_union =
+    Type.Union [Type.dictionary ~key:Type.integer ~value:Type.string; Type.set Type.integer]
+  in
+  let callable ~parameters ~annotation =
+    let parameters =
+      let open Type.Callable in
+      let to_parameter (name, kind, default) =
+        match kind with
+        | NamedParameter -> Parameter.Named { name; annotation = Type.Any; default }
+        | VariableParameter -> Parameter.Variable (Concrete Type.Any)
+        | KeywordParameter -> Parameter.Keywords Type.Any
+      in
+      Defined (List.map parameters ~f:to_parameter)
+    in
+    Type.Callable.create ~parameters ~annotation ()
+  in
+  let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
+    assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
+  in
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
   assert_forward "await undefined" Type.Any;
@@ -601,9 +620,6 @@ let test_forward_expression context =
       ["x", Type.union [Type.literal_integer 1; Type.literal_integer 2]; "y", Type.string]
     "x and y"
     Type.string;
-  let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
-    assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
-  in
   assert_optional_forward "x or 1" Type.integer;
   assert_optional_forward "x or x" (Type.optional Type.integer);
   assert_optional_forward "x and 1" (Type.optional Type.integer);
@@ -690,9 +706,6 @@ let test_forward_expression context =
     ~postcondition:["Container", Type.meta (Type.Primitive "test.Foo")]
     "1 in Container"
     Type.bool;
-  let dictionary_set_union =
-    Type.Union [Type.dictionary ~key:Type.integer ~value:Type.string; Type.set Type.integer]
-  in
   assert_forward
     ~precondition:["Container", dictionary_set_union]
     ~postcondition:["Container", dictionary_set_union]
@@ -786,19 +799,6 @@ let test_forward_expression context =
   assert_forward "(element for element in undefined)" (Type.generator_expression Type.Any);
 
   (* Lambda. *)
-  let callable ~parameters ~annotation =
-    let parameters =
-      let open Type.Callable in
-      let to_parameter (name, kind, default) =
-        match kind with
-        | NamedParameter -> Parameter.Named { name; annotation = Type.Any; default }
-        | VariableParameter -> Parameter.Variable (Concrete Type.Any)
-        | KeywordParameter -> Parameter.Keywords Type.Any
-      in
-      Defined (List.map parameters ~f:to_parameter)
-    in
-    Type.Callable.create ~parameters ~annotation ()
-  in
   assert_forward "lambda: 1" (callable ~parameters:[] ~annotation:Type.integer);
   assert_forward
     "lambda parameter: parameter"
@@ -986,9 +986,12 @@ let test_forward_expression context =
     "typing.ClassVar[int]"
     (Type.meta (Type.parametric "typing.ClassVar" [Single Type.integer]));
   assert_forward "typing.Union[int, str]" (Type.meta Type.Any);
+  ()
 
+
+let test_forward_expression__store =
   (* Resolved annotation field. *)
-  let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =
+  let assert_annotation ?(precondition = []) ?(environment = "") expression annotation context =
     let expression =
       let expression = parse expression in
       expression
@@ -1008,66 +1011,91 @@ let test_forward_expression context =
     let resolved_annotation = Resolution.resolve_expression_to_annotation resolution expression in
     assert_equal ~cmp:Annotation.equal ~printer:Annotation.show annotation resolved_annotation
   in
-  assert_annotation ~environment:"x = 1" "test.x" (Annotation.create_immutable Type.integer);
-  assert_annotation
-    ~environment:"x: typing.Union[int, str] = 1"
-    "test.x"
-    (Annotation.create_immutable
-       ~original:(Some (Type.union [Type.string; Type.integer]))
-       (Type.union [Type.string; Type.integer]));
-  assert_annotation
-    ~environment:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation ~environment:"x = 1" "test.x" (Annotation.create_immutable Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation
+           ~environment:"x: typing.Union[int, str] = 1"
+           "test.x"
+           (Annotation.create_immutable
+              ~original:(Some (Type.union [Type.string; Type.integer]))
+              (Type.union [Type.string; Type.integer]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation
+           ~environment:
+             {|
         class Foo:
           def __init__(self):
             self.attribute: int = 1
       |}
-    "test.Foo().attribute"
-    (Annotation.create_immutable Type.integer)
+           "test.Foo().attribute"
+           (Annotation.create_immutable Type.integer);
+    ]
 
 
-let test_forward_statement context =
+let assert_forward_statement
+    ?(precondition_immutables = [])
+    ?(postcondition_immutables = [])
+    ?(bottom = false)
+    precondition
+    statement
+    postcondition
+    context
+  =
   let global_resolution =
     ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
   in
+  let forwarded =
+    let parsed =
+      parse statement
+      |> function
+      | { Source.statements = statement :: rest; _ } -> statement :: rest
+      | _ -> failwith "unable to parse test"
+    in
+    let resolution =
+      let annotation_store =
+        create_annotation_store ~immutables:precondition_immutables precondition
+      in
+      TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+    in
+
+    let rec process_statement resolution = function
+      | [] -> Some resolution
+      | statement :: rest -> (
+          match Resolution.resolve_statement resolution statement with
+          | Resolution.Unreachable -> None
+          | Resolution.Reachable { resolution; _ } -> process_statement resolution rest)
+    in
+    process_statement resolution parsed
+  in
+  match forwarded with
+  | None -> assert_bool "Expected Resolution.Unreachable when `bottom` is set to true" bottom
+  | Some actual_resolution ->
+      assert_bool "Expected Resolution.Reachable when `bottom` is set to false" (not bottom);
+      assert_annotation_store
+        ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
+        actual_resolution
+
+
+let test_forward_statement context =
   let assert_forward
-      ?(precondition_immutables = [])
-      ?(postcondition_immutables = [])
-      ?(bottom = false)
+      ?precondition_immutables
+      ?postcondition_immutables
+      ?bottom
       precondition
       statement
       postcondition
     =
-    let forwarded =
-      let parsed =
-        parse statement
-        |> function
-        | { Source.statements = statement :: rest; _ } -> statement :: rest
-        | _ -> failwith "unable to parse test"
-      in
-      let resolution =
-        let annotation_store =
-          create_annotation_store ~immutables:precondition_immutables precondition
-        in
-        TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
-      in
-
-      let rec process_statement resolution = function
-        | [] -> Some resolution
-        | statement :: rest -> (
-            match Resolution.resolve_statement resolution statement with
-            | Resolution.Unreachable -> None
-            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest)
-      in
-      process_statement resolution parsed
-    in
-    match forwarded with
-    | None -> assert_bool "Expected Resolution.Unreachable when `bottom` is set to true" bottom
-    | Some actual_resolution ->
-        assert_bool "Expected Resolution.Reachable when `bottom` is set to false" (not bottom);
-        assert_annotation_store
-          ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
-          actual_resolution
+    assert_forward_statement
+      ?precondition_immutables
+      ?postcondition_immutables
+      ?bottom
+      precondition
+      statement
+      postcondition
+      context
   in
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
@@ -1296,6 +1324,41 @@ let test_forward_statement context =
   assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
   assert_forward ~bottom:true ["x", Type.none] "assert x is not None" ["x", Type.none];
 
+  (* Works for general expressions. *)
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert not isinstance(x + 1, int)"
+    ["x", Type.integer];
+  assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
+  assert_forward ~bottom:true [] "assert False" [];
+  assert_forward ~bottom:true [] "assert None" [];
+  assert_forward ~bottom:true [] "assert 0" [];
+  assert_forward ~bottom:true [] "assert 0.0" [];
+  assert_forward ~bottom:true [] "assert 0.0j" [];
+  assert_forward ~bottom:true [] "assert ''" [];
+  assert_forward ~bottom:true [] "assert b''" [];
+  assert_forward ~bottom:true [] "assert []" [];
+  assert_forward ~bottom:true [] "assert ()" [];
+  assert_forward ~bottom:true [] "assert {}" [];
+  assert_forward ~bottom:false [] "assert (not True)" [];
+
+  (* Raise. *)
+  assert_forward [] "raise 1" [];
+  assert_forward [] "raise Exception" [];
+  assert_forward [] "raise Exception()" [];
+  assert_forward [] "raise undefined" [];
+  assert_forward [] "raise" [];
+
+  (* Return. *)
+  assert_forward [] "return 1" [];
+
+  (* Pass. *)
+  assert_forward ["y", Type.integer] "pass" ["y", Type.integer];
+  ()
+
+
+let test_forward_statement__refinement context =
   (* isinstance, type(_) is _ *)
   let assert_refinement_by_type_comparison
       ?(bottom = false)
@@ -1307,11 +1370,12 @@ let test_forward_statement context =
       ()
     =
     let assert_forward_expression assertion_expression =
-      assert_forward
+      assert_forward_statement
         ~bottom
         precondition
         (Format.asprintf "assert %s" assertion_expression)
         postcondition
+        context
     in
     Format.asprintf "%s isinstance(%s, %s)" (if negated then "not" else "") variable type_expression
     |> assert_forward_expression;
@@ -1444,53 +1508,10 @@ let test_forward_statement context =
     ~type_expression:"y"
     ~postcondition:["x", Type.string; "y", Type.Any]
     ();
-
-  (* Works for general expressions. *)
-  assert_forward
-    ~bottom:true
-    ["x", Type.integer]
-    "assert not isinstance(x + 1, int)"
-    ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
-  assert_forward ~bottom:true [] "assert False" [];
-  assert_forward ~bottom:true [] "assert None" [];
-  assert_forward ~bottom:true [] "assert 0" [];
-  assert_forward ~bottom:true [] "assert 0.0" [];
-  assert_forward ~bottom:true [] "assert 0.0j" [];
-  assert_forward ~bottom:true [] "assert ''" [];
-  assert_forward ~bottom:true [] "assert b''" [];
-  assert_forward ~bottom:true [] "assert []" [];
-  assert_forward ~bottom:true [] "assert ()" [];
-  assert_forward ~bottom:true [] "assert {}" [];
-  assert_forward ~bottom:false [] "assert (not True)" [];
-
-  (* Raise. *)
-  assert_forward [] "raise 1" [];
-  assert_forward [] "raise Exception" [];
-  assert_forward [] "raise Exception()" [];
-  assert_forward [] "raise undefined" [];
-  assert_forward [] "raise" [];
-
-  (* Return. *)
-  assert_forward [] "return 1" [];
-
-  (* Pass. *)
-  assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
+  ()
 
 
-let test_forward context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  let create =
-    let module Create = Create (DefaultContext) in
-    Create.create ~resolution
-  in
-  let module State = State (DefaultContext) in
-  let assert_state_equal =
-    assert_equal
-      ~cmp:State.equal
-      ~printer:(Format.asprintf "%a" State.pp)
-      ~pp_diff:(diff ~print:State.pp)
-  in
+let test_forward_statement__bottom context =
   let assert_forward
       ?(precondition_bottom = false)
       ?(postcondition_bottom = false)
@@ -1498,6 +1519,18 @@ let test_forward context =
       statement
       postcondition
     =
+    let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+    let create =
+      let module Create = Create (DefaultContext) in
+      Create.create ~resolution
+    in
+    let module State = State (DefaultContext) in
+    let assert_state_equal =
+      assert_equal
+        ~cmp:State.equal
+        ~printer:(Format.asprintf "%a" State.pp)
+        ~pp_diff:(diff ~print:State.pp)
+    in
     let forwarded =
       let parsed =
         parse statement
@@ -1512,9 +1545,11 @@ let test_forward context =
     in
     assert_state_equal (create ~bottom:postcondition_bottom postcondition) forwarded
   in
+  (* Checking interactions of control flow with the bottom *)
   assert_forward [] "x = 1" ["x", Type.literal_integer 1];
   assert_forward ~precondition_bottom:true ~postcondition_bottom:true [] "x = 1" [];
-  assert_forward ~postcondition_bottom:true [] "sys.exit(1)" []
+  assert_forward ~postcondition_bottom:true [] "sys.exit(1)" [];
+  ()
 
 
 type method_call = {
@@ -2362,8 +2397,10 @@ let () =
          "widen" >:: test_widen;
          "check_annotation" >:: test_check_annotation;
          "forward_expression" >:: test_forward_expression;
+         test_forward_expression__store;
          "forward_statement" >:: test_forward_statement;
-         "forward" >:: test_forward;
+         "forward_statement__refinement" >:: test_forward_statement__refinement;
+         "forward_statement__bottom" >:: test_forward_statement__bottom;
          "module_exports" >:: test_module_exports;
          "object_callables" >:: test_object_callables;
          "callable_selection" >:: test_callable_selection;
