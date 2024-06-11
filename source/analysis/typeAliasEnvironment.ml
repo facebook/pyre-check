@@ -26,12 +26,6 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
-let preprocess_alias_value value =
-  value
-  |> Preprocessing.replace_union_shorthand_in_annotation_expression
-  |> Preprocessing.expand_strings_in_annotation_expression
-
-
 module IncomingDataComputation = struct
   module Queries = struct
     type t = {
@@ -152,7 +146,7 @@ module IncomingDataComputation = struct
               match Type.Variable.parse_declaration (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->
-                  let value = preprocess_alias_value value |> delocalize in
+                  let value = Type.preprocess_alias_value value |> delocalize in
                   let value_annotation = Type.create ~aliases:Type.empty_aliases value in
                   if
                     not
@@ -261,7 +255,7 @@ module OutgoingDataComputation = struct
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
     let parsed =
-      let expression = preprocess_alias_value expression |> delocalize in
+      let expression = Type.preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in

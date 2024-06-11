@@ -5095,6 +5095,13 @@ let dequalify map annotation =
 
 (* Transform tuples and callables so they are printed correctly when running infer and click to
    fix. *)
+
+let preprocess_alias_value value =
+  value
+  |> Preprocessing.replace_union_shorthand_in_annotation_expression
+  |> Preprocessing.expand_strings_in_annotation_expression
+
+
 let infer_transform annotation =
   let module InferTransform = VisitWithTransform.Make (struct
     type state = unit
