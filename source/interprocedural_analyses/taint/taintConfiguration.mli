@@ -92,11 +92,13 @@ module PartialSinkConverter : sig
 end
 
 module StringOperationPartialSinks : sig
-  type t
+  type t [@@deriving show]
 
   val equal : t -> t -> bool
 
   val singleton : Sinks.PartialSink.t -> t
+
+  val of_list : Sinks.PartialSink.t list -> t
 
   val get_partial_sinks : t -> Sinks.t list
 end

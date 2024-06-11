@@ -342,6 +342,12 @@ module JsonAst = struct
         match node.Node.value with
         | `Null -> raise (type_error "non-null" node)
         | _ -> node.Node.location
+
+
+      let is_string node =
+        match node.Node.value with
+        | `String _ -> true
+        | _ -> false
     end
   end
 end

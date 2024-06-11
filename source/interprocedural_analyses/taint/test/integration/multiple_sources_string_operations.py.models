@@ -54,7 +54,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -132,7 +132,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -210,7 +210,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -279,7 +279,7 @@
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "call": {
@@ -354,7 +354,7 @@
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "call": {
@@ -426,7 +426,7 @@
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary], UserControlled]"
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
             "call": {
@@ -501,7 +501,7 @@
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "call": {
@@ -585,7 +585,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -663,7 +663,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -739,7 +739,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -815,7 +815,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -891,7 +891,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -967,7 +967,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.__mod__", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -1040,7 +1040,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary], UserControlled]"
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1116,7 +1116,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -1168,7 +1168,7 @@
                     "port": "leaf:**[attribute_query]"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary], UserControlled]"
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1207,7 +1207,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -1236,7 +1236,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -1275,7 +1275,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary], UserControlled]"
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1314,7 +1314,7 @@
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main], StringMayBeSQL]"
+                "kind": "TriggeredPartialSink[UserControlledSink, StringMayBeSQL]"
               }
             ],
             "origin": {
@@ -1396,7 +1396,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "str.__add__", "port": "leaf:**[f]" } ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary], UserControlled]"
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
             "origin": {

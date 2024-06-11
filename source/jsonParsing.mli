@@ -238,6 +238,8 @@ module JsonAst : sig
       val to_list_exn : t -> t list
 
       val to_location_exn : t -> Location.t (* throws Type Error *)
+
+      val is_string : t -> bool
     end
   end
 end
