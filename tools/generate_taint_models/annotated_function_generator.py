@@ -8,9 +8,22 @@
 import ast
 import logging
 import re
+import multiprocessing
+import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    Tuple,
+    List,
+    Optional,
+    Set,
+    Union,
+    TypeVar,
+)
 
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel
@@ -19,6 +32,20 @@ from .module_loader import find_all_paths, load_module
 
 LOG: logging.Logger = logging.getLogger(__name__)
 FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
+
+T = TypeVar("T")
+
+
+def _batched(iterable: Iterable[T], n: int) -> Iterator[Tuple[T, ...]]:
+    """
+    Batch the input iterable in chunks of `n` elements.
+    For instance: batched([0, 1, 2, 3, 4], 2) = [[0, 1], [2, 3], [4]]
+    """
+    if n < 1:
+        raise AssertionError("n must be at least one")
+    iterator = iter(iterable)
+    while batch := tuple(itertools.islice(iterator, n)):
+        yield batch
 
 
 class FunctionVisitor(ast.NodeVisitor):
@@ -43,6 +70,7 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         annotation_specifications: List[DecoratorAnnotationSpecification],
         paths: Optional[List[str]] = None,
         exclude_paths: Optional[List[Union[str, re.Pattern[str]]]] = None,
+        sequential: Optional[bool] = False,
     ) -> None:
         self._paths: Optional[List[str]] = paths
         self.exclude_paths: List[Union[str, re.Pattern[str]]] = exclude_paths or []
@@ -50,12 +78,15 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
             annotation_specifications
         )
+        self.sequential = sequential
 
     @property
     def paths(self) -> List[str]:
         paths = self._paths
         if paths is None:
+            LOG.info("Collecting all python files")
             paths = list(find_all_paths(self.root))
+            LOG.info(f"Found {len(paths)} python files")
             self._paths = paths
         # TODO(T191766251): Remove the support for re.Pattern in self.exclude_paths
         exclude_paths: List[re.Pattern[str]] = [
@@ -108,7 +139,27 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
     ) -> Iterable[FunctionDefinitionModel]:
         annotated_functions = set()
 
-        for path in self.paths:
-            annotated_functions.update(self._annotate_functions(path))
+        if self.sequential:
+            for path in self.paths:
+                annotated_functions.update(self._annotate_functions(path))
+        else:
+            with multiprocessing.Pool() as pool:
+                for functions in pool.imap_unordered(
+                    _invoke_AnnotatedFunctionGenerator_annotate_function,
+                    [(self, batch) for batch in _batched(self.paths, 1000)],
+                ):
+                    annotated_functions.update(functions)
 
         return sorted(annotated_functions)
+
+
+# This needs to be in the top level for multiprocessing.
+def _invoke_AnnotatedFunctionGenerator_annotate_function(
+    arguments: Tuple[AnnotatedFunctionGenerator, Tuple[str, ...]]
+) -> Set[FunctionDefinitionModel]:
+    generator = arguments[0]
+    paths = arguments[1]
+    annotated_functions = set()
+    for path in paths:
+        annotated_functions.update(generator._annotate_functions(path))
+    return annotated_functions
