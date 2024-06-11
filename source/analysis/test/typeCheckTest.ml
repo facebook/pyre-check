@@ -1619,11 +1619,11 @@ let test_forward_statement__refinement =
            ~postcondition:["x", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_refinement_by_type_comparison
-           ~bottom:false
+           ~bottom:true
            ~precondition:["x", Type.Bottom]
            ~variable:"x"
            ~type_expression:"str"
-           ~postcondition:["x", Type.string];
+           ~postcondition:["x", Type.Bottom];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_refinement_by_type_comparison
            ~bottom:false

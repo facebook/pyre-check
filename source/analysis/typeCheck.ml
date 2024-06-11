@@ -3682,10 +3682,10 @@ module State (Context : Context) = struct
               if not (Type.is_unbound consistent_with_boundary) then
                 Value (Annotation.create_mutable consistent_with_boundary |> refine_local ~name)
               else if
-                GlobalResolution.less_or_equal_either_way
+                GlobalResolution.less_or_equal
                   global_resolution
-                  existing_type
-                  parsed_annotation
+                  ~left:parsed_annotation
+                  ~right:existing_type
               then
                 (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound
                    to refine `x` to `Child` because the runtime will not enter the branch unless `x`

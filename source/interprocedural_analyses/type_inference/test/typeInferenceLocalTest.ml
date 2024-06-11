@@ -977,7 +977,12 @@ let test_inferred_function_parameters =
                     return
             |}
            ~target:"test.foo"
-           ~expected:(single_parameter "int");
+           ~expected:
+             {|
+                [
+                  { "name": "x", "annotation": null, "value": null, "index": 0 }
+                ]
+             |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
@@ -988,7 +993,12 @@ let test_inferred_function_parameters =
                     return
             |}
            ~target:"test.foo"
-           ~expected:(single_parameter "typing.Union[int, str]");
+           ~expected:
+             {|
+                [
+                  { "name": "x", "annotation": null, "value": null, "index": 0 }
+                ]
+             |};
       (* Conditionals *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
