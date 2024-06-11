@@ -19,3 +19,4 @@ module SetDomain = AbstractSetDomain
 module SimpleDomain = AbstractSimpleDomain
 module ToppedSetDomain = AbstractToppedSetDomain
 module TreeDomain = AbstractTreeDomain
+module WrapperDomain = AbstractWrapperDomain

@@ -2894,6 +2894,103 @@ module TestProductAmbiguousPart = struct
     ]
 end
 
+module StringSetWrapper = struct
+  module Set = AbstractSetDomain.Make (String)
+
+  module T = AbstractWrapperDomain.Make (struct
+    include Set
+
+    let name = "Set"
+  end)
+
+  include T
+
+  let singletons = ["a"; "b"; "c"]
+
+  let unrelated = List.map singletons ~f:Set.singleton
+
+  let values =
+    List.cartesian_product unrelated unrelated
+    |> List.map ~f:(Tuple2.uncurry join)
+    |> List.dedup_and_sort ~compare:Poly.compare
+
+
+  let () = assert_equal 9 (List.length values)
+
+  let test_fold _ =
+    let test expected =
+      let element_set = Set.of_list expected in
+      let actual =
+        fold Set.Element ~init:[] ~f:List.cons element_set |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ["a"];
+    test ["a"; "b"];
+    test ["a"; "b"; "c"]
+
+
+  let test_transform _ =
+    let test ~initial ~by ~f ~expected =
+      let element_set = Set.of_list initial in
+      let actual =
+        transform by Map ~f element_set
+        |> fold Set.Element ~init:[] ~f:List.cons
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ~initial:["a"; "b"] ~by:Set.Element ~f:(fun x -> "t." ^ x) ~expected:["t.a"; "t.b"];
+    test ~initial:["a"; "b"] ~by:Self ~f:(fun set -> Set.add "c" set) ~expected:["a"; "b"; "c"]
+
+
+  let test_partition _ =
+    let test ~initial ~f ~expected =
+      let element_set = Set.of_list initial in
+      let actual =
+        partition Set.Element By ~f element_set
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
+               let elements =
+                 fold Set.Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
+               in
+               (key, elements) :: result)
+        |> List.sort ~compare:Poly.compare
+      in
+      assert_equal expected actual ~printer:int_string_list_list_printer
+    in
+    test
+      ~initial:["abc"; "bef"; "g"]
+      ~f:(fun x -> String.length x)
+      ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
+
+
+  let test_create _ =
+    assert_equal
+      (Set.of_list ["a"; "b"; "c"])
+      (create [Part (Self, Set.of_list ["a"; "b"; "c"])])
+      ~printer:show;
+    assert_equal
+      (Set.of_list ["a"; "b"; "c"])
+      (create [Part (Set.Element, "a"); Part (Set.Element, "b"); Part (Set.Element, "c")])
+      ~printer:show;
+    ()
+
+
+  let test_additional _ =
+    let () =
+      assert_equal
+        "Wrapper(Set):\n  Set(strings)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    ()
+
+
+  let test_context _ = ()
+end
+
+module TestStringSetWrapper = TestAbstractDomain (StringSetWrapper)
+
 let () =
   "abstractDomainTest"
   >::: [
@@ -2912,5 +3009,6 @@ let () =
          "string_biset" >::: TestOverUnderStringSet.suite ();
          "flat_string" >::: TestFlatString.suite ();
          "product_ambiguous_part" >::: TestProductAmbiguousPart.suite ();
+         "string_set_wrapper" >::: TestStringSetWrapper.suite ();
        ]
   |> run_test_tt_main

@@ -137,6 +137,18 @@ module FirstIndexSet = struct
       existing_indices
 end
 
+module LocalFirstIndexSet = Abstract.WrapperDomain.Make (struct
+  include FirstIndexSet
+
+  let name = "local indexes"
+end)
+
+module PropagatedFirstIndexSet = Abstract.WrapperDomain.Make (struct
+  include FirstIndexSet
+
+  let name = "propagated indexes"
+end)
+
 module FirstField = First (struct
   let kind = "field"
 end)
@@ -164,6 +176,18 @@ module FirstFieldSet = struct
     else
       existing_fields
 end
+
+module LocalFirstFieldSet = Abstract.WrapperDomain.Make (struct
+  include FirstFieldSet
+
+  let name = "local fields"
+end)
+
+module PropagatedFirstFieldSet = Abstract.WrapperDomain.Make (struct
+  include FirstFieldSet
+
+  let name = "propagated fields"
+end)
 
 module TitoPosition = struct
   let name = "tito positions"
@@ -384,6 +408,18 @@ module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
   let show_element = BreadcrumbInterned.show
 
   let element_name = BreadcrumbInterned.name
+end)
+
+module LocalBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "local breadcrumbs"
+end)
+
+module PropagatedBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "propagated breadcrumbs"
 end)
 
 module ViaFeature = struct

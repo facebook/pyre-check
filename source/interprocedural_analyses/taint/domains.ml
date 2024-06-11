@@ -403,13 +403,13 @@ module Frame = struct
     let name = "frame"
 
     type 'a slot =
-      | Breadcrumb : Features.BreadcrumbSet.t slot
+      | Breadcrumb : Features.PropagatedBreadcrumbSet.t slot
       | ViaFeature : Features.ViaFeatureSet.t slot
       | ReturnAccessPath : Features.ReturnAccessPathTree.t slot
       | TraceLength : TraceLength.t slot
       | LeafName : Features.LeafNameSet.t slot
-      | FirstIndex : Features.FirstIndexSet.t slot
-      | FirstField : Features.FirstFieldSet.t slot
+      | FirstIndex : Features.PropagatedFirstIndexSet.t slot
+      | FirstField : Features.PropagatedFirstFieldSet.t slot
 
     (* Must be consistent with above variants *)
     let slots = 7
@@ -427,14 +427,14 @@ module Frame = struct
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
-      | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
+      | Breadcrumb -> (module Features.PropagatedBreadcrumbSet : Abstract.Domain.S with type t = a)
       | ViaFeature -> (module Features.ViaFeatureSet : Abstract.Domain.S with type t = a)
       | ReturnAccessPath ->
           (module Features.ReturnAccessPathTree : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
-      | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
-      | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
+      | FirstIndex -> (module Features.PropagatedFirstIndexSet : Abstract.Domain.S with type t = a)
+      | FirstField -> (module Features.PropagatedFirstFieldSet : Abstract.Domain.S with type t = a)
 
 
     let strict _ = false
@@ -444,15 +444,21 @@ module Frame = struct
 
   let initial =
     create
-      [Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty); Part (TraceLength.Self, 0)]
+      [
+        Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+        Part (TraceLength.Self, 0);
+      ]
 
 
   let add_propagated_breadcrumb breadcrumb =
-    transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
+    transform Features.PropagatedBreadcrumbSet.Self Map ~f:(Features.BreadcrumbSet.add breadcrumb)
 
 
   let add_propagated_breadcrumbs breadcrumbs =
-    transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+    transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
 
 
   let product_pp = pp (* shadow *)
@@ -586,9 +592,6 @@ module type TAINT_DOMAIN = sig
     t ->
     Yojson.Safe.t
 
-  (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
-  val may_breadcrumbs_to_must : t -> t
-
   (* Within every local taint, join every frame with the frame in the same local taint that has the
      specified kind. *)
   val join_every_frame_with : frame_kind:kind -> t -> t
@@ -598,6 +601,15 @@ module type TAINT_DOMAIN = sig
   val transform_call_info
     :  CallInfo.t ->
     'a Abstract.Domain.part ->
+    ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
+    f:'f ->
+    t ->
+    t
+
+  (* Apply a transform operation for all parts, except for CallInfo.Tito.
+   * This is an optimization to avoid iterating over the whole taint. *)
+  val transform_non_tito
+    :  'a Abstract.Domain.part ->
     ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
     f:'f ->
     t ->
@@ -676,9 +688,9 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
     type 'a slot =
       | Kinds : KindTaintDomain.t slot
       | TitoPosition : Features.TitoPositionSet.t slot
-      | Breadcrumb : Features.BreadcrumbSet.t slot
-      | FirstIndex : Features.FirstIndexSet.t slot
-      | FirstField : Features.FirstFieldSet.t slot
+      | Breadcrumb : Features.LocalBreadcrumbSet.t slot
+      | FirstIndex : Features.LocalFirstIndexSet.t slot
+      | FirstField : Features.LocalFirstFieldSet.t slot
       | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
@@ -698,9 +710,9 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       match slot with
       | Kinds -> (module KindTaintDomain : Abstract.Domain.S with type t = a)
       | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
-      | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
-      | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
-      | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
+      | Breadcrumb -> (module Features.LocalBreadcrumbSet : Abstract.Domain.S with type t = a)
+      | FirstIndex -> (module Features.LocalFirstIndexSet : Abstract.Domain.S with type t = a)
+      | FirstField -> (module Features.LocalFirstFieldSet : Abstract.Domain.S with type t = a)
       | ExtraTraceFirstHopSet -> (module ExtraTraceFirstHop.Set : Abstract.Domain.S with type t = a)
 
 
@@ -711,10 +723,6 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
   end
 
   include Abstract.ProductDomain.Make (Slots)
-
-  (* Warning: do NOT use `BreadcrumbSet`, `FirstFieldSet` and `FirstFieldSet` abstract parts
-   * (e.g,`BreadcrumbSet.Self`, `BreadcrumbSet.Element`, etc.) since these are ambiguous.
-   * They can refer to the sets in `Frame` or in `LocalTaint`. *)
 
   let singleton kind frame =
     (* Initialize strict slots first *)
@@ -910,20 +918,51 @@ end = struct
     `List elements
 
 
-  let add_local_breadcrumbs ?(add_on_tito = true) breadcrumbs taint =
-    let apply_local_taint local_taint =
-      let breadcrumbs =
-        LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint
-        |> Features.BreadcrumbSet.add_set ~to_add:breadcrumbs
-      in
-      LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb breadcrumbs local_taint
-    in
+  let transform_call_info
+      : type a b f.
+        CallInfo.t ->
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun call_info part op ~f taint ->
+    Map.update taint call_info ~f:(function
+        | None -> LocalTaintDomain.bottom
+        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
+
+
+  let transform_non_tito
+      : type a b f.
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun part op ~f taint ->
     let apply (call_info, local_taint) =
-      match call_info, add_on_tito with
-      | CallInfo.Tito, false -> call_info, local_taint
-      | _ -> call_info, apply_local_taint local_taint
+      match call_info with
+      | CallInfo.Tito -> call_info, local_taint
+      | _ -> call_info, LocalTaintDomain.transform part op ~f local_taint
     in
     Map.transform KeyValue Map ~f:apply taint
+
+
+  let add_local_breadcrumbs ?(add_on_tito = true) breadcrumbs taint =
+    if add_on_tito then
+      Map.transform
+        Features.LocalBreadcrumbSet.Self
+        Map
+        ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
+        taint
+    else
+      transform_non_tito
+        Features.LocalBreadcrumbSet.Self
+        Map
+        ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
+        taint
 
 
   let add_local_breadcrumb ?add_on_tito breadcrumb taint =
@@ -931,25 +970,15 @@ end = struct
 
 
   let add_local_first_index index taint =
-    let apply_local_taint local_taint =
-      let first_indices =
-        LocalTaintDomain.get LocalTaintDomain.Slots.FirstIndex local_taint
-        |> Features.FirstIndexSet.add_first index
-      in
-      LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex first_indices local_taint
-    in
-    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+    transform Features.LocalFirstIndexSet.Self Map ~f:(Features.FirstIndexSet.add_first index) taint
 
 
   let add_local_first_field attribute taint =
-    let apply_local_taint local_taint =
-      let first_fields =
-        LocalTaintDomain.get LocalTaintDomain.Slots.FirstField local_taint
-        |> Features.FirstFieldSet.add_first attribute
-      in
-      LocalTaintDomain.update LocalTaintDomain.Slots.FirstField first_fields local_taint
-    in
-    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+    transform
+      Features.LocalFirstFieldSet.Self
+      Map
+      ~f:(Features.FirstFieldSet.add_first attribute)
+      taint
 
 
   let get_features ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
@@ -1019,21 +1048,6 @@ end = struct
       ~f:Features.ViaFeatureSet.join
       ~init:Features.ViaFeatureSet.bottom
       taint
-
-
-  let transform_call_info
-      : type a b f.
-        CallInfo.t ->
-        a Abstract.Domain.part ->
-        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
-        f:f ->
-        t ->
-        t
-    =
-   fun call_info part op ~f taint ->
-    Map.update taint call_info ~f:(function
-        | None -> LocalTaintDomain.bottom
-        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
 
 
   let transform_on_widening_collapse taint =
@@ -1316,13 +1330,6 @@ end = struct
     Map.transform Map.KeyValue Map ~f:apply taint
 
 
-  let may_breadcrumbs_to_must taint =
-    let apply_frame frame =
-      Frame.transform Features.BreadcrumbSet.Self Map ~f:Features.BreadcrumbSet.over_to_under frame
-    in
-    Map.transform Frame.Self Map ~f:apply_frame taint
-
-
   let join_every_frame_with ~frame_kind taint =
     let apply_local_taint local_taint =
       let frame_to_join =
@@ -1357,23 +1364,11 @@ end = struct
 
 
   let add_extra_traces ~extra_traces taint =
-    let add_extra_traces existing_extra_traces =
-      ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces
-    in
-    let apply (call_info, local_taint) =
-      match call_info with
-      | CallInfo.Tito -> (* Tito taint needs no extra traces *) call_info, local_taint
-      | _ ->
-          let local_taint =
-            LocalTaintDomain.transform
-              ExtraTraceFirstHop.Set.Self
-              Map
-              ~f:add_extra_traces
-              local_taint
-          in
-          call_info, local_taint
-    in
-    Map.transform Map.KeyValue Map ~f:apply taint
+    transform_non_tito
+      ExtraTraceFirstHop.Set.Self
+      Map
+      ~f:(ExtraTraceFirstHop.Set.join extra_traces)
+      taint
 
 
   let transform_on_sink = Fn.id
@@ -1444,8 +1439,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform_path (path, tip) = path, Taint.for_override_model ~callable ~port ~path tip in
     transform Path Map ~f:transform_path taint_tree
 
-
-  let may_breadcrumbs_to_must tree = transform Taint.Self Map ~f:Taint.may_breadcrumbs_to_must tree
 
   let empty = bottom
 
@@ -1629,6 +1622,17 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     =
    fun call_info part op ~f taint ->
     transform Taint.Self Map ~f:(Taint.transform_call_info call_info part op ~f) taint
+
+
+  let transform_non_tito
+      : type a b f.
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun part op ~f taint -> transform Taint.Self Map ~f:(Taint.transform_non_tito part op ~f) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -1712,8 +1716,6 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let is_empty = is_bottom
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
-
-  let may_breadcrumbs_to_must = transform Taint.Self Map ~f:Taint.may_breadcrumbs_to_must
 
   let join_every_frame_with ~frame_kind =
     transform Taint.Self Map ~f:(Taint.join_every_frame_with ~frame_kind)
