@@ -8,6 +8,26 @@
 open OUnit2
 open IntegrationTest
 
+(* TODO T179079864: Fix the type variable scoping issue. *)
+let test_type_variable_scoping =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import TypeVar
+              T = TypeVar("T")
+              def f1(x: T) -> T: ...
+              def f2(y: T) -> T: ...
+              g: object = f1(f2)
+            |}
+           [
+             "Mutually recursive type variables [36]: Solving type variables for call `f1` led to \
+              infinite recursion.";
+           ];
+    ]
+
+
 let test_check_bounded_variables =
   test_list
     [
@@ -4190,6 +4210,7 @@ let test_self_type =
 let () =
   "typeVariable"
   >::: [
+         test_type_variable_scoping;
          test_check_bounded_variables;
          test_check_unbounded_variables;
          test_check_variable_bindings;
