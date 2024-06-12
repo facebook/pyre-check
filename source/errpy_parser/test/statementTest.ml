@@ -1150,7 +1150,9 @@ let test_assign =
              [
                +Statement.Assign
                   {
-                    Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                    Assign.target =
+                      +Expression.Subscript
+                         { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
                     value = Some (+Expression.Constant (Constant.Integer 3));
                     annotation = None;
                   };
@@ -1162,7 +1164,9 @@ let test_assign =
              [
                +Statement.Assign
                   {
-                    Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                    Assign.target =
+                      +Expression.Subscript
+                         { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
                     value = Some (+Expression.Constant (Constant.Integer 3));
                     annotation = Some !"int";
                   };
@@ -1180,7 +1184,8 @@ let test_assign =
                +Statement.AugmentedAssign
                   {
                     AugmentedAssign.target =
-                      +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                      +Expression.Subscript
+                         { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
                     operator = BinaryOperator.Add;
                     value = +Expression.Constant (Constant.Integer 3);
                   };
@@ -1196,8 +1201,9 @@ let test_assign =
                       +Expression.Subscript
                          {
                            Subscript.base =
-                             +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
-                           index = +Expression.Constant (Constant.Integer 7);
+                             +Expression.Subscript
+                                { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
+                           index = Subscript.Index.Index (+Expression.Constant (Constant.Integer 7));
                          };
                     value = Some (+Expression.Constant (Constant.Integer 8));
                     annotation = None;
@@ -1215,22 +1221,23 @@ let test_assign =
                          {
                            Subscript.base = !"i";
                            index =
-                             +Expression.Call
-                                {
-                                  Call.callee = !"slice";
-                                  arguments =
-                                    [
-                                      { Call.Argument.name = None; value = !"j" };
-                                      {
-                                        Call.Argument.name = None;
-                                        value = +Expression.Constant Constant.NoneLiteral;
-                                      };
-                                      {
-                                        Call.Argument.name = None;
-                                        value = +Expression.Constant (Constant.Integer 1);
-                                      };
-                                    ];
-                                };
+                             Subscript.Index.Index
+                               (+Expression.Call
+                                   {
+                                     Call.callee = !"slice";
+                                     arguments =
+                                       [
+                                         { Call.Argument.name = None; value = !"j" };
+                                         {
+                                           Call.Argument.name = None;
+                                           value = +Expression.Constant Constant.NoneLiteral;
+                                         };
+                                         {
+                                           Call.Argument.name = None;
+                                           value = +Expression.Constant (Constant.Integer 1);
+                                         };
+                                       ];
+                                   });
                          };
                     value =
                       Some
@@ -1238,22 +1245,23 @@ let test_assign =
                             {
                               Subscript.base = !"i";
                               index =
-                                +Expression.Call
-                                   {
-                                     Call.callee = !"slice";
-                                     arguments =
-                                       [
-                                         {
-                                           Call.Argument.name = None;
-                                           value = +Expression.Constant Constant.NoneLiteral;
-                                         };
-                                         { Call.Argument.name = None; value = !"j" };
-                                         {
-                                           Call.Argument.name = None;
-                                           value = +Expression.Constant Constant.NoneLiteral;
-                                         };
-                                       ];
-                                   };
+                                Subscript.Index.Index
+                                  (+Expression.Call
+                                      {
+                                        Call.callee = !"slice";
+                                        arguments =
+                                          [
+                                            {
+                                              Call.Argument.name = None;
+                                              value = +Expression.Constant Constant.NoneLiteral;
+                                            };
+                                            { Call.Argument.name = None; value = !"j" };
+                                            {
+                                              Call.Argument.name = None;
+                                              value = +Expression.Constant Constant.NoneLiteral;
+                                            };
+                                          ];
+                                      });
                             });
                     annotation = None;
                   };
@@ -1266,7 +1274,9 @@ let test_assign =
                +Statement.Assign { Assign.target = !"x"; annotation = None; value = Some !"y" };
                +Statement.Assign
                   {
-                    Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                    Assign.target =
+                      +Expression.Subscript
+                         { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
                     value = Some !"y";
                     annotation = None;
                   };
@@ -1280,7 +1290,11 @@ let test_assign =
                   {
                     Assign.target =
                       +Expression.Tuple
-                         [!"x"; +Expression.Subscript { Subscript.base = !"i"; index = !"j" }];
+                         [
+                           !"x";
+                           +Expression.Subscript
+                              { Subscript.base = !"i"; index = Subscript.Index.Index !"j" };
+                         ];
                     annotation = None;
                     value = Some !"y";
                   };
@@ -1590,7 +1604,9 @@ let test_define =
                                       +Expression.Subscript
                                          {
                                            Subscript.base = !"x";
-                                           index = +Expression.Constant (Constant.Integer 0);
+                                           index =
+                                             Subscript.Index.Index
+                                               (+Expression.Constant (Constant.Integer 0));
                                          };
                                     attribute = "y";
                                     special = false;

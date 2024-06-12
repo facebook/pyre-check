@@ -379,7 +379,7 @@ module ParserToAst = struct
         AstExpression.Expression.Subscript
           {
             AstExpression.Subscript.base = convert_expression base;
-            index = convert_expression index;
+            index = AstExpression.Subscript.Index.Index (convert_expression index);
           }
         |> Node.create ~location
     | Ternary { Ternary.target; test; alternative } ->

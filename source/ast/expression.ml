@@ -796,17 +796,54 @@ end = struct
 end
 
 and Subscript : sig
+  module Index : sig
+    type t =
+      | Index of Expression.t
+      | Slice of {
+          start: Expression.t option;
+          stop: Expression.t option;
+          step: Expression.t option;
+        }
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+  end
+
   type t = {
     base: Expression.t;
-    index: Expression.t;
+    index: Index.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
+  module Index = struct
+    type t =
+      | Index of Expression.t
+      | Slice of {
+          start: Expression.t option;
+          stop: Expression.t option;
+          step: Expression.t option;
+        }
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+    let location_insensitive_compare left_index right_index =
+      match left_index, right_index with
+      | Index left, Index right -> Expression.location_insensitive_compare left right
+      | ( Slice { start = left_start; stop = left_stop; step = left_step },
+          Slice { start = right_start; stop = right_stop; step = right_step } ) -> (
+          match Option.compare Expression.location_insensitive_compare left_start right_start with
+          | x when not (Int.equal x 0) -> x
+          | _ -> (
+              match Option.compare Expression.location_insensitive_compare left_stop right_stop with
+              | x when not (Int.equal x 0) -> x
+              | _ -> Option.compare Expression.location_insensitive_compare left_step right_step))
+      | _, _ -> -1
+  end
+
   type t = {
     base: Expression.t;
-    index: Expression.t;
+    index: Index.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -815,7 +852,7 @@ end = struct
       { base = right_base; index = right_index }
     =
     match Expression.location_insensitive_compare left_base right_base with
-    | 0 -> Expression.location_insensitive_compare left_index right_index
+    | 0 -> Index.location_insensitive_compare left_index right_index
     | nonzero -> nonzero
 end
 
@@ -1223,8 +1260,36 @@ end = struct
       | Starred.Twice expression -> Format.fprintf formatter "**%a" pp_expression_t expression
 
 
+    and pp_index formatter = function
+      | Subscript.Index.Index index -> Format.fprintf formatter "%a" pp_expression_t index
+      | Subscript.Index.Slice { start = None; stop = None; step = None } ->
+          Format.fprintf formatter ":"
+      | Subscript.Index.Slice { start = Some start; stop = None; step = None } ->
+          Format.fprintf formatter "%a:" pp_expression_t start
+      | Subscript.Index.Slice { start = Some start; stop = Some stop; step = None } ->
+          Format.fprintf formatter "%a:%a" pp_expression_t start pp_expression_t stop
+      | Subscript.Index.Slice { start = None; stop = Some stop; step = None } ->
+          Format.fprintf formatter ":%a" pp_expression_t stop
+      | Subscript.Index.Slice { start = Some start; stop = None; step = Some step } ->
+          Format.fprintf formatter "%a::%a" pp_expression_t start pp_expression_t step
+      | Subscript.Index.Slice { start = Some start; stop = Some stop; step = Some step } ->
+          Format.fprintf
+            formatter
+            "%a:%a:%a"
+            pp_expression_t
+            start
+            pp_expression_t
+            stop
+            pp_expression_t
+            step
+      | Subscript.Index.Slice { start = None; stop = Some stop; step = Some step } ->
+          Format.fprintf formatter ":%a:%a" pp_expression_t stop pp_expression_t step
+      | Subscript.Index.Slice { start = None; stop = None; step = Some step } ->
+          Format.fprintf formatter ":%a" pp_expression_t step
+
+
     and pp_subscript formatter { Subscript.base; index } =
-      Format.fprintf formatter "%a[%a]" pp_expression_t base pp_expression_t index
+      Format.fprintf formatter "%a[%a]" pp_expression_t base pp_index index
 
 
     and pp_ternary formatter { Ternary.target; test; alternative } =
@@ -1684,7 +1749,19 @@ module Mapper = struct
 
 
   let default_map_subscript ~mapper { Subscript.base; index } =
-    { Subscript.base = map ~mapper base; index = map ~mapper index }
+    {
+      Subscript.base = map ~mapper base;
+      index =
+        (match index with
+        | Subscript.Index.Index index -> Subscript.Index.Index (map ~mapper index)
+        | Subscript.Index.Slice { start; stop; step } ->
+            Subscript.Index.Slice
+              {
+                start = map_option ~mapper start;
+                stop = map_option ~mapper stop;
+                step = map_option ~mapper step;
+              });
+    }
 
 
   let default_map_subscript_node ~mapper ~location subscript =
@@ -2312,7 +2389,12 @@ module Folder = struct
 
   let default_fold_subscript ~folder ~state { Subscript.base; index } =
     let state = fold ~folder ~state base in
-    fold ~folder ~state index
+    match index with
+    | Subscript.Index.Index index -> fold ~folder ~state index
+    | Subscript.Index.Slice { start; stop; step } ->
+        let state = fold_option ~folder ~state start in
+        let state = fold_option ~folder ~state stop in
+        fold_option ~folder ~state step
 
 
   let default_fold_ternary ~folder ~state { Ternary.target; test; alternative } =
@@ -2666,8 +2748,21 @@ let rec sanitized ({ Node.value; location } as expression) =
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     match value with
-    | Subscript { Subscript.base; index } ->
-        Subscript { Subscript.base = delocalize base; index = delocalize index }
+    | Subscript { Subscript.base; index = Subscript.Index.Index index } ->
+        Subscript
+          { Subscript.base = delocalize base; index = Subscript.Index.Index (delocalize index) }
+    | Subscript { Subscript.base; index = Subscript.Index.Slice { start; stop; step } } ->
+        Subscript
+          {
+            Subscript.base = delocalize base;
+            index =
+              Subscript.Index.Slice
+                {
+                  start = Option.map ~f:delocalize start;
+                  stop = Option.map ~f:delocalize stop;
+                  step = Option.map ~f:delocalize step;
+                };
+          }
     | Call { Call.callee; arguments } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }
@@ -2804,7 +2899,11 @@ let subscript base indices ~location =
     | [index] -> index
     | multiple_indices -> Tuple multiple_indices |> Node.create_with_default_location
   in
-  Subscript { Subscript.base = { Node.location; value = create_name base }; index }
+  Subscript
+    {
+      Subscript.base = { Node.location; value = create_name base };
+      index = Subscript.Index.Index index;
+    }
 
 
 let is_dunder_attribute attribute_name =

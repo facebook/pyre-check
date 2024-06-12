@@ -69,9 +69,14 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.base; index = Index index } ->
         let collected = from_expression collected base in
         from_expression collected index
+    | Subscript { Subscript.base; index = Slice { start; stop; step } } ->
+        let collected = from_expression collected base in
+        let collected = Option.value_map start ~default:collected ~f:(from_expression collected) in
+        let collected = Option.value_map stop ~default:collected ~f:(from_expression collected) in
+        Option.value_map step ~default:collected ~f:(from_expression collected)
     | Call { Call.callee; arguments } ->
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
@@ -169,7 +174,7 @@ let extract_value_expressions_from_assignment_target expression =
      the base and the key in subscript targets. *)
   let rec extract_one_element so_far { Node.value; _ } =
     match value with
-    | Expression.Subscript { base; index } -> base :: index :: so_far
+    | Expression.Subscript { base; index = Index index } -> base :: index :: so_far
     | List elements
     | Tuple elements ->
         List.fold ~f:extract_one_element ~init:so_far elements

@@ -281,7 +281,7 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.Subscript subscript ->
             let value = translate_expression subscript.value in
             let slice = translate_expression subscript.slice in
-            Expression.Subscript { Subscript.base = value; index = slice }
+            Expression.Subscript { Subscript.base = value; index = Subscript.Index.Index slice }
         | Errpyast.Slice slice ->
             (* TODO(T101302994): We should avoid lowering slice expressions at parser phase. *)
             let callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location in

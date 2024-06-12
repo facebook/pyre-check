@@ -694,7 +694,8 @@ module State (Context : Context) = struct
           state = forward_setitem ~resolution ~state ~base ~index ~value_expression;
           nested_awaitable_expressions = [];
         }
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+    | Subscript { Subscript.base; index = Index index } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:base
         in
@@ -878,7 +879,8 @@ module State (Context : Context) = struct
         (* Unsoundly assume that any awaitable assigned to an attribute is being awaited somewhere.
            Otherwise, we risk getting many false positives for attribute assignments. *)
         mark_awaitable_originating_at_expression_as_awaited ~expression state
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+    | Subscript { Subscript.base; index = Index index } ->
         forward_setitem ~resolution ~state ~base ~index ~value_expression:expression
     | List elements
     | Tuple elements

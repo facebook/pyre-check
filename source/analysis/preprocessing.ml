@@ -71,7 +71,7 @@ let transform_string_annotation_expression ~relative =
       match value with
       | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
           Expression.Name (Name.Attribute { name with base = transform_expression base })
-      | Expression.Subscript { Subscript.base; index } -> (
+      | Expression.Subscript { Subscript.base; index = Index index } -> (
           match base with
           | {
            Node.value =
@@ -92,7 +92,7 @@ let transform_string_annotation_expression ~relative =
           } ->
               (* Don't transform arguments in Literals. *)
               value
-          | _ -> Expression.Subscript { base; index = transform_expression index })
+          | _ -> Expression.Subscript { base; index = Index (transform_expression index) })
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
         when is_type_variable_definition callee ->
           Expression.Call
@@ -577,13 +577,14 @@ module Qualify (Context : QualifyContext) = struct
                         | qualified -> Name qualified
                     in
                     scope, name
-                | Subscript { Subscript.base; index } ->
+                | Subscript { Subscript.base; index = Index index } ->
                     ( scope,
                       Subscript
                         {
                           Subscript.base =
                             qualify_expression ~qualify_strings:DoNotQualify ~scope base;
-                          index = qualify_expression ~qualify_strings:DoNotQualify ~scope index;
+                          index =
+                            Index (qualify_expression ~qualify_strings:DoNotQualify ~scope index);
                         } )
                 | target ->
                     (* This case is allowed in the type signatures, but should be prevented by the
@@ -1073,7 +1074,8 @@ module Qualify (Context : QualifyContext) = struct
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
             }
-      | Subscript { Subscript.base; index } ->
+      | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+      | Subscript { Subscript.base; index = Index index } ->
           let qualified_base = qualify_expression ~qualify_strings ~scope base in
           let qualified_index =
             let qualify_strings =
@@ -1087,7 +1089,7 @@ module Qualify (Context : QualifyContext) = struct
             in
             qualify_expression ~qualify_strings ~scope index
           in
-          Subscript { Subscript.base = qualified_base; index = qualified_index }
+          Subscript { Subscript.base = qualified_base; index = Index qualified_index }
       | Call { callee; arguments } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let arguments =
@@ -1413,7 +1415,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                                 });
                           _;
                         };
-                      index;
+                      index = Index index;
                     };
                 _;
               } -> (
@@ -2538,7 +2540,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   {
                     base =
                       Reference.create "typing.Final" |> Ast.Expression.from_reference ~location;
-                    index = annotation;
+                    index = Index annotation;
                   };
             }
           in
@@ -3057,7 +3059,8 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+    | Subscript { Subscript.base; index = Index index } ->
         let collected = from_expression collected base in
         from_expression collected index
     | Call { Call.callee; arguments } ->
@@ -3318,18 +3321,19 @@ let populate_captures ({ Source.statements; _ } as source) =
                                          });
                                 };
                               index =
-                                {
-                                  Node.location;
-                                  value =
-                                    Expression.Tuple
-                                      [
-                                        {
-                                          Node.location;
-                                          value = Expression.Name (Name.Identifier "str");
-                                        };
-                                        value_annotation;
-                                      ];
-                                };
+                                Index
+                                  {
+                                    Node.location;
+                                    value =
+                                      Expression.Tuple
+                                        [
+                                          {
+                                            Node.location;
+                                            value = Expression.Name (Name.Identifier "str");
+                                          };
+                                          value_annotation;
+                                        ];
+                                  };
                             };
                       }
                     in
@@ -3389,18 +3393,19 @@ let populate_captures ({ Source.statements; _ } as source) =
                                          });
                                 };
                               index =
-                                {
-                                  Node.location;
-                                  value =
-                                    Expression.Tuple
-                                      [
-                                        value_annotation;
-                                        {
-                                          Node.location;
-                                          value = Expression.Constant Constant.Ellipsis;
-                                        };
-                                      ];
-                                };
+                                Index
+                                  {
+                                    Node.location;
+                                    value =
+                                      Expression.Tuple
+                                        [
+                                          value_annotation;
+                                          {
+                                            Node.location;
+                                            value = Expression.Constant Constant.Ellipsis;
+                                          };
+                                        ];
+                                  };
                             };
                       }
                     in
@@ -3637,7 +3642,7 @@ let replace_union_shorthand_in_annotation_expression =
                       });
                 _;
               };
-            index = { Node.value = Tuple index_expressions; _ };
+            index = Index { Node.value = Tuple index_expressions; _ };
           } ->
           List.concat [sofar; index_expressions] |> List.rev
       | _ -> part_of_union_expression :: sofar
@@ -3668,10 +3673,10 @@ let replace_union_shorthand_in_annotation_expression =
                            special = false;
                          });
                 };
-              index;
+              index = Index index;
             }
-      | Subscript { Subscript.base; index } ->
-          Subscript { base; index = transform_expression index }
+      | Subscript { Subscript.base; index = Index index } ->
+          Subscript { base; index = Index (transform_expression index) }
       | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
       | List arguments -> List (List.map ~f:transform_expression arguments)
       | _ -> value
@@ -4338,63 +4343,65 @@ module SelfType = struct
                               _;
                             };
                           index =
-                            {
-                              Node.value =
-                                ( Name
-                                    (Attribute
+                            Index
+                              {
+                                Node.value =
+                                  ( Name
+                                      (Attribute
+                                        {
+                                          base =
+                                            {
+                                              Node.value =
+                                                Name (Identifier ("typing_extensions" | "typing"));
+                                              _;
+                                            };
+                                          attribute = "Self";
+                                          special = false;
+                                        })
+                                  | Subscript
                                       {
                                         base =
                                           {
                                             Node.value =
-                                              Name (Identifier ("typing_extensions" | "typing"));
+                                              Name
+                                                (Attribute
+                                                  {
+                                                    base =
+                                                      {
+                                                        Node.value =
+                                                          Name
+                                                            (Identifier
+                                                              ("typing_extensions" | "typing"));
+                                                        _;
+                                                      };
+                                                    attribute = "Type";
+                                                    special = false;
+                                                  });
                                             _;
                                           };
-                                        attribute = "Self";
-                                        special = false;
-                                      })
-                                | Subscript
-                                    {
-                                      base =
-                                        {
-                                          Node.value =
-                                            Name
-                                              (Attribute
-                                                {
-                                                  base =
+                                        index =
+                                          Index
+                                            {
+                                              Node.value =
+                                                Name
+                                                  (Attribute
                                                     {
-                                                      Node.value =
-                                                        Name
-                                                          (Identifier
-                                                            ("typing_extensions" | "typing"));
-                                                      _;
-                                                    };
-                                                  attribute = "Type";
-                                                  special = false;
-                                                });
-                                          _;
-                                        };
-                                      index =
-                                        {
-                                          Node.value =
-                                            Name
-                                              (Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.value =
-                                                        Name
-                                                          (Identifier
-                                                            ("typing_extensions" | "typing"));
-                                                      _;
-                                                    };
-                                                  attribute = "Self";
-                                                  special = false;
-                                                });
-                                          _;
-                                        };
-                                    } );
-                              _;
-                            };
+                                                      base =
+                                                        {
+                                                          Node.value =
+                                                            Name
+                                                              (Identifier
+                                                                ("typing_extensions" | "typing"));
+                                                          _;
+                                                        };
+                                                      attribute = "Self";
+                                                      special = false;
+                                                    });
+                                              _;
+                                            };
+                                      } );
+                                _;
+                              };
                         };
                     _;
                   } );

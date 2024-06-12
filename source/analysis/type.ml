@@ -263,7 +263,7 @@ module Record = struct
         Expression.Subscript
           {
             base = Expression.Name (create_name ~location "typing.Unpack") |> Node.create ~location;
-            index = index_value |> Node.create ~location;
+            index = Index (index_value |> Node.create ~location);
           }
         |> Node.create ~location
     end
@@ -3741,7 +3741,7 @@ module ToExpression = struct
           Expression.Subscript
             {
               base = { Node.location; value = create_name "typing.Callable" };
-              index = convert_signature_as_index implementation;
+              index = Index (convert_signature_as_index implementation);
             }
         in
         let overloads =
@@ -3750,7 +3750,7 @@ module ToExpression = struct
             | None -> Some (convert_signature_as_leftmost_overload overload)
             | Some expression ->
                 Expression.Subscript
-                  { base = expression; index = convert_signature_as_index overload }
+                  { base = expression; index = Index (convert_signature_as_index overload) }
                 |> Node.create ~location
                 |> Option.some
           in
@@ -3758,7 +3758,8 @@ module ToExpression = struct
         in
         match overloads with
         | Some overloads ->
-            Expression.Subscript { base = { Node.location; value = base_value }; index = overloads }
+            Expression.Subscript
+              { base = { Node.location; value = base_value }; index = Index overloads }
         | None -> base_value)
     | Any -> create_name "typing.Any"
     | Literal literal ->
@@ -4486,8 +4487,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         match Node.value resolved_base, subscript_index with
         (* There are two layers of subscripts, this is how we represent overloads in closed
            expression form *)
-        | Expression.Subscript { base = inner_base; index = inner_subscript_index }, overloads_index
-          ->
+        | Expression.Subscript { index = Slice _; _ }, _ -> failwith "T101302994"
+        | ( Expression.Subscript { base = inner_base; index = Index inner_subscript_index },
+            overloads_index ) ->
             get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
         (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
            type *)
@@ -4538,7 +4540,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       let overloads =
         let rec parse_overloads = function
           | Expression.List arguments -> [get_signature (Tuple arguments)]
-          | Subscript { base; index } ->
+          | Subscript { index = Slice _; _ } -> failwith "T101302994"
+          | Subscript { base; index = Index index } ->
               get_signature (Node.value index) :: parse_overloads (Node.value base)
           | _ -> [undefined]
         in
@@ -4705,7 +4708,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
         Constructors.variable value ~constraints:LiteralIntegers
-    | Subscript { base; index = subscript_index } ->
+    | Subscript { index = Slice _; _ } -> failwith "T101302994"
+    | Subscript { base; index = Index subscript_index } ->
         create_from_subscript ~location:(Node.location base) ~base ~subscript_index
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->

@@ -240,11 +240,12 @@ let test_pp _ =
         {
           Subscript.base = +Expression.Name (Name.Identifier "a");
           index =
-            +Expression.Subscript
-               {
-                 Subscript.base = +Expression.Name (Name.Identifier "b");
-                 index = +Expression.Constant (Constant.Integer 1);
-               };
+            Subscript.Index.Index
+              (+Expression.Subscript
+                  {
+                    Subscript.base = +Expression.Name (Name.Identifier "b");
+                    index = Subscript.Index.Index (+Expression.Constant (Constant.Integer 1));
+                  });
         })
     "a[b[1]]";
   assert_pp_equal
@@ -262,7 +263,7 @@ let test_pp _ =
                               attribute = "b";
                               special = false;
                             });
-                    index = +Expression.Constant (Constant.Integer 1);
+                    index = Subscript.Index.Index (+Expression.Constant (Constant.Integer 1));
                   };
              attribute = "c";
              special = false;

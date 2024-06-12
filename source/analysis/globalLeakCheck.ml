@@ -283,7 +283,8 @@ module State (Context : Context) = struct
               reachable_globals
               (value_errors @ errors);
         }
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+    | Subscript { Subscript.base; index = Index index } ->
         (* We assume that idiomatic python code does not mutate base in __getitem__ evaluation, and
            that globals used as index keys aren't going to be mutated later. *)
         let { errors = base_errors; reachable_globals } = forward_expression base in
@@ -458,7 +459,8 @@ module State (Context : Context) = struct
           }
         in
         List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
-    | Expression.Subscript { Subscript.base; index } ->
+    | Expression.Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
+    | Expression.Subscript { Subscript.base; index = Index index } ->
         (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
            arity should be 2 instead of 1 (we don't have an actual expression for the second
            argument, which is coming from the RHS of assignment). But globalLeakCheck doesn't care

@@ -43,7 +43,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 60, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -121,7 +121,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 60, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -199,7 +199,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 50, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -574,7 +574,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 56, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -652,7 +652,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 55, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -730,7 +730,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 39, "start": 4, "end": 16 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -806,7 +806,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 28, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -882,7 +882,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 28, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -958,7 +958,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 28, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -1031,7 +1031,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for UserControlled",
+                "message": "Subtrace for source UserControlled",
                 "origin": { "line": 29, "start": 27, "end": 50 },
                 "leaf_kind": "UserControlled",
                 "trace_kind": "source"
@@ -1107,7 +1107,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 28, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -1152,7 +1152,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for UserControlled",
+                "message": "Subtrace for source UserControlled",
                 "origin": { "line": 23, "start": 31, "end": 54 },
                 "caller_interval": [ { "lower": 2, "upper": 3 } ],
                 "is_self_call": false,
@@ -1196,7 +1196,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 88, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -1225,7 +1225,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 88, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -1264,7 +1264,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for UserControlled",
+                "message": "Subtrace for source UserControlled",
                 "origin": { "line": 78, "start": 22, "end": 45 },
                 "leaf_kind": "UserControlled",
                 "trace_kind": "source"
@@ -1303,7 +1303,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for StringMayBeSQL",
+                "message": "Subtrace for source StringMayBeSQL",
                 "origin": { "line": 68, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
@@ -1387,7 +1387,7 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace for UserControlled",
+                "message": "Subtrace for source UserControlled",
                 "origin": { "line": 104, "start": 13, "end": 36 },
                 "leaf_kind": "UserControlled",
                 "trace_kind": "source"

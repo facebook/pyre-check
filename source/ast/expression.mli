@@ -270,9 +270,22 @@ and Starred : sig
 end
 
 and Subscript : sig
+  module Index : sig
+    type t =
+      | Index of Expression.t
+      | Slice of {
+          start: Expression.t option;
+          stop: Expression.t option;
+          step: Expression.t option;
+        }
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+  end
+
   type t = {
     base: Expression.t;
-    index: Expression.t;
+    index: Index.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 

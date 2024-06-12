@@ -128,9 +128,14 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
-      | Subscript { Subscript.base; index } ->
+      | Subscript { Subscript.base; index } -> (
           visit_expression base;
-          visit_expression index
+          match index with
+          | Subscript.Index.Index index -> visit_expression index
+          | Subscript.Index.Slice { start; stop; step } ->
+              Option.iter ~f:visit_expression start;
+              Option.iter ~f:visit_expression stop;
+              Option.iter ~f:visit_expression step)
       | FormatString substrings ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
@@ -579,7 +584,8 @@ let collect_base_identifiers statement =
 
 let rec collect_non_generic_type_names { Node.value; _ } =
   match value with
-  | Expression.Subscript { Subscript.index; _ } -> collect_non_generic_type_names index
+  | Expression.Subscript { Subscript.index = Subscript.Index.Index index; _ } ->
+      collect_non_generic_type_names index
   | Expression.Call { Call.arguments; _ } ->
       List.concat_map
         ~f:(fun { Call.Argument.value; _ } -> collect_non_generic_type_names value)

@@ -1802,7 +1802,7 @@ let redirect_expressions ~pyre_in_context = function
             };
           arguments = [{ Call.Argument.name = None; value = right }];
         }
-  | Expression.Subscript { Subscript.base; index } ->
+  | Expression.Subscript { Subscript.base; index = Index index } ->
       Expression.Call
         {
           callee =
@@ -1833,7 +1833,7 @@ let redirect_assignments = function
       Node.value =
         Statement.Assign
           {
-            Assign.target = { Node.value = Expression.Subscript { base; index }; _ };
+            Assign.target = { Node.value = Expression.Subscript { base; index = Index index }; _ };
             value = Some value_expression;
             _;
           };

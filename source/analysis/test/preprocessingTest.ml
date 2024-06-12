@@ -5116,15 +5116,16 @@ let test_populate_captures _ =
                (Expression.Name (create_name ~location:(location start stop) "typing.Tuple"))
                ~location:(location start stop);
            index =
-             Node.create
-               ~location:(location start stop)
-               (Expression.Tuple
-                  [
-                    value_annotation;
-                    Node.create
-                      ~location:(location start stop)
-                      (Expression.Constant Constant.Ellipsis);
-                  ]);
+             Subscript.Index.Index
+               (Node.create
+                  ~location:(location start stop)
+                  (Expression.Tuple
+                     [
+                       value_annotation;
+                       Node.create
+                         ~location:(location start stop)
+                         (Expression.Constant Constant.Ellipsis);
+                     ]));
          })
       ~location:(location start stop)
   in
@@ -5137,15 +5138,16 @@ let test_populate_captures _ =
                (Expression.Name (create_name ~location:(location start stop) "typing.Dict"))
                ~location:(location start stop);
            index =
-             Node.create
-               ~location:(location start stop)
-               (Expression.Tuple
-                  [
-                    Node.create
-                      (Expression.Name (create_name ~location:(location start stop) "str"))
-                      ~location:(location start stop);
-                    value_annotation;
-                  ]);
+             Subscript.Index.Index
+               (Node.create
+                  ~location:(location start stop)
+                  (Expression.Tuple
+                     [
+                       Node.create
+                         (Expression.Name (create_name ~location:(location start stop) "str"))
+                         ~location:(location start stop);
+                       value_annotation;
+                     ]));
          })
       ~location:(location start stop)
   in

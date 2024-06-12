@@ -51,7 +51,8 @@ module MatchTranslate = struct
 
 
   let create_subscript ~location ~container ~key =
-    Expression.Subscript { base = container; index = key } |> Node.create ~location
+    Expression.Subscript { base = container; index = Subscript.Index.Index key }
+    |> Node.create ~location
 
 
   let create_subscript_index ~location ~sequence ~index =

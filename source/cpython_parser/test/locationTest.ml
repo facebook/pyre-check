@@ -396,23 +396,24 @@ let test_call_locations =
                                   ~stop:(1, 1)
                                   (Expression.Name (Name.Identifier "a"));
                               index =
-                                node
-                                  ~start:(1, 2)
-                                  ~stop:(1, 7)
-                                  (Expression.ComparisonOperator
-                                     {
-                                       ComparisonOperator.left =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 3)
-                                           (Expression.Constant (Constant.Integer 1));
-                                       operator = ComparisonOperator.LessThan;
-                                       right =
-                                         node
-                                           ~start:(1, 6)
-                                           ~stop:(1, 7)
-                                           (Expression.Constant (Constant.Integer 2));
-                                     });
+                                Subscript.Index.Index
+                                  (node
+                                     ~start:(1, 2)
+                                     ~stop:(1, 7)
+                                     (Expression.ComparisonOperator
+                                        {
+                                          ComparisonOperator.left =
+                                            node
+                                              ~start:(1, 2)
+                                              ~stop:(1, 3)
+                                              (Expression.Constant (Constant.Integer 1));
+                                          operator = ComparisonOperator.LessThan;
+                                          right =
+                                            node
+                                              ~start:(1, 6)
+                                              ~stop:(1, 7)
+                                              (Expression.Constant (Constant.Integer 2));
+                                        }));
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -824,10 +825,11 @@ let test_call_locations =
                                      ~stop:(1, 5)
                                      (Expression.Name (Name.Identifier "i"));
                                  index =
-                                   node
-                                     ~start:(1, 6)
-                                     ~stop:(1, 7)
-                                     (Expression.Name (Name.Identifier "j"));
+                                   Subscript.Index.Index
+                                     (node
+                                        ~start:(1, 6)
+                                        ~stop:(1, 7)
+                                        (Expression.Name (Name.Identifier "j")));
                                });
                         value =
                           Some
@@ -858,36 +860,37 @@ let test_call_locations =
                                   ~stop:(1, 1)
                                   (Expression.Name (Name.Identifier "a"));
                               index =
-                                node
-                                  ~start:(1, 2)
-                                  ~stop:(1, 4)
-                                  (Expression.Call
-                                     {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 4)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value =
-                                               node
-                                                 ~start:(1, 3)
-                                                 ~stop:(1, 4)
-                                                 (Expression.Constant (Constant.Integer 1));
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                         ];
-                                     });
+                                Subscript.Index.Index
+                                  (node
+                                     ~start:(1, 2)
+                                     ~stop:(1, 4)
+                                     (Expression.Call
+                                        {
+                                          Call.callee =
+                                            node
+                                              ~start:(1, 2)
+                                              ~stop:(1, 4)
+                                              (Expression.Name (Name.Identifier "slice"));
+                                          arguments =
+                                            [
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value =
+                                                  node
+                                                    ~start:(1, 3)
+                                                    ~stop:(1, 4)
+                                                    (Expression.Constant (Constant.Integer 1));
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                            ];
+                                        }));
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -910,36 +913,37 @@ let test_call_locations =
                                   ~stop:(1, 1)
                                   (Expression.Name (Name.Identifier "a"));
                               index =
-                                node
-                                  ~start:(1, 2)
-                                  ~stop:(1, 5)
-                                  (Expression.Call
-                                     {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 5)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value =
-                                               node
-                                                 ~start:(1, 4)
-                                                 ~stop:(1, 5)
-                                                 (Expression.Constant (Constant.Integer 2));
-                                           };
-                                         ];
-                                     });
+                                Subscript.Index.Index
+                                  (node
+                                     ~start:(1, 2)
+                                     ~stop:(1, 5)
+                                     (Expression.Call
+                                        {
+                                          Call.callee =
+                                            node
+                                              ~start:(1, 2)
+                                              ~stop:(1, 5)
+                                              (Expression.Name (Name.Identifier "slice"));
+                                          arguments =
+                                            [
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value =
+                                                  node
+                                                    ~start:(1, 4)
+                                                    ~stop:(1, 5)
+                                                    (Expression.Constant (Constant.Integer 2));
+                                              };
+                                            ];
+                                        }));
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -962,32 +966,33 @@ let test_call_locations =
                                   ~stop:(1, 1)
                                   (Expression.Name (Name.Identifier "a"));
                               index =
-                                node
-                                  ~start:(1, 2)
-                                  ~stop:(1, 3)
-                                  (Expression.Call
-                                     {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 3)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                         ];
-                                     });
+                                Subscript.Index.Index
+                                  (node
+                                     ~start:(1, 2)
+                                     ~stop:(1, 3)
+                                     (Expression.Call
+                                        {
+                                          Call.callee =
+                                            node
+                                              ~start:(1, 2)
+                                              ~stop:(1, 3)
+                                              (Expression.Name (Name.Identifier "slice"));
+                                          arguments =
+                                            [
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                              {
+                                                Call.Argument.name = None;
+                                                value = +Expression.Constant Constant.NoneLiteral;
+                                              };
+                                            ];
+                                        }));
                             })));
                ];
       ]
@@ -4001,10 +4006,11 @@ let test_type_comments =
                                             ~stop:(2, 2)
                                             (Expression.Name (Name.Identifier "List"));
                                         index =
-                                          node
-                                            ~start:(1, 0)
-                                            ~stop:(2, 2)
-                                            (Expression.Name (Name.Identifier "derp"));
+                                          Subscript.Index.Index
+                                            (node
+                                               ~start:(1, 0)
+                                               ~stop:(2, 2)
+                                               (Expression.Name (Name.Identifier "derp")));
                                       }));
                             async = false;
                             generator = false;
