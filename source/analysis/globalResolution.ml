@@ -358,11 +358,6 @@ let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen
 
-let less_or_equal_either_way resolution type0 type1 =
-  less_or_equal resolution ~left:type0 ~right:type1
-  || less_or_equal resolution ~left:type1 ~right:type0
-
-
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },

@@ -203,8 +203,6 @@ val meet : t -> Type.t -> Type.t -> Type.t
 
 val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
 
-val less_or_equal_either_way : t -> Type.t -> Type.t -> bool
-
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val attribute_from_class_name

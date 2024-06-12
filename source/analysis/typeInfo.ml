@@ -140,10 +140,14 @@ module LocalOrGlobal = struct
       let should_recurse, base =
         match left.base, right.base with
         | Some left, Some right ->
-            ( GlobalResolution.less_or_equal_either_way
+            ( GlobalResolution.less_or_equal
                 global_resolution
-                left.annotation
-                right.annotation,
+                ~left:left.annotation
+                ~right:right.annotation
+              || GlobalResolution.less_or_equal
+                   global_resolution
+                   ~left:right.annotation
+                   ~right:left.annotation,
               Some (Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right)
             )
         | None, None ->
@@ -164,10 +168,14 @@ module LocalOrGlobal = struct
     let should_recurse, base =
       match left.base, right.base with
       | Some left, Some right ->
-          ( GlobalResolution.less_or_equal_either_way
+          ( GlobalResolution.less_or_equal
               global_resolution
-              left.annotation
-              right.annotation,
+              ~left:left.annotation
+              ~right:right.annotation
+            || GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:right.annotation
+                 ~right:left.annotation,
             Some (Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right) )
       | None, None ->
           (* you only want to continue the nested meet should at least one attribute tree exists *)
