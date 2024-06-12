@@ -5,8 +5,6 @@
 
 # pyre-strict
 
-import os  # noqa
-import re
 import textwrap
 import unittest
 from typing import List, Set
