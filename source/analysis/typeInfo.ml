@@ -134,61 +134,42 @@ module LocalOrGlobal = struct
 
 
   let rec join ~global_resolution left right =
-    if equal left top || equal right top then
-      top
-    else
-      let should_recurse, base =
-        match left.base, right.base with
-        | Some left, Some right ->
-            ( GlobalResolution.less_or_equal
-                global_resolution
-                ~left:left.annotation
-                ~right:right.annotation
-              || GlobalResolution.less_or_equal
-                   global_resolution
-                   ~left:right.annotation
-                   ~right:left.annotation,
-              Some (Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right)
-            )
-        | None, None ->
-            (* you only want to continue the nested join should both attribute trees exist *)
-            not (Map.Tree.is_empty left.attributes || Map.Tree.is_empty right.attributes), None
-        | _ -> false, None
-      in
-      let attributes =
-        if should_recurse then
-          IdentifierMap.join ~join_one:(join ~global_resolution) left.attributes right.attributes
-        else
-          IdentifierMap.empty
-      in
-      { base; attributes }
+    let base =
+      match left.base, right.base with
+      | Some left_base, Some right_base ->
+          Some
+            (Annotation.join
+               ~type_join:(GlobalResolution.join global_resolution)
+               left_base
+               right_base)
+      | _ -> None
+    in
+    {
+      base;
+      attributes =
+        IdentifierMap.join ~join_one:(join ~global_resolution) left.attributes right.attributes;
+    }
 
 
   let rec meet ~global_resolution left right =
-    let should_recurse, base =
+    let base =
       match left.base, right.base with
-      | Some left, Some right ->
-          ( GlobalResolution.less_or_equal
-              global_resolution
-              ~left:left.annotation
-              ~right:right.annotation
-            || GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:right.annotation
-                 ~right:left.annotation,
-            Some (Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right) )
-      | None, None ->
-          (* you only want to continue the nested meet should at least one attribute tree exists *)
-          not (Map.Tree.is_empty left.attributes && Map.Tree.is_empty right.attributes), None
-      | _ -> false, None
+      | Some left_base, Some right_base ->
+          Some
+            (Annotation.meet
+               ~type_meet:(GlobalResolution.meet global_resolution)
+               left_base
+               right_base)
+      | Some base, None
+      | None, Some base ->
+          Some base
+      | None, None -> None
     in
-    let attributes =
-      if should_recurse then
-        IdentifierMap.meet ~meet_one:(meet ~global_resolution) left.attributes right.attributes
-      else
-        IdentifierMap.empty
-    in
-    { base; attributes }
+    {
+      base;
+      attributes =
+        IdentifierMap.meet ~meet_one:(meet ~global_resolution) left.attributes right.attributes;
+    }
 
 
   let widen ~global_resolution ~widening_threshold ~iteration left right =
