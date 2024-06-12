@@ -69,11 +69,11 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         root: str,
         annotation_specifications: List[DecoratorAnnotationSpecification],
         paths: Optional[List[str]] = None,
-        exclude_paths: Optional[List[Union[str, re.Pattern[str]]]] = None,
+        exclude_paths: Optional[List[str]] = None,
         sequential: Optional[bool] = False,
     ) -> None:
         self._paths: Optional[List[str]] = paths
-        self.exclude_paths: List[Union[str, re.Pattern[str]]] = exclude_paths or []
+        self.exclude_paths: List[str] = exclude_paths or []
         self.root = root
         self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
             annotation_specifications
@@ -88,10 +88,8 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
             paths = list(find_all_paths(self.root))
             LOG.info(f"Found {len(paths)} python files")
             self._paths = paths
-        # TODO(T191766251): Remove the support for re.Pattern in self.exclude_paths
         exclude_paths: List[re.Pattern[str]] = [
-            re.compile(path) if isinstance(path, str) else path
-            for path in self.exclude_paths
+            re.compile(path) for path in self.exclude_paths
         ]
         return [
             path

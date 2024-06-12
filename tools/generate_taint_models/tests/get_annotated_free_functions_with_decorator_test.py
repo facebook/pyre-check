@@ -597,7 +597,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             AnnotatedFreeFunctionWithDecoratorGenerator(
                 root="/root",
                 annotation_specifications=unused_specification,
-                exclude_paths=[re.compile(r"one\.py"), re.compile(r"two\.py")],
+                exclude_paths=[r"one\.py", r"two\.py"],
             ).paths,
             ["/root/three.py"],
         )
