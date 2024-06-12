@@ -47,6 +47,8 @@ end
 module RegisteredPartialSinks : sig
   type t [@@deriving compare, show, equal]
 
+  val empty : t
+
   val from_kind_label : kind:string -> label:string -> Sinks.PartialSink.t
 
   type registration_result =

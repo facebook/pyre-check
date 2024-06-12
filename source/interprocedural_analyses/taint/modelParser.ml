@@ -601,7 +601,23 @@ let rec parse_annotations
           base = { Node.value = Expression.Name (Name.Identifier kind); _ };
           index = { Node.value = Name (Name.Identifier label); _ };
         } -> (
+        (* TODO(T192180304): Delete once models are migrated to new syntax. *)
         let partial_sink = TaintConfiguration.RegisteredPartialSinks.from_kind_label ~kind ~label in
+        match
+          TaintConfiguration.RegisteredPartialSinks.is_registered
+            ~partial_sink
+            taint_configuration.registered_partial_sinks
+        with
+        | Yes -> Ok (Sinks.PartialSink partial_sink)
+        | No registered_sinks ->
+            Error
+              (annotation_error
+                 (Format.sprintf
+                    "Unrecognized partial sink `%s` (choices: `%s`)"
+                    partial_sink
+                    (registered_sinks |> Sinks.PartialSink.Set.elements |> String.concat ~sep:", ")))
+        )
+    | Expression.Name (Name.Identifier partial_sink) -> (
         match
           TaintConfiguration.RegisteredPartialSinks.is_registered
             ~partial_sink

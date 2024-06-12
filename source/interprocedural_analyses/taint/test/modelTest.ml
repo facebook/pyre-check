@@ -39,6 +39,7 @@ let set_up_environment
     ?filtered_sources
     ?filtered_sinks
     ?filtered_transforms
+    ?(registered_partial_sinks = TaintConfiguration.RegisteredPartialSinks.empty)
     ~context
     ~model_source
     ()
@@ -105,9 +106,7 @@ let set_up_environment
         sinks;
         transforms;
         features = ["special"];
-        registered_partial_sinks =
-          TaintConfiguration.RegisteredPartialSinks.of_alist_exn
-            ["Test[a]", ["Test[b]"]; "Test[b]", ["Test[a]"]];
+        registered_partial_sinks;
         rules;
         filtered_rule_codes = None;
         filtered_sources;
@@ -155,13 +154,22 @@ let assert_model
     ?filtered_sources
     ?filtered_sinks
     ?expected_skipped_overrides
+    ?registered_partial_sinks
     ~context
     ~model_source
     ~expect
     ()
   =
   let { ModelParseResult.models; _ }, pyre_api, taint_configuration =
-    set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
+    set_up_environment
+      ?source
+      ?rules
+      ?filtered_sources
+      ?filtered_sinks
+      ?registered_partial_sinks
+      ~context
+      ~model_source
+      ()
   in
   begin
     match expected_skipped_overrides with
@@ -230,7 +238,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         rules = [];
         registered_partial_sinks =
           TaintConfiguration.RegisteredPartialSinks.of_alist_exn
-            ["Test[a]", ["Test[b]"]; "Test[b]", ["Test[a]"]];
+            ["TestA", ["TestB"]; "TestB", ["TestA"]];
       }
   in
   let error_message =
@@ -3062,8 +3070,54 @@ let test_attach_features context =
 
 
 let test_partial_sinks context =
-  let assert_model = assert_model ~context in
   assert_model
+    ~registered_partial_sinks:
+      (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+         ["TestA", ["TestB"]; "TestB", ["TestA"]])
+    ~rules:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks =
+            [Sinks.TriggeredPartialSink { partial_sink = "TestA"; triggering_source = "TestTest" }];
+          transforms = [];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+          filters = None;
+          location = None;
+        };
+        {
+          Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks =
+            [Sinks.TriggeredPartialSink { partial_sink = "TestB"; triggering_source = "TestTest" }];
+          transforms = [];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+          filters = None;
+          location = None;
+        };
+      ]
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestB]): ..."
+    ~expect:
+      [
+        outcome
+          ~parameter_sinks:
+            [
+              { name = "x"; sinks = [Sinks.PartialSink "TestA"] };
+              { name = "y"; sinks = [Sinks.PartialSink "TestB"] };
+            ]
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.partial_sink";
+      ]
+    ~context
+    ();
+  assert_model
+    ~registered_partial_sinks:
+      (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+         ["Test[a]", ["Test[b]"]; "Test[b]", ["Test[a]"]])
     ~rules:
       [
         {
@@ -3106,6 +3160,7 @@ let test_partial_sinks context =
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.partial_sink";
       ]
+    ~context
     ()
 
 
@@ -3122,7 +3177,13 @@ let test_demangle_class_attributes _ =
 
 
 let test_filter_by_rules context =
-  let assert_model = assert_model ~context in
+  let assert_model =
+    assert_model
+      ~registered_partial_sinks:
+        (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
+           ["TestA", ["TestB"]; "TestB", ["TestA"]])
+      ~context
+  in
   assert_model
     ~rules:
       [
@@ -3225,9 +3286,7 @@ let test_filter_by_rules context =
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink { partial_sink = "Test[a]"; triggering_source = "TestTest" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestA"; triggering_source = "TestTest" }];
           transforms = [];
           code = 4321;
           message_format = "";
@@ -3238,9 +3297,7 @@ let test_filter_by_rules context =
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
           sinks =
-            [
-              Sinks.TriggeredPartialSink { partial_sink = "Test[b]"; triggering_source = "TestTest" };
-            ];
+            [Sinks.TriggeredPartialSink { partial_sink = "TestB"; triggering_source = "TestTest" }];
           transforms = [];
           code = 4321;
           message_format = "";
@@ -3249,15 +3306,15 @@ let test_filter_by_rules context =
           location = None;
         };
       ]
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestB]): ..."
     ~expect:
       [
         outcome
           ~kind:`Function
           ~parameter_sinks:
             [
-              { name = "x"; sinks = [Sinks.PartialSink "Test[a]"] };
-              { name = "y"; sinks = [Sinks.PartialSink "Test[b]"] };
+              { name = "x"; sinks = [Sinks.PartialSink "TestA"] };
+              { name = "y"; sinks = [Sinks.PartialSink "TestB"] };
             ]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.partial_sink";

@@ -62,12 +62,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         rules = [];
         registered_partial_sinks =
           TaintConfiguration.RegisteredPartialSinks.of_alist_exn
-            [
-              "Test[a]", ["Test[b]"];
-              "Test[b]", ["Test[a]"];
-              "Test[c]", ["Test[d]"];
-              "Test[d]", ["Test[c]"];
-            ];
+            ["TestA", ["TestB"]; "TestB", ["TestA"]; "TestC", ["TestD"]; "TestD", ["TestC"]];
       }
   in
   let error_message =
@@ -160,58 +155,57 @@ let test_invalid_models context =
        taint annotation."
     ();
   assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[first]], y: PartialSink[Test[b]]): ..."
+    ~model_source:"def test.partial_sink(x: PartialSink[TestFirst], y: PartialSink[TestB]): ..."
     ~expect:
-      "`PartialSink[Test[first]]` is an invalid taint annotation: Unrecognized partial sink \
-       `Test[first]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
+      "`PartialSink[TestFirst]` is an invalid taint annotation: Unrecognized partial sink \
+       `TestFirst` (choices: `TestA, TestB, TestC, TestD`)"
     ();
   assert_invalid_model
-    ~model_source:
-      "def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[second]]): ..."
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestSecond]): ..."
     ~expect:
-      "`PartialSink[Test[second]]` is an invalid taint annotation: Unrecognized partial sink \
-       `Test[second]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
+      "`PartialSink[TestSecond]` is an invalid taint annotation: Unrecognized partial sink \
+       `TestSecond` (choices: `TestA, TestB, TestC, TestD`)"
     ();
   assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[d]]): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestD]): ..."
+    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
     ();
   assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y): ..."
+    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
     ();
   assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[a]]): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[a]]`"
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestA]): ..."
+    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
     ();
   assert_invalid_model
     ~model_source:
       {|
       def test.partial_sink_3(
-        x: PartialSink[Test[a]],
-        y: PartialSink[Test[b]],
-        z: PartialSink[Test[b]]
+        x: PartialSink[TestA],
+        y: PartialSink[TestB],
+        z: PartialSink[TestB]
       ): ...
        |}
-    ~expect:"Cannot find any matching partial sink for `PartialSink[Test[b]]`"
+    ~expect:"Cannot find any matching partial sink for `PartialSink[TestB]`"
     ();
   assert_invalid_model
     ~model_source:
       {|
       def test.partial_sink_4(
-        w: PartialSink[Test[a]],
-        x: PartialSink[Test[b]],
-        y: PartialSink[Test[c]],
-        z: PartialSink[Test[d]]
+        w: PartialSink[TestA],
+        x: PartialSink[TestB],
+        y: PartialSink[TestC],
+        z: PartialSink[TestD]
       ): ...
       |}
     ~expect:"no failure"
     ();
   assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
+    ~model_source:"def test.partial_sink(x: PartialSink[XA], y: PartialSink[XB]): ..."
     ~expect:
-      "`PartialSink[X[a]]` is an invalid taint annotation: Unrecognized partial sink `X[a]` \
-       (choices: `Test[a], Test[b], Test[c], Test[d]`)"
+      "`PartialSink[XA]` is an invalid taint annotation: Unrecognized partial sink `XA` (choices: \
+       `TestA, TestB, TestC, TestD`)"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
@@ -299,7 +293,7 @@ let test_invalid_models context =
        declaration: a.b"
     ();
   assert_valid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
+    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestB]): ..."
     ();
   assert_valid_model ~model_source:"def test.sink(): ..." ();
   assert_valid_model ~model_source:"def test.sink_with_optional(): ..." ();
@@ -823,10 +817,10 @@ let test_invalid_models context =
   assert_invalid_model
     ~source:"def partial_sink(x, y) -> None: ..."
     ~model_source:
-      "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
+      "def test.partial_sink(x: PartialSink[NonexistentA], y: PartialSink[NonexistentB]): ..."
     ~expect:
-      "`PartialSink[Nonexistent[a]]` is an invalid taint annotation: Unrecognized partial sink \
-       `Nonexistent[a]` (choices: `Test[a], Test[b], Test[c], Test[d]`)"
+      "`PartialSink[NonexistentA]` is an invalid taint annotation: Unrecognized partial sink \
+       `NonexistentA` (choices: `TestA, TestB, TestC, TestD`)"
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."
