@@ -10,8 +10,6 @@ open OUnit2
 open AbstractDomain
 module MapPoly = Map.Poly
 
-let ( = ) = Stdlib.( = )
-
 let string_list_printer elements = String.concat ~sep:"," elements
 
 let int_list_printer elements = ListLabels.map ~f:Int.to_string elements |> String.concat ~sep:","
@@ -34,18 +32,6 @@ let string_int_list_list_printer elements =
   List.map elements ~f:(fun (key, elements) ->
       Format.sprintf "%s:[%s]" key (List.map ~f:Int.to_string elements |> String.concat ~sep:","))
   |> String.concat ~sep:"\n"
-
-
-(* List.equal is incompatible in different core_kernel versions *)
-let rec list_equal a b ~equal =
-  match a, b with
-  | [], [] -> true
-  | ahead :: arest, bhead :: brest ->
-      if equal ahead bhead then
-        list_equal arest brest ~equal
-      else
-        false
-  | _ -> false
 
 
 module type AbstractDomainUnderTest = sig
@@ -172,7 +158,7 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     in
     let assert_equivalent _what a b =
       if not (Domain.less_or_equal ~left:a ~right:b && Domain.less_or_equal ~left:b ~right:a) then
-        assert_equal a b ~printer:Domain.show
+        assert_equal a b ~printer:Domain.show ~cmp:Domain.equal
     in
     let ident = Domain.transform Domain.Self Map ~f:transform v in
     let added = Domain.transform Domain.Self Add ~f:v Domain.bottom in
@@ -308,11 +294,13 @@ module StringSet = struct
     assert_equal
       (of_list ["a"; "b"; "c"])
       (create [Part (Self, of_list ["a"; "b"; "c"])])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (of_list ["a"; "b"; "c"])
       (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
       ~printer:show
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -395,16 +383,18 @@ module InvertedStringSet = struct
     assert_equal
       (of_elements ["a"; "b"; "c"])
       (create [Part (Self, of_elements ["a"; "b"; "c"])])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (of_elements ["a"; "b"; "c"])
       (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
       ~printer:show
+      ~cmp:equal
 
 
   let assert_equivalent a b =
     if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
-      assert_equal a b ~printer:show
+      assert_equal a b ~printer:show ~cmp:equal
 
 
   let test_additional _ =
@@ -495,16 +485,23 @@ module ToppedStringSet = struct
     assert_equal
       (of_list ["a"; "b"; "c"])
       (create [Part (Self, of_list ["a"; "b"; "c"])])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (of_list ["a"; "b"; "c"])
       (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
-      ~printer:show;
-    assert_equal (of_list ["a"; "b"]) (create [Part (Self, of_list ["a"; "b"])]) ~printer:show;
+      ~printer:show
+      ~cmp:equal;
+    assert_equal
+      (of_list ["a"; "b"])
+      (create [Part (Self, of_list ["a"; "b"])])
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (of_list ["a"; "b"])
       (create [Part (Element, "a"); Part (Element, "b")])
       ~printer:show
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -537,7 +534,7 @@ module IntToStringSet = struct
   (* Test that maps are strict in bottom elements. *)
   let bottom = set bottom ~key:1 ~data:StringSet.bottom
 
-  let () = assert_equal Map.bottom bottom ~msg:"strict in bottom" ~printer:Map.show
+  let () = assert_equal Map.bottom bottom ~msg:"strict in bottom" ~printer:Map.show ~cmp:Map.equal
 
   (* Builds maps from i -> string sets, where all unrelated string elements are in the range
      except for one, and keys are from [0,n), n being the number of unrelated string elements.
@@ -690,11 +687,12 @@ module IntToStringSet = struct
            Part (StringSet.Self, StringSet.of_list []);
          ])
       ~printer:show
+      ~cmp:equal
 
 
   let assert_equivalent a b =
     if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
-      assert_equal a b ~printer:show
+      assert_equal a b ~printer:show ~cmp:equal
 
 
   let test_additional _ =
@@ -752,14 +750,15 @@ module IntToStringSet = struct
     assert_show
       ~expected:"{\n   0 -> [a]\n   1 -> [b]\n   2 -> [c]\n}"
       (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]]);
-    assert_bool
-      "of_list mapping to bottom removed in strict map"
-      (of_list [0, StringSet.bottom] = bottom)
+    assert_equal
+      ~msg:"of_list mapping to bottom removed in strict map"
+      bottom
+      (of_list [0, StringSet.bottom])
 
 
   let assert_equivalent a b =
     if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
-      assert_equal a b ~printer:show
+      assert_equal a b ~printer:show ~cmp:equal
 
 
   let test_context _ =
@@ -769,7 +768,7 @@ module IntToStringSet = struct
       ~printer:int_string_pair_list_printer
       (List.rev [0, "a"; 0, "b"; 1, "b"; 1, "c"; 2, "c"; 2, "d"])
       (reduce StringSet.Element ~using:(Context (Key, Acc)) ~f:key_values ~init:[] v);
-    let filter key value = key = 1 && value = "b" in
+    let filter key value = Int.equal key 1 && String.equal value "b" in
     let concat key value = Format.sprintf "%d:%s" key value in
     assert_equivalent
       (build_map [1, ["b"]])
@@ -921,11 +920,12 @@ module NonStrictIntToStringSet = struct
            Part (StringSet.Self, StringSet.of_list []);
          ])
       ~printer:show
+      ~cmp:equal
 
 
   let assert_equivalent a b =
     if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
-      assert_equal a b ~printer:show
+      assert_equal a b ~printer:show ~cmp:equal
 
 
   let test_additional _ =
@@ -1104,8 +1104,6 @@ module PairStringMapIntToString = struct
       ~expected_keys:["false", [2]; "true", [0; 1]]
 
 
-  let cmp a b = less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a
-
   let test_create _ =
     assert_equal
       (build [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]])
@@ -1119,7 +1117,7 @@ module PairStringMapIntToString = struct
            Part (right_key, 2);
            Part (right_set, StringSet.of_list ["c"; "d"]);
          ])
-      ~cmp
+      ~cmp:equal
       ~printer:show
 
 
@@ -1167,7 +1165,7 @@ module PairStringMapIntToString = struct
              Part (right_set, StringSet.of_list ["Y"]);
            ])
         (subtract b ~from:a)
-        ~cmp
+        ~cmp:equal
         ~printer:show
     in
     ()
@@ -1301,14 +1299,12 @@ module AbstractElementSet = struct
       ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
 
 
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
-
   let test_create _ =
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (create [Part (Self, of_list [A; B; C ("x", 5); C ("y", 5)])])
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (create
@@ -1319,7 +1315,7 @@ module AbstractElementSet = struct
            Part (Element, C ("y", 5));
          ])
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -1329,29 +1325,28 @@ module AbstractElementSet = struct
         (introspect Structure |> String.concat ~sep:"\n")
         ~printer:Fn.id
     in
-    let cmp a b = list_equal (elements a) (elements b) ~equal:AbstractElement.equal in
     let set = of_list [B; C ("x", 5); C ("y", 5)] in
-    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp:equal ~printer:show;
     assert_equal
       (of_list [B; C ("x", 6); C ("y", 5)])
       (add (C ("x", 6)) set)
       ~msg:"add subsuming"
-      ~cmp
+      ~cmp:equal
       ~printer:show;
-    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp:equal ~printer:show;
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (add A set)
       ~msg:"add A"
-      ~cmp
+      ~cmp:equal
       ~printer:show;
-    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp ~printer:show;
+    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp:equal ~printer:show;
     let big_set = of_list [A; B; C ("x", 5); C ("y", 5); C ("z", 5); C ("q", 5)] in
     assert_equal
       (of_list [A; B; CSuper])
       (widen ~iteration:0 ~prev:big_set ~next:bottom)
       ~msg:"widen"
-      ~cmp
+      ~cmp:equal
       ~printer:show
 
 
@@ -1466,14 +1461,12 @@ module AbstractBucketedElementSet = struct
       ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
 
 
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
-
   let test_create _ =
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (create [Part (Self, of_list [A; B; C ("x", 5); C ("y", 5)])])
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (create
@@ -1484,7 +1477,7 @@ module AbstractBucketedElementSet = struct
            Part (Element, C ("y", 5));
          ])
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -1494,29 +1487,28 @@ module AbstractBucketedElementSet = struct
         (introspect Structure |> String.concat ~sep:"\n")
         ~printer:Fn.id
     in
-    let cmp a b = list_equal (elements a) (elements b) ~equal:AbstractBucketedElement.equal in
     let set = of_list [B; C ("x", 5); C ("y", 5)] in
-    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp:equal ~printer:show;
     assert_equal
       (of_list [B; C ("x", 6); C ("y", 5)])
       (add (C ("x", 6)) set)
       ~msg:"add subsuming"
-      ~cmp
+      ~cmp:equal
       ~printer:show;
-    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp:equal ~printer:show;
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (add A set)
       ~msg:"add A"
-      ~cmp
+      ~cmp:equal
       ~printer:show;
-    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp ~printer:show;
+    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp:equal ~printer:show;
     let big_set = of_list [A; B; C ("x", 5); C ("y", 5); C ("z", 5); C ("q", 5)] in
     assert_equal
       (of_list [A; B; CSuper])
       (widen ~iteration:0 ~prev:big_set ~next:bottom)
       ~msg:"widen"
-      ~cmp
+      ~cmp:equal
       ~printer:show
 
 
@@ -1623,8 +1615,6 @@ module PairStringString = struct
       ~expected:["b", "left: [a, b], right: [b]"; "c", "left: [a, b], right: [c]"]
 
 
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
-
   let test_create _ =
     assert_equal
       (build ["a"; "b"] ["a"; "b"])
@@ -1634,23 +1624,23 @@ module PairStringString = struct
            Part (RightStringSet.Self, RightStringSet.of_list ["a"; "b"]);
          ])
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
 
     (* Check strictness *)
-    assert_equal bottom (build ["a"; "b"] []) ~printer:show ~cmp:compare;
-    assert_equal bottom (build [] ["a"; "b"]) ~printer:show ~cmp:compare;
+    assert_equal bottom (build ["a"; "b"] []) ~printer:show ~cmp:equal;
+    assert_equal bottom (build [] ["a"; "b"]) ~printer:show ~cmp:equal;
 
     (* Check update strictness *)
     assert_equal
       bottom
       (update Slots.Left (LeftStringSet.singleton "a") bottom)
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
     assert_equal
       bottom
       (update Slots.Right (RightStringSet.singleton "a") bottom)
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -1671,9 +1661,9 @@ module PairStringString = struct
     let d = build ["a"; "b"] ["x"] in
     let e = build ["b"] ["x"; "y"] in
     let f = build ["a"; "b"] ["y"] in
-    let () = assert_equal a (subtract b ~from:a) ~cmp:compare ~printer:show in
-    let () = assert_equal e (subtract c ~from:a) ~cmp:compare ~printer:show in
-    let () = assert_equal f (subtract d ~from:a) ~cmp:compare ~printer:show in
+    let () = assert_equal a (subtract b ~from:a) ~cmp:equal ~printer:show in
+    let () = assert_equal e (subtract c ~from:a) ~cmp:equal ~printer:show in
+    let () = assert_equal f (subtract d ~from:a) ~cmp:equal ~printer:show in
     ()
 
 
@@ -1821,8 +1811,6 @@ module ProductDomain = struct
         ]
 
 
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
-
   let test_create _ =
     assert_equal
       (build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
@@ -1833,7 +1821,7 @@ module ProductDomain = struct
            Part (RiverSet.Self, RiverSet.of_list ["Flon"; "Louve"; "Sarine"]);
          ])
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -1884,10 +1872,10 @@ module ProductDomain = struct
         (build (["Lausanne"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
         (subtract b ~from:a)
         ~printer:show
-        ~cmp:compare
+        ~cmp:equal
     in
-    let () = assert_equal a (subtract c ~from:a) ~printer:show ~cmp:compare in
-    let () = assert_equal a (subtract d ~from:a) ~printer:show ~cmp:compare in
+    let () = assert_equal a (subtract c ~from:a) ~printer:show ~cmp:equal in
+    let () = assert_equal a (subtract d ~from:a) ~printer:show ~cmp:equal in
     ()
 
 
@@ -2029,7 +2017,7 @@ module PathDomain = struct
     in
     let test_meet a b ~expected =
       let meet = Element.meet a b in
-      assert_equal expected meet ~printer:Element.show
+      assert_equal expected meet ~printer:Element.show ~cmp:Element.equal
     in
     let a = build "abcdefg" in
     let b = build "abxyz" in
@@ -2216,14 +2204,12 @@ module TreeOfStringSets = struct
       ~expected:["[a]", "{\n   [a] -> [a]\n   [a][b] -> [aa, bb]\n}"]
 
 
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
-
   let test_create _ =
     assert_equal
       (create [Part (Path, ([], StringSet.of_list ["a"; "b"]))])
       (create [Part (StringSet.Element, "a"); Part (StringSet.Element, "b")])
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_additional _ =
@@ -2232,7 +2218,7 @@ module TreeOfStringSets = struct
       (widen ~iteration:0 ~prev:deep_element ~next:deep_element)
       (create [Part (Path, (parse_path "a.b.c", StringSet.of_list ["x"; "y"]))])
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
     let () =
       let open AbstractTreeDomain.Label in
       let path1 = [create_name_index "foo"; create_name_index "bar"] in
@@ -2274,7 +2260,7 @@ module TreeOfStringSets = struct
         (shape ~transform:Fn.id tree ~mold)
         ~msg:"molded tree"
         ~printer:show
-        ~cmp:compare
+        ~cmp:equal
     in
     (* Test less or equal. *)
     assert_equal
@@ -2314,7 +2300,7 @@ module TreeOfStringSets = struct
       (less_or_equal ~left:(parse_tree ["a.$keys", ["val"]]) ~right:(parse_tree ["a", ["other"]]));
 
     let assert_join ~expected left right =
-      assert_equal ~cmp:compare ~printer:show expected (join left right)
+      assert_equal ~cmp:equal ~printer:show expected (join left right)
     in
     assert_join
       (parse_tree ["$keys", ["a"]; "a", ["v"]])
@@ -2358,7 +2344,7 @@ module TreeOfStringSets = struct
 
     (* limit_to width. *)
     let assert_limit_to ~expected ~width tree =
-      assert_equal ~cmp:compare ~printer:show expected (limit_to ~transform:Fn.id ~width tree)
+      assert_equal ~cmp:equal ~printer:show expected (limit_to ~transform:Fn.id ~width tree)
     in
     assert_limit_to
       ~expected:(parse_tree ["a", ["a"]; "b", ["b"]])
@@ -2373,7 +2359,7 @@ module TreeOfStringSets = struct
       ~width:1
       (parse_tree ["a", ["a"]; "b", ["b"]]);
     let assert_equal_trees ~expected actual =
-      assert_equal ~cmp:compare ~printer:show expected actual
+      assert_equal ~cmp:equal ~printer:show expected actual
     in
     (* Weak assignment with bottom. *)
     assert_equal_trees
@@ -2672,7 +2658,8 @@ module OverUnderStringSet = struct
                    { element = "c"; in_under = false };
                  ] );
          ])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (of_approximation
          [
@@ -2686,18 +2673,19 @@ module OverUnderStringSet = struct
            Part (ElementAndUnder, { element = "b"; in_under = true });
            Part (ElementAndUnder, { element = "c"; in_under = false });
          ])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (from ["a"; "b"; "c"])
       (create [Part (Self, of_list ["a"; "b"; "c"])])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (from ["a"; "b"; "c"])
       (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
       ~printer:show
+      ~cmp:equal
 
-
-  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
 
   let test_additional _ =
     let set_a =
@@ -2730,35 +2718,35 @@ module OverUnderStringSet = struct
          ])
       set_c
       ~printer:show
-      ~cmp:compare;
-    assert_equal set_a (join set_a bottom) ~printer:show ~cmp:compare;
-    assert_equal set_a (join bottom set_a) ~printer:show ~cmp:compare;
-    assert_equal set_a_over (join set_a empty) ~printer:show ~cmp:compare;
-    assert_equal set_a_over (join empty set_a) ~printer:show ~cmp:compare;
+      ~cmp:equal;
+    assert_equal set_a (join set_a bottom) ~printer:show ~cmp:equal;
+    assert_equal set_a (join bottom set_a) ~printer:show ~cmp:equal;
+    assert_equal set_a_over (join set_a empty) ~printer:show ~cmp:equal;
+    assert_equal set_a_over (join empty set_a) ~printer:show ~cmp:equal;
 
     (* Test that adding does not use join *)
-    assert_equal set_a (transform Element Add ~f:"c" set_c) ~printer:show ~cmp:compare;
-    assert_equal set_a (transform Self Add ~f:set_d set_c) ~printer:show ~cmp:compare;
-    assert_equal set_c (transform Self Add ~f:set_c set_c) ~printer:show ~cmp:compare;
-    assert_equal empty (transform Element Map ~f:Fn.id empty) ~printer:show ~cmp:compare;
+    assert_equal set_a (transform Element Add ~f:"c" set_c) ~printer:show ~cmp:equal;
+    assert_equal set_a (transform Self Add ~f:set_d set_c) ~printer:show ~cmp:equal;
+    assert_equal set_c (transform Self Add ~f:set_c set_c) ~printer:show ~cmp:equal;
+    assert_equal empty (transform Element Map ~f:Fn.id empty) ~printer:show ~cmp:equal;
     assert_equal
       (of_approximation [{ element = "a"; in_under = true }])
       (transform Element Map ~f:(fun _ -> "a") set_c)
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
 
     (* Test subtract *)
-    assert_equal bottom (subtract set_a ~from:set_a) ~printer:show ~cmp:compare;
-    assert_equal set_a (subtract set_a_over ~from:set_a) ~printer:show ~cmp:compare;
-    assert_equal empty (subtract set_a ~from:set_a_over) ~printer:show ~cmp:compare;
-    assert_equal set_b (subtract set_a ~from:set_b) ~printer:show ~cmp:compare;
-    assert_equal set_a (subtract set_b ~from:set_a) ~printer:show ~cmp:compare;
-    assert_equal set_b (subtract set_a_over ~from:set_b) ~printer:show ~cmp:compare;
+    assert_equal bottom (subtract set_a ~from:set_a) ~printer:show ~cmp:equal;
+    assert_equal set_a (subtract set_a_over ~from:set_a) ~printer:show ~cmp:equal;
+    assert_equal empty (subtract set_a ~from:set_a_over) ~printer:show ~cmp:equal;
+    assert_equal set_b (subtract set_a ~from:set_b) ~printer:show ~cmp:equal;
+    assert_equal set_a (subtract set_b ~from:set_a) ~printer:show ~cmp:equal;
+    assert_equal set_b (subtract set_a_over ~from:set_b) ~printer:show ~cmp:equal;
     assert_equal
       (of_approximation [{ element = "c"; in_under = false }])
       (subtract set_b ~from:set_a_over)
       ~printer:show
-      ~cmp:compare;
+      ~cmp:equal;
 
     (* Test empty *)
     assert_bool "bottom is empty" (is_empty bottom);
@@ -2770,7 +2758,7 @@ module OverUnderStringSet = struct
       set_a
       (transform Element Expand ~f:(fun e -> [e; "c"]) set_b)
       ~printer:show
-      ~cmp:compare
+      ~cmp:equal
 
 
   let test_context _ = ()
@@ -2825,7 +2813,9 @@ module FlatString = struct
     test ~initial:"abc" ~f:(fun x -> String.length x) ~expected:[3, ["abc"]]
 
 
-  let test_create _ = assert_equal (make "a") (create [Part (Element, "a")]) ~printer:show
+  let test_create _ =
+    assert_equal (make "a") (create [Part (Element, "a")]) ~printer:show ~cmp:equal
+
 
   let test_additional _ =
     let () =
@@ -2882,10 +2872,16 @@ module TestProductAmbiguousPart = struct
     in
     let test_update_get _ =
       let x = StringSet.singleton "x" in
-      assert_equal (bottom |> update Slots.Left x |> get Slots.Left) x;
-      assert_equal (bottom |> update Slots.Right x |> get Slots.Right) x;
-      assert_equal (bottom |> update Slots.Left x |> get Slots.Right) StringSet.bottom;
-      assert_equal (bottom |> update Slots.Right x |> get Slots.Left) StringSet.bottom
+      assert_equal (bottom |> update Slots.Left x |> get Slots.Left) x ~cmp:StringSet.equal;
+      assert_equal (bottom |> update Slots.Right x |> get Slots.Right) x ~cmp:StringSet.equal;
+      assert_equal
+        (bottom |> update Slots.Left x |> get Slots.Right)
+        StringSet.bottom
+        ~cmp:StringSet.equal;
+      assert_equal
+        (bottom |> update Slots.Right x |> get Slots.Left)
+        StringSet.bottom
+        ~cmp:StringSet.equal
     in
     [
       "test_create" >:: test_create;
@@ -2968,11 +2964,13 @@ module StringSetWrapper = struct
     assert_equal
       (Set.of_list ["a"; "b"; "c"])
       (create [Part (Self, Set.of_list ["a"; "b"; "c"])])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     assert_equal
       (Set.of_list ["a"; "b"; "c"])
       (create [Part (Set.Element, "a"); Part (Set.Element, "b"); Part (Set.Element, "c")])
-      ~printer:show;
+      ~printer:show
+      ~cmp:equal;
     ()
 
 
