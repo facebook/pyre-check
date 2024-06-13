@@ -11,15 +11,12 @@
 open Core
 
 module Mutability = struct
-  type immutable = {
-    original: Type.t;
-    final: bool;
-  }
-  [@@deriving compare, eq, hash, sexp]
-
   type t =
     | Mutable
-    | Immutable of immutable
+    | Immutable of {
+        original: Type.t;
+        final: bool;
+      }
   [@@deriving compare, eq, hash, sexp]
 
   let pp format = function
