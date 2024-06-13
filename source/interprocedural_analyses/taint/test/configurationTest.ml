@@ -1143,16 +1143,18 @@ let test_old_string_combine_rules _ =
 
 
 let test_partial_sink_converter _ =
-  let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
-    let configuration = assert_parse configuration in
-    TaintConfiguration.PartialSinkConverter.get_triggered_sinks_if_matched
-      configuration.TaintConfiguration.Heap.partial_sink_converter
-      ~partial_sink
-      ~source
+  let module PartialSinkConverter = TaintConfiguration.PartialSinkConverter in
+  let assert_triggered_sinks_from_converter ~partial_sink ~source ~expected_sink converter =
+    converter
+    |> PartialSinkConverter.get_triggered_sinks_if_matched ~partial_sink ~source
     |> assert_equal
          ~cmp:Sinks.PartialSink.Triggered.Set.equal
          ~printer:Sinks.PartialSink.Triggered.Set.show
          expected_sink
+  in
+  let assert_triggered_sinks_from_configuration configuration =
+    assert_triggered_sinks_from_converter
+      (assert_parse configuration).TaintConfiguration.Heap.partial_sink_converter
   in
   let configuration =
     {|
@@ -1194,7 +1196,7 @@ let test_partial_sink_converter _ =
     }
   |}
   in
-  assert_triggered_sinks
+  assert_triggered_sinks_from_configuration
     configuration
     ~partial_sink:"C[ca]"
     ~source:(Sources.NamedSource "A")
@@ -1204,23 +1206,50 @@ let test_partial_sink_converter _ =
          { Sinks.PartialSink.Triggered.partial_sink = "C[cd]"; triggering_source = "A" };
        ]
       |> Sinks.PartialSink.Triggered.Set.of_list);
-  assert_triggered_sinks
+  assert_triggered_sinks_from_configuration
     configuration
     ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "B")
     ~expected_sink:
       (Sinks.PartialSink.Triggered.Set.singleton
          { Sinks.PartialSink.Triggered.partial_sink = "C[ca]"; triggering_source = "B" });
-  assert_triggered_sinks
+  assert_triggered_sinks_from_configuration
     configuration
     ~partial_sink:"C[ca]"
     ~source:(Sources.NamedSource "B")
     ~expected_sink:Sinks.PartialSink.Triggered.Set.empty;
-  assert_triggered_sinks
+  assert_triggered_sinks_from_configuration
     configuration
     ~partial_sink:"C[cb]"
     ~source:(Sources.NamedSource "A")
-    ~expected_sink:Sinks.PartialSink.Triggered.Set.empty
+    ~expected_sink:Sinks.PartialSink.Triggered.Set.empty;
+  (* Test merging the converters. *)
+  let converter_1 =
+    PartialSinkConverter.add
+      ~first_sources:[Sources.NamedSource "SourceA"]
+      ~first_sink:"SinkA"
+      ~second_sources:[Sources.NamedSource "SourceB"]
+      ~second_sink:"SinkB"
+      PartialSinkConverter.empty
+  in
+  let converter_2 =
+    PartialSinkConverter.add
+      ~first_sources:[Sources.NamedSource "SourceA"]
+      ~first_sink:"SinkA"
+      ~second_sources:[Sources.NamedSource "SourceC"]
+      ~second_sink:"SinkC"
+      PartialSinkConverter.empty
+  in
+  assert_triggered_sinks_from_converter
+    (PartialSinkConverter.merge converter_1 converter_2)
+    ~partial_sink:"SinkA"
+    ~source:(Sources.NamedSource "SourceA")
+    ~expected_sink:
+      ([
+         { Sinks.PartialSink.Triggered.partial_sink = "SinkB"; triggering_source = "SourceA" };
+         { Sinks.PartialSink.Triggered.partial_sink = "SinkC"; triggering_source = "SourceA" };
+       ]
+      |> Sinks.PartialSink.Triggered.Set.of_list)
 
 
 let test_multiple_configurations _ =

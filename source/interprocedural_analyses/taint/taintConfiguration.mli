@@ -91,6 +91,8 @@ module PartialSinkConverter : sig
     second_sink:Sinks.PartialSink.t ->
     t ->
     t
+
+  val merge : t -> t -> t
 end
 
 module StringOperationPartialSinks : sig

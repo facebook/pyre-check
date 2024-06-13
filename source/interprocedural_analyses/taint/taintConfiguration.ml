@@ -371,17 +371,22 @@ module PartialSinkConverter = struct
 
 
   let merge left right =
+    let merge_triggered_sinks left right =
+      match left, right with
+      | Some value, None
+      | None, Some value ->
+          Some value
+      | Some left, Some right -> Some (PartialSink.Triggered.Set.union left right)
+      | None, None -> None
+    in
     PartialSink.Map.merge
-      (fun partial_sink left right ->
+      (fun _ left right ->
         match left, right with
         | Some value, None
         | None, Some value ->
             Some value
-        | Some _, Some _ ->
-            Format.asprintf
-              "Unexpected that partial sink %s corresponds to different sources and sinks"
-              partial_sink
-            |> failwith
+        | Some left, Some right ->
+            Some (TriggeringSource.Map.merge (fun _ -> merge_triggered_sinks) left right)
         | None, None -> None)
       left
       right
