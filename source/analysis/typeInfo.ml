@@ -117,49 +117,34 @@ module LocalOrGlobal = struct
     recurse refinement_unit ~identifiers:(attribute_path |> Reference.as_list)
 
 
-  let rec less_or_equal ~global_resolution ~left ~right =
+  let rec less_or_equal ~type_less_or_equal ~left ~right =
     let base_less_or_equal left_base right_base =
       match left_base, right_base with
-      | Some left, Some right ->
-          Annotation.less_or_equal
-            ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
-            ~left
-            ~right
+      | Some left, Some right -> Annotation.less_or_equal ~type_less_or_equal ~left ~right
       | None, None -> true (* intermediate refinement units don't require computation *)
       | _ -> false
     in
-    let less_or_equal_one = less_or_equal ~global_resolution in
+    let less_or_equal_one = less_or_equal ~type_less_or_equal in
     base_less_or_equal left.base right.base
     && IdentifierMap.less_or_equal ~less_or_equal_one ~left:left.attributes ~right:right.attributes
 
 
-  let rec join ~global_resolution left right =
+  let rec join ~type_join left right =
     let base =
       match left.base, right.base with
-      | Some left_base, Some right_base ->
-          Some
-            (Annotation.join
-               ~type_join:(GlobalResolution.join global_resolution)
-               left_base
-               right_base)
+      | Some left_base, Some right_base -> Some (Annotation.join ~type_join left_base right_base)
       | _ -> None
     in
     {
       base;
-      attributes =
-        IdentifierMap.join ~join_one:(join ~global_resolution) left.attributes right.attributes;
+      attributes = IdentifierMap.join ~join_one:(join ~type_join) left.attributes right.attributes;
     }
 
 
-  let rec meet ~global_resolution left right =
+  let rec meet ~type_meet left right =
     let base =
       match left.base, right.base with
-      | Some left_base, Some right_base ->
-          Some
-            (Annotation.meet
-               ~type_meet:(GlobalResolution.meet global_resolution)
-               left_base
-               right_base)
+      | Some left_base, Some right_base -> Some (Annotation.meet ~type_meet left_base right_base)
       | Some base, None
       | None, Some base ->
           Some base
@@ -167,21 +152,20 @@ module LocalOrGlobal = struct
     in
     {
       base;
-      attributes =
-        IdentifierMap.meet ~meet_one:(meet ~global_resolution) left.attributes right.attributes;
+      attributes = IdentifierMap.meet ~meet_one:(meet ~type_meet) left.attributes right.attributes;
     }
 
 
-  let widen ~global_resolution ~widening_threshold ~iteration left right =
+  let widen ~type_join ~widening_threshold ~iteration left right =
     if iteration + 1 >= widening_threshold then
       create (Annotation.create_mutable Type.Top)
     else
-      join ~global_resolution left right
+      join ~type_join left right
 
 
-  let join_annotations ~global_resolution left right =
+  let join_annotations ~type_join left right =
     let refined =
-      join ~global_resolution (create left) (create right)
+      join ~type_join (create left) (create right)
       |> base
       |> Option.value ~default:(Annotation.create_mutable Type.Bottom)
     in
@@ -300,8 +284,8 @@ module Store = struct
     map_over_name ~temporary ~name ~f:set_unit_annotation store
 
 
-  let less_or_equal ~global_resolution ~left ~right =
-    let less_or_equal_one = LocalOrGlobal.less_or_equal ~global_resolution in
+  let less_or_equal ~type_less_or_equal ~left ~right =
+    let less_or_equal_one = LocalOrGlobal.less_or_equal ~type_less_or_equal in
     ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
     && ReferenceMap.less_or_equal
          ~less_or_equal_one
@@ -321,8 +305,8 @@ module Store = struct
          ~right:right.temporary_annotations
 
 
-  let meet ~global_resolution left right =
-    let meet_one = LocalOrGlobal.meet ~global_resolution in
+  let meet ~type_meet left right =
+    let meet_one = LocalOrGlobal.meet ~type_meet in
     {
       annotations = ReferenceMap.meet ~meet_one left.annotations right.annotations;
       temporary_annotations =
@@ -345,13 +329,13 @@ module Store = struct
     }
 
 
-  let outer_join ~global_resolution =
-    let merge_one = LocalOrGlobal.join ~global_resolution in
+  let outer_join ~type_join =
+    let merge_one = LocalOrGlobal.join ~type_join in
     widen_or_join ~merge_one
 
 
-  let outer_widen ~global_resolution ~iteration ~widening_threshold =
-    let merge_one = LocalOrGlobal.widen ~global_resolution ~iteration ~widening_threshold in
+  let outer_widen ~type_join ~iteration ~widening_threshold =
+    let merge_one = LocalOrGlobal.widen ~type_join ~iteration ~widening_threshold in
     widen_or_join ~merge_one
 
 

@@ -31,14 +31,18 @@ module LocalOrGlobal : sig
 
   val get_annotation : attribute_path:Reference.t -> t -> Annotation.t option
 
-  val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
+  val less_or_equal
+    :  type_less_or_equal:(left:Type.t -> right:Type.t -> bool) ->
+    left:t ->
+    right:t ->
+    bool
 
-  val join : global_resolution:GlobalResolution.t -> t -> t -> t
+  val join : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
-  val meet : global_resolution:GlobalResolution.t -> t -> t -> t
+  val meet : type_meet:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
   val join_annotations
-    :  global_resolution:GlobalResolution.t ->
+    :  type_join:(Type.t -> Type.t -> Type.t) ->
     Annotation.t ->
     Annotation.t ->
     Annotation.t
@@ -73,16 +77,20 @@ module Store : sig
     t ->
     t
 
-  val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
+  val less_or_equal
+    :  type_less_or_equal:(left:Type.t -> right:Type.t -> bool) ->
+    left:t ->
+    right:t ->
+    bool
 
   val less_or_equal_monotone : left:t -> right:t -> bool
 
-  val meet : global_resolution:GlobalResolution.t -> t -> t -> t
+  val meet : type_meet:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
-  val outer_join : global_resolution:GlobalResolution.t -> t -> t -> t
+  val outer_join : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
   val outer_widen
-    :  global_resolution:GlobalResolution.t ->
+    :  type_join:(Type.t -> Type.t -> Type.t) ->
     iteration:int ->
     widening_threshold:int ->
     t ->

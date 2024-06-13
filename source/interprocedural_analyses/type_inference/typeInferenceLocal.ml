@@ -219,7 +219,7 @@ module State (Context : Context) = struct
         &&
         let global_resolution = Resolution.global_resolution left.resolution in
         TypeInfo.Store.less_or_equal
-          ~global_resolution
+          ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
           ~left:(Resolution.annotation_store left.resolution)
           ~right:(Resolution.annotation_store right.resolution)
 

@@ -245,7 +245,10 @@ let meet_refinements left right =
   {
     left with
     annotation_store =
-      TypeInfo.Store.meet ~global_resolution left.annotation_store right.annotation_store;
+      TypeInfo.Store.meet
+        ~type_meet:(GlobalResolution.meet global_resolution)
+        left.annotation_store
+        right.annotation_store;
   }
 
 
@@ -260,7 +263,10 @@ let outer_join_refinements left right =
   {
     left with
     annotation_store =
-      TypeInfo.Store.outer_join ~global_resolution left.annotation_store right.annotation_store;
+      TypeInfo.Store.outer_join
+        ~type_join:(GlobalResolution.join global_resolution)
+        left.annotation_store
+        right.annotation_store;
   }
 
 
@@ -271,7 +277,7 @@ let outer_widen_refinements ~iteration ~widening_threshold left right =
     left with
     annotation_store =
       TypeInfo.Store.outer_widen
-        ~global_resolution
+        ~type_join:(GlobalResolution.join global_resolution)
         ~iteration
         ~widening_threshold
         left.annotation_store

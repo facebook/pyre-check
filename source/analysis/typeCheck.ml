@@ -1662,7 +1662,9 @@ module State (Context : Context) = struct
             in
             tail_annotations
             |> Algorithms.fold_balanced
-                 ~f:(TypeInfo.LocalOrGlobal.join_annotations ~global_resolution)
+                 ~f:
+                   (TypeInfo.LocalOrGlobal.join_annotations
+                      ~type_join:(GlobalResolution.join global_resolution))
                  ~init:head_annotation
             |> apply_local_override
           in

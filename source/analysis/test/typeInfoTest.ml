@@ -72,21 +72,22 @@ module LocalOrGlobal = struct
 
   let test_less_or_equal context =
     let global_resolution = resolution context in
+    let type_less_or_equal = GlobalResolution.less_or_equal global_resolution in
     (* Bases are compared *)
     assert_true
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:(create_mutable Type.integer)
          ~right:(create_mutable Type.integer));
     assert_false
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:(create_mutable Type.float)
          ~right:(create_mutable Type.integer));
     (* Attributes are compared *)
     assert_true
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:
            (create_mutable Type.object_primitive
            |> add_mutable_attribute_refinement !&"a.x" Type.integer)
@@ -95,7 +96,7 @@ module LocalOrGlobal = struct
            |> add_mutable_attribute_refinement !&"a.x" Type.integer));
     assert_true
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:
            (create_mutable Type.object_primitive
            |> add_mutable_attribute_refinement !&"a.x" Type.integer)
@@ -104,7 +105,7 @@ module LocalOrGlobal = struct
            |> add_mutable_attribute_refinement !&"a.x" Type.float));
     assert_false
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:
            (create_mutable Type.object_primitive
            |> add_mutable_attribute_refinement !&"a.x" Type.float)
@@ -115,7 +116,7 @@ module LocalOrGlobal = struct
        restrictions, so lower in the lattice *)
     assert_true
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:
            (create_mutable Type.object_primitive
            |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
@@ -125,7 +126,7 @@ module LocalOrGlobal = struct
            |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive));
     assert_false
       (less_or_equal
-         ~global_resolution
+         ~type_less_or_equal
          ~left:
            (create_mutable Type.object_primitive
            |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive)
@@ -138,17 +139,18 @@ module LocalOrGlobal = struct
 
   let test_join context =
     let global_resolution = resolution context in
+    let type_join = GlobalResolution.join global_resolution in
     (* Bases are compared *)
     assert_equal_local_or_global
-      (join ~global_resolution (create_mutable Type.integer) (create_mutable Type.integer))
+      (join ~type_join (create_mutable Type.integer) (create_mutable Type.integer))
       (create_mutable Type.integer);
     assert_equal_local_or_global
-      (join ~global_resolution (create_mutable Type.integer) (create_mutable Type.float))
+      (join ~type_join (create_mutable Type.integer) (create_mutable Type.float))
       (create_mutable Type.float);
     (* Attributes are compared *)
     assert_equal_local_or_global
       (join
-         ~global_resolution
+         ~type_join
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.integer)
          (create_mutable Type.object_primitive
@@ -156,7 +158,7 @@ module LocalOrGlobal = struct
       (create_mutable Type.object_primitive |> add_mutable_attribute_refinement !&"a.x" Type.integer);
     assert_equal_local_or_global
       (join
-         ~global_resolution
+         ~type_join
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.integer)
          (create_mutable Type.object_primitive
@@ -166,7 +168,7 @@ module LocalOrGlobal = struct
     (* Nested attributes are compared *)
     assert_equal_local_or_global
       (join
-         ~global_resolution
+         ~type_join
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
@@ -179,17 +181,18 @@ module LocalOrGlobal = struct
 
   let test_meet context =
     let global_resolution = resolution context in
+    let type_meet = GlobalResolution.meet global_resolution in
     (* Compare bases *)
     assert_equal_local_or_global
-      (meet ~global_resolution (create_mutable Type.integer) (create_mutable Type.integer))
+      (meet ~type_meet (create_mutable Type.integer) (create_mutable Type.integer))
       (create_mutable Type.integer);
     assert_equal_local_or_global
-      (meet ~global_resolution (create_mutable Type.integer) (create_mutable Type.float))
+      (meet ~type_meet (create_mutable Type.integer) (create_mutable Type.float))
       (create_mutable Type.integer);
     (* Compare attributes *)
     assert_equal_local_or_global
       (meet
-         ~global_resolution
+         ~type_meet
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.integer)
          (create_mutable Type.object_primitive
@@ -197,7 +200,7 @@ module LocalOrGlobal = struct
       (create_mutable Type.object_primitive |> add_mutable_attribute_refinement !&"a.x" Type.integer);
     assert_equal_local_or_global
       (meet
-         ~global_resolution
+         ~type_meet
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.integer)
          (create_mutable Type.object_primitive
@@ -205,7 +208,7 @@ module LocalOrGlobal = struct
       (create_mutable Type.object_primitive |> add_mutable_attribute_refinement !&"a.x" Type.integer);
     assert_equal_local_or_global
       (meet
-         ~global_resolution
+         ~type_meet
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.integer)
          (create_mutable Type.object_primitive
@@ -214,7 +217,7 @@ module LocalOrGlobal = struct
     (* Compare nested attributes *)
     assert_equal_local_or_global
       (meet
-         ~global_resolution
+         ~type_meet
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
@@ -225,7 +228,7 @@ module LocalOrGlobal = struct
       |> add_mutable_attribute_refinement !&"a.x.b" Type.integer);
     assert_equal_local_or_global
       (meet
-         ~global_resolution
+         ~type_meet
          (create_mutable Type.object_primitive
          |> add_mutable_attribute_refinement !&"a.x" Type.string
          |> add_mutable_attribute_refinement !&"a.x.b" Type.object_primitive)
@@ -236,10 +239,7 @@ module LocalOrGlobal = struct
       |> add_mutable_attribute_refinement !&"a.x.b" Type.object_primitive);
     (* Check behavior when we meet and there are only attribute refinements, no base at all *)
     assert_equal_local_or_global
-      (meet
-         ~global_resolution
-         (empty |> add_mutable_attribute_refinement !&"a.x" Type.string)
-         empty)
+      (meet ~type_meet (empty |> add_mutable_attribute_refinement !&"a.x" Type.string) empty)
       (empty |> add_mutable_attribute_refinement !&"a.x" Type.string);
     ()
 
