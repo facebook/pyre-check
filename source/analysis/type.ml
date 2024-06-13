@@ -2753,6 +2753,33 @@ end = struct
       | _ -> None
 
 
+    let parse_declaration value target =
+      match value with
+      | {
+       Node.value =
+         Expression.Call
+           {
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       {
+                         base = { Node.value = Name (Name.Identifier "typing"); _ };
+                         attribute = "TypeVar";
+                         special = false;
+                       });
+                 _;
+               };
+             arguments =
+               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+           };
+       _;
+      } ->
+          Some (create (Reference.show target))
+      | _ -> None
+
+
     let dequalify ({ variable = name; _ } as variable) ~dequalify_map =
       { variable with variable = dequalify_identifier dequalify_map name }
   end
@@ -3354,7 +3381,10 @@ end = struct
     | None -> (
         match Variadic.Tuple.parse_declaration expression ~target with
         | Some variable -> Some (TupleVariadic variable)
-        | None -> None)
+        | None -> (
+            match Unary.parse_declaration expression target with
+            | Some _ -> None
+            | None -> None))
 
 
   let dequalify dequalify_map = function
