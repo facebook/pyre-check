@@ -3383,7 +3383,7 @@ end = struct
         | Some variable -> Some (TupleVariadic variable)
         | None -> (
             match Unary.parse_declaration expression target with
-            | Some _ -> None
+            | Some variable -> Some (Record.Variable.Unary variable)
             | None -> None))
 
 
@@ -4666,6 +4666,12 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~subscript_index)
   in
+  let resolve_variables_then_aliases alias_name =
+    match variable_aliases alias_name with
+    | Some (Record.Variable.Unary variable) -> Variable variable
+    | _ -> Primitive alias_name |> resolve_aliases
+  in
+
   let result =
     match expression with
     | Call
@@ -4744,11 +4750,11 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
-        Primitive sanitized |> resolve_aliases
+        resolve_variables_then_aliases sanitized
     | Name (Name.Attribute { base; attribute; _ }) -> (
         let attribute = Identifier.sanitized attribute in
         match create_logic base with
-        | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
+        | Primitive primitive -> resolve_variables_then_aliases (primitive ^ "." ^ attribute)
         | _ -> Primitive (Expression.show base ^ "." ^ attribute))
     | Constant Constant.Ellipsis -> Primitive "..."
     | Constant (Constant.String { StringLiteral.value; _ }) ->
@@ -5059,7 +5065,7 @@ let resolve_aliases ~aliases annotation =
 
 let create ~aliases =
   let variable_aliases name =
-    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+    match aliases ?replace_unbound_parameters_with_any:(Some true) name with
     | Some (Alias.VariableAlias variable) -> Some variable
     | _ -> None
   in
