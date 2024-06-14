@@ -6,29 +6,44 @@
  *)
 
 (* This module allows storing the type of an expression and its attribute chains after refinement.
-
-   For example, say we have an expression `foo` of type `Foo`, having attribute `bar:
-   Optional[Bar]`, with `Bar` having attribute `baz: Optional[Baz]`.
-
-   If we see an if-statement that refines the type, such as:
-
-   `if foo.bar is not None and foo.bar.baz is not None:`
-
-   then, within that block, we would store the information that `foo.bar` is of type `Bar` (not
-   `Optional[Bar]`) and `foo.bar.baz` is of type `Baz` (not `Optional[Baz]`).
-
-   We store the above for arbitrary chains of attributes starting from the base expression `foo`,
-   leading to a tree of attributes (`foo -> bar -> baz`, `foo -> hello -> world`, etc.).
-
-   TypeInfo.Store: This stores two types of refinements: permanent and temporary.
-
-   For example, if we know that an attribute `bar` is final (e.g., it has type `Final[...]` or is
-   part of a frozen dataclass), then it is safe to permanently refine `foo.bar` as non-`None`, since
-   that attribute cannot be set to `None` again.
-
-   However, if the attribute is not final, then we only mark it temporarily as non-`None`. Any
-   intervening function call on that expression will end up removing these temporary refinements,
-   since that function *could* have set the attribute to `None`. *)
+ *
+ * For example, say we have an expression `foo` of type `Foo`, having attribute `bar:
+ * Optional[Bar]`, with `Bar` having attribute `baz: Optional[Baz]`.
+ *
+ * If we see an if-statement that refines the type, such as:
+ *
+ * `if foo.bar is not None and foo.bar.baz is not None:`
+ *
+ * then, within that block, we would store the information that `foo.bar` is of type `Bar` (not
+ * `Optional[Bar]`) and `foo.bar.baz` is of type `Baz` (not `Optional[Baz]`).
+ *
+ * We store the above for arbitrary chains of attributes starting from the base expression `foo`,
+ * leading to a tree of attributes (`foo -> bar -> baz`, `foo -> hello -> world`, etc.).
+ *
+ * The submodules handle this at different granularity:
+ * - TypeInfo.Unit: This represents the smallest unit of type info, one "name" which might
+ *   represent a global or local variable, or might be a chain of attribute accesses.
+ * - TypeInfo.LocalOrGlobal: This represents a given local or global variable, together
+ *   with any attribute access chains, in a rose tree format.
+ * - TypeInfo.Store: This represents the entire set of live type information as of analyzing
+ *   one specific expression. We store this type info in two separate trees:
+ *   - permanent type information representing either "primary" types coming
+ *     from type inference / explicit annotations and refinements of final
+ *     variables and attributes.
+ *   - temporary type information representing "temporary refinements" which are an
+ *     unsound attempt to allow "mostly" safe refinements of mutable attributes. We wipe
+ *     temporary anntoations on the first function call or `await`, which is an attempt
+ *     to minimize the likelihood of the narrowed type being invalidated by mutation.
+ *     (This mostly works in the absence of free threading).
+ *
+ * For example, if we know that an attribute `bar` is final (e.g., it has type `Final[...]` or is
+ * part of a frozen dataclass), then it is safe to permanently refine `foo.bar` as non-`None`, since
+ * that attribute cannot be set to `None` again.
+ *
+ * However, if the attribute is not final, then we only mark it temporarily as non-`None`. Any
+ * intervening function call on that expression will end up removing these temporary refinements,
+ * since that function *could* have set the attribute to `None`.
+ *)
 
 open Core
 open Ast
