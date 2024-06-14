@@ -93,8 +93,8 @@ end
 
 module Store : sig
   type t = {
-    annotations: LocalOrGlobal.t Reference.Map.Tree.t;
-    temporary_annotations: LocalOrGlobal.t Reference.Map.Tree.t;
+    type_info: LocalOrGlobal.t Reference.Map.Tree.t;
+    temporary_type_info: LocalOrGlobal.t Reference.Map.Tree.t;
   }
   [@@deriving eq, show]
 

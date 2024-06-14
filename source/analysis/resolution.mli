@@ -83,7 +83,7 @@ val get_local_with_attributes
 
 val unset_local : t -> reference:Reference.t -> t
 
-val clear_temporary_annotations : t -> t
+val clear_temporary_type_info : t -> t
 
 val is_global : t -> reference:Reference.t -> bool
 

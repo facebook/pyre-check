@@ -29,7 +29,7 @@ module DefaultContext = struct
   module Builder = Callgraph.NullBuilder
 end
 
-let create_annotation_store ?(immutables = []) annotations =
+let create_annotation_store ?(immutables = []) type_info =
   let immutables = String.Map.of_alist_exn immutables in
   let annotify (name, annotation) =
     let annotation =
@@ -45,51 +45,28 @@ let create_annotation_store ?(immutables = []) annotations =
     !&name, annotation
   in
   {
-    TypeInfo.Store.annotations = List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
-    temporary_annotations = Reference.Map.Tree.empty;
+    TypeInfo.Store.type_info = List.map type_info ~f:annotify |> Reference.Map.Tree.of_alist_exn;
+    temporary_type_info = Reference.Map.Tree.empty;
   }
 
 
 let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
   let compare_annotation_store
+      { TypeInfo.Store.type_info = left_type_info; temporary_type_info = left_temporary_type_info }
       {
-        TypeInfo.Store.annotations = left_annotations;
-        temporary_annotations = left_temporary_annotations;
-      }
-      {
-        TypeInfo.Store.annotations = right_annotations;
-        temporary_annotations = right_temporary_annotations;
+        TypeInfo.Store.type_info = right_type_info;
+        temporary_type_info = right_temporary_type_info;
       }
     =
     let equal_map = Reference.Map.Tree.equal [%equal: TypeInfo.LocalOrGlobal.t] in
-    equal_map left_annotations right_annotations
-    && equal_map left_temporary_annotations right_temporary_annotations
-  in
-  let pp_annotation_store formatter { TypeInfo.Store.annotations; temporary_annotations } =
-    let annotation_to_string (name, refinement_unit) =
-      Format.asprintf "%a -> %a" Reference.pp name TypeInfo.LocalOrGlobal.pp refinement_unit
-    in
-    let printed_annotations =
-      Reference.Map.Tree.to_alist annotations
-      |> List.map ~f:annotation_to_string
-      |> String.concat ~sep:"\n"
-    in
-    let printed_temporary_annotations =
-      Reference.Map.Tree.to_alist temporary_annotations
-      |> List.map ~f:annotation_to_string
-      |> String.concat ~sep:"\n"
-    in
-    Format.fprintf
-      formatter
-      "Annotations: %s\nTemporaryAnnotations: %s"
-      printed_annotations
-      printed_temporary_annotations
+    equal_map left_type_info right_type_info
+    && equal_map left_temporary_type_info right_temporary_type_info
   in
   assert_equal
     ~cmp:compare_annotation_store
-    ~printer:(Format.asprintf "%a" pp_annotation_store)
-    ~pp_diff:(diff ~print:pp_annotation_store)
+    ~printer:(Format.asprintf "%a" TypeInfo.Store.pp)
+    ~pp_diff:(diff ~print:TypeInfo.Store.pp)
     expected
     actual
 

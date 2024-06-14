@@ -181,23 +181,23 @@ let get_local_with_attributes
 
 
 let unset_local
-    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
+    ({ annotation_store = { type_info; temporary_type_info }; _ } as resolution)
     ~reference
   =
   {
     resolution with
     annotation_store =
       {
-        annotations = Reference.Map.Tree.remove annotations reference;
-        temporary_annotations = Reference.Map.Tree.remove temporary_annotations reference;
+        type_info = Reference.Map.Tree.remove type_info reference;
+        temporary_type_info = Reference.Map.Tree.remove temporary_type_info reference;
       };
   }
 
 
-let clear_temporary_annotations ({ annotation_store; _ } as resolution) =
+let clear_temporary_type_info ({ annotation_store; _ } as resolution) =
   {
     resolution with
-    annotation_store = { annotation_store with temporary_annotations = Reference.Map.Tree.empty };
+    annotation_store = { annotation_store with temporary_type_info = Reference.Map.Tree.empty };
   }
 
 

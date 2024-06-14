@@ -53,10 +53,10 @@ let show map = Format.asprintf "%a" pp map
 let set
     ?(precondition =
       TypeInfo.Store.
-        { annotations = Reference.Map.Tree.empty; temporary_annotations = Reference.Map.Tree.empty })
+        { type_info = Reference.Map.Tree.empty; temporary_type_info = Reference.Map.Tree.empty })
     ?(postcondition =
       TypeInfo.Store.
-        { annotations = Reference.Map.Tree.empty; temporary_annotations = Reference.Map.Tree.empty })
+        { type_info = Reference.Map.Tree.empty; temporary_type_info = Reference.Map.Tree.empty })
     ~statement_key
     local_annotations
   =

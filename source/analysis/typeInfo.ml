@@ -347,30 +347,30 @@ end
 
 module Store = struct
   type t = {
-    annotations: LocalOrGlobal.t Reference.Map.Tree.t;
-    temporary_annotations: LocalOrGlobal.t Reference.Map.Tree.t;
+    type_info: LocalOrGlobal.t Reference.Map.Tree.t;
+    temporary_type_info: LocalOrGlobal.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
-  let empty = { annotations = ReferenceMap.empty; temporary_annotations = ReferenceMap.empty }
+  let empty = { type_info = ReferenceMap.empty; temporary_type_info = ReferenceMap.empty }
 
-  let pp format { annotations; temporary_annotations } =
+  let pp format { type_info; temporary_type_info } =
     let show_annotation (reference, unit) =
       Format.asprintf "%a -> %a" Reference.pp reference LocalOrGlobal.pp unit
     in
-    Reference.Map.Tree.to_alist annotations
+    Reference.Map.Tree.to_alist type_info
     |> List.map ~f:show_annotation
     |> String.concat ~sep:", "
-    |> Format.fprintf format "Annotations: [%s]\n";
-    Reference.Map.Tree.to_alist temporary_annotations
+    |> Format.fprintf format "type_info: [%s]\n";
+    Reference.Map.Tree.to_alist temporary_type_info
     |> List.map ~f:show_annotation
     |> String.concat ~sep:", "
-    |> Format.fprintf format "Temporary Annotations: [%s]"
+    |> Format.fprintf format "temporary_type_info: [%s]"
 
 
   let show = Format.asprintf "%a" pp
 
-  let print_as_json formatter { annotations; temporary_annotations } =
+  let print_as_json formatter { type_info; temporary_type_info } =
     let pp_element ~temporary ~key ~data =
       let temporary_suffix = if temporary then "(temp)" else "" in
       Format.fprintf
@@ -383,24 +383,24 @@ module Store = struct
         temporary_suffix
     in
     Format.fprintf formatter "{";
-    Reference.Map.Tree.iteri annotations ~f:(pp_element ~temporary:false);
-    Reference.Map.Tree.iteri temporary_annotations ~f:(pp_element ~temporary:true);
+    Reference.Map.Tree.iteri type_info ~f:(pp_element ~temporary:false);
+    Reference.Map.Tree.iteri temporary_type_info ~f:(pp_element ~temporary:true);
     Format.fprintf formatter "}"
 
 
-  let has_nontemporary_annotation ~name { annotations; _ } = ReferenceMap.mem annotations name
+  let has_nontemporary_annotation ~name { type_info; _ } = ReferenceMap.mem type_info name
 
-  let get_unit ?(include_temporary = true) ~name { annotations; temporary_annotations } =
+  let get_unit ?(include_temporary = true) ~name { type_info; temporary_type_info } =
     let temporary =
       if include_temporary then
-        ReferenceMap.find temporary_annotations name
+        ReferenceMap.find temporary_type_info name
       else
         None
     in
     let found =
       match temporary with
       | Some _ -> temporary
-      | None -> ReferenceMap.find annotations name
+      | None -> ReferenceMap.find type_info name
     in
     Option.value ~default:LocalOrGlobal.empty found
 
@@ -410,12 +410,12 @@ module Store = struct
 
       The way we handle temporary vs non-temporary is very particular:
 
-      - If `temporary` is true we only apply this to `temporary_annotations`
-      - Otherwise, we apply it to `annotations` and also apply it to any *existing* data in
-        `temporary_annotations`, but we don't create any new `temporary_annotations`.
-      - The idea here is to minimize the amount of duplicated data, but ensure that `annotations`
-        and `temporary_annotations` always have a consistent view of (non-temporary) refinements. *)
-  let map_over_name ~temporary ~name ~f { annotations; temporary_annotations } =
+      - If `temporary` is true we only apply this to `temporary_type_info`
+      - Otherwise, we apply it to `type_info` and also apply it to any *existing* data in
+        `temporary_type_info`, but we don't create any new `temporary_type_info`.
+      - The idea here is to minimize the amount of duplicated data, but ensure that `type_info` and
+        `temporary_type_info` always have a consistent view of (non-temporary) refinements. *)
+  let map_over_name ~temporary ~name ~f { type_info; temporary_type_info } =
     let map_over_reference_map ~fallback reference_map =
       match Option.first_some (ReferenceMap.find reference_map name) fallback with
       | Some unit -> ReferenceMap.set ~key:name ~data:(f unit) reference_map
@@ -423,14 +423,14 @@ module Store = struct
     in
     if temporary then
       {
-        annotations;
-        temporary_annotations =
-          map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) temporary_annotations;
+        type_info;
+        temporary_type_info =
+          map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) temporary_type_info;
       }
     else
       {
-        annotations = map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) annotations;
-        temporary_annotations = map_over_reference_map ~fallback:None temporary_annotations;
+        type_info = map_over_reference_map ~fallback:(Some LocalOrGlobal.empty) type_info;
+        temporary_type_info = map_over_reference_map ~fallback:None temporary_type_info;
       }
 
 
@@ -444,17 +444,17 @@ module Store = struct
     map_over_name ~temporary ~name ~f:(LocalOrGlobal.set_base ~base) store
 
 
-  let new_as_base ?(temporary = false) ~name ~base { annotations; temporary_annotations } =
+  let new_as_base ?(temporary = false) ~name ~base { type_info; temporary_type_info } =
     if temporary then
       {
-        annotations;
-        temporary_annotations =
-          ReferenceMap.set temporary_annotations ~key:name ~data:(LocalOrGlobal.create base);
+        type_info;
+        temporary_type_info =
+          ReferenceMap.set temporary_type_info ~key:name ~data:(LocalOrGlobal.create base);
       }
     else
       {
-        annotations = ReferenceMap.set annotations ~key:name ~data:(LocalOrGlobal.create base);
-        temporary_annotations = ReferenceMap.remove temporary_annotations name;
+        type_info = ReferenceMap.set type_info ~key:name ~data:(LocalOrGlobal.create base);
+        temporary_type_info = ReferenceMap.remove temporary_type_info name;
       }
 
 
@@ -477,11 +477,11 @@ module Store = struct
 
   let less_or_equal ~type_less_or_equal ~left ~right =
     let less_or_equal_one = LocalOrGlobal.less_or_equal ~type_less_or_equal in
-    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
+    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.type_info ~right:right.type_info
     && ReferenceMap.less_or_equal
          ~less_or_equal_one
-         ~left:left.temporary_annotations
-         ~right:right.temporary_annotations
+         ~left:left.temporary_type_info
+         ~right:right.temporary_type_info
 
 
   (** Whenever we know for sure that right is pointwise less_or_equal to left, then we can save
@@ -489,19 +489,19 @@ module Store = struct
       operations *)
   let less_or_equal_monotone ~left ~right =
     let less_or_equal_one ~left ~right = LocalOrGlobal.equal left right in
-    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
+    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.type_info ~right:right.type_info
     && ReferenceMap.less_or_equal
          ~less_or_equal_one
-         ~left:left.temporary_annotations
-         ~right:right.temporary_annotations
+         ~left:left.temporary_type_info
+         ~right:right.temporary_type_info
 
 
   let meet ~type_meet left right =
     let meet_one = LocalOrGlobal.meet ~type_meet in
     {
-      annotations = ReferenceMap.meet ~meet_one left.annotations right.annotations;
-      temporary_annotations =
-        ReferenceMap.meet ~meet_one left.temporary_annotations right.temporary_annotations;
+      type_info = ReferenceMap.meet ~meet_one left.type_info right.type_info;
+      temporary_type_info =
+        ReferenceMap.meet ~meet_one left.temporary_type_info right.temporary_type_info;
     }
 
 
@@ -512,11 +512,11 @@ module Store = struct
       which is applied at the `TypeInfo.LocalOrGlobal` level. *)
   let widen_or_join ~merge_one left right =
     {
-      (* Newly-instantiated locals live in `annotations`, so we merge with join *)
-      annotations = ReferenceMap.merge_with ~merge_one left.annotations right.annotations;
-      (* `temporary_annotations` only has type info, so we do a proper join *)
-      temporary_annotations =
-        ReferenceMap.join ~join_one:merge_one left.temporary_annotations right.temporary_annotations;
+      (* Newly-instantiated locals live in `type_info`, so we merge with join *)
+      type_info = ReferenceMap.merge_with ~merge_one left.type_info right.type_info;
+      (* `temporary_type_info` only has type info, so we do a proper join *)
+      temporary_type_info =
+        ReferenceMap.join ~join_one:merge_one left.temporary_type_info right.temporary_type_info;
     }
 
 
@@ -532,14 +532,14 @@ module Store = struct
 
   let update_existing ~old_store ~new_store =
     {
-      annotations =
+      type_info =
         ReferenceMap.update_existing_entries
-          ~map_to_update:old_store.annotations
-          ~new_map:new_store.annotations;
-      temporary_annotations =
+          ~map_to_update:old_store.type_info
+          ~new_map:new_store.type_info;
+      temporary_type_info =
         ReferenceMap.update_existing_entries
-          ~map_to_update:old_store.temporary_annotations
-          ~new_map:new_store.temporary_annotations;
+          ~map_to_update:old_store.temporary_type_info
+          ~new_map:new_store.temporary_type_info;
     }
 
 
@@ -554,8 +554,7 @@ module Store = struct
       ReferenceMap.fold ~init:old_map ~f new_map
     in
     {
-      annotations = update_map old_store.annotations new_store.annotations;
-      temporary_annotations =
-        update_map old_store.temporary_annotations new_store.temporary_annotations;
+      type_info = update_map old_store.type_info new_store.type_info;
+      temporary_type_info = update_map old_store.temporary_type_info new_store.temporary_type_info;
     }
 end

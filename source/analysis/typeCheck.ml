@@ -2051,13 +2051,13 @@ module State (Context : Context) = struct
           in
           { Error.name; annotation }
         in
-        let annotations =
-          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).annotations
+        let type_info =
+          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).type_info
         in
-        let temporary_annotations =
-          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).temporary_annotations
+        let temporary_type_info =
+          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).temporary_type_info
         in
-        let revealed_locals = List.map ~f:from_annotation (temporary_annotations @ annotations) in
+        let revealed_locals = List.map ~f:from_annotation (temporary_type_info @ type_info) in
         let errors = emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals) in
         { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
@@ -2619,7 +2619,7 @@ module State (Context : Context) = struct
               |> detect_broadcast_errors
         in
         {
-          resolution = Resolution.clear_temporary_annotations updated_resolution;
+          resolution = Resolution.clear_temporary_type_info updated_resolution;
           errors = updated_errors;
           resolved;
           resolved_annotation = None;

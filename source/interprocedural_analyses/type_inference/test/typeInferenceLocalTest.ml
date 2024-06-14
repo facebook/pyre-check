@@ -29,7 +29,7 @@ let assert_backward precondition statement postcondition context =
     let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)
   in
-  let create annotations =
+  let create type_info =
     let resolution =
       let annotation_store =
         let annotify (name, annotation) =
@@ -42,9 +42,9 @@ let assert_backward precondition statement postcondition context =
           !&name, annotation
         in
         {
-          TypeInfo.Store.annotations =
-            List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
-          temporary_annotations = Reference.Map.Tree.empty;
+          TypeInfo.Store.type_info =
+            List.map type_info ~f:annotify |> Reference.Map.Tree.of_alist_exn;
+          temporary_type_info = Reference.Map.Tree.empty;
         }
       in
       Resolution.with_annotation_store resolution ~annotation_store
