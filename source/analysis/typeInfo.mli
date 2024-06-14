@@ -98,6 +98,8 @@ module Store : sig
   }
   [@@deriving eq, show]
 
+  val print_as_json : Format.formatter -> t -> unit
+
   val empty : t
 
   val has_nontemporary_annotation : name:Reference.t -> t -> bool

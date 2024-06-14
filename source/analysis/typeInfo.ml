@@ -355,6 +355,24 @@ module Store = struct
 
   let show = Format.asprintf "%a" pp
 
+  let print_as_json formatter { annotations; temporary_annotations } =
+    let pp_element ~temporary ~key ~data =
+      let temporary_suffix = if temporary then "(temp)" else "" in
+      Format.fprintf
+        formatter
+        "\"%a\": \"%a\"%s, "
+        Reference.pp
+        key
+        LocalOrGlobal.pp
+        data
+        temporary_suffix
+    in
+    Format.fprintf formatter "{";
+    Reference.Map.Tree.iteri annotations ~f:(pp_element ~temporary:false);
+    Reference.Map.Tree.iteri temporary_annotations ~f:(pp_element ~temporary:true);
+    Format.fprintf formatter "}"
+
+
   let has_nontemporary_annotation ~name { annotations; _ } = ReferenceMap.mem annotations name
 
   let get_unit ?(include_temporary = true) ~name { annotations; temporary_annotations } =

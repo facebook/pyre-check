@@ -12,43 +12,19 @@ open Ast
 open Pyre
 
 module Annotations = struct
-  type annotation_store = {
-    annotations: TypeInfo.LocalOrGlobal.t Reference.Map.Tree.t;
-    temporary_annotations: TypeInfo.LocalOrGlobal.t Reference.Map.Tree.t;
-  }
-  [@@deriving eq]
-
   type t = {
-    precondition: annotation_store;
-    postcondition: annotation_store;
+    precondition: TypeInfo.Store.t;
+    postcondition: TypeInfo.Store.t;
   }
   [@@deriving eq]
-
-  let pp_state formatter { annotations; temporary_annotations } =
-    let pp_element ~temporary ~key ~data =
-      let temporary_suffix = if temporary then "(temp)" else "" in
-      Format.fprintf
-        formatter
-        "\"%a\": \"%a\"%s, "
-        Reference.pp
-        key
-        TypeInfo.LocalOrGlobal.pp
-        data
-        temporary_suffix
-    in
-    Format.fprintf formatter "{";
-    Reference.Map.Tree.iteri annotations ~f:(pp_element ~temporary:false);
-    Reference.Map.Tree.iteri temporary_annotations ~f:(pp_element ~temporary:true);
-    Format.fprintf formatter "}"
-
 
   let pp formatter { precondition; postcondition } =
     Format.fprintf
       formatter
       "{ \"Precondition\": %a, \"Postcondition\": %a}"
-      pp_state
+      TypeInfo.Store.print_as_json
       precondition
-      pp_state
+      TypeInfo.Store.print_as_json
       postcondition
 end
 
@@ -84,17 +60,7 @@ let set
     ~statement_key
     local_annotations
   =
-  let convert_to_tree TypeInfo.Store.{ annotations; temporary_annotations } =
-    { Annotations.annotations; temporary_annotations }
-  in
-  Hashtbl.set
-    local_annotations
-    ~key:statement_key
-    ~data:
-      {
-        Annotations.precondition = convert_to_tree precondition;
-        postcondition = convert_to_tree postcondition;
-      }
+  Hashtbl.set local_annotations ~key:statement_key ~data:{ Annotations.precondition; postcondition }
 
 
 module StatementIdMap = struct
@@ -111,18 +77,14 @@ end
 module ReadOnly = struct
   type t = Annotations.t StatementIdMap.t [@@deriving equal]
 
-  let convert_to_map { Annotations.annotations; temporary_annotations } =
-    TypeInfo.Store.{ annotations; temporary_annotations }
-
-
   let get_precondition local_annotations ~statement_key =
     StatementIdMap.find local_annotations statement_key
-    >>| fun { Annotations.precondition; _ } -> convert_to_map precondition
+    >>| fun { Annotations.precondition; _ } -> precondition
 
 
   let get_postcondition local_annotations ~statement_key =
     StatementIdMap.find local_annotations statement_key
-    >>| fun { Annotations.postcondition; _ } -> convert_to_map postcondition
+    >>| fun { Annotations.postcondition; _ } -> postcondition
 end
 
 let read_only local_annotations = Hashtbl.to_alist local_annotations |> StatementIdMap.of_alist_exn
