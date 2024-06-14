@@ -64,6 +64,15 @@ def format_string_issue():
     f"{query}{user_controlled}{x}"
 
 
+def format_string_no_issue_when_single_sink_parameter():
+    if 1 == 1:
+        x: str = "SELECT"
+    else:
+        x = user_controlled_input()
+    # False positive: Should not see an issue here
+    f"{x}"
+
+
 def format_string_triggered_user_controlled(arg):
     query: str = "SELECT"
     f"{query}{arg}"

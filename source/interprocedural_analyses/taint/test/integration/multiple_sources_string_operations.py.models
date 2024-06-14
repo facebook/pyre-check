@@ -237,9 +237,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled",
-    "callable_line": 91,
+    "callable_line": 100,
     "code": 4324,
-    "line": 94,
+    "line": 103,
     "start": 56,
     "end": 71,
     "filename": "multiple_sources_string_operations.py",
@@ -262,7 +262,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 92,
+              "line": 101,
               "start": 22,
               "end": 45
             }
@@ -285,7 +285,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources_string_operations.py",
-                "line": 94,
+                "line": 103,
                 "start": 56,
                 "end": 71
               },
@@ -312,9 +312,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled",
-    "callable_line": 91,
+    "callable_line": 100,
     "code": 4324,
-    "line": 93,
+    "line": 102,
     "start": 53,
     "end": 68,
     "filename": "multiple_sources_string_operations.py",
@@ -337,7 +337,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 92,
+              "line": 101,
               "start": 22,
               "end": 45
             }
@@ -360,7 +360,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources_string_operations.py",
-                "line": 93,
+                "line": 102,
                 "start": 53,
                 "end": 68
               },
@@ -387,9 +387,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_sql",
-    "callable_line": 82,
+    "callable_line": 91,
     "code": 4324,
-    "line": 84,
+    "line": 93,
     "start": 32,
     "end": 37,
     "filename": "multiple_sources_string_operations.py",
@@ -409,7 +409,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 83,
+              "line": 92,
               "start": 17,
               "end": 25
             }
@@ -432,7 +432,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources_string_operations.py",
-                "line": 84,
+                "line": 93,
                 "start": 32,
                 "end": 37
               },
@@ -459,9 +459,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled",
-    "callable_line": 72,
+    "callable_line": 81,
     "code": 4324,
-    "line": 74,
+    "line": 83,
     "start": 44,
     "end": 59,
     "filename": "multiple_sources_string_operations.py",
@@ -484,7 +484,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 73,
+              "line": 82,
               "start": 22,
               "end": 45
             }
@@ -507,7 +507,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources_string_operations.py",
-                "line": 74,
+                "line": 83,
                 "start": 44,
                 "end": 59
               },
@@ -684,6 +684,81 @@
       "parameter_index": 1
     },
     "master_handle": "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|1:ff6b8d82e9a659216c47375695a67063"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter",
+    "callable_line": 67,
+    "code": 4324,
+    "line": 73,
+    "start": 7,
+    "end": 8,
+    "filename": "multiple_sources_string_operations.py",
+    "message": "User controlled data flows into potential SQL strings",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "StringMayBeSQL"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 73, "start": 7, "end": 8 } ],
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 69,
+              "start": 17,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Subtrace for source UserControlled",
+                "origin": { "line": 71, "start": 12, "end": 35 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 73,
+              "start": 7,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "StringFormat",
+      "callee": "Obj{<format-string>}",
+      "index": 0,
+      "parameter_index": 1
+    },
+    "master_handle": "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter:4324:0:StringFormat|Obj{<format-string>}|0|1:4e6d6fdf424d122ad12d861701b1b973"
   }
 }
 {
@@ -1188,7 +1263,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 87,
+    "callable_line": 96,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -1197,7 +1272,7 @@
             "extra_traces": [
               {
                 "message": "Subtrace for source StringMayBeSQL",
-                "origin": { "line": 88, "start": 4, "end": 27 },
+                "origin": { "line": 97, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               }
@@ -1212,7 +1287,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 88,
+              "line": 97,
               "start": 4,
               "end": 27
             }
@@ -1226,7 +1301,7 @@
             "extra_traces": [
               {
                 "message": "Subtrace for source StringMayBeSQL",
-                "origin": { "line": 88, "start": 4, "end": 27 },
+                "origin": { "line": 97, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               }
@@ -1241,7 +1316,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 88,
+              "line": 97,
               "start": 4,
               "end": 27
             }
@@ -1256,7 +1331,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_sql",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 77,
+    "callable_line": 86,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1265,7 +1340,7 @@
             "extra_traces": [
               {
                 "message": "Subtrace for source UserControlled",
-                "origin": { "line": 78, "start": 22, "end": 45 },
+                "origin": { "line": 87, "start": 22, "end": 45 },
                 "leaf_kind": "UserControlled",
                 "trace_kind": "source"
               }
@@ -1280,7 +1355,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 79,
+              "line": 88,
               "start": 4,
               "end": 29
             }
@@ -1295,7 +1370,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 67,
+    "callable_line": 76,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1304,7 +1379,7 @@
             "extra_traces": [
               {
                 "message": "Subtrace for source StringMayBeSQL",
-                "origin": { "line": 68, "start": 17, "end": 25 },
+                "origin": { "line": 77, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               }
@@ -1319,7 +1394,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 69,
+              "line": 78,
               "start": 4,
               "end": 19
             }
@@ -1334,7 +1409,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.nested_stradd_and_fstring",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 97,
+    "callable_line": 106,
     "sources": [
       {
         "port": "result",
@@ -1358,13 +1433,13 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 100, "start": 19, "end": 29 },
-              { "line": 100, "start": 22, "end": 23 },
-              { "line": 100, "start": 22, "end": 27 }
+              { "line": 109, "start": 19, "end": 29 },
+              { "line": 109, "start": 22, "end": 23 },
+              { "line": 109, "start": 22, "end": 27 }
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 98,
+              "line": 107,
               "start": 13,
               "end": 36
             }
@@ -1379,7 +1454,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 103,
+    "callable_line": 112,
     "sinks": [
       {
         "port": "formal(arg, position=0)[f]",
@@ -1388,7 +1463,7 @@
             "extra_traces": [
               {
                 "message": "Subtrace for source UserControlled",
-                "origin": { "line": 104, "start": 13, "end": 36 },
+                "origin": { "line": 113, "start": 13, "end": 36 },
                 "leaf_kind": "UserControlled",
                 "trace_kind": "source"
               }
@@ -1401,7 +1476,7 @@
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 105,
+              "line": 114,
               "start": 4,
               "end": 13
             }
