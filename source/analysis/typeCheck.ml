@@ -1663,7 +1663,7 @@ module State (Context : Context) = struct
             tail_annotations
             |> Algorithms.fold_balanced
                  ~f:
-                   (TypeInfo.LocalOrGlobal.join_annotations
+                   (TypeInfo.Unit.join_forcing_union
                       ~type_join:(GlobalResolution.join global_resolution))
                  ~init:head_annotation
             |> apply_local_override

@@ -52,6 +52,8 @@ module Unit : sig
     refined_type:Type.t ->
     t ->
     t
+
+  val join_forcing_union : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 end
 
 module LocalOrGlobal : sig
@@ -87,8 +89,6 @@ module LocalOrGlobal : sig
   val join : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
   val meet : type_meet:(Type.t -> Type.t -> Type.t) -> t -> t -> t
-
-  val join_annotations : type_join:(Type.t -> Type.t -> Type.t) -> Unit.t -> Unit.t -> Unit.t
 end
 
 module Store : sig

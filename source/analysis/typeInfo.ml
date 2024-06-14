@@ -214,6 +214,11 @@ module Unit = struct
                 |> Option.value ~default:annotation;
               mutability;
             })
+
+
+  let join_forcing_union ~type_join left right =
+    let refined = join ~type_join left right in
+    { refined with annotation = Type.union [left.annotation; right.annotation] }
 end
 
 module LocalOrGlobal = struct
@@ -343,14 +348,7 @@ module LocalOrGlobal = struct
     else
       join ~type_join left right
 
-
-  let join_annotations ~type_join left right =
-    let refined =
-      join ~type_join (create left) (create right)
-      |> base
-      |> Option.value ~default:(Unit.create_mutable Type.Bottom)
-    in
-    { refined with annotation = Type.union [left.annotation; right.annotation] }
+  (* TODO() Explore whether this is really necessary - why would we want to force a union? *)
 end
 
 module Store = struct
