@@ -141,7 +141,7 @@ module ReadOnly : sig
 
   val named_tuple_attributes : t -> string -> string list option
 
-  val resolve_expression_to_annotation : t -> Ast.Expression.t -> Annotation.t
+  val resolve_expression_to_annotation : t -> Ast.Expression.t -> TypeInfo.Unit.t
 
   val get_unannotated_global
     :  t ->

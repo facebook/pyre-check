@@ -201,7 +201,7 @@ let test_constructors context =
         ~name:"__call__"
       |> (fun option -> Option.value_exn option)
       |> AnnotatedAttribute.annotation
-      |> Annotation.annotation
+      |> TypeInfo.Unit.annotation
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
   in
@@ -972,7 +972,7 @@ let test_attribute_from_annotation context =
     let actual =
       GlobalResolution.attribute_from_annotation ~parent:(parse parent) global_resolution ~name
       >>| AnnotatedAttribute.annotation
-      >>| Annotation.annotation
+      >>| TypeInfo.Unit.annotation
       >>| Type.show
     in
     let printer = Option.value_map ~default:"None" ~f:Fn.id in
@@ -2163,24 +2163,27 @@ let test_refine context =
   assert_equal
     (GlobalResolution.refine
        global_resolution
-       (Annotation.create_immutable Type.float)
+       (TypeInfo.Unit.create_immutable Type.float)
        Type.integer)
-    (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
+    (TypeInfo.Unit.create_immutable ~original:(Some Type.float) Type.integer);
   assert_equal
     (GlobalResolution.refine
        global_resolution
-       (Annotation.create_immutable Type.integer)
+       (TypeInfo.Unit.create_immutable Type.integer)
        Type.float)
-    (Annotation.create_immutable Type.integer);
+    (TypeInfo.Unit.create_immutable Type.integer);
   assert_equal
     (GlobalResolution.refine
        global_resolution
-       (Annotation.create_immutable Type.integer)
+       (TypeInfo.Unit.create_immutable Type.integer)
        Type.Bottom)
-    (Annotation.create_immutable Type.integer);
+    (TypeInfo.Unit.create_immutable Type.integer);
   assert_equal
-    (GlobalResolution.refine global_resolution (Annotation.create_immutable Type.integer) Type.Top)
-    (Annotation.create_immutable ~original:(Some Type.integer) Type.Top);
+    (GlobalResolution.refine
+       global_resolution
+       (TypeInfo.Unit.create_immutable Type.integer)
+       Type.Top)
+    (TypeInfo.Unit.create_immutable ~original:(Some Type.integer) Type.Top);
   ()
 
 

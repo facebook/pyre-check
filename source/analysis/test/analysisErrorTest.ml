@@ -544,32 +544,34 @@ let test_join context =
     (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.not_bar" })))
     (error Error.Top);
   assert_join
-    (error (revealed_type "a" (Annotation.create_mutable Type.string)))
-    (error (revealed_type "a" (Annotation.create_mutable Type.float)))
-    (error (revealed_type "a" (Annotation.create_mutable (Type.union [Type.string; Type.float]))));
+    (error (revealed_type "a" (TypeInfo.Unit.create_mutable Type.string)))
+    (error (revealed_type "a" (TypeInfo.Unit.create_mutable Type.float)))
+    (error
+       (revealed_type "a" (TypeInfo.Unit.create_mutable (Type.union [Type.string; Type.float]))));
   assert_join
-    (error (revealed_type "a" (Annotation.create_immutable Type.string)))
-    (error (revealed_type "a" (Annotation.create_immutable Type.float)))
-    (error (revealed_type "a" (Annotation.create_immutable (Type.union [Type.string; Type.float]))));
+    (error (revealed_type "a" (TypeInfo.Unit.create_immutable Type.string)))
+    (error (revealed_type "a" (TypeInfo.Unit.create_immutable Type.float)))
+    (error
+       (revealed_type "a" (TypeInfo.Unit.create_immutable (Type.union [Type.string; Type.float]))));
   assert_join
-    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
-    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
-    (error (revealed_type "a" (Annotation.create_immutable Type.integer)));
+    (error (revealed_type "a" (TypeInfo.Unit.create_immutable Type.integer)))
+    (error (revealed_type "a" (TypeInfo.Unit.create_immutable Type.integer)))
+    (error (revealed_type "a" (TypeInfo.Unit.create_immutable Type.integer)));
   assert_join
-    (error (revealed_type "a" (Annotation.create_mutable Type.integer)))
-    (error (revealed_type "b" (Annotation.create_mutable Type.float)))
+    (error (revealed_type "a" (TypeInfo.Unit.create_mutable Type.integer)))
+    (error (revealed_type "b" (TypeInfo.Unit.create_mutable Type.float)))
     (error Error.Top);
   let stop = { Location.line = 42; column = 42 } in
   assert_join
     (error
        ~location:{ Location.start = { Location.line = 1; column = 0 }; stop }
-       (revealed_type "a" (Annotation.create_mutable Type.integer)))
+       (revealed_type "a" (TypeInfo.Unit.create_mutable Type.integer)))
     (error
        ~location:{ Location.start = { Location.line = 2; column = 1 }; stop }
-       (revealed_type "a" (Annotation.create_mutable Type.float)))
+       (revealed_type "a" (TypeInfo.Unit.create_mutable Type.float)))
     (error
        ~location:{ Location.start = { Location.line = 1; column = 0 }; stop }
-       (revealed_type "a" (Annotation.create_mutable Type.float)))
+       (revealed_type "a" (TypeInfo.Unit.create_mutable Type.float)))
 
 
 let test_filter context =
@@ -718,11 +720,13 @@ let test_suppress _ =
 
   (* Should not be made *)
   assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.Any);
-  assert_not_suppressed Source.Unsafe (revealed_type "a" (Annotation.create_mutable Type.integer));
+  assert_not_suppressed
+    Source.Unsafe
+    (revealed_type "a" (TypeInfo.Unit.create_mutable Type.integer));
   assert_not_suppressed
     ~signature:untyped_signature
     Source.Unsafe
-    (revealed_type "a" (Annotation.create_mutable Type.integer));
+    (revealed_type "a" (TypeInfo.Unit.create_mutable Type.integer));
   assert_not_suppressed Source.Unsafe (Error.AnalysisFailure (UnexpectedUndefinedType "int"));
   assert_suppressed
     Source.Unsafe

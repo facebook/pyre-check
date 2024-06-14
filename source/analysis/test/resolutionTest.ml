@@ -18,7 +18,7 @@ let test_new_and_refine context =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
-      (Resolution.get_local ~reference:!&name resolution >>| Annotation.annotation)
+      (Resolution.get_local ~reference:!&name resolution >>| TypeInfo.Unit.annotation)
   in
   let assert_local_with_attributes
       ?(global_fallback = true)
@@ -35,7 +35,7 @@ let test_new_and_refine context =
          ~name:!&name
          ~attribute_path:!&attribute_path
          resolution
-      >>| Annotation.annotation)
+      >>| TypeInfo.Unit.annotation)
   in
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   (* nothing to start out with *)
@@ -45,7 +45,7 @@ let test_new_and_refine context =
     Resolution.new_local
       resolution
       ~reference:!&"local"
-      ~annotation:(Annotation.create_mutable Type.object_primitive)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.object_primitive)
   in
   assert_local ~name:"local" ~expected:(Some "object") resolution;
   (* create an attribute `local.x.y` and make sure the type is right, also refine it *)
@@ -56,7 +56,7 @@ let test_new_and_refine context =
       ~name:!&"local"
       ~attribute_path:!&"x.y"
       ~base_annotation:None
-      ~annotation:(Annotation.create_mutable Type.object_primitive)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.object_primitive)
   in
   assert_local_with_attributes
     ~name:"local"
@@ -70,7 +70,7 @@ let test_new_and_refine context =
       ~name:!&"local"
       ~attribute_path:!&"x.y"
       ~base_annotation:None
-      ~annotation:(Annotation.create_mutable Type.integer)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
   (* refine `local.x` and make sure it refines, and doesn't destroy `local.x.y` *)
@@ -80,7 +80,7 @@ let test_new_and_refine context =
       ~name:!&"local"
       ~attribute_path:!&"x"
       ~base_annotation:None
-      ~annotation:(Annotation.create_mutable Type.float)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.float)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "float") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
@@ -91,7 +91,7 @@ let test_new_and_refine context =
       ~name:!&"local"
       ~attribute_path:!&"x"
       ~base_annotation:None
-      ~annotation:(Annotation.create_mutable Type.integer)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:None resolution;
@@ -100,7 +100,7 @@ let test_new_and_refine context =
     Resolution.refine_local
       resolution
       ~reference:!&"local"
-      ~annotation:(Annotation.create_mutable Type.float)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.float)
   in
   assert_local ~name:"local" ~expected:(Some "float") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
@@ -109,7 +109,7 @@ let test_new_and_refine context =
     Resolution.new_local
       resolution
       ~reference:!&"local"
-      ~annotation:(Annotation.create_mutable Type.integer)
+      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local ~name:"local" ~expected:(Some "int") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:None resolution;
@@ -434,7 +434,7 @@ let test_fallback_attribute =
       ~cmp:(Option.equal Type.equal)
       ~printer
       annotation
-      (attribute >>| AnnotatedAttribute.annotation >>| Annotation.annotation)
+      (attribute >>| AnnotatedAttribute.annotation >>| TypeInfo.Unit.annotation)
   in
   test_list
     [

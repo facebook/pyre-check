@@ -25,8 +25,8 @@ module PyrePysaApi = Analysis.PyrePysaApi
 module Cfg = Analysis.Cfg
 module ResolvedReference = Analysis.ResolvedReference
 module ClassSummary = Analysis.ClassSummary
-module Annotation = Analysis.Annotation
 module AnnotatedAttribute = Analysis.AnnotatedAttribute
+module TypeInfo = Analysis.TypeInfo
 
 module JsonHelper = struct
   let add_optional name value to_json bindings =
@@ -2140,7 +2140,7 @@ let resolve_attribute_access_properties
       else
         let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
         AnnotatedAttribute.annotation property
-        |> Annotation.annotation
+        |> TypeInfo.Unit.annotation
         |> ReturnType.from_annotation ~pyre_api
     in
     let parent = AnnotatedAttribute.parent property |> Reference.create in

@@ -124,7 +124,7 @@ let resolve_callable_protocol
 
       attribute annotation ~assumptions:new_assumptions ~name:"__call__"
       >>| AnnotatedAttribute.annotation
-      >>| Annotation.annotation
+      >>| TypeInfo.Unit.annotation
       >>= fun annotation ->
       match annotation with
       | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
@@ -1104,7 +1104,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | [] -> []
         | _ ->
             let attribute_type attribute =
-              AnnotatedAttribute.annotation attribute |> Annotation.annotation
+              AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation
             in
             let attribute_type_with_getattr_fallback ~attribute_lookup ~name =
               match attribute_lookup ~name with

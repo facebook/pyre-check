@@ -3535,7 +3535,7 @@ let assert_instantiated_attribute_equal expected actual =
   in
   let simple_print l =
     let simple attribute =
-      let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+      let annotation = AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation in
       let name = AnnotatedAttribute.name attribute in
       Printf.sprintf "%s, %s" name (Type.show annotation)
     in

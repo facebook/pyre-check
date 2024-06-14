@@ -18,7 +18,6 @@ module AttributeResolution = AttributeResolution
 module AstEnvironment = AstEnvironment
 module Assumptions = Assumptions
 module UnawaitedAwaitableCheck = UnawaitedAwaitableCheck
-module Annotation = Annotation
 module Callgraph = Callgraph
 module Cfg = Cfg
 module ClassHierarchy = ClassHierarchy

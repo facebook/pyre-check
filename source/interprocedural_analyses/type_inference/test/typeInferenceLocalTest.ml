@@ -35,7 +35,7 @@ let assert_backward precondition statement postcondition context =
         let annotify (name, annotation) =
           let annotation =
             let create annotation =
-              TypeInfo.LocalOrGlobal.create (Annotation.create_mutable annotation)
+              TypeInfo.LocalOrGlobal.create (TypeInfo.Unit.create_mutable annotation)
             in
             create annotation
           in

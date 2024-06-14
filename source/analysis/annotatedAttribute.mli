@@ -110,7 +110,7 @@ val create_uninstantiated
   problem:problem option ->
   'a t
 
-val annotation : instantiated -> Annotation.t
+val annotation : instantiated -> TypeInfo.Unit.t
 
 val uninstantiated_annotation : 'a t -> 'a
 

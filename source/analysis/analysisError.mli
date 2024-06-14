@@ -18,7 +18,7 @@ type missing_annotation = {
 
 type revealed_local = {
   name: Reference.t;
-  annotation: Annotation.t;
+  annotation: TypeInfo.Unit.t;
 }
 [@@deriving compare, sexp, show, hash]
 
@@ -461,7 +461,7 @@ and kind =
   | RevealedLocals of revealed_local list
   | RevealedType of {
       expression: Expression.t;
-      annotation: Annotation.t;
+      annotation: TypeInfo.Unit.t;
       qualify: bool;
     }
   | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }

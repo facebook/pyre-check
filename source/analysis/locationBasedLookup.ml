@@ -176,9 +176,9 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     let resolve ~resolution ~expression =
       try
         let annotation = Resolution.resolve_expression_to_annotation resolution expression in
-        let original = Annotation.original annotation in
+        let original = TypeInfo.Unit.original annotation in
         if Type.is_top original || Type.is_unbound original then
-          let annotation = Annotation.annotation annotation in
+          let annotation = TypeInfo.Unit.annotation annotation in
           if Type.is_top annotation || Type.is_unbound annotation then
             None
           else

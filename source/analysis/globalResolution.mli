@@ -164,7 +164,7 @@ val resolve_define
 val signature_select
   :  t ->
   resolve_with_locals:
-    (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
+    (locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.expression Node.t -> Type.t) ->
   arguments:Type.t AttributeResolution.Argument.t list ->
   location:Location.t ->
   callable:Type.Callable.t ->
@@ -246,4 +246,4 @@ val nonvalidating_annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val overrides : t -> Type.Primitive.t -> name:Identifier.t -> AnnotatedAttribute.instantiated option
 
-val refine : t -> Annotation.t -> Type.t -> Annotation.t
+val refine : t -> TypeInfo.Unit.t -> Type.t -> TypeInfo.Unit.t

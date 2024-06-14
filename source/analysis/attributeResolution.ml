@@ -87,7 +87,7 @@ end
 
 module Global = struct
   type t = {
-    annotation: Annotation.t;
+    annotation: TypeInfo.Unit.t;
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }
@@ -1210,7 +1210,7 @@ module SignatureSelection = struct
                         ~locals:
                           [
                             ( Reference.create lambda_parameter,
-                              Annotation.create_mutable parameter_type );
+                              TypeInfo.Unit.create_mutable parameter_type );
                           ]
                         lambda_body
                       |> Type.weaken_literals
@@ -1879,7 +1879,7 @@ let apply_dataclass_transforms_to_table
             let original_annotation =
               instantiate_attribute attribute
               |> AnnotatedAttribute.annotation
-              |> Annotation.original
+              |> TypeInfo.Unit.original
             in
             let annotation, is_initvar_for_init =
               process_potential_initvar_annotation original_annotation
@@ -2197,7 +2197,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ~attribute_name:"__init__"
               class_name
             >>| AnnotatedAttribute.annotation
-            >>| Annotation.annotation
+            >>| TypeInfo.Unit.annotation
             >>= function
             | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
             | _ -> None
@@ -2531,7 +2531,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ?apply_descriptors:None
                   attribute
                 |> AnnotatedAttribute.annotation
-                |> Annotation.annotation
+                |> TypeInfo.Unit.annotation
               in
               Some (name, annotation)
           in
@@ -3418,7 +3418,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                             ~attribute_name
                             class_name
                           >>| AnnotatedAttribute.annotation
-                          >>| Annotation.annotation
+                          >>| TypeInfo.Unit.annotation
                         in
                         match attribute with
                         | None -> `NotDescriptor instantiated
@@ -4131,7 +4131,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     >>| List.map ~f:access
                     >>= Option.all
                     >>| List.map ~f:AnnotatedAttribute.annotation
-                    >>| List.map ~f:Annotation.annotation
+                    >>| List.map ~f:TypeInfo.Unit.annotation
                     >>= join_all
                   in
                   let resolver = function
@@ -4468,7 +4468,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               class_name
           with
           | Some attribute ->
-              ( AnnotatedAttribute.annotation attribute |> Annotation.annotation,
+              ( AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation,
                 AnnotatedAttribute.parent attribute )
           | None -> Type.Top, class_name
         in
@@ -4537,7 +4537,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             else
               None
           in
-          Annotation.create_immutable ~final:is_final ~original annotation
+          TypeInfo.Unit.create_immutable ~final:is_final ~original annotation
         in
         match global with
         | UnannotatedGlobal.Define defines ->
@@ -4551,7 +4551,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ~assumptions
             in
             let annotation =
-              Result.ok decorated |> Option.value ~default:Type.Any |> Annotation.create_immutable
+              Result.ok decorated
+              |> Option.value ~default:Type.Any
+              |> TypeInfo.Unit.create_immutable
             in
             Some
               {
@@ -4591,7 +4593,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             |> Node.create ~location
             |> self#parse_annotation ~validation:ValidatePrimitives ~assumptions
             |> Type.meta
-            |> Annotation.create_immutable
+            |> TypeInfo.Unit.create_immutable
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
         | SimpleAssign { explicit_annotation; value; _ } -> (
@@ -4635,7 +4637,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let class_lookup = Reference.show name |> class_exists in
       if class_lookup then
         let primitive = Type.Primitive (Reference.show name) in
-        Annotation.create_immutable (Type.meta primitive)
+        TypeInfo.Unit.create_immutable (Type.meta primitive)
         |> fun annotation ->
         Some { Global.annotation; undecorated_signature = None; problem = None }
       else
@@ -4674,14 +4676,14 @@ module OutgoingDataComputation = struct
     | "__file__"
     | "__name__"
     | "__package__" ->
-        let annotation = Annotation.create_immutable Type.string in
+        let annotation = TypeInfo.Unit.create_immutable Type.string in
         Some { Global.annotation; undecorated_signature = None; problem = None }
     | "__path__" ->
-        let annotation = Type.list Type.string |> Annotation.create_immutable in
+        let annotation = Type.list Type.string |> TypeInfo.Unit.create_immutable in
         Some { Global.annotation; undecorated_signature = None; problem = None }
     | "__dict__" ->
         let annotation =
-          Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable
+          Type.dictionary ~key:Type.string ~value:Type.Any |> TypeInfo.Unit.create_immutable
         in
         Some { annotation; undecorated_signature = None; problem = None }
     | _ -> global_annotation reference

@@ -423,7 +423,7 @@ let test_register_globals context =
     let actual =
       !&reference
       |> GlobalResolution.global resolution
-      >>| fun { annotation; _ } -> Annotation.annotation annotation
+      >>| fun { annotation; _ } -> TypeInfo.Unit.annotation annotation
     in
     assert_equal
       ~printer:(function
@@ -641,9 +641,9 @@ let test_populate context =
   let assert_global_with_environment environment actual expected =
     let global_resolution = GlobalResolution.create environment in
     assert_equal
-      ~cmp:(Option.equal Annotation.equal)
+      ~cmp:(Option.equal TypeInfo.Unit.equal)
       ~printer:(function
-        | Some global -> Annotation.show global
+        | Some global -> TypeInfo.Unit.show global
         | None -> "None")
       expected
       (GlobalResolution.global global_resolution !&actual >>| fun { annotation; _ } -> annotation)
@@ -669,11 +669,11 @@ let test_populate context =
     |> assert_global_with_environment
   in
   let assert_global actual expected = assert_global actual (Some expected) in
-  assert_global "test.A" (Annotation.create_immutable (parse_annotation environment !"test.int"));
-  assert_global "test.B" (Annotation.create_immutable Type.integer);
-  assert_global "test.C" (Annotation.create_immutable (parse_annotation environment !"test.int"));
-  assert_global "test.G" (Annotation.create_immutable (parse_annotation environment !"test.Foo"));
-  assert_global "test.H" (Annotation.create_immutable (parse_annotation environment !"test.Foo"));
+  assert_global "test.A" (TypeInfo.Unit.create_immutable (parse_annotation environment !"test.int"));
+  assert_global "test.B" (TypeInfo.Unit.create_immutable Type.integer);
+  assert_global "test.C" (TypeInfo.Unit.create_immutable (parse_annotation environment !"test.int"));
+  assert_global "test.G" (TypeInfo.Unit.create_immutable (parse_annotation environment !"test.Foo"));
+  assert_global "test.H" (TypeInfo.Unit.create_immutable (parse_annotation environment !"test.Foo"));
   let assert_global =
     populate
       ~context
@@ -697,15 +697,15 @@ let test_populate context =
   in
   let assert_no_global actual = assert_global actual None in
   let assert_global actual expected = assert_global actual (Some expected) in
-  assert_global "test.global_value_set" (Annotation.create_immutable Type.integer);
-  assert_global "test.global_annotated" (Annotation.create_immutable Type.integer);
-  assert_global "test.global_both" (Annotation.create_immutable Type.integer);
+  assert_global "test.global_value_set" (TypeInfo.Unit.create_immutable Type.integer);
+  assert_global "test.global_annotated" (TypeInfo.Unit.create_immutable Type.integer);
+  assert_global "test.global_both" (TypeInfo.Unit.create_immutable Type.integer);
   assert_global
     "test.global_unknown"
-    (Annotation.create_immutable ~original:(Some Type.Top) Type.Any);
+    (TypeInfo.Unit.create_immutable ~original:(Some Type.Top) Type.Any);
   assert_global
     "test.function"
-    (Annotation.create_immutable
+    (TypeInfo.Unit.create_immutable
        (Type.Callable.create
           ~name:!&"test.function"
           ~parameters:(Type.Callable.Defined [])
@@ -713,14 +713,16 @@ let test_populate context =
           ()));
   assert_global
     "test.global_function"
-    (Annotation.create_immutable
+    (TypeInfo.Unit.create_immutable
        ~original:(Some Type.Top)
        (Type.Callable.create
           ~name:!&"test.function"
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Any
           ()));
-  assert_global "test.Class" (Annotation.create_immutable (Type.meta (Type.Primitive "test.Class")));
+  assert_global
+    "test.Class"
+    (TypeInfo.Unit.create_immutable (Type.meta (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 
   (* Properties. *)
@@ -757,7 +759,7 @@ let test_populate context =
   in
   assert_global
     "test.A"
-    (Some (Type.Primitive "test.A" |> Type.meta |> Annotation.create_immutable));
+    (Some (Type.Primitive "test.A" |> Type.meta |> TypeInfo.Unit.create_immutable));
 
   (* Callable classes. *)
   let environment =

@@ -612,7 +612,7 @@ let rec process_request_exn
               attribute
           in
           let annotation =
-            instantiated_annotation |> AnnotatedAttribute.annotation |> Annotation.annotation
+            instantiated_annotation |> AnnotatedAttribute.annotation |> TypeInfo.Unit.annotation
           in
           let property = AnnotatedAttribute.property attribute in
           let kind =

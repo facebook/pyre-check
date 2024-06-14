@@ -37,8 +37,8 @@ let create_annotation_store ?(immutables = []) annotations =
         match Map.find immutables name with
         | Some original ->
             TypeInfo.LocalOrGlobal.create
-              (Annotation.create_immutable ~original:(Some original) annotation)
-        | _ -> TypeInfo.LocalOrGlobal.create (Annotation.create_mutable annotation)
+              (TypeInfo.Unit.create_immutable ~original:(Some original) annotation)
+        | _ -> TypeInfo.LocalOrGlobal.create (TypeInfo.Unit.create_mutable annotation)
       in
       create annotation
     in
@@ -1152,17 +1152,20 @@ let test_forward_expression__store =
     in
 
     let resolved_annotation = Resolution.resolve_expression_to_annotation resolution expression in
-    assert_equal ~cmp:Annotation.equal ~printer:Annotation.show annotation resolved_annotation
+    assert_equal ~cmp:TypeInfo.Unit.equal ~printer:TypeInfo.Unit.show annotation resolved_annotation
   in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_annotation ~environment:"x = 1" "test.x" (Annotation.create_immutable Type.integer);
+      @@ assert_annotation
+           ~environment:"x = 1"
+           "test.x"
+           (TypeInfo.Unit.create_immutable Type.integer);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_annotation
            ~environment:"x: typing.Union[int, str] = 1"
            "test.x"
-           (Annotation.create_immutable
+           (TypeInfo.Unit.create_immutable
               ~original:(Some (Type.union [Type.string; Type.integer]))
               (Type.union [Type.string; Type.integer]));
       labeled_test_case __FUNCTION__ __LINE__
@@ -1174,7 +1177,7 @@ let test_forward_expression__store =
                     self.attribute: int = 1
               |}
            "test.Foo().attribute"
-           (Annotation.create_immutable Type.integer);
+           (TypeInfo.Unit.create_immutable Type.integer);
     ]
 
 

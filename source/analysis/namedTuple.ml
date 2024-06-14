@@ -48,7 +48,7 @@ let field_annotations ~global_resolution annotation =
         in
         match attribute with
         | Some attribute when AnnotatedAttribute.defined attribute ->
-            attribute |> AnnotatedAttribute.annotation |> Annotation.annotation |> Option.some
+            attribute |> AnnotatedAttribute.annotation |> TypeInfo.Unit.annotation |> Option.some
         | _ -> None
       in
       field_names >>| List.filter_map ~f:matching_annotation

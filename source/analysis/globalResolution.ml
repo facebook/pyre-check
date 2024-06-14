@@ -614,4 +614,4 @@ let refine global_resolution annotation refined_type =
     >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
   in
   let type_less_or_equal = less_or_equal global_resolution in
-  Annotation.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation
+  TypeInfo.Unit.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation

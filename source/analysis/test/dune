@@ -6,7 +6,6 @@
   annotatedDefineTest
   annotatedGlobalEnvironmentTest
   annotatedSignatureTest
-  annotationTest
   astEnvironmentTest
   attributeResolutionTest
   attrsTest

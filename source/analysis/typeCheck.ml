@@ -119,7 +119,7 @@ let incompatible_annotation_with_attribute_error
   match unwrapped_annotation_type, AnnotatedAttribute.initialized attribute with
   | Some original, AnnotatedAttribute.OnClass
     when has_explicit_annotation && Define.is_constructor define ->
-      let class_annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+      let class_annotation = AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation in
       if not (Type.equal original class_annotation) then
         Some
           Error.(
@@ -335,7 +335,7 @@ let rec unpack_callable_and_self_argument ~signature_select ~global_resolution i
   let get_call_attribute parent =
     GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
     >>| AnnotatedAttribute.annotation
-    >>| Annotation.annotation
+    >>| TypeInfo.Unit.annotation
   in
   match input with
   | Type.Callable callable -> Some { TypeOperation.callable; self_argument = None }
@@ -686,7 +686,7 @@ module State (Context : Context) = struct
       resolution: Resolution.t;
       errors: Error.t list;
       resolved: Type.t;
-      resolved_annotation: Annotation.t option;
+      resolved_annotation: TypeInfo.Unit.t option;
       base: base option;
     }
     [@@deriving show]
@@ -830,7 +830,7 @@ module State (Context : Context) = struct
           Resolution.get_local
             resolution
             ~reference:(Reference.create ~prefix:qualifier "__getattr__")
-          >>| Annotation.annotation
+          >>| TypeInfo.Unit.annotation
         in
         let correct_getattr_arity signature =
           Type.Callable.Overload.parameters signature
@@ -838,7 +838,7 @@ module State (Context : Context) = struct
           |> Option.value ~default:false
         in
         let create_annotation signature =
-          Annotation.create_immutable
+          TypeInfo.Unit.create_immutable
             ~original:(Some Type.Top)
             (Type.Callable.Overload.return_annotation signature)
         in
@@ -900,7 +900,7 @@ module State (Context : Context) = struct
         {
           Resolved.resolution;
           errors;
-          resolved = Annotation.annotation annotation;
+          resolved = TypeInfo.Unit.annotation annotation;
           resolved_annotation = Some annotation;
           base = None;
         }
@@ -936,7 +936,7 @@ module State (Context : Context) = struct
   type partition_name_result_t = {
     name: Reference.t;
     attribute_path: Reference.t;
-    base_annotation: Annotation.t option;
+    base_annotation: TypeInfo.Unit.t option;
   }
 
   let partition_name ~resolution name =
@@ -959,7 +959,7 @@ module State (Context : Context) = struct
             base
             |> resolve_reference_aliases_with_fallback ~global_resolution
             |> resolve_reference_annotation ~resolution
-            >>| Annotation.annotation
+            >>| TypeInfo.Unit.annotation
             |> Option.value ~default:Type.Top
           in
           if Type.is_untyped base_type then
@@ -968,7 +968,7 @@ module State (Context : Context) = struct
             | attribute :: attribute_list ->
                 partition_attribute Reference.(attribute |> create |> combine base) attribute_list
           else
-            base, attribute_list, Some (Annotation.create_mutable base_type)
+            base, attribute_list, Some (TypeInfo.Unit.create_mutable base_type)
         in
         partition_attribute base attribute_list
         |> fun (base, attributes, annotation) ->
@@ -1113,7 +1113,7 @@ module State (Context : Context) = struct
     let find_method ~parent ~name ~special_method =
       GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
       >>| AnnotatedAttribute.annotation
-      >>| Annotation.annotation
+      >>| TypeInfo.Unit.annotation
       >>= unpack_callable_and_self_argument
     in
     let callable_from_type resolved =
@@ -1654,7 +1654,7 @@ module State (Context : Context) = struct
                   resolution
                   ~name
                   ~attribute_path
-                  ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
+                  ~global_fallback:(Type.is_meta (TypeInfo.Unit.annotation global_annotation))
               in
               match local_override with
               | Some local_annotation -> local_annotation
@@ -1671,7 +1671,7 @@ module State (Context : Context) = struct
           {
             resolution;
             errors;
-            resolved = Annotation.annotation resolved_annotation;
+            resolved = TypeInfo.Unit.annotation resolved_annotation;
             resolved_annotation = Some resolved_annotation;
             base = None;
           }
@@ -1704,7 +1704,7 @@ module State (Context : Context) = struct
               {
                 resolution;
                 errors;
-                resolved = Annotation.annotation annotation;
+                resolved = TypeInfo.Unit.annotation annotation;
                 resolved_annotation = Some annotation;
                 base = None;
               }
@@ -2046,7 +2046,7 @@ module State (Context : Context) = struct
           let name = reference in
           let annotation =
             Option.value
-              ~default:(Annotation.create_mutable Type.Any)
+              ~default:(TypeInfo.Unit.create_mutable Type.Any)
               (TypeInfo.LocalOrGlobal.base unit)
           in
           { Error.name; annotation }
@@ -2095,7 +2095,7 @@ module State (Context : Context) = struct
           forward_expression ~resolution value
         in
         let annotation =
-          Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation
+          Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
         in
         let errors =
           emit_error
@@ -2106,7 +2106,7 @@ module State (Context : Context) = struct
         {
           resolution;
           errors;
-          resolved = Annotation.annotation annotation;
+          resolved = TypeInfo.Unit.annotation annotation;
           resolved_annotation = Some annotation;
           base = None;
         }
@@ -2131,9 +2131,9 @@ module State (Context : Context) = struct
           forward_expression ~resolution value
         in
         let value_annotation =
-          Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation
+          Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
         in
-        let value_type = Annotation.annotation value_annotation in
+        let value_type = TypeInfo.Unit.annotation value_annotation in
         let expected_type_errors, expected_type =
           parse_and_check_annotation ~resolution expected_annotation
         in
@@ -2649,7 +2649,7 @@ module State (Context : Context) = struct
               ~name
               ~instantiated
             >>| AnnotatedAttribute.annotation
-            >>| Annotation.annotation
+            >>| TypeInfo.Unit.annotation
             >>= function
             | Type.Top -> None
             | annotation -> Some annotation
@@ -3112,7 +3112,7 @@ module State (Context : Context) = struct
             Resolution.new_local
               resolution
               ~reference:(Reference.create name)
-              ~annotation:(Annotation.create_mutable Type.Any)
+              ~annotation:(TypeInfo.Unit.create_mutable Type.Any)
           in
           List.fold ~f:add_parameter ~init:resolution parameters
         in
@@ -3466,7 +3466,7 @@ module State (Context : Context) = struct
   and refine_resolution_for_assert ~resolution test =
     let global_resolution = Resolution.global_resolution resolution in
     let annotation_less_or_equal =
-      Annotation.less_or_equal
+      TypeInfo.Unit.less_or_equal
         ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
     in
     let parse_refinement_annotation annotation =
@@ -3538,7 +3538,7 @@ module State (Context : Context) = struct
         | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
             let attribute =
               refinable_annotation base
-              >>| Annotation.annotation
+              >>| TypeInfo.Unit.annotation
               >>= fun parent ->
               Type.split parent
               |> fst
@@ -3590,7 +3590,7 @@ module State (Context : Context) = struct
             | None ->
                 None
           in
-          match existing_annotation base >>| Annotation.annotation >>= attribute_from_parent with
+          match existing_annotation base >>| TypeInfo.Unit.annotation >>= attribute_from_parent with
           | Some attribute when AnnotatedAttribute.defined attribute ->
               Some (AnnotatedAttribute.annotation attribute)
           | _ -> None)
@@ -3667,9 +3667,9 @@ module State (Context : Context) = struct
           let refinement_unnecessary existing_annotation =
             annotation_less_or_equal
               ~left:existing_annotation
-              ~right:(Annotation.create_mutable parsed_annotation)
-            && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
-            && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
+              ~right:(TypeInfo.Unit.create_mutable parsed_annotation)
+            && (not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Bottom))
+            && not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any)
           in
           match existing_annotation name with
           | Some _ when Type.is_any parsed_annotation -> Value resolution
@@ -3678,15 +3678,15 @@ module State (Context : Context) = struct
               Value resolution
           (* Clarify Anys if possible *)
           | Some existing_annotation
-            when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-              Value (Annotation.create_mutable parsed_annotation |> refine_local ~name)
+            when Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any ->
+              Value (TypeInfo.Unit.create_mutable parsed_annotation |> refine_local ~name)
           | Some existing_annotation ->
-              let existing_type = Annotation.annotation existing_annotation in
+              let existing_type = TypeInfo.Unit.annotation existing_annotation in
               let { consistent_with_boundary; _ } =
                 partition existing_type ~boundary:parsed_annotation
               in
               if not (Type.is_unbound consistent_with_boundary) then
-                Value (Annotation.create_mutable consistent_with_boundary |> refine_local ~name)
+                Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
               else if
                 GlobalResolution.less_or_equal
                   global_resolution
@@ -3710,7 +3710,7 @@ module State (Context : Context) = struct
                   else
                     parsed_annotation
                 in
-                Value (Annotation.create_mutable refined_type |> refine_local ~name)
+                Value (TypeInfo.Unit.create_mutable refined_type |> refine_local ~name)
               else
                 Unreachable
         in
@@ -3772,7 +3772,7 @@ module State (Context : Context) = struct
           | Some { annotation = previous_annotation; _ } ->
               let { not_consistent_with_boundary; _ } = partition previous_annotation ~boundary in
               not_consistent_with_boundary
-              >>| Annotation.create_mutable
+              >>| TypeInfo.Unit.create_mutable
               >>| refine_local ~name
               |> Option.value ~default:resolution
           | _ -> resolution
@@ -3805,15 +3805,15 @@ module State (Context : Context) = struct
             let callable =
               Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
             in
-            let existing_type = Annotation.annotation existing_annotation in
+            let existing_type = TypeInfo.Unit.annotation existing_annotation in
             let { consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
             (* Check for supertypes of callable: e.g. object is only returned on
                not_consistent_with_boundary in partition *)
             if GlobalResolution.less_or_equal global_resolution ~left:callable ~right:existing_type
             then
-              Value (Annotation.create_mutable callable |> refine_local ~name)
+              Value (TypeInfo.Unit.create_mutable callable |> refine_local ~name)
             else if not (Type.is_unbound consistent_with_boundary) then
-              Value (Annotation.create_mutable consistent_with_boundary |> refine_local ~name)
+              Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
             else
               Unreachable
         | _ -> Value resolution)
@@ -3839,12 +3839,12 @@ module State (Context : Context) = struct
             let callable =
               Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
             in
-            let existing_type = Annotation.annotation existing_annotation in
+            let existing_type = TypeInfo.Unit.annotation existing_annotation in
             let { not_consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
             match not_consistent_with_boundary with
-            | Some type_ -> Value (Annotation.create_mutable type_ |> refine_local ~name)
+            | Some type_ -> Value (TypeInfo.Unit.create_mutable type_ |> refine_local ~name)
             | None when Type.is_any existing_type ->
-                Value (Annotation.create_mutable existing_type |> refine_local ~name)
+                Value (TypeInfo.Unit.create_mutable existing_type |> refine_local ~name)
             | None -> Unreachable)
         | _ -> Value resolution)
     (* Is typeddict *)
@@ -3867,7 +3867,7 @@ module State (Context : Context) = struct
       when is_simple_name name -> (
         match existing_annotation name with
         | Some existing_annotation -> (
-            match Annotation.annotation existing_annotation with
+            match TypeInfo.Unit.annotation existing_annotation with
             | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
                 if
                   Type.is_any typed_dictionary
@@ -3910,7 +3910,7 @@ module State (Context : Context) = struct
       when is_simple_name name -> (
         match existing_annotation name with
         | Some existing_annotation -> (
-            match Annotation.annotation existing_annotation with
+            match TypeInfo.Unit.annotation existing_annotation with
             | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
                 if GlobalResolution.is_typed_dictionary global_resolution typed_dictionary then
                   Unreachable
@@ -3927,7 +3927,7 @@ module State (Context : Context) = struct
         }
       when is_simple_name name -> (
         let { Resolved.resolved = refined; _ } = forward_expression ~resolution right in
-        let refined = Annotation.create_mutable refined in
+        let refined = TypeInfo.Unit.create_mutable refined in
         match existing_annotation name with
         | Some previous ->
             if annotation_less_or_equal ~left:refined ~right:previous then
@@ -3965,19 +3965,19 @@ module State (Context : Context) = struct
             match annotation with
             | Some previous ->
                 let refined =
-                  if Annotation.is_immutable previous then
-                    Annotation.create_immutable
-                      ~original:(Some (Annotation.original previous))
+                  if TypeInfo.Unit.is_immutable previous then
+                    TypeInfo.Unit.create_immutable
+                      ~original:(Some (TypeInfo.Unit.original previous))
                       element_type
                   else
-                    Annotation.create_mutable element_type
+                    TypeInfo.Unit.create_mutable element_type
                 in
                 if annotation_less_or_equal ~left:refined ~right:previous then
                   Value (refine_local ~name refined)
                 else (* Keeping previous state, since it is more refined. *)
                   Value resolution
             | None when not (Resolution.is_global resolution ~reference) ->
-                let resolution = refine_local ~name (Annotation.create_mutable element_type) in
+                let resolution = refine_local ~name (TypeInfo.Unit.create_mutable element_type) in
                 Value resolution
             | _ -> Value resolution)
         | _ -> Value resolution)
@@ -3991,8 +3991,8 @@ module State (Context : Context) = struct
         refine_resolution_for_assert ~resolution left
     | Name name when is_simple_name name -> (
         match existing_annotation name with
-        | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable
-        | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
+        | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable
+        | Some ({ TypeInfo.Unit.annotation = Type.Union parameters; _ } as annotation) ->
             let refined_annotation =
               List.filter parameters ~f:(fun parameter ->
                   let unpacked_readonly_type =
@@ -4003,7 +4003,7 @@ module State (Context : Context) = struct
             let resolution =
               refine_local
                 ~name
-                { annotation with Annotation.annotation = Type.union refined_annotation }
+                { annotation with TypeInfo.Unit.annotation = Type.union refined_annotation }
             in
             Value resolution
         | _ -> Value resolution)
@@ -4024,7 +4024,7 @@ module State (Context : Context) = struct
         in
         match annotation with
         | Some annotation -> (
-            match Annotation.annotation annotation with
+            match TypeInfo.Unit.annotation annotation with
             | Type.Parametric
                 {
                   name = "list";
@@ -4032,7 +4032,9 @@ module State (Context : Context) = struct
                     [Single (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]))];
                 } ->
                 let resolution =
-                  refine_local ~name { annotation with Annotation.annotation = Type.list parameter }
+                  refine_local
+                    ~name
+                    { annotation with TypeInfo.Unit.annotation = Type.list parameter }
                 in
                 Value resolution
             | _ -> Value resolution)
@@ -4050,7 +4052,7 @@ module State (Context : Context) = struct
           with
           | Some
               {
-                Annotation.annotation =
+                TypeInfo.Unit.annotation =
                   Type.Parametric
                     { name = parametric_name; parameters = [Single (Type.Union parameters)] } as
                   annotation;
@@ -4065,7 +4067,7 @@ module State (Context : Context) = struct
               in
               refine_local
                 ~name
-                (Annotation.create_mutable
+                (TypeInfo.Unit.create_mutable
                    (Type.parametric parametric_name [Single (Type.union parameters)]))
           | _ -> resolution
         in
@@ -4074,10 +4076,10 @@ module State (Context : Context) = struct
     | Call
         { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
       when is_simple_name name -> (
-        let { Annotation.annotation = callee_type; _ } = resolve_expression ~resolution test in
+        let { TypeInfo.Unit.annotation = callee_type; _ } = resolve_expression ~resolution test in
         match Type.typeguard_annotation callee_type with
         | Some guard_type ->
-            let resolution = refine_local ~name (Annotation.create_mutable guard_type) in
+            let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
         | None -> Value resolution)
     (* Compound assertions *)
@@ -4277,7 +4279,7 @@ module State (Context : Context) = struct
               Resolution.new_local
                 resolution
                 ~reference:(Reference.create synthetic)
-                ~annotation:(Annotation.create_mutable annotation)
+                ~annotation:(TypeInfo.Unit.create_mutable annotation)
             in
             let getitem_type =
               let callee =
@@ -4400,8 +4402,8 @@ module State (Context : Context) = struct
           let expected, is_immutable =
             match unwrapped_annotation_type, target_annotation with
             | Some original, _ when not (Type.is_type_alias original) -> original, true
-            | _, target_annotation when Annotation.is_immutable target_annotation ->
-                Annotation.original target_annotation, true
+            | _, target_annotation when TypeInfo.Unit.is_immutable target_annotation ->
+                TypeInfo.Unit.original target_annotation, true
             | _ -> Type.Top, false
           in
           let find_getattr parent =
@@ -4419,7 +4421,7 @@ module State (Context : Context) = struct
             in
             match attribute with
             | Some attribute when AnnotatedAttribute.defined attribute -> (
-                match AnnotatedAttribute.annotation attribute |> Annotation.annotation with
+                match AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation with
                 | Type.Parametric { name = "BoundMethod"; parameters = [Single (Callable _); _] }
                 | Type.Callable _ ->
                     Some attribute
@@ -4529,7 +4531,7 @@ module State (Context : Context) = struct
                         match
                           find_getattr parent
                           >>| AnnotatedAttribute.annotation
-                          >>| Annotation.annotation
+                          >>| TypeInfo.Unit.annotation
                         with
                         | Some
                             (Type.Parametric
@@ -4593,8 +4595,8 @@ module State (Context : Context) = struct
                       let is_reannotation_with_same_type =
                         (* TODO(T77219514): special casing for re-annotation in loops can be removed
                            when fixpoint is gone *)
-                        Annotation.is_immutable target_annotation
-                        && Type.equal expected (Annotation.original target_annotation)
+                        TypeInfo.Unit.is_immutable target_annotation
+                        && Type.equal expected (TypeInfo.Unit.original target_annotation)
                       in
                       if
                         has_explicit_annotation
@@ -4612,7 +4614,7 @@ module State (Context : Context) = struct
                 in
                 let check_assignment_to_readonly_type errors =
                   let is_readonly_attribute =
-                    target_annotation |> Annotation.annotation |> Type.ReadOnly.is_readonly
+                    target_annotation |> TypeInfo.Unit.annotation |> Type.ReadOnly.is_readonly
                   in
                   match attribute, resolved_base with
                   | Some (_, attribute_name), `Attribute (_, resolved_base_type)
@@ -4638,7 +4640,7 @@ module State (Context : Context) = struct
                     match attribute, unwrapped_annotation_type with
                     | None, _ when is_locally_initialized || not has_explicit_annotation ->
                         Option.some_if
-                          (Annotation.is_final target_annotation)
+                          (TypeInfo.Unit.is_final target_annotation)
                           (AnalysisError.FinalAttribute reference)
                     | None, _ -> None
                     | Some _, Some _ ->
@@ -4934,7 +4936,7 @@ module State (Context : Context) = struct
               in
               if has_explicit_annotation && is_valid_annotation then
                 let guide_annotation =
-                  Annotation.create_immutable ~final:is_final guide_annotation_type
+                  TypeInfo.Unit.create_immutable ~final:is_final guide_annotation_type
                 in
                 if
                   Type.is_concrete resolved_value
@@ -4945,17 +4947,19 @@ module State (Context : Context) = struct
                 else
                   guide_annotation
               else if is_immutable then
-                if Type.is_any (Annotation.original target_annotation) || invariance_mismatch then
+                if Type.is_any (TypeInfo.Unit.original target_annotation) || invariance_mismatch
+                then
                   target_annotation
                 else
                   refine_annotation target_annotation guide_annotation_type
               else
-                Annotation.create_mutable guide_annotation_type
+                TypeInfo.Unit.create_mutable guide_annotation_type
             in
             let errors, annotation =
               if
                 (not has_explicit_annotation)
-                && Type.Variable.contains_escaped_free_variable (Annotation.annotation annotation)
+                && Type.Variable.contains_escaped_free_variable
+                     (TypeInfo.Unit.annotation annotation)
               then
                 let kind =
                   Error.IncompleteType
@@ -4967,7 +4971,7 @@ module State (Context : Context) = struct
                 in
                 let converted =
                   Type.Variable.convert_all_escaped_free_variables_to_anys
-                    (Annotation.annotation annotation)
+                    (TypeInfo.Unit.annotation annotation)
                 in
                 emit_error ~errors ~location ~kind, { annotation with annotation = converted }
               else
@@ -5362,11 +5366,11 @@ module State (Context : Context) = struct
   and resolve_expression ~resolution expression =
     forward_expression ~resolution expression
     |> fun { Resolved.resolved; resolved_annotation; _ } ->
-    resolved_annotation |> Option.value ~default:(Annotation.create_mutable resolved)
+    resolved_annotation |> Option.value ~default:(TypeInfo.Unit.create_mutable resolved)
 
 
   and resolve_expression_type ~resolution expression =
-    resolve_expression ~resolution expression |> Annotation.annotation
+    resolve_expression ~resolution expression |> TypeInfo.Unit.annotation
 
 
   and resolve_expression_type_with_locals ~resolution ~locals expression =
@@ -5374,7 +5378,7 @@ module State (Context : Context) = struct
       Resolution.new_local resolution ~reference ~annotation
     in
     let resolution_with_locals = List.fold ~init:resolution ~f:new_local locals in
-    resolve_expression ~resolution:resolution_with_locals expression |> Annotation.annotation
+    resolve_expression ~resolution:resolution_with_locals expression |> TypeInfo.Unit.annotation
 
 
   and resolve_reference_type ~resolution reference =
@@ -5521,7 +5525,7 @@ module State (Context : Context) = struct
               type_of_signature ~resolution signature
               |> Type.Variable.mark_all_variables_as_bound
                    ~specific:(Resolution.all_type_variables_in_scope resolution)
-              |> Annotation.create_mutable
+              |> TypeInfo.Unit.create_mutable
               |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
           | None -> resolution
         in
@@ -6028,7 +6032,7 @@ module State (Context : Context) = struct
         | Some _ ->
             type_of_signature ~resolution signature
             |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
-            |> Annotation.create_mutable
+            |> TypeInfo.Unit.create_mutable
             |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
         | None -> resolution
       in
@@ -6064,9 +6068,9 @@ module State (Context : Context) = struct
             |> not
           in
           if is_readonly_entrypoint_function then
-            type_ |> Type.ReadOnly.create |> Annotation.create_immutable
+            type_ |> Type.ReadOnly.create |> TypeInfo.Unit.create_immutable
           else
-            Annotation.create_immutable type_
+            TypeInfo.Unit.create_immutable type_
         in
         let resolution =
           let reference = Reference.create name in
@@ -6235,8 +6239,8 @@ module State (Context : Context) = struct
                       else
                         errors
                     in
-                    errors, Annotation.create_mutable annotation
-                | None -> errors, Annotation.create_mutable resolved)
+                    errors, TypeInfo.Unit.create_mutable annotation
+                | None -> errors, TypeInfo.Unit.create_mutable resolved)
             | _ -> (
                 let errors, parsed_annotation =
                   match annotation with
@@ -6273,22 +6277,22 @@ module State (Context : Context) = struct
                 match parsed_annotation, value_annotation with
                 | Some annotation, Some _ when Type.contains_final annotation ->
                     ( add_final_parameter_annotation_error ~errors,
-                      Annotation.create_immutable annotation )
+                      TypeInfo.Unit.create_immutable annotation )
                 | Some annotation, Some value_annotation when contains_prohibited_any annotation ->
                     ( add_missing_parameter_annotation_error
                         ~errors
                         ~given_annotation:(Some annotation)
                         (Some value_annotation),
-                      Annotation.create_immutable annotation )
+                      TypeInfo.Unit.create_immutable annotation )
                 | Some annotation, _ when Type.contains_final annotation ->
                     ( add_final_parameter_annotation_error ~errors,
-                      Annotation.create_immutable annotation )
+                      TypeInfo.Unit.create_immutable annotation )
                 | Some annotation, None when contains_prohibited_any annotation ->
                     ( add_missing_parameter_annotation_error
                         ~errors
                         ~given_annotation:(Some annotation)
                         None,
-                      Annotation.create_immutable annotation )
+                      TypeInfo.Unit.create_immutable annotation )
                 | Some annotation, _ ->
                     let errors =
                       emit_invalid_enumeration_literal_errors
@@ -6297,16 +6301,16 @@ module State (Context : Context) = struct
                         ~errors
                         annotation
                     in
-                    errors, Annotation.create_immutable annotation
+                    errors, TypeInfo.Unit.create_immutable annotation
                 | None, Some value_annotation ->
                     ( add_missing_parameter_annotation_error
                         ~errors
                         ~given_annotation:None
                         (Some value_annotation),
-                      Annotation.create_mutable Type.Any )
+                      TypeInfo.Unit.create_mutable Type.Any )
                 | None, None ->
                     ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
-                      Annotation.create_mutable Type.Any ))
+                      TypeInfo.Unit.create_mutable Type.Any ))
           in
           let apply_starred_annotations annotation =
             if String.is_prefix ~prefix:"**" name then
@@ -6319,7 +6323,7 @@ module State (Context : Context) = struct
           let transform type_ =
             Type.Variable.mark_all_variables_as_bound type_ |> apply_starred_annotations
           in
-          errors, Annotation.transform_types ~f:transform annotation
+          errors, TypeInfo.Unit.transform_types ~f:transform annotation
         in
         let errors, annotation =
           if String.is_prefix ~prefix:"*" name && not (String.is_prefix ~prefix:"**" name) then
@@ -6329,7 +6333,7 @@ module State (Context : Context) = struct
             >>| (fun concatenation ->
                   Type.Tuple (Concatenation concatenation)
                   |> Type.Variable.mark_all_variables_as_bound
-                  |> Annotation.create_mutable
+                  |> TypeInfo.Unit.create_mutable
                   |> fun annotation -> errors, annotation)
             |> Option.value ~default:(parse_as_unary ())
           else
@@ -6381,10 +6385,10 @@ module State (Context : Context) = struct
                 resolution
                 |> Resolution.new_local
                      ~reference:(make_parameter_name first_name)
-                     ~annotation:(Annotation.create_mutable positional_component)
+                     ~annotation:(TypeInfo.Unit.create_mutable positional_component)
                 |> Resolution.new_local
                      ~reference:(make_parameter_name second_name)
-                     ~annotation:(Annotation.create_mutable keyword_component)
+                     ~annotation:(TypeInfo.Unit.create_mutable keyword_component)
               in
               if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
               then
@@ -6687,7 +6691,7 @@ module State (Context : Context) = struct
                 in
                 (* Check strengthening of postcondition. *)
                 let overridden_base_attribute_annotation =
-                  Annotation.annotation (AnnotatedAttribute.annotation overridden_attribute)
+                  TypeInfo.Unit.annotation (AnnotatedAttribute.annotation overridden_attribute)
                 in
                 match overridden_base_attribute_annotation with
                 | Type.Parametric
@@ -7162,7 +7166,7 @@ let resolution
     State.forward_expression ~resolution expression
     |> fun { State.Resolved.resolved; resolved_annotation; resolution = new_resolution; _ } ->
     ( new_resolution,
-      resolved_annotation |> Option.value ~default:(Annotation.create_mutable resolved) )
+      resolved_annotation |> Option.value ~default:(TypeInfo.Unit.create_mutable resolved) )
   in
   let resolve_statement ~resolution statement =
     State.forward_statement ~resolution ~statement
@@ -7246,7 +7250,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     ?instantiated:None
                     attribute
                   |> AnnotatedAttribute.annotation
-                  |> Annotation.annotation
+                  |> TypeInfo.Unit.annotation
                 in
                 let name = AnnotatedAttribute.name attribute in
                 match Map.add sofar ~key:name ~data:(annotation, name_and_metadata) with
@@ -7487,13 +7491,14 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         ?instantiated:None
                         attribute
                       |> AnnotatedAttribute.annotation
-                      |> Annotation.annotation
+                      |> TypeInfo.Unit.annotation
                     in
                     let name = AnnotatedAttribute.name attribute in
                     let actual = annotation in
                     let check_override overridden_attribute =
                       let annotation =
-                        AnnotatedAttribute.annotation overridden_attribute |> Annotation.annotation
+                        AnnotatedAttribute.annotation overridden_attribute
+                        |> TypeInfo.Unit.annotation
                       in
                       let name = AnnotatedAttribute.name overridden_attribute in
                       let visibility = AnnotatedAttribute.visibility overridden_attribute in

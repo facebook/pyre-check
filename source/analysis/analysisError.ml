@@ -52,7 +52,7 @@ type missing_annotation = {
 
 type revealed_local = {
   name: Reference.t;
-  annotation: Annotation.t;
+  annotation: TypeInfo.Unit.t;
 }
 [@@deriving compare, sexp, show, hash]
 
@@ -807,7 +807,7 @@ and kind =
   | RevealedLocals of revealed_local list
   | RevealedType of {
       expression: Expression.t;
-      annotation: Annotation.t;
+      annotation: TypeInfo.Unit.t;
       qualify: bool;
     }
   | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }
@@ -2570,7 +2570,7 @@ let rec messages ~concise ~signature location kind =
         Format.asprintf
           "    %s: %s"
           (Reference.show_sanitized name)
-          (Annotation.display_as_revealed_type annotation)
+          (TypeInfo.Unit.display_as_revealed_type annotation)
       in
       [
         Format.asprintf
@@ -2582,7 +2582,7 @@ let rec messages ~concise ~signature location kind =
         Format.asprintf
           "Revealed type for `%s` is %s."
           (show_sanitized_expression expression)
-          (Annotation.display_as_revealed_type annotation);
+          (TypeInfo.Unit.display_as_revealed_type annotation);
       ]
   | SuppressionCommentWithoutErrorCode { suppressed_error_codes } ->
       [
@@ -3388,7 +3388,7 @@ let join ~resolution left right =
           {
             name = left_name;
             annotation =
-              Annotation.join
+              TypeInfo.Unit.join
                 ~type_join:(GlobalResolution.join resolution)
                 left_annotation
                 right_annotation;
@@ -3405,7 +3405,7 @@ let join ~resolution left right =
           {
             expression = left_expression;
             annotation =
-              Annotation.join
+              TypeInfo.Unit.join
                 ~type_join:(GlobalResolution.join resolution)
                 left_annotation
                 right_annotation;
@@ -4055,7 +4055,7 @@ let dequalify
   let dequalify = Type.dequalify dequalify_map in
   let dequalify_identifier = Type.dequalify_identifier dequalify_map in
   let dequalify_reference = Type.dequalify_reference dequalify_map in
-  let dequalify_annotation = Annotation.dequalify dequalify_map in
+  let dequalify_annotation = TypeInfo.Unit.dequalify dequalify_map in
   let dequalify_class_kind (kind : class_kind) =
     match kind with
     | Class

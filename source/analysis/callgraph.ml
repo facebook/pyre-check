@@ -169,7 +169,7 @@ module DefaultBuilder : Builder = struct
       let extract_callables ~annotation instantiated_attribute =
         instantiated_attribute
         |> AnnotatedAttribute.annotation
-        |> Annotation.annotation
+        |> TypeInfo.Unit.annotation
         |> Type.callable_name
         >>| (fun name -> method_callee ~is_optional_class_attribute:true annotation (Named name))
         |> function
