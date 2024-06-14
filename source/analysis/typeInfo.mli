@@ -146,3 +146,27 @@ module Store : sig
 
   val update_with_filter : old_store:t -> new_store:t -> filter:(Reference.t -> Unit.t -> bool) -> t
 end
+
+module ForFunctionBody : sig
+  type t
+
+  val empty : unit -> t
+
+  val equal : t -> t -> bool
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val set : ?precondition:Store.t -> ?postcondition:Store.t -> statement_key:int -> t -> unit
+
+  module ReadOnly : sig
+    type t [@@deriving equal]
+
+    val get_precondition : t -> statement_key:int -> Store.t option
+
+    val get_postcondition : t -> statement_key:int -> Store.t option
+  end
+
+  val read_only : t -> ReadOnly.t
+end

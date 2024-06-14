@@ -39,7 +39,7 @@ type class_name_and_is_abstract_and_is_protocol = {
 
 type exit_state_of_define = {
   errors: Error.t list;
-  local_annotations: LocalAnnotationMap.t option;
+  local_annotations: TypeInfo.ForFunctionBody.t option;
   callees: Callgraph.callee_with_locations list option;
 }
 
@@ -67,7 +67,7 @@ module type Context = sig
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
-  val resolution_fixpoint : LocalAnnotationMap.t option
+  val resolution_fixpoint : TypeInfo.ForFunctionBody.t option
 
   (* Where to store errors found during the fixpoint. `None` discards them. *)
   val error_map : LocalErrorMap.t option
@@ -7087,7 +7087,7 @@ module State (Context : Context) = struct
       let postcondition = Resolution.annotation_store resolution in
       let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
       let (_ : unit option) =
-        Context.resolution_fixpoint >>| LocalAnnotationMap.set ~statement_key ~postcondition
+        Context.resolution_fixpoint >>| TypeInfo.ForFunctionBody.set ~statement_key ~postcondition
       in
       let (_ : unit option) = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
       Value resolution
@@ -7109,7 +7109,7 @@ module State (Context : Context) = struct
               let postcondition = Resolution.annotation_store post_resolution in
               let (_ : unit option) =
                 Context.resolution_fixpoint
-                >>| LocalAnnotationMap.set ~statement_key ~precondition ~postcondition
+                >>| TypeInfo.ForFunctionBody.set ~statement_key ~precondition ~postcondition
               in
               ()
         in
@@ -7122,7 +7122,7 @@ end
 module CheckResult = struct
   type t = {
     errors: Error.t list option;
-    local_annotations: LocalAnnotationMap.ReadOnly.t option;
+    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
   }
 
   let errors { errors; _ } = errors
@@ -7134,7 +7134,7 @@ module CheckResult = struct
       { errors = errors1; local_annotations = local_annotations1 }
     =
     [%compare.equal: Error.t list option] errors0 errors1
-    && [%equal: LocalAnnotationMap.ReadOnly.t option] local_annotations0 local_annotations1
+    && [%equal: TypeInfo.ForFunctionBody.ReadOnly.t option] local_annotations0 local_annotations1
 end
 
 module DummyContext = struct
@@ -7961,7 +7961,7 @@ let compute_local_annotations
 
       let define = define_node
 
-      let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+      let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
       let error_map = Some (LocalErrorMap.empty ())
 
@@ -7974,7 +7974,7 @@ let compute_local_annotations
   GlobalResolution.get_define_body_in_project global_resolution name
   >>| exit_state_of_define
   >>= (fun { local_annotations; _ } -> local_annotations)
-  >>| LocalAnnotationMap.read_only
+  >>| TypeInfo.ForFunctionBody.read_only
 
 
 let errors_from_other_analyses
@@ -7994,7 +7994,7 @@ let errors_from_other_analyses
     if include_unawaited_awaitable_errors && not (Define.is_toplevel define) then
       UnawaitedAwaitableCheck.check_define
         ~resolution
-        ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
+        ~local_annotations:(local_annotations >>| TypeInfo.ForFunctionBody.read_only)
         ~qualifier
         define_node
     else
@@ -8029,7 +8029,7 @@ let check_define
 
         let define = define_node
 
-        let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+        let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
         let error_map = Some (LocalErrorMap.empty ())
 
@@ -8082,8 +8082,8 @@ let check_define
   let local_annotations =
     if include_local_annotations then
       Some
-        (Option.value local_annotations ~default:(LocalAnnotationMap.empty ())
-        |> LocalAnnotationMap.read_only)
+        (Option.value local_annotations ~default:(TypeInfo.ForFunctionBody.empty ())
+        |> TypeInfo.ForFunctionBody.read_only)
     else
       None
   in

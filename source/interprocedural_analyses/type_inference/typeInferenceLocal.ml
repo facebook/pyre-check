@@ -72,7 +72,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val resolution_fixpoint : LocalAnnotationMap.t option
+  val resolution_fixpoint : TypeInfo.ForFunctionBody.t option
 
   val error_map : TypeCheck.LocalErrorMap.t option
 end
@@ -994,7 +994,7 @@ let infer_local
 
     let define = Node.create ~location define
 
-    let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+    let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
     let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)

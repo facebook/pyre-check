@@ -118,7 +118,7 @@ val parent : t -> Reference.t option
 val with_parent : t -> parent:Reference.t option -> t
 
 val resolution_for_statement
-  :  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+  :  local_annotations:TypeInfo.ForFunctionBody.ReadOnly.t option ->
   parent:Reference.t option ->
   statement_key:int ->
   t ->

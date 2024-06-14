@@ -35,6 +35,13 @@
  *     temporary anntoations on the first function call or `await`, which is an attempt
  *     to minimize the likelihood of the narrowed type being invalidated by mutation.
  *     (This mostly works in the absence of free threading).
+ * - TypeInfo.AroundStatement: This represents what we need to deal with type information in
+ *   a statement, given the way Pyre currently handles statements using a fixpoint. It contains
+ *   two `Store.t` values, one with the info *before* resolving the statement and another with
+ *   the info *after*.
+ * - TypeInfo.ForFunctionBody: This represent a map of the `AroundStatement.t` values for
+ *   every state in a function body. The representation is a map whose keys are statement ids
+ *   coming from the `Cfg`.
  *
  * For example, if we know that an attribute `bar` is final (e.g., it has type `Final[...]` or is
  * part of a frozen dataclass), then it is safe to permanently refine `foo.bar` as non-`None`, since
@@ -47,6 +54,7 @@
 
 open Core
 open Ast
+open Pyre
 open LatticeOfMaps
 
 module Mutability = struct
@@ -557,4 +565,88 @@ module Store = struct
       type_info = update_map old_store.type_info new_store.type_info;
       temporary_type_info = update_map old_store.temporary_type_info new_store.temporary_type_info;
     }
+end
+
+module AroundStatement = struct
+  type t = {
+    precondition: Store.t;
+    postcondition: Store.t;
+  }
+  [@@deriving eq]
+
+  let pp formatter { precondition; postcondition } =
+    Format.fprintf
+      formatter
+      "{ \"Precondition\": %a, \"Postcondition\": %a}"
+      Store.print_as_json
+      precondition
+      Store.print_as_json
+      postcondition
+end
+
+module ForFunctionBody = struct
+  (* Maps a key, unique to each statement for a function CFG, to type annotations. The statement key
+     is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
+  type t = AroundStatement.t Int.Table.t
+
+  let equal left right = Core.Hashtbl.equal AroundStatement.equal left right
+
+  let empty () = Int.Table.create ()
+
+  let pp formatter statements =
+    let pp_map formatter iterator pp_key map =
+      Format.fprintf formatter "{ ";
+      let pp_map_entry ~key ~data =
+        Format.fprintf formatter "%a: %a" pp_key key AroundStatement.pp data
+      in
+      iterator map ~f:pp_map_entry;
+      Format.fprintf formatter " }"
+    in
+    pp_map formatter Hashtbl.iteri Int.pp statements
+
+
+  let show map = Format.asprintf "%a" pp map
+
+  let set
+      ?(precondition =
+        Store.
+          { type_info = Reference.Map.Tree.empty; temporary_type_info = Reference.Map.Tree.empty })
+      ?(postcondition =
+        Store.
+          { type_info = Reference.Map.Tree.empty; temporary_type_info = Reference.Map.Tree.empty })
+      ~statement_key
+      type_info_for_function
+    =
+    Hashtbl.set
+      type_info_for_function
+      ~key:statement_key
+      ~data:{ AroundStatement.precondition; postcondition }
+
+
+  module StatementIdMap = struct
+    module StatementId = struct
+      type t = int [@@deriving compare, sexp, hash, to_yojson]
+    end
+
+    include Map.Make_tree (struct
+      include StatementId
+      include Comparator.Make (StatementId)
+    end)
+  end
+
+  module ReadOnly = struct
+    type t = AroundStatement.t StatementIdMap.t [@@deriving equal]
+
+    let get_precondition type_info_for_function ~statement_key =
+      StatementIdMap.find type_info_for_function statement_key
+      >>| fun { AroundStatement.precondition; _ } -> precondition
+
+
+    let get_postcondition type_info_for_function ~statement_key =
+      StatementIdMap.find type_info_for_function statement_key
+      >>| fun { AroundStatement.postcondition; _ } -> postcondition
+  end
+
+  let read_only type_info_for_function =
+    Hashtbl.to_alist type_info_for_function |> StatementIdMap.of_alist_exn
 end

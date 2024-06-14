@@ -35,9 +35,12 @@ module TypeEnvironmentReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
-    LocalAnnotationMap.ReadOnly.t option
+    TypeInfo.ForFunctionBody.ReadOnly.t option
 
-  val get_or_recompute_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
+  val get_or_recompute_local_annotations
+    :  t ->
+    Reference.t ->
+    TypeInfo.ForFunctionBody.ReadOnly.t option
 end
 
 include

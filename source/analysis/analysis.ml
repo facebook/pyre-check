@@ -37,7 +37,6 @@ module GlobalResolution = GlobalResolution
 module GlobalLeakCheck = GlobalLeakCheck
 module DecoratorPreprocessing = DecoratorPreprocessing
 module LatticeOfMaps = LatticeOfMaps
-module LocalAnnotationMap = LocalAnnotationMap
 module LocationBasedLookup = LocationBasedLookup
 module Module = Module
 module ModuleTracker = ModuleTracker

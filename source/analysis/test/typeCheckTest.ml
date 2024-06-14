@@ -110,7 +110,7 @@ let test_initial =
 
       let define = +define
 
-      let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+      let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
       let error_map = Some (LocalErrorMap.empty ())
 

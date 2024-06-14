@@ -132,7 +132,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val local_annotations : LocalAnnotationMap.ReadOnly.t option
+  val local_annotations : TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val resolution : Resolution.t
 end
@@ -949,7 +949,7 @@ module State (Context : Context) = struct
   let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
     let annotation_store =
       local_annotations
-      >>= LocalAnnotationMap.ReadOnly.get_precondition ~statement_key
+      >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     in
     resolution

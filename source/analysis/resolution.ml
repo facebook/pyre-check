@@ -319,7 +319,7 @@ let with_parent resolution ~parent = { resolution with parent }
 let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
   let annotation_store =
     local_annotations
-    >>= LocalAnnotationMap.ReadOnly.get_precondition ~statement_key
+    >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
     |> Option.value ~default:TypeInfo.Store.empty
   in
   with_annotation_store ~annotation_store resolution |> with_parent ~parent

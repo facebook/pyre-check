@@ -33,7 +33,7 @@ module type Context = sig
 
   val global_resolution : GlobalResolution.t
 
-  val local_annotations : LocalAnnotationMap.ReadOnly.t option
+  val local_annotations : TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val error_map : LocalErrorMap.t
 

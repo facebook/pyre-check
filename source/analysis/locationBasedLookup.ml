@@ -409,15 +409,17 @@ let create_of_module type_environment qualifier =
       TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
       |> function
       | Some coverage_data_lookup_map -> coverage_data_lookup_map
-      | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+      | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
+        ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
           |> Option.value ~default:TypeInfo.Store.empty,
-          LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
+          TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
+            coverage_data_lookup_map
+            ~statement_key
           |> Option.value ~default:TypeInfo.Store.empty )
       in
       let pre_resolution =
@@ -990,15 +992,15 @@ let resolution_from_cfg_data
     TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
     |> function
     | Some coverage_data_lookup_map -> coverage_data_lookup_map
-    | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+    | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
   in
   let annotation_store =
     let statement_key = [%hash: int * int] (node_id, statement_index) in
     if use_postcondition_info then
-      LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
+      TypeInfo.ForFunctionBody.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     else
-      LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
+      TypeInfo.ForFunctionBody.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)

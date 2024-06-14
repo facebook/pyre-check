@@ -24,7 +24,7 @@ let assert_backward precondition statement postcondition context =
 
     let define = +mock_define
 
-    let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+    let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
     let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)
