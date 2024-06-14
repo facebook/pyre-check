@@ -1,0 +1,158 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# Ensure correct AST creation given units defined under: https://docs.python.org/3/library/ast.html :: 3.10.7 grammar
+# Note: the guide referenced above is not complete, so we've extended it here wher appropriate
+
+
+## Avoid more than one newline in nested control flow statements
+# We need to avoid two newlines being output after asdasd = 8
+# i.e. not one after the final statement of the for loop immediatly followed by
+# one orignating from after the for statement itself
+
+for x in requests.items():
+    for x in requests.items():
+        asdasd = 8
+    dest = 3
+
+## comment nesting in control loops
+for a in b:
+  for c in d:
+    test(a, c)  # comment0  # comment1
+    # comment2
+  # comment3
+# comment4
+
+## with other logic straight after the comment
+for a in b:
+  for c in d:
+    test(a, c)  # comment0  # comment1
+    # comment2
+    something()
+  # comment3
+  something()
+# comment4
+something()
+
+
+## extra dot needed on attribute access of integer
+z = 123123 .b                    # formatted as: <int> .b
+g =  5 .thing()                  # formatted as: <int> .thing()
+a = 1223423423423425345345346 .z # formatted as: <bigInt> .z
+f = 567567567567.567 . j         # formatted as: <float>.j
+f = 567567567567.567j . j        # formatted as: <float>j.j
+
+## params are required for unambiguous pretty printing of these
+h = (2 + 4) * 3
+h = 2 + 4 * 3
+h = 2 + (4 * 3)
+
+## mixture of Terms and arithmetic with params
+g = ( 1 + 2 ) * 3
+g = 1 + (2  * 3)
+g = 1 + 2  * 3
+
+## Complex case which showed bug concerning params around boolean operators
+a = not a if (4**3 / 2) > 4 else (3 and 4) % (1 + 3) * 2
+
+## boolean operator param placement
+(3 and 4) % (1 + 3)
+(3 and 4) % 1 + 3
+3 and 4 % (1 + 3)
+3 and (4 % 1) + 3
+3 and 4 % 1 + 3
+
+## pow operator is right associative
+(a + b) ** ( c + d)
+a + (b **  c) + d
+(a + b **  c) + d
+a + (b ** c + d)
+
+## compare operators can be tricky
+a < b < c
+a < (b < c)
+(a < b) < c
+
+## preserve params on parenthesized_expression
+a.thing()
+a().thing()
+(a+b).thing()
+
+## indentation for try except statement
+def do_thing():
+    try:
+ 	    something()
+    except Exception as e:
+        print(e)
+
+## indentation for try finally statement
+
+def do_thing():
+    try:
+ 	    something()
+    finally:
+        something_else(e)
+
+## indentation for try else statement
+
+def do_thing2():
+    try:
+ 	    something()
+    except e:
+ 	    something_err()
+    else:
+        something_else(e)
+
+## improve newline placement for async functions
+class Bar:
+    def bar(self):
+        pass
+
+    def bar(self):
+        pass
+
+class Foo:
+    async def bar(self):
+        pass
+
+    async def bar(self):
+        pass
+
+## indentation for functions with annotations
+class Bar:
+    @annot
+    def bar(self):
+        pass
+
+    @annot
+    def bar(self):
+        pass
+
+class Foo:
+    @annot
+    async def bar(self):
+        pass
+
+    @annot
+    async def bar(self):
+        pass
+
+## formatting of if-else starting with an if
+if cond1 == 2:
+    pass
+else: # this is turned into an elif
+    if cond2 == "py2":
+        pass
+    # as the block just contains an if
+
+if cond1 == 2:
+    pass
+else: # this is not turned into elif
+    if cond2 == "py2":
+        pass
+    x = 3 # because the block contains other things besides an if
+
+## no comma popping for empty tuples
+a[b] = ((), c)

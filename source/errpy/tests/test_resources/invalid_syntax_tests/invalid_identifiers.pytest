@@ -1,0 +1,39 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# Ensure correct rejection of syntatically incorrect input given grammar defined under: https://docs.python.org/3/library/ast.html :: 3.10.7 grammar
+
+
+## keyword cant be identifer
+and
+
+## empty space cannot be identifier
+a[] # reject empty space identifer
+
+## async and await are keywords
+x = xx.async # keyword
+x = xx.await # keyword
+
+
+## keywords cant be imported
+import a.def
+import def
+import a.async
+import async
+from and import a
+from a import and
+from a import f as and
+from ...and.bar import a as b, c
+
+def and():
+    pass
+
+class and():
+    pass
+
+def foo(and):
+    pass
+
+foo(and)

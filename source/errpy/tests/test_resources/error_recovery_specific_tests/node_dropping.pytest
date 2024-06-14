@@ -1,0 +1,16 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# This is a series of tests which try focusing on error recovery which look
+# at the specific way ERRPY acts in cases where there are recoverable errors
+# in input on the likes of block statements, sub-expressions, tuples,
+# arguments etc
+
+
+## Avoid panic on function artuments having incorrect expression syntax
+def testcase():
+    f = 9
+    foo(1, 2, a.3, 4, identifier1 identifier2, 6, 7, identifier 8, 9, 10)
+    d=9

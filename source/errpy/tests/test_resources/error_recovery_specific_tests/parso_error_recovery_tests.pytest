@@ -1,0 +1,95 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# Collection of tests from https://github.com/davidhalter/parso/blob/master/test/test_error_recovery.py
+# Parso is able to handle these instances, at the very least ERRPY should be
+# able to recover a reasonable AST for these instances
+
+## test_with_stmt
+code = before
+
+with x: f.
+a
+
+code = after
+
+## test_one_line_function
+code = before
+
+def x(): f.
+
+code = after
+
+## test_one_line_function 2
+code = before
+
+def x(a:
+
+code = after
+
+## test_if_else
+code = before
+
+if x:
+    f.
+else:
+    g(
+
+code = after
+
+## test_if_stmt
+code = before
+
+if x: f.
+else: g(
+
+code = after
+
+## test_invalid_token
+code = before
+
+a + ? + b
+
+code = after
+
+## test_invalid_token_in_fstr
+code = before
+
+f"{a + ? + b}"
+
+code = after
+
+## test_dedent_issues1
+code = before
+
+class C:
+    @property
+        f
+            g
+    end
+
+code = after
+
+## test_dedent_issues2
+code = before
+
+class C:
+    @property
+        if 1:
+            g
+        else:
+            h
+    end
+
+code = after
+
+## test_dedent_issues3
+code = before
+
+class C:
+        f
+    g
+
+code = after

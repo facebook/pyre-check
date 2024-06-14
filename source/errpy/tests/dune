@@ -1,0 +1,3 @@
+(tests
+ (names test_ffi_ocaml)
+ (libraries ounit2 errpy))

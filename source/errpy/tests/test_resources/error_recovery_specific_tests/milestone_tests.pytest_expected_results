@@ -1,0 +1,116 @@
+@generated
+
+##Milestone 1 - Error correction for powering navigation on unsaved files
+class Thing:
+
+    def ok1(self, slice_elements: MyObject) -> str:
+        thing = slice_elements.thing()
+        return thing
+
+    def broken(self):
+        this_is_ok = [a for a in [1, 2, 3]]
+        thing = [a for a in in[1, 2, 3]]
+        this_part_is_ok = 34 + 8
+
+    def ok2(self, slice_elements: MyObject, b) -> None:
+        thing = slice_elements.something(b)
+
+
+1 Recoverable error detected:
+SyntaxError: keyword: "in" cannot be used as identifier at [11:29 - 11:31]
+CST Stack:
+    {Node identifier (10, 28) - (10, 30)}
+    {Node subscript (10, 28) - (10, 38)}
+    {Node for_in_clause (10, 19) - (10, 38)}
+    {Node list_comprehension (10, 16) - (10, 39)}
+    {Node assignment (10, 8) - (10, 39)}
+    {Node expression_statement (10, 8) - (10, 39)}
+    {Node block (9, 8) - (11, 32)}
+    {Node function_definition (7, 4) - (11, 32)}
+    {Node block (3, 4) - (14, 43)}
+    {Node class_definition (2, 0) - (14, 43)}
+    {Node module (2, 0) - (15, 0)}
+Output AST is not valid according to CPython: invalid syntax (<unknown>, line 9)
+
+##M2 - Autocomplete on trailing `.`
+def myfunc():
+    thing = slice_elements.
+
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [3:5 - 3:28]
+CST Stack:
+    {Node ERROR (2, 4) - (2, 27)}
+    {Node function_definition (1, 0) - (2, 27)}
+    {Node module (1, 0) - (3, 0)}
+Output AST is not valid according to CPython: invalid syntax (<unknown>, line 2)
+
+##M2 - autocomplete common case
+def myfunc():
+    thing = slice_elements..pop()
+    return thing
+
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [4:29 - 4:30]
+CST Stack:
+    {Node ERROR (3, 28) - (3, 29)}
+    {Node attribute (3, 12) - (3, 32)}
+    {Node call (3, 12) - (3, 34)}
+    {Node assignment (3, 4) - (3, 34)}
+    {Node expression_statement (3, 4) - (3, 34)}
+    {Node block (3, 4) - (4, 16)}
+    {Node function_definition (2, 0) - (4, 16)}
+    {Node module (2, 0) - (5, 0)}
+Output AST is not valid according to CPython: invalid syntax (<unknown>, line 2)
+
+##Milestone 3 - Signature help for Function and Method Signatures
+class Thing:
+
+    def ok1(self, slice_elements: MyObject) -> str:
+        thing = slice_elements.thing()
+        return thing
+
+    def broken(self):
+
+
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [8:9 - 12:44]
+CST Stack:
+    {Node ERROR (7, 8) - (11, 43)}
+    {Node function_definition (5, 4) - (11, 43)}
+    {Node block (1, 4) - (11, 43)}
+    {Node class_definition (0, 0) - (11, 43)}
+    {Node module (0, 0) - (12, 0)}
+Output AST is not valid according to CPython: expected an indented block after function definition on line 7 (<unknown>, line 9)
+
+##M3 - we must gracefully handle this...
+apple = 55
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [2:1 - 3:17]
+CST Stack:
+    {Node ERROR (1, 0) - (2, 16)}
+    {Node module (0, 0) - (3, 0)}
+
+##M3 - this must also be gracefully handled
+apple = 55
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [2:1 - 3:23]
+CST Stack:
+    {Node ERROR (1, 0) - (2, 22)}
+    {Node module (0, 0) - (3, 0)}
+
+##M3 - we must gracefully handle this...
+apple = 55
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [2:1 - 4:7]
+CST Stack:
+    {Node ERROR (1, 0) - (3, 6)}
+    {Node module (0, 0) - (4, 0)}
+
+##M3 - this must also be gracefully handled
+apple = 55
+1 Recoverable error detected:
+SyntaxError: invalid syntax at [2:1 - 5:7]
+CST Stack:
+    {Node ERROR (1, 0) - (4, 6)}
+    {Node module (0, 0) - (5, 0)}
+

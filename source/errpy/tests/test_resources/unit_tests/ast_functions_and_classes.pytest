@@ -1,0 +1,302 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# Ensure correct AST creation given units defined under: https://docs.python.org/3/library/ast.html :: 3.10.7 grammar
+# Note: the guide referenced above is not complete, so we've extended it here where appropriate
+
+
+## FunctionDef(name, args, body, decorator_list, returns, type_comment)
+def myfun(a):
+    return a
+
+def myfun(a=9):
+    return a
+
+def myfun(a=9):
+    return a
+
+## more fomplex funcDefs
+
+def f1(a) -> 'return annotation':
+    pass
+
+def f1(a, b=33):
+    c = a + b
+    return a+c
+
+def f1(a: int, *d: int, **e: int):
+    pass
+
+def f1(a: int, b: int=33):
+    c = a + b
+    return a+c
+
+@decorator1
+@decorator2
+def f1(a) -> 'return annotation':
+    pass
+
+@decorator1
+@decorator2
+def f1(print) -> 'return annotation':
+    pass
+
+@decorator1
+@decorator2
+def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
+    pass
+
+def myfun(a):
+    return a
+
+def myfun(a: int) -> int:
+    return a
+
+def myfun(a=9):
+    return a
+
+
+## docstrings
+def something():
+    """docstring"""
+    pass
+
+def something2():
+    '''docstring'''
+    pass
+
+def something3():
+    'docstring'
+    pass
+
+def something4():
+    '''docstring
+    multi
+    line'''
+    pass
+
+## funcdefs with positional seperator and keyword seperator
+def f(a, b, c:int, /, d, e:int): pass
+def f(a, b, c:int=7, /): pass
+def f(a, b, c:int=7, /, d=8): pass
+def f(a, b, b:int, /, d, e:int, *, kwonly1, kwdonly2): pass
+
+## funcdefs with args more than one char
+def thing(asdasd=6767):
+    pass
+
+## Lambda(args, body)
+lambda x,y: ...
+x = lambda x,y: ...
+xy = lambda x,y: x+7
+
+## lambda with no parameters
+ret = lambda: 34
+
+## arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
+@decorator1
+@decorator2
+def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
+    pass
+
+@decorator1
+@decorator2
+def f(a: int, b=1, c=2, *d, e, f=3, **g) -> int:
+    pass
+
+##ast.Call(func, args)
+func(a, b, c)
+
+##ast.Call(func, keywords)
+func(a=2, b=5, c=33)
+
+##ast.Call(func, starargs)
+func(*d, *e)
+
+##ast.Call(func, kwargs)
+func(**e, **f)
+
+## ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+@decorator1
+@decorator2
+class Foo(base1, base2, metaclass=meta):
+    pass
+
+## lots of classdefs and functions mixed
+# Python, ast.unparse is very sensitive regarding newline placement in pretty print
+# where there are many classes (with or without bodies) and functions mixed together
+class Foo:
+    pass
+
+
+class Foo(base1):
+    pass
+
+class Foo(base1):
+    classvar=9
+
+
+@decorator1
+@decorator2
+class Foo(base1):
+    pass
+
+
+def func1():
+    return 22
+
+def func2():
+    return 3
+
+
+@decorator1
+@decorator2
+class Foo(base1, base2, metaclass=meta):
+    def foo(self, thing: int) -> int:
+        return thing + 2
+
+    def bar(self, thing: int) -> int:
+        return thing + 2
+
+
+@decorator1
+@decorator2
+class Foo(metaclass=meta, metaclass2=meta):
+    def foo(self, thing: int) -> int:
+        return thing + 2
+
+
+@decorator1
+@decorator2
+class Foo(base1, base2, metaclass=meta):
+    classvar = 7
+
+def another():
+    pass
+
+## nested classes
+
+class MyClass:
+    class ChildClass:
+        def __init__(self, thing):
+            self.thing
+
+        def foo(self):
+            return self.thing
+
+    def do_thing(self):
+        inner = ChildClass(12)
+        return inner.foo()
+
+## nested classes preceeded by variables
+f = 99
+
+class Foo(base1, base2, metaclass=meta):
+    f = 99
+
+    class NestedFoo(base1, base2, metaclass=meta):
+        pass
+
+## more than one nested class
+class Foo(base1, base2, metaclass=meta):
+
+    class NestedFoo(base1, base2, metaclass=meta):
+        pass
+
+    class NestedFoo2(base1, base2, metaclass=meta):
+        pass
+
+
+## nested funcdefs
+
+def outerFunc(a: int) -> int:
+    a = a + 1
+    def inner(b: int) -> int:
+        return b + 1
+    return inner(a)
+
+
+def outerFunc(a: int) -> int:
+    def inner(b: int) -> int:
+        return b + 1
+    return inner(a)
+
+## class immediatly after variable declared
+f = 99
+class Foo(base1, base2, metaclass=meta):
+    pass
+
+
+## newlines for variables declared before and after class and function blocks
+f = 99
+
+class Foo(base1, base2, metaclass=meta):
+    f = 99
+    g = 12
+
+    class NestedFoo(base1, base2, metaclass=meta):
+        pass
+
+class Foo(base1, base2, metaclass=meta):
+
+    class NestedFoo(base1, base2, metaclass=meta):
+        pass
+
+    class NestedFoo2(base1, base2, metaclass=meta):
+        pass
+
+class MyClass:
+
+    class ChildClass:
+
+        def __init__(self, thing):
+            self.thing
+
+        def foo(self):
+            return self.thing
+
+    def do_thing(self):
+        inner = ChildClass(12)
+        return inner.foo()
+f = 99
+
+class Foo(base1, base2, metaclass=meta):
+    f = 99
+
+    class NestedFoo(base1, base2, metaclass=meta):
+        pass
+
+
+## more newlines for variables declared before and after class and function blocks
+f = 99
+
+class Thing:
+
+    def fib(a: int) -> int:
+        if a <= 2 or a == 1:
+            return 1
+
+    def fib2(a: int) -> int:
+        if a <= 2 or a == 1:
+            return 1
+j = 99
+
+def another():
+    99
+
+def another2():
+    99
+o = 999
+j = 99
+
+def another():
+
+    def nested():
+        return 33
+
+    def nested2():
+        return 33
+    return nested() + nested2()
+o = 999

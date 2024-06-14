@@ -1,0 +1,37 @@
+on:
+  push:
+    branches:
+      - main
+name: cargo vendor and commit
+run-name: cargo vendor 🚚 on - ${{ github.event.head_commit.message }}
+jobs:
+  cargo_vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete release branch
+        uses: dawidd6/action-delete-branch@v3
+        with:
+          soft_fail: true # set to true so that if the branch doesn't exist action doesnt fail
+          branches: release
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo vendor vendor_external
+      - name: Create .cargo dir
+        run: |
+          mkdir -p .cargo
+      - name: Create cargo config
+        shell: bash
+        run: |
+          cat << EOF > .cargo/config.toml
+          [source.crates-io]
+          replace-with = "vendored-sources"
+
+          [source.vendored-sources]
+          directory = "vendor_external"
+          EOF
+      - name: commit to 'new' release branch
+        uses: EndBug/add-and-commit@v9.1.1
+        with:
+          new_branch: release
+          author_name: GitHub Action
+          author_email: action@github.com

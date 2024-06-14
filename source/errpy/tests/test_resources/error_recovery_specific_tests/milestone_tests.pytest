@@ -1,0 +1,82 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# This is a series of tests which try focusing on error recovery which try to capture the
+# minimum functionality required of ERRPY in order to be considered useable for
+# Pyre.
+
+# Note: we require Class support before the performance of error recovery for these instances can be improved
+
+## Milestone 1 - Error correction for powering navigation on unsaved files
+# we should be able to recover at least the surrounding functions from within a class
+# which has a syntax error within one of its functions
+class Thing:
+    def ok1(self, slice_elements: MyObject) -> str:
+        thing = slice_elements.thing()
+        return thing
+
+    def broken(self):
+        # localized error in broken
+        this_is_ok = [a for a in [1,2,3]]
+        thing = [a for a in in [1,2,3]]
+        this_part_is_ok = 34 + 8
+
+    def ok2(self, slice_elements: MyObject, b) -> None:
+        thing = slice_elements.something(b)
+
+
+## M2 - Autocomplete on trailing `.`
+# standard trailing dot
+def myfunc():
+    thing = slice_elements.
+
+
+## M2 - autocomplete common case
+# where user adds a dot in between existing lhs and dot
+
+def myfunc():
+    thing = slice_elements. .pop() # for dot completion
+    return thing
+
+
+## Milestone 3 - Signature help for Function and Method Signatures
+class Thing:
+    def ok1(self, slice_elements: MyObject) -> str:
+        thing = slice_elements.thing()
+        return thing
+
+    def broken(self):
+        # here is the open param without close...
+        self.call_something(
+
+    def ok2(self, slice_elements: MyObject, b) -> None:
+        # should still be ok
+        thing = slice_elements.something(b)
+
+
+## M3 - we must gracefully handle this...
+apple = 55
+acid = “citric”
+a = foo(x: int =
+
+
+## M3 - this must also be gracefully handled
+apple = 55
+acid = “citric”
+a = foo(x: int = 42, a
+
+## M3 - we must gracefully handle this...
+apple = 55
+acid = “citric”
+a = foo(
+    a|
+
+
+## M3 - this must also be gracefully handled
+apple = 55
+acid = “citric”
+a = foo(
+    x: int = 42,
+    a|

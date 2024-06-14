@@ -1,0 +1,5 @@
+[source.crates-io] # @oss-disable
+replace-with = "vendored-sources" # @oss-disable
+
+[source.vendored-sources] # @oss-disable
+directory = "../../../third-party/rust/vendor" # @oss-disable

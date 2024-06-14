@@ -1,0 +1,39 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree
+
+# Ensure correct AST creation given units defined under: https://docs.python.org/3/library/ast.html :: 3.10.7 grammar
+# Note: the guide referenced above is not complete, so we've extended it here where appropriate
+
+
+## AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment)
+
+## Await(value)
+async def f():
+    await other_func()
+
+## AsyncFor(target, iter, body, orelse, type_comment)
+async for a in y:
+    somethign()
+
+async for a in y:
+    somethign()
+else:
+    ysss()
+
+## AsyncWith(items, body, type_comment)
+async with a:
+   something(a)
+
+async with a, c as d:
+   something(b, c, d)
+
+async with a as b, c as d:
+   something(b, d)
+
+async with open('file_path', 'w') as file:
+    file.write('hello world !')
+
+async with A() as a, B() as b, C() as c:
+    doSomething(a,b,c)

@@ -1,0 +1,8 @@
+(library
+ (name ocamlpool)
+ (package errpy)
+ (wrapped false)
+ (modules)
+ (foreign_stubs
+  (language c)
+  (names ocamlpool)))

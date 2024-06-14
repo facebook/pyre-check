@@ -1,0 +1,13 @@
+// Copyright (c) Meta Platforms, Inc. and affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+pub enum E {
+    Foo((A, B)),
+    Bar(Box<(A, B)>),
+    #[rust_to_ocaml(inline_tuple)]
+    Baz((A, B)),
+    #[rust_to_ocaml(inline_tuple)]
+    Qux(Box<(A, B)>),
+}
