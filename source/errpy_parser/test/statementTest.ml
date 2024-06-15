@@ -865,6 +865,48 @@ let test_try =
                     handles_exception_group = false;
                   };
              ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_parsed
+           "try:\n\ta\nexcept* a:\n\tb"
+           ~expected:
+             [
+               +Statement.Try
+                  {
+                    Try.body = [+Statement.Expression !"a"];
+                    handlers =
+                      [
+                        {
+                          Try.Handler.kind = Some !"a";
+                          name = None;
+                          body = [+Statement.Expression !"b"];
+                        };
+                      ];
+                    orelse = [];
+                    finally = [];
+                    handles_exception_group = true;
+                  };
+             ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_parsed
+           "try:\n\ta\nexcept* a as b:\n\tb"
+           ~expected:
+             [
+               +Statement.Try
+                  {
+                    Try.body = [+Statement.Expression !"a"];
+                    handlers =
+                      [
+                        {
+                          Try.Handler.kind = Some !"a";
+                          name = Some (+"b");
+                          body = [+Statement.Expression !"b"];
+                        };
+                      ];
+                    orelse = [];
+                    finally = [];
+                    handles_exception_group = true;
+                  };
+             ];
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "try: a";
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "try:\n\ta\nelse:\n\tb";
       (*TODO (T148669698): assert_not_parsed "try:\n\ta\nexcept a, b:\n\tb";*)

@@ -154,6 +154,12 @@ and stmt_desc =
       orelse: stmt list;
       finalbody: stmt list;
     }
+  | TryStar of {
+      body: stmt list;
+      handlers: excepthandler list;
+      orelse: stmt list;
+      finalbody: stmt list;
+    }
   | Assert of {
       test: expr;
       msg: expr option;
