@@ -27,7 +27,7 @@ let test_simple_registration context =
     in
     let expectation = expected >>| TypeInfo.Unit.create_immutable ?original in
     AttributeResolution.ReadOnly.global read_only (Reference.create name)
-    >>| (fun { annotation; _ } -> annotation)
+    >>| (fun { type_info; _ } -> type_info)
     |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
   in
   assert_registers "x = 1" "test.x" (Some Type.integer);
@@ -101,7 +101,7 @@ let test_updates context =
           in
           let expectation = expectation >>| TypeInfo.Unit.create_immutable in
           AttributeResolution.ReadOnly.global read_only (Reference.create global_name) ~dependency
-          >>| (fun { annotation; _ } -> annotation)
+          >>| (fun { type_info; _ } -> type_info)
           |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;

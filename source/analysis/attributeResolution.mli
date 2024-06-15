@@ -12,7 +12,7 @@ open Core
 
 module Global : sig
   type t = {
-    annotation: TypeInfo.Unit.t;
+    type_info: TypeInfo.Unit.t;
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }

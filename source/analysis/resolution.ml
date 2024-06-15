@@ -160,7 +160,7 @@ let get_local ?(global_fallback = true) ~reference { type_info_store; global_res
   | Some _ as result -> result
   | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.delocalize reference |> global >>| fun { annotation; _ } -> annotation
+      Reference.delocalize reference |> global >>| fun { type_info; _ } -> type_info
   | None -> None
 
 
@@ -176,7 +176,7 @@ let get_local_with_attributes
       let global = GlobalResolution.global global_resolution in
       Reference.(combine name attribute_path |> delocalize)
       |> global
-      >>| fun { annotation; _ } -> annotation
+      >>| fun { type_info; _ } -> type_info
   | None -> None
 
 

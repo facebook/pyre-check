@@ -87,7 +87,7 @@ end
 
 module Global = struct
   type t = {
-    annotation: TypeInfo.Unit.t;
+    type_info: TypeInfo.Unit.t;
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }
@@ -4148,7 +4148,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         Reference.create_from_list [name]
                         |> Reference.combine from
                         |> self#global_annotation ~assumptions
-                        >>| (fun { Global.annotation = { annotation; _ }; _ } -> annotation)
+                        >>| (fun { Global.type_info = { annotation; _ }; _ } -> annotation)
                         >>= resolve_remaining ~remaining
                   in
                   let extract_callable = function
@@ -4550,14 +4550,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ~overloads
                 ~assumptions
             in
-            let annotation =
+            let type_info =
               Result.ok decorated
               |> Option.value ~default:Type.Any
               |> TypeInfo.Unit.create_immutable
             in
             Some
               {
-                Global.annotation;
+                Global.type_info;
                 undecorated_signature = Some undecorated_signature;
                 problem = Result.error decorated;
               }
@@ -4594,8 +4594,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             |> self#parse_annotation ~validation:ValidatePrimitives ~assumptions
             |> Type.meta
             |> TypeInfo.Unit.create_immutable
-            |> fun annotation ->
-            Some { Global.annotation; undecorated_signature = None; problem = None }
+            |> fun type_info ->
+            Some { Global.type_info; undecorated_signature = None; problem = None }
         | SimpleAssign { explicit_annotation; value; _ } -> (
             let explicit_annotation =
               explicit_annotation
@@ -4614,8 +4614,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             match annotation with
             | Some annotation ->
                 produce_assignment_global ~is_explicit ~is_final annotation
-                |> fun annotation ->
-                Some { Global.annotation; undecorated_signature = None; problem = None }
+                |> fun type_info ->
+                Some { Global.type_info; undecorated_signature = None; problem = None }
             | _ -> None)
         | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
@@ -4630,16 +4630,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | _ -> Type.Top
             in
             produce_assignment_global ~is_explicit:false ~is_final:false extracted
-            |> fun annotation ->
-            Some { Global.annotation; undecorated_signature = None; problem = None }
+            |> fun type_info ->
+            Some { Global.type_info; undecorated_signature = None; problem = None }
         | _ -> None
       in
       let class_lookup = Reference.show name |> class_exists in
       if class_lookup then
         let primitive = Type.Primitive (Reference.show name) in
         TypeInfo.Unit.create_immutable (Type.meta primitive)
-        |> fun annotation ->
-        Some { Global.annotation; undecorated_signature = None; problem = None }
+        |> fun type_info -> Some { Global.type_info; undecorated_signature = None; problem = None }
       else
         get_unannotated_global name
         >>= fun global ->
@@ -4676,16 +4675,16 @@ module OutgoingDataComputation = struct
     | "__file__"
     | "__name__"
     | "__package__" ->
-        let annotation = TypeInfo.Unit.create_immutable Type.string in
-        Some { Global.annotation; undecorated_signature = None; problem = None }
+        let type_info = TypeInfo.Unit.create_immutable Type.string in
+        Some { Global.type_info; undecorated_signature = None; problem = None }
     | "__path__" ->
-        let annotation = Type.list Type.string |> TypeInfo.Unit.create_immutable in
-        Some { Global.annotation; undecorated_signature = None; problem = None }
+        let type_info = Type.list Type.string |> TypeInfo.Unit.create_immutable in
+        Some { Global.type_info; undecorated_signature = None; problem = None }
     | "__dict__" ->
-        let annotation =
+        let type_info =
           Type.dictionary ~key:Type.string ~value:Type.Any |> TypeInfo.Unit.create_immutable
         in
-        Some { annotation; undecorated_signature = None; problem = None }
+        Some { type_info; undecorated_signature = None; problem = None }
     | _ -> global_annotation reference
 end
 

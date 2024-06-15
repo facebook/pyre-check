@@ -423,7 +423,7 @@ let test_register_globals context =
     let actual =
       !&reference
       |> GlobalResolution.global resolution
-      >>| fun { annotation; _ } -> TypeInfo.Unit.annotation annotation
+      >>| fun { type_info; _ } -> TypeInfo.Unit.annotation type_info
     in
     assert_equal
       ~printer:(function
@@ -646,7 +646,7 @@ let test_populate context =
         | Some global -> TypeInfo.Unit.show global
         | None -> "None")
       expected
-      (GlobalResolution.global global_resolution !&actual >>| fun { annotation; _ } -> annotation)
+      (GlobalResolution.global global_resolution !&actual >>| fun { type_info; _ } -> type_info)
   in
   let assert_global =
     populate
