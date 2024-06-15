@@ -361,8 +361,8 @@ module ReadOnly = struct
       None
 
 
-  let resolve_expression_to_annotation api =
-    contextless_resolution api |> Resolution.resolve_expression_to_annotation
+  let resolve_expression_to_type_info api =
+    contextless_resolution api |> Resolution.resolve_expression_to_type_info
 
 
   let get_unannotated_global api =

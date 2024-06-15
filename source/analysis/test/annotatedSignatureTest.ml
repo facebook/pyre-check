@@ -118,7 +118,7 @@ let test_unresolved_select =
       TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
       |> Resolution.new_local
            ~reference:(Reference.create "optional")
-           ~annotation:(TypeInfo.Unit.create_mutable (Type.optional Type.integer))
+           ~type_info:(TypeInfo.Unit.create_mutable (Type.optional Type.integer))
     in
     Type.Variable.Namespace.reset ();
     let arguments_of_call, callable_type_expression =

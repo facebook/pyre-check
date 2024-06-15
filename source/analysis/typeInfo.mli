@@ -71,14 +71,9 @@ module LocalOrGlobal : sig
 
   val set_base : t -> base:Unit.t -> t
 
-  val set_annotation
-    :  ?wipe_subtree:bool ->
-    attribute_path:Reference.t ->
-    annotation:Unit.t ->
-    t ->
-    t
+  val set_type_info : ?wipe_subtree:bool -> attribute_path:Reference.t -> type_info:Unit.t -> t -> t
 
-  val get_annotation : attribute_path:Reference.t -> t -> Unit.t option
+  val get_type_info : attribute_path:Reference.t -> t -> Unit.t option
 
   val less_or_equal
     :  type_less_or_equal:(left:Type.t -> right:Type.t -> bool) ->
@@ -102,23 +97,23 @@ module Store : sig
 
   val empty : t
 
-  val has_nontemporary_annotation : name:Reference.t -> t -> bool
+  val has_nontemporary_type_info : name:Reference.t -> t -> bool
 
   val get_base : name:Reference.t -> t -> Unit.t option
 
-  val get_annotation : name:Reference.t -> attribute_path:Reference.t -> t -> Unit.t option
+  val get_type_info : name:Reference.t -> attribute_path:Reference.t -> t -> Unit.t option
 
   val set_base : ?temporary:bool -> name:Reference.t -> base:Unit.t -> t -> t
 
   val new_as_base : ?temporary:bool -> name:Reference.t -> base:Unit.t -> t -> t
 
-  val set_annotation
+  val set_type_info
     :  ?temporary:bool ->
     ?wipe_subtree:bool ->
     name:Reference.t ->
     attribute_path:Reference.t ->
-    base_annotation:Unit.t option ->
-    annotation:Unit.t ->
+    base_type_info:Unit.t option ->
+    type_info:Unit.t ->
     t ->
     t
 

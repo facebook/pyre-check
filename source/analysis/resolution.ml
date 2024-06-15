@@ -20,7 +20,7 @@ open Pyre
 
 type t = {
   global_resolution: GlobalResolution.t;
-  annotation_store: TypeInfo.Store.t;
+  type_info_store: TypeInfo.Store.t;
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * TypeInfo.Unit.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
@@ -34,10 +34,10 @@ and resolve_statement_result_t =
       errors: AnalysisError.t list;
     }
 
-let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ?parent () =
+let create ~global_resolution ~type_info_store ~resolve_expression ~resolve_statement ?parent () =
   {
     global_resolution;
-    annotation_store;
+    type_info_store;
     type_variables = Type.Variable.Set.empty;
     resolve_expression;
     resolve_statement;
@@ -45,12 +45,12 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
   }
 
 
-let pp format { annotation_store; type_variables; _ } =
+let pp format { type_info_store; type_variables; _ } =
   Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
-  Format.fprintf format "%a" TypeInfo.Store.pp annotation_store
+  Format.fprintf format "%a" TypeInfo.Store.pp type_info_store
 
 
 let show resolution = Format.asprintf "%a" pp resolution
@@ -60,15 +60,15 @@ let is_global { global_resolution; _ } ~reference =
 
 
 let resolve_expression ({ resolve_expression; _ } as resolution) expression =
-  let resolution, annotation = resolve_expression ~resolution expression in
-  resolution, TypeInfo.Unit.annotation annotation
+  let resolution, type_info = resolve_expression ~resolution expression in
+  resolution, TypeInfo.Unit.annotation type_info
 
 
 let resolve_expression_to_type ({ resolve_expression; _ } as resolution) expression =
   resolve_expression ~resolution expression |> snd |> TypeInfo.Unit.annotation
 
 
-let resolve_expression_to_annotation ({ resolve_expression; _ } as resolution) expression =
+let resolve_expression_to_type_info ({ resolve_expression; _ } as resolution) expression =
   resolve_expression ~resolution expression |> snd
 
 
@@ -106,25 +106,25 @@ let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_express
   | Reachable { resolution; _ } -> Some resolution
 
 
-let has_nontemporary_annotation ~reference resolution =
-  TypeInfo.Store.has_nontemporary_annotation ~name:reference resolution.annotation_store
+let has_nontemporary_type_info ~reference resolution =
+  TypeInfo.Store.has_nontemporary_type_info ~name:reference resolution.type_info_store
 
 
-let new_local ?(temporary = false) resolution ~reference ~annotation =
+let new_local ?(temporary = false) resolution ~reference ~type_info =
   {
     resolution with
-    annotation_store =
-      resolution.annotation_store
-      |> TypeInfo.Store.new_as_base ~temporary ~name:reference ~base:annotation;
+    type_info_store =
+      resolution.type_info_store
+      |> TypeInfo.Store.new_as_base ~temporary ~name:reference ~base:type_info;
   }
 
 
-let refine_local ?(temporary = false) resolution ~reference ~annotation =
+let refine_local ?(temporary = false) resolution ~reference ~type_info =
   {
     resolution with
-    annotation_store =
-      resolution.annotation_store
-      |> TypeInfo.Store.set_base ~temporary ~name:reference ~base:annotation;
+    type_info_store =
+      resolution.type_info_store
+      |> TypeInfo.Store.set_base ~temporary ~name:reference ~base:type_info;
   }
 
 
@@ -134,20 +134,20 @@ let set_local_with_attributes
     resolution
     ~name
     ~attribute_path
-    ~base_annotation
-    ~annotation
+    ~base_type_info
+    ~type_info
   =
   {
     resolution with
-    annotation_store =
-      resolution.annotation_store
-      |> TypeInfo.Store.set_annotation
+    type_info_store =
+      resolution.type_info_store
+      |> TypeInfo.Store.set_type_info
            ~temporary
            ~wipe_subtree
            ~name
            ~attribute_path
-           ~base_annotation
-           ~annotation;
+           ~base_type_info
+           ~type_info;
   }
 
 
@@ -155,8 +155,8 @@ let new_local_with_attributes = set_local_with_attributes ~wipe_subtree:true
 
 let refine_local_with_attributes = set_local_with_attributes ~wipe_subtree:false
 
-let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
-  match TypeInfo.Store.get_base ~name:reference annotation_store with
+let get_local ?(global_fallback = true) ~reference { type_info_store; global_resolution; _ } =
+  match TypeInfo.Store.get_base ~name:reference type_info_store with
   | Some _ as result -> result
   | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
@@ -168,9 +168,9 @@ let get_local_with_attributes
     ?(global_fallback = true)
     ~name
     ~attribute_path
-    { annotation_store; global_resolution; _ }
+    { type_info_store; global_resolution; _ }
   =
-  match TypeInfo.Store.get_annotation ~name ~attribute_path annotation_store with
+  match TypeInfo.Store.get_type_info ~name ~attribute_path type_info_store with
   | Some _ as result -> result
   | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
@@ -181,12 +181,12 @@ let get_local_with_attributes
 
 
 let unset_local
-    ({ annotation_store = { type_info; temporary_type_info }; _ } as resolution)
+    ({ type_info_store = { type_info; temporary_type_info }; _ } as resolution)
     ~reference
   =
   {
     resolution with
-    annotation_store =
+    type_info_store =
       {
         type_info = Reference.Map.Tree.remove type_info reference;
         temporary_type_info = Reference.Map.Tree.remove temporary_type_info reference;
@@ -194,17 +194,17 @@ let unset_local
   }
 
 
-let clear_temporary_type_info ({ annotation_store; _ } as resolution) =
+let clear_temporary_type_info ({ type_info_store; _ } as resolution) =
   {
     resolution with
-    annotation_store = { annotation_store with temporary_type_info = Reference.Map.Tree.empty };
+    type_info_store = { type_info_store with temporary_type_info = Reference.Map.Tree.empty };
   }
 
 
 let resolve_attribute_access resolution ~base_type ~attribute =
   let unique_name = Reference.create "$n" in
   let resolution =
-    new_local resolution ~reference:unique_name ~annotation:(TypeInfo.Unit.create_mutable base_type)
+    new_local resolution ~reference:unique_name ~type_info:(TypeInfo.Unit.create_mutable base_type)
   in
   let expression_to_analyze =
     Expression.from_reference
@@ -219,7 +219,7 @@ let resolve_expression_to_type_with_locals
     ~locals
     expression
   =
-  let new_local resolution (reference, annotation) = new_local resolution ~reference ~annotation in
+  let new_local resolution (reference, type_info) = new_local resolution ~reference ~type_info in
   let resolution_with_locals = List.fold ~init:resolution ~f:new_local locals in
   resolve_expression ~resolution:resolution_with_locals expression
   |> snd
@@ -234,9 +234,9 @@ let type_variable_exists { type_variables; _ } ~variable = Set.mem type_variable
 
 let all_type_variables_in_scope { type_variables; _ } = Set.to_list type_variables
 
-let annotation_store { annotation_store; _ } = annotation_store
+let type_info_store { type_info_store; _ } = type_info_store
 
-let refinements_equal left right = TypeInfo.Store.equal left.annotation_store right.annotation_store
+let refinements_equal left right = TypeInfo.Store.equal left.type_info_store right.type_info_store
 
 (** Meet refinements.
 
@@ -246,11 +246,11 @@ let meet_refinements left right =
   let global_resolution = left.global_resolution in
   {
     left with
-    annotation_store =
+    type_info_store =
       TypeInfo.Store.meet
         ~type_meet:(GlobalResolution.meet global_resolution)
-        left.annotation_store
-        right.annotation_store;
+        left.type_info_store
+        right.type_info_store;
   }
 
 
@@ -264,11 +264,11 @@ let outer_join_refinements left right =
   let global_resolution = left.global_resolution in
   {
     left with
-    annotation_store =
+    type_info_store =
       TypeInfo.Store.outer_join
         ~type_join:(GlobalResolution.join global_resolution)
-        left.annotation_store
-        right.annotation_store;
+        left.type_info_store
+        right.type_info_store;
   }
 
 
@@ -277,23 +277,23 @@ let outer_widen_refinements ~iteration ~widening_threshold left right =
   let global_resolution = left.global_resolution in
   {
     left with
-    annotation_store =
+    type_info_store =
       TypeInfo.Store.outer_widen
         ~type_join:(GlobalResolution.join global_resolution)
         ~iteration
         ~widening_threshold
-        left.annotation_store
-        right.annotation_store;
+        left.type_info_store
+        right.type_info_store;
   }
 
 
 let update_existing_refinements ~old_resolution ~new_resolution =
   {
     old_resolution with
-    annotation_store =
+    type_info_store =
       TypeInfo.Store.update_existing
-        ~old_store:old_resolution.annotation_store
-        ~new_store:new_resolution.annotation_store;
+        ~old_store:old_resolution.type_info_store
+        ~new_store:new_resolution.type_info_store;
   }
 
 
@@ -302,27 +302,27 @@ let update_existing_refinements ~old_resolution ~new_resolution =
 let update_refinements_with_filter ~old_resolution ~new_resolution ~filter =
   {
     old_resolution with
-    annotation_store =
+    type_info_store =
       TypeInfo.Store.update_with_filter
-        ~old_store:old_resolution.annotation_store
-        ~new_store:new_resolution.annotation_store
+        ~old_store:old_resolution.type_info_store
+        ~new_store:new_resolution.type_info_store
         ~filter;
   }
 
 
-let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
+let with_type_info_store resolution ~type_info_store = { resolution with type_info_store }
 
 let parent { parent; _ } = parent
 
 let with_parent resolution ~parent = { resolution with parent }
 
 let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
-  let annotation_store =
+  let type_info_store =
     local_annotations
     >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
     |> Option.value ~default:TypeInfo.Store.empty
   in
-  with_annotation_store ~annotation_store resolution |> with_parent ~parent
+  with_type_info_store ~type_info_store resolution |> with_parent ~parent
 
 
 let is_consistent_with ({ global_resolution; _ } as resolution) =

@@ -175,10 +175,10 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     =
     let resolve ~resolution ~expression =
       try
-        let annotation = Resolution.resolve_expression_to_annotation resolution expression in
-        let original = TypeInfo.Unit.original annotation in
+        let type_info = Resolution.resolve_expression_to_type_info resolution expression in
+        let original = TypeInfo.Unit.original type_info in
         if Type.is_top original || Type.is_unbound original then
-          let annotation = TypeInfo.Unit.annotation annotation in
+          let annotation = TypeInfo.Unit.annotation type_info in
           if Type.is_top annotation || Type.is_unbound annotation then
             None
           else
@@ -426,14 +426,14 @@ let create_of_module type_environment qualifier =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:pre_annotations
+          ~type_info_store:pre_annotations
           (module TypeCheck.DummyContext)
       in
       let post_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:post_annotations
+          ~type_info_store:post_annotations
           (module TypeCheck.DummyContext)
       in
       CreateLookupsIncludingTypeAnnotationsVisitor.visit
@@ -994,7 +994,7 @@ let resolution_from_cfg_data
     | Some coverage_data_lookup_map -> coverage_data_lookup_map
     | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
   in
-  let annotation_store =
+  let type_info_store =
     let statement_key = [%hash: int * int] (node_id, statement_index) in
     if use_postcondition_info then
       TypeInfo.ForFunctionBody.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
@@ -1004,7 +1004,7 @@ let resolution_from_cfg_data
       |> Option.value ~default:TypeInfo.Store.empty
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-  TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+  TypeCheck.resolution global_resolution ~type_info_store (module TypeCheck.DummyContext)
 
 
 let resolve_definition_for_symbol

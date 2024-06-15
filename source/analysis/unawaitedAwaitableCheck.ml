@@ -947,14 +947,12 @@ module State (Context : Context) = struct
 
 
   let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
-    let annotation_store =
+    let type_info_store =
       local_annotations
       >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     in
-    resolution
-    |> Resolution.with_annotation_store ~annotation_store
-    |> Resolution.with_parent ~parent
+    resolution |> Resolution.with_type_info_store ~type_info_store |> Resolution.with_parent ~parent
 
 
   let forward ~statement_key state ~statement:{ Node.value; location } =

@@ -633,8 +633,8 @@ module State (Context : Context) = struct
     | _, Unreachable -> false
     | Value left_resolution, Value right_resolution ->
         TypeInfo.Store.less_or_equal_monotone
-          ~left:(Resolution.annotation_store left_resolution)
-          ~right:(Resolution.annotation_store right_resolution)
+          ~left:(Resolution.type_info_store left_resolution)
+          ~right:(Resolution.type_info_store right_resolution)
 
 
   let widening_threshold = 3
@@ -936,14 +936,14 @@ module State (Context : Context) = struct
   type partition_name_result_t = {
     name: Reference.t;
     attribute_path: Reference.t;
-    base_annotation: TypeInfo.Unit.t option;
+    base_type_info: TypeInfo.Unit.t option;
   }
 
   let partition_name ~resolution name =
     let global_resolution = Resolution.global_resolution resolution in
     let reference = Ast.Expression.name_to_reference_exn name in
     match Reference.as_list reference with
-    | [] -> { name = Reference.empty; attribute_path = Reference.empty; base_annotation = None }
+    | [] -> { name = Reference.empty; attribute_path = Reference.empty; base_type_info = None }
     | head :: tail ->
         let base, attribute_list =
           match GlobalResolution.resolve_exports global_resolution reference with
@@ -975,7 +975,7 @@ module State (Context : Context) = struct
         {
           name = base;
           attribute_path = Reference.create_from_list attributes;
-          base_annotation = annotation;
+          base_type_info = annotation;
         }
 
 
@@ -2052,10 +2052,10 @@ module State (Context : Context) = struct
           { Error.name; annotation }
         in
         let type_info =
-          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).type_info
+          Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).type_info
         in
         let temporary_type_info =
-          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).temporary_type_info
+          Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).temporary_type_info
         in
         let revealed_locals = List.map ~f:from_annotation (temporary_type_info @ type_info) in
         let errors = emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals) in
@@ -3112,7 +3112,7 @@ module State (Context : Context) = struct
             Resolution.new_local
               resolution
               ~reference:(Reference.create name)
-              ~annotation:(TypeInfo.Unit.create_mutable Type.Any)
+              ~type_info:(TypeInfo.Unit.create_mutable Type.Any)
           in
           List.fold ~f:add_parameter ~init:resolution parameters
         in
@@ -3597,7 +3597,7 @@ module State (Context : Context) = struct
       | _ -> None
     in
     let refine_local ~name annotation =
-      let { name = partitioned_name; attribute_path; base_annotation } =
+      let { name = partitioned_name; attribute_path; base_type_info } =
         partition_name ~resolution name
       in
       Resolution.refine_local_with_attributes
@@ -3605,8 +3605,8 @@ module State (Context : Context) = struct
         resolution
         ~name:partitioned_name
         ~attribute_path
-        ~base_annotation
-        ~annotation
+        ~base_type_info
+        ~type_info:annotation
     in
     match Node.value test with
     (* Explicit asserting falsy values. *)
@@ -4279,7 +4279,7 @@ module State (Context : Context) = struct
               Resolution.new_local
                 resolution
                 ~reference:(Reference.create synthetic)
-                ~annotation:(TypeInfo.Unit.create_mutable annotation)
+                ~type_info:(TypeInfo.Unit.create_mutable annotation)
             in
             let getitem_type =
               let callee =
@@ -4634,7 +4634,7 @@ module State (Context : Context) = struct
                     let is_locally_initialized =
                       name_reference
                       >>| (fun reference ->
-                            Resolution.has_nontemporary_annotation ~reference resolution)
+                            Resolution.has_nontemporary_type_info ~reference resolution)
                       |> Option.value ~default:false
                     in
                     match attribute, unwrapped_annotation_type with
@@ -4984,14 +4984,14 @@ module State (Context : Context) = struct
                     resolution
                     ~temporary:is_not_local
                     ~reference:(Reference.create identifier)
-                    ~annotation
+                    ~type_info:annotation
               | Attribute _ as name when is_simple_name name -> (
                   match resolved_base, attribute with
                   | `Attribute (_, parent), Some (attribute, _)
                     when not
                            (AnnotatedAttribute.property attribute
                            || Option.is_some (find_getattr parent)) ->
-                      let { name; attribute_path; base_annotation } =
+                      let { name; attribute_path; base_type_info } =
                         partition_name ~resolution name
                       in
                       Resolution.new_local_with_attributes
@@ -4999,8 +4999,8 @@ module State (Context : Context) = struct
                         resolution
                         ~name
                         ~attribute_path
-                        ~base_annotation
-                        ~annotation
+                        ~base_type_info
+                        ~type_info:annotation
                   | _ -> resolution)
               | _ -> resolution
             in
@@ -5375,7 +5375,7 @@ module State (Context : Context) = struct
 
   and resolve_expression_type_with_locals ~resolution ~locals expression =
     let new_local resolution (reference, annotation) =
-      Resolution.new_local resolution ~reference ~annotation
+      Resolution.new_local resolution ~reference ~type_info:annotation
     in
     let resolution_with_locals = List.fold ~init:resolution ~f:new_local locals in
     resolve_expression ~resolution:resolution_with_locals expression |> TypeInfo.Unit.annotation
@@ -5526,7 +5526,8 @@ module State (Context : Context) = struct
               |> Type.Variable.mark_all_variables_as_bound
                    ~specific:(Resolution.all_type_variables_in_scope resolution)
               |> TypeInfo.Unit.create_mutable
-              |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
+              |> fun annotation ->
+              Resolution.new_local resolution ~reference:name ~type_info:annotation
           | None -> resolution
         in
         let duplicate_parameters, _ =
@@ -6033,7 +6034,8 @@ module State (Context : Context) = struct
             type_of_signature ~resolution signature
             |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
             |> TypeInfo.Unit.create_mutable
-            |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
+            |> fun annotation ->
+            Resolution.new_local resolution ~reference:name ~type_info:annotation
         | None -> resolution
       in
       let process_capture (resolution, errors) { Define.Capture.name; kind } =
@@ -6058,7 +6060,7 @@ module State (Context : Context) = struct
           | Define.Capture.Kind.ClassSelf parent ->
               resolution, errors, type_of_parent ~global_resolution parent |> Type.meta
         in
-        let type_ =
+        let annotation =
           let is_readonly_entrypoint_function =
             decorators
             |> List.map ~f:Expression.show
@@ -6074,7 +6076,7 @@ module State (Context : Context) = struct
         in
         let resolution =
           let reference = Reference.create name in
-          Resolution.new_local resolution ~reference ~annotation:type_
+          Resolution.new_local resolution ~reference ~type_info:annotation
         in
         resolution, errors
       in
@@ -6339,7 +6341,10 @@ module State (Context : Context) = struct
           else
             parse_as_unary ()
         in
-        ( Resolution.new_local ~reference:(make_parameter_name name) ~annotation new_resolution,
+        ( Resolution.new_local
+            ~reference:(make_parameter_name name)
+            ~type_info:annotation
+            new_resolution,
           errors )
       in
       let number_of_stars name = Identifier.split_star name |> fst |> String.length in
@@ -6385,10 +6390,10 @@ module State (Context : Context) = struct
                 resolution
                 |> Resolution.new_local
                      ~reference:(make_parameter_name first_name)
-                     ~annotation:(TypeInfo.Unit.create_mutable positional_component)
+                     ~type_info:(TypeInfo.Unit.create_mutable positional_component)
                 |> Resolution.new_local
                      ~reference:(make_parameter_name second_name)
-                     ~annotation:(TypeInfo.Unit.create_mutable keyword_component)
+                     ~type_info:(TypeInfo.Unit.create_mutable keyword_component)
               in
               if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
               then
@@ -6421,7 +6426,7 @@ module State (Context : Context) = struct
           | None -> List.foldi ~init:(resolution, errors) ~f:check_parameter parameters)
       | _ -> List.foldi ~init:(resolution, errors) ~f:check_parameter parameters
     in
-    let check_base_annotations resolution errors =
+    let check_base_type_infos resolution errors =
       let current_class_name = parent >>| Reference.show in
       let is_current_class_typed_dictionary =
         current_class_name
@@ -7076,7 +7081,7 @@ module State (Context : Context) = struct
         check_unbound_names errors
         |> check_return_annotation resolution
         |> check_decorators resolution
-        |> check_base_annotations resolution
+        |> check_base_type_infos resolution
         |> check_init_subclass_call resolution
         |> check_behavioral_subtyping resolution
         |> check_constructor_return
@@ -7084,7 +7089,7 @@ module State (Context : Context) = struct
       resolution, errors
     in
     let state =
-      let postcondition = Resolution.annotation_store resolution in
+      let postcondition = Resolution.type_info_store resolution in
       let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
       let (_ : unit option) =
         Context.resolution_fixpoint >>| TypeInfo.ForFunctionBody.set ~statement_key ~postcondition
@@ -7105,8 +7110,8 @@ module State (Context : Context) = struct
           match post_resolution with
           | Unreachable -> ()
           | Value post_resolution ->
-              let precondition = Resolution.annotation_store resolution in
-              let postcondition = Resolution.annotation_store post_resolution in
+              let precondition = Resolution.type_info_store resolution in
+              let postcondition = Resolution.type_info_store post_resolution in
               let (_ : unit option) =
                 Context.resolution_fixpoint
                 >>| TypeInfo.ForFunctionBody.set ~statement_key ~precondition ~postcondition
@@ -7162,7 +7167,7 @@ end
 
 let resolution
     global_resolution
-    ?(annotation_store = TypeInfo.Store.empty)
+    ?(type_info_store = TypeInfo.Store.empty)
     (module Context : Context)
   =
   let module State = State (Context) in
@@ -7179,7 +7184,7 @@ let resolution
     | Unreachable -> Resolution.Unreachable
     | Value resolution -> Resolution.Reachable { resolution; errors }
   in
-  Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
+  Resolution.create ~global_resolution ~type_info_store ~resolve_expression ~resolve_statement ()
 
 
 let resolution_at_key ~global_resolution ~local_annotations ~parent ~statement_key context =
@@ -7916,7 +7921,7 @@ let exit_state ~resolution (module Context : Context) =
        let precondition { Fixpoint.preconditions; _ } id =
          match Hashtbl.find preconditions id with
          | Some (State.Value exit_resolution) ->
-             Resolution.annotation_store exit_resolution |> TypeInfo.Store.show
+             Resolution.type_info_store exit_resolution |> TypeInfo.Store.show
          | _ -> ""
        in
        Log.dump

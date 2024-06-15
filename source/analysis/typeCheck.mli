@@ -71,7 +71,7 @@ module DummyContext : Context
 
 val resolution
   :  GlobalResolution.t ->
-  ?annotation_store:TypeInfo.Store.t ->
+  ?type_info_store:TypeInfo.Store.t ->
   (module Context) ->
   Resolution.t
 

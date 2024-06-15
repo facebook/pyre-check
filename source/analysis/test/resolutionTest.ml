@@ -45,7 +45,7 @@ let test_new_and_refine context =
     Resolution.new_local
       resolution
       ~reference:!&"local"
-      ~annotation:(TypeInfo.Unit.create_mutable Type.object_primitive)
+      ~type_info:(TypeInfo.Unit.create_mutable Type.object_primitive)
   in
   assert_local ~name:"local" ~expected:(Some "object") resolution;
   (* create an attribute `local.x.y` and make sure the type is right, also refine it *)
@@ -55,8 +55,8 @@ let test_new_and_refine context =
       resolution
       ~name:!&"local"
       ~attribute_path:!&"x.y"
-      ~base_annotation:None
-      ~annotation:(TypeInfo.Unit.create_mutable Type.object_primitive)
+      ~base_type_info:None
+      ~type_info:(TypeInfo.Unit.create_mutable Type.object_primitive)
   in
   assert_local_with_attributes
     ~name:"local"
@@ -69,8 +69,8 @@ let test_new_and_refine context =
       resolution
       ~name:!&"local"
       ~attribute_path:!&"x.y"
-      ~base_annotation:None
-      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
+      ~base_type_info:None
+      ~type_info:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
   (* refine `local.x` and make sure it refines, and doesn't destroy `local.x.y` *)
@@ -79,8 +79,8 @@ let test_new_and_refine context =
       resolution
       ~name:!&"local"
       ~attribute_path:!&"x"
-      ~base_annotation:None
-      ~annotation:(TypeInfo.Unit.create_mutable Type.float)
+      ~base_type_info:None
+      ~type_info:(TypeInfo.Unit.create_mutable Type.float)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "float") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
@@ -90,8 +90,8 @@ let test_new_and_refine context =
       resolution
       ~name:!&"local"
       ~attribute_path:!&"x"
-      ~base_annotation:None
-      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
+      ~base_type_info:None
+      ~type_info:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:None resolution;
@@ -100,7 +100,7 @@ let test_new_and_refine context =
     Resolution.refine_local
       resolution
       ~reference:!&"local"
-      ~annotation:(TypeInfo.Unit.create_mutable Type.float)
+      ~type_info:(TypeInfo.Unit.create_mutable Type.float)
   in
   assert_local ~name:"local" ~expected:(Some "float") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
@@ -109,7 +109,7 @@ let test_new_and_refine context =
     Resolution.new_local
       resolution
       ~reference:!&"local"
-      ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
+      ~type_info:(TypeInfo.Unit.create_mutable Type.integer)
   in
   assert_local ~name:"local" ~expected:(Some "int") resolution;
   assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:None resolution;

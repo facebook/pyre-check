@@ -194,14 +194,14 @@ module LocalOrGlobal = struct
     let assert_attribute_refinement ~refinement_unit ~attribute_path ~expected =
       assert_equal
         ~cmp:(Option.equal TypeInfo.Unit.equal)
-        (get_annotation refinement_unit ~attribute_path)
+        (get_type_info refinement_unit ~attribute_path)
         expected
     in
     let refinement_unit =
-      set_annotation
+      set_type_info
         empty
         ~attribute_path:!&"a.b.c.d"
-        ~annotation:(TypeInfo.Unit.create_mutable Type.integer)
+        ~type_info:(TypeInfo.Unit.create_mutable Type.integer)
     in
     assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a" ~expected:None;
     assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a.b" ~expected:None;
@@ -214,10 +214,10 @@ module LocalOrGlobal = struct
 
     assert_attribute_refinement
       ~refinement_unit:
-        (set_annotation
+        (set_type_info
            refinement_unit
            ~attribute_path:!&"a.b.c.d"
-           ~annotation:(TypeInfo.Unit.create_mutable Type.bool))
+           ~type_info:(TypeInfo.Unit.create_mutable Type.bool))
       ~attribute_path:!&"a.b.c.d"
       ~expected:(Some (TypeInfo.Unit.create_mutable (Type.Primitive "bool")));
     ()
@@ -228,7 +228,7 @@ module LocalOrGlobal = struct
 
 
   let add_mutable_attribute_refinement attribute_path type_ refinement_unit =
-    set_annotation refinement_unit ~attribute_path ~annotation:(TypeInfo.Unit.create_mutable type_)
+    set_type_info refinement_unit ~attribute_path ~type_info:(TypeInfo.Unit.create_mutable type_)
 
 
   let test_less_or_equal context =

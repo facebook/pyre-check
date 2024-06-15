@@ -261,17 +261,17 @@ module LocalOrGlobal = struct
     { refinement_unit with base = Option.first_some refinement_unit.base base }
 
 
-  (** If `attribute_path` is empty, set the base annotation. Otherwise, find the appropriate
+  (** If `attribute_path` is empty, set the base type_info. Otherwise, find the appropriate
       attribute (traversing intermediate units and constructing new ones as needed) and set the base
       there. *)
-  let set_annotation ?(wipe_subtree = false) ~attribute_path ~annotation refinement_unit =
-    let rec recurse ~annotation ~identifiers ({ attributes; _ } as refinement_unit) =
+  let set_type_info ?(wipe_subtree = false) ~attribute_path ~type_info refinement_unit =
+    let rec recurse ~type_info ~identifiers ({ attributes; _ } as refinement_unit) =
       match identifiers with
       | [] ->
           if wipe_subtree then
-            { empty with base = Some annotation }
+            { empty with base = Some type_info }
           else
-            { refinement_unit with base = Some annotation }
+            { refinement_unit with base = Some type_info }
       | identifier :: identifiers ->
           {
             refinement_unit with
@@ -282,16 +282,16 @@ module LocalOrGlobal = struct
                    ~data:
                      (find attributes identifier
                      |> Option.value ~default:empty
-                     |> recurse ~annotation ~identifiers);
+                     |> recurse ~type_info ~identifiers);
           }
     in
-    recurse ~annotation ~identifiers:(attribute_path |> Reference.as_list) refinement_unit
+    recurse ~type_info ~identifiers:(attribute_path |> Reference.as_list) refinement_unit
 
 
-  (** If `attribute_path` is empty, get the base annotation. Otherwise, find the appropriate
+  (** If `attribute_path` is empty, get the base type_info. Otherwise, find the appropriate
       attribute (traversing intermediate units until we finish or hit a dead end) and return the
       base found there, if any *)
-  let get_annotation ~attribute_path refinement_unit =
+  let get_type_info ~attribute_path refinement_unit =
     let rec recurse { base; attributes } ~identifiers =
       match identifiers with
       | [] -> base
@@ -361,15 +361,15 @@ module Store = struct
   let empty = { type_info = ReferenceMap.empty; temporary_type_info = ReferenceMap.empty }
 
   let pp format { type_info; temporary_type_info } =
-    let show_annotation (reference, unit) =
+    let show_type_info (reference, unit) =
       Format.asprintf "%a -> %a" Reference.pp reference LocalOrGlobal.pp unit
     in
     Reference.Map.Tree.to_alist type_info
-    |> List.map ~f:show_annotation
+    |> List.map ~f:show_type_info
     |> String.concat ~sep:", "
     |> Format.fprintf format "type_info: [%s]\n";
     Reference.Map.Tree.to_alist temporary_type_info
-    |> List.map ~f:show_annotation
+    |> List.map ~f:show_type_info
     |> String.concat ~sep:", "
     |> Format.fprintf format "temporary_type_info: [%s]"
 
@@ -394,7 +394,7 @@ module Store = struct
     Format.fprintf formatter "}"
 
 
-  let has_nontemporary_annotation ~name { type_info; _ } = ReferenceMap.mem type_info name
+  let has_nontemporary_type_info ~name { type_info; _ } = ReferenceMap.mem type_info name
 
   let get_unit ?(include_temporary = true) ~name { type_info; temporary_type_info } =
     let temporary =
@@ -442,8 +442,8 @@ module Store = struct
 
   let get_base ~name store = get_unit ~name store |> LocalOrGlobal.base
 
-  let get_annotation ~name ~attribute_path store =
-    get_unit ~name store |> LocalOrGlobal.get_annotation ~attribute_path
+  let get_type_info ~name ~attribute_path store =
+    get_unit ~name store |> LocalOrGlobal.get_type_info ~attribute_path
 
 
   let set_base ?(temporary = false) ~name ~base store =
@@ -464,21 +464,21 @@ module Store = struct
       }
 
 
-  let set_annotation
+  let set_type_info
       ?(temporary = false)
       ?(wipe_subtree = false)
       ~name
       ~attribute_path
-      ~base_annotation
-      ~annotation
+      ~base_type_info
+      ~type_info
       store
     =
-    let set_unit_annotation unit =
+    let set_type_info_unit unit =
       unit
-      |> LocalOrGlobal.set_annotation ~wipe_subtree ~attribute_path ~annotation
-      |> LocalOrGlobal.set_base_if_none ~base:base_annotation
+      |> LocalOrGlobal.set_type_info ~wipe_subtree ~attribute_path ~type_info
+      |> LocalOrGlobal.set_base_if_none ~base:base_type_info
     in
-    map_over_name ~temporary ~name ~f:set_unit_annotation store
+    map_over_name ~temporary ~name ~f:set_type_info_unit store
 
 
   let less_or_equal ~type_less_or_equal ~left ~right =
@@ -583,8 +583,8 @@ module AroundStatement = struct
 end
 
 module ForFunctionBody = struct
-  (* Maps a key, unique to each statement for a function CFG, to type annotations. The statement key
-     is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
+  (* Maps a key, unique to each statement for a function CFG, to type info. The statement key is
+     computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
   type t = AroundStatement.t Int.Table.t
 
   let equal left right = Core.Hashtbl.equal AroundStatement.equal left right

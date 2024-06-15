@@ -29,7 +29,7 @@ module DefaultContext = struct
   module Builder = Callgraph.NullBuilder
 end
 
-let create_annotation_store ?(immutables = []) type_info =
+let create_type_info_store ?(immutables = []) type_info =
   let immutables = String.Map.of_alist_exn immutables in
   let annotify (name, annotation) =
     let annotation =
@@ -50,9 +50,9 @@ let create_annotation_store ?(immutables = []) type_info =
   }
 
 
-let assert_annotation_store ~expected actual =
-  let actual = Resolution.annotation_store actual in
-  let compare_annotation_store
+let assert_type_info_store ~expected actual =
+  let actual = Resolution.type_info_store actual in
+  let compare_type_info_store
       { TypeInfo.Store.type_info = left_type_info; temporary_type_info = left_temporary_type_info }
       {
         TypeInfo.Store.type_info = right_type_info;
@@ -64,7 +64,7 @@ let assert_annotation_store ~expected actual =
     && equal_map left_temporary_type_info right_temporary_type_info
   in
   assert_equal
-    ~cmp:compare_annotation_store
+    ~cmp:compare_type_info_store
     ~printer:(Format.asprintf "%a" TypeInfo.Store.pp)
     ~pp_diff:(diff ~print:TypeInfo.Store.pp)
     expected
@@ -78,8 +78,8 @@ module Create (Context : TypeCheck.Context) = struct
       State.unreachable
     else
       let resolution =
-        let annotation_store = create_annotation_store ~immutables annotations in
-        Resolution.with_annotation_store resolution ~annotation_store
+        let type_info_store = create_type_info_store ~immutables annotations in
+        Resolution.with_type_info_store resolution ~type_info_store
       in
       State.create ~resolution
 end
@@ -542,13 +542,13 @@ let test_forward_expression =
     in
     let new_resolution, resolved =
       let resolution =
-        let annotation_store = create_annotation_store precondition in
-        TypeCheck.resolution ~annotation_store global_resolution (module TypeCheck.DummyContext)
+        let type_info_store = create_type_info_store precondition in
+        TypeCheck.resolution ~type_info_store global_resolution (module TypeCheck.DummyContext)
       in
 
       Resolution.resolve_expression resolution expression
     in
-    assert_annotation_store ~expected:(create_annotation_store postcondition) new_resolution;
+    assert_type_info_store ~expected:(create_type_info_store postcondition) new_resolution;
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved
   in
   let dictionary_set_union =
@@ -1111,7 +1111,7 @@ let test_forward_expression =
 
 let test_forward_expression__store =
   (* Resolved annotation field. *)
-  let assert_annotation ?(precondition = []) ?(environment = "") expression annotation context =
+  let assert_type_info ?(precondition = []) ?(environment = "") expression expected context =
     let expression =
       let expression = parse expression in
       expression
@@ -1124,29 +1124,28 @@ let test_forward_expression__store =
         ScratchProject.setup ~context ["test.py", environment]
         |> ScratchProject.build_global_resolution
       in
-      let annotation_store = create_annotation_store precondition in
-      TypeCheck.resolution ~annotation_store global_resolution (module TypeCheck.DummyContext)
+      let type_info_store = create_type_info_store precondition in
+      TypeCheck.resolution ~type_info_store global_resolution (module TypeCheck.DummyContext)
     in
-
-    let resolved_annotation = Resolution.resolve_expression_to_annotation resolution expression in
-    assert_equal ~cmp:TypeInfo.Unit.equal ~printer:TypeInfo.Unit.show annotation resolved_annotation
+    let actual = Resolution.resolve_expression_to_type_info resolution expression in
+    assert_equal ~cmp:TypeInfo.Unit.equal ~printer:TypeInfo.Unit.show expected actual
   in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_annotation
+      @@ assert_type_info
            ~environment:"x = 1"
            "test.x"
            (TypeInfo.Unit.create_immutable Type.integer);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_annotation
+      @@ assert_type_info
            ~environment:"x: typing.Union[int, str] = 1"
            "test.x"
            (TypeInfo.Unit.create_immutable
               ~original:(Some (Type.union [Type.string; Type.integer]))
               (Type.union [Type.string; Type.integer]));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_annotation
+      @@ assert_type_info
            ~environment:
              {|
                 class Foo:
@@ -1178,10 +1177,10 @@ let assert_forward_statement
       | _ -> failwith "unable to parse test"
     in
     let resolution =
-      let annotation_store =
-        create_annotation_store ~immutables:precondition_immutables precondition
+      let type_info_store =
+        create_type_info_store ~immutables:precondition_immutables precondition
       in
-      TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+      TypeCheck.resolution global_resolution ~type_info_store (module TypeCheck.DummyContext)
     in
 
     let rec process_statement resolution = function
@@ -1197,8 +1196,8 @@ let assert_forward_statement
   | None -> assert_bool "Expected Resolution.Unreachable when `bottom` is set to true" bottom
   | Some actual_resolution ->
       assert_bool "Expected Resolution.Reachable when `bottom` is set to false" (not bottom);
-      assert_annotation_store
-        ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
+      assert_type_info_store
+        ~expected:(create_type_info_store ~immutables:postcondition_immutables postcondition)
         actual_resolution
 
 

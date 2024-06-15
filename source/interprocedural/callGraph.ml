@@ -2109,7 +2109,7 @@ let resolve_callee_ignoring_decorators
   targets
 
 
-let get_defining_attributes ~pyre_in_context ~base_annotation ~attribute =
+let get_defining_attributes ~pyre_in_context ~base_type_info ~attribute =
   let rec get_defining_parents annotation =
     match annotation with
     | Type.Union annotations
@@ -2117,7 +2117,7 @@ let get_defining_attributes ~pyre_in_context ~base_annotation ~attribute =
         List.concat_map annotations ~f:get_defining_parents
     | _ -> [CallResolution.defining_attribute ~pyre_in_context annotation attribute]
   in
-  base_annotation |> strip_meta |> strip_optional |> get_defining_parents
+  base_type_info |> strip_meta |> strip_optional |> get_defining_parents
 
 
 type attribute_access_properties = {
@@ -2129,7 +2129,7 @@ let resolve_attribute_access_properties
     ~pyre_in_context
     ~override_graph
     ~call_indexer
-    ~base_annotation
+    ~base_type_info
     ~attribute
     ~setter
   =
@@ -2146,14 +2146,14 @@ let resolve_attribute_access_properties
     let parent = AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
-      if Type.is_meta base_annotation then
+      if Type.is_meta base_type_info then
         [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
       else
         let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
         compute_indirect_targets
           ~pyre_in_context
           ~override_graph
-          ~receiver_type:base_annotation
+          ~receiver_type:base_type_info
           callee
     in
     List.map
@@ -2164,7 +2164,7 @@ let resolve_attribute_access_properties
            ~return_type:(Some return_type))
       property_targets
   in
-  let attributes = get_defining_attributes ~pyre_in_context ~base_annotation ~attribute in
+  let attributes = get_defining_attributes ~pyre_in_context ~base_type_info ~attribute in
   let properties, non_properties =
     List.partition_map
       ~f:(function
@@ -2208,7 +2208,7 @@ let is_builtin_reference = function
 let resolve_attribute_access_global_targets
     ~define
     ~pyre_in_context
-    ~base_annotation
+    ~base_type_info
     ~base
     ~attribute
     ~special
@@ -2268,7 +2268,7 @@ let resolve_attribute_access_global_targets
             let target = Reference.create ~prefix:(Type.class_name annotation) attribute in
             target :: targets
       in
-      find_targets [] base_annotation
+      find_targets [] base_type_info
 
 
 let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
@@ -2462,7 +2462,7 @@ struct
       ~special
       ~setter
     =
-    let base_annotation = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
+    let base_type_info = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
 
     log
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \
@@ -2471,14 +2471,14 @@ struct
       Expression.pp
       base
       Type.pp
-      base_annotation;
+      base_type_info;
 
     let { property_targets; is_attribute } =
       resolve_attribute_access_properties
         ~pyre_in_context
         ~override_graph
         ~call_indexer
-        ~base_annotation
+        ~base_type_info
         ~attribute
         ~setter
     in
@@ -2487,7 +2487,7 @@ struct
       resolve_attribute_access_global_targets
         ~define:Context.name
         ~pyre_in_context
-        ~base_annotation
+        ~base_type_info
         ~base
         ~attribute
         ~special

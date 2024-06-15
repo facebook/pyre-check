@@ -173,7 +173,7 @@ let resolve_global ~pyre_api name =
             (* Fall back for anything else. *)
             let annotation =
               from_reference name ~location:Location.any
-              |> PyrePysaApi.ReadOnly.resolve_expression_to_annotation pyre_api
+              |> PyrePysaApi.ReadOnly.resolve_expression_to_type_info pyre_api
             in
             match TypeInfo.Unit.annotation annotation with
             | Type.Parametric { name = "type"; _ }

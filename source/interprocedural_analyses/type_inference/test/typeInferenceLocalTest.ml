@@ -31,7 +31,7 @@ let assert_backward precondition statement postcondition context =
   in
   let create type_info =
     let resolution =
-      let annotation_store =
+      let type_info_store =
         let annotify (name, annotation) =
           let annotation =
             let create annotation =
@@ -47,7 +47,7 @@ let assert_backward precondition statement postcondition context =
           temporary_type_info = Reference.Map.Tree.empty;
         }
       in
-      Resolution.with_annotation_store resolution ~annotation_store
+      Resolution.with_type_info_store resolution ~type_info_store
     in
     State.create ~resolution ()
   in
