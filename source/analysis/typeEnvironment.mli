@@ -41,6 +41,12 @@ module TypeEnvironmentReadOnly : sig
     :  t ->
     Reference.t ->
     TypeInfo.ForFunctionBody.ReadOnly.t option
+
+  val get_callees
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    Callgraph.callee_with_locations list option
 end
 
 include

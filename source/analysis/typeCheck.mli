@@ -93,12 +93,15 @@ module CheckResult : sig
   type t = {
     errors: Error.t list option;
     local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
+    callees: Callgraph.callee_with_locations list option;
   }
   [@@deriving equal]
 
   val errors : t -> Error.t list option
 
   val local_annotations : t -> TypeInfo.ForFunctionBody.ReadOnly.t option
+
+  val callees : t -> Callgraph.callee_with_locations list option
 end
 
 val check_define_by_name

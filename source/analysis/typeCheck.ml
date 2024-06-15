@@ -7123,18 +7123,22 @@ module CheckResult = struct
   type t = {
     errors: Error.t list option;
     local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
+    callees: Callgraph.callee_with_locations list option;
   }
 
   let errors { errors; _ } = errors
 
   let local_annotations { local_annotations; _ } = local_annotations
 
+  let callees { callees; _ } = callees
+
   let equal
-      { errors = errors0; local_annotations = local_annotations0 }
-      { errors = errors1; local_annotations = local_annotations1 }
+      { errors = errors0; local_annotations = local_annotations0; callees = callees0 }
+      { errors = errors1; local_annotations = local_annotations1; callees = callees1 }
     =
     [%compare.equal: Error.t list option] errors0 errors1
     && [%equal: TypeInfo.ForFunctionBody.ReadOnly.t option] local_annotations0 local_annotations1
+    && [%equal: Callgraph.callee_with_locations list option] callees0 callees1
 end
 
 module DummyContext = struct
@@ -8071,14 +8075,6 @@ let check_define
         in
         Some [undefined_error], None, None
   in
-  (if not (Define.is_overloaded_function define) then
-     let caller =
-       if Define.is_property_setter define then
-         Callgraph.PropertySetterCaller name
-       else
-         Callgraph.FunctionCaller name
-     in
-     Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
   let local_annotations =
     if include_local_annotations then
       Some
@@ -8087,7 +8083,7 @@ let check_define
     else
       None
   in
-  { CheckResult.errors; local_annotations }
+  { CheckResult.errors; local_annotations; callees }
 
 
 let check_function_definition
@@ -8108,10 +8104,17 @@ let check_function_definition
       |> List.fold ~init:(Some []) ~f:(Option.map2 ~f:List.append)
     in
     match body with
-    | None -> { CheckResult.errors = aggregate_errors sibling_results; local_annotations = None }
+    | None ->
+        {
+          CheckResult.errors = aggregate_errors sibling_results;
+          local_annotations = None;
+          callees = None;
+        }
     | Some define_node ->
-        let ({ CheckResult.local_annotations; _ } as body_result) = check_define define_node in
-        { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
+        let ({ CheckResult.local_annotations; callees; _ } as body_result) =
+          check_define define_node
+        in
+        { errors = aggregate_errors (body_result :: sibling_results); local_annotations; callees }
   in
 
   let number_of_lines =

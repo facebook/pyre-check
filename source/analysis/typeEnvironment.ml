@@ -230,6 +230,10 @@ module ReadOnly = struct
     get ?dependency environment reference >>= TypeCheck.CheckResult.local_annotations
 
 
+  let get_callees environment ?dependency reference =
+    get ?dependency environment reference >>= TypeCheck.CheckResult.callees
+
+
   let get_or_recompute_local_annotations environment name =
     match get_local_annotations environment name with
     | Some _ as local_annotations -> local_annotations

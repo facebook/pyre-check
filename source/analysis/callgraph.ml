@@ -30,15 +30,11 @@ and callee =
     }
 [@@deriving compare, hash, sexp, eq, show, to_yojson]
 
-type caller =
-  | FunctionCaller of Reference.t
-  | PropertySetterCaller of Reference.t
-[@@deriving compare, sexp]
-
 type callee_with_locations = {
   callee: callee;
   locations: Location.WithModule.t list;
 }
+[@@deriving eq]
 
 let callee_to_yojson ?locations callee =
   let locations =
@@ -77,30 +73,6 @@ let callee_to_yojson ?locations callee =
              "class_name", `String (Type.class_name class_name |> Reference.show);
            ])
 
-
-module CalleeValue = struct
-  type t = callee_with_locations list
-
-  let prefix = Hack_parallel.Std.Prefix.make ()
-
-  let description = "Reference List"
-end
-
-module CallerKey = struct
-  type t = caller
-
-  let to_string caller = sexp_of_caller caller |> Sexp.to_string
-
-  let compare = compare_caller
-
-  let from_string caller = Sexp.of_string caller |> caller_of_sexp
-end
-
-module SharedMemory = Memory.WithCache.Make (CallerKey) (CalleeValue)
-
-let set ~caller ~callees = SharedMemory.add caller callees
-
-let get ~caller = SharedMemory.get caller |> Option.value ~default:[]
 
 module type Builder = sig
   val initialize : unit -> unit
