@@ -18,23 +18,7 @@ open Ast
 open Statement
 open Expression
 
-let missing_builtin_globals =
-  let assign name annotation =
-    {
-      UnannotatedGlobal.Collector.Result.name;
-      unannotated_global =
-        UnannotatedGlobal.SimpleAssign
-          {
-            explicit_annotation = Some (Type.expression annotation);
-            target_location = Location.WithModule.any;
-            value = Some (Node.create_with_default_location (Expression.Constant Constant.Ellipsis));
-          };
-    }
-  in
-  [assign "..." Type.Any; assign "__debug__" Type.bool]
-
-
-let make ?(bases = []) ?(metaclasses = []) ?(body = []) name =
+let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
   let create_base annotation = { Call.Argument.name = None; value = Type.expression annotation } in
   let create_metaclass annotation =
     {
@@ -198,17 +182,17 @@ let missing_builtin_classes =
     Expression.Name (Name.Identifier "TSelf") |> Node.create_with_default_location
   in
   [
-    make
+    make_class
       ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
       ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
       (Type.TypedDictionary.class_name ~total:true);
-    make
+    make_class
       ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
       ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:false)
       (Type.TypedDictionary.class_name ~total:false);
     (* I think this may be actually covariant, covariant, but I don't think there's any value in
        going out on that limb yet *)
-    make
+    make_class
       ~bases:
         [
           Type.Primitive "typing.Callable";
@@ -220,38 +204,54 @@ let missing_builtin_classes =
   ]
 
 
+let missing_builtin_globals =
+  let assign name annotation =
+    {
+      UnannotatedGlobal.Collector.Result.name;
+      unannotated_global =
+        UnannotatedGlobal.SimpleAssign
+          {
+            explicit_annotation = Some (Type.expression annotation);
+            target_location = Location.WithModule.any;
+            value = Some (Node.create_with_default_location (Expression.Constant Constant.Ellipsis));
+          };
+    }
+  in
+  [assign "..." Type.Any; assign "__debug__" Type.bool]
+
+
 let missing_typing_classes =
   [
-    make "typing.Optional" ~bases:single_unary_generic;
-    make "typing.NoReturn";
-    make "typing.Never";
-    make "typing.Annotated" ~bases:catch_all_generic;
-    make "typing.Protocol" ~bases:catch_all_generic;
-    make "typing.Callable" ~bases:catch_all_generic ~body:callable_body;
-    make "typing.FrozenSet" ~bases:single_unary_generic;
-    make "typing.ClassVar" ~bases:single_unary_generic;
-    make "typing.Final" ~bases:catch_all_generic;
-    make "typing.Literal" ~bases:catch_all_generic;
-    make "typing.Union" ~bases:catch_all_generic;
-    make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
-    make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
-    make "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
-    make "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
-    make "typing.TypeAlias";
-    make "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
-    make "typing.Required" ~bases:single_unary_generic;
-    make "typing.NotRequired" ~bases:single_unary_generic;
+    make_class "typing.Optional" ~bases:single_unary_generic;
+    make_class "typing.NoReturn";
+    make_class "typing.Never";
+    make_class "typing.Annotated" ~bases:catch_all_generic;
+    make_class "typing.Protocol" ~bases:catch_all_generic;
+    make_class "typing.Callable" ~bases:catch_all_generic ~body:callable_body;
+    make_class "typing.FrozenSet" ~bases:single_unary_generic;
+    make_class "typing.ClassVar" ~bases:single_unary_generic;
+    make_class "typing.Final" ~bases:catch_all_generic;
+    make_class "typing.Literal" ~bases:catch_all_generic;
+    make_class "typing.Union" ~bases:catch_all_generic;
+    make_class ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
+    make_class "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
+    make_class "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
+    make_class "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
+    make_class "typing.TypeAlias";
+    make_class "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class "typing.Required" ~bases:single_unary_generic;
+    make_class "typing.NotRequired" ~bases:single_unary_generic;
   ]
 
 
 let missing_typing_extensions_classes =
   [
-    make "typing_extensions.Final";
-    make "typing_extensions.Literal" ~bases:catch_all_generic;
-    make "typing_extensions.Annotated" ~bases:catch_all_generic;
-    make "typing_extensions.TypeAlias";
-    make "typing_extensions.Never";
-    make "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
-    make "typing_extensions.Required" ~bases:single_unary_generic;
-    make "typing_extensions.NotRequired" ~bases:single_unary_generic;
+    make_class "typing_extensions.Final";
+    make_class "typing_extensions.Literal" ~bases:catch_all_generic;
+    make_class "typing_extensions.Annotated" ~bases:catch_all_generic;
+    make_class "typing_extensions.TypeAlias";
+    make_class "typing_extensions.Never";
+    make_class "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class "typing_extensions.Required" ~bases:single_unary_generic;
+    make_class "typing_extensions.NotRequired" ~bases:single_unary_generic;
   ]
