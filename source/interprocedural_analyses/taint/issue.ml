@@ -365,55 +365,62 @@ let generate_issues
   |> IssueHandle.SerializableMap.data
 
 
-(* A map from triggered sink kinds (which is a string) to the sources that triggered them, along
-   with the source traces. Such flows will be shown as subtraces. A triggered sink here means we
-   found one source, and must find the other source, in order to file an issue for a
+(* A map from triggered sink kinds (which is a string) to their triggers. A triggered sink here
+   means we found one source, and must find the other source, in order to file an issue for a
    multi-source. *)
 module TriggeredSinkHashMap = struct
   module Hashable = Core.Hashable.Make (String)
   module HashMap = Hashable.Table
 
-  type t = Domains.ExtraTraceFirstHop.Set.t Sources.TriggeringSource.Map.t HashMap.t
+  module Trigger = struct
+    (* Information about why a triggered sink is created: the sources that triggered them, the
+       source traces, as well as the locations that the sources flow into. The source traces will be
+       shown as subtraces *)
+    type t = {
+      source: Sources.TriggeringSource.t;
+      source_trace: Domains.ExtraTraceFirstHop.t;
+      argument_location: Location.t;
+    }
+
+    let create_taint ~call_info ~partial_sink { source; source_trace; argument_location = _ } =
+      BackwardTaint.singleton
+        call_info
+        (Sinks.TriggeredPartialSink { partial_sink; triggering_source = source })
+        Frame.initial
+      |> BackwardTaint.transform
+           ExtraTraceFirstHop.Set.Self
+           Map
+           ~f:(ExtraTraceFirstHop.Set.add source_trace)
+  end
+
+  type t = Trigger.t list HashMap.t
 
   let create () = HashMap.create ()
 
-  let is_empty map = Core.Hashtbl.is_empty map
+  let is_empty = Core.Hashtbl.is_empty
 
-  let mem map partial_sink = Core.Hashtbl.mem map partial_sink
+  let mem = Core.Hashtbl.mem
 
   let add
-      map
+      ~argument_location
       ~triggered_sink:{ Sinks.PartialSink.Triggered.partial_sink; triggering_source }
-      ~extra_traces
+      ~extra_trace
+      map
     =
-    let merge_extra_traces = function
-      | Some existing_extra_traces ->
-          Some (Domains.ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces)
-      | None -> Some extra_traces
+    let trigger =
+      { Trigger.source = triggering_source; source_trace = extra_trace; argument_location }
     in
     let update = function
-      | Some existing_map ->
-          Sources.TriggeringSource.Map.update triggering_source merge_extra_traces existing_map
-      | None -> Sources.TriggeringSource.Map.singleton triggering_source extra_traces
+      | Some existing_triggers -> trigger :: existing_triggers
+      | None -> [trigger]
     in
     Core.Hashtbl.update map partial_sink ~f:update
 
 
   let create_triggered_sink_taint ~call_info ~partial_sink map =
-    let create_taint call_info partial_sink triggering_source extra_traces =
-      BackwardTaint.singleton
-        call_info
-        (Sinks.TriggeredPartialSink { partial_sink; triggering_source })
-        Frame.initial
-      |> BackwardTaint.transform
-           ExtraTraceFirstHop.Set.Self
-           Map
-           ~f:(ExtraTraceFirstHop.Set.join extra_traces)
-    in
     Core.Hashtbl.find map partial_sink
-    >>| Sources.TriggeringSource.Map.bindings
-    >>| List.map ~f:(fun (triggering_source, extra_traces) ->
-            create_taint call_info partial_sink triggering_source extra_traces)
+    >>| List.filter_map ~f:(fun trigger ->
+            Some (Trigger.create_taint ~call_info ~partial_sink trigger))
     >>| Algorithms.fold_balanced ~f:BackwardTaint.join ~init:BackwardTaint.bottom
     |> Option.value ~default:BackwardTaint.bottom
 end
@@ -500,15 +507,20 @@ let compute_triggered_flows
              ~source_tree
              ~sink_tree:(BackwardState.Tree.create_leaf triggered_sink_taint))
     else (* Remember the discovered flow so that later it can be attached as a subtrace. *)
-      let extra_traces =
+      let extra_trace =
         {
           ExtraTraceFirstHop.call_info;
           leaf_kind = Source source;
           message = Some (Format.asprintf "Subtrace for source %s" (Sources.show source));
         }
-        |> ExtraTraceFirstHop.Set.singleton
       in
-      let () = TriggeredSinkHashMap.add triggered_sinks_for_call ~triggered_sink ~extra_traces in
+      let () =
+        TriggeredSinkHashMap.add
+          triggered_sinks_for_call
+          ~argument_location:(Location.strip_module location)
+          ~triggered_sink
+          ~extra_trace
+      in
       None
   in
   let check_source_sink_flows ~call_info ~source ~partial_sink =

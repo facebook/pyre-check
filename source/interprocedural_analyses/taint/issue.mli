@@ -51,9 +51,8 @@ val to_json
 
 val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
-(* A map from triggered sink kinds (which is a string) to the sources that triggered them, along
-   with the source traces. Such flows will be shown as subtraces. A triggered sink here means we
-   found one source, and must find the other source, in order to file an issue for a
+(* A map from triggered sink kinds (which is a string) to their triggers. A triggered sink here
+   means we found one source, and must find the other source, in order to file an issue for a
    multi-source. *)
 module TriggeredSinkHashMap : sig
   type t
