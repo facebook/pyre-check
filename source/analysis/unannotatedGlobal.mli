@@ -23,9 +23,6 @@ type import =
     }
 [@@deriving sexp, compare]
 
-(* Do NOT use this API in new code *)
-val deprecated_original_name : import -> Ast.Reference.t
-
 type t =
   | SimpleAssign of {
       explicit_annotation: Ast.Expression.t option;

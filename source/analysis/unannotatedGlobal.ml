@@ -28,20 +28,6 @@ type import =
     }
 [@@deriving sexp, compare]
 
-let deprecated_original_name = function
-  | ImportModule { target; implicit_alias } ->
-      if implicit_alias then
-        Option.value_exn (Reference.head target)
-      else
-        target
-  | ImportFrom { from; target; _ } -> (
-      match Reference.show from with
-      | "future.builtins"
-      | "builtins" ->
-          Reference.create target
-      | _ -> Reference.create target |> Reference.combine from)
-
-
 type t =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
