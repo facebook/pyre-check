@@ -43,6 +43,7 @@ This will compile Pyre and run all the unit tests. This is likely going to take 
 
 You can now make changes to the code. Run the following commands to compile and test your changes:
 ```bash
+$ cd source
 $ make
 $ make test
 ```
