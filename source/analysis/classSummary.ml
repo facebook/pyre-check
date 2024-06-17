@@ -898,6 +898,19 @@ type t = {
 [@@deriving compare, sexp, show, hash]
 
 let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
+  (* Pyre currently makes `type` generic. This seems incorrect, and in fact leads to some odd
+     behaviors, but it also enum metaclass nonsense, but it also causes some strange behaviors in
+     type inference (for example we will infer `type[Union[X, Y]]` in some cases). *)
+  let class_definition =
+    if Reference.equal name (Reference.create "type") then
+      let value =
+        Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
+      in
+      { class_definition with Class.base_arguments = [{ name = None; value }] }
+    else
+      class_definition
+  in
+
   let bases =
     {
       base_classes = Ast.Statement.Class.base_classes class_definition;

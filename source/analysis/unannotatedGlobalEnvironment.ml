@@ -84,19 +84,9 @@ module ModuleComponents = struct
       | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
       | _ -> classes
     in
-    let definition_to_summary { Node.location; value = { Class.name; _ } as definition } =
+    let definition_to_summary { Node.location; value = { Class.name; _ } as class_definition } =
       let primitive = Reference.show name in
-      let definition =
-        match primitive with
-        | "type" ->
-            let value =
-              Type.expression
-                (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
-            in
-            { definition with Class.base_arguments = [{ name = None; value }] }
-        | _ -> definition
-      in
-      primitive, { Node.location; value = ClassSummary.create ~qualifier definition }
+      primitive, { Node.location; value = ClassSummary.create ~qualifier class_definition }
     in
     List.map classes ~f:definition_to_summary
 
