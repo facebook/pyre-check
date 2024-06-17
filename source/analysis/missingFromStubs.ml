@@ -217,7 +217,7 @@ let missing_builtin_globals =
           };
     }
   in
-  [assign "..." Type.Any; assign "__debug__" Type.bool]
+  [assign "__debug__" Type.bool]
 
 
 let missing_typing_classes =
