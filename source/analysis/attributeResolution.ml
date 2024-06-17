@@ -51,7 +51,7 @@ module Queries = struct
     controls: EnvironmentControls.t;
     resolve_exports: ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option;
     is_protocol: Type.t -> bool;
-    get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
+    get_unannotated_global: Ast.Reference.t -> UnannotatedGlobal.t option;
     get_class_summary: string -> ClassSummary.t Ast.Node.t option;
     first_matching_class_decorator:
       names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;

@@ -8,12 +8,11 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core
-open Expression
-open Statement
+open Ast
 
 module UnannotatedDefine = struct
   type t = {
-    define: Define.Signature.t;
+    define: Statement.Define.Signature.t;
     location: Location.WithModule.t;
   }
   [@@deriving sexp, compare]
@@ -75,6 +74,8 @@ module Collector = struct
   end
 
   let from_source { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
+    let open Ast.Statement in
+    let open Ast.Expression in
     let rec visit_statement ~qualifier globals { Node.value; location } =
       match value with
       | Statement.Assign

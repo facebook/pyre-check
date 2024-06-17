@@ -31,7 +31,7 @@ module IncomingDataComputation = struct
     type t = {
       class_exists: string -> bool;
       module_exists: Ast.Reference.t -> bool;
-      get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
+      get_unannotated_global: Ast.Reference.t -> UnannotatedGlobal.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
     }
   end

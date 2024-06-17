@@ -8,7 +8,6 @@
   sourceTest
   statementTest
   transformTest
-  unannotatedGlobalTest
   visitTest)
  (preprocess
   (pps
