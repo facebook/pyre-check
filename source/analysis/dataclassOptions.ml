@@ -276,11 +276,11 @@ let options_from_custom_dataclass_transform_decorator
     let { Decorator.name = { Node.value = decorator_reference; _ }; _ } = decorator in
     get_unannotated_global decorator_reference
     >>= function
-    | UnannotatedGlobal.Define definitions ->
+    | UnannotatedGlobal.Define signatures ->
         (* Grab the implementation signature, which will be the last definition if there are
            overloads. *)
-        let { UnannotatedGlobal.UnannotatedDefine.define = { Define.Signature.decorators; _ }; _ } =
-          List.last_exn definitions
+        let { UnannotatedGlobal.signature = { Define.Signature.decorators; _ }; _ } =
+          List.last_exn signatures
         in
 
         (* Determine whether any decorators are marking this function as a dataclass transform *)

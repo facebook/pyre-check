@@ -311,7 +311,7 @@ let test_simple_global_registration context =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
         {
-          UnannotatedGlobal.UnannotatedDefine.define = signature;
+          UnannotatedGlobal.signature;
           location = Location.with_module ~module_reference:(Reference.create "test") location;
         }
     | _ -> failwith "not define"
@@ -1291,7 +1291,7 @@ let test_get_unannotated_global context =
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Module
+                 (UnannotatedGlobal.ImportModule
                     { target = !&"target.member"; implicit_alias = false })) );
       ]
     ~expected_triggers:[dependency]
@@ -1319,14 +1319,14 @@ let test_get_unannotated_global context =
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
       (* Location insensitive *)
@@ -1338,14 +1338,14 @@ let test_get_unannotated_global context =
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
     ();
@@ -1363,7 +1363,7 @@ let test_get_unannotated_global context =
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
       ]
     ~new_sources:[]
@@ -1387,7 +1387,7 @@ let test_get_unannotated_global context =
             dependency,
             Some
               (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportEntry.Name
+                 (UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
       ]
     ();
@@ -1539,7 +1539,7 @@ let test_get_unannotated_global context =
       return_annotation
     =
     {
-      UnannotatedGlobal.UnannotatedDefine.define =
+      UnannotatedGlobal.signature =
         {
           Define.Signature.name;
           parameters = [];

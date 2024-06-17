@@ -3905,9 +3905,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           match get_unannotated_global reference with
-          | Some (UnannotatedGlobal.Define defines) ->
+          | Some (UnannotatedGlobal.Define signatures) ->
               let { decorated; _ } =
-                List.map defines ~f:(fun { define; _ } -> define)
+                List.map signatures ~f:(fun { signature; _ } -> signature)
                 |> List.partition_tf ~f:Define.Signature.is_overloaded_function
                 |> fun (overloads, implementations) ->
                 self#resolve_define
@@ -4540,9 +4540,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           TypeInfo.Unit.create_immutable ~final:is_final ~original annotation
         in
         match global with
-        | UnannotatedGlobal.Define defines ->
+        | UnannotatedGlobal.Define signatures ->
             let { undecorated_signature; decorated } =
-              List.map defines ~f:(fun { define; _ } -> define)
+              List.map signatures ~f:(fun { signature; _ } -> signature)
               |> List.partition_tf ~f:Define.Signature.is_overloaded_function
               |> fun (overloads, implementations) ->
               self#resolve_define

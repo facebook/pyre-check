@@ -10,40 +10,37 @@
 open Core
 open Ast
 
-module UnannotatedDefine = struct
-  type t = {
-    define: Statement.Define.Signature.t;
-    location: Location.WithModule.t;
-  }
-  [@@deriving sexp, compare]
-end
+type define_signature = {
+  signature: Statement.Define.Signature.t;
+  location: Location.WithModule.t;
+}
+[@@deriving sexp, compare]
 
-module ImportEntry = struct
-  type t =
-    | Module of {
-        target: Reference.t;
-        implicit_alias: bool;
-      }
-    | Name of {
-        from: Reference.t;
-        target: Identifier.t;
-        implicit_alias: bool;
-      }
-  [@@deriving sexp, compare]
+type import =
+  | ImportModule of {
+      target: Reference.t;
+      implicit_alias: bool;
+    }
+  | ImportFrom of {
+      from: Reference.t;
+      target: Identifier.t;
+      implicit_alias: bool;
+    }
+[@@deriving sexp, compare]
 
-  let deprecated_original_name = function
-    | Module { target; implicit_alias } ->
-        if implicit_alias then
-          Option.value_exn (Reference.head target)
-        else
-          target
-    | Name { from; target; _ } -> (
-        match Reference.show from with
-        | "future.builtins"
-        | "builtins" ->
-            Reference.create target
-        | _ -> Reference.create target |> Reference.combine from)
-end
+let deprecated_original_name = function
+  | ImportModule { target; implicit_alias } ->
+      if implicit_alias then
+        Option.value_exn (Reference.head target)
+      else
+        target
+  | ImportFrom { from; target; _ } -> (
+      match Reference.show from with
+      | "future.builtins"
+      | "builtins" ->
+          Reference.create target
+      | _ -> Reference.create target |> Reference.combine from)
+
 
 type t =
   | SimpleAssign of {
@@ -57,8 +54,8 @@ type t =
       index: int;
       total_length: int;
     }
-  | Imported of ImportEntry.t
-  | Define of UnannotatedDefine.t list
+  | Imported of import
+  | Define of define_signature list
   | Class
 [@@deriving sexp, compare]
 
@@ -129,10 +126,7 @@ module Collector = struct
                   true, Reference.as_list target |> List.hd_exn
               | Some alias -> false, alias
             in
-            {
-              Result.name;
-              unannotated_global = Imported (ImportEntry.Module { target; implicit_alias });
-            }
+            { Result.name; unannotated_global = Imported (ImportModule { target; implicit_alias }) }
             :: sofar
           in
           List.fold imports ~init:globals ~f:collect_module_import
@@ -151,7 +145,7 @@ module Collector = struct
                 in
                 {
                   Result.name;
-                  unannotated_global = Imported (ImportEntry.Name { from; target; implicit_alias });
+                  unannotated_global = Imported (ImportFrom { from; target; implicit_alias });
                 }
                 :: sofar
           in
@@ -164,10 +158,7 @@ module Collector = struct
             unannotated_global =
               Define
                 [
-                  {
-                    UnannotatedDefine.define = signature;
-                    location = Location.with_module ~module_reference:qualifier location;
-                  };
+                  { signature; location = Location.with_module ~module_reference:qualifier location };
                 ];
           }
           :: globals

@@ -5,30 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module UnannotatedDefine : sig
-  type t = {
-    define: Ast.Statement.Define.Signature.t;
-    location: Ast.Location.WithModule.t;
-  }
-  [@@deriving sexp, compare]
-end
+type define_signature = {
+  signature: Ast.Statement.Define.Signature.t;
+  location: Ast.Location.WithModule.t;
+}
+[@@deriving sexp, compare]
 
-module ImportEntry : sig
-  type t =
-    | Module of {
-        target: Ast.Reference.t;
-        implicit_alias: bool;
-      }
-    | Name of {
-        from: Ast.Reference.t;
-        target: Ast.Identifier.t;
-        implicit_alias: bool;
-      }
-  [@@deriving sexp, compare]
+type import =
+  | ImportModule of {
+      target: Ast.Reference.t;
+      implicit_alias: bool;
+    }
+  | ImportFrom of {
+      from: Ast.Reference.t;
+      target: Ast.Identifier.t;
+      implicit_alias: bool;
+    }
+[@@deriving sexp, compare]
 
-  (* Do NOT use this API in new code *)
-  val deprecated_original_name : t -> Ast.Reference.t
-end
+(* Do NOT use this API in new code *)
+val deprecated_original_name : import -> Ast.Reference.t
 
 type t =
   | SimpleAssign of {
@@ -42,8 +38,8 @@ type t =
       index: int;
       total_length: int;
     }
-  | Imported of ImportEntry.t
-  | Define of UnannotatedDefine.t list
+  | Imported of import
+  | Define of define_signature list
   | Class
 [@@deriving sexp, compare]
 

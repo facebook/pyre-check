@@ -53,8 +53,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
         let filter_unaliased_import = function
           | {
               Collector.Result.unannotated_global =
-                Imported
-                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
+                Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ });
               _;
             } ->
               not implicit_alias

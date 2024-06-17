@@ -86,10 +86,7 @@ let create
   let exports =
     let open UnannotatedGlobal in
     let is_getattr_any
-        {
-          UnannotatedDefine.define = { Define.Signature.name; parameters; return_annotation; _ };
-          _;
-        }
+        { signature = { Define.Signature.name; parameters; return_annotation; _ }; _ }
       =
       match Reference.last name with
       | "__getattr__" -> (
@@ -128,11 +125,11 @@ let create
     in
     let collect_export sofar { Collector.Result.name; unannotated_global } =
       match unannotated_global with
-      | Imported ImportEntry.(Module { implicit_alias; _ } | Name { implicit_alias; _ })
+      | Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ })
         when implicit_alias && is_stub ->
           (* Stub files do not re-export unaliased imports *)
           sofar
-      | Imported (ImportEntry.Module { target; implicit_alias }) ->
+      | Imported (ImportModule { target; implicit_alias }) ->
           let exported_module_name =
             if implicit_alias then
               Option.value_exn (Reference.head target)
@@ -140,7 +137,7 @@ let create
               target
           in
           Identifier.Map.Tree.set sofar ~key:name ~data:(Export.Module exported_module_name)
-      | Imported (ImportEntry.Name { from; target; _ }) ->
+      | Imported (ImportFrom { from; target; _ }) ->
           Identifier.Map.Tree.set sofar ~key:name ~data:(Export.NameAlias { from; name = target })
       | Define defines ->
           Identifier.Map.Tree.set

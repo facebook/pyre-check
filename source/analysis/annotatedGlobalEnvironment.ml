@@ -60,8 +60,7 @@ module IncomingDataComputation = struct
     | Some location -> Some location
     | None ->
         let extract_location = function
-          | UnannotatedGlobal.Define ({ UnannotatedGlobal.UnannotatedDefine.location; _ } :: _) ->
-              Some location
+          | UnannotatedGlobal.Define ({ UnannotatedGlobal.location; _ } :: _) -> Some location
           | SimpleAssign { target_location; _ } -> Some target_location
           | TupleAssign { target_location; _ } -> Some target_location
           | _ -> None

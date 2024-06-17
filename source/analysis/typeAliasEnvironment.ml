@@ -162,7 +162,7 @@ module IncomingDataComputation = struct
           if class_exists (Reference.show name) then
             None
           else
-            let original_name = UnannotatedGlobal.ImportEntry.deprecated_original_name import in
+            let original_name = UnannotatedGlobal.deprecated_original_name import in
             match Reference.as_list name, Reference.as_list original_name with
             | [single_identifier], [typing; identifier]
               when String.equal typing "typing" && String.equal single_identifier identifier ->
