@@ -92,4 +92,17 @@ module Metadata : sig
   val create_for_testing : stub:bool -> t
 end
 
+module Components : sig
+  type t = {
+    module_metadata: Metadata.t;
+    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
+    unannotated_globals: Collector.Result.t list;
+    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
+  }
+
+  val of_source : Ast.Source.t -> t
+
+  val implicit_module : unit -> t
+end
+
 val wildcard_exports_of_raw_source : Ast.Source.t -> Ast.Identifier.t list

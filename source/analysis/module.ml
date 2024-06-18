@@ -357,6 +357,102 @@ module Metadata = struct
     | Implicit _ -> true
 end
 
+module Components = struct
+  type t = {
+    module_metadata: Metadata.t;
+    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
+    unannotated_globals: Collector.Result.t list;
+    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
+  }
+
+  let unannotated_globals_of_source source =
+    let merge_defines unannotated_globals_alist =
+      let not_defines, defines =
+        List.partition_map unannotated_globals_alist ~f:(function
+            | { Collector.Result.name; unannotated_global = Define defines } ->
+                Either.Second (name, defines)
+            | x -> Either.First x)
+      in
+      let add_to_map sofar (name, defines) =
+        let merge_with_existing to_merge = function
+          | None -> Some to_merge
+          | Some existing -> Some (to_merge @ existing)
+        in
+        Map.change sofar name ~f:(merge_with_existing defines)
+      in
+      List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
+      |> Map.to_alist
+      |> List.map ~f:(fun (name, defines) ->
+             { Collector.Result.name; unannotated_global = Define (List.rev defines) })
+      |> fun defines -> List.append defines not_defines
+    in
+    let drop_classes unannotated_globals =
+      let is_not_class = function
+        | { Collector.Result.unannotated_global = Class; _ } -> false
+        | _ -> true
+      in
+      List.filter unannotated_globals ~f:is_not_class
+    in
+    let globals = Collector.from_source source |> merge_defines |> drop_classes in
+    globals
+
+
+  let class_summaries_of_source ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
+    (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
+    let module ClassCollector = Visit.MakeStatementVisitor (struct
+      type t = Statement.Class.t Node.t list
+
+      let visit_children _ = true
+
+      let statement _ sofar = function
+        | { Node.location; value = Statement.Statement.Class definition } ->
+            { Node.location; value = definition } :: sofar
+        | _ -> sofar
+    end)
+    in
+    let classes = ClassCollector.visit [] source in
+    let classes =
+      match Reference.as_list qualifier with
+      | [] -> classes @ MissingFromStubs.missing_builtin_classes
+      | ["typing"] -> classes @ MissingFromStubs.missing_typing_classes
+      | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
+      | _ -> classes
+    in
+    let definition_to_summary
+        { Node.location; value = { Statement.Class.name; _ } as class_definition }
+      =
+      let primitive = Reference.show name in
+      primitive, { Node.location; value = ClassSummary.create ~qualifier class_definition }
+    in
+    List.map classes ~f:definition_to_summary
+
+
+  let function_definitions_of_source ({ Source.module_path; _ } as source) =
+    match ModulePath.should_type_check module_path with
+    | false ->
+        (* Do not collect function bodies for external sources as they won't get type checked *)
+        []
+    | true -> FunctionDefinition.collect_defines source
+
+
+  let of_source source =
+    {
+      module_metadata = Metadata.create source;
+      class_summaries = class_summaries_of_source source;
+      unannotated_globals = unannotated_globals_of_source source;
+      function_definitions = function_definitions_of_source source;
+    }
+
+
+  let implicit_module () =
+    {
+      module_metadata = Metadata.create_implicit ();
+      class_summaries = [];
+      unannotated_globals = [];
+      function_definitions = [];
+    }
+end
+
 let wildcard_exports_of_raw_source ({ Source.module_path; _ } as source) =
   let open Expression in
   let extract_dunder_all = function

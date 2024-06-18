@@ -55,100 +55,6 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
-module ModuleComponents = struct
-  type t = {
-    module_metadata: Module.Metadata.t;
-    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: Module.Collector.Result.t list;
-    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
-  }
-
-  let class_summaries_of_source ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
-    (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
-    let module ClassCollector = Visit.MakeStatementVisitor (struct
-      type t = Class.t Node.t list
-
-      let visit_children _ = true
-
-      let statement _ sofar = function
-        | { Node.location; value = Statement.Class definition } ->
-            { Node.location; value = definition } :: sofar
-        | _ -> sofar
-    end)
-    in
-    let classes = ClassCollector.visit [] source in
-    let classes =
-      match Reference.as_list qualifier with
-      | [] -> classes @ MissingFromStubs.missing_builtin_classes
-      | ["typing"] -> classes @ MissingFromStubs.missing_typing_classes
-      | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
-      | _ -> classes
-    in
-    let definition_to_summary { Node.location; value = { Class.name; _ } as class_definition } =
-      let primitive = Reference.show name in
-      primitive, { Node.location; value = ClassSummary.create ~qualifier class_definition }
-    in
-    List.map classes ~f:definition_to_summary
-
-
-  let function_definitions_of_source ({ Source.module_path; _ } as source) =
-    match ModulePath.should_type_check module_path with
-    | false ->
-        (* Do not collect function bodies for external sources as they won't get type checked *)
-        []
-    | true -> FunctionDefinition.collect_defines source
-
-
-  let unannotated_globals_of_source source =
-    let merge_defines unannotated_globals_alist =
-      let not_defines, defines =
-        List.partition_map unannotated_globals_alist ~f:(function
-            | { Module.Collector.Result.name; unannotated_global = Define defines } ->
-                Either.Second (name, defines)
-            | x -> Either.First x)
-      in
-      let add_to_map sofar (name, defines) =
-        let merge_with_existing to_merge = function
-          | None -> Some to_merge
-          | Some existing -> Some (to_merge @ existing)
-        in
-        Map.change sofar name ~f:(merge_with_existing defines)
-      in
-      List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
-      |> Map.to_alist
-      |> List.map ~f:(fun (name, defines) ->
-             { Module.Collector.Result.name; unannotated_global = Define (List.rev defines) })
-      |> fun defines -> List.append defines not_defines
-    in
-    let drop_classes unannotated_globals =
-      let is_not_class = function
-        | { Module.Collector.Result.unannotated_global = Class; _ } -> false
-        | _ -> true
-      in
-      List.filter unannotated_globals ~f:is_not_class
-    in
-    let globals = Module.Collector.from_source source |> merge_defines |> drop_classes in
-    globals
-
-
-  let of_source source =
-    {
-      module_metadata = Module.Metadata.create source;
-      class_summaries = class_summaries_of_source source;
-      unannotated_globals = unannotated_globals_of_source source;
-      function_definitions = function_definitions_of_source source;
-    }
-
-
-  let implicit_module () =
-    {
-      module_metadata = Module.Metadata.create_implicit ();
-      class_summaries = [];
-      unannotated_globals = [];
-      function_definitions = [];
-    }
-end
-
 module IncomingDataComputation = struct
   module Queries = struct
     type t = {
@@ -159,10 +65,10 @@ module IncomingDataComputation = struct
 
   let module_components Queries.{ is_qualifier_tracked; source_of_qualifier } qualifier =
     match source_of_qualifier qualifier with
-    | Some source -> Some (ModuleComponents.of_source source)
+    | Some source -> Some (Module.Components.of_source source)
     | None ->
         if is_qualifier_tracked qualifier then
-          Some (ModuleComponents.implicit_module ())
+          Some (Module.Components.implicit_module ())
         else
           None
 end
@@ -776,7 +682,7 @@ module FromReadOnlyUpstream = struct
           _;
         }
       ~qualifier
-      ModuleComponents.
+      Module.Components.
         { module_metadata; class_summaries; unannotated_globals; function_definitions }
     =
     let set_module () = ModuleTable.add module_table qualifier module_metadata in
