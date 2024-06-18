@@ -386,7 +386,7 @@ Sometimes, Pysa is unable to infer that tainted data provided as an argument to 
 def dict.get(self: TaintInTaintOut[LocalReturn], key, default): ...
 ```
 
-Note that `TaintInTaintOut` (ie. without square brackets) is also accepted and can be used as a short hand for `TaintInTaintOut[LocalReturn]`. `LocalReturn` is ony ever *required* when using the `Updates` syntax below and wanting to preserve the `LocalReturn` behaviour.
+Note that `TaintInTaintOut` (ie. without square brackets) is also accepted and can be used as a short hand for `TaintInTaintOut[LocalReturn]`. `LocalReturn` is only ever *required* when using the `Updates` syntax below and wanting to preserve the `LocalReturn` behaviour.
 
 For performance reasons, Pysa does not keep track of when functions place taint into their parameters, such as when a function adds a tainted entry to a list it received (with some notable exceptions for taint assigned to `self` in a constructor or property). The `TaintInTaintOut[Updates[PARAMETER]]` annotation can be used to work around Pysa's limitations by telling Pysa that taint will flow the the annotated parameter into the parameter named `PARAMETER`:
 
