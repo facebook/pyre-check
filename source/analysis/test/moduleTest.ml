@@ -14,8 +14,7 @@ let test_collected_names context =
   let assert_collected_names ~expected source_text =
     let source = parse ~handle:"test.py" source_text in
     let actual =
-      Module.Collector.from_source source
-      |> List.map ~f:(fun { Module.Collector.Result.name; _ } -> name)
+      Module.UnannotatedGlobal.raw_alist_of_source source |> List.map ~f:(fun (name, _) -> name)
     in
     assert_equal
       ~ctxt:context
@@ -101,10 +100,9 @@ let test_collected_imports context =
   let assert_imports ~expected source_text =
     let source = parse ~handle:"test.py" source_text in
     let actual =
-      Module.Collector.from_source source
+      Module.UnannotatedGlobal.raw_alist_of_source source
       |> List.filter_map ~f:(function
-             | { Module.Collector.Result.name; unannotated_global = Imported import } ->
-                 Some (name, import)
+             | name, Module.UnannotatedGlobal.Imported import -> Some (name, import)
              | _ -> None)
     in
     assert_equal

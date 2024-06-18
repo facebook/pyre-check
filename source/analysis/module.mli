@@ -40,18 +40,9 @@ module UnannotatedGlobal : sig
     | Define of define_signature list
     | Class
   [@@deriving sexp, compare]
-end
 
-module Collector : sig
-  module Result : sig
-    type nonrec t = {
-      name: Ast.Identifier.t;
-      unannotated_global: UnannotatedGlobal.t;
-    }
-    [@@deriving sexp, compare]
-  end
-
-  val from_source : Ast.Source.t -> Result.t list
+  (* Only exposed in the API for testing purposes *)
+  val raw_alist_of_source : Ast.Source.t -> (Ast.Identifier.t * t) list
 end
 
 module Export : sig
@@ -96,7 +87,7 @@ module Components : sig
   type t = {
     module_metadata: Metadata.t;
     class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: Collector.Result.t list;
+    unannotated_globals: (Ast.Identifier.t * UnannotatedGlobal.t) list;
     function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
   }
 

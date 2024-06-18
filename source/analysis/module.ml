@@ -45,21 +45,10 @@ module UnannotatedGlobal = struct
     | Define of define_signature list
     | Class
   [@@deriving sexp, compare]
-end
 
-module Collector = struct
-  module Result = struct
-    type t = {
-      name: Identifier.t;
-      unannotated_global: UnannotatedGlobal.t;
-    }
-    [@@deriving sexp, compare]
-  end
-
-  let from_source { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
+  let raw_alist_of_source { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
     let open Ast.Statement in
     let open Ast.Expression in
-    let open UnannotatedGlobal in
     let rec visit_statement ~qualifier globals { Node.value; location } =
       match value with
       | Statement.Assign
@@ -69,16 +58,13 @@ module Collector = struct
             value;
             _;
           } ->
-          {
-            Result.name = Identifier.sanitized identifier;
-            unannotated_global =
-              SimpleAssign
-                {
-                  explicit_annotation = annotation;
-                  value;
-                  target_location = Location.with_module ~module_reference:qualifier location;
-                };
-          }
+          ( Identifier.sanitized identifier,
+            SimpleAssign
+              {
+                explicit_annotation = annotation;
+                value;
+                target_location = Location.with_module ~module_reference:qualifier location;
+              } )
           :: globals
       | Statement.Assign { Assign.target = { Node.value = Expression.Tuple elements; _ }; value; _ }
         ->
@@ -87,18 +73,15 @@ module Collector = struct
             let is_simple_name index = function
               | { Node.value = Expression.Name (Name.Identifier identifier); location } ->
                   Some
-                    {
-                      Result.name = Identifier.sanitized identifier;
-                      unannotated_global =
-                        TupleAssign
-                          {
-                            value;
-                            target_location =
-                              Location.with_module ~module_reference:qualifier location;
-                            index;
-                            total_length;
-                          };
-                    }
+                    ( Identifier.sanitized identifier,
+                      TupleAssign
+                        {
+                          value;
+                          target_location =
+                            Location.with_module ~module_reference:qualifier location;
+                          index;
+                          total_length;
+                        } )
               | _ -> None
             in
             List.mapi elements ~f:is_simple_name
@@ -113,8 +96,7 @@ module Collector = struct
                   true, Reference.as_list target |> List.hd_exn
               | Some alias -> false, alias
             in
-            { Result.name; unannotated_global = Imported (ImportModule { target; implicit_alias }) }
-            :: sofar
+            (name, Imported (ImportModule { target; implicit_alias })) :: sofar
           in
           List.fold imports ~init:globals ~f:collect_module_import
       | Statement.Import { Import.from = Some { Node.value = from; _ }; imports } ->
@@ -130,24 +112,15 @@ module Collector = struct
                   | None -> true, target
                   | Some alias -> false, alias
                 in
-                {
-                  Result.name;
-                  unannotated_global = Imported (ImportFrom { from; target; implicit_alias });
-                }
-                :: sofar
+                (name, Imported (ImportFrom { from; target; implicit_alias })) :: sofar
           in
           List.fold imports ~init:globals ~f:collect_name_import
-      | Statement.Class { Class.name; _ } ->
-          { Result.name = name |> Reference.last; unannotated_global = Class } :: globals
+      | Statement.Class { Class.name; _ } -> (name |> Reference.last, Class) :: globals
       | Statement.Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
-          {
-            Result.name = name |> Reference.last;
-            unannotated_global =
-              Define
-                [
-                  { signature; location = Location.with_module ~module_reference:qualifier location };
-                ];
-          }
+          ( name |> Reference.last,
+            Define
+              [{ signature; location = Location.with_module ~module_reference:qualifier location }]
+          )
           :: globals
       | Statement.If { If.body; orelse; _ } ->
           (* TODO(T28732125): Properly take an intersection here. *)
@@ -284,7 +257,7 @@ module Metadata = struct
             | _ -> false)
         | _ -> false
       in
-      let collect_export sofar { Collector.Result.name; unannotated_global } =
+      let collect_export sofar (name, unannotated_global) =
         match unannotated_global with
         | Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ })
           when implicit_alias && is_stub ->
@@ -329,7 +302,7 @@ module Metadata = struct
             exports_from_missing_classes MissingFromStubs.missing_typing_extensions_classes
         | _ -> Identifier.Map.Tree.empty
       in
-      Collector.from_source source |> List.fold ~init ~f:collect_export
+      UnannotatedGlobal.raw_alist_of_source source |> List.fold ~init ~f:collect_export
     in
     Explicit
       { exports; empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode }
@@ -361,7 +334,7 @@ module Components = struct
   type t = {
     module_metadata: Metadata.t;
     class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: Collector.Result.t list;
+    unannotated_globals: (Ast.Identifier.t * UnannotatedGlobal.t) list;
     function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
   }
 
@@ -369,8 +342,7 @@ module Components = struct
     let merge_defines unannotated_globals_alist =
       let not_defines, defines =
         List.partition_map unannotated_globals_alist ~f:(function
-            | { Collector.Result.name; unannotated_global = Define defines } ->
-                Either.Second (name, defines)
+            | name, UnannotatedGlobal.Define defines -> Either.Second (name, defines)
             | x -> Either.First x)
       in
       let add_to_map sofar (name, defines) =
@@ -382,19 +354,17 @@ module Components = struct
       in
       List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
       |> Map.to_alist
-      |> List.map ~f:(fun (name, defines) ->
-             { Collector.Result.name; unannotated_global = Define (List.rev defines) })
+      |> List.map ~f:(fun (name, defines) -> name, UnannotatedGlobal.Define (List.rev defines))
       |> fun defines -> List.append defines not_defines
     in
     let drop_classes unannotated_globals =
       let is_not_class = function
-        | { Collector.Result.unannotated_global = Class; _ } -> false
+        | _, UnannotatedGlobal.Class -> false
         | _ -> true
       in
       List.filter unannotated_globals ~f:is_not_class
     in
-    let globals = Collector.from_source source |> merge_defines |> drop_classes in
-    globals
+    UnannotatedGlobal.raw_alist_of_source source |> merge_defines |> drop_classes
 
 
   let class_summaries_of_source ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
@@ -456,11 +426,9 @@ end
 let wildcard_exports_of_raw_source ({ Source.module_path; _ } as source) =
   let open Expression in
   let extract_dunder_all = function
-    | {
-        Collector.Result.name = "__all__";
-        unannotated_global =
-          SimpleAssign { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ };
-      } ->
+    | ( "__all__",
+        UnannotatedGlobal.SimpleAssign
+          { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ } ) ->
         let to_identifier = function
           | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
               Some name
@@ -469,18 +437,16 @@ let wildcard_exports_of_raw_source ({ Source.module_path; _ } as source) =
         Some (List.filter_map ~f:to_identifier names)
     | _ -> None
   in
-  let unannotated_globals = Collector.from_source source in
+  let unannotated_globals = UnannotatedGlobal.raw_alist_of_source source in
   match List.find_map unannotated_globals ~f:extract_dunder_all with
   | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
   | _ ->
       let unannotated_globals =
         (* Stubs have a slightly different rule with re-export *)
         let filter_unaliased_import = function
-          | {
-              Collector.Result.unannotated_global =
-                Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ });
-              _;
-            } ->
+          | ( _,
+              UnannotatedGlobal.Imported
+                (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ }) ) ->
               not implicit_alias
           | _ -> true
         in
@@ -489,6 +455,6 @@ let wildcard_exports_of_raw_source ({ Source.module_path; _ } as source) =
         else
           unannotated_globals
       in
-      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
+      List.map unannotated_globals ~f:(fun (name, _) -> name)
       |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
       |> List.dedup_and_sort ~compare:Identifier.compare

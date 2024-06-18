@@ -707,7 +707,7 @@ module FromReadOnlyUpstream = struct
       |> DefineNames.add define_names qualifier
     in
     let set_unannotated_globals () =
-      let register { Module.Collector.Result.name; unannotated_global } =
+      let register (name, unannotated_global) =
         let name = Reference.create name |> Reference.combine qualifier in
         UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
         name
