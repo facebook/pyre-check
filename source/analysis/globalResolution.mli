@@ -47,7 +47,7 @@ val module_exists : t -> Reference.t -> bool
 
 val class_exists : t -> Type.Primitive.t -> bool
 
-val get_module_metadata : t -> Reference.t -> Module.t option
+val get_module_metadata : t -> Reference.t -> Module.Metadata.t option
 
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 

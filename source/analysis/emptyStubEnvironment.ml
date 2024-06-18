@@ -33,7 +33,7 @@ module IncomingDataComputation = struct
           let lead = lead @ [head] in
           let reference = Reference.create_from_list lead in
           match get_module_metadata reference with
-          | Some definition when Module.empty_stub definition -> true
+          | Some definition when Module.Metadata.empty_stub definition -> true
           | Some _ -> is_from_empty_stub ~lead ~tail
           | _ -> false)
       | _ -> false

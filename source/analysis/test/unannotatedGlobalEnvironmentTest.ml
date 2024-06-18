@@ -249,10 +249,13 @@ let test_simple_global_registration context =
       |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let printer global =
-      global >>| UnannotatedGlobal.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
+      global
+      >>| Module.UnannotatedGlobal.sexp_of_t
+      >>| Sexp.to_string_hum
+      |> Option.value ~default:"None"
     in
     let location_insensitive_compare left right =
-      Option.compare UnannotatedGlobal.compare left right = 0
+      Option.compare Module.UnannotatedGlobal.compare left right = 0
     in
     assert_equal
       ~cmp:location_insensitive_compare
@@ -311,7 +314,7 @@ let test_simple_global_registration context =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
         {
-          UnannotatedGlobal.signature;
+          Module.UnannotatedGlobal.signature;
           location = Location.with_module ~module_reference:(Reference.create "test") location;
         }
     | _ -> failwith "not define"
@@ -373,14 +376,14 @@ let test_builtin_modules context =
     match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata read_only qualifier with
     | None -> assert_failure "Module does not exist"
     | Some metadata ->
-        assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
-        assert_bool "implicit module not expected" (not (Module.is_implicit metadata));
+        assert_bool "empty stub not expected" (not (Module.Metadata.empty_stub metadata));
+        assert_bool "implicit module not expected" (not (Module.Metadata.is_implicit metadata));
         assert_equal
           ~ctxt:context
           ~cmp:[%compare.equal: Module.Export.t option]
           ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
           (Some Module.Export.(Name GlobalVariable))
-          (Module.get_export metadata "foo")
+          (Module.Metadata.get_export metadata "foo")
   in
   assert_nonempty Reference.empty;
   assert_nonempty !&"builtins";
@@ -757,7 +760,7 @@ let assert_update
           with
           | None -> "None"
           | Some module_metadata ->
-              if Module.is_implicit module_metadata then "Implicit" else "Explicit"
+              if Module.Metadata.is_implicit module_metadata then "Implicit" else "Explicit"
         in
         assert_equal ~ctxt:context actual expected ~printer:Fn.id
     | `Get (class_name, dependency, expected_number_of_statements) ->
@@ -786,17 +789,17 @@ let assert_update
     | `Global (global_name, dependency, expectation) ->
         let printer optional =
           optional
-          >>| UnannotatedGlobal.sexp_of_t
+          >>| Module.UnannotatedGlobal.sexp_of_t
           >>| Sexp.to_string_hum
           |> Option.value ~default:"none"
         in
-        let cmp left right = Option.compare UnannotatedGlobal.compare left right = 0 in
+        let cmp left right = Option.compare Module.UnannotatedGlobal.compare left right = 0 in
         let remove_target_location = function
-          | UnannotatedGlobal.SimpleAssign assign ->
-              UnannotatedGlobal.SimpleAssign
+          | Module.UnannotatedGlobal.SimpleAssign assign ->
+              Module.UnannotatedGlobal.SimpleAssign
                 { assign with target_location = Location.WithModule.any }
-          | UnannotatedGlobal.TupleAssign assign ->
-              UnannotatedGlobal.TupleAssign
+          | Module.UnannotatedGlobal.TupleAssign assign ->
+              Module.UnannotatedGlobal.TupleAssign
                 { assign with target_location = Location.WithModule.any }
           | global -> global
         in
@@ -1249,7 +1252,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.x",
             dependency,
             Some
-              (UnannotatedGlobal.SimpleAssign
+              (Module.UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -1265,7 +1268,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.x",
             dependency,
             Some
-              (UnannotatedGlobal.SimpleAssign
+              (Module.UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -1290,8 +1293,8 @@ let test_get_unannotated_global context =
           ( Reference.create "test.alias",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportModule
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportModule
                     { target = !&"target.member"; implicit_alias = false })) );
       ]
     ~expected_triggers:[dependency]
@@ -1318,15 +1321,15 @@ let test_get_unannotated_global context =
           ( Reference.create "test.member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
       (* Location insensitive *)
@@ -1337,15 +1340,15 @@ let test_get_unannotated_global context =
           ( Reference.create "test.member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
     ();
@@ -1362,8 +1365,8 @@ let test_get_unannotated_global context =
           ( Reference.create "test.member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
       ]
     ~new_sources:[]
@@ -1386,8 +1389,8 @@ let test_get_unannotated_global context =
           ( Reference.create "test.member",
             dependency,
             Some
-              (UnannotatedGlobal.Imported
-                 (UnannotatedGlobal.ImportFrom
+              (Module.UnannotatedGlobal.Imported
+                 (Module.UnannotatedGlobal.ImportFrom
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
       ]
     ();
@@ -1426,7 +1429,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobal.TupleAssign
+              (Module.UnannotatedGlobal.TupleAssign
                  {
                    value = Some tuple_expression;
                    index = 0;
@@ -1437,7 +1440,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.Y",
             dependency,
             Some
-              (UnannotatedGlobal.TupleAssign
+              (Module.UnannotatedGlobal.TupleAssign
                  {
                    value = Some tuple_expression;
                    index = 1;
@@ -1448,7 +1451,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.Z",
             dependency,
             Some
-              (UnannotatedGlobal.TupleAssign
+              (Module.UnannotatedGlobal.TupleAssign
                  {
                    value = Some tuple_expression;
                    index = 2;
@@ -1477,7 +1480,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobal.SimpleAssign
+              (Module.UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation = None;
                    value =
@@ -1520,7 +1523,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobal.SimpleAssign
+              (Module.UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation = None;
                    value =
@@ -1539,7 +1542,7 @@ let test_get_unannotated_global context =
       return_annotation
     =
     {
-      UnannotatedGlobal.signature =
+      Module.UnannotatedGlobal.signature =
         {
           Define.Signature.name;
           parameters = [];
@@ -1582,7 +1585,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.foo",
             dependency,
             Some
-              (UnannotatedGlobal.Define
+              (Module.UnannotatedGlobal.Define
                  [
                    create_simple_signature
                      ~start:(2, 0)
@@ -1602,7 +1605,7 @@ let test_get_unannotated_global context =
           ( Reference.create "test.foo",
             dependency,
             Some
-              (UnannotatedGlobal.Define
+              (Module.UnannotatedGlobal.Define
                  [
                    create_simple_signature
                      ~start:(2, 0)
@@ -1656,7 +1659,7 @@ let test_dependencies_and_new_values context =
           ( Reference.create "test.x",
             alias_dependency,
             Some
-              (UnannotatedGlobal.SimpleAssign
+              (Module.UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -2614,7 +2617,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
           | None -> "")
     in
     assert_is_overlaid
-      ~cmp:[%equal: Module.t option]
+      ~cmp:[%equal: Module.Metadata.t option]
       UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
       qualifier;
     assert_is_overlaid
@@ -2637,7 +2640,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
       assert_equal ~cmp ?printer from_parent from_overlay
     in
     assert_not_overlaid
-      ~cmp:[%equal: Module.t option]
+      ~cmp:[%equal: Module.Metadata.t option]
       UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
       qualifier;
     assert_not_overlaid

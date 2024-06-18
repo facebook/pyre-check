@@ -51,7 +51,7 @@ module Queries = struct
     controls: EnvironmentControls.t;
     resolve_exports: ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option;
     is_protocol: Type.t -> bool;
-    get_unannotated_global: Ast.Reference.t -> UnannotatedGlobal.t option;
+    get_unannotated_global: Ast.Reference.t -> Module.UnannotatedGlobal.t option;
     get_class_summary: string -> ClassSummary.t Ast.Node.t option;
     first_matching_class_decorator:
       names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
@@ -3905,7 +3905,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           match get_unannotated_global reference with
-          | Some (UnannotatedGlobal.Define signatures) ->
+          | Some (Module.UnannotatedGlobal.Define signatures) ->
               let { decorated; _ } =
                 List.map signatures ~f:(fun { signature; _ } -> signature)
                 |> List.partition_tf ~f:Define.Signature.is_overloaded_function
@@ -4540,7 +4540,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           TypeInfo.Unit.create_immutable ~final:is_final ~original annotation
         in
         match global with
-        | UnannotatedGlobal.Define signatures ->
+        | Module.UnannotatedGlobal.Define signatures ->
             let { undecorated_signature; decorated } =
               List.map signatures ~f:(fun { signature; _ } -> signature)
               |> List.partition_tf ~f:Define.Signature.is_overloaded_function

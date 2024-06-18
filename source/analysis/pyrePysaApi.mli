@@ -147,7 +147,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Ast.Reference.t ->
-    UnannotatedGlobal.t option
+    Module.UnannotatedGlobal.t option
 
   val all_classes : t -> string list
 

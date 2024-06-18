@@ -28,7 +28,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    Module.t option
+    Module.Metadata.t option
 
   val get_class_summary
     :  t ->
@@ -60,7 +60,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    UnannotatedGlobal.t option
+    Module.UnannotatedGlobal.t option
 
   val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 

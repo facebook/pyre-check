@@ -40,7 +40,7 @@ val attrs_attributes
   options option
 
 val options_from_custom_dataclass_transform_decorator
-  :  get_unannotated_global:(Ast.Reference.t -> UnannotatedGlobal.t option) ->
+  :  get_unannotated_global:(Ast.Reference.t -> Module.UnannotatedGlobal.t option) ->
   ClassSummary.t Ast.Node.t ->
   options option
 

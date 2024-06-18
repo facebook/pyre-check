@@ -57,9 +57,9 @@ open SharedMemoryKeys
 
 module ModuleComponents = struct
   type t = {
-    module_metadata: Module.t;
+    module_metadata: Module.Metadata.t;
     class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: UnannotatedGlobal.Collector.Result.t list;
+    unannotated_globals: Module.Collector.Result.t list;
     function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
   }
 
@@ -103,7 +103,7 @@ module ModuleComponents = struct
     let merge_defines unannotated_globals_alist =
       let not_defines, defines =
         List.partition_map unannotated_globals_alist ~f:(function
-            | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
+            | { Module.Collector.Result.name; unannotated_global = Define defines } ->
                 Either.Second (name, defines)
             | x -> Either.First x)
       in
@@ -117,26 +117,23 @@ module ModuleComponents = struct
       List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
       |> Map.to_alist
       |> List.map ~f:(fun (name, defines) ->
-             {
-               UnannotatedGlobal.Collector.Result.name;
-               unannotated_global = Define (List.rev defines);
-             })
+             { Module.Collector.Result.name; unannotated_global = Define (List.rev defines) })
       |> fun defines -> List.append defines not_defines
     in
     let drop_classes unannotated_globals =
       let is_not_class = function
-        | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
+        | { Module.Collector.Result.unannotated_global = Class; _ } -> false
         | _ -> true
       in
       List.filter unannotated_globals ~f:is_not_class
     in
-    let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
+    let globals = Module.Collector.from_source source |> merge_defines |> drop_classes in
     globals
 
 
   let of_source source =
     {
-      module_metadata = Module.create source;
+      module_metadata = Module.Metadata.create source;
       class_summaries = class_summaries_of_source source;
       unannotated_globals = unannotated_globals_of_source source;
       function_definitions = function_definitions_of_source source;
@@ -145,7 +142,7 @@ module ModuleComponents = struct
 
   let implicit_module () =
     {
-      module_metadata = Module.create_implicit ();
+      module_metadata = Module.Metadata.create_implicit ();
       class_summaries = [];
       unannotated_globals = [];
       function_definitions = [];
@@ -176,9 +173,9 @@ module OutgoingDataComputation = struct
       class_exists: string -> bool;
       get_define_names_for_qualifier_in_project: Reference.t -> Reference.t list;
       get_class_summary: string -> ClassSummary.t Node.t option;
-      get_unannotated_global: Reference.t -> UnannotatedGlobal.t option;
+      get_unannotated_global: Reference.t -> Module.UnannotatedGlobal.t option;
       get_function_definition_in_project: Reference.t -> FunctionDefinition.t option;
-      get_module_metadata: Reference.t -> Module.t option;
+      get_module_metadata: Reference.t -> Module.Metadata.t option;
       module_exists: Reference.t -> bool;
     }
   end
@@ -265,7 +262,7 @@ module OutgoingDataComputation = struct
                     let checked_module = List.rev prefixes |> Reference.create_from_list in
                     let sofar = name :: sofar in
                     match get_module_metadata checked_module with
-                    | Some module_metadata when Module.empty_stub module_metadata ->
+                    | Some module_metadata when Module.Metadata.empty_stub module_metadata ->
                         Some
                           (ResolvedReference.PlaceholderStub
                              { stub_module = checked_module; remaining = sofar })
@@ -275,7 +272,7 @@ module OutgoingDataComputation = struct
                 names_to_resolve
                 (Reference.as_list current_module |> List.rev))
       | Some module_metadata -> (
-          match Module.empty_stub module_metadata with
+          match Module.Metadata.empty_stub module_metadata with
           | true ->
               (* If we encounter a placeholder stub as we are searching packages shallow-to-deep,
                  immediately return that this reference is coming from a Placeholder stub. Pyre will
@@ -299,10 +296,10 @@ module OutgoingDataComputation = struct
                       None
                   | Result.Ok _ -> (
                       (* There is no cycle, so look up the name in this module's globals. *)
-                      match Module.get_export module_metadata next_name with
+                      match Module.Metadata.get_export module_metadata next_name with
                       | None -> (
                           (* We didn't find any explicit global symbol for this name. *)
-                          match Module.get_export module_metadata "__getattr__" with
+                          match Module.Metadata.get_export module_metadata "__getattr__" with
                           | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
                               (* If __getattr__ is defined, then all lookups resolve through it;
                                  this is occasionally used for real code and is also a common
@@ -624,13 +621,13 @@ module FromReadOnlyUpstream = struct
   end
 
   module ModuleValue = struct
-    type t = Module.t
+    type t = Module.Metadata.t
 
     let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Module"
 
-    let equal = Module.equal
+    let equal = Module.Metadata.equal
   end
 
   module ModuleTable = struct
@@ -717,13 +714,13 @@ module FromReadOnlyUpstream = struct
   end
 
   module UnannotatedGlobalValue = struct
-    type t = UnannotatedGlobal.t
+    type t = Module.UnannotatedGlobal.t
 
     let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "UnannotatedGlobal"
 
-    let equal = Memory.equal_from_compare UnannotatedGlobal.compare
+    let equal = Memory.equal_from_compare Module.UnannotatedGlobal.compare
   end
 
   module UnannotatedGlobalTable = struct
@@ -804,7 +801,7 @@ module FromReadOnlyUpstream = struct
       |> DefineNames.add define_names qualifier
     in
     let set_unannotated_globals () =
-      let register { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+      let register { Module.Collector.Result.name; unannotated_global } =
         let name = Reference.create name |> Reference.combine qualifier in
         UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
         name

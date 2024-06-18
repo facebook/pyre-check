@@ -29,10 +29,9 @@ open Pyre
 
 let wildcard_exports_of ({ Source.module_path; _ } as source) =
   let open Expression in
-  let open UnannotatedGlobal in
   let extract_dunder_all = function
     | {
-        Collector.Result.name = "__all__";
+        Module.Collector.Result.name = "__all__";
         unannotated_global =
           SimpleAssign { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ };
       } ->
@@ -44,7 +43,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
         Some (List.filter_map ~f:to_identifier names)
     | _ -> None
   in
-  let unannotated_globals = Collector.from_source source in
+  let unannotated_globals = Module.Collector.from_source source in
   match List.find_map unannotated_globals ~f:extract_dunder_all with
   | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
   | _ ->
@@ -52,7 +51,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
         (* Stubs have a slightly different rule with re-export *)
         let filter_unaliased_import = function
           | {
-              Collector.Result.unannotated_global =
+              Module.Collector.Result.unannotated_global =
                 Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ });
               _;
             } ->
@@ -64,7 +63,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
         else
           unannotated_globals
       in
-      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
+      List.map unannotated_globals ~f:(fun { Module.Collector.Result.name; _ } -> name)
       |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
       |> List.dedup_and_sort ~compare:Identifier.compare
 

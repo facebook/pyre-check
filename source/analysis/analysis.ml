@@ -62,7 +62,6 @@ module TypeInfo = TypeInfo
 module TypeOperation = TypeOperation
 module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
-module UnannotatedGlobal = UnannotatedGlobal
 module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
 module UninitializedLocalCheck = UninitializedLocalCheck
 module WeakenMutableLiterals = WeakenMutableLiterals

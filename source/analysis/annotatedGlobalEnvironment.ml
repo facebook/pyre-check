@@ -45,7 +45,7 @@ module IncomingDataComputation = struct
   module Queries = struct
     type t = {
       get_class_summary: Identifier.t -> ClassSummary.t Node.t option;
-      get_unannotated_global: Reference.t -> UnannotatedGlobal.t option;
+      get_unannotated_global: Reference.t -> Module.UnannotatedGlobal.t option;
     }
   end
 
@@ -59,8 +59,9 @@ module IncomingDataComputation = struct
     match class_location with
     | Some location -> Some location
     | None ->
+        let open Module.UnannotatedGlobal in
         let extract_location = function
-          | UnannotatedGlobal.Define ({ UnannotatedGlobal.location; _ } :: _) -> Some location
+          | Define ({ location; _ } :: _) -> Some location
           | SimpleAssign { target_location; _ } -> Some target_location
           | TupleAssign { target_location; _ } -> Some target_location
           | _ -> None

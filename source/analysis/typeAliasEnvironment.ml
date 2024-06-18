@@ -31,7 +31,7 @@ module IncomingDataComputation = struct
     type t = {
       class_exists: string -> bool;
       module_exists: Ast.Reference.t -> bool;
-      get_unannotated_global: Ast.Reference.t -> UnannotatedGlobal.t option;
+      get_unannotated_global: Ast.Reference.t -> Module.UnannotatedGlobal.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
     }
   end
@@ -118,9 +118,10 @@ module IncomingDataComputation = struct
     | TypeAlias of UnresolvedAlias.t
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
+    let open Module.UnannotatedGlobal in
     let extract_alias = function
-      | UnannotatedGlobal.SimpleAssign { value = None; _ } -> None
-      | UnannotatedGlobal.SimpleAssign { explicit_annotation; value = Some value; _ } -> (
+      | SimpleAssign { value = None; _ } -> None
+      | SimpleAssign { explicit_annotation; value = Some value; _ } -> (
           let target_annotation =
             Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
           in
@@ -158,18 +159,18 @@ module IncomingDataComputation = struct
                   else
                     None)
           | _ -> None)
-      | UnannotatedGlobal.Imported import -> (
+      | Imported import -> (
           if class_exists (Reference.show name) then
             None
           else
             let original_name_of_alias =
               match import with
-              | UnannotatedGlobal.ImportModule { target; implicit_alias } ->
+              | ImportModule { target; implicit_alias } ->
                   if implicit_alias then
                     Option.value_exn (Reference.head target)
                   else
                     target
-              | UnannotatedGlobal.ImportFrom { from; target; _ } -> (
+              | ImportFrom { from; target; _ } -> (
                   match Reference.show from with
                   | "future.builtins"
                   | "builtins" ->
