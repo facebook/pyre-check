@@ -186,21 +186,6 @@ impl fmt::Display for StmtDesc {
                     format_vec(finalbody)
                 )
             }
-            StmtDesc::TryStar {
-                body,
-                handlers,
-                orelse,
-                finalbody,
-            } => {
-                write!(
-                    f,
-                    "TryStar(body=[{}], handlers=[{}], orelse=[{}], finalbody=[{}], ",
-                    format_vec(body),
-                    format_vec(handlers),
-                    format_vec(orelse),
-                    format_vec(finalbody)
-                )
-            }
             StmtDesc::While { test, body, orelse } => {
                 write!(
                     f,
@@ -949,12 +934,7 @@ impl fmt::Display for Withitem {
 impl fmt::Display for ExcepthandlerDesc {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ExcepthandlerDesc::ExceptHandler {
-                type__,
-                name,
-                body,
-                star: _,
-            } => {
+            ExcepthandlerDesc::ExceptHandler { type__, name, body } => {
                 let type_fmt = match &type__ {
                     Some(ttype) => format!("type={}, ", ttype),
                     _ => String::from(""),

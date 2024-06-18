@@ -738,17 +738,6 @@ and translate_statements
                 handles_exception_group = false;
               };
           ]
-      | Errpyast.TryStar try_statement ->
-          [
-            Statement.Try
-              {
-                Try.body = translate_statements try_statement.body ~context;
-                orelse = translate_statements try_statement.orelse ~context;
-                finally = translate_statements try_statement.finalbody ~context;
-                handlers = List.map ~f:translate_excepthandler try_statement.handlers;
-                handles_exception_group = true;
-              };
-          ]
       | Errpyast.With with_statement ->
           [
             Statement.With

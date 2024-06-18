@@ -194,12 +194,6 @@ pub enum StmtDesc {
         orelse: Vec<Stmt>,
         finalbody: Vec<Stmt>,
     },
-    TryStar {
-        body: Vec<Stmt>,
-        handlers: Vec<Excepthandler>,
-        orelse: Vec<Stmt>,
-        finalbody: Vec<Stmt>,
-    },
     Assert {
         test: Expr,
         msg: Option<Expr>,
@@ -476,7 +470,6 @@ pub enum ExcepthandlerDesc {
         type__: Option<Expr>,
         name: Option<String>,
         body: Vec<Stmt>,
-        star: bool,
     },
 }
 

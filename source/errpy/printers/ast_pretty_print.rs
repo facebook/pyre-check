@@ -569,33 +569,6 @@ impl Stmt {
                     format_block(finalbody, pprint_output);
                 }
             }
-            StmtDesc::TryStar {
-                body,
-                handlers,
-                orelse,
-                finalbody,
-            } => {
-                pprint_output.push_str("try:\n");
-                format_block(body, pprint_output);
-
-                for handle in handlers {
-                    handle.desc.pprint(pprint_output);
-                }
-
-                if !orelse.is_empty() {
-                    pprint_output.push_str("\n");
-                    pprint_output.push_ident();
-                    pprint_output.push_str("else:\n");
-                    format_block(orelse, pprint_output);
-                }
-
-                if !finalbody.is_empty() {
-                    pprint_output.push_str("\n");
-                    pprint_output.push_ident();
-                    pprint_output.push_str("finally:\n");
-                    format_block(finalbody, pprint_output);
-                }
-            }
             StmtDesc::ClassDef {
                 name,
                 bases,
@@ -1761,19 +1734,10 @@ impl Withitem {
 impl ExcepthandlerDesc {
     pub fn pprint(&self, pprint_output: &mut PrintHelper) {
         match self {
-            ExcepthandlerDesc::ExceptHandler {
-                type__,
-                name,
-                body,
-                star,
-            } => {
+            ExcepthandlerDesc::ExceptHandler { type__, name, body } => {
                 pprint_output.push_str("\n");
                 pprint_output.push_ident();
-                if *star {
-                    pprint_output.push_str("except*");
-                } else {
-                    pprint_output.push_str("except");
-                }
+                pprint_output.push_str("except");
 
                 if let Some(tt) = type__ {
                     pprint_output.push_str(" ");

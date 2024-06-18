@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree
 
-# Ensure correct AST creation given units defined under: https://docs.python.org/3/library/ast.html :: 3.12.3 grammar
+# Ensure correct AST creation given units defined under: https://docs.python.org/3/library/ast.html :: 3.10.7 grammar
 # Note: the guide referenced above is not complete, so we've extended it here where appropriate
 
 
@@ -156,28 +156,6 @@ finally:
 try:
     a+1
 except TypeError:
-    pass
-
-## TryStar(body, handlers, orelse, finalbody)
-try:
-    something()
-except* Exception:
-    pass
-except* OtherException as e:
-    react()
-except* (OtherException, Another):
-    react2()
-except* (OtherException, Another) as ee:
-    react3()
-else:
-    elablock()
-finally:
-    andForver()
-
-## ExceptHandler(type, name, body)
-try:
-    a+1
-except* TypeError:
     pass
 
 ## With(items, body, type_comment)

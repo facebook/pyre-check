@@ -2457,6 +2457,8 @@ impl<'parser> FilteredCSTParser<'parser> {
     //   $._suite
     // ),
     //
+    // except_group_clause - comes in 3.11 ( so we need to care about this for the 3.12 upgrade )
+    //
     // except_group_clause: $ => seq(
     //   'except*',
     //   seq(
@@ -2480,7 +2482,6 @@ impl<'parser> FilteredCSTParser<'parser> {
         let mut handlers: Vec<Excepthandler> = vec![];
         let mut orelse: Vec<Stmt> = vec![];
         let mut finalbody: Vec<Stmt> = vec![];
-        let mut trystar = false;
 
         let body_node = try_node
             .child_by_field_name(self.filtered_cst, "body")
@@ -2530,62 +2531,11 @@ impl<'parser> FilteredCSTParser<'parser> {
                     }
 
                     handlers.push(Excepthandler::new(
-                        ExcepthandlerDesc::ExceptHandler {
-                            type__,
-                            name,
-                            body,
-                            star: false,
-                        },
+                        ExcepthandlerDesc::ExceptHandler { type__, name, body },
                         child_node,
                     ));
                 }
-                "except_group_clause" => {
-                    trystar = true;
-                    let mut name: Option<String> = None;
-                    let mut body: Vec<Stmt> = vec![];
-                    self.block(
-                        child_node
-                            .child(self.filtered_cst, child_node.child_count() - 1)
-                            .expect("exception handler body"),
-                        &mut body,
-                    );
-
-                    let expr_node = &child_node
-                        .child(self.filtered_cst, 1)
-                        .expect("expression or as_pattern");
-                    let expr_type = &get_node_type(expr_node);
-                    let type__ = match expr_type {
-                        NodeType::Production(rule) => match &rule.production_kind {
-                            ProductionKind::AS_PATTERN => {
-                                let node = rule.node;
-                                let lhs_expression = node
-                                    .child(self.filtered_cst, 0)
-                                    .expect("expression for exception handler");
-                                let target_expression = node
-                                    .child(self.filtered_cst, 2)
-                                    .expect("target for exception handler")
-                                    .child(self.filtered_cst, 0)
-                                    .expect("pattern target");
-
-                                name = Some(self.get_valid_identifier(target_expression));
-
-                                self.expression(lhs_expression)?
-                            }
-                            _ => self.expression(expr_node)?,
-                        },
-                        _ => panic!("unexpected statement handling: {:?}", expr_type),
-                    };
-
-                    handlers.push(Excepthandler::new(
-                        ExcepthandlerDesc::ExceptHandler {
-                            type__: Some(type__),
-                            name,
-                            body,
-                            star: true,
-                        },
-                        child_node,
-                    ));
-                }
+                "except_group_clause" => panic!("except* not supported until Python 3.11"),
                 "else_clause" => {
                     self.block(
                         child_node.child(self.filtered_cst, 2).expect("else body"),
@@ -2604,21 +2554,12 @@ impl<'parser> FilteredCSTParser<'parser> {
             }
         }
 
-        if trystar {
-            Ok(StmtDesc::TryStar {
-                body,
-                handlers,
-                orelse,
-                finalbody,
-            })
-        } else {
-            Ok(StmtDesc::Try {
-                body,
-                handlers,
-                orelse,
-                finalbody,
-            })
-        }
+        Ok(StmtDesc::Try {
+            body,
+            handlers,
+            orelse,
+            finalbody,
+        })
     }
 
     // while_statement: $ => seq(
