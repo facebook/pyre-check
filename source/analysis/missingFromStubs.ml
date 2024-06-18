@@ -204,22 +204,6 @@ let missing_builtin_classes =
   ]
 
 
-let missing_builtin_globals =
-  let assign name annotation =
-    {
-      UnannotatedGlobal.Collector.Result.name;
-      unannotated_global =
-        UnannotatedGlobal.SimpleAssign
-          {
-            explicit_annotation = Some (Type.expression annotation);
-            target_location = Location.WithModule.any;
-            value = Some (Node.create_with_default_location (Expression.Constant Constant.Ellipsis));
-          };
-    }
-  in
-  [assign "__debug__" Type.bool]
-
-
 let missing_typing_classes =
   [
     make_class "typing.Optional" ~bases:single_unary_generic;

@@ -3160,6 +3160,17 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
+    | Name (Name.Identifier "__debug__") ->
+        (* `__debug__` is a special unassignable builtin boolean, see
+           https://docs.python.org/3/library/constants.html *)
+        let resolved = Type.bool in
+        {
+          resolution;
+          errors = [];
+          resolved;
+          resolved_annotation = Some (TypeInfo.Unit.create_immutable resolved);
+          base = None;
+        }
     | Name (Name.Identifier identifier) ->
         forward_reference ~resolution ~location ~errors:[] (Reference.create identifier)
     | Name (Name.Attribute { base; attribute; special } as name) -> (

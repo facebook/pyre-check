@@ -7,8 +7,6 @@
 
 open Ast
 
-val missing_builtin_globals : UnannotatedGlobal.Collector.Result.t list
-
 val missing_builtin_classes : Statement.Class.t Node.t list
 
 val missing_typing_classes : Statement.Class.t Node.t list

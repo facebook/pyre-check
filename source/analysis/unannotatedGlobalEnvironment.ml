@@ -99,9 +99,7 @@ module ModuleComponents = struct
     | true -> FunctionDefinition.collect_defines source
 
 
-  let unannotated_globals_of_source
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-    =
+  let unannotated_globals_of_source source =
     let merge_defines unannotated_globals_alist =
       let not_defines, defines =
         List.partition_map unannotated_globals_alist ~f:(function
@@ -133,11 +131,6 @@ module ModuleComponents = struct
       List.filter unannotated_globals ~f:is_not_class
     in
     let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
-    let globals =
-      match Reference.as_list qualifier with
-      | [] -> globals @ MissingFromStubs.missing_builtin_globals
-      | _ -> globals
-    in
     globals
 
 
