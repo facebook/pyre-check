@@ -687,33 +687,35 @@ module FromReadOnlyUpstream = struct
     =
     let set_module () = ModuleTable.add module_table qualifier module_metadata in
     let set_class_summaries () =
-      let register new_classes (class_name, class_summary_node) =
+      let register ~key:class_name ~data:class_summary_node class_names =
         ClassSummaryTable.write_around class_summary_table class_name class_summary_node;
-        Set.add new_classes class_name
+        Set.add class_names class_name
       in
       class_summaries
-      |> List.fold ~init:Type.Primitive.Set.empty ~f:register
+      |> Identifier.Map.Tree.fold ~init:Type.Primitive.Set.empty ~f:register
       |> Set.to_list
       |> KeyTracker.add_class_keys key_tracker qualifier
     in
     let set_function_definitions () =
-      let register (name, function_definition) =
+      let register ~key:name ~data:function_definition function_names =
         FunctionDefinitionTable.write_around function_definition_table name function_definition;
-        name
+        Set.add function_names name
       in
       function_definitions
-      |> List.map ~f:register
+      |> Reference.Map.Tree.fold ~init:Reference.Set.empty ~f:register
+      |> Set.to_list
       |> List.sort ~compare:Reference.compare
       |> DefineNames.add define_names qualifier
     in
     let set_unannotated_globals () =
-      let register (name, unannotated_global) =
+      let register ~key:name ~data:unannotated_global global_names =
         let name = Reference.create name |> Reference.combine qualifier in
         UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
-        name
+        Set.add global_names name
       in
       unannotated_globals
-      |> List.map ~f:register
+      |> Identifier.Map.Tree.fold ~init:Reference.Set.empty ~f:register
+      |> Set.to_list
       |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
     in
     set_class_summaries ();

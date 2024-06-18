@@ -86,9 +86,9 @@ end
 module Components : sig
   type t = {
     module_metadata: Metadata.t;
-    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: (Ast.Identifier.t * UnannotatedGlobal.t) list;
-    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
+    class_summaries: ClassSummary.t Ast.Node.t Ast.Identifier.Map.Tree.t;
+    unannotated_globals: UnannotatedGlobal.t Ast.Identifier.Map.Tree.t;
+    function_definitions: FunctionDefinition.t Ast.Reference.Map.Tree.t;
   }
 
   val of_source : Ast.Source.t -> t

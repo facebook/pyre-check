@@ -113,7 +113,7 @@ let test_find_globals =
       foo = []
       bar: typing.List[typing.Any] = []
     |}
-           ~expected:[!&"test.foo", None; !&"test.bar", Some (Type.list Type.Any)];
+           ~expected:[!&"test.bar", Some (Type.list Type.Any); !&"test.foo", None];
       (* Note that functions are not selected *)
       labeled_test_case __FILE__ __LINE__
       @@ assert_found_globals ~source:{|
@@ -132,10 +132,10 @@ let test_find_globals =
     |}
            ~expected:
              [
-               !&"test.foo", None;
+               !&"test.abc", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
                !&"test.bar", None;
                !&"test.baz", Some (Type.list Type.Any);
-               !&"test.abc", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+               !&"test.foo", None;
              ];
       (* TODO(T132423781): Classes are not recognized as globals *)
       labeled_test_case __FILE__ __LINE__
@@ -157,7 +157,7 @@ let test_find_globals =
       c = C()
       annotated_c: C = C()
     |}
-           ~expected:[!&"test.c", None; !&"test.annotated_c", Some (Type.Primitive "test.C")];
+           ~expected:[!&"test.annotated_c", Some (Type.Primitive "test.C"); !&"test.c", None];
       labeled_test_case __FILE__ __LINE__
       @@ assert_found_globals
            ~source:
@@ -170,12 +170,10 @@ let test_find_globals =
     |}
            ~expected:
              [
+               !&"test.annotated_x", Some (Type.list Type.Any);
+               !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
                !&"test.x", None;
                !&"test.y", None;
-               !&"test.annotated_x", Some (Type.list Type.Any);
-               !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
-               !&"test.annotated_x", Some (Type.list Type.Any);
-               !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
              ];
       labeled_test_case __FILE__ __LINE__
       @@ assert_found_globals
@@ -223,7 +221,7 @@ let test_find_globals =
       b: int = fun(1, "2")
       |}
            ~expected:
-             [!&"test.x", None; !&"test.y", None; !&"test.a", None; !&"test.b", Some Type.integer];
+             [!&"test.a", None; !&"test.b", Some Type.integer; !&"test.x", None; !&"test.y", None];
       labeled_test_case __FILE__ __LINE__
       @@ assert_found_globals
            ~source:
@@ -235,14 +233,7 @@ let test_find_globals =
     y = "abc"
     y: str = "abc"
     |}
-           ~expected:
-             [
-               !&"test.x", None;
-               !&"test.x", None;
-               !&"test.y", Some Type.integer;
-               !&"test.y", Some Type.integer;
-               !&"test.y", Some Type.integer;
-             ];
+           ~expected:[!&"test.x", None; !&"test.y", Some Type.integer];
     ]
 
 

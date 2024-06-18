@@ -333,9 +333,9 @@ end
 module Components = struct
   type t = {
     module_metadata: Metadata.t;
-    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
-    unannotated_globals: (Ast.Identifier.t * UnannotatedGlobal.t) list;
-    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
+    class_summaries: ClassSummary.t Ast.Node.t Identifier.Map.Tree.t;
+    unannotated_globals: UnannotatedGlobal.t Identifier.Map.Tree.t;
+    function_definitions: FunctionDefinition.t Reference.Map.Tree.t;
   }
 
   let unannotated_globals_of_source source =
@@ -406,20 +406,25 @@ module Components = struct
 
 
   let of_source source =
+    let prefer_left left _ = left in
+    let identifier_map_of_alist_prefer_first = Identifier.Map.Tree.of_alist_reduce ~f:prefer_left in
+    let reference_map_of_alist_prefer_first = Reference.Map.Tree.of_alist_reduce ~f:prefer_left in
     {
       module_metadata = Metadata.create source;
-      class_summaries = class_summaries_of_source source;
-      unannotated_globals = unannotated_globals_of_source source;
-      function_definitions = function_definitions_of_source source;
+      class_summaries = class_summaries_of_source source |> identifier_map_of_alist_prefer_first;
+      unannotated_globals =
+        unannotated_globals_of_source source |> identifier_map_of_alist_prefer_first;
+      function_definitions =
+        function_definitions_of_source source |> reference_map_of_alist_prefer_first;
     }
 
 
   let implicit_module () =
     {
       module_metadata = Metadata.create_implicit ();
-      class_summaries = [];
-      unannotated_globals = [];
-      function_definitions = [];
+      class_summaries = Identifier.Map.Tree.empty;
+      unannotated_globals = Identifier.Map.Tree.empty;
+      function_definitions = Reference.Map.Tree.empty;
     }
 end
 
