@@ -6040,7 +6040,7 @@ SQLITE_API int sqlite3_sleep(int);
 ** <blockquote><pre>
 ** LPCWSTR zPath = Windows::Storage::ApplicationData::Current->
 ** &nbsp;     TemporaryFolder->Path->Data();
-** char zPathBuf&#91;MAX_PATH + 1&#93;;
+** char zPathBuf&#91;MAX_PATH + 1&#93;
 ** memset(zPathBuf, 0, sizeof(zPathBuf));
 ** WideCharToMultiByte(CP_UTF8, 0, zPath, -1, zPathBuf, sizeof(zPathBuf),
 ** &nbsp;     NULL, NULL);
