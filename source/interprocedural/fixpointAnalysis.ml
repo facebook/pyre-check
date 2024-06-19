@@ -191,6 +191,19 @@ module Make (Analysis : ANALYSIS) = struct
       Target.Map.fold (fun key data so_far -> f ~target:key ~model:data so_far) map init
   end
 
+    (* Pretty-printing functions *)
+    let pp formatter map =
+      let pp_pairs formatter pairs =
+        let pp_pair formatter (key, value) =
+          Format.fprintf formatter "@[<hv 2>%a -> %a@]" Target.pp key Model.pp value
+        in
+        Format.pp_print_list pp_pair formatter (Target.Map.bindings map)
+      in
+      Format.fprintf formatter "@[<v 2>{%a}@}" pp_pairs
+
+    let show map = Format.asprintf "%a" pp map
+  end
+
   module Epoch = struct
     type t = int [@@deriving show]
 
@@ -734,7 +747,7 @@ module Make (Analysis : ANALYSIS) = struct
   let get_iterations { fixpoint_reached_iterations; _ } = fixpoint_reached_iterations
 
   let cleanup { shared_models_handle; _ } = State.cleanup shared_models_handle
-end
+end 
 
 module WithoutLogging = struct
   let initial_models_stored ~timer:_ = ()
@@ -874,3 +887,11 @@ struct
     else
       Format.ifprintf Format.err_formatter format
 end
+
+(* Demonstration of pretty-printing a registry *)
+let () =
+  let open Registry in
+  let model1 = (* construct a sample model *) in
+  let model2 = (* construct another sample model *) in
+  let registry = empty |> set ~target:Target.dummy_target ~model:model1 |> set ~target:Target.dummy_target ~model:model2 in
+  Format.printf "Pretty-printed registry: %s\n" (show registry)

@@ -170,8 +170,7 @@ module Heap = struct
         | None ->
             if number_of_overrides > 50 then
               Log.warning
-                "`%s` has %d overrides, this might slow down the analysis considerably."
-                (Target.show_pretty member)
+              "`%s` has %d overrides, this might slow down the analysis considerably. Use `maximum_overrides_to_analyze` to limit the number of overrides analyzed. For more information, visit: https://pyre-check.org/docs/pysa-advanced/#ignoring-overrides"                (Target.show_pretty member)
                 number_of_overrides;
             true
     in
