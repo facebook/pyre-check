@@ -1,7 +1,0 @@
-# -*- conf -*-
-
-doc-comments = before
-field-space = tight-decl
-module-item-spacing = sparse
-space-around-lists = false
-type-decl = sparse

@@ -1,3 +1,0 @@
-type 'a my_option =
-  | None
-  | Some of 'a

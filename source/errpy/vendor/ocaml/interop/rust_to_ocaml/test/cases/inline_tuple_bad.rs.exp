@@ -1,4 +1,0 @@
-Error: Failed to convert type E
-
-Caused by:
-    Variant Foo must have a single argument which is a tuple

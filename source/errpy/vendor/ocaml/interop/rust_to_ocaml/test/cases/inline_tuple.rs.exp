@@ -1,5 +1,0 @@
-type e =
-  | Foo of (a * b)
-  | Bar of (a * b)
-  | Baz of a * b
-  | Qux of a * b

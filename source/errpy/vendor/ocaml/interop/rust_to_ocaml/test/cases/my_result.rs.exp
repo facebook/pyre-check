@@ -1,3 +1,0 @@
-type ('t, 'e) result =
-  | Ok of 't
-  | Err of 'e
