@@ -69,7 +69,7 @@ def format_string_no_issue_when_single_sink_parameter():
         x: str = "SELECT"
     else:
         x = user_controlled_input()
-    # False positive: Should not see an issue here
+    # Should not see an issue here
     f"{x}"
 
 

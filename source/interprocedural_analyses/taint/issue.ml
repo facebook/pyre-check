@@ -382,15 +382,27 @@ module TriggeredSinkHashMap = struct
       argument_location: Location.t;
     }
 
-    let create_taint ~call_info ~partial_sink { source; source_trace; argument_location = _ } =
-      BackwardTaint.singleton
-        call_info
-        (Sinks.TriggeredPartialSink { partial_sink; triggering_source = source })
-        Frame.initial
-      |> BackwardTaint.transform
-           ExtraTraceFirstHop.Set.Self
-           Map
-           ~f:(ExtraTraceFirstHop.Set.add source_trace)
+    let create_taint
+        ~call_info
+        ~partial_sink
+        ~argument_location
+        { source; source_trace; argument_location = trigger_location }
+      =
+      if Location.equal argument_location trigger_location then
+        (* Only generate triggered taint on the non-fullfilled parameter. E.g., in `foo(a=source(),
+           b)`, we only want to create a triggered sink on `b`, not `a`. The flow on `a` triggers
+           creating a taint on `b`. *)
+        None
+      else
+        Some
+          (BackwardTaint.singleton
+             call_info
+             (Sinks.TriggeredPartialSink { partial_sink; triggering_source = source })
+             Frame.initial
+          |> BackwardTaint.transform
+               ExtraTraceFirstHop.Set.Self
+               Map
+               ~f:(ExtraTraceFirstHop.Set.add source_trace))
   end
 
   type t = Trigger.t list HashMap.t
@@ -417,10 +429,11 @@ module TriggeredSinkHashMap = struct
     Core.Hashtbl.update map partial_sink ~f:update
 
 
-  let create_triggered_sink_taint ~call_info ~partial_sink map =
+  (* Turn the given partial sink into a triggered sink taint at certain location, based on what has
+     triggered this partial sink. *)
+  let create_triggered_sink_taint ~argument_location ~call_info ~partial_sink map =
     Core.Hashtbl.find map partial_sink
-    >>| List.filter_map ~f:(fun trigger ->
-            Some (Trigger.create_taint ~call_info ~partial_sink trigger))
+    >>| List.filter_map ~f:(Trigger.create_taint ~call_info ~partial_sink ~argument_location)
     >>| Algorithms.fold_balanced ~f:BackwardTaint.join ~init:BackwardTaint.bottom
     |> Option.value ~default:BackwardTaint.bottom
 end
@@ -433,7 +446,7 @@ module TriggeredSinkLocationMap = struct
 
   let create () = Location.Table.create ()
 
-  let add map ~location ~taint =
+  let add map ~location taint =
     Hashtbl.update map location ~f:(function
         | Some existing -> BackwardState.join existing taint
         | None -> taint)
@@ -482,10 +495,11 @@ let compute_triggered_flows
       (* Since another flow has already been found, both flows are found and hence we emit an issue.
          No need to add subtraces for the discovered flow, since it is already an issue. *)
       let triggered_sink_taint =
-        TriggeredSinkHashMap.create_triggered_sink_taint
-          ~call_info:CallInfo.declaration
-          ~partial_sink
-          triggered_sinks_for_call
+        triggered_sinks_for_call
+        |> TriggeredSinkHashMap.create_triggered_sink_taint
+             ~argument_location:(Location.strip_module location)
+             ~call_info:CallInfo.declaration
+             ~partial_sink
         |> BackwardTaint.apply_call
              ~pyre_in_context
              ~location

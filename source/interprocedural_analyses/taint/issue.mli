@@ -61,10 +61,11 @@ module TriggeredSinkHashMap : sig
 
   val is_empty : t -> bool
 
-  (* Turn the given partial sink into a triggered sink taint, based on what has triggered this
-     partial sink. *)
+  (* Turn the given partial sink into a triggered sink taint at certain location, based on what has
+     triggered this partial sink. *)
   val create_triggered_sink_taint
-    :  call_info:CallInfo.t ->
+    :  argument_location:Location.t ->
+    call_info:CallInfo.t ->
     partial_sink:Sinks.PartialSink.t ->
     t ->
     BackwardTaint.t
@@ -78,7 +79,7 @@ module TriggeredSinkLocationMap : sig
 
   val create : unit -> t
 
-  val add : t -> location:Location.t -> taint:BackwardState.t -> unit
+  val add : t -> location:Location.t -> BackwardState.t -> unit
 
   val get : t -> location:Location.t -> BackwardState.t
 end
