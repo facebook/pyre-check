@@ -303,10 +303,10 @@ let create_with_ast_environment controls =
   environment
 
 
-let check_and_preprocess ~scheduler ~scheduler_policies environment qualifiers =
+let check_and_postprocess ~scheduler ~scheduler_policies environment qualifiers =
   (AssumeDownstreamNeverNeedsUpdates.type_environment environment
   |> TypeEnvironment.populate_for_modules ~scheduler ~scheduler_policies)
     qualifiers;
   populate_for_modules ~scheduler environment qualifiers;
-  PyreProfiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
+  PyreProfiling.track_shared_memory_usage ~name:"After checking and postprocess" ();
   ()

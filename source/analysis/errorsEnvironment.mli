@@ -95,7 +95,7 @@ module Testing : sig
   end
 end
 
-val check_and_preprocess
+val check_and_postprocess
   :  scheduler:Scheduler.t ->
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   t ->
