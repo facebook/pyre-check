@@ -285,9 +285,6 @@ module RegisteredPartialSinks = struct
     |> PartialSink.Map.of_alist_exn
 
 
-  (* TODO: Remove once the syntax no longer supports specifying labels. *)
-  let from_kind_label ~kind ~label = Format.asprintf "%s[%s]" kind label
-
   let add partial_sink_1 partial_sink_2 map =
     let update_matches partial_sink_1 partial_sink_2 =
       PartialSink.Map.update partial_sink_1 (function
@@ -791,6 +788,7 @@ module Error = struct
     | UnsupportedSink of string
     | UnsupportedTransform of string
     | UnexpectedCombinedSourceRule of JsonAst.Json.t
+    | UnexpectedStringCombineRule of JsonAst.Json.t
     | InvalidMultiSink of {
         sink: string;
         registered: Sinks.PartialSink.Set.t;
@@ -851,7 +849,8 @@ module Error = struct
     | UnsupportedSink sink -> Format.fprintf formatter "Unsupported taint sink `%s`" sink
     | UnsupportedTransform transform ->
         Format.fprintf formatter "Unsupported taint transform `%s`" transform
-    | UnexpectedCombinedSourceRule json ->
+    | UnexpectedCombinedSourceRule json
+    | UnexpectedStringCombineRule json ->
         let expected_json_form =
           `Assoc
             [
@@ -865,7 +864,7 @@ module Error = struct
         in
         Format.fprintf
           formatter
-          {|Combined source rules must have a section of the form %s, got %a|}
+          {|Combined source / String combined rules must have a section of the form %s, got %a|}
           (Yojson.Safe.to_string expected_json_form)
           JsonAst.Json.pp
           json
@@ -927,6 +926,7 @@ module Error = struct
     | UnsupportedSource _ -> 8
     | UnsupportedSink _ -> 9
     | UnexpectedCombinedSourceRule _ -> 10
+    | UnexpectedStringCombineRule _ -> 11
     | InvalidMultiSink _ -> 13
     | RuleCodeDuplicate _ -> 14
     | OptionDuplicate _ -> 15
@@ -1304,28 +1304,7 @@ let from_json_list source_json_list =
           parse_partial_sink ~path ~section:"partial_sink" second_rule
           >>= fun second_sink ->
           Result.Ok { first_sources; first_sink; second_sources; second_sink }
-      | _ -> (
-          (* Parse old syntax. Delete once the old rules are migrated to new syntax. *)
-          let sources = JsonAst.Json.Util.member_exn "sources" json in
-          let keys = JsonAst.Json.Util.keys sources in
-          match keys with
-          | [first_tag; second_tag] ->
-              parse_sources ~allowed_sources ~path ~section:first_tag sources
-              >>= fun first_sources ->
-              parse_sources ~allowed_sources ~path ~section:second_tag sources
-              >>= fun second_sources ->
-              parse_partial_sink ~path ~section:"partial_sink" json
-              >>= fun partial_sink ->
-              Result.Ok
-                {
-                  first_sources;
-                  first_sink =
-                    RegisteredPartialSinks.from_kind_label ~kind:partial_sink ~label:first_tag;
-                  second_sources;
-                  second_sink =
-                    RegisteredPartialSinks.from_kind_label ~kind:partial_sink ~label:second_tag;
-                }
-          | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)])
+      | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
 
 
     let parse_string_combine_rule ~allowed_sources ~path json =
@@ -1340,22 +1319,7 @@ let from_json_list source_json_list =
           parse_partial_sink ~path ~section:"partial_sink" second_rule
           >>= fun second_sink ->
           Result.Ok { first_sources; first_sink; second_sources; second_sink }
-      | _ ->
-          (* Parse old syntax. Delete once the old rules are migrated to new syntax. *)
-          parse_sources ~allowed_sources ~path ~section:"main_sources" json
-          >>= fun first_sources ->
-          parse_sources ~allowed_sources ~path ~section:"secondary_sources" json
-          >>= fun second_sources ->
-          parse_partial_sink ~path ~section:"partial_sink" json
-          >>= fun partial_sink ->
-          Result.Ok
-            {
-              first_sources;
-              first_sink = RegisteredPartialSinks.from_kind_label ~kind:partial_sink ~label:"main";
-              second_sources;
-              second_sink =
-                RegisteredPartialSinks.from_kind_label ~kind:partial_sink ~label:"secondary";
-            }
+      | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedStringCombineRule json)]
   end
   in
   let create_combined_source_rules_and_update_partial_sinks

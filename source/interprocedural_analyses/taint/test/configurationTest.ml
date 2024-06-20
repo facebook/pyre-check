@@ -268,7 +268,7 @@ let test_invalid_transform _ =
     |}
 
 
-let test_new_combined_source_rules _ =
+let test_combined_source_rules _ =
   assert_parse_error
     ~errors:
       [
@@ -356,6 +356,63 @@ let test_new_combined_source_rules _ =
                  "partial_sink": "CombinedSinkB"
                }
              ]
+          }
+        ]
+      }
+    |};
+  assert_parse_error
+    ~errors:
+      [
+        TaintConfiguration.Error.UnexpectedCombinedSourceRule
+          {
+            JsonParsing.JsonAst.Node.value =
+              `Assoc
+                [
+                  ( "name",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "test combined rule";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 8; column = 22 };
+                          stop = { line = 8; column = 41 };
+                        };
+                    } );
+                  ( "code",
+                    {
+                      JsonParsing.JsonAst.Node.value = `Float 2001.;
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 9; column = 22 };
+                          stop = { line = 9; column = 25 };
+                        };
+                    } );
+                  ( "message_format",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "some form";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 10; column = 32 };
+                          stop = { line = 10; column = 42 };
+                        };
+                    } );
+                ];
+            location =
+              {
+                JsonParsing.JsonAst.Location.start = { line = 10; column = 32 };
+                stop = { line = 10; column = 42 };
+              };
+          };
+      ]
+    {|
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" }
+        ],
+        "combined_source_rules": [
+          {
+             "name": "test combined rule",
+             "code": 2001,
+             "message_format": "some form"
           }
         ]
       }
@@ -656,114 +713,60 @@ let test_new_combined_source_rules _ =
       ]
 
 
-let test_old_combined_source_rules _ =
-  let configuration =
-    assert_parse
-      {|
-    { "sources": [
-        { "name": "A" },
-        { "name": "B" },
-        { "name": "C" }
-      ],
-      "sinks": [],
-      "combined_source_rules": [
-        {
-           "name": "test combined rule",
-           "sources": {"a": "A", "b": ["B", "C"]},
-           "partial_sink": "CombinedSink",
-           "code": 2001,
-           "message_format": "some form"
-        }
-      ]
-    }
-  |}
-  in
-  assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
-  assert_equal configuration.sinks [];
-  assert_equal
-    ~printer:TaintConfiguration.RegisteredPartialSinks.show
-    ~cmp:TaintConfiguration.RegisteredPartialSinks.equal
-    (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
-       ["CombinedSink[a]", ["CombinedSink[b]"]; "CombinedSink[b]", ["CombinedSink[a]"]])
-    configuration.registered_partial_sinks;
-  assert_rules_equal
-    ~actual:configuration.rules
-    ~expected:
-      [
-        {
-          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "CombinedSink[b]"; triggering_source = "A" };
-            ];
-          transforms = [];
-          code = 2001;
-          message_format = "some form";
-          filters = None;
-          location =
-            Some
-              {
-                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
-                location =
-                  {
-                    JsonParsing.JsonAst.Location.start = { line = 13; column = 20 };
-                    stop = { line = 13; column = 23 };
-                  };
-              };
-          name = "test combined rule";
-        };
-        {
-          Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "CombinedSink[a]"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "CombinedSink[a]"; triggering_source = "C" };
-            ];
-          transforms = [];
-          code = 2001;
-          message_format = "some form";
-          filters = None;
-          location =
-            Some
-              {
-                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
-                location =
-                  {
-                    JsonParsing.JsonAst.Location.start = { line = 13; column = 20 };
-                    stop = { line = 13; column = 23 };
-                  };
-              };
-          name = "test combined rule";
-        };
-      ];
-  assert_equal (List.hd_exn configuration.rules).code 2001
-
-
-let test_new_string_combine_rules _ =
+let test_string_combine_rules _ =
   assert_parse_error
     ~errors:
       [
-        TaintConfiguration.Error.UnexpectedJsonType
+        TaintConfiguration.Error.UnexpectedStringCombineRule
           {
-            json =
+            JsonParsing.JsonAst.Node.value =
+              `Assoc
+                [
+                  ( "name",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "test string combine rule";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 8; column = 22 };
+                          stop = { line = 8; column = 47 };
+                        };
+                    } );
+                  ( "code",
+                    {
+                      JsonParsing.JsonAst.Node.value = `Float 2001.;
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 9; column = 22 };
+                          stop = { line = 9; column = 25 };
+                        };
+                    } );
+                  ( "message_format",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "some form";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 10; column = 32 };
+                          stop = { line = 10; column = 42 };
+                        };
+                    } );
+                ];
+            location =
               {
-                JsonParsing.JsonAst.Node.value = `Null;
-                location = JsonParsing.JsonAst.Location.null_location;
+                JsonParsing.JsonAst.Location.start = { line = 10; column = 32 };
+                stop = { line = 10; column = 42 };
               };
-            message = "Expected a string or an array of strings";
-            section = Some "main_sources";
           };
       ]
     {|
-      { "sources": [],
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" }
+        ],
         "string_combine_rules": [
           {
-             "name": "",
+             "name": "test string combine rule",
              "code": 2001,
-             "message_format": ""
+             "message_format": "some form"
           }
         ]
       }
@@ -772,15 +775,100 @@ let test_new_string_combine_rules _ =
   assert_parse_error
     ~errors:
       [
-        TaintConfiguration.Error.UnexpectedJsonType
+        TaintConfiguration.Error.UnexpectedStringCombineRule
           {
-            json =
+            JsonParsing.JsonAst.Node.value =
+              `Assoc
+                [
+                  ( "name",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 7; column = 22 };
+                          stop = { line = 7; column = 23 };
+                        };
+                    } );
+                  ( "code",
+                    {
+                      JsonParsing.JsonAst.Node.value = `Float 2001.;
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 8; column = 22 };
+                          stop = { line = 8; column = 25 };
+                        };
+                    } );
+                  ( "message_format",
+                    {
+                      JsonParsing.JsonAst.Node.value = `String "";
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 9; column = 32 };
+                          stop = { line = 9; column = 33 };
+                        };
+                    } );
+                  ( "rule",
+                    {
+                      JsonParsing.JsonAst.Node.value =
+                        `List
+                          [
+                            {
+                              JsonParsing.JsonAst.Node.value =
+                                `Assoc
+                                  [
+                                    ( "sources",
+                                      {
+                                        JsonParsing.JsonAst.Node.value =
+                                          `List
+                                            [
+                                              {
+                                                JsonParsing.JsonAst.Node.value = `String "A";
+                                                location =
+                                                  {
+                                                    JsonParsing.JsonAst.Location.start =
+                                                      { line = 12; column = 29 };
+                                                    stop = { line = 12; column = 31 };
+                                                  };
+                                              };
+                                            ];
+                                        location =
+                                          {
+                                            JsonParsing.JsonAst.Location.start =
+                                              { line = 12; column = 29 };
+                                            stop = { line = 12; column = 31 };
+                                          };
+                                      } );
+                                    ( "partial_sink",
+                                      {
+                                        JsonParsing.JsonAst.Node.value =
+                                          `String "UserDefinedPartialSinkA";
+                                        location =
+                                          {
+                                            JsonParsing.JsonAst.Location.start =
+                                              { line = 13; column = 32 };
+                                            stop = { line = 13; column = 56 };
+                                          };
+                                      } );
+                                  ];
+                              location =
+                                {
+                                  JsonParsing.JsonAst.Location.start = { line = 13; column = 32 };
+                                  stop = { line = 13; column = 56 };
+                                };
+                            };
+                          ];
+                      location =
+                        {
+                          JsonParsing.JsonAst.Location.start = { line = 14; column = 14 };
+                          stop = { line = 14; column = 14 };
+                        };
+                    } );
+                ];
+            location =
               {
-                JsonParsing.JsonAst.Node.value = `Null;
-                location = JsonParsing.JsonAst.Location.null_location;
+                JsonParsing.JsonAst.Location.start = { line = 15; column = 12 };
+                stop = { line = 15; column = 12 };
               };
-            message = "Expected a string or an array of strings";
-            section = Some "main_sources";
           };
       ]
     {|
@@ -1046,100 +1134,6 @@ let test_new_string_combine_rules _ =
           name = "rule name 2";
         };
       ]
-
-
-let test_old_string_combine_rules _ =
-  let configuration =
-    assert_parse
-      {|
-    { "sources": [
-        { "name": "A" },
-        { "name":"B" },
-        { "name":"C" }
-      ],
-      "sinks": [],
-      "string_combine_rules": [
-        {
-           "name": "rule name",
-           "main_sources": "A",
-           "secondary_sources": ["B", "C"],
-           "partial_sink": "UserDefinedPartialSink",
-           "code": 2001,
-           "message_format": "rule message"
-        }
-      ]
-    }
-  |}
-  in
-  assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
-  assert_equal
-    ~printer:TaintConfiguration.RegisteredPartialSinks.show
-    ~cmp:TaintConfiguration.RegisteredPartialSinks.equal
-    (TaintConfiguration.RegisteredPartialSinks.of_alist_exn
-       [
-         "UserDefinedPartialSink[main]", ["UserDefinedPartialSink[secondary]"];
-         "UserDefinedPartialSink[secondary]", ["UserDefinedPartialSink[main]"];
-       ])
-    configuration.registered_partial_sinks;
-  assert_rules_equal
-    ~actual:configuration.rules
-    ~expected:
-      [
-        {
-          Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink[main]"; triggering_source = "C" };
-            ];
-          transforms = [];
-          code = 2001;
-          message_format = "rule message";
-          filters = None;
-          location =
-            Some
-              {
-                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
-                location =
-                  {
-                    JsonParsing.JsonAst.Location.start = { line = 14; column = 20 };
-                    stop = { line = 14; column = 23 };
-                  };
-              };
-          name = "rule name";
-        };
-        {
-          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink[secondary]"; triggering_source = "A" };
-            ];
-          transforms = [];
-          code = 2001;
-          message_format = "rule message";
-          filters = None;
-          location =
-            Some
-              {
-                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
-                location =
-                  {
-                    JsonParsing.JsonAst.Location.start = { line = 14; column = 20 };
-                    stop = { line = 14; column = 23 };
-                  };
-              };
-          name = "rule name";
-        };
-      ];
-  assert_equal
-    ~printer:TaintConfiguration.StringOperationPartialSinks.show
-    ~cmp:TaintConfiguration.StringOperationPartialSinks.equal
-    configuration.string_combine_partial_sinks
-    (TaintConfiguration.StringOperationPartialSinks.of_list
-       ["UserDefinedPartialSink[main]"; "UserDefinedPartialSink[secondary]"])
 
 
 let test_partial_sink_converter _ =
@@ -2592,10 +2586,8 @@ let test_filters _ =
 let () =
   "configuration"
   >::: [
-         "new_combined_source_rules" >:: test_new_combined_source_rules;
-         "new_string_combine_rules" >:: test_new_string_combine_rules;
-         "old_combined_source_rules" >:: test_old_combined_source_rules;
-         "old_string_combine_rules" >:: test_old_string_combine_rules;
+         "combined_source_rules" >:: test_combined_source_rules;
+         "string_combine_rules" >:: test_string_combine_rules;
          "implicit_sources" >:: test_implicit_sources;
          "implicit_sinks" >:: test_implicit_sinks;
          "invalid_sink" >:: test_invalid_sink;

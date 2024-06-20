@@ -49,8 +49,6 @@ module RegisteredPartialSinks : sig
 
   val empty : t
 
-  val from_kind_label : kind:string -> label:string -> Sinks.PartialSink.t
-
   type registration_result =
     | Yes
     | No of Sinks.PartialSink.Set.t (* The set of registered labels *)
@@ -173,6 +171,7 @@ module Error : sig
     | UnsupportedSink of string
     | UnsupportedTransform of string
     | UnexpectedCombinedSourceRule of JsonParsing.JsonAst.Json.t
+    | UnexpectedStringCombineRule of JsonParsing.JsonAst.Json.t
     | InvalidMultiSink of {
         sink: string;
         registered: Sinks.PartialSink.Set.t;
