@@ -165,7 +165,8 @@ def _opam_command(opam_version: Tuple[int, ...]) -> List[str]:
     # some options from 2.1 such as `--assume-depexts`.
     if opam_version >= (2, 1):
         command.append("--cli=2.1")
-
+    if opam_version >= (2, 2):
+        command.append("--cli=2.2")
     return command
 
 
