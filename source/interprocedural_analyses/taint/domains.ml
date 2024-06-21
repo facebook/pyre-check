@@ -403,7 +403,8 @@ module Frame = struct
     let name = "frame"
 
     type 'a slot =
-      | Breadcrumb : Features.PropagatedBreadcrumbSet.t slot
+      | PropagatedBreadcrumb : Features.PropagatedBreadcrumbSet.t slot
+      | LocalKindSpecificBreadcrumb : Features.LocalKindSpecificBreadcrumbSet.t slot
       | ViaFeature : Features.ViaFeatureSet.t slot
       | ReturnAccessPath : Features.ReturnAccessPathTree.t slot
       | TraceLength : TraceLength.t slot
@@ -413,11 +414,12 @@ module Frame = struct
       | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 8
+    let slots = 9
 
     let slot_name (type a) (slot : a slot) =
       match slot with
-      | Breadcrumb -> "Breadcrumb"
+      | PropagatedBreadcrumb -> "PropagatedBreadcrumb"
+      | LocalKindSpecificBreadcrumb -> "LocalKindSpecificBreadcrumb"
       | ViaFeature -> "ViaFeature"
       | ReturnAccessPath -> "ReturnAccessPath"
       | TraceLength -> "TraceLength"
@@ -429,7 +431,10 @@ module Frame = struct
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
-      | Breadcrumb -> (module Features.PropagatedBreadcrumbSet : Abstract.Domain.S with type t = a)
+      | PropagatedBreadcrumb ->
+          (module Features.PropagatedBreadcrumbSet : Abstract.Domain.S with type t = a)
+      | LocalKindSpecificBreadcrumb ->
+          (module Features.LocalKindSpecificBreadcrumbSet : Abstract.Domain.S with type t = a)
       | ViaFeature -> (module Features.ViaFeatureSet : Abstract.Domain.S with type t = a)
       | ReturnAccessPath ->
           (module Features.ReturnAccessPathTree : Abstract.Domain.S with type t = a)
@@ -449,6 +454,7 @@ module Frame = struct
     create
       [
         Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+        Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
         Part (TraceLength.Self, 0);
       ]
 
@@ -798,12 +804,12 @@ end = struct
         (key, `List list) :: assoc
     in
     let open Features in
+    let breadcrumb_to_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+      let element = BreadcrumbInterned.unintern element in
+      let json = Breadcrumb.to_json element ~on_all_paths:in_under in
+      json :: breadcrumbs
+    in
     let breadcrumbs_to_json ~breadcrumbs ~first_indices ~first_fields =
-      let breadcrumb_to_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
-        let element = BreadcrumbInterned.unintern element in
-        let json = Breadcrumb.to_json element ~on_all_paths:in_under in
-        json :: breadcrumbs
-      in
       let breadcrumbs =
         BreadcrumbSet.fold BreadcrumbSet.ElementAndUnder ~f:breadcrumb_to_json ~init:[] breadcrumbs
       in
@@ -883,11 +889,19 @@ end = struct
 
         let breadcrumbs =
           breadcrumbs_to_json
-            ~breadcrumbs:(Frame.get Frame.Slots.Breadcrumb frame)
+            ~breadcrumbs:(Frame.get Frame.Slots.PropagatedBreadcrumb frame)
             ~first_indices:(Frame.get Frame.Slots.FirstIndex frame)
             ~first_fields:(Frame.get Frame.Slots.FirstField frame)
         in
+        (* Those are "propagated breadcrumbs", but stored as "features" for backward
+           compatibility. *)
         let json = cons_if_non_empty "features" breadcrumbs json in
+
+        let local_breadcrumbs =
+          Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
+          |> BreadcrumbSet.fold BreadcrumbSet.ElementAndUnder ~f:breadcrumb_to_json ~init:[]
+        in
+        let json = cons_if_non_empty "local_features" local_breadcrumbs json in
 
         let extra_traces =
           Frame.get Frame.Slots.ExtraTraceFirstHopSet frame
@@ -982,9 +996,21 @@ end = struct
       taint
 
 
-  let get_features ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
+  let get_features
+      ~propagated_slot
+      ~local_kind_specific_slot
+      ~local_slot
+      ~bottom
+      ~join
+      ~sequence_join
+      taint
+    =
     let local_taint_features local_taint sofar =
-      let frame_features frame sofar = Frame.get frame_slot frame |> join sofar in
+      let frame_features frame sofar =
+        let propagated_features = Frame.get propagated_slot frame in
+        let local_kind_specific_features = Frame.get local_kind_specific_slot frame in
+        sequence_join propagated_features local_kind_specific_features |> join sofar
+      in
       let features = LocalTaintDomain.fold Frame.Self local_taint ~init:bottom ~f:frame_features in
       let features = LocalTaintDomain.get local_slot local_taint |> sequence_join features in
       join sofar features
@@ -994,7 +1020,8 @@ end = struct
 
   let accumulated_breadcrumbs taint =
     get_features
-      ~frame_slot:Frame.Slots.Breadcrumb
+      ~propagated_slot:Frame.Slots.PropagatedBreadcrumb
+      ~local_kind_specific_slot:Frame.Slots.LocalKindSpecificBreadcrumb
       ~local_slot:LocalTaintDomain.Slots.Breadcrumb
       ~bottom:Features.BreadcrumbSet.bottom
       ~join:Features.BreadcrumbSet.sequence_join
@@ -1004,7 +1031,8 @@ end = struct
 
   let joined_breadcrumbs taint =
     get_features
-      ~frame_slot:Frame.Slots.Breadcrumb
+      ~propagated_slot:Frame.Slots.PropagatedBreadcrumb
+      ~local_kind_specific_slot:Frame.Slots.LocalKindSpecificBreadcrumb
       ~local_slot:LocalTaintDomain.Slots.Breadcrumb
       ~bottom:Features.BreadcrumbSet.bottom
       ~join:Features.BreadcrumbSet.join
@@ -1012,11 +1040,11 @@ end = struct
       taint
 
 
-  let get_first ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
+  let get_first ~propagated_slot ~local_slot ~bottom ~join ~sequence_join taint =
     let local_taint_first local_taint sofar =
       let local_first = LocalTaintDomain.get local_slot local_taint in
       let frame_first frame sofar =
-        Frame.get frame_slot frame |> sequence_join local_first |> join sofar
+        Frame.get propagated_slot frame |> sequence_join local_first |> join sofar
       in
       LocalTaintDomain.fold Frame.Self local_taint ~init:sofar ~f:frame_first
     in
@@ -1025,7 +1053,7 @@ end = struct
 
   let first_indices taint =
     get_first
-      ~frame_slot:Frame.Slots.FirstIndex
+      ~propagated_slot:Frame.Slots.FirstIndex
       ~local_slot:LocalTaintDomain.Slots.FirstIndex
       ~bottom:Features.FirstIndexSet.bottom
       ~join:Features.FirstIndexSet.join
@@ -1035,7 +1063,7 @@ end = struct
 
   let first_fields taint =
     get_first
-      ~frame_slot:Frame.Slots.FirstField
+      ~propagated_slot:Frame.Slots.FirstField
       ~local_slot:LocalTaintDomain.Slots.FirstField
       ~bottom:Features.FirstFieldSet.bottom
       ~join:Features.FirstFieldSet.join
@@ -1224,10 +1252,15 @@ end = struct
               frame
           | _ -> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom frame
         in
+        let local_breadcrumbs =
+          Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
+          |> Features.BreadcrumbSet.sequence_join local_breadcrumbs
+        in
         frame
         |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
+        |> Frame.update Frame.Slots.LocalKindSpecificBreadcrumb Features.BreadcrumbSet.empty
         |> Frame.transform
-             Features.BreadcrumbSet.Self
+             Features.PropagatedBreadcrumbSet.Self
              Map
              ~f:(Features.BreadcrumbSet.sequence_join local_breadcrumbs)
         |> Frame.transform
@@ -1851,7 +1884,8 @@ let local_return_frame ~output_path ~collapse_depth =
     [
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathTree.Path, (output_path, collapse_depth));
-      Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+      Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+      Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 
 

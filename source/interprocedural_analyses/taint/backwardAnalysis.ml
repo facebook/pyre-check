@@ -517,9 +517,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               let breadcrumb = CallModel.transform_tito_depth_breadcrumb tito_taint in
               let taint_to_propagate =
-                BackwardState.Tree.add_local_breadcrumb
-                  ~add_on_tito:false
-                  breadcrumb
+                BackwardState.Tree.transform_non_tito
+                  Features.LocalKindSpecificBreadcrumbSet.Self
+                  Map
+                  ~f:(Features.BreadcrumbSet.add breadcrumb)
                   taint_to_propagate
               in
               add_extra_traces_for_transforms

@@ -410,12 +410,23 @@ module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
   let element_name = BreadcrumbInterned.name
 end)
 
+(* Stores local breadcrumbs (also called trace breadcrumbs) inferred during the analysis of the
+   current function. *)
 module LocalBreadcrumbSet = Abstract.WrapperDomain.Make (struct
   include BreadcrumbSet
 
   let name = "local breadcrumbs"
 end)
 
+(* Stores local breadcrumbs that are kind-specific, unlike `LocalBreadcrumbSet`. For instance,
+   `via:transform-tito-depth:N` should only be emitted on transform kinds. *)
+module LocalKindSpecificBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "local kind-specific breadcrumbs"
+end)
+
+(* Stores breadcrumbs propagated from the callee. *)
 module PropagatedBreadcrumbSet = Abstract.WrapperDomain.Make (struct
   include BreadcrumbSet
 

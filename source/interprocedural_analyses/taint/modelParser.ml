@@ -1234,7 +1234,7 @@ let introduce_sink_taint
     let leaf_taint =
       Frame.initial
       |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
       |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
       |> transform_trace_length
       |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
@@ -1299,7 +1299,7 @@ let introduce_taint_in_taint_out
   >>= fun output_path ->
   let tito_result_taint =
     Domains.local_return_frame ~output_path ~collapse_depth
-    |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+    |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
     |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
     |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
     |> BackwardState.Tree.create_leaf
@@ -1343,7 +1343,7 @@ let introduce_taint_in_taint_out
     | Sinks.Attach ->
         let attach_taint =
           Frame.initial
-          |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+          |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
           |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
           |> BackwardState.Tree.create_leaf
@@ -1425,7 +1425,7 @@ let introduce_source_taint
       in
       Frame.initial
       |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
       |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
       |> transform_trace_length
       |> ForwardTaint.singleton CallInfo.declaration taint_source_kind
