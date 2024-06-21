@@ -15,16 +15,16 @@
         "name": "forward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 97, "start": 27, "end": 33 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 97, "start": 27, "end": 33 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -93,24 +93,24 @@
         "name": "forward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 113, "start": 27, "end": 33 },
-                  "resolves_to": [
-                    "extra_trace.OverrideTransform.transform"
-                  ],
-                  "port": "formal(arg, position=1)"
-                },
-                "receiver_interval": [ { "lower": 2, "upper": 5 } ],
-                "is_self_call": false,
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 113, "start": 27, "end": 33 },
+                      "resolves_to": [
+                        "extra_trace.OverrideTransform.transform"
+                      ],
+                      "port": "formal(arg, position=1)"
+                    },
+                    "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+                    "is_self_call": false,
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -373,30 +373,32 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 70, "start": 27, "end": 30 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 68, "start": 34, "end": 37 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 68, "start": 34, "end": 37 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 70, "start": 27, "end": 30 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformY@TestSink"
               }
@@ -433,42 +435,44 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 62, "start": 25, "end": 27 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 59, "start": 32, "end": 34 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 61, "start": 32, "end": 34 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 59, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 62, "start": 25, "end": 27 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 61, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -555,20 +559,20 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 83, "start": 26, "end": 29 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TestSink"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 83, "start": 26, "end": 29 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               }
@@ -600,14 +604,6 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 77, "start": 25, "end": 27 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
                 "leaves": [
@@ -616,6 +612,14 @@
                 "kind": "TestSource"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 77, "start": 25, "end": 27 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -699,30 +703,30 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 50, "start": 30, "end": 33 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformY:TransformZ",
-                "call": {
-                  "position": { "line": 52, "start": 24, "end": 28 },
-                  "resolves_to": [ "extra_trace.transform_yz" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 50, "start": 30, "end": 33 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 52, "start": 24, "end": 28 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX:TransformY:TransformZ@TestSink"
               }
@@ -759,30 +763,30 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 43, "start": 28, "end": 30 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformY:TransformZ",
-                "call": {
-                  "position": { "line": 45, "start": 22, "end": 24 },
-                  "resolves_to": [ "extra_trace.transform_yz" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 43, "start": 28, "end": 30 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 45, "start": 22, "end": 24 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -821,20 +825,20 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX:TransformY",
-                "call": {
-                  "position": { "line": 92, "start": 32, "end": 46 },
-                  "resolves_to": [ "extra_trace.transform_nested_x_y" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX:TransformY",
+                    "call": {
+                      "position": { "line": 92, "start": 32, "end": 46 },
+                      "resolves_to": [ "extra_trace.transform_nested_x_y" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -888,20 +892,20 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 88, "start": 42, "end": 45 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 88, "start": 42, "end": 45 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "extra_trace.transform_y", "port": "leaf:arg" }
                 ],
@@ -1053,16 +1057,16 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 27, "start": 23, "end": 27 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 27, "start": 23, "end": 27 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "leaves": [
                   { "name": "extra_trace.transform_z", "port": "leaf:arg" }
                 ],

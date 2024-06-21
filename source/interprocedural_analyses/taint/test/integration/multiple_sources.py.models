@@ -39,16 +39,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestC",
-                "origin": { "line": 249, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 249, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -118,16 +118,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestC",
-                "origin": { "line": 248, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 248, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -197,16 +197,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 30, "start": 9, "end": 32 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 30, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
@@ -273,16 +273,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestA",
-                "origin": { "line": 129, "start": 8, "end": 18 },
-                "leaf_kind": "TestA",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestA",
+                    "origin": { "line": 129, "start": 8, "end": 18 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
@@ -352,16 +352,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestB",
-                "origin": { "line": 90, "start": 31, "end": 41 },
-                "leaf_kind": "TestB",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestB",
+                    "origin": { "line": 90, "start": 31, "end": 41 },
+                    "leaf_kind": "TestB",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
@@ -431,16 +431,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestA",
-                "origin": { "line": 89, "start": 31, "end": 41 },
-                "leaf_kind": "TestA",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestA",
+                    "origin": { "line": 89, "start": 31, "end": 41 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
@@ -1293,16 +1293,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 166, "start": 22, "end": 45 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.B.multi_sink",
@@ -1372,16 +1372,16 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 166, "start": 22, "end": 45 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.A.multi_sink",
@@ -1743,16 +1743,16 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestD",
-                "origin": { "line": 218, "start": 35, "end": 45 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 218, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -1785,16 +1785,16 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestD",
-                "origin": { "line": 208, "start": 35, "end": 45 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 208, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -1812,16 +1812,16 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestE",
-                "origin": { "line": 209, "start": 35, "end": 45 },
-                "leaf_kind": "TestE",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestE",
+                    "origin": { "line": 209, "start": 35, "end": 45 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -1854,16 +1854,16 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestD",
-                "origin": { "line": 228, "start": 39, "end": 49 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 228, "start": 39, "end": 49 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -1881,16 +1881,16 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestE",
-                "origin": { "line": 230, "start": 39, "end": 49 },
-                "leaf_kind": "TestE",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestE",
+                    "origin": { "line": 230, "start": 39, "end": 49 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -1923,16 +1923,16 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 36, "start": 9, "end": 32 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 36, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
@@ -1964,22 +1964,22 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "call": {
-                  "position": { "line": 145, "start": 9, "end": 40 },
-                  "resolves_to": [
-                    "multiple_sources.user_controlled_input_wrapper"
-                  ],
-                  "port": "result"
-                },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "call": {
+                      "position": { "line": 145, "start": 9, "end": 40 },
+                      "resolves_to": [
+                        "multiple_sources.user_controlled_input_wrapper"
+                      ],
+                      "port": "result"
+                    },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
@@ -2011,16 +2011,16 @@
         "port": "formal(y, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source TestC",
-                "origin": { "line": 239, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 239, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
@@ -2053,16 +2053,16 @@
         "port": "formal(id, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source PermissiveContext",
-                "origin": { "line": 41, "start": 9, "end": 29 },
-                "leaf_kind": "PermissiveContext",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source PermissiveContext",
+                    "origin": { "line": 41, "start": 9, "end": 29 },
+                    "leaf_kind": "PermissiveContext",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.Node.send",
@@ -2149,16 +2149,16 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 176, "start": 10, "end": 33 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 176, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
@@ -2175,16 +2175,16 @@
             "is_self_call": false
           },
           {
-            "extra_traces": [
-              {
-                "message": "Subtrace for source UserControlled",
-                "origin": { "line": 178, "start": 10, "end": 33 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 178, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],

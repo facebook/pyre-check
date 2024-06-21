@@ -410,9 +410,10 @@ module Frame = struct
       | LeafName : Features.LeafNameSet.t slot
       | FirstIndex : Features.PropagatedFirstIndexSet.t slot
       | FirstField : Features.PropagatedFirstFieldSet.t slot
+      | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 7
+    let slots = 8
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -423,6 +424,7 @@ module Frame = struct
       | LeafName -> "LeafName"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
+      | ExtraTraceFirstHopSet -> "ExtraTraceFirstHopSet"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -435,6 +437,7 @@ module Frame = struct
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.PropagatedFirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.PropagatedFirstFieldSet : Abstract.Domain.S with type t = a)
+      | ExtraTraceFirstHopSet -> (module ExtraTraceFirstHop.Set : Abstract.Domain.S with type t = a)
 
 
     let strict _ = false
@@ -691,10 +694,9 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb : Features.LocalBreadcrumbSet.t slot
       | FirstIndex : Features.LocalFirstIndexSet.t slot
       | FirstField : Features.LocalFirstFieldSet.t slot
-      | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 6
+    let slots = 5
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -703,7 +705,6 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> "Breadcrumb"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
-      | ExtraTraceFirstHopSet -> "ExtraTraceFirstHopSet"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -713,7 +714,6 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> (module Features.LocalBreadcrumbSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.LocalFirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.LocalFirstFieldSet : Abstract.Domain.S with type t = a)
-      | ExtraTraceFirstHopSet -> (module ExtraTraceFirstHop.Set : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
@@ -889,6 +889,12 @@ end = struct
         in
         let json = cons_if_non_empty "features" breadcrumbs json in
 
+        let extra_traces =
+          Frame.get Frame.Slots.ExtraTraceFirstHopSet frame
+          |> ExtraTraceFirstHop.Set.to_json ~expand_overrides ~is_valid_callee
+        in
+        let json = cons_if_non_empty "extra_traces" extra_traces json in
+
         `Assoc json
       in
       let kinds =
@@ -897,11 +903,6 @@ end = struct
         |> List.map ~f:add_kind
       in
       let json = cons_if_non_empty "kinds" kinds json in
-      let extra_traces =
-        LocalTaintDomain.get LocalTaintDomain.Slots.ExtraTraceFirstHopSet local_taint
-        |> ExtraTraceFirstHop.Set.to_json ~expand_overrides ~is_valid_callee
-      in
-      let json = cons_if_non_empty "extra_traces" extra_traces json in
       `Assoc json
     in
     let taint =
@@ -1213,20 +1214,16 @@ end = struct
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
-      let local_taint =
-        match call_info with
-        | CallInfo.Declaration _ ->
-            (* Even if we allow extra traces on user models in the future, we would still want to
-               propagate them to the first frame. This is because the Declaration frame is never
-               shown in the Zoncolan UI. The first frame is the Origin one. *)
-            local_taint
-        | _ ->
-            LocalTaintDomain.update
-              LocalTaintDomain.Slots.ExtraTraceFirstHopSet
-              ExtraTraceFirstHop.Set.bottom
-              local_taint
-      in
       let apply_frame frame =
+        let frame =
+          match call_info with
+          | CallInfo.Declaration _ ->
+              (* Even if we allow extra traces on user models in the future, we would still want to
+                 propagate them to the first frame. This is because the Declaration frame is never
+                 shown in the Zoncolan UI. The first frame is the Origin one. *)
+              frame
+          | _ -> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom frame
+        in
         frame
         |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
         |> Frame.transform
