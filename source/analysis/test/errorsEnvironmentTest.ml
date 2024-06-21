@@ -403,7 +403,7 @@ let test_error_filtering context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "postprocessing" >:: test_postprocessing;
          "update_ancestor" >:: test_update_ancestor;

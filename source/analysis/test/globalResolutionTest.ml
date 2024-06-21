@@ -2188,7 +2188,7 @@ let test_refine context =
 
 
 let () =
-  "class"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "all_attributes" >:: test_all_attributes;
          test_attribute_from_class_name;

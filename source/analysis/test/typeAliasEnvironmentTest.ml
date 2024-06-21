@@ -506,6 +506,6 @@ let test_updates context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [test_simple_registration; test_harder_registrations; "updates" >:: test_updates]
   |> Test.run

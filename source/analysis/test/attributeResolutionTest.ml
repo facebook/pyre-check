@@ -1696,7 +1696,7 @@ let test_most_important_error_reason _ =
 
 
 let () =
-  "attributeResolution"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "prepare_arguments" >:: test_prepare_arguments_for_signature_selection;
          "parameter_argument_mapping" >:: test_get_parameter_argument_mapping;

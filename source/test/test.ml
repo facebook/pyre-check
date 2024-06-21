@@ -103,6 +103,13 @@ let run tests =
   tests |> bracket |> OUnit2.run_test_tt_main
 
 
+let sanitized_module_name raw_module_name =
+  if String.is_prefix ~prefix:"Dune__exe__" raw_module_name then
+    String.drop_prefix raw_module_name (String.length "Dune__exe__")
+  else
+    raw_module_name
+
+
 let labeled_test_case function_name line_number ?name test_callback =
   let description =
     let function_name =

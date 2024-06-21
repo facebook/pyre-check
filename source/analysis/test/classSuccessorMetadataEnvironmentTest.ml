@@ -920,7 +920,7 @@ let test_overlay_propagation context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "simple_registration" >:: test_simple_registration;
          "updates" >:: test_updates;

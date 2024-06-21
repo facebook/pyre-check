@@ -312,7 +312,7 @@ let test_overlay_propagation context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "update_root" >:: test_update_root;
          "update_lazy_root" >:: test_update_lazy_root;

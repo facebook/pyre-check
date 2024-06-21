@@ -1184,7 +1184,7 @@ let test_overlay context =
 
 
 let () =
-  "ast_environment"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "basic" >:: test_basic;
          "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;

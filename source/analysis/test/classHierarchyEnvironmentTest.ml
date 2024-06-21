@@ -728,7 +728,7 @@ let test_compute_inferred_generic_base context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "simple_registration" >:: test_simple_registration;
          "parents_and_inferred_generic_bases" >:: test_parents_and_inferred_generic_base;
