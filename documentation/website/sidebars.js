@@ -164,6 +164,7 @@ module.exports = {
             'fb/warning_codes/code-5045',
             'fb/warning_codes/code-5046',
             'fb/warning_codes/code-5047',
+            'fb/warning_codes/code-5048',
             'fb/warning_codes/code-5049',
             'fb/warning_codes/code-5100',
             'fb/warning_codes/code-5101',
