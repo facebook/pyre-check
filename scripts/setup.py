@@ -28,7 +28,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-COMPILER_VERSION = "4.14.0"
+COMPILER_VERSION = "5.2.0"
 DEPENDENCIES = [
     "base64.3.5.1",
     "cmdliner.1.1.1",
@@ -40,8 +40,8 @@ DEPENDENCIES = [
     "ppx_deriving_yojson.3.7.0",
     "ppx_yojson_conv.v0.16.0",
     "ounit2.2.2.7",
-    "menhir.20220210",
-    "lwt.5.6.1",
+    "menhir.20231231",
+    "lwt.5.7.0",
     "lwt_ppx.2.1.0",
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.11",
