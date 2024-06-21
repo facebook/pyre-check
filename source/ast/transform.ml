@@ -198,19 +198,16 @@ module Make (Transformer : Transformer) = struct
               | Starred.Twice expression -> Starred.Twice (transform_expression expression)
             in
             Starred starred
+        | Slice { Slice.start; stop; step } ->
+            Slice
+              {
+                Slice.start = start >>| transform_expression;
+                stop = stop >>| transform_expression;
+                step = step >>| transform_expression;
+              }
         | Subscript { Subscript.base; index } ->
-            let index =
-              match index with
-              | Subscript.Index.Index index -> Subscript.Index.Index (transform_expression index)
-              | Subscript.Index.Slice { start; stop; step } ->
-                  Subscript.Index.Slice
-                    {
-                      start = start >>| transform_expression;
-                      stop = stop >>| transform_expression;
-                      step = step >>| transform_expression;
-                    }
-            in
-            Subscript { Subscript.base = transform_expression base; index }
+            Subscript
+              { Subscript.base = transform_expression base; index = transform_expression index }
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
               {

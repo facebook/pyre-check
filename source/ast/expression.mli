@@ -269,23 +269,21 @@ and Starred : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+and Slice : sig
+  type t = {
+    start: Expression.t option;
+    stop: Expression.t option;
+    step: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 and Subscript : sig
-  module Index : sig
-    type t =
-      | Index of Expression.t
-      | Slice of {
-          start: Expression.t option;
-          stop: Expression.t option;
-          step: Expression.t option;
-        }
-    [@@deriving equal, compare, sexp, show, hash, to_yojson]
-
-    val location_insensitive_compare : t -> t -> int
-  end
-
   type t = {
     base: Expression.t;
-    index: Index.t;
+    index: Expression.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -364,6 +362,7 @@ and Expression : sig
     | Name of Name.t
     | Set of t list
     | SetComprehension of t Comprehension.t
+    | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
     | Ternary of Ternary.t
@@ -406,6 +405,7 @@ module Mapper : sig
     map_name:(mapper:'a t -> location:Location.t -> Name.t -> 'a) ->
     map_set:(mapper:'a t -> location:Location.t -> Expression.t list -> 'a) ->
     map_set_comprehension:(mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    map_slice:(mapper:'a t -> location:Location.t -> Slice.t -> 'a) ->
     map_starred:(mapper:'a t -> location:Location.t -> Starred.t -> 'a) ->
     map_subscript:(mapper:'a t -> location:Location.t -> Subscript.t -> 'a) ->
     map_ternary:(mapper:'a t -> location:Location.t -> Ternary.t -> 'a) ->
@@ -445,6 +445,7 @@ module Mapper : sig
     ?map_set:(mapper:Expression.t t -> location:Location.t -> Expression.t list -> Expression.t) ->
     ?map_set_comprehension:
       (mapper:Expression.t t -> location:Location.t -> Expression.t Comprehension.t -> Expression.t) ->
+    ?map_slice:(mapper:Expression.t t -> location:Location.t -> Slice.t -> Expression.t) ->
     ?map_starred:(mapper:Expression.t t -> location:Location.t -> Starred.t -> Expression.t) ->
     ?map_subscript:(mapper:Expression.t t -> location:Location.t -> Subscript.t -> Expression.t) ->
     ?map_ternary:(mapper:Expression.t t -> location:Location.t -> Ternary.t -> Expression.t) ->
@@ -481,6 +482,7 @@ module Mapper : sig
     ?map_set:(mapper:Expression.t t -> Expression.t list -> Expression.t list) ->
     ?map_set_comprehension:
       (mapper:Expression.t t -> Expression.t Comprehension.t -> Expression.t Comprehension.t) ->
+    ?map_slice:(mapper:Expression.t t -> Slice.t -> Slice.t) ->
     ?map_starred:(mapper:Expression.t t -> Starred.t -> Starred.t) ->
     ?map_subscript:(mapper:Expression.t t -> Subscript.t -> Subscript.t) ->
     ?map_ternary:(mapper:Expression.t t -> Ternary.t -> Ternary.t) ->
@@ -530,6 +532,7 @@ module Folder : sig
     ?fold_set:(folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a) ->
     ?fold_set_comprehension:
       (folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_slice:(folder:'a t -> state:'a -> location:Location.t -> Slice.t -> 'a) ->
     ?fold_starred:(folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a) ->
     ?fold_subscript:(folder:'a t -> state:'a -> location:Location.t -> Subscript.t -> 'a) ->
     ?fold_ternary:(folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a) ->
@@ -559,6 +562,7 @@ module Folder : sig
     ?fold_name:(folder:'a t -> state:'a -> Name.t -> 'a) ->
     ?fold_set:(folder:'a t -> state:'a -> Expression.t list -> 'a) ->
     ?fold_set_comprehension:(folder:'a t -> state:'a -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_slice:(folder:'a t -> state:'a -> Slice.t -> 'a) ->
     ?fold_starred:(folder:'a t -> state:'a -> Starred.t -> 'a) ->
     ?fold_subscript:(folder:'a t -> state:'a -> Subscript.t -> 'a) ->
     ?fold_ternary:(folder:'a t -> state:'a -> Ternary.t -> 'a) ->

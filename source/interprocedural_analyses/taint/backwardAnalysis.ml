@@ -2308,6 +2308,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Starred (Starred.Twice expression) ->
         let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
         analyze_expression ~pyre_in_context ~taint ~state ~expression
+    | Slice _ -> failwith "T101302994"
     | Subscript _ ->
         (* This case should be unreachable, fail if we hit it *)
         failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"

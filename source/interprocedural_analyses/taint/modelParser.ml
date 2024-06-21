@@ -112,7 +112,7 @@ let parse_access_path ~path ~location expression =
         parse_model_labels base
         >>| fun base ->
         TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_name_index attribute)])
-    | Expression.Subscript { base; index = Index index } -> (
+    | Expression.Subscript { base; index } -> (
         parse_model_labels base
         >>= fun base ->
         match Node.value index with
@@ -333,8 +333,7 @@ let rec parse_annotations
         {
           base = { Node.value = Name (Name.Identifier "WithTag"); _ };
           index =
-            Index
-              { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+            { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
         } ->
         Ok (Some value)
     | Expression.Name (Name.Identifier _) when requires_parameter_name -> Ok None
@@ -432,10 +431,7 @@ let rec parse_annotations
               (TaintKindsWithFeatures.from_kind
                  (AnnotationParser.KindExpression.from_name taint_kind)))
     | Subscript
-        {
-          base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ };
-          index = Index index;
-        } -> (
+        { base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ }; index } -> (
         match base_identifier with
         | "Via" -> extract_breadcrumbs index >>| TaintKindsWithFeatures.from_breadcrumbs
         | "ViaDynamicFeature" ->
@@ -619,10 +615,7 @@ let rec parse_annotations
   in
   let rec parse_annotation = function
     | Expression.Subscript
-        {
-          base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ };
-          index = Index index;
-        } -> (
+        { base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ }; index } -> (
         let open Core.Result in
         match base_identifier, index with
         | "TaintSink", _ -> get_sink_kinds index
@@ -803,7 +796,7 @@ let rec parse_annotations
     | Expression.Subscript
         {
           base = { Node.value = Expression.Name (Name.Identifier "TaintInTaintOut"); _ };
-          index = Index { Node.value = index_value; _ };
+          index = { Node.value = index_value; _ };
         } ->
         let gather_sources_sinks (sources, sinks) = function
           | TaintAnnotation.Source { source; features } when TaintFeatures.is_empty features ->
@@ -2272,11 +2265,10 @@ let parse_model_clause
             {
               base = { Node.value = Name (Name.Identifier "CrossRepositoryTaintAnchor"); _ };
               index =
-                Index
-                  {
-                    Node.value = Expression.Tuple [taint_expression; canonical_name; canonical_port];
-                    _;
-                  };
+                {
+                  Node.value = Expression.Tuple [taint_expression; canonical_name; canonical_port];
+                  _;
+                };
             } ->
             let parse_string_argument parameter_name argument =
               match Node.value argument with
@@ -3207,7 +3199,7 @@ let parse_decorator_annotations
                   Expression.Subscript
                     {
                       base = { Node.value = Expression.Name (Name.Identifier "Parameters"); _ };
-                      index = Index index;
+                      index;
                     };
                 _;
               };
@@ -3962,8 +3954,7 @@ let rec parse_statement
         let name = name |> name_to_reference_exn |> mangle_private_variable in
         let arguments =
           match annotation.Node.value with
-          | Expression.Subscript { index = Index index; _ } ->
-              Some [{ Call.Argument.value = index; name = None }]
+          | Expression.Subscript { index; _ } -> Some [{ Call.Argument.value = index; name = None }]
           | _ -> None
         in
         let decorator =

@@ -2682,6 +2682,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
+      | Slice _ -> failwith "T101302994"
       | Subscript _ ->
           (* This case should be unreachable, fail if we hit it *)
           failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"

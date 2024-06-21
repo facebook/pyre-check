@@ -61,9 +61,7 @@ module Binding = struct
     | Expression.Name (Name.Identifier name) -> { name; kind; location } :: sofar
     | Expression.Starred (Starred.Once element | Starred.Twice element) ->
         of_unannotated_target ~kind sofar element
-    | Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
-    | Subscript { Subscript.base; index = Index index } ->
-        of_expression (of_expression sofar base) index
+    | Subscript { Subscript.base; index } -> of_expression (of_expression sofar base) index
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
@@ -90,8 +88,8 @@ module Binding = struct
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in
         of_expression sofar right
-    | Expression.Subscript { Subscript.index = Slice _; _ } -> failwith "T101302994"
-    | Expression.Subscript { Subscript.base; index = Index index } ->
+    | Expression.Slice _ -> failwith "T101302994"
+    | Expression.Subscript { Subscript.base; index } ->
         let sofar = of_expression sofar base in
         of_expression sofar index
     | Expression.Call { Call.callee; arguments } ->

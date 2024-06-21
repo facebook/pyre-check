@@ -333,7 +333,7 @@ module ClassAttributes = struct
                                          special = false;
                                        });
                               };
-                            index = Index index;
+                            index;
                           };
                     }
           in
@@ -533,10 +533,7 @@ module ClassAttributes = struct
                     | Some ({ Node.value = Subscript _; _ } as value)
                     | Some ({ Node.value = Call _; _ } as value) ->
                         Some
-                          {
-                            value with
-                            Node.value = Expression.Subscript { base = value; index = Index index };
-                          }
+                          { value with Node.value = Expression.Subscript { base = value; index } }
                     | _ -> None
                   in
                   value
@@ -748,7 +745,7 @@ module ClassAttributes = struct
                                        special = false;
                                      });
                             };
-                          index = Index (from_reference ~location:Location.any name);
+                          index = from_reference ~location:Location.any name;
                         };
                   }
                 in
@@ -770,7 +767,7 @@ module ClassAttributes = struct
                                      special = false;
                                    });
                           };
-                        index = Index meta_annotation;
+                        index = meta_annotation;
                       };
                 }
               in
