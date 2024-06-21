@@ -114,6 +114,15 @@ def stradd_triggered_user_controlled(arg):
     x + arg.f  # The triggered sink should be on arg.f, not arg
 
 
+def tito(x: str) -> str:
+    return x
+
+
+def stradd_tito_triggered_user_controlled(arg):
+    x: str = user_controlled_input()
+    x + tito(arg.f)  # False negative: Should see a triggered sink on arg.f
+
+
 def test_large_string_add():
     db_dir = "/mnt"
     wal_dir = "/mnt"

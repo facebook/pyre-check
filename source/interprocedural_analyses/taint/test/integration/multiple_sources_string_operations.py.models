@@ -1414,6 +1414,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources_string_operations.tito",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 117,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources_string_operations.user_controlled_input",
     "filename": "multiple_sources_string_operations.py",
     "callable_line": 12,
