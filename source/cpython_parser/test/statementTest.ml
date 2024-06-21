@@ -2644,21 +2644,11 @@ let test_assign =
                            {
                              Subscript.base = !"i";
                              index =
-                               +Expression.Call
+                               +Expression.Slice
                                   {
-                                    Call.callee = !"slice";
-                                    arguments =
-                                      [
-                                        { Call.Argument.name = None; value = !"j" };
-                                        {
-                                          Call.Argument.name = None;
-                                          value = +Expression.Constant Constant.NoneLiteral;
-                                        };
-                                        {
-                                          Call.Argument.name = None;
-                                          value = +Expression.Constant (Constant.Integer 1);
-                                        };
-                                      ];
+                                    Slice.start = Some !"j";
+                                    stop = None;
+                                    step = Some (+Expression.Constant (Constant.Integer 1));
                                   };
                            };
                       value =
@@ -2667,22 +2657,8 @@ let test_assign =
                               {
                                 Subscript.base = !"i";
                                 index =
-                                  +Expression.Call
-                                     {
-                                       Call.callee = !"slice";
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           { Call.Argument.name = None; value = !"j" };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                         ];
-                                     };
+                                  +Expression.Slice
+                                     { Slice.start = None; stop = Some !"j"; step = None };
                               });
                       annotation = None;
                     };

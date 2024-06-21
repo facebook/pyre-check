@@ -1814,26 +1814,7 @@ let test_subscript =
              (+Expression.Subscript
                  {
                    Subscript.base = !"a";
-                   index =
-                     +Expression.Call
-                        {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                            ];
-                        };
+                   index = +Expression.Slice { Slice.start = None; stop = None; step = None };
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
@@ -1842,26 +1823,7 @@ let test_subscript =
              (+Expression.Subscript
                  {
                    Subscript.base = !"a";
-                   index =
-                     +Expression.Call
-                        {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                            ];
-                        };
+                   index = +Expression.Slice { Slice.start = None; stop = None; step = None };
                  });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
@@ -1871,24 +1833,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                            ];
+                          Slice.start = Some (+Expression.Constant (Constant.Integer 1));
+                          stop = None;
+                          step = None;
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -1899,24 +1848,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                            ];
+                          Slice.start = None;
+                          stop = Some (+Expression.Constant (Constant.Integer 1));
+                          step = None;
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -1927,24 +1863,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                            ];
+                          Slice.start = None;
+                          stop = None;
+                          step = Some (+Expression.Constant (Constant.Integer 1));
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -1955,24 +1878,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                            ];
+                          Slice.start = Some (+Expression.Constant (Constant.Integer 1));
+                          stop = Some (+Expression.Constant (Constant.Integer 1));
+                          step = None;
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -1983,24 +1893,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                            ];
+                          Slice.start = Some (+Expression.Constant (Constant.Integer 1));
+                          stop = None;
+                          step = Some (+Expression.Constant (Constant.Integer 1));
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -2011,24 +1908,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant Constant.NoneLiteral;
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                            ];
+                          Slice.start = None;
+                          stop = Some (+Expression.Constant (Constant.Integer 1));
+                          step = Some (+Expression.Constant (Constant.Integer 1));
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -2039,24 +1923,11 @@ let test_subscript =
                  {
                    Subscript.base = !"a";
                    index =
-                     +Expression.Call
+                     +Expression.Slice
                         {
-                          Call.callee = !"slice";
-                          arguments =
-                            [
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                              {
-                                Call.Argument.name = None;
-                                value = +Expression.Constant (Constant.Integer 1);
-                              };
-                            ];
+                          Slice.start = Some (+Expression.Constant (Constant.Integer 1));
+                          stop = Some (+Expression.Constant (Constant.Integer 1));
+                          step = Some (+Expression.Constant (Constant.Integer 1));
                         };
                  });
       labeled_test_case __FUNCTION__ __LINE__
@@ -2069,24 +1940,11 @@ let test_subscript =
                    index =
                      +Expression.Tuple
                         [
-                          +Expression.Call
+                          +Expression.Slice
                              {
-                               Call.callee = !"slice";
-                               arguments =
-                                 [
-                                   {
-                                     Call.Argument.name = None;
-                                     value = +Expression.Constant Constant.NoneLiteral;
-                                   };
-                                   {
-                                     Call.Argument.name = None;
-                                     value = +Expression.Constant (Constant.Integer 1);
-                                   };
-                                   {
-                                     Call.Argument.name = None;
-                                     value = +Expression.Constant Constant.NoneLiteral;
-                                   };
-                                 ];
+                               Slice.start = None;
+                               stop = Some (+Expression.Constant (Constant.Integer 1));
+                               step = None;
                              };
                           +Expression.Constant (Constant.Integer 2);
                         ];

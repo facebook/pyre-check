@@ -285,22 +285,12 @@ let rec translate_expression (expression : Errpyast.expr) =
                 index = translate_expression subscript.slice;
               }
         | Errpyast.Slice slice ->
-            (* TODO(T101302994): We should avoid lowering slice expressions at parser phase. *)
-            let callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location in
-            let arguments =
-              let to_argument = function
-                | None ->
-                    Expression.Constant Constant.NoneLiteral
-                    |> Node.create ~location:Ast.Location.any
-                | Some expression -> translate_expression expression
-              in
-              [
-                { Call.Argument.name = None; value = to_argument slice.lower };
-                { Call.Argument.name = None; value = to_argument slice.upper };
-                { Call.Argument.name = None; value = to_argument slice.step };
-              ]
-            in
-            Expression.Call { callee; arguments }
+            Expression.Slice
+              {
+                Slice.start = Option.map ~f:translate_expression slice.lower;
+                stop = Option.map ~f:translate_expression slice.upper;
+                step = Option.map ~f:translate_expression slice.step;
+              }
         | Errpyast.GeneratorExp gennerator_expression ->
             Expression.Generator
               {
