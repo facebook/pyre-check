@@ -804,6 +804,8 @@ and Slice : sig
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val lowered : location:Location.t -> t -> Expression.t
 end = struct
   type t = {
     start: Expression.t option;
@@ -822,6 +824,24 @@ end = struct
             match Option.compare Expression.location_insensitive_compare left_stop right_stop with
             | x when not (Int.equal x 0) -> x
             | _ -> Option.compare Expression.location_insensitive_compare left_step right_step))
+
+
+  let lowered ~location { Slice.start; stop; step } =
+    let default_none = function
+      | None -> Expression.Constant Constant.NoneLiteral |> Node.create ~location
+      | Some expr -> expr
+    in
+    Expression.Call
+      {
+        Call.callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location;
+        arguments =
+          [
+            { Call.Argument.value = default_none start; name = None };
+            { Call.Argument.value = default_none stop; name = None };
+            { Call.Argument.value = default_none step; name = None };
+          ];
+      }
+    |> Node.create ~location
 end
 
 and Subscript : sig

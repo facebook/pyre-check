@@ -278,6 +278,8 @@ and Slice : sig
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val lowered : location:Location.t -> t -> Expression.t
 end
 
 and Subscript : sig

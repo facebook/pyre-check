@@ -694,7 +694,9 @@ module State (Context : Context) = struct
           state = forward_setitem ~resolution ~state ~base ~index ~value_expression;
           nested_awaitable_expressions = [];
         }
-    | Slice _ -> failwith "T101302994"
+    | Slice slice ->
+        let lowered = Slice.lowered ~location slice in
+        forward_expression ~resolution ~state ~expression:lowered
     | Subscript { Subscript.base; index } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:base

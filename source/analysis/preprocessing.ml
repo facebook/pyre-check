@@ -3064,7 +3064,10 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
-    | Slice _ -> failwith "T101302994"
+    | Slice { Slice.start; stop; step } ->
+        let collected = Option.value_map start ~default:collected ~f:(from_expression collected) in
+        let collected = Option.value_map stop ~default:collected ~f:(from_expression collected) in
+        Option.value_map step ~default:collected ~f:(from_expression collected)
     | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index

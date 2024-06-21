@@ -1784,7 +1784,7 @@ let redirect_special_calls ~pyre_in_context call =
       PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
 
 
-let redirect_expressions ~pyre_in_context = function
+let redirect_expressions ~pyre_in_context ~location = function
   | Expression.BinaryOperator { BinaryOperator.operator; left; right } ->
       Expression.Call
         {
@@ -1816,6 +1816,7 @@ let redirect_expressions ~pyre_in_context = function
   | Expression.Call call ->
       let call = redirect_special_calls ~pyre_in_context call in
       Expression.Call call
+  | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | expression -> expression
 
 
@@ -2565,7 +2566,7 @@ struct
             | Some existing_callees ->
                 UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
       in
-      let value = redirect_expressions ~pyre_in_context value in
+      let value = redirect_expressions ~pyre_in_context ~location value in
       let () =
         match value with
         | Expression.Call call ->
