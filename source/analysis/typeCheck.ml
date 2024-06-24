@@ -587,6 +587,25 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
+      | Type.Callable
+          {
+            implementation =
+              { parameters = Defined [PositionalOnly { annotation = Type.Primitive "..."; _ }]; _ };
+            _;
+          } ->
+          (* ban forms like Callable[[...], T] - the ellipsis should be used without the brackets *)
+          emit_error
+            ~errors:[]
+            ~location
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    {
+                      annotation = Type.Primitive (Expression.show expression);
+                      expected =
+                        "`Callable[[<parameters>], <return type>]` or `Callable[..., <return \
+                         type>]`";
+                    }))
       | Type.Callable { implementation = { annotation; _ }; _ } when Type.is_ellipsis annotation ->
           emit_error
             ~errors:[]

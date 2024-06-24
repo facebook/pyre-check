@@ -1370,6 +1370,19 @@ let test_check_incomplete_callable =
               x: Callable[..., str]
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~show_error_traces:true
+           {|
+              from typing import Callable
+              x: Callable[[...], str]
+            |}
+           [
+             "Invalid type [31]: Expression `typing.Callable[([...], str)]` is not a valid type. \
+              Expected `Callable[[<parameters>], <return type>]` or `Callable[..., <return \
+              type>]`.";
+             "Undefined or invalid type [11]: Annotation `...` is not defined as a type.";
+           ];
     ]
 
 
