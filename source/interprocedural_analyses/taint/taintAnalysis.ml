@@ -89,7 +89,7 @@ let parse_model_modes
         _;
       }
   =
-  let step_logger = StepLogger.start ~start_message:"Parsing taint models modes..." ~end_message:"Parsed taint models modes" in
+  let step_logger = StepLogger.start ~start_message:"Parsing taint models modes" ~end_message:"Parsed taint models modes" in
   let model_modes =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> List.map ~f:(fun (path, source) -> ModelParser.parse_model_modes ~path ~source)
@@ -417,7 +417,7 @@ let compute_coverage
     ~partial_sink_converter
   =
 
-  let step_logger = StepLogger.start ~start_message:"Computing file coverage..." ~end_message:"Computed file coverage..." in
+  let step_logger = StepLogger.start ~start_message:"Computing file coverage" ~end_message:"Finished computing file coverage" in
 
   let file_coverage =
     FileCoverage.from_callables
@@ -430,7 +430,7 @@ let compute_coverage
   StepLogger.finish ~step_logger ~integers:[];
 
 
-  let step_logger = StepLogger.start ~start_message:"Computing kind coverage..." ~end_message:"Computed kind coverage..." in
+  let step_logger = StepLogger.start ~start_message:"Computing kind coverage" ~end_message:"Finished computing kind coverage" in
   let compute_kind_coverage callables =
     callables
     |> List.filter_map ~f:(fun callable ->
@@ -462,7 +462,7 @@ let compute_coverage
   in
   StepLogger.finish ~step_logger ~integers:[];
 
-  let step_logger = StepLogger.start ~start_message:"Computing rule coverage..." ~end_message:"Computed rule coverage..." in
+  let step_logger = StepLogger.start ~start_message:"Computing rule coverage" ~end_message:"Finished computing rule coverage" in
   let rule_coverage =
     RuleCoverage.from_rules ~kind_coverage_from_models ~partial_sink_converter rules
   in
@@ -539,7 +539,7 @@ let run_taint_analysis
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
-      let step_logger = StepLogger.start ~start_message:"Computing class hierarchy graph..." ~end_message:"Computed class hierarchy graph..." in
+      let step_logger = StepLogger.start ~start_message:"Computing class hierarchy graph" ~end_message:"Computed class hierarchy graph" in
         let class_hierarchy_graph =
           Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
             ~scheduler
@@ -553,7 +553,7 @@ let run_taint_analysis
 
   let class_interval_graph, cache =
     Cache.class_interval_graph cache (fun () ->
-        let step_logger = StepLogger.start ~start_message:"Computing class intervals..." ~end_message:"Computed class intervals..." in
+        let step_logger = StepLogger.start ~start_message:"Computing class intervals" ~end_message:"Computed class intervals" in
         let class_interval_graph =
           Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
         in
@@ -567,7 +567,7 @@ let run_taint_analysis
 
   let initial_callables, cache =
     Cache.initial_callables cache (fun () ->
-        let step_logger = StepLogger.start ~start_message:"Fetching initial callables to analyze..." ~end_message:"Fetched initial callables to analyze..." in
+        let step_logger = StepLogger.start ~start_message:"Fetching initial callables to analyze" ~end_message:"Fetched initial callables to analyze" in
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
@@ -591,7 +591,7 @@ let run_taint_analysis
       ~initial_callables
   in
 
-  let step_logger = StepLogger.start ~start_message:"Computing overrides..." ~end_message:"Computed overrides..." in
+  let step_logger = StepLogger.start ~start_message:"Computing overrides" ~end_message:"Overrides computed" in
   let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
   let skip_overrides_targets = Registry.skip_overrides initial_models in
   let analyze_all_overrides_targets = Registry.analyze_all_overrides initial_models in
@@ -642,7 +642,7 @@ let run_taint_analysis
       ~static_analysis_configuration
   in
 
-  let step_logger = StepLogger.start ~start_message:"Building call graph..." ~end_message:"Built call graph..." in
+  let step_logger = StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built" in
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = Registry.object_targets initial_models in
   let skip_analysis_targets = Registry.skip_analysis initial_models in
@@ -679,7 +679,7 @@ let run_taint_analysis
       Interprocedural.DependencyGraph.PruneMethod.Internals
   in
 
-  let step_logger = StepLogger.start ~start_message:"Computing dependencies..." ~end_message:"Computed dependencies..." in
+  let step_logger = StepLogger.start ~start_message:"Computing dependencies" ~end_message:"Computed dependencies" in
   let {
     Interprocedural.DependencyGraph.dependency_graph;
     override_targets;
