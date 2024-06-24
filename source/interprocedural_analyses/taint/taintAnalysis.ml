@@ -332,7 +332,7 @@ let initialize_models
     match queries with
     | [] -> models, errors
     | _ ->
-        let step_logger = StepLogger.start ~start_message:"Generating models from model queries..." ~end_message:"Generatedmodels from model queries..." in
+        let step_logger = StepLogger.start ~start_message:"Generating models from model queries" ~end_message:"Generated models from model queries" in
 
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
         let {
