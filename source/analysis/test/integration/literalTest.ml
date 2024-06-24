@@ -582,6 +582,22 @@ let test_string_literal =
 let test_pep_675 =
   test_list
     [
+      (* TODO: T193277561 - join of literal strings should be a literal string *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+          from typing import LiteralString
+
+          def expect_literal_string(s: LiteralString) -> None: ...
+
+          def bar() -> None:
+            expect_literal_string(".".join(("", "")))
+        |}
+           [
+             "Non-literal string [62]: In call `expect_literal_string`, for 1st positional \
+              argument, expected `LiteralString` but got `str`. Ensure only a string literal or a \
+              `LiteralString` is used.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
