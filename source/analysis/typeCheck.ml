@@ -476,23 +476,26 @@ module State (Context : Context) = struct
     | true -> []
     | false ->
         let is_untracked_name class_name =
-          match GlobalResolution.resolve_exports resolution (Reference.create class_name) with
-          | None -> true
-          | Some (ResolvedReference.PlaceholderStub _) -> false
-          | Some (ResolvedReference.Module _) ->
-              (* `name` refers to a module, which is usually not valid type *)
-              true
-          | Some
-              (ResolvedReference.ModuleAttribute
-                { export = ResolvedReference.FromModuleGetattr; _ }) ->
-              (* Don't complain if `name` is derived from getattr-Any *)
-              false
-          | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-              let full_name =
-                Reference.combine from (Reference.create_from_list (name :: remaining))
-                |> Reference.show
-              in
-              not (GlobalResolution.class_exists resolution full_name)
+          match class_name with
+          | "..." -> false
+          | _ -> (
+              match GlobalResolution.resolve_exports resolution (Reference.create class_name) with
+              | None -> true
+              | Some (ResolvedReference.PlaceholderStub _) -> false
+              | Some (ResolvedReference.Module _) ->
+                  (* `name` refers to a module, which is usually not valid type *)
+                  true
+              | Some
+                  (ResolvedReference.ModuleAttribute
+                    { export = ResolvedReference.FromModuleGetattr; _ }) ->
+                  (* Don't complain if `name` is derived from getattr-Any *)
+                  false
+              | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+                  let full_name =
+                    Reference.combine from (Reference.create_from_list (name :: remaining))
+                    |> Reference.show
+                  in
+                  not (GlobalResolution.class_exists resolution full_name))
         in
         let add_untracked_errors errors =
           Type.collect_names annotation
