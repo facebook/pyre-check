@@ -20,7 +20,7 @@ my_list: List[int] = [1]
 my_list = to_seconds(my_list) # Pyre errors here!
 ```
 
-This code is works perfectly fine at runtime, and we may think that since `int` is a subtype of `float` this should not be a problem for the type checker either. However, consider the following code:
+This code works perfectly fine at runtime, and we may think that since `int` is a subtype of `float` this should not be a problem for the type checker either. However, consider the following code:
 
 ```python
 def halve_first_element(list: List[float]) -> None:
