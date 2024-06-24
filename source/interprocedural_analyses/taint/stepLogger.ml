@@ -1,6 +1,5 @@
 open Core
 
-module StepLogger = struct
   type t = {
     start_message: string;
     end_message: string;
