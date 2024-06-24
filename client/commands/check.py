@@ -192,11 +192,16 @@ def _run_check_command(command: Sequence[str]) -> CheckResult:
             result = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
-                stderr=log_file.file,
+                stderr=subprocess.PIPE,
                 universal_newlines=True,
                 errors="replace",
             )
             return_code = result.returncode
+
+            if result.stderr:
+                LOG.error("Error output from check command:")
+                for line in result.stderr.splitlines():
+                    LOG.error(line)
 
             # Interpretation of the return code needs to be kept in sync with
             # `source/command/checkCommand.ml`.
