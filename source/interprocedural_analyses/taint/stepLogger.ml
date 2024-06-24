@@ -11,7 +11,7 @@ open Core
     Log.info "%s..." start_message;
     { start_message; end_message; timer }
 
-  let finish ~step_logger ~integers () =
+  let finish ~integers step_logger =
     let time_in_seconds = Timer.stop_in_sec step_logger.timer in
     Log.info "%s: %.3fs" step_logger.end_message time_in_seconds;
     Statistics.performance
