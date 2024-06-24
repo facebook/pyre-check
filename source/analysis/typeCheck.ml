@@ -620,6 +620,19 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "annotation other than ... for return type";
                     }))
+      | Type.Tuple (Concrete types) when List.find ~f:Type.is_ellipsis types |> Option.is_some ->
+          emit_error
+            ~errors:[]
+            ~location
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    {
+                      annotation = Type.Primitive (Expression.show expression);
+                      expected =
+                        "a list of concrete type parameters, or an unbounded tuple type like \
+                         tuple[int, ...]";
+                    }))
       | _ when Type.contains_unknown annotation ->
           emit_error
             ~errors:[]

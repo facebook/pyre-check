@@ -1383,6 +1383,36 @@ let test_check_incomplete_callable =
     ]
 
 
+let test_check_tuple_typeform =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: tuple[int, int, ...]
+            |}
+           ["Invalid type [31]: Expression `tuple[(int, int, ...)]` is not a valid type."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: tuple[...]
+            |}
+           ["Invalid type [31]: Expression `tuple[...]` is not a valid type."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: tuple[..., int]
+            |}
+           ["Invalid type [31]: Expression `tuple[(..., int)]` is not a valid type."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: tuple[int, ..., int]
+            |}
+           ["Invalid type [31]: Expression `tuple[(int, ..., int)]` is not a valid type."];
+    ]
+
+
 let test_check_refinement =
   test_list
     [
@@ -2907,6 +2937,7 @@ let test_check_compose =
 let () =
   "annotation"
   >::: [
+         test_check_tuple_typeform;
          test_check_undefined_type;
          test_check_invalid_type;
          test_check_illegal_annotation_target;
