@@ -309,7 +309,7 @@ let initialize_models
     ~initial_callables
   =
   let open TaintConfiguration.Heap in
-  let step_logger = StepLogger.start ~start_message:"Parsing taint models..." ~end_message:"Parsed taint models" in
+  let step_logger = StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models" in
   let definitions_hashset =
     initial_callables |> Interprocedural.FetchCallables.get_definitions |> Target.HashSet.of_list
   in
