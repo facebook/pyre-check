@@ -622,7 +622,7 @@ let run_taint_analysis
   in
   StepLogger.finish ~step_logger ~integers:[];
 
-  let step_logger = StepLogger.start ~start_message:"indexing global constants..." ~end_message:"Indexed global constants" in
+  let step_logger = StepLogger.start ~start_message:"Indexing global constants" ~end_message:"Finished constant propagation analysis" in
   let global_constants, cache =
     Cache.global_constants cache (fun () ->
         Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
