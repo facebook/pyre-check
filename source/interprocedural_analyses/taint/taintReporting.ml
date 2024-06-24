@@ -172,7 +172,12 @@ let save_results_to_directory
     ~file_coverage
     ~rule_coverage
   =
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:
+        (Format.sprintf "Writing analysis results to `%s`" (PyrePath.absolute result_directory))
+      ~end_message:"Wrote analysis results"
+  in
   let root = local_root |> PyrePath.absolute in
   let open_file ~filename =
     let path = PyrePath.append result_directory ~element:filename in
@@ -269,12 +274,8 @@ let save_results_to_directory
   save_errors ();
   save_file_coverage ();
   save_rule_coverage ();
-  Log.info "Analysis results were written to `%s`." (PyrePath.absolute result_directory);
-  Statistics.performance
-    ~name:"Wrote analysis results"
-    ~phase_name:"Writing analysis results"
-    ~timer
-    ()
+  StepLogger.finish step_logger;
+  ()
 
 
 let produce_errors
@@ -285,7 +286,7 @@ let produce_errors
     ~resolve_module_path
     ~taint_configuration
     ~callables
-    ~fixpoint_timer
+    ~fixpoint_step_logger
     ~fixpoint_state
   =
   let errors =
@@ -300,17 +301,14 @@ let produce_errors
   let () = Log.info "Found %d issues" (List.length errors) in
   let iterations = TaintFixpoint.get_iterations fixpoint_state in
   let () =
-    Statistics.performance
-      ~name:"Analysis fixpoint complete"
-      ~phase_name:"Static analysis fixpoint"
-      ~timer:fixpoint_timer
+    StepLogger.finish
       ~integers:
         [
           "iterations", iterations;
           "heap size", Hack_parallel.Std.SharedMemory.heap_size ();
           "issues", List.length errors;
         ]
-      ()
+      fixpoint_step_logger
   in
   let filename_lookup qualifier =
     resolve_module_path qualifier >>= fun { RepositoryPath.filename; _ } -> filename

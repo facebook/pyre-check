@@ -39,8 +39,11 @@ let initialize_and_verify_configuration
         _;
       }
   =
-  Log.info "Initializing and verifying taint configuration.";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Initializing and verifying taint configuration"
+      ~end_message:"Initialized and verified taint configuration"
+  in
   let open Core.Result in
   let taint_configuration =
     TaintConfiguration.from_taint_model_paths taint_model_paths
@@ -66,32 +69,21 @@ let initialize_and_verify_configuration
           ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error
   in
-  let () =
-    Statistics.performance
-      ~name:"Initialized and verified taint configuration"
-      ~phase_name:"Initializing and verifying taint configuration"
-      ~timer
-      ()
-  in
+  let () = StepLogger.finish step_logger in
   taint_configuration
 
 
 let verify_model_syntax ~static_analysis_configuration =
-  Log.info "Verifying model syntax.";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start ~start_message:"Verifying model syntax" ~end_message:"Verified model syntax"
+  in
   let () =
     ModelParser.get_model_sources
       ~paths:
         static_analysis_configuration.Configuration.StaticAnalysis.configuration.taint_model_paths
     |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source)
   in
-  let () =
-    Statistics.performance
-      ~name:"Verified model syntax"
-      ~phase_name:"Verifying model syntax"
-      ~timer
-      ()
-  in
+  let () = StepLogger.finish step_logger in
   ()
 
 
@@ -103,8 +95,11 @@ let parse_model_modes
         _;
       }
   =
-  let timer = Timer.start () in
-  let () = Log.info "Parsing taint models modes..." in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Parsing taint models modes"
+      ~end_message:"Parsed taint models modes"
+  in
   let model_modes =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> List.map ~f:(fun (path, source) -> ModelParser.parse_model_modes ~path ~source)
@@ -129,13 +124,7 @@ let parse_model_modes
     |> Ast.Reference.SerializableMap.keys
     |> Ast.Reference.SerializableSet.of_list
   in
-  let () =
-    Statistics.performance
-      ~name:"Parsed taint models modes"
-      ~phase_name:"Parsed taint models modes"
-      ~timer
-      ()
-  in
+  let () = StepLogger.finish step_logger in
   decorator_preprocessing_configuration, skip_type_checking_callables
 
 
@@ -167,8 +156,11 @@ let write_modules_to_file
     ~path
     qualifiers
   =
-  let timer = Timer.start () in
-  Log.info "Writing modules to `%s`" (PyrePath.absolute path);
+  let step_logger =
+    StepLogger.start
+      ~start_message:(Format.sprintf "Writing modules to `%s`" (PyrePath.absolute path))
+      ~end_message:"Wrote modules"
+  in
   let to_json_lines qualifier =
     let path =
       resolve_module_path
@@ -192,7 +184,8 @@ let write_modules_to_file
     ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
     ~to_json_lines
     qualifiers;
-  Statistics.performance ~name:"Wrote modules" ~phase_name:"Writing modules" ~timer ()
+  let () = StepLogger.finish step_logger in
+  ()
 
 
 let write_functions_to_file
@@ -201,8 +194,11 @@ let write_functions_to_file
     ~path
     definitions
   =
-  let timer = Timer.start () in
-  Log.info "Writing functions to `%s`" (PyrePath.absolute path);
+  let step_logger =
+    StepLogger.start
+      ~start_message:(Format.sprintf "Writing functions to `%s`" (PyrePath.absolute path))
+      ~end_message:"Wrote functions"
+  in
   let to_json_lines definition =
     [
       {
@@ -216,7 +212,8 @@ let write_functions_to_file
     ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
     ~to_json_lines
     definitions;
-  Statistics.performance ~name:"Wrote functions" ~phase_name:"Writing functions" ~timer ()
+  let () = StepLogger.finish step_logger in
+  ()
 
 
 let create_pyre_read_write_api_and_perform_type_analysis
@@ -330,8 +327,9 @@ let initialize_models
     ~initial_callables
   =
   let open TaintConfiguration.Heap in
-  Log.info "Parsing taint models...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models"
+  in
   let definitions_hashset =
     initial_callables |> Interprocedural.FetchCallables.get_definitions |> Target.HashSet.of_list
   in
@@ -348,19 +346,21 @@ let initialize_models
       ~definitions:(Some definitions_hashset)
       ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory)
   in
-  Statistics.performance
-    ~name:"Parsed taint models"
-    ~phase_name:"Parsing taint models"
-    ~timer
-    ~integers:["models", Registry.size models; "queries", List.length queries]
-    ();
+  let () =
+    StepLogger.finish
+      ~integers:["models", Registry.size models; "queries", List.length queries]
+      step_logger
+  in
 
   let models, errors =
     match queries with
     | [] -> models, errors
     | _ ->
-        Log.info "Generating models from model queries...";
-        let timer = Timer.start () in
+        let step_logger =
+          StepLogger.start
+            ~start_message:"Generating models from model queries"
+            ~end_message:"Generated models from model queries"
+        in
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
         let {
           ModelQueryExecution.ExecutionResult.models = model_query_results;
@@ -399,12 +399,7 @@ let initialize_models
                ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models
         in
-        Statistics.performance
-          ~name:"Generated models from model queries"
-          ~phase_name:"Generating models from model queries"
-          ~timer
-          ~integers:["models", Registry.size models]
-          ();
+        let () = StepLogger.finish ~integers:["models", Registry.size models] step_logger in
         models, errors
   in
 
@@ -427,14 +422,17 @@ let initialize_models
 
 
 let compact_ocaml_heap ~name =
-  let timer = Timer.start () in
-  let () = Log.info "Compacting OCaml heap: %s" name in
+  let step_logger =
+    StepLogger.start
+      ~start_message:(Format.sprintf "Compacting OCaml heap: %s" name)
+      ~end_message:(Format.sprintf "Compacted OCaml heap: %s" name)
+  in
   let original = Gc.get () in
   Gc.set { original with space_overhead = 25; max_overhead = 25 };
   Gc.compact ();
   Gc.set original;
-  let name = Printf.sprintf "Compacted OCaml heap: %s" name in
-  Statistics.performance ~name ~phase_name:name ~timer ()
+  let () = StepLogger.finish step_logger in
+  ()
 
 
 let compute_coverage
@@ -448,8 +446,11 @@ let compute_coverage
     ~fixpoint_state
     ~partial_sink_converter
   =
-  Log.info "Computing file coverage...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Computing file coverage"
+      ~end_message:"Finished computing file coverage"
+  in
   let file_coverage =
     FileCoverage.from_callables
       ~scheduler
@@ -458,14 +459,13 @@ let compute_coverage
       ~resolve_module_path
       ~callables:callables_to_analyze
   in
-  Statistics.performance
-    ~name:"Finished computing file coverage"
-    ~phase_name:"Computing file coverage"
-    ~timer
-    ();
+  let () = StepLogger.finish step_logger in
 
-  Log.info "Computing kind coverage...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Computing kind coverage"
+      ~end_message:"Finished computing kind coverage"
+  in
   let compute_kind_coverage callables =
     callables
     |> List.filter_map ~f:(fun callable ->
@@ -495,22 +495,17 @@ let compute_coverage
       ~inputs:all_callables
       ()
   in
-  Statistics.performance
-    ~name:"Finished computing kind coverage"
-    ~phase_name:"Computing kind coverage"
-    ~timer
-    ();
+  let () = StepLogger.finish step_logger in
 
-  Log.info "Computing rule coverage...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Computing rule coverage"
+      ~end_message:"Finished computing rule coverage"
+  in
   let rule_coverage =
     RuleCoverage.from_rules ~kind_coverage_from_models ~partial_sink_converter rules
   in
-  Statistics.performance
-    ~name:"Finished computing rule coverage"
-    ~phase_name:"Computing rule coverage"
-    ~timer
-    ();
+  let () = StepLogger.finish step_logger in
   file_coverage, rule_coverage
 
 
@@ -583,8 +578,11 @@ let run_taint_analysis
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
-        let timer = Timer.start () in
-        let () = Log.info "Computing class hierarchy graph..." in
+        let step_logger =
+          StepLogger.start
+            ~start_message:"Computing class hierarchy graph"
+            ~end_message:"Computed class hierarchy graph"
+        in
         let class_hierarchy_graph =
           Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
             ~scheduler
@@ -592,26 +590,21 @@ let run_taint_analysis
             ~pyre_api
             ~qualifiers
         in
-        Statistics.performance
-          ~name:"Computed class hierarchy graph"
-          ~phase_name:"Computing class hierarchy graph"
-          ~timer
-          ();
+        let () = StepLogger.finish step_logger in
         class_hierarchy_graph)
   in
 
   let class_interval_graph, cache =
     Cache.class_interval_graph cache (fun () ->
-        let timer = Timer.start () in
-        let () = Log.info "Computing class intervals..." in
+        let step_logger =
+          StepLogger.start
+            ~start_message:"Computing class intervals"
+            ~end_message:"Computed class intervals"
+        in
         let class_interval_graph =
           Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
         in
-        Statistics.performance
-          ~name:"Computed class intervals"
-          ~phase_name:"Computing class intervals"
-          ~timer
-          ();
+        let () = StepLogger.finish step_logger in
         class_interval_graph)
   in
 
@@ -621,8 +614,11 @@ let run_taint_analysis
 
   let initial_callables, cache =
     Cache.initial_callables cache (fun () ->
-        let timer = Timer.start () in
-        let () = Log.info "Fetching initial callables to analyze..." in
+        let step_logger =
+          StepLogger.start
+            ~start_message:"Fetching initial callables to analyze"
+            ~end_message:"Fetched initial callables to analyze"
+        in
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
@@ -631,12 +627,11 @@ let run_taint_analysis
             ~pyre_api
             ~qualifiers
         in
-        Statistics.performance
-          ~name:"Fetched initial callables to analyze"
-          ~phase_name:"Fetching initial callables to analyze"
-          ~timer
-          ~integers:(Interprocedural.FetchCallables.get_stats initial_callables)
-          ();
+        let () =
+          StepLogger.finish
+            ~integers:(Interprocedural.FetchCallables.get_stats initial_callables)
+            step_logger
+        in
         initial_callables)
   in
 
@@ -651,8 +646,9 @@ let run_taint_analysis
       ~initial_callables
   in
 
-  Log.info "Computing overrides...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start ~start_message:"Computing overrides" ~end_message:"Overrides computed"
+  in
   let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
   let skip_overrides_targets = Registry.skip_overrides initial_models in
   let analyze_all_overrides_targets = Registry.analyze_all_overrides initial_models in
@@ -681,10 +677,13 @@ let run_taint_analysis
   let override_graph_shared_memory_read_only =
     Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
   in
-  Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
+  let () = StepLogger.finish step_logger in
 
-  Log.info "Indexing global constants...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Indexing global constants"
+      ~end_message:"Finished constant propagation analysis"
+  in
   let global_constants, cache =
     Cache.global_constants cache (fun () ->
         Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
@@ -694,11 +693,7 @@ let run_taint_analysis
           ~pyre_api
           ~qualifiers)
   in
-  Statistics.performance
-    ~name:"Finished constant propagation analysis"
-    ~phase_name:"Indexing global constants"
-    ~timer
-    ();
+  let () = StepLogger.finish step_logger in
 
   let resolve_module_path =
     resolve_module_path
@@ -708,8 +703,9 @@ let run_taint_analysis
       ~static_analysis_configuration
   in
 
-  Log.info "Building call graph...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built"
+  in
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = Registry.object_targets initial_models in
   let skip_analysis_targets = Registry.skip_analysis initial_models in
@@ -731,7 +727,7 @@ let run_taint_analysis
           ~skip_analysis_targets
           ~definitions)
   in
-  Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
+  let () = StepLogger.finish step_logger in
 
   let prune_method =
     if limit_entrypoints then
@@ -746,8 +742,9 @@ let run_taint_analysis
       Interprocedural.DependencyGraph.PruneMethod.Internals
   in
 
-  Log.info "Computing dependencies...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start ~start_message:"Computing dependencies" ~end_message:"Computed dependencies"
+  in
   let {
     Interprocedural.DependencyGraph.dependency_graph;
     override_targets;
@@ -762,11 +759,7 @@ let run_taint_analysis
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
-  Statistics.performance
-    ~name:"Computed dependencies"
-    ~phase_name:"Computing dependencies"
-    ~timer
-    ();
+  let () = StepLogger.finish step_logger in
 
   let () =
     Cache.save
@@ -802,11 +795,15 @@ let run_taint_analysis
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";
 
-  Log.info
-    "Analysis fixpoint started for %d overrides and %d functions..."
-    (List.length override_targets)
-    (List.length callables_kept);
-  let fixpoint_timer = Timer.start () in
+  let fixpoint_step_logger =
+    StepLogger.start
+      ~start_message:
+        (Format.sprintf
+           "Analysis fixpoint started for %d overrides and %d functions..."
+           (List.length override_targets)
+           (List.length callables_kept))
+      ~end_message:"Analysis fixpoint complete"
+  in
   let shared_models =
     TaintFixpoint.record_initial_models
       ~initial_models
@@ -863,7 +860,7 @@ let run_taint_analysis
       ~taint_configuration:taint_configuration_shared_memory
       ~resolve_module_path
       ~callables
-      ~fixpoint_timer
+      ~fixpoint_step_logger
       ~fixpoint_state
   in
 
