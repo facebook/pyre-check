@@ -31,6 +31,17 @@ let dequalify_identifier map identifier =
   Reference.create identifier |> dequalify_reference map |> Reference.show
 
 
+(* Callable parameter names can be qualified, which means the actual identifier values are globally
+   unique and not comparable. Specialize Identifier.t so that `equal` treats names that were the
+   same before qualification as equal. *)
+module QualifiedParameterName = struct
+  type t = Identifier.t [@@deriving compare, sexp, show, hash]
+
+  let sanitized = Identifier.sanitized
+
+  let equal left right = Identifier.equal (sanitized left) (sanitized right)
+end
+
 module Record = struct
   module Variable = struct
     type state =
@@ -625,7 +636,7 @@ module Record = struct
   module Callable = struct
     module RecordParameter = struct
       type 'annotation named = {
-        name: Identifier.t;
+        name: QualifiedParameterName.t;
         annotation: 'annotation;
         default: bool;
       }
@@ -647,15 +658,6 @@ module Record = struct
         | Variable of 'annotation variable
         | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
-
-      let equal equal_annotation left right =
-        match left, right with
-        | Named left, Named right ->
-            Bool.equal left.default right.default
-            && Identifier.equal (Identifier.sanitized left.name) (Identifier.sanitized right.name)
-            && equal_annotation left.annotation right.annotation
-        | _ -> equal equal_annotation left right
-
 
       let show_concise ~pp_type parameter =
         let print_named ~kind { name; annotation; default } =
@@ -716,19 +718,6 @@ module Record = struct
       overloads: 'annotation overload list;
     }
     [@@deriving compare, eq, sexp, show, hash]
-
-    let equal_overload equal_annotation left right =
-      equal_record_parameters equal_annotation left.parameters right.parameters
-      && equal_annotation left.annotation right.annotation
-
-
-    let _ = equal_record (* suppress warning about unused generated version *)
-
-    let equal_record equal_annotation left right =
-      (* Ignores implicit argument to simplify unit tests. *)
-      equal_kind left.kind right.kind
-      && equal_overload equal_annotation left.implementation right.implementation
-      && List.equal (equal_overload equal_annotation) left.overloads right.overloads
   end
 
   module Parameter = struct
@@ -1876,7 +1865,7 @@ module Callable = struct
           match parameter with
           | KeywordOnly { name = parameter_name; _ }
           | Named { name = parameter_name; _ }
-            when Identifier.equal parameter_name name ->
+            when QualifiedParameterName.equal parameter_name name ->
               Some parameter
           | _ -> None
         in
