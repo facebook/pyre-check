@@ -66,7 +66,7 @@ module Queries = struct
       variable_parameter_annotation:Ast.Expression.t ->
       keywords_parameter_annotation:Ast.Expression.t ->
       unit ->
-      Type.Variable.Variadic.ParamSpec.t option;
+      Type.Variable.ParamSpec.t option;
     class_hierarchy: unit -> (module ClassHierarchy.Handler);
     variables:
       ?default:Type.Variable.t list option -> Type.Primitive.t -> Type.Variable.t list option;
@@ -1301,8 +1301,8 @@ module SignatureSelection = struct
         |> check_arguments_against_parameters ~callable
         |> fun signature_match -> [signature_match]
     | Undefined -> [base_signature_match]
-    | ParameterVariadicTypeVariable { head; variable }
-      when Type.Variable.Variadic.ParamSpec.is_free variable -> (
+    | ParameterVariadicTypeVariable { head; variable } when Type.Variable.ParamSpec.is_free variable
+      -> (
         (* Handle callables where an early parameter binds a ParamSpec and later parameters expect
            the corresponding arguments.
 
@@ -1378,9 +1378,8 @@ module SignatureSelection = struct
            `**kwargs` that have "type" `P.args` and `P.kwargs` respectively. If the ParamSpec has a
            `head` prefix of parameters, check for any prefix arguments. *)
         let combines_into_variable ~positional_component ~keyword_component =
-          Type.Variable.Variadic.ParamSpec.Components.combine
-            { positional_component; keyword_component }
-          >>| Type.Variable.Variadic.ParamSpec.equal variable
+          Type.Variable.ParamSpec.Components.combine { positional_component; keyword_component }
+          >>| Type.Variable.ParamSpec.equal variable
           |> Option.value ~default:false
         in
         match List.rev arguments with
@@ -2304,7 +2303,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   [Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "T")]
               | "typing.Callable" ->
                   [
-                    Type.Variable.ParamSpecVariable (Type.Variable.Variadic.ParamSpec.create "Ps");
+                    Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create "Ps");
                     Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "R");
                   ]
               | _ -> variables name |> Option.value ~default:[]
@@ -2412,8 +2411,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                     [Type.Parameter.Single Type.Any]
                                 | ParamSpecVariable _ -> [CallableParameters Undefined]
                                 | TypeVarTupleVariable _ ->
-                                    Type.OrderedTypes.to_parameters
-                                      Type.Variable.Variadic.TypeVarTuple.any))
+                                    Type.OrderedTypes.to_parameters Type.Variable.TypeVarTuple.any))
                         in
                         ( annotation,
                           List.filter generics ~f:(fun x -> not (is_tuple_variadic x))

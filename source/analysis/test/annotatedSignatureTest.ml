@@ -928,8 +928,8 @@ let test_unresolved_select =
                        {
                          head = [];
                          variable =
-                           Type.Variable.Variadic.ParamSpec.create "TParams"
-                           |> Type.Variable.Variadic.ParamSpec.mark_as_bound;
+                           Type.Variable.ParamSpec.create "TParams"
+                           |> Type.Variable.ParamSpec.mark_as_bound;
                        };
                  };
                overloads = [];

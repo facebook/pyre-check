@@ -36,7 +36,7 @@ module AliasReadOnly : sig
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->
     unit ->
-    Type.Variable.Variadic.ParamSpec.t option
+    Type.Variable.ParamSpec.t option
 end
 
 include

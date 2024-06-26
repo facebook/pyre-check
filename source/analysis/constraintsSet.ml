@@ -94,7 +94,7 @@ module type OrderedConstraintsSetType = sig
   val get_parameter_specification_possibilities
     :  t ->
     order:order ->
-    parameter_specification:Type.Variable.Variadic.ParamSpec.t ->
+    parameter_specification:Type.Variable.ParamSpec.t ->
     Type.Callable.parameters list
 
   val instantiate_protocol_parameters
@@ -302,8 +302,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | Undefined, Defined _ -> [initial_constraints]
         | ( ParameterVariadicTypeVariable { head = left_head; variable = left_variable },
             ParameterVariadicTypeVariable { head = right_head; variable = right_variable } )
-          when Type.Variable.Variadic.ParamSpec.is_free left_variable
-               && Type.Variable.Variadic.ParamSpec.is_free right_variable ->
+          when Type.Variable.ParamSpec.is_free left_variable
+               && Type.Variable.ParamSpec.is_free right_variable ->
             let add_parameter_specification_bounds constraints =
               constraints
               |> OrderedConstraints.add_upper_bound
@@ -327,11 +327,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ~constraints:initial_constraints
             |> List.concat_map ~f:add_parameter_specification_bounds
         | bound, ParameterVariadicTypeVariable { head = []; variable }
-          when Type.Variable.Variadic.ParamSpec.is_free variable ->
+          when Type.Variable.ParamSpec.is_free variable ->
             let pair = Type.Variable.ParamSpecPair (variable, bound) in
             OrderedConstraints.add_upper_bound initial_constraints ~order ~pair |> Option.to_list
         | bound, ParameterVariadicTypeVariable { head; variable }
-          when Type.Variable.Variadic.ParamSpec.is_free variable ->
+          when Type.Variable.ParamSpec.is_free variable ->
             let constraints, remainder =
               match bound with
               | Undefined -> [initial_constraints], Undefined
@@ -478,7 +478,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Top -> [constraints]
     | Type.ParameterVariadicComponent component, _ ->
         let left =
-          match Type.Variable.Variadic.ParamSpec.Components.component component with
+          match Type.Variable.ParamSpec.Components.component component with
           | KeywordArguments ->
               Type.parametric
                 Type.mapping_primitive
@@ -848,7 +848,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
-            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -869,7 +869,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
-            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -882,7 +882,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic left_concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_variadic right_concatenation )
             with
-            | _, Some variadic when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
+            | _, Some variadic when Type.Variable.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -891,7 +891,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~pair:
                             (Type.Variable.TypeVarTuplePair
                                (variadic, Concatenation left_concatenation)))
-            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:

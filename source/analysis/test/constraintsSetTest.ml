@@ -366,27 +366,27 @@ let make_assert_functions context =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.ParamSpec.name variable)
+            (Type.Variable.ParamSpec.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
             (Type.Callable.ParameterVariadicTypeVariable
-               { head = []; variable = Type.Variable.Variadic.ParamSpec.mark_as_bound variable })
+               { head = []; variable = Type.Variable.ParamSpec.mark_as_bound variable })
       in
       let mark_tuple_variadic variable =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.TypeVarTuple.name variable)
+            (Type.Variable.TypeVarTuple.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
-            (Type.Variable.Variadic.TypeVarTuple.self_reference
-               (Type.Variable.Variadic.TypeVarTuple.mark_as_bound variable))
+            (Type.Variable.TypeVarTuple.self_reference
+               (Type.Variable.TypeVarTuple.mark_as_bound variable))
       in
       parse_annotation left
       |> Type.Variable.GlobalTransforms.TypeVar.replace_all mark_unary
@@ -947,8 +947,8 @@ let test_add_constraint context =
     ~expected_solutions:[]
     ();
 
-  let { Type.Variable.Variadic.ParamSpec.Components.positional_component; keyword_component } =
-    Type.Variable.Variadic.ParamSpec.create "TParams" |> Type.Variable.Variadic.ParamSpec.decompose
+  let { Type.Variable.ParamSpec.Components.positional_component; keyword_component } =
+    Type.Variable.ParamSpec.create "TParams" |> Type.Variable.ParamSpec.decompose
   in
 
   assert_less_or_equal_direct
@@ -1193,8 +1193,8 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, bool, typing.Unpack[Ts2], bool, str]"
     ~expected_solutions:[]
     ();
-  let variadic = Type.Variable.Variadic.TypeVarTuple.create "test.Ts" in
-  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "test.Ts2" in
+  let variadic = Type.Variable.TypeVarTuple.create "test.Ts" in
+  let variadic2 = Type.Variable.TypeVarTuple.create "test.Ts2" in
   assert_less_or_equal_direct
     ~left:
       (Type.Tuple

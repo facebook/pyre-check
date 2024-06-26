@@ -6428,10 +6428,7 @@ module State (Context : Context) = struct
           with
           | Some variable ->
               let add_annotations_to_resolution
-                  {
-                    Type.Variable.Variadic.ParamSpec.Components.positional_component;
-                    keyword_component;
-                  }
+                  { Type.Variable.ParamSpec.Components.positional_component; keyword_component }
                 =
                 resolution
                 |> Resolution.new_local
@@ -6444,8 +6441,8 @@ module State (Context : Context) = struct
               if Resolution.type_variable_exists resolution ~variable:(ParamSpecVariable variable)
               then
                 let new_resolution =
-                  Type.Variable.Variadic.ParamSpec.mark_as_bound variable
-                  |> Type.Variable.Variadic.ParamSpec.decompose
+                  Type.Variable.ParamSpec.mark_as_bound variable
+                  |> Type.Variable.ParamSpec.decompose
                   |> add_annotations_to_resolution
                 in
                 List.rev reversed_head

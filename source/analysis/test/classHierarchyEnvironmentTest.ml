@@ -619,8 +619,8 @@ let test_compute_inferred_generic_base context =
           "typing.Generic"
           [
             Type.Parameter.CallableParameters
-              (Type.Variable.Variadic.ParamSpec.self_reference
-                 (Type.Variable.Variadic.ParamSpec.create "test.TParams"));
+              (Type.Variable.ParamSpec.self_reference
+                 (Type.Variable.ParamSpec.create "test.TParams"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"
@@ -637,7 +637,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
+                 (Type.Variable.TypeVarTuple.create "test.Ts"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"
@@ -654,7 +654,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
+                 (Type.Variable.TypeVarTuple.create "test.Ts"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"
@@ -671,7 +671,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
+                 (Type.Variable.TypeVarTuple.create "test.Ts"));
           ]));
 
   (* We should not sort the generic variables in alphabetical order. *)

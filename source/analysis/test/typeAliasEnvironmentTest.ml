@@ -317,7 +317,7 @@ let test_harder_registrations =
                         Single Type.float;
                         Unpacked
                           (Type.OrderedTypes.Concatenation.create_unpackable
-                             (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
+                             (Type.Variable.TypeVarTuple.create "test.Ts"));
                       ])));
       (* An alias containing "..." should not mistake the "..." for some unknown alias. *)
       labeled_test_case __FUNCTION__ __LINE__

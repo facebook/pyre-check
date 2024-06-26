@@ -13,7 +13,7 @@ type annotation_parser = {
   parse_as_parameter_specification_instance_annotation:
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->
-    Type.Variable.Variadic.ParamSpec.t option;
+    Type.Variable.ParamSpec.t option;
 }
 
 val return_annotation_without_applying_decorators

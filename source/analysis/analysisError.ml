@@ -1970,11 +1970,9 @@ let rec messages ~concise ~signature location kind =
         | ParamSpecVariable expected ->
             Format.asprintf
               "Callable parameters expected for parameter specification `%s`"
-              (Type.Variable.Variadic.ParamSpec.name expected)
+              (Type.Variable.ParamSpec.name expected)
         | TypeVarTupleVariable expected ->
-            Format.asprintf
-              "Tuple expected for `%s`"
-              (Type.Variable.Variadic.TypeVarTuple.name expected)
+            Format.asprintf "Tuple expected for `%s`" (Type.Variable.TypeVarTuple.name expected)
       in
       let actual =
         match actual with
@@ -2002,10 +2000,10 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.TypeVarVariable variable ->
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParamSpecVariable variable ->
-          let name = Type.Variable.Variadic.ParamSpec.name variable in
+          let name = Type.Variable.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TypeVarTupleVariable variable ->
-          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
+          let name = Type.Variable.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
@@ -2032,11 +2030,11 @@ let rec messages ~concise ~signature location kind =
           | Toplevel -> [Format.asprintf format (Type.show (Type.Variable variable))])
       | Type.Variable.ParamSpecVariable variable ->
           (* We don't give hints for the more complicated cases. *)
-          let name = Type.Variable.Variadic.ParamSpec.name variable in
+          let name = Type.Variable.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TypeVarTupleVariable variable ->
           (* We don't give hints for the more complicated cases. *)
-          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
+          let name = Type.Variable.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | InvalidTypeVariance { origin; _ } when concise -> (
       match origin with
@@ -2775,10 +2773,10 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.TypeVarVariable { Type.Record.Variable.RecordTypeVar.variable = name; _ } ->
           [Format.asprintf format name]
       | Type.Variable.ParamSpecVariable variable ->
-          let name = Type.Variable.Variadic.ParamSpec.name variable in
+          let name = Type.Variable.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TypeVarTupleVariable variable ->
-          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
+          let name = Type.Variable.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | UnboundName name when concise ->
       [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]

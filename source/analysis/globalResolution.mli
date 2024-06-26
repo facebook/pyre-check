@@ -70,7 +70,7 @@ val parse_as_parameter_specification_instance_annotation
   :  t ->
   variable_parameter_annotation:Expression.t ->
   keywords_parameter_annotation:Expression.t ->
-  Type.Variable.Variadic.ParamSpec.t option
+  Type.Variable.ParamSpec.t option
 
 val immediate_parents : t -> Type.Primitive.t -> string list
 
