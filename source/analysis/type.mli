@@ -837,12 +837,11 @@ module Variable : sig
       val collect_all : type_t -> t list
     end
 
-    module Unary : S with type t = unary_t and type domain = type_t
+    module TypeVar : S with type t = unary_t and type domain = type_t
 
-    module ParameterVariadic :
-      S with type t = parameter_variadic_t and type domain = Callable.parameters
+    module ParamSpec : S with type t = parameter_variadic_t and type domain = Callable.parameters
 
-    module TupleVariadic :
+    module TypeVarTuple :
       S with type t = tuple_variadic_t and type domain = type_t OrderedTypes.record
   end
 

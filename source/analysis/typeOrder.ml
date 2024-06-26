@@ -265,7 +265,7 @@ module OrderImplementation = struct
                       let replace_if_free variable =
                         Option.some_if (Type.Variable.TypeVar.is_free variable) Type.Top
                       in
-                      Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
+                      Type.Variable.GlobalTransforms.TypeVar.replace_all replace_if_free
                     in
                     Type.Variable.zip_variables_with_two_parameter_lists
                       ~left_parameters

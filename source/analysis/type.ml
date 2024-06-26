@@ -3099,9 +3099,9 @@ module Variable = struct
       val collect_all : T.t -> t list
     end
 
-    module Unary = Make (TypeVar)
-    module ParameterVariadic = Make (Variadic.ParamSpec)
-    module TupleVariadic = Make (Variadic.TypeVarTuple)
+    module TypeVar = Make (TypeVar)
+    module ParamSpec = Make (Variadic.ParamSpec)
+    module TypeVarTuple = Make (Variadic.TypeVarTuple)
   end
 
   type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
@@ -3170,17 +3170,16 @@ module Variable = struct
       | None -> None, None, None
       | Some (unaries, parameters, tuples) -> Some unaries, Some parameters, Some tuples
     in
-    GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
-    |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
-    |> GlobalTransforms.TupleVariadic.mark_all_as_bound ?specific:specific_tuple_variadics
+    GlobalTransforms.TypeVar.mark_all_as_bound ?specific:specific_unaries annotation
+    |> GlobalTransforms.ParamSpec.mark_all_as_bound ?specific:specific_parameters_variadics
+    |> GlobalTransforms.TypeVarTuple.mark_all_as_bound ?specific:specific_tuple_variadics
 
 
   let mark_as_bound = function
-    | Unary variable -> Unary (GlobalTransforms.Unary.mark_as_bound variable)
+    | Unary variable -> Unary (GlobalTransforms.TypeVar.mark_as_bound variable)
     | ParameterVariadic variable ->
-        ParameterVariadic (GlobalTransforms.ParameterVariadic.mark_as_bound variable)
-    | TupleVariadic variable ->
-        TupleVariadic (GlobalTransforms.TupleVariadic.mark_as_bound variable)
+        ParameterVariadic (GlobalTransforms.ParamSpec.mark_as_bound variable)
+    | TupleVariadic variable -> TupleVariadic (GlobalTransforms.TypeVarTuple.mark_as_bound variable)
 
 
   let mark_all_variables_as_free ?specific annotation =
@@ -3189,28 +3188,28 @@ module Variable = struct
       | None -> None, None, None
       | Some (unaries, parameters, tuples) -> Some unaries, Some parameters, Some tuples
     in
-    GlobalTransforms.Unary.mark_all_as_free ?specific:specific_unaries annotation
-    |> GlobalTransforms.ParameterVariadic.mark_all_as_free ?specific:specific_parameters_variadics
-    |> GlobalTransforms.TupleVariadic.mark_all_as_free ?specific:specific_tuple_variadics
+    GlobalTransforms.TypeVar.mark_all_as_free ?specific:specific_unaries annotation
+    |> GlobalTransforms.ParamSpec.mark_all_as_free ?specific:specific_parameters_variadics
+    |> GlobalTransforms.TypeVarTuple.mark_all_as_free ?specific:specific_tuple_variadics
 
 
   let namespace_all_free_variables annotation ~namespace =
-    GlobalTransforms.Unary.namespace_all_free_variables annotation ~namespace
-    |> GlobalTransforms.ParameterVariadic.namespace_all_free_variables ~namespace
-    |> GlobalTransforms.TupleVariadic.namespace_all_free_variables ~namespace
+    GlobalTransforms.TypeVar.namespace_all_free_variables annotation ~namespace
+    |> GlobalTransforms.ParamSpec.namespace_all_free_variables ~namespace
+    |> GlobalTransforms.TypeVarTuple.namespace_all_free_variables ~namespace
 
 
   let all_free_variables annotation =
     let unaries =
-      GlobalTransforms.Unary.all_free_variables annotation
+      GlobalTransforms.TypeVar.all_free_variables annotation
       |> List.map ~f:(fun variable -> Unary variable)
     in
     let callable_variadics =
-      GlobalTransforms.ParameterVariadic.all_free_variables annotation
+      GlobalTransforms.ParamSpec.all_free_variables annotation
       |> List.map ~f:(fun variable -> ParameterVariadic variable)
     in
     let tuple_variadics =
-      GlobalTransforms.TupleVariadic.all_free_variables annotation
+      GlobalTransforms.TypeVarTuple.all_free_variables annotation
       |> List.map ~f:(fun variable -> TupleVariadic variable)
     in
     unaries @ callable_variadics @ tuple_variadics
@@ -3228,14 +3227,14 @@ module Variable = struct
     let specific_unaries, specific_parameters_variadics, specific_tuple_variadics =
       partition variables
     in
-    GlobalTransforms.Unary.mark_as_escaped
+    GlobalTransforms.TypeVar.mark_as_escaped
       annotation
       ~variables:specific_unaries
       ~namespace:fresh_namespace
-    |> GlobalTransforms.ParameterVariadic.mark_as_escaped
+    |> GlobalTransforms.ParamSpec.mark_as_escaped
          ~variables:specific_parameters_variadics
          ~namespace:fresh_namespace
-    |> GlobalTransforms.TupleVariadic.mark_as_escaped
+    |> GlobalTransforms.TypeVarTuple.mark_as_escaped
          ~variables:specific_tuple_variadics
          ~namespace:fresh_namespace
 
@@ -3266,21 +3265,21 @@ module Variable = struct
 
 
   let contains_escaped_free_variable annotation =
-    GlobalTransforms.Unary.contains_escaped_free_variable annotation
-    || GlobalTransforms.ParameterVariadic.contains_escaped_free_variable annotation
-    || GlobalTransforms.TupleVariadic.contains_escaped_free_variable annotation
+    GlobalTransforms.TypeVar.contains_escaped_free_variable annotation
+    || GlobalTransforms.ParamSpec.contains_escaped_free_variable annotation
+    || GlobalTransforms.TypeVarTuple.contains_escaped_free_variable annotation
 
 
   let convert_all_escaped_free_variables_to_anys annotation =
-    GlobalTransforms.Unary.convert_all_escaped_free_variables_to_anys annotation
-    |> GlobalTransforms.ParameterVariadic.convert_all_escaped_free_variables_to_anys
-    |> GlobalTransforms.TupleVariadic.convert_all_escaped_free_variables_to_anys
+    GlobalTransforms.TypeVar.convert_all_escaped_free_variables_to_anys annotation
+    |> GlobalTransforms.ParamSpec.convert_all_escaped_free_variables_to_anys
+    |> GlobalTransforms.TypeVarTuple.convert_all_escaped_free_variables_to_anys
 
 
   let converge_all_variable_namespaces annotation =
-    GlobalTransforms.Unary.converge_all_variable_namespaces annotation
-    |> GlobalTransforms.ParameterVariadic.converge_all_variable_namespaces
-    |> GlobalTransforms.TupleVariadic.converge_all_variable_namespaces
+    GlobalTransforms.TypeVar.converge_all_variable_namespaces annotation
+    |> GlobalTransforms.ParamSpec.converge_all_variable_namespaces
+    |> GlobalTransforms.TypeVarTuple.converge_all_variable_namespaces
 
 
   let coalesce_if_all_single parameters =
@@ -4747,11 +4746,11 @@ let resolve_aliases ~aliases annotation =
                     | Variable _ as variable -> variable
                     | alias ->
                         alias
-                        |> Variable.GlobalTransforms.Unary.replace_all (fun _ ->
+                        |> Variable.GlobalTransforms.TypeVar.replace_all (fun _ ->
                                Some Variable.TypeVar.any)
-                        |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
+                        |> Variable.GlobalTransforms.ParamSpec.replace_all (fun _ ->
                                Some Variable.Variadic.ParamSpec.any)
-                        |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
+                        |> Variable.GlobalTransforms.TypeVarTuple.replace_all (fun _ ->
                                Some Variable.Variadic.TypeVarTuple.any)
                   in
                   mark_recursive_alias_as_visited alias;
@@ -4777,14 +4776,13 @@ let resolve_aliases ~aliases annotation =
                 match variable_pairs with
                 | Some variable_pairs ->
                     uninstantiated_alias_annotation
-                    |> Variable.GlobalTransforms.Unary.replace_all (fun given_variable ->
+                    |> Variable.GlobalTransforms.TypeVar.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
                                | UnaryPair (variable, replacement)
                                  when [%equal: Variable.unary_t] variable given_variable ->
                                    Some replacement
                                | _ -> None))
-                    |> Variable.GlobalTransforms.ParameterVariadic.replace_all
-                         (fun given_variable ->
+                    |> Variable.GlobalTransforms.ParamSpec.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
                                | ParameterVariadicPair (variable, replacement)
                                  when [%equal: Variable.parameter_variadic_t]
@@ -4792,7 +4790,7 @@ let resolve_aliases ~aliases annotation =
                                         given_variable ->
                                    Some replacement
                                | _ -> None))
-                    |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun given_variable ->
+                    |> Variable.GlobalTransforms.TypeVarTuple.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
                                | TupleVariadicPair (variable, replacement)
                                  when [%equal: Variable.tuple_variadic_t] variable given_variable ->

@@ -2265,20 +2265,20 @@ let test_replace_all _ =
     assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
   in
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.replace_all (fun _ -> Some Type.integer) annotation)
+    (Type.Variable.GlobalTransforms.TypeVar.replace_all (fun _ -> Some Type.integer) annotation)
     (Type.parametric "p" ![Type.integer; Type.integer]);
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.replace_all
+    (Type.Variable.GlobalTransforms.TypeVar.replace_all
        (fun _ -> Some Type.integer)
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer));
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.replace_all
+    (Type.Variable.GlobalTransforms.TypeVar.replace_all
        (fun _ -> None)
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable));
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.replace_all
+    (Type.Variable.GlobalTransforms.TypeVar.replace_all
        (fun _ -> Some Type.float)
        (Type.union [Type.literal_integer 2; Type.integer; free_variable]))
     (Type.union [Type.literal_integer 2; Type.integer; Type.float]);
@@ -2294,12 +2294,12 @@ let test_replace_all _ =
     Type.Callable.create ~parameters:(Type.Callable.Defined []) ~annotation:Type.integer ()
   in
   assert_equal
-    (Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
+    (Type.Variable.GlobalTransforms.ParamSpec.replace_all
        (fun _ -> Some (Type.Callable.Defined []))
        (Type.parametric "p" ![Type.integer; free_variable_callable]))
     (Type.parametric "p" ![Type.integer; no_parameter_callable]);
   assert_equal
-    (Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
+    (Type.Variable.GlobalTransforms.ParamSpec.replace_all
        (fun _ ->
          Some
            (Type.Callable.Defined [Named { name = "p"; annotation = Type.integer; default = false }]))
@@ -2325,7 +2325,7 @@ let test_replace_all _ =
       | _ -> None
     in
     assert_equal
-      (Type.Variable.GlobalTransforms.TupleVariadic.replace_all
+      (Type.Variable.GlobalTransforms.TypeVarTuple.replace_all
          replace
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
       (Type.create ~aliases (parse_single_expression ~preprocess:true expected))
@@ -2477,10 +2477,10 @@ let test_collect_all _ =
   let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.collect_all annotation)
+    (Type.Variable.GlobalTransforms.TypeVar.collect_all annotation)
     [Type.Variable.TypeVar.create "T"];
   assert_equal
-    (Type.Variable.GlobalTransforms.Unary.collect_all
+    (Type.Variable.GlobalTransforms.TypeVar.collect_all
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     [Type.Variable.TypeVar.create "T"];
   let free_variable_callable =
@@ -2491,11 +2491,11 @@ let test_collect_all _ =
       ()
   in
   assert_equal
-    (Type.Variable.GlobalTransforms.ParameterVariadic.collect_all
+    (Type.Variable.GlobalTransforms.ParamSpec.collect_all
        (Type.parametric "p" ![Type.integer; free_variable_callable]))
     [Type.Variable.Variadic.ParamSpec.create "T"];
   assert_equal
-    (Type.Variable.GlobalTransforms.ParameterVariadic.collect_all
+    (Type.Variable.GlobalTransforms.ParamSpec.collect_all
        (Type.parametric
           "G"
           [
@@ -2517,7 +2517,7 @@ let test_collect_all _ =
     assert_equal
       ~printer:[%show: Type.Variable.Variadic.TypeVarTuple.t list]
       expected
-      (Type.Variable.GlobalTransforms.TupleVariadic.collect_all
+      (Type.Variable.GlobalTransforms.TypeVarTuple.collect_all
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
   in
   assert_collected "typing.Tuple[int, str]" [];

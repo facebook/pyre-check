@@ -389,9 +389,9 @@ let make_assert_functions context =
                (Type.Variable.Variadic.TypeVarTuple.mark_as_bound variable))
       in
       parse_annotation left
-      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
-      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
-      |> Type.Variable.GlobalTransforms.TupleVariadic.replace_all mark_tuple_variadic
+      |> Type.Variable.GlobalTransforms.TypeVar.replace_all mark_unary
+      |> Type.Variable.GlobalTransforms.ParamSpec.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.TypeVarTuple.replace_all mark_tuple_variadic
     in
     let right = parse_annotation right in
     assert_less_or_equal_direct ~left ~right ~do_prep

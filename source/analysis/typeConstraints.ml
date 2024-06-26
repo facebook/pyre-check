@@ -107,7 +107,7 @@ let empty =
 let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~variables =
   let contains_variable annotation =
     let contains_unary =
-      Type.Variable.GlobalTransforms.Unary.collect_all annotation
+      Type.Variable.GlobalTransforms.TypeVar.collect_all annotation
       |> List.exists ~f:(fun variable ->
              List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
     in
@@ -115,11 +115,11 @@ let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~varia
       let parameter_variadic_contained_in_list variable =
         List.mem variables (Type.Variable.ParameterVariadic variable) ~equal:Type.Variable.equal
       in
-      Type.Variable.GlobalTransforms.ParameterVariadic.collect_all annotation
+      Type.Variable.GlobalTransforms.ParamSpec.collect_all annotation
       |> List.exists ~f:parameter_variadic_contained_in_list
     in
     let contains_tuple_variadic =
-      Type.Variable.GlobalTransforms.TupleVariadic.collect_all annotation
+      Type.Variable.GlobalTransforms.TypeVarTuple.collect_all annotation
       |> List.exists ~f:(fun variable ->
              List.mem variables (Type.Variable.TupleVariadic variable) ~equal:Type.Variable.equal)
     in
@@ -198,7 +198,7 @@ module Solution = struct
       if Map.is_empty unaries then
         annotation
       else
-        Type.Variable.GlobalTransforms.Unary.replace_all
+        Type.Variable.GlobalTransforms.TypeVar.replace_all
           (fun variable -> Map.find unaries variable)
           annotation
     in
@@ -206,7 +206,7 @@ module Solution = struct
       if Map.is_empty callable_parameters then
         annotation
       else
-        Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
+        Type.Variable.GlobalTransforms.ParamSpec.replace_all
           (fun variable -> Map.find callable_parameters variable)
           annotation
     in
@@ -214,7 +214,7 @@ module Solution = struct
       if Map.is_empty tuple_variadics then
         annotation
       else
-        Type.Variable.GlobalTransforms.TupleVariadic.replace_all
+        Type.Variable.GlobalTransforms.TypeVarTuple.replace_all
           (fun variable -> Map.find tuple_variadics variable)
           annotation
     in
@@ -410,7 +410,7 @@ module OrderedConstraints (Order : OrderType) = struct
                     sofar
               | _ -> sofar
             in
-            Type.Variable.GlobalTransforms.Unary.collect_all annotation
+            Type.Variable.GlobalTransforms.TypeVar.collect_all annotation
             |> List.fold ~f:add_to_explicits_if_safe ~init:sofar
           in
           let explicits =
