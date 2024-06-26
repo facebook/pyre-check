@@ -298,7 +298,7 @@ let rec weaken_mutable_literals
                 let key = resolve key in
                 match key with
                 | Type.Literal (Type.String (Type.LiteralValue name)) ->
-                    let annotation, required =
+                    let { resolved; typed_dictionary_errors }, required =
                       let resolved = resolve value in
                       let relax { annotation; _ } =
                         if
@@ -322,7 +322,7 @@ let rec weaken_mutable_literals
                       >>| (fun field -> relax field, field.required)
                       |> Option.value ~default:(make_weakened_type resolved, true)
                     in
-                    Some { name; annotation; required }
+                    Some ({ name; annotation = resolved; required }, typed_dictionary_errors)
                 | _ -> None
               end
             | Splat _ -> None
@@ -408,15 +408,11 @@ let rec weaken_mutable_literals
                 resolved
           in
           let valid_field_or_typed_dictionary_error
-              {
-                name;
-                required;
-                annotation = { resolved; typed_dictionary_errors } as weakened_type;
-              }
+              (({ annotation; _ } as field), typed_dictionary_errors)
             =
             match typed_dictionary_errors with
-            | [] -> Ok { name; required; annotation = resolved }
-            | _ -> Error weakened_type
+            | [] -> Ok field
+            | _ -> Error { resolved = annotation; typed_dictionary_errors }
           in
           List.map entries ~f:resolve_entry
           |> Option.all
