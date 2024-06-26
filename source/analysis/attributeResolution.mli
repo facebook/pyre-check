@@ -32,7 +32,7 @@ type generic_type_problems =
     }
   | ViolateConstraints of {
       actual: Type.t;
-      expected: Type.Variable.Unary.t;
+      expected: Type.Variable.TypeVar.t;
     }
   | UnexpectedKind of {
       actual: Type.Parameter.t;

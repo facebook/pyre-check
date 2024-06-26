@@ -37,7 +37,7 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
 
 
 let single_unary_generic =
-  [Type.parametric "typing.Generic" [Single (Variable (Type.Variable.Unary.create "typing._T"))]]
+  [Type.parametric "typing.Generic" [Single (Variable (Type.Variable.TypeVar.create "typing._T"))]]
 
 
 let catch_all_generic = [Type.parametric "typing.Generic" [Single Any]]
@@ -120,13 +120,13 @@ let classmethod_body =
     make_dunder_get
       ~parent:"typing.ClassMethod"
       ~host:Type.object_primitive
-      ~host_type:(Variable (Type.Variable.Unary.create "typing._S"))
+      ~host_type:(Variable (Type.Variable.TypeVar.create "typing._S"))
       ~return:
         (Type.parametric
            "BoundMethod"
            [
-             Single (Variable (Type.Variable.Unary.create "typing._T"));
-             Single (Variable (Type.Variable.Unary.create "typing._S"));
+             Single (Variable (Type.Variable.TypeVar.create "typing._T"));
+             Single (Variable (Type.Variable.TypeVar.create "typing._S"));
            ]);
   ]
   |> List.map ~f:Node.create_with_default_location
@@ -143,7 +143,7 @@ let staticmethod_body =
       ~parent:"typing.StaticMethod"
       ~host:Type.object_primitive
       ~host_type:Type.object_primitive
-      ~return:(Variable (Type.Variable.Unary.create "typing._T"));
+      ~return:(Variable (Type.Variable.TypeVar.create "typing._T"));
   ]
   |> List.map ~f:Node.create_with_default_location
 

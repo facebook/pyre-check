@@ -1206,7 +1206,7 @@ module State (Context : Context) = struct
                   >>| fun callable -> known_callable_before_application callable)
               |> Option.all
           | Type.Variable ({ constraints = Type.Variable.Explicit _; _ } as explicit) ->
-              let upper_bound = Type.Variable.Unary.upper_bound explicit in
+              let upper_bound = Type.Variable.TypeVar.upper_bound explicit in
               let callee =
                 match callee with
                 | Callee.Attribute { attribute; base; expression } ->
@@ -4201,7 +4201,7 @@ module State (Context : Context) = struct
     in
     let add_type_variable_errors errors =
       match parsed with
-      | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
+      | Variable variable when Type.Variable.TypeVar.contains_subvariable variable ->
           emit_error
             ~errors
             ~location
@@ -5719,8 +5719,8 @@ module State (Context : Context) = struct
           in
           let check_pair errors extended actual =
             match extended, actual with
-            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
-                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
+            | ( Type.Variable { Type.Record.Variable.RecordTypeVar.variance = left; _ },
+                Type.Variable { Type.Record.Variable.RecordTypeVar.variance = right; _ } ) -> (
                 match left, right with
                 | Type.Variable.Covariant, Type.Variable.Invariant
                 | Type.Variable.Contravariant, Type.Variable.Invariant
@@ -6034,7 +6034,7 @@ module State (Context : Context) = struct
       in
       let add_variance_error ~errors annotation =
         match annotation with
-        | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
+        | Type.Variable variable when Type.Variable.TypeVar.is_contravariant variable ->
             emit_error
               ~errors
               ~location
@@ -6205,7 +6205,7 @@ module State (Context : Context) = struct
         let add_variance_error errors annotation =
           match annotation with
           | Type.Variable variable
-            when (not (Define.is_constructor define)) && Type.Variable.Unary.is_covariant variable
+            when (not (Define.is_constructor define)) && Type.Variable.TypeVar.is_covariant variable
             ->
               emit_error
                 ~errors

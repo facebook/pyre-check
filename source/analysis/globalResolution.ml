@@ -368,7 +368,7 @@ let is_invariance_mismatch resolution ~left ~right =
           ClassHierarchy.type_parameters_as_variables (class_hierarchy resolution) left_name
           (* TODO(T47346673): Do this check when list variadics have variance *)
           >>= Type.Variable.all_unary
-          >>| List.map ~f:(fun { Type.Variable.Unary.variance; _ } -> variance)
+          >>| List.map ~f:(fun { Type.Variable.TypeVar.variance; _ } -> variance)
         in
         match variances with
         | Some variances -> (

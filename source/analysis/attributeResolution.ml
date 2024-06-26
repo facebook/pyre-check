@@ -302,7 +302,7 @@ module TypeParameterValidationTypes = struct
       }
     | ViolateConstraints of {
         actual: Type.t;
-        expected: Type.Variable.Unary.t;
+        expected: Type.Variable.TypeVar.t;
       }
     | UnexpectedKind of {
         actual: Type.Parameter.t;
@@ -701,8 +701,8 @@ module SignatureSelection = struct
                 _;
               };
           ] )
-        when Type.Variable.Unary.is_free parameter_variable
-             && Type.Variable.Unary.is_free return_variable ->
+        when Type.Variable.TypeVar.is_free parameter_variable
+             && Type.Variable.TypeVar.is_free return_variable ->
           Some (annotation, parameter_variable, return_variable, lambda_parameter, lambda_body)
       | _ -> None
     in
@@ -789,7 +789,7 @@ module SignatureSelection = struct
                           item_type_for_error = Type.OrderedTypes.union_upper_bound ordered_type;
                         }
                   | _, _ -> (
-                      let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                      let synthetic_variable = Type.Variable.TypeVar.create "$_T" in
                       let generic_iterable_type =
                         Type.iterable (Type.Variable synthetic_variable)
                       in
@@ -1015,7 +1015,7 @@ module SignatureSelection = struct
                 match kind with
                 | DoubleStar ->
                     let create_error error = InvalidKeywordArgument error in
-                    let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                    let synthetic_variable = Type.Variable.TypeVar.create "$_T" in
                     let generic_iterable_type =
                       Type.parametric
                         "typing.Mapping"
@@ -1080,7 +1080,7 @@ module SignatureSelection = struct
                     | Some signature_match_for_single_element -> signature_match_for_single_element
                     | None ->
                         let create_error error = InvalidVariableArgument error in
-                        let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                        let synthetic_variable = Type.Variable.TypeVar.create "$_T" in
                         let generic_iterable_type =
                           Type.iterable (Type.Variable synthetic_variable)
                         in
@@ -2301,11 +2301,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | "typing.Final"
               | "typing_extensions.Final"
               | "typing.Optional" ->
-                  [Type.Variable.Unary (Type.Variable.Unary.create "T")]
+                  [Type.Variable.Unary (Type.Variable.TypeVar.create "T")]
               | "typing.Callable" ->
                   [
                     Type.Variable.ParameterVariadic (Type.Variable.Variadic.ParamSpec.create "Ps");
-                    Type.Variable.Unary (Type.Variable.Unary.create "R");
+                    Type.Variable.Unary (Type.Variable.TypeVar.create "R");
                   ]
               | _ -> variables name |> Option.value ~default:[]
             in
@@ -3168,7 +3168,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 in
                 let synthetic =
                   Type.Variable
-                    (Type.Variable.Unary.create "$synthetic_attribute_resolution_variable")
+                    (Type.Variable.TypeVar.create "$synthetic_attribute_resolution_variable")
                 in
                 match name with
                 (* This can't be expressed without IntVars, StrVars, and corresponding TypeVarTuple
@@ -3339,7 +3339,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   | Found { selected_return_annotation = return } -> Some return
                 in
                 let invert_dunder_set (descriptor, callable) ~order =
-                  let synthetic = Type.Variable.Unary.create "$synthetic_dunder_set_variable" in
+                  let synthetic = Type.Variable.TypeVar.create "$synthetic_dunder_set_variable" in
                   let right =
                     Type.Callable.create
                       ~annotation:Type.none

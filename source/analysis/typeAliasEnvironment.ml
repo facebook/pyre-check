@@ -49,7 +49,7 @@ module IncomingDataComputation = struct
           unparsed
       with
       | Type.Variable variable ->
-          if Type.Variable.Unary.contains_subvariable variable then
+          if Type.Variable.TypeVar.contains_subvariable variable then
             Type.Any
           else
             Type.Variable { variable with variable = Reference.show target }

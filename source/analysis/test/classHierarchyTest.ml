@@ -235,7 +235,9 @@ let test_type_parameters_as_variables _ =
     assert_equal expected (type_parameters_as_variables order source)
   in
   assert_type_parameters_as_variables ~expected:None "B";
-  assert_type_parameters_as_variables ~expected:(Some [Unary (Type.Variable.Unary.create "T")]) "A";
+  assert_type_parameters_as_variables
+    ~expected:(Some [Unary (Type.Variable.TypeVar.create "T")])
+    "A";
 
   assert_type_parameters_as_variables ~expected:None "Nonexistent";
   assert_type_parameters_as_variables
@@ -400,7 +402,7 @@ let variadic_order =
     order
     ~predecessor:"DTypedTensor"
     ~successor:"typing.Generic"
-    ~parameters:[Single (Type.Variable (Type.Variable.Unary.create "DType")); variadic_parameter];
+    ~parameters:[Single (Type.Variable (Type.Variable.TypeVar.create "DType")); variadic_parameter];
   insert order "IntTensor";
   connect
     order

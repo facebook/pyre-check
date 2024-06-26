@@ -263,7 +263,7 @@ module OrderImplementation = struct
                 | Some left_parameters, Some right_parameters, Some variables ->
                     let replace_free_unary_variables_with_top =
                       let replace_if_free variable =
-                        Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                        Option.some_if (Type.Variable.TypeVar.is_free variable) Type.Top
                       in
                       Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
                     in

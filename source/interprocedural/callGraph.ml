@@ -2114,7 +2114,7 @@ let get_defining_attributes ~pyre_in_context ~base_type_info ~attribute =
   let rec get_defining_parents annotation =
     match annotation with
     | Type.Union annotations
-    | Type.Variable { Type.Variable.Unary.constraints = Type.Variable.Explicit annotations; _ } ->
+    | Type.Variable { Type.Variable.TypeVar.constraints = Type.Variable.Explicit annotations; _ } ->
         List.concat_map annotations ~f:get_defining_parents
     | _ -> [CallResolution.defining_attribute ~pyre_in_context annotation attribute]
   in

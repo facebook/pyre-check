@@ -10,7 +10,7 @@
 open Core
 open Pyre
 module ParameterVariable = Type.Variable.Variadic.ParamSpec
-module UnaryVariable = Type.Variable.Unary
+module UnaryVariable = Type.Variable.TypeVar
 module TupleVariable = Type.Variable.Variadic.TypeVarTuple
 
 type unary_interval = {
@@ -398,7 +398,7 @@ module OrderedConstraints (Order : OrderType) = struct
           let collect annotation sofar =
             let add_to_explicits_if_safe sofar candidate =
               match candidate with
-              | { Type.Variable.Unary.constraints = Explicit left_constraints; _ } as candidate ->
+              | { Type.Variable.TypeVar.constraints = Explicit left_constraints; _ } as candidate ->
                   let exists_in_explicits left_constraint =
                     List.exists explicits ~f:(Type.equal left_constraint)
                   in

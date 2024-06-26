@@ -29,7 +29,7 @@ module Record : sig
       | Invariant
     [@@deriving compare, eq, sexp, show, hash]
 
-    module RecordUnary : sig
+    module RecordTypeVar : sig
       type 'annotation record = {
         variable: Identifier.t;
         constraints: 'annotation constraints;
@@ -55,7 +55,7 @@ module Record : sig
     end
 
     type 'a record =
-      | Unary of 'a RecordUnary.record
+      | Unary of 'a RecordTypeVar.record
       | ParameterVariadic of 'a RecordVariadic.RecordParamSpec.record
       | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
@@ -258,7 +258,7 @@ and t =
   | Tuple of t Record.OrderedTypes.record
   | TypeOperation of t Record.TypeOperation.record
   | Union of t list
-  | Variable of t Record.Variable.RecordUnary.record
+  | Variable of t Record.Variable.RecordTypeVar.record
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
@@ -696,7 +696,7 @@ module Variable : sig
     val create_fresh : unit -> t
   end
 
-  type unary_t = type_t Record.Variable.RecordUnary.record
+  type unary_t = type_t Record.Variable.RecordTypeVar.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
@@ -751,9 +751,9 @@ module Variable : sig
     val pair : t -> domain -> pair
   end
 
-  module Unary : sig
+  module TypeVar : sig
     include module type of struct
-      include Record.Variable.RecordUnary
+      include Record.Variable.RecordTypeVar
     end
 
     include VariableKind with type t = unary_t and type domain = type_t
@@ -899,7 +899,7 @@ module Variable : sig
     t list ->
     (pair * pair) list option
 
-  val all_unary : t list -> Unary.t list option
+  val all_unary : t list -> TypeVar.t list option
 
   val to_parameter : t -> Parameter.t
 end

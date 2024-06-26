@@ -65,7 +65,7 @@ end
 
 module DiamondOrderedConstraints = OrderedConstraints (DiamondOrder)
 
-let variable ?(name = "_V") constraints = Type.Variable.Unary.create name ~constraints
+let variable ?(name = "_V") constraints = Type.Variable.TypeVar.create name ~constraints
 
 let add_bound constraints bound =
   let order = () in
@@ -100,12 +100,12 @@ let test_add_bound _ =
     (`Lower
       (UnaryPair
          ( explicit_parent_a_parent_b,
-           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
+           Variable (Type.Variable.TypeVar.mark_as_bound explicit_parent_a_parent_b) )));
   assert_add_bound_succeeds
     (`Upper
       (UnaryPair
          ( explicit_parent_a_parent_b,
-           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
+           Variable (Type.Variable.TypeVar.mark_as_bound explicit_parent_a_parent_b) )));
   assert_add_bound_fails
     ~preconstraints:
       (add_bound (Some empty) (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent))))
@@ -225,13 +225,13 @@ let test_single_variable_solution _ =
         `Lower
           (UnaryPair
              ( explicit_int_string_parent_A,
-               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+               Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) ));
       ]
     (Some
        [
          UnaryPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
   assert_solution
     ~sequentially_applied_bounds:
@@ -239,13 +239,13 @@ let test_single_variable_solution _ =
         `Upper
           (UnaryPair
              ( explicit_int_string_parent_A,
-               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+               Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) ));
       ]
     (Some
        [
          UnaryPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
   assert_solution
     ~sequentially_applied_bounds:
@@ -254,7 +254,7 @@ let test_single_variable_solution _ =
           (UnaryPair
              ( explicit_int_string_parent_A,
                Type.optional
-                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+                 (Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A)) ));
       ]
     None;
   assert_solution
@@ -264,13 +264,13 @@ let test_single_variable_solution _ =
           (UnaryPair
              ( explicit_int_string_parent_A,
                Type.optional
-                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+                 (Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A)) ));
       ]
     (Some
        [
          UnaryPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
   let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "T" in
   let empty_parameters = Type.Callable.Defined [] in

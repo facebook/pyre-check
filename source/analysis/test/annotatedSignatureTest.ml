@@ -1107,9 +1107,9 @@ let test_resolved_select =
                        (* Only "local" variables should be marked as escaped *)
                        Single
                          (Variable
-                            (Type.Variable.Unary.create "X"
-                            |> Type.Variable.Unary.mark_as_escaped
-                            |> Type.Variable.Unary.namespace ~namespace));
+                            (Type.Variable.TypeVar.create "X"
+                            |> Type.Variable.TypeVar.mark_as_escaped
+                            |> Type.Variable.TypeVar.namespace ~namespace));
                      ];
                }));
     ]

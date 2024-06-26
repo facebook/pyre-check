@@ -1053,7 +1053,7 @@ let weaken_literals kind =
     let type_map = function
       | Type.Variable
           {
-            Type.Record.Variable.RecordUnary.constraints =
+            Type.Record.Variable.RecordTypeVar.constraints =
               Type.Record.Variable.Bound (Type.Primitive "int");
             _;
           } ->
@@ -1369,7 +1369,7 @@ let rec messages ~concise ~signature location kind =
   | IncompleteType { target; annotation; attempted_action } ->
       let inferred =
         match annotation with
-        | Type.Variable variable when Type.Variable.Unary.is_escaped_and_free variable -> ""
+        | Type.Variable variable when Type.Variable.TypeVar.is_escaped_and_free variable -> ""
         | _ -> Format.asprintf "`%a` " pp_type annotation
       in
       let consequence =
@@ -2537,7 +2537,7 @@ let rec messages ~concise ~signature location kind =
       | Annotation, _ ->
           [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name]
       | TypeVariable, Some (Type.Variable variable)
-        when Type.is_any (Type.Variable.Unary.upper_bound variable) ->
+        when Type.is_any (Type.Variable.TypeVar.upper_bound variable) ->
           [Format.asprintf "Type variable `%a` cannot have `Any` as a bound." pp_reference name]
       | TypeVariable, _ ->
           [
@@ -2760,7 +2760,7 @@ let rec messages ~concise ~signature location kind =
         | ProtocolBase -> "Duplicate type variable `%s` in Protocol[...]."
       in
       match variable with
-      | Type.Variable.Unary { Type.Record.Variable.RecordUnary.variable = name; _ } ->
+      | Type.Variable.Unary { Type.Record.Variable.RecordTypeVar.variable = name; _ } ->
           [Format.asprintf format name]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.ParamSpec.name variable in
@@ -4144,7 +4144,7 @@ let dequalify
           AttributeResolution.ViolateConstraints
             {
               actual = dequalify actual;
-              expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
+              expected = Type.Variable.TypeVar.dequalify ~dequalify_map expected;
             }
       | AttributeResolution.UnexpectedKind { actual; expected } ->
           AttributeResolution.UnexpectedKind

@@ -398,7 +398,7 @@ let test_create_type_operator _ =
   in
 
   (* Compose. *)
-  let variable = Type.Variable.Unary.create "T" in
+  let variable = Type.Variable.TypeVar.create "T" in
   let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_create
     {|
@@ -770,9 +770,9 @@ let test_resolve_aliases _ =
   (* `IntList` resolves to `List[int]`. So, it ignores the `str` argument. *)
   assert_resolved ~aliases (Type.parametric "IntList" [Single Type.string]) (Type.list Type.integer);
 
-  let variable_t = Type.Variable (Type.Variable.Unary.create "T") in
-  let variable_k = Type.Variable (Type.Variable.Unary.create "K") in
-  let variable_v = Type.Variable (Type.Variable.Unary.create "V") in
+  let variable_t = Type.Variable (Type.Variable.TypeVar.create "T") in
+  let variable_k = Type.Variable (Type.Variable.TypeVar.create "K") in
+  let variable_v = Type.Variable (Type.Variable.TypeVar.create "V") in
   let aliases = function
     | "IntList" -> Some (Type.Alias.TypeAlias (Type.list Type.integer))
     | "foo.Optional" -> Some (Type.Alias.TypeAlias (Type.optional variable_t))
@@ -1697,8 +1697,8 @@ let test_dequalify _ =
       expected
   in
   assert_dequalify_variable
-    (Type.Variable.Unary (Type.Variable.Unary.create "A.B.C"))
-    (Type.Variable.Unary (Type.Variable.Unary.create "C"));
+    (Type.Variable.Unary (Type.Variable.TypeVar.create "A.B.C"))
+    (Type.Variable.Unary (Type.Variable.TypeVar.create "C"));
   assert_dequalify_variable
     (Type.Variable.ParameterVariadic (Type.Variable.Variadic.ParamSpec.create "A.B.C"))
     (Type.Variable.ParameterVariadic (Type.Variable.Variadic.ParamSpec.create "C"));
@@ -1809,7 +1809,7 @@ let test_variables _ =
   assert_variables "typing.Callable[..., T]" ["T"];
   assert_variables "typing.Callable[[T, int], str]" ["T"];
   let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "T" in
-  let unary = Type.Variable.Unary.create "T" in
+  let unary = Type.Variable.TypeVar.create "T" in
   assert_equal
     [Type.Variable.Unary unary; Type.Variable.ParameterVariadic parameter_variadic]
     (Type.Variable.all_free_variables
@@ -2005,7 +2005,7 @@ let test_collapse_escaped_variable_unions _ =
 
 
 let test_namespace_insensitive_compare _ =
-  let no_namespace_variable = Type.Variable.Unary.create "A" in
+  let no_namespace_variable = Type.Variable.TypeVar.create "A" in
   let namespaced_variable_1 =
     let namespace = Type.Variable.Namespace.create_fresh () in
     Type.Variable { no_namespace_variable with namespace }
@@ -2025,7 +2025,7 @@ let test_namespace_insensitive_compare _ =
 
 
 let test_namespace _ =
-  let no_namespace_variable = Type.Variable.Unary.create "A" in
+  let no_namespace_variable = Type.Variable.TypeVar.create "A" in
   let namespaced_variable_1 =
     let namespace = Type.Variable.Namespace.create_fresh () in
     Type.Variable.Unary { no_namespace_variable with namespace }
@@ -2041,7 +2041,7 @@ let test_namespace _ =
 
 
 let test_mark_all_variables_as_bound _ =
-  let variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   assert_false (Type.Variable.all_variables_are_resolved variable);
   let variable = Type.Variable.mark_all_variables_as_bound variable in
   assert_true (Type.Variable.all_variables_are_resolved variable);
@@ -2060,7 +2060,7 @@ let test_mark_all_variables_as_bound _ =
 
 let test_mark_all_variables_as_free _ =
   let variable =
-    Type.Variable (Type.Variable.Unary.create "T") |> Type.Variable.mark_all_variables_as_bound
+    Type.Variable (Type.Variable.TypeVar.create "T") |> Type.Variable.mark_all_variables_as_bound
   in
   assert_true (Type.Variable.all_variables_are_resolved variable);
   let variable = Type.Variable.mark_all_variables_as_free variable in
@@ -2080,17 +2080,17 @@ let test_mark_all_variables_as_free _ =
 
 
 let test_namespace_all_free_variables _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let bound_variable =
-    Type.Variable.Unary.create "T2"
-    |> Type.Variable.Unary.mark_as_bound
+    Type.Variable.TypeVar.create "T2"
+    |> Type.Variable.TypeVar.mark_as_bound
     |> fun variable -> Type.Variable variable
   in
   let annotation = Type.parametric "p" ![free_variable; bound_variable] in
   let namespace = Type.Variable.Namespace.create_fresh () in
   let namespaced_free =
-    Type.Variable.Unary.create "T"
-    |> Type.Variable.Unary.namespace ~namespace
+    Type.Variable.TypeVar.create "T"
+    |> Type.Variable.TypeVar.namespace ~namespace
     |> fun variable -> Type.Variable variable
   in
   assert_equal
@@ -2131,19 +2131,19 @@ let test_namespace_all_free_variables _ =
 
 
 let test_mark_all_free_variables_as_escaped _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let bound_variable =
-    Type.Variable.Unary.create "T2"
-    |> Type.Variable.Unary.mark_as_bound
+    Type.Variable.TypeVar.create "T2"
+    |> Type.Variable.TypeVar.mark_as_bound
     |> fun variable -> Type.Variable variable
   in
   let annotation = Type.parametric "p" ![free_variable; bound_variable] in
   Type.Variable.Namespace.reset ();
   let escaped_free =
     let namespace = Type.Variable.Namespace.create_fresh () in
-    Type.Variable.Unary.create "T"
-    |> Type.Variable.Unary.mark_as_escaped
-    |> Type.Variable.Unary.namespace ~namespace
+    Type.Variable.TypeVar.create "T"
+    |> Type.Variable.TypeVar.mark_as_escaped
+    |> Type.Variable.TypeVar.namespace ~namespace
     |> fun variable -> Type.Variable variable
   in
   Type.Variable.Namespace.reset ();
@@ -2188,11 +2188,11 @@ let test_mark_all_free_variables_as_escaped _ =
 
 
 let test_contains_escaped_free_variable _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   assert_false (Type.Variable.contains_escaped_free_variable free_variable);
   let escaped_free =
-    Type.Variable.Unary.create "T"
-    |> Type.Variable.Unary.mark_as_escaped
+    Type.Variable.TypeVar.create "T"
+    |> Type.Variable.TypeVar.mark_as_escaped
     |> fun variable -> Type.Variable variable
   in
   assert_true (Type.Variable.contains_escaped_free_variable escaped_free);
@@ -2219,10 +2219,10 @@ let test_contains_escaped_free_variable _ =
 
 
 let test_convert_all_escaped_free_variables_to_anys _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let escaped_free =
-    Type.Variable.Unary.create "T"
-    |> Type.Variable.Unary.mark_as_escaped
+    Type.Variable.TypeVar.create "T"
+    |> Type.Variable.TypeVar.mark_as_escaped
     |> fun variable -> Type.Variable variable
   in
   let annotation = Type.parametric "p" ![free_variable; escaped_free] in
@@ -2259,7 +2259,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
 
 
 let test_replace_all _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   let assert_equal actual expected =
     assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
@@ -2474,15 +2474,15 @@ let test_replace_all _ =
 
 
 let test_collect_all _ =
-  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let free_variable = Type.Variable (Type.Variable.TypeVar.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.collect_all annotation)
-    [Type.Variable.Unary.create "T"];
+    [Type.Variable.TypeVar.create "T"];
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.collect_all
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
-    [Type.Variable.Unary.create "T"];
+    [Type.Variable.TypeVar.create "T"];
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "T" in
     Type.Callable.create
@@ -3039,8 +3039,8 @@ let test_index_ordered_type _ =
 
 
 let test_zip_variables_with_parameters _ =
-  let unary = Type.Variable.Unary.create "T" in
-  let unary2 = Type.Variable.Unary.create "T2" in
+  let unary = Type.Variable.TypeVar.create "T" in
+  let unary2 = Type.Variable.TypeVar.create "T2" in
   let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "TParams" in
@@ -3373,8 +3373,8 @@ let test_zip_variables_with_parameters _ =
 
 
 let test_zip_on_two_parameter_lists _ =
-  let unary = Type.Variable.Unary.create "T" in
-  let unary2 = Type.Variable.Unary.create "T2" in
+  let unary = Type.Variable.TypeVar.create "T" in
+  let unary2 = Type.Variable.TypeVar.create "T2" in
   let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "TParams" in

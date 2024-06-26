@@ -490,8 +490,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.ParameterVariadicComponent _ -> impossible
     | Type.Any, other -> [add_fallbacks other]
     | Type.Variable left_variable, Type.Variable right_variable
-      when Type.Variable.Unary.is_free left_variable && Type.Variable.Unary.is_free right_variable
-      ->
+      when Type.Variable.TypeVar.is_free left_variable
+           && Type.Variable.TypeVar.is_free right_variable ->
         (* Either works because constraining V1 to be less or equal to V2 implies that V2 is greater
            than or equal to V1. Therefore either constraint is sufficient, and we should consider
            both. This approach simplifies things downstream for the constraint solver *)
@@ -508,10 +508,10 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             |> Option.to_list )
         in
         right_greater_than_left @ left_less_than_right
-    | Type.Variable variable, bound when Type.Variable.Unary.is_free variable ->
+    | Type.Variable variable, bound when Type.Variable.TypeVar.is_free variable ->
         let pair = Type.Variable.UnaryPair (variable, bound) in
         OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
-    | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
+    | bound, Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
         let pair = Type.Variable.UnaryPair (variable, bound) in
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
     | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
@@ -584,13 +584,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         @ solve_less_or_equal
             order
             ~constraints
-            ~left:(Type.Variable.Unary.upper_bound bound_variable)
+            ~left:(Type.Variable.TypeVar.upper_bound bound_variable)
             ~right
     | Type.Variable bound_variable, _ ->
         solve_less_or_equal
           order
           ~constraints
-          ~left:(Type.Variable.Unary.upper_bound bound_variable)
+          ~left:(Type.Variable.TypeVar.upper_bound bound_variable)
           ~right
     | _, Type.Variable _bound_variable -> impossible
     | _, Type.Union rights ->
@@ -676,7 +676,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
                   constraints
               | Top, _, _ -> impossible
-              | left, right, { Type.Variable.Unary.variance = Covariant; _ } ->
+              | left, right, { Type.Variable.TypeVar.variance = Covariant; _ } ->
                   constraints
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
@@ -1006,10 +1006,10 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       let visit_children_after = false
 
                       let visit sofar = function
-                        | Type.Variable variable when Type.Variable.Unary.is_free variable ->
+                        | Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
                             let transformed_variable =
-                              Type.Variable.Unary.namespace variable ~namespace
-                              |> Type.Variable.Unary.mark_as_bound
+                              Type.Variable.TypeVar.namespace variable ~namespace
+                              |> Type.Variable.TypeVar.mark_as_bound
                             in
                             {
                               Type.VisitWithTransform.transformed_annotation =

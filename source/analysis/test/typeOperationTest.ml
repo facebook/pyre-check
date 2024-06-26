@@ -86,8 +86,8 @@ let test_compose_list _ =
     ["typing.Callable[[int], bool]"; "typing.Callable[[str], bool]"]
     None;
 
-  let variable = Type.Variable.Unary.create "T" in
-  let variable2 = Type.Variable.Unary.create "R" in
+  let variable = Type.Variable.TypeVar.create "T" in
+  let variable2 = Type.Variable.TypeVar.create "R" in
   let identity_select ~arguments ~callable ~self_argument =
     match arguments with
     | [{ AttributeResolution.Argument.resolved; _ }] ->
