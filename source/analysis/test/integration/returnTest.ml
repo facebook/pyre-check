@@ -230,7 +230,7 @@ let test_check_return =
       def foo() -> type(x):
         return x
     |}
-           ["Invalid type [31]: Expression `type($local_test$x)` is not a valid type."];
+           ["Invalid type [31]: Expression `type(x)` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -241,7 +241,7 @@ let test_check_return =
       def foo() -> Type(x):
         return x
     |}
-           ["Invalid type [31]: Expression `typing.Type($local_test$x)` is not a valid type."];
+           ["Invalid type [31]: Expression `typing.Type(x)` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -252,10 +252,7 @@ let test_check_return =
       def foo() -> Tuple[Type(x)]:
         return (x,)
     |}
-           [
-             "Invalid type [31]: Expression `typing.Tuple[typing.Type($local_test$x)]` is not a \
-              valid type.";
-           ];
+           ["Invalid type [31]: Expression `typing.Tuple[typing.Type(x)]` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|

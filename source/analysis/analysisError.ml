@@ -1864,10 +1864,16 @@ let rec messages ~concise ~signature location kind =
             ]
       | InvalidTypeAnnotationExpression { annotation; expected } ->
           if String.is_empty expected then
-            [Format.asprintf "Expression `%s` is not a valid type." (Expression.show annotation)]
+            [
+              Format.asprintf
+                "Expression `%s` is not a valid type."
+                (show_sanitized_expression annotation);
+            ]
           else
             [
-              Format.asprintf "Expression `%s` is not a valid type." (Expression.show annotation);
+              Format.asprintf
+                "Expression `%s` is not a valid type."
+                (show_sanitized_expression annotation);
               Format.asprintf "Expected %s." expected;
             ]
       | NestedAlias name ->
