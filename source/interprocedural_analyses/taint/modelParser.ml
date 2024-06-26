@@ -960,7 +960,7 @@ let rec class_names_from_annotation = function
   | Type.TypeOperation _
   | Type.Variable _
   | Type.RecursiveType _
-  | Type.ParameterVariadicComponent _ ->
+  | Type.ParamSpecComponent _ ->
       []
   | Type.Primitive class_name
   | Type.Parametric { name = class_name; _ } ->

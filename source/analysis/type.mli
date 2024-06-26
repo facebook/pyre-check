@@ -212,7 +212,7 @@ and t =
       name: Identifier.t;
       parameters: t Record.Parameter.record list;
     }
-  | ParameterVariadicComponent of Record.Variable.ParamSpec.Components.t
+  | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
   | Primitive of Primitive.t
   | ReadOnly of t
   | RecursiveType of t Record.RecursiveType.record

@@ -147,8 +147,8 @@ module OrderImplementation = struct
         | Type.Any, _
         | _, Type.Any ->
             Type.Any
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
+        | Type.ParamSpecComponent _, _
+        | _, Type.ParamSpecComponent _ ->
             union
         | Type.NoneType, _
         | _, Type.NoneType ->
@@ -464,8 +464,8 @@ module OrderImplementation = struct
         | Type.Bottom, _
         | _, Type.Bottom ->
             Type.Bottom
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
+        | Type.ParamSpecComponent _, _
+        | _, Type.ParamSpecComponent _ ->
             Type.Bottom
         | ReadOnly left, ReadOnly right -> Type.ReadOnly.create (meet order left right)
         | ReadOnly left, _ -> meet order left right

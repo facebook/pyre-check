@@ -489,7 +489,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Primitive "object" -> [constraints]
     | other, Type.Any -> [add_fallbacks other]
     | _, Type.Top -> [constraints]
-    | Type.ParameterVariadicComponent component, _ ->
+    | Type.ParamSpecComponent component, _ ->
         let left =
           match Type.Variable.ParamSpec.Components.component component with
           | KeywordArguments ->
@@ -500,7 +500,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.object_primitive)
         in
         solve_less_or_equal order ~constraints ~left ~right
-    | _, Type.ParameterVariadicComponent _ -> impossible
+    | _, Type.ParamSpecComponent _ -> impossible
     | Type.Any, other -> [add_fallbacks other]
     | Type.Variable left_variable, Type.Variable right_variable
       when Type.Variable.TypeVar.is_free left_variable

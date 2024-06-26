@@ -322,7 +322,7 @@ module T = struct
         name: Identifier.t;
         parameters: t Record.Parameter.record list;
       }
-    | ParameterVariadicComponent of Record.Variable.ParamSpec.Components.t
+    | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
     | Primitive of Primitive.t
     | ReadOnly of t
     | RecursiveType of t Record.RecursiveType.record
@@ -600,7 +600,7 @@ module VisitWithTransform = struct
                    enumeration_member with
                    enumeration_type = visit_annotation ~state enumeration_type;
                  })
-        | ParameterVariadicComponent _
+        | ParamSpecComponent _
         | Literal _
         | Bottom
         | Top
@@ -708,7 +708,7 @@ module Visitors = struct
           | Union _ -> "typing.Union" :: sofar, recursive_type_names
           | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
           | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
-          | ParameterVariadicComponent _
+          | ParamSpecComponent _
           | Bottom
           | Any
           | Top
@@ -1253,8 +1253,7 @@ module PrettyPrinting = struct
     | Parametric { name; parameters } ->
         let name = Canonicalization.reverse_substitute name in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
-    | ParameterVariadicComponent component ->
-        Variable.ParamSpec.Components.pp_concise format component
+    | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive name -> Format.fprintf format "%s" name
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
     | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
@@ -1337,8 +1336,7 @@ module PrettyPrinting = struct
     | Parametric { name; parameters } ->
         let name = strip_qualification (Canonicalization.reverse_substitute name) in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
-    | ParameterVariadicComponent component ->
-        Variable.ParamSpec.Components.pp_concise format component
+    | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
@@ -2770,9 +2768,8 @@ module Variable = struct
             { right with component = KeywordArguments }
         in
         match positional_component, keyword_component with
-        | ( ParameterVariadicComponent
-              ({ component = PositionalArguments; _ } as positional_component),
-            ParameterVariadicComponent ({ component = KeywordArguments; _ } as keyword_component) )
+        | ( ParamSpecComponent ({ component = PositionalArguments; _ } as positional_component),
+            ParamSpecComponent ({ component = KeywordArguments; _ } as keyword_component) )
           when component_agnostic_equal positional_component keyword_component ->
             let { variance; variable_name = name; variable_namespace = namespace; _ } =
               positional_component
@@ -2787,10 +2784,10 @@ module Variable = struct
     let decompose { name = variable_name; variance; namespace = variable_namespace; _ } =
       {
         Components.positional_component =
-          ParameterVariadicComponent
+          ParamSpecComponent
             { component = PositionalArguments; variable_name; variance; variable_namespace };
         keyword_component =
-          ParameterVariadicComponent
+          ParamSpecComponent
             { component = KeywordArguments; variable_name; variance; variable_namespace };
       }
   end
@@ -3595,7 +3592,7 @@ module ToExpression = struct
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
         subscript (Canonicalization.reverse_substitute name) parameters
-    | ParameterVariadicComponent { component; variable_name; _ } ->
+    | ParamSpecComponent { component; variable_name; _ } ->
         let attribute = PrettyPrinting.Variable.ParamSpec.Components.component_name component in
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
