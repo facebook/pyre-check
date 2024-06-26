@@ -1203,27 +1203,6 @@ module Visitors = struct
     List.filter names ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
 end
 
-module Parameter = struct
-  open T
-  include Record.Parameter
-
-  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
-
-  let all_singles parameters = List.map parameters ~f:is_single |> Option.all
-
-  let to_variable = function
-    | Single (Variable variable) -> Some (Record.Variable.TypeVarVariable variable)
-    | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
-        Some (ParamSpecVariable variable)
-    | Unpacked (Variadic variadic) -> Some (TypeVarTupleVariable variadic)
-    | _ -> None
-
-
-  let is_unpacked = function
-    | Unpacked _ -> true
-    | _ -> false
-end
-
 (* Helper functions that extract an inner type if the outer type matches some pattern *)
 module Extractions = struct
   open T
@@ -1730,6 +1709,27 @@ module PrettyPrinting = struct
 
 
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
+end
+
+module Parameter = struct
+  open T
+  include Record.Parameter
+
+  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+
+  let all_singles parameters = List.map parameters ~f:is_single |> Option.all
+
+  let to_variable = function
+    | Single (Variable variable) -> Some (Record.Variable.TypeVarVariable variable)
+    | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
+        Some (ParamSpecVariable variable)
+    | Unpacked (Variadic variadic) -> Some (TypeVarTupleVariable variadic)
+    | _ -> None
+
+
+  let is_unpacked = function
+    | Unpacked _ -> true
+    | _ -> false
 end
 
 module Transforms = struct
