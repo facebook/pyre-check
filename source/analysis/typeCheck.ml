@@ -5795,7 +5795,7 @@ module State (Context : Context) = struct
                       | Type.Tuple (Concrete types) -> types
                       | Tuple (Concatenation concatenation) ->
                           [
-                            Type.Record.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
                               concatenation
                             |> Option.value ~default:type_;
                           ]

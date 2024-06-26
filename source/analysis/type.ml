@@ -172,20 +172,6 @@ module Record = struct
 
       let create_from_unbounded_element ?prefix ?suffix annotation =
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
-
-
-      let extract_sole_variadic = function
-        | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
-        | _ -> None
-
-
-      let extract_sole_unbounded_annotation = function
-        | { prefix = []; middle = UnboundedElements annotation; suffix = [] } -> Some annotation
-        | _ -> None
-
-
-      let is_fully_unbounded concatenation =
-        extract_sole_unbounded_annotation concatenation |> Option.is_some
     end
 
     type 'annotation record =
@@ -195,344 +181,6 @@ module Record = struct
 
     let create_unbounded_concatenation annotation =
       Concatenation (Concatenation.create_from_unbounded_element annotation)
-
-
-    (* This represents the splitting of two ordered types to match each other in length. The prefix
-       contains the prefix elements of known length that both have, the suffix contains the suffix
-       elements of known length that both have, and the middle part contains the rest.
-
-       [int, bool, str, int, bool] <: [int, int, *Ts, T]
-
-       will be represented as:
-
-       * prefix_match: [int; bool], [int; int].
-
-       * middle_match: [str; int], *Ts
-
-       * suffix_match: [bool], T.
-
-       We don't include `str` in the prefixes because the corresponding `*Ts` on the right side is
-       not of known length. Note that this doesn't check for compatibility; it is a purely
-       length-based operation. *)
-    type 'annotation ordered_type_split = {
-      prefix_pairs: ('annotation * 'annotation) list;
-      middle_pair: 'annotation record * 'annotation record;
-      suffix_pairs: ('annotation * 'annotation) list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    let concatenate ~left ~right =
-      match left, right with
-      | Concrete left, Concrete right -> Some (Concrete (left @ right))
-      | Concrete left, Concatenation ({ prefix; _ } as concatenation) ->
-          Some (Concatenation { concatenation with prefix = left @ prefix })
-      | Concatenation ({ suffix; _ } as concatenation), Concrete right ->
-          Some (Concatenation { concatenation with suffix = suffix @ right })
-      | Concatenation _, Concatenation _ ->
-          (* TODO(T84854853). *)
-          None
-
-
-    (** Pair matching elements of the prefixes and suffixes.
-
-        [left_prefix] <middle> [left_suffix]
-
-        [right_prefix] <middle> [right_suffix]
-
-        gets split into:
-
-        * prefix_pairs: 1-1 pairs between left_prefix and right_prefix. If the middle element is an
-        unbounded tuple Tuple[X, ...], then pad the prefix with X in order to match the other
-        prefix.
-
-        * suffix_pairs: 1-1 pairs between left_suffix and right_suffix. Pad unbounded elements if
-        needed, as above.
-
-        [left_prefix_unpaired] <middle> [left_suffix_unpaired]
-
-        [right_prefix_unpaired] <middle> [right_suffix_unpaired] *)
-    let pair_matching_elements
-        { Concatenation.prefix = left_prefix; middle = left_middle; suffix = left_suffix }
-        { Concatenation.prefix = right_prefix; middle = right_middle; suffix = right_suffix }
-      =
-      let ( left_prefix,
-            left_prefix_unpaired,
-            left_suffix_unpaired,
-            left_suffix,
-            right_prefix,
-            right_prefix_unpaired,
-            right_suffix_unpaired,
-            right_suffix )
-        =
-        let pad ~to_the_left ~element ~length list =
-          let padding = List.init (length - List.length list) ~f:(fun _ -> element) in
-          if to_the_left then
-            padding @ list
-          else
-            list @ padding
-        in
-        let pad_prefix = pad ~to_the_left:true in
-        let pad_suffix = pad ~to_the_left:false in
-        let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
-        let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
-        let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
-        let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
-        let left_suffix_unpaired, left_suffix =
-          List.split_n left_suffix (List.length left_suffix - suffix_length)
-        in
-        let right_suffix_unpaired, right_suffix =
-          List.split_n right_suffix (List.length right_suffix - suffix_length)
-        in
-        match left_middle, right_middle with
-        | UnboundedElements left_unbounded, UnboundedElements right_unbounded ->
-            let left_prefix, right_prefix =
-              match left_prefix_unpaired, right_prefix_unpaired with
-              | [], _ ->
-                  ( pad_suffix
-                      ~element:left_unbounded
-                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
-                      left_prefix,
-                    right_prefix @ right_prefix_unpaired )
-              | _, [] ->
-                  ( left_prefix @ left_prefix_unpaired,
-                    pad_suffix
-                      ~element:right_unbounded
-                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
-                      right_prefix )
-              | _, _ -> left_prefix, right_prefix
-            in
-            let left_suffix, right_suffix =
-              match left_suffix_unpaired, right_suffix_unpaired with
-              | [], _ ->
-                  ( pad_prefix
-                      ~element:left_unbounded
-                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
-                      left_suffix,
-                    right_suffix_unpaired @ right_suffix )
-              | _, [] ->
-                  ( left_suffix_unpaired @ left_suffix,
-                    pad_prefix
-                      ~element:right_unbounded
-                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
-                      right_suffix )
-              | _, _ -> left_suffix, right_suffix
-            in
-            (* There are no unpaired elements because we can always match two unbounded tuple
-               concatenations by padding. *)
-            left_prefix, [], [], left_suffix, right_prefix, [], [], right_suffix
-        | UnboundedElements left_unbounded, _ ->
-            let left_prefix, right_prefix, right_prefix_unpaired =
-              match left_prefix_unpaired with
-              | [] ->
-                  ( pad_suffix
-                      ~element:left_unbounded
-                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
-                      left_prefix,
-                    right_prefix @ right_prefix_unpaired,
-                    [] )
-              | _ -> left_prefix, right_prefix, right_prefix_unpaired
-            in
-            let left_suffix, right_suffix, right_suffix_unpaired =
-              match left_suffix_unpaired with
-              | [] ->
-                  ( pad_prefix
-                      ~element:left_unbounded
-                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
-                      left_suffix,
-                    right_suffix_unpaired @ right_suffix,
-                    [] )
-              | _ -> left_suffix, right_suffix, right_suffix_unpaired
-            in
-            ( left_prefix,
-              left_prefix_unpaired,
-              left_suffix_unpaired,
-              left_suffix,
-              right_prefix,
-              right_prefix_unpaired,
-              right_suffix_unpaired,
-              right_suffix )
-        | _, UnboundedElements right_unbounded ->
-            let right_prefix, left_prefix, left_prefix_unpaired =
-              match right_prefix_unpaired with
-              | [] ->
-                  ( pad_suffix
-                      ~element:right_unbounded
-                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
-                      right_prefix,
-                    left_prefix @ left_prefix_unpaired,
-                    [] )
-              | _ -> right_prefix, left_prefix, left_prefix_unpaired
-            in
-            let right_suffix, left_suffix, left_suffix_unpaired =
-              match right_suffix_unpaired with
-              | [] ->
-                  ( pad_prefix
-                      ~element:right_unbounded
-                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
-                      right_suffix,
-                    left_suffix_unpaired @ left_suffix,
-                    [] )
-              | _ -> right_suffix, left_suffix, left_suffix_unpaired
-            in
-            ( left_prefix,
-              left_prefix_unpaired,
-              left_suffix_unpaired,
-              left_suffix,
-              right_prefix,
-              right_prefix_unpaired,
-              right_suffix_unpaired,
-              right_suffix )
-        | _, _ ->
-            ( left_prefix,
-              left_prefix_unpaired,
-              left_suffix_unpaired,
-              left_suffix,
-              right_prefix,
-              right_prefix_unpaired,
-              right_suffix_unpaired,
-              right_suffix )
-      in
-      match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
-      | Ok prefix_pairs, Ok suffix_pairs ->
-          Some
-            ( prefix_pairs,
-              left_prefix_unpaired,
-              right_prefix_unpaired,
-              suffix_pairs,
-              left_suffix_unpaired,
-              right_suffix_unpaired )
-      | _ -> None
-
-
-    let split_matching_elements_by_length left right =
-      let split_concrete_against_concatenation
-          ~is_left_concrete
-          ~concrete
-          ~concatenation:{ Concatenation.prefix; middle; suffix }
-        =
-        let prefix_length = List.length prefix in
-        let suffix_length = List.length suffix in
-        let concrete_prefix, concrete_rest = List.split_n concrete prefix_length in
-        let concrete_middle, concrete_suffix =
-          List.split_n concrete_rest (List.length concrete_rest - suffix_length)
-        in
-        let prefix_pairs, middle_pair, suffix_pairs =
-          match middle, is_left_concrete with
-          | UnboundedElements unbounded, _ ->
-              let concrete_length = List.length concrete in
-              let middle =
-                if concrete_length > prefix_length + suffix_length then
-                  List.init
-                    (List.length concrete - List.length prefix - List.length suffix)
-                    ~f:(fun _ -> unbounded)
-                else
-                  []
-              in
-              let pairs =
-                if is_left_concrete then
-                  List.zip concrete (prefix @ middle @ suffix)
-                else
-                  List.zip (prefix @ middle @ suffix) concrete
-              in
-              pairs, (Concrete [], Concrete []), List.Or_unequal_lengths.Ok []
-          | _, true ->
-              ( List.zip concrete_prefix prefix,
-                (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
-                List.zip concrete_suffix suffix )
-          | _, false ->
-              ( List.zip prefix concrete_prefix,
-                (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
-                List.zip suffix concrete_suffix )
-        in
-        match prefix_pairs, middle_pair, suffix_pairs with
-        | Ok prefix_pairs, middle_pair, Ok suffix_pairs ->
-            Some { prefix_pairs; middle_pair; suffix_pairs }
-        | _ -> None
-      in
-      match left, right with
-      | Concrete left, Concrete right -> (
-          match List.zip left right with
-          | Ok prefix_pairs ->
-              Some { prefix_pairs; middle_pair = Concrete [], Concrete []; suffix_pairs = [] }
-          | Unequal_lengths -> None)
-      | Concrete left, Concatenation concatenation ->
-          split_concrete_against_concatenation ~is_left_concrete:true ~concrete:left ~concatenation
-      | Concatenation concatenation, Concrete right ->
-          split_concrete_against_concatenation
-            ~is_left_concrete:false
-            ~concrete:right
-            ~concatenation
-      | ( Concatenation ({ middle = left_middle; _ } as left_record),
-          Concatenation ({ middle = right_middle; _ } as right_record) ) -> (
-          pair_matching_elements left_record right_record
-          >>= fun ( prefix_pairs,
-                    left_prefix_unpaired,
-                    right_prefix_unpaired,
-                    suffix_pairs,
-                    left_suffix_unpaired,
-                    right_suffix_unpaired ) ->
-          match left_middle, right_middle, right_prefix_unpaired, right_suffix_unpaired with
-          | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
-              Some
-                {
-                  prefix_pairs;
-                  middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
-                  suffix_pairs;
-                }
-          | _ ->
-              let middle_pair =
-                ( Concatenation
-                    {
-                      prefix = left_prefix_unpaired;
-                      middle = left_middle;
-                      suffix = left_suffix_unpaired;
-                    },
-                  Concatenation
-                    {
-                      prefix = right_prefix_unpaired;
-                      middle = right_middle;
-                      suffix = right_suffix_unpaired;
-                    } )
-              in
-              Some { prefix_pairs; middle_pair; suffix_pairs })
-
-
-    let drop_prefix ~length = function
-      | Concrete elements ->
-          Concrete (List.drop elements length) |> Option.some_if (length <= List.length elements)
-      | Concatenation ({ prefix; middle = UnboundedElements _; _ } as concatenation) ->
-          (* We can drop indefinitely many elements after the concrete prefix because the middle
-             element is an unbounded tuple. *)
-          Concatenation { concatenation with prefix = List.drop prefix length } |> Option.some
-      | Concatenation ({ prefix; middle = Variadic _; _ } as concatenation) ->
-          (* Variadic or Broadcast middle element may be empty, so we cannot drop any elements past
-             the concrete prefix. *)
-          List.drop prefix length
-          |> Option.some_if (length <= List.length prefix)
-          >>| fun new_prefix -> Concatenation { concatenation with prefix = new_prefix }
-
-
-    let index ~python_index = function
-      | Concrete elements ->
-          let index =
-            if python_index < 0 then List.length elements + python_index else python_index
-          in
-          List.nth elements index
-      | Concatenation { prefix; middle; suffix } -> (
-          let result =
-            if python_index >= 0 then
-              List.nth prefix python_index
-            else
-              List.nth suffix (python_index + List.length suffix)
-          in
-          match middle with
-          | UnboundedElements unbounded ->
-              (* We can index indefinitely many elements in the unbounded tuple. *)
-              result |> Option.value ~default:unbounded |> Option.some
-          | Variadic _ ->
-              (* Variadic middle element may be empty, so we cannot index any elements past the
-                 concrete prefix. *)
-              result)
   end
 
   module Callable = struct
@@ -2155,6 +1803,20 @@ module OrderedTypes = struct
           index = index_value |> Node.create ~location;
         }
       |> Node.create ~location
+
+
+    let extract_sole_variadic = function
+      | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
+      | _ -> None
+
+
+    let extract_sole_unbounded_annotation = function
+      | { prefix = []; middle = UnboundedElements annotation; suffix = [] } -> Some annotation
+      | _ -> None
+
+
+    let is_fully_unbounded concatenation =
+      extract_sole_unbounded_annotation concatenation |> Option.is_some
   end
 
   type t = T.t record [@@deriving compare, eq, sexp, show, hash]
@@ -2262,6 +1924,340 @@ module OrderedTypes = struct
     | Concrete dimensions -> Tuple (Concrete (prefix @ dimensions @ suffix))
     | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
+
+
+  (* This represents the splitting of two ordered types to match each other in length. The prefix
+     contains the prefix elements of known length that both have, the suffix contains the suffix
+     elements of known length that both have, and the middle part contains the rest.
+
+     [int, bool, str, int, bool] <: [int, int, *Ts, T]
+
+     will be represented as:
+
+     * prefix_match: [int; bool], [int; int].
+
+     * middle_match: [str; int], *Ts
+
+     * suffix_match: [bool], T.
+
+     We don't include `str` in the prefixes because the corresponding `*Ts` on the right side is not
+     of known length. Note that this doesn't check for compatibility; it is a purely length-based
+     operation. *)
+  type 'annotation ordered_type_split = {
+    prefix_pairs: ('annotation * 'annotation) list;
+    middle_pair: 'annotation record * 'annotation record;
+    suffix_pairs: ('annotation * 'annotation) list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  let concatenate ~left ~right =
+    match left, right with
+    | Concrete left, Concrete right -> Some (Concrete (left @ right))
+    | Concrete left, Concatenation ({ prefix; _ } as concatenation) ->
+        Some (Concatenation { concatenation with prefix = left @ prefix })
+    | Concatenation ({ suffix; _ } as concatenation), Concrete right ->
+        Some (Concatenation { concatenation with suffix = suffix @ right })
+    | Concatenation _, Concatenation _ ->
+        (* TODO(T84854853). *)
+        None
+
+
+  (** Pair matching elements of the prefixes and suffixes.
+
+      [left_prefix] <middle> [left_suffix]
+
+      [right_prefix] <middle> [right_suffix]
+
+      gets split into:
+
+      * prefix_pairs: 1-1 pairs between left_prefix and right_prefix. If the middle element is an
+      unbounded tuple Tuple[X, ...], then pad the prefix with X in order to match the other prefix.
+
+      * suffix_pairs: 1-1 pairs between left_suffix and right_suffix. Pad unbounded elements if
+      needed, as above.
+
+      [left_prefix_unpaired] <middle> [left_suffix_unpaired]
+
+      [right_prefix_unpaired] <middle> [right_suffix_unpaired] *)
+  let pair_matching_elements
+      { Concatenation.prefix = left_prefix; middle = left_middle; suffix = left_suffix }
+      { Concatenation.prefix = right_prefix; middle = right_middle; suffix = right_suffix }
+    =
+    let ( left_prefix,
+          left_prefix_unpaired,
+          left_suffix_unpaired,
+          left_suffix,
+          right_prefix,
+          right_prefix_unpaired,
+          right_suffix_unpaired,
+          right_suffix )
+      =
+      let pad ~to_the_left ~element ~length list =
+        let padding = List.init (length - List.length list) ~f:(fun _ -> element) in
+        if to_the_left then
+          padding @ list
+        else
+          list @ padding
+      in
+      let pad_prefix = pad ~to_the_left:true in
+      let pad_suffix = pad ~to_the_left:false in
+      let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
+      let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
+      let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
+      let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
+      let left_suffix_unpaired, left_suffix =
+        List.split_n left_suffix (List.length left_suffix - suffix_length)
+      in
+      let right_suffix_unpaired, right_suffix =
+        List.split_n right_suffix (List.length right_suffix - suffix_length)
+      in
+      match left_middle, right_middle with
+      | UnboundedElements left_unbounded, UnboundedElements right_unbounded ->
+          let left_prefix, right_prefix =
+            match left_prefix_unpaired, right_prefix_unpaired with
+            | [], _ ->
+                ( pad_suffix
+                    ~element:left_unbounded
+                    ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                    left_prefix,
+                  right_prefix @ right_prefix_unpaired )
+            | _, [] ->
+                ( left_prefix @ left_prefix_unpaired,
+                  pad_suffix
+                    ~element:right_unbounded
+                    ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                    right_prefix )
+            | _, _ -> left_prefix, right_prefix
+          in
+          let left_suffix, right_suffix =
+            match left_suffix_unpaired, right_suffix_unpaired with
+            | [], _ ->
+                ( pad_prefix
+                    ~element:left_unbounded
+                    ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                    left_suffix,
+                  right_suffix_unpaired @ right_suffix )
+            | _, [] ->
+                ( left_suffix_unpaired @ left_suffix,
+                  pad_prefix
+                    ~element:right_unbounded
+                    ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                    right_suffix )
+            | _, _ -> left_suffix, right_suffix
+          in
+          (* There are no unpaired elements because we can always match two unbounded tuple
+             concatenations by padding. *)
+          left_prefix, [], [], left_suffix, right_prefix, [], [], right_suffix
+      | UnboundedElements left_unbounded, _ ->
+          let left_prefix, right_prefix, right_prefix_unpaired =
+            match left_prefix_unpaired with
+            | [] ->
+                ( pad_suffix
+                    ~element:left_unbounded
+                    ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                    left_prefix,
+                  right_prefix @ right_prefix_unpaired,
+                  [] )
+            | _ -> left_prefix, right_prefix, right_prefix_unpaired
+          in
+          let left_suffix, right_suffix, right_suffix_unpaired =
+            match left_suffix_unpaired with
+            | [] ->
+                ( pad_prefix
+                    ~element:left_unbounded
+                    ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                    left_suffix,
+                  right_suffix_unpaired @ right_suffix,
+                  [] )
+            | _ -> left_suffix, right_suffix, right_suffix_unpaired
+          in
+          ( left_prefix,
+            left_prefix_unpaired,
+            left_suffix_unpaired,
+            left_suffix,
+            right_prefix,
+            right_prefix_unpaired,
+            right_suffix_unpaired,
+            right_suffix )
+      | _, UnboundedElements right_unbounded ->
+          let right_prefix, left_prefix, left_prefix_unpaired =
+            match right_prefix_unpaired with
+            | [] ->
+                ( pad_suffix
+                    ~element:right_unbounded
+                    ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                    right_prefix,
+                  left_prefix @ left_prefix_unpaired,
+                  [] )
+            | _ -> right_prefix, left_prefix, left_prefix_unpaired
+          in
+          let right_suffix, left_suffix, left_suffix_unpaired =
+            match right_suffix_unpaired with
+            | [] ->
+                ( pad_prefix
+                    ~element:right_unbounded
+                    ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                    right_suffix,
+                  left_suffix_unpaired @ left_suffix,
+                  [] )
+            | _ -> right_suffix, left_suffix, left_suffix_unpaired
+          in
+          ( left_prefix,
+            left_prefix_unpaired,
+            left_suffix_unpaired,
+            left_suffix,
+            right_prefix,
+            right_prefix_unpaired,
+            right_suffix_unpaired,
+            right_suffix )
+      | _, _ ->
+          ( left_prefix,
+            left_prefix_unpaired,
+            left_suffix_unpaired,
+            left_suffix,
+            right_prefix,
+            right_prefix_unpaired,
+            right_suffix_unpaired,
+            right_suffix )
+    in
+    match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
+    | Ok prefix_pairs, Ok suffix_pairs ->
+        Some
+          ( prefix_pairs,
+            left_prefix_unpaired,
+            right_prefix_unpaired,
+            suffix_pairs,
+            left_suffix_unpaired,
+            right_suffix_unpaired )
+    | _ -> None
+
+
+  let split_matching_elements_by_length left right =
+    let split_concrete_against_concatenation
+        ~is_left_concrete
+        ~concrete
+        ~concatenation:{ Concatenation.prefix; middle; suffix }
+      =
+      let prefix_length = List.length prefix in
+      let suffix_length = List.length suffix in
+      let concrete_prefix, concrete_rest = List.split_n concrete prefix_length in
+      let concrete_middle, concrete_suffix =
+        List.split_n concrete_rest (List.length concrete_rest - suffix_length)
+      in
+      let prefix_pairs, middle_pair, suffix_pairs =
+        match middle, is_left_concrete with
+        | UnboundedElements unbounded, _ ->
+            let concrete_length = List.length concrete in
+            let middle =
+              if concrete_length > prefix_length + suffix_length then
+                List.init
+                  (List.length concrete - List.length prefix - List.length suffix)
+                  ~f:(fun _ -> unbounded)
+              else
+                []
+            in
+            let pairs =
+              if is_left_concrete then
+                List.zip concrete (prefix @ middle @ suffix)
+              else
+                List.zip (prefix @ middle @ suffix) concrete
+            in
+            pairs, (Concrete [], Concrete []), List.Or_unequal_lengths.Ok []
+        | _, true ->
+            ( List.zip concrete_prefix prefix,
+              (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
+              List.zip concrete_suffix suffix )
+        | _, false ->
+            ( List.zip prefix concrete_prefix,
+              (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
+              List.zip suffix concrete_suffix )
+      in
+      match prefix_pairs, middle_pair, suffix_pairs with
+      | Ok prefix_pairs, middle_pair, Ok suffix_pairs ->
+          Some { prefix_pairs; middle_pair; suffix_pairs }
+      | _ -> None
+    in
+    match left, right with
+    | Concrete left, Concrete right -> (
+        match List.zip left right with
+        | Ok prefix_pairs ->
+            Some { prefix_pairs; middle_pair = Concrete [], Concrete []; suffix_pairs = [] }
+        | Unequal_lengths -> None)
+    | Concrete left, Concatenation concatenation ->
+        split_concrete_against_concatenation ~is_left_concrete:true ~concrete:left ~concatenation
+    | Concatenation concatenation, Concrete right ->
+        split_concrete_against_concatenation ~is_left_concrete:false ~concrete:right ~concatenation
+    | ( Concatenation ({ middle = left_middle; _ } as left_record),
+        Concatenation ({ middle = right_middle; _ } as right_record) ) -> (
+        pair_matching_elements left_record right_record
+        >>= fun ( prefix_pairs,
+                  left_prefix_unpaired,
+                  right_prefix_unpaired,
+                  suffix_pairs,
+                  left_suffix_unpaired,
+                  right_suffix_unpaired ) ->
+        match left_middle, right_middle, right_prefix_unpaired, right_suffix_unpaired with
+        | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
+            Some
+              {
+                prefix_pairs;
+                middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
+                suffix_pairs;
+              }
+        | _ ->
+            let middle_pair =
+              ( Concatenation
+                  {
+                    prefix = left_prefix_unpaired;
+                    middle = left_middle;
+                    suffix = left_suffix_unpaired;
+                  },
+                Concatenation
+                  {
+                    prefix = right_prefix_unpaired;
+                    middle = right_middle;
+                    suffix = right_suffix_unpaired;
+                  } )
+            in
+            Some { prefix_pairs; middle_pair; suffix_pairs })
+
+
+  let drop_prefix ~length = function
+    | Concrete elements ->
+        Concrete (List.drop elements length) |> Option.some_if (length <= List.length elements)
+    | Concatenation ({ prefix; middle = UnboundedElements _; _ } as concatenation) ->
+        (* We can drop indefinitely many elements after the concrete prefix because the middle
+           element is an unbounded tuple. *)
+        Concatenation { concatenation with prefix = List.drop prefix length } |> Option.some
+    | Concatenation ({ prefix; middle = Variadic _; _ } as concatenation) ->
+        (* Variadic or Broadcast middle element may be empty, so we cannot drop any elements past
+           the concrete prefix. *)
+        List.drop prefix length
+        |> Option.some_if (length <= List.length prefix)
+        >>| fun new_prefix -> Concatenation { concatenation with prefix = new_prefix }
+
+
+  let index ~python_index = function
+    | Concrete elements ->
+        let index =
+          if python_index < 0 then List.length elements + python_index else python_index
+        in
+        List.nth elements index
+    | Concatenation { prefix; middle; suffix } -> (
+        let result =
+          if python_index >= 0 then
+            List.nth prefix python_index
+          else
+            List.nth suffix (python_index + List.length suffix)
+        in
+        match middle with
+        | UnboundedElements unbounded ->
+            (* We can index indefinitely many elements in the unbounded tuple. *)
+            result |> Option.value ~default:unbounded |> Option.some
+        | Variadic _ ->
+            (* Variadic middle element may be empty, so we cannot index any elements past the
+               concrete prefix. *)
+            result)
 
 
   let coalesce_ordered_types ordered_types =

@@ -71,12 +71,6 @@ module Record : sig
 
       val create_unbounded_unpackable : 'annotation -> 'annotation record_unpackable
 
-      val extract_sole_variadic : 'annotation t -> 'annotation Variable.TypeVarTuple.record option
-
-      val extract_sole_unbounded_annotation : 'annotation t -> 'annotation option
-
-      val is_fully_unbounded : 'annotation t -> bool
-
       val create_from_unpackable
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
@@ -101,23 +95,7 @@ module Record : sig
       | Concatenation of 'annotation Concatenation.t
     [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation ordered_type_split = {
-      prefix_pairs: ('annotation * 'annotation) list;
-      middle_pair: 'annotation record * 'annotation record;
-      suffix_pairs: ('annotation * 'annotation) list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
     val create_unbounded_concatenation : 'annotation -> 'annotation record
-
-    val split_matching_elements_by_length
-      :  'annotation record ->
-      'annotation record ->
-      'annotation ordered_type_split option
-
-    val drop_prefix : length:int -> 'annotation record -> 'annotation record option
-
-    val index : python_index:int -> 'annotation record -> 'annotation option
   end
 
   module Callable : sig
@@ -626,6 +604,14 @@ module OrderedTypes : sig
     end
 
     val pp_unpackable : Format.formatter -> type_t record_unpackable -> unit
+
+    val extract_sole_variadic
+      :  'annotation t ->
+      'annotation Record.Variable.TypeVarTuple.record option
+
+    val extract_sole_unbounded_annotation : 'annotation t -> 'annotation option
+
+    val is_fully_unbounded : 'annotation t -> bool
   end
 
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]
@@ -652,6 +638,22 @@ module OrderedTypes : sig
     type_t Concatenation.t option
 
   val coalesce_ordered_types : type_t record list -> type_t record option
+
+  type 'annotation ordered_type_split = {
+    prefix_pairs: ('annotation * 'annotation) list;
+    middle_pair: 'annotation record * 'annotation record;
+    suffix_pairs: ('annotation * 'annotation) list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val split_matching_elements_by_length
+    :  'annotation record ->
+    'annotation record ->
+    'annotation ordered_type_split option
+
+  val drop_prefix : length:int -> 'annotation record -> 'annotation record option
+
+  val index : python_index:int -> 'annotation record -> 'annotation option
 end
 
 val split : t -> t * Parameter.t list

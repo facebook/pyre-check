@@ -2658,10 +2658,10 @@ let test_split_ordered_types _ =
       expected
       (Type.OrderedTypes.split_matching_elements_by_length left right);
     if split_both_ways then
-      let flip_splits { Type.Record.OrderedTypes.prefix_pairs; middle_pair; suffix_pairs } =
+      let flip_splits { Type.OrderedTypes.prefix_pairs; middle_pair; suffix_pairs } =
         let swap (a, b) = b, a in
         {
-          Type.Record.OrderedTypes.prefix_pairs = List.map prefix_pairs ~f:swap;
+          Type.OrderedTypes.prefix_pairs = List.map prefix_pairs ~f:swap;
           middle_pair = swap middle_pair;
           suffix_pairs = List.map suffix_pairs ~f:swap;
         }
