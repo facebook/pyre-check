@@ -6213,7 +6213,7 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
           | _ -> errors
         in
-        let parse_as_unary () =
+        let parse_as_type_var () =
           let errors, annotation =
             match index, parent with
             | 0, Some parent
@@ -6383,9 +6383,9 @@ module State (Context : Context) = struct
                   |> Type.Variable.mark_all_variables_as_bound
                   |> TypeInfo.Unit.create_mutable
                   |> fun annotation -> errors, annotation)
-            |> Option.value ~default:(parse_as_unary ())
+            |> Option.value ~default:(parse_as_type_var ())
           else
-            parse_as_unary ()
+            parse_as_type_var ()
         in
         ( Resolution.new_local
             ~reference:(make_parameter_name name)

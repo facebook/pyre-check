@@ -47,7 +47,7 @@ module Solution : sig
 
   val instantiate : t -> Type.t -> Type.t
 
-  val instantiate_single_variable : t -> Type.Variable.TypeVar.t -> Type.t option
+  val instantiate_single_type_var : t -> Type.Variable.TypeVar.t -> Type.t option
 
   (* For testing *)
   val create : Type.Variable.pair list -> t

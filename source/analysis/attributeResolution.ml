@@ -757,7 +757,7 @@ module SignatureSelection = struct
         in
         TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order
         >>| fun solution ->
-        ConstraintsSet.Solution.instantiate_single_variable solution synthetic_variable
+        ConstraintsSet.Solution.instantiate_single_type_var solution synthetic_variable
         |> Option.value ~default:Type.Any
       in
       let bind_arguments_to_variadic ~expected ~arguments =
@@ -1197,7 +1197,7 @@ module SignatureSelection = struct
                 ~order
                 ~only_solve_for:[Type.Record.Variable.TypeVarVariable parameter_variable]
               >>= fun solution ->
-              ConstraintsSet.Solution.instantiate_single_variable solution parameter_variable
+              ConstraintsSet.Solution.instantiate_single_type_var solution parameter_variable
             in
             match solution with
             | None -> signature_match
@@ -3359,7 +3359,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     ~order
                   |> TypeOrder.OrderedConstraintsSet.solve ~order
                   >>= fun solution ->
-                  ConstraintsSet.Solution.instantiate_single_variable solution synthetic
+                  ConstraintsSet.Solution.instantiate_single_type_var solution synthetic
                 in
                 let function_dunder_get callable =
                   if accessed_through_class then

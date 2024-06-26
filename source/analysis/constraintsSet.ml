@@ -1053,11 +1053,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               in
               let instantiate = function
                 | Type.Variable.TypeVarVariable variable ->
-                    TypeConstraints.Solution.instantiate_single_variable solution variable
+                    TypeConstraints.Solution.instantiate_single_type_var solution variable
                     |> Option.value ~default:(Type.Variable variable)
                     |> fun instantiated -> [Type.Parameter.Single instantiated]
                 | ParamSpecVariable variable ->
-                    TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
+                    TypeConstraints.Solution.instantiate_single_param_spec solution variable
                     |> Option.value
                          ~default:
                            (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
@@ -1208,7 +1208,5 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            ~variables:[Type.Variable.ParamSpecVariable parameter_specification])
     |> List.map ~f:snd
     |> List.filter_map ~f:(fun solution ->
-           TypeConstraints.Solution.instantiate_single_parameter_variadic
-             solution
-             parameter_specification)
+           TypeConstraints.Solution.instantiate_single_param_spec solution parameter_specification)
 end

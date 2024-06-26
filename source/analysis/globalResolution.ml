@@ -529,7 +529,7 @@ let extract_type_parameters resolution ~source ~target =
         ~order:(full_order resolution)
       |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
-      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)
+      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_type_var solution)
       |> Option.all
 
 
