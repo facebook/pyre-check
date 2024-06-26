@@ -1111,7 +1111,7 @@ let test_invalid_type_parameters context =
             { actual = 0; expected = 1; can_accept_more_parameters = true };
       };
     ];
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
@@ -1243,12 +1243,13 @@ let test_invalid_type_parameters context =
               actual =
                 Single
                   (Type.parametric
-                     Type.Variable.Variadic.Tuple.synthetic_class_name_for_error
+                     Type.Variable.Variadic.TypeVarTuple.synthetic_class_name_for_error
                      [
                        CallableParameters
                          (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
                      ]);
-              expected = Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "test.Ts");
+              expected =
+                Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "test.Ts");
             };
       };
     ];

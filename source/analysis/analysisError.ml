@@ -1960,7 +1960,9 @@ let rec messages ~concise ~signature location kind =
               "Callable parameters expected for parameter specification `%s`"
               (Type.Variable.Variadic.Parameters.name expected)
         | TupleVariadic expected ->
-            Format.asprintf "Tuple expected for `%s`" (Type.Variable.Variadic.Tuple.name expected)
+            Format.asprintf
+              "Tuple expected for `%s`"
+              (Type.Variable.Variadic.TypeVarTuple.name expected)
       in
       let actual =
         match actual with
@@ -1991,7 +1993,7 @@ let rec messages ~concise ~signature location kind =
           let name = Type.Variable.Variadic.Parameters.name variable in
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
-          let name = Type.Variable.Variadic.Tuple.name variable in
+          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
@@ -2022,7 +2024,7 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           (* We don't give hints for the more complicated cases. *)
-          let name = Type.Variable.Variadic.Tuple.name variable in
+          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | InvalidTypeVariance { origin; _ } when concise -> (
       match origin with
@@ -2764,7 +2766,7 @@ let rec messages ~concise ~signature location kind =
           let name = Type.Variable.Variadic.Parameters.name variable in
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
-          let name = Type.Variable.Variadic.Tuple.name variable in
+          let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | UnboundName name when concise ->
       [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]

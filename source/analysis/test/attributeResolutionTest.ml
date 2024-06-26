@@ -1332,7 +1332,7 @@ let test_check_arguments_against_parameters context =
     ~expected_reasons:
       { arity = [SignatureSelectionTypes.MissingArgument (PositionalOnly 2)]; annotation = [] }
     [TypeConstraints.empty];
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let ordered_type_int_variadic =
     Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic
   in

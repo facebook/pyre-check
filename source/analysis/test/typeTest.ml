@@ -399,7 +399,7 @@ let test_create_type_operator _ =
 
   (* Compose. *)
   let variable = Type.Variable.Unary.create "T" in
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_create
     {|
       pyre_extensions.Compose[
@@ -568,8 +568,8 @@ let test_create_variadic_tuple _ =
          ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
          (parse_single_expression ~preprocess:true source))
   in
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   (* Parametric types. *)
   assert_create
     ~aliases:(function
@@ -870,7 +870,7 @@ let test_resolve_aliases _ =
     ~aliases
     (Type.Primitive "FooParamSpec")
     (Type.parametric "Bar" [CallableParameters Undefined]);
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let aliases = function
     | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
     | "FloatTensor" ->
@@ -1010,7 +1010,7 @@ let test_expression _ =
   assert_expression (Type.Literal (Type.String AnyLiteral)) "typing_extensions.Literal[str]";
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_expression
     (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)])
     "Foo[typing.Unpack[Ts]]";
@@ -2318,8 +2318,8 @@ let test_replace_all _ =
          CallableParameters
            (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
        ]);
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let assert_replaced ~replace annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -2335,7 +2335,7 @@ let test_replace_all _ =
   (* Variadic tuples. *)
   let replace_with_concrete given =
     Option.some_if
-      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.Variable.Variadic.TypeVarTuple.equal given variadic)
       (Type.OrderedTypes.Concrete [Type.bool; Type.bool])
   in
   let replace_with_concatenation _ =
@@ -2382,14 +2382,14 @@ let test_replace_all _ =
     Type.create ~aliases (parse_single_expression ~preprocess:true string)
   in
   let replace_with_concrete = function
-    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+    | variable when Type.Variable.Variadic.TypeVarTuple.equal variable variadic ->
         Some
           (Type.OrderedTypes.Concrete
              [
                parse_string "typing.Callable[[int], str]";
                parse_string "typing.Callable[[str], bool]";
              ])
-    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+    | variable when Type.Variable.Variadic.TypeVarTuple.equal variable variadic2 ->
         Some
           (Type.OrderedTypes.Concrete
              [
@@ -2399,12 +2399,12 @@ let test_replace_all _ =
     | _ -> None
   in
   let replace_with_concatenation = function
-    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+    | variable when Type.Variable.Variadic.TypeVarTuple.equal variable variadic ->
         Some
           (Type.OrderedTypes.Concatenation
              (Type.OrderedTypes.Concatenation.create_from_unbounded_element
                 (parse_string "typing.Callable[[int], int]")))
-    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+    | variable when Type.Variable.Variadic.TypeVarTuple.equal variable variadic2 ->
         Some (Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create variadic))
     | _ -> None
   in
@@ -2508,8 +2508,8 @@ let test_collect_all _ =
     [Type.Variable.Variadic.Parameters.create "TParams"];
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let assert_collected annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -2517,7 +2517,7 @@ let test_collect_all _ =
       | _ -> None
     in
     assert_equal
-      ~printer:[%show: Type.Variable.Variadic.Tuple.t list]
+      ~printer:[%show: Type.Variable.Variadic.TypeVarTuple.t list]
       expected
       (Type.Variable.GlobalTransforms.TupleVariadic.collect_all
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
@@ -2581,13 +2581,13 @@ let test_parse_type_variable_declarations _ =
   assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
   assert_parses_declaration
     "typing.TypeVarTuple('Ts')"
-    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "target"));
   assert_parses_declaration
     "typing_extensions.TypeVarTuple('Ts')"
-    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "target"));
   assert_parses_declaration
     "pyre_extensions.TypeVarTuple('Ts')"
-    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "target"));
   assert_declaration_does_not_parse "typing.TypeVarTuple('Ts', covariant=True)";
   ()
 
@@ -2600,7 +2600,7 @@ let test_starred_annotation_expression _ =
       (parse_single_expression ~coerce_special_methods:true expression)
       (Type.OrderedTypes.to_starred_annotation_expression ~expression:Type.expression concatenation)
   in
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_starred_expression
     (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic)
     "typing.Unpack[Ts]";
@@ -2611,7 +2611,7 @@ let test_starred_annotation_expression _ =
 
 
 let test_concatenation_from_unpack_expression _ =
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let assert_concatenation expression concatenation =
     let parse_annotation expression =
       let aliases ?replace_unbound_parameters_with_any:_ = function
@@ -2643,7 +2643,7 @@ let test_concatenation_from_unpack_expression _ =
 
 
 let test_split_ordered_types _ =
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -2892,7 +2892,7 @@ let test_split_ordered_types _ =
 
 
 let test_coalesce_ordered_types _ =
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let assert_coalesce ordered_types expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -2941,7 +2941,7 @@ let test_coalesce_ordered_types _ =
 let test_drop_prefix_ordered_type _ =
   let open Type.OrderedTypes in
   let assert_drop_prefix ~length actual expected_tuple =
-    let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+    let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None
@@ -2987,7 +2987,7 @@ let test_drop_prefix_ordered_type _ =
 
 let test_index_ordered_type _ =
   let assert_index ~python_index tuple expected =
-    let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+    let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None
@@ -3043,8 +3043,8 @@ let test_index_ordered_type _ =
 let test_zip_variables_with_parameters _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
   let assert_zipped ~generic_class ~instantiation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
@@ -3348,11 +3348,11 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair =
-             Type.Variable.TupleVariadicPair (variadic, Type.Variable.Variadic.Tuple.any);
+             Type.Variable.TupleVariadicPair (variadic, Type.Variable.Variadic.TypeVarTuple.any);
            received_parameter =
              Single
                (Type.parametric
-                  Type.Variable.Variadic.Tuple.synthetic_class_name_for_error
+                  Type.Variable.Variadic.TypeVarTuple.synthetic_class_name_for_error
                   [
                     CallableParameters
                       (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
@@ -3381,8 +3381,8 @@ let test_zip_variables_with_parameters _ =
 let test_zip_on_two_parameter_lists _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
   let assert_zipped ~generic_class ~left ~right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
@@ -3442,7 +3442,7 @@ let test_union_upper_bound _ =
     (Concrete [Type.integer; Type.string; Type.bool])
     (Type.union [Type.integer; Type.string; Type.bool]);
 
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_union_upper_bound
     (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
     Type.object_primitive;
@@ -3815,7 +3815,7 @@ let test_show _ =
       ~annotation:Type.bool
       ()
   in
-  let ts = Type.Variable.Variadic.Tuple.create "Ts" in
+  let ts = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_show
     (Type.TypeOperation (Compose (Type.OrderedTypes.Concrete [callable1; callable2])))
     ~expected_full:

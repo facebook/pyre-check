@@ -379,14 +379,14 @@ let make_assert_functions context =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.Tuple.name variable)
+            (Type.Variable.Variadic.TypeVarTuple.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
-            (Type.Variable.Variadic.Tuple.self_reference
-               (Type.Variable.Variadic.Tuple.mark_as_bound variable))
+            (Type.Variable.Variadic.TypeVarTuple.self_reference
+               (Type.Variable.Variadic.TypeVarTuple.mark_as_bound variable))
       in
       parse_annotation left
       |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
@@ -1194,8 +1194,8 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, bool, typing.Unpack[Ts2], bool, str]"
     ~expected_solutions:[]
     ();
-  let variadic = Type.Variable.Variadic.Tuple.create "test.Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "test.Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "test.Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "test.Ts2" in
   assert_less_or_equal_direct
     ~left:
       (Type.Tuple

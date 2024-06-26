@@ -134,7 +134,7 @@ let test_add_bound _ =
          )));
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   let bound =
     TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])
   in
@@ -294,7 +294,7 @@ let test_single_variable_solution _ =
       ]
     None;
 
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -481,8 +481,8 @@ let test_multiple_variable_solution _ =
     (Some [UnaryPair (unconstrained_a, Type.Any); UnaryPair (unconstrained_b, Type.Any)]);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -645,8 +645,8 @@ let test_partial_solution _ =
     (Some []);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   (* Ts <: Ts2 and Ts2 <: Ts. Solve for Ts. *)
   expect_split_solution
     ~variables:[Type.Variable.TupleVariadic variadic]
@@ -739,8 +739,8 @@ let test_exists _ =
        ~variables:[Type.Variable.ParameterVariadic parameters_a]);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.Variadic.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.TypeVarTuple.create "Ts2" in
   let constraints_with_variadic2_in_bounds =
     let pair =
       TupleVariadicPair

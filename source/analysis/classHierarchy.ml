@@ -293,7 +293,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let to_any = function
         | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
         | ParameterVariadic _ -> [CallableParameters Undefined]
-        | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
+        | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.TypeVarTuple.any
       in
       target
       |> parents_and_generic_of_target (module Handler)
@@ -336,7 +336,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
                       | TupleVariadic variadic ->
                           Type.Variable.TupleVariadicPair
-                            (variadic, Type.Variable.Variadic.Tuple.any)
+                            (variadic, Type.Variable.Variadic.TypeVarTuple.any)
                     in
                     Type.Variable.zip_variables_with_parameters ~parameters variables
                     |> Option.value ~default:(List.map ~f:to_any variables)

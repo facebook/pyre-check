@@ -11,7 +11,7 @@ open Core
 open Pyre
 module ParameterVariable = Type.Variable.Variadic.Parameters
 module UnaryVariable = Type.Variable.Unary
-module TupleVariable = Type.Variable.Variadic.Tuple
+module TupleVariable = Type.Variable.Variadic.TypeVarTuple
 
 type unary_interval = {
   upper_bound: Type.t;

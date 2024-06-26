@@ -637,7 +637,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"
@@ -654,7 +654,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"
@@ -671,7 +671,7 @@ let test_compute_inferred_generic_base context =
           [
             Unpacked
               (Type.OrderedTypes.Concatenation.create_unpackable
-                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+                 (Type.Variable.Variadic.TypeVarTuple.create "test.Ts"));
           ]));
 
   (* We should not sort the generic variables in alphabetical order. *)

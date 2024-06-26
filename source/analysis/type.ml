@@ -147,7 +147,7 @@ module Record = struct
           { name; variance; state = Free { escaped = false }; namespace = 1 }
       end
 
-      module Tuple = struct
+      module TypeVarTuple = struct
         type 'annotation record = {
           name: Identifier.t;
           state: state;
@@ -164,7 +164,7 @@ module Record = struct
     type 'a record =
       | Unary of 'a RecordUnary.record
       | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
-      | TupleVariadic of 'a RecordVariadic.Tuple.record
+      | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -190,7 +190,7 @@ module Record = struct
 
     module Concatenation = struct
       type 'annotation record_unpackable =
-        | Variadic of 'annotation Variable.RecordVariadic.Tuple.record
+        | Variadic of 'annotation Variable.RecordVariadic.TypeVarTuple.record
         | UnboundedElements of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -224,7 +224,7 @@ module Record = struct
 
       let rec pp_unpackable ~pp_type format = function
         | Variadic variadic ->
-            Format.fprintf format "*%a" Variable.RecordVariadic.Tuple.pp_concise variadic
+            Format.fprintf format "*%a" Variable.RecordVariadic.TypeVarTuple.pp_concise variadic
         | UnboundedElements annotation -> Format.fprintf format "*Tuple[%a, ...]" pp_type annotation
 
 
@@ -261,7 +261,7 @@ module Record = struct
               Expression.Name
                 (create_name
                    ~location
-                   (Format.asprintf "%a" Variable.RecordVariadic.Tuple.pp_concise variadic))
+                   (Format.asprintf "%a" Variable.RecordVariadic.TypeVarTuple.pp_concise variadic))
           | UnboundedElements annotation ->
               subscript
                 ~location
@@ -2394,7 +2394,7 @@ module Variable = struct
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_t = T.t Record.Variable.RecordVariadic.Tuple.record
+  type tuple_variadic_t = T.t Record.Variable.RecordVariadic.TypeVarTuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
@@ -2764,8 +2764,8 @@ module Variable = struct
         }
     end
 
-    module Tuple = struct
-      include Record.Variable.RecordVariadic.Tuple
+    module TypeVarTuple = struct
+      include Record.Variable.RecordVariadic.TypeVarTuple
 
       type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
@@ -3101,7 +3101,7 @@ module Variable = struct
 
     module Unary = Make (Unary)
     module ParameterVariadic = Make (Variadic.Parameters)
-    module TupleVariadic = Make (Variadic.Tuple)
+    module TupleVariadic = Make (Variadic.TypeVarTuple)
   end
 
   type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
@@ -3131,7 +3131,7 @@ module Variable = struct
     match Variadic.Parameters.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
     | None -> (
-        match Variadic.Tuple.parse_declaration expression ~target with
+        match Variadic.TypeVarTuple.parse_declaration expression ~target with
         | Some variable -> Some (TupleVariadic variable)
         | None -> (
             match Unary.parse_declaration expression target with
@@ -3143,7 +3143,8 @@ module Variable = struct
     | Unary variable -> Unary (Unary.dequalify variable ~dequalify_map)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.dequalify variable ~dequalify_map)
-    | TupleVariadic variable -> TupleVariadic (Variadic.Tuple.dequalify variable ~dequalify_map)
+    | TupleVariadic variable ->
+        TupleVariadic (Variadic.TypeVarTuple.dequalify variable ~dequalify_map)
 
 
   let namespace variable ~namespace =
@@ -3151,7 +3152,7 @@ module Variable = struct
     | Unary variable -> Unary (Unary.namespace variable ~namespace)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.namespace variable ~namespace)
-    | TupleVariadic variable -> TupleVariadic (Variadic.Tuple.namespace variable ~namespace)
+    | TupleVariadic variable -> TupleVariadic (Variadic.TypeVarTuple.namespace variable ~namespace)
 
 
   let partition =
@@ -3303,7 +3304,7 @@ module Variable = struct
           ParameterVariadicPair (parameter_variadic, Variadic.Parameters.any)
       | TupleVariadic tuple_variadic, _ ->
           (* We should not hit this case at all. *)
-          TupleVariadicPair (tuple_variadic, Variadic.Tuple.any)
+          TupleVariadicPair (tuple_variadic, Variadic.TypeVarTuple.any)
     in
     { variable_pair; received_parameter }
 
@@ -3341,11 +3342,11 @@ module Variable = struct
                 |> Option.value
                      ~default:
                        {
-                         variable_pair = TupleVariadicPair (variadic, Variadic.Tuple.any);
+                         variable_pair = TupleVariadicPair (variadic, Variadic.TypeVarTuple.any);
                          received_parameter =
                            Single
                              (Constructors.parametric
-                                Variadic.Tuple.synthetic_class_name_for_error
+                                Variadic.TypeVarTuple.synthetic_class_name_for_error
                                 parameters_middle);
                        }
               in
@@ -4751,7 +4752,7 @@ let resolve_aliases ~aliases annotation =
                         |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
                                Some Variable.Variadic.Parameters.any)
                         |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
-                               Some Variable.Variadic.Tuple.any)
+                               Some Variable.Variadic.TypeVarTuple.any)
                   in
                   mark_recursive_alias_as_visited alias;
                   alias

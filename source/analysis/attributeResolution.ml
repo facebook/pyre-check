@@ -2411,7 +2411,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                 | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
                                 | ParameterVariadic _ -> [CallableParameters Undefined]
                                 | TupleVariadic _ ->
-                                    Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any))
+                                    Type.OrderedTypes.to_parameters
+                                      Type.Variable.Variadic.TypeVarTuple.any))
                         in
                         ( annotation,
                           List.filter generics ~f:(fun x -> not (is_tuple_variadic x))

@@ -49,7 +49,7 @@ module Record : sig
         end
       end
 
-      module Tuple : sig
+      module TypeVarTuple : sig
         type 'annotation record [@@deriving compare, eq, sexp, show, hash]
       end
     end
@@ -57,7 +57,7 @@ module Record : sig
     type 'a record =
       | Unary of 'a RecordUnary.record
       | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
-      | TupleVariadic of 'a RecordVariadic.Tuple.record
+      | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -74,14 +74,14 @@ module Record : sig
         unit
 
       val create_unpackable
-        :  'annotation Variable.RecordVariadic.Tuple.record ->
+        :  'annotation Variable.RecordVariadic.TypeVarTuple.record ->
         'annotation record_unpackable
 
       val create_unbounded_unpackable : 'annotation -> 'annotation record_unpackable
 
       val extract_sole_variadic
         :  'annotation t ->
-        'annotation Variable.RecordVariadic.Tuple.record option
+        'annotation Variable.RecordVariadic.TypeVarTuple.record option
 
       val extract_sole_unbounded_annotation : 'annotation t -> 'annotation option
 
@@ -96,7 +96,7 @@ module Record : sig
       val create
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
-        'annotation Variable.RecordVariadic.Tuple.record ->
+        'annotation Variable.RecordVariadic.TypeVarTuple.record ->
         'annotation t
 
       val create_from_unbounded_element
@@ -706,7 +706,7 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
+  type tuple_variadic_t = type_t Record.Variable.RecordVariadic.TypeVarTuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
@@ -815,7 +815,7 @@ module Variable : sig
       val decompose : t -> Components.decomposition
     end
 
-    module Tuple : sig
+    module TypeVarTuple : sig
       include VariableKind with type t = tuple_variadic_t and type domain = tuple_variadic_domain
 
       val name : t -> Identifier.t

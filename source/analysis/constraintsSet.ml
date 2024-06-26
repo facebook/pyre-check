@@ -849,7 +849,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
-            | Some variadic, _ when Type.Variable.Variadic.Tuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -870,7 +870,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
-            | Some variadic, _ when Type.Variable.Variadic.Tuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -883,7 +883,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic left_concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_variadic right_concatenation )
             with
-            | _, Some variadic when Type.Variable.Variadic.Tuple.is_free variadic ->
+            | _, Some variadic when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
@@ -892,7 +892,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~pair:
                             (Type.Variable.TupleVariadicPair
                                (variadic, Concatenation left_concatenation)))
-            | Some variadic, _ when Type.Variable.Variadic.Tuple.is_free variadic ->
+            | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.filter_map
                      ~f:
