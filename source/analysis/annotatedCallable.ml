@@ -60,38 +60,36 @@ let create_overload_without_applying_decorators
   let parameters =
     let parameter { Node.value = { Expression.Parameter.name; annotation; value }; _ } =
       let default = Option.is_some value in
-      { Parameter.name; annotation; default }
+      { CallableParamType.name; annotation; default }
     in
     let parse_as_annotation annotation =
       annotation >>| parse_annotation |> Option.value ~default:Type.Top
     in
     let parse_parameters parameters =
       let parse = function
-        | Type.Callable.Parameter.PositionalOnly ({ annotation; _ } as anonymous) ->
-            Type.Callable.Parameter.PositionalOnly
+        | CallableParamType.PositionalOnly ({ annotation; _ } as anonymous) ->
+            CallableParamType.PositionalOnly
               { anonymous with annotation = parse_as_annotation annotation }
-        | Named ({ annotation; _ } as named) ->
+        | CallableParamType.Named ({ annotation; _ } as named) ->
             Named { named with annotation = parse_as_annotation annotation }
-        | KeywordOnly ({ annotation; _ } as named) ->
+        | CallableParamType.KeywordOnly ({ annotation; _ } as named) ->
             KeywordOnly { named with annotation = parse_as_annotation annotation }
-        | Variable (Concrete annotation) ->
+        | CallableParamType.Variable (Concrete annotation) ->
             annotation
             >>= Type.OrderedTypes.concatenation_from_unpack_expression
                   ~parse_annotation:(fun expression -> parse_as_annotation (Some expression))
-            >>| (fun concatenation ->
-                  Type.Callable.Parameter.Variable (Concatenation concatenation))
+            >>| (fun concatenation -> CallableParamType.Variable (Concatenation concatenation))
             |> Option.value
-                 ~default:
-                   (Type.Callable.Parameter.Variable (Concrete (parse_as_annotation annotation)))
+                 ~default:(CallableParamType.Variable (Concrete (parse_as_annotation annotation)))
         | Variable (Concatenation _) ->
-            (* We are guaranteed that `Type.Callable.Parameter.create expression` will not convert
-               `*args: <anything>` to `Variable (Concatenation ...)`. *)
+            (* We are guaranteed that `Type.Callable.CallableParamType.create expression` will not
+               convert `*args: <anything>` to `Variable (Concatenation ...)`. *)
             failwith "impossible"
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match List.rev parameters with
-      | Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation)
-        :: Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation))
+      | CallableParamType.Keywords (Some keywords_parameter_annotation)
+        :: CallableParamType.Variable (Concrete (Some variable_parameter_annotation))
         :: reversed_head -> (
           let default () = Defined (List.map parameters ~f:parse) in
           match
@@ -102,7 +100,7 @@ let create_overload_without_applying_decorators
           | Some variable -> (
               let parsed_head =
                 let extract_positional_only = function
-                  | Type.Callable.Parameter.PositionalOnly { annotation; _ }
+                  | CallableParamType.PositionalOnly { annotation; _ }
                   | Named { annotation; _ } ->
                       Some annotation
                   | _ -> None
@@ -118,12 +116,12 @@ let create_overload_without_applying_decorators
           | None -> default ())
       | _ -> Defined (List.map parameters ~f:parse)
     in
-    List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
+    List.map parameters ~f:parameter |> CallableParamType.create |> parse_parameters
   in
   let parameters =
     match parameters, parent with
     | ( Type.Callable.Defined
-          (Named { Type.Callable.Parameter.name; annotation = Type.Top; default } :: tail),
+          (Named { CallableParamType.name; annotation = Type.Top; default } :: tail),
         Some parent ) ->
         let replacement ~meta =
           let parent_type =
@@ -134,7 +132,7 @@ let create_overload_without_applying_decorators
             |> Option.value ~default:(Type.Primitive class_annotation)
           in
           let annotation = if meta then Type.meta parent_type else parent_type in
-          Type.Callable.Defined (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
+          Type.Callable.Defined (Named { CallableParamType.name; annotation; default } :: tail)
         in
         if String.equal (Define.Signature.unqualified_name signature) "__new__" then
           replacement ~meta:true

@@ -2573,7 +2573,8 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.integer; default = false };
            ])
       ~annotation:Type.integer
       ()
@@ -2583,7 +2584,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.string; default = false };
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -2592,7 +2596,7 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.PositionalOnly
+             Type.Callable.CallableParamType.PositionalOnly
                { index = 0; annotation = Type.string; default = false };
            ])
       ~annotation:Type.integer
@@ -2603,7 +2607,8 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.integer; default = false };
            ])
       ~annotation:Type.float
       ()
@@ -2613,7 +2618,7 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named
+             Type.Callable.CallableParamType.Named
                { name = "a"; annotation = Type.union [Type.integer; Type.string]; default = false };
            ])
       ~annotation:Type.integer
@@ -2628,7 +2633,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "b"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "b"; annotation = Type.string; default = false };
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -2647,7 +2655,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.string; default = false };
+           ])
       ~annotation:(Type.union [Type.integer; Type.string])
       ~overloads:
         [
@@ -2655,7 +2666,7 @@ let test_meet_callable _ =
             parameters =
               Defined
                 [
-                  Type.Callable.Parameter.Named
+                  Type.Callable.CallableParamType.Named
                     { name = "a"; annotation = Type.string; default = false };
                 ];
             annotation = Type.integer;

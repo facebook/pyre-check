@@ -2836,17 +2836,10 @@ let test_classify_coverage_data _ =
       (Type.Callable.create
          ~parameters:
            (Type.Callable.Defined
-              [Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false }])
-         ~annotation:Type.bytes
-         ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_parse_expression
-    ~expression:"foo"
-    ~type_:
-      (Type.Callable.create
-         ~parameters:
-           (Type.Callable.Defined
-              [Type.Callable.Parameter.Named { name = "x"; annotation = Type.Top; default = false }])
+              [
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Any; default = false };
+              ])
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
@@ -2857,7 +2850,20 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Top; default = false };
+              ])
+         ~annotation:Type.bytes
+         ())
+    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+  assert_coverage_gap_parse_expression
+    ~expression:"foo"
+    ~type_:
+      (Type.Callable.create
+         ~parameters:
+           (Type.Callable.Defined
+              [
+                Type.Callable.CallableParamType.Named
                   { name = "x"; annotation = Type.integer; default = false };
               ])
          ~annotation:Type.bytes
@@ -2870,8 +2876,10 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Any; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2883,8 +2891,10 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Top; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Top; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2896,8 +2906,10 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Top; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Any; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2909,9 +2921,12 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Any; default = false };
-                Type.Callable.Parameter.Named { name = "z"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "z"; annotation = Type.Any; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2923,9 +2938,12 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Top; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Top; default = false };
-                Type.Callable.Parameter.Named { name = "z"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "z"; annotation = Type.Top; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2937,9 +2955,10 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named
+                Type.Callable.CallableParamType.Named
                   { name = "x"; annotation = Type.integer; default = false };
-                Type.Callable.Parameter.Named { name = "y"; annotation = Type.Any; default = false };
+                Type.Callable.CallableParamType.Named
+                  { name = "y"; annotation = Type.Any; default = false };
               ])
          ~annotation:Type.bytes
          ())
@@ -2951,8 +2970,9 @@ let test_classify_coverage_data _ =
          ~parameters:
            (Type.Callable.Defined
               [
-                Type.Callable.Parameter.Named { name = "x"; annotation = Type.Top; default = false };
-                Type.Callable.Parameter.Named
+                Type.Callable.CallableParamType.Named
+                  { name = "x"; annotation = Type.Top; default = false };
+                Type.Callable.CallableParamType.Named
                   { name = "y"; annotation = Type.integer; default = false };
               ])
          ~annotation:Type.bytes
@@ -3016,7 +3036,7 @@ let test_lookup_expression context =
                 parameters =
                   Type.Callable.Defined
                     [
-                      Type.Callable.Parameter.Named
+                      Type.Callable.CallableParamType.Named
                         { name = "$parameter$x"; annotation = Type.Top; default = false };
                     ];
                 annotation = NoneType;
@@ -3034,18 +3054,18 @@ let test_lookup_expression context =
                 parameters =
                   Type.Callable.Defined
                     [
-                      Type.Callable.Parameter.Variable (Concrete Type.object_primitive);
-                      Type.Callable.Parameter.KeywordOnly
+                      Type.Callable.CallableParamType.Variable (Concrete Type.object_primitive);
+                      Type.Callable.CallableParamType.KeywordOnly
                         { name = "$parameter$sep"; annotation = Type.Top; default = true };
-                      Type.Callable.Parameter.KeywordOnly
+                      Type.Callable.CallableParamType.KeywordOnly
                         { name = "$parameter$end"; annotation = Type.Top; default = true };
-                      Type.Callable.Parameter.KeywordOnly
+                      Type.Callable.CallableParamType.KeywordOnly
                         {
                           name = "$parameter$file";
                           annotation = Type.union [Type.NoneType; Type.Primitive "_Writer"];
                           default = true;
                         };
-                      Type.Callable.Parameter.KeywordOnly
+                      Type.Callable.CallableParamType.KeywordOnly
                         {
                           name = "$parameter$flush";
                           annotation = Type.Primitive "bool";
@@ -3199,7 +3219,7 @@ let test_coverage_gaps_in_module context =
                       parameters =
                         Type.Callable.Defined
                           [
-                            Type.Callable.Parameter.Named
+                            Type.Callable.CallableParamType.Named
                               { name = "$parameter$x"; annotation = Type.Top; default = false };
                           ];
                     };
@@ -3523,7 +3543,7 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.Named
+                          Type.Callable.CallableParamType.Named
                             {
                               name = "$parameter$self";
                               annotation = Type.Primitive "test.Foo";
@@ -3581,7 +3601,7 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.Named
+                          Type.Callable.CallableParamType.Named
                             { name = "$parameter$self"; annotation = Type.string; default = false };
                         ];
                   };
@@ -3619,7 +3639,7 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.Named
+                          Type.Callable.CallableParamType.Named
                             {
                               name = "$parameter$self";
                               annotation = Type.Primitive "test.Foo";
@@ -3696,7 +3716,7 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.Named
+                          Type.Callable.CallableParamType.Named
                             {
                               name = "$parameter$cls";
                               annotation = Type.meta (Type.Primitive "test.Foo");
@@ -3803,13 +3823,13 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.Named
+                          Type.Callable.CallableParamType.Named
                             {
                               name = "$parameter$self";
                               annotation = Type.list Type.integer;
                               default = false;
                             };
-                          Type.Callable.Parameter.PositionalOnly
+                          Type.Callable.CallableParamType.PositionalOnly
                             { index = 1; annotation = Type.integer; default = false };
                         ];
                   };

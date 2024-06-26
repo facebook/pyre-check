@@ -1104,7 +1104,7 @@ let classify_coverage_data { expression; type_ } =
       make_coverage_gap CallableReturnIsAny
   | Callable { implementation = { parameters = Defined (_ :: _ as parameter_list); _ }; _ } ->
       let parameter_is_top_or_any = function
-        | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
+        | Type.Callable.CallableParamType.Named { annotation = Type.Any | Type.Top; _ } -> true
         | _ -> false
       in
       (* This will treat parameters that use default values, which will never have a runtime error,

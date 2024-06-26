@@ -559,9 +559,9 @@ let test_forward_expression =
       let open Type.Callable in
       let to_parameter (name, kind, default) =
         match kind with
-        | NamedParameter -> Parameter.Named { name; annotation = Type.Any; default }
-        | VariableParameter -> Parameter.Variable (Concrete Type.Any)
-        | KeywordParameter -> Parameter.Keywords Type.Any
+        | NamedParameter -> CallableParamType.Named { name; annotation = Type.Any; default }
+        | VariableParameter -> CallableParamType.Variable (Concrete Type.Any)
+        | KeywordParameter -> CallableParamType.Keywords Type.Any
       in
       Defined (List.map parameters ~f:to_parameter)
     in
@@ -2496,13 +2496,13 @@ let test_unpack_callable_and_self_argument =
                       parameters =
                         Type.Callable.Defined
                           [
-                            Type.Callable.Parameter.Named
+                            Type.Callable.CallableParamType.Named
                               {
                                 name = "$parameter$self";
                                 annotation = Type.Primitive "test.Foo";
                                 default = false;
                               };
-                            Type.Callable.Parameter.Named
+                            Type.Callable.CallableParamType.Named
                               { name = "$parameter$x"; annotation = Type.bool; default = false };
                           ];
                       annotation = Type.integer;

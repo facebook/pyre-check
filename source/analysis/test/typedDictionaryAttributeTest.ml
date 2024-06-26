@@ -33,7 +33,7 @@ let assert_equivalent_typed_dictionary_attribute_types
           parameters =
             [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
         } ->
-        let open Type.Callable.Parameter in
+        let open Type.Callable.CallableParamType in
         (* TypedDictionary methods have `self` annotation as `Top`, whereas the equivalent class has
            the annotation as, say, `Movie`. So, clear the annotation. *)
         let sanitize_self_annotation = function

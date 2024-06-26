@@ -20,7 +20,7 @@ let make_callable_from_arguments annotations =
   Type.Callable.Defined
     (List.mapi
        ~f:(fun index annotation ->
-         Type.Callable.RecordParameter.PositionalOnly { index; annotation; default = false })
+         Type.Callable.CallableParamType.PositionalOnly { index; annotation; default = false })
        annotations)
 
 
@@ -203,8 +203,10 @@ let test_create_callable _ =
              parameters =
                Defined
                  [
-                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
-                   Parameter.PositionalOnly { index = 1; annotation = Type.string; default = false };
+                   CallableParamType.PositionalOnly
+                     { index = 0; annotation = Type.integer; default = false };
+                   CallableParamType.PositionalOnly
+                     { index = 1; annotation = Type.string; default = false };
                  ];
            };
          overloads = [];
@@ -220,10 +222,12 @@ let test_create_callable _ =
              parameters =
                Defined
                  [
-                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Named { name = "a"; annotation = Type.integer; default = false };
-                   Parameter.Variable (Concrete Type.Top);
-                   Parameter.Keywords Type.Top;
+                   CallableParamType.PositionalOnly
+                     { index = 0; annotation = Type.integer; default = false };
+                   CallableParamType.Named
+                     { name = "a"; annotation = Type.integer; default = false };
+                   CallableParamType.Variable (Concrete Type.Top);
+                   CallableParamType.Keywords Type.Top;
                  ];
            };
          overloads = [];
@@ -239,9 +243,10 @@ let test_create_callable _ =
              parameters =
                Defined
                  [
-                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Variable (Concrete Type.integer);
-                   Parameter.Keywords Type.string;
+                   CallableParamType.PositionalOnly
+                     { index = 0; annotation = Type.integer; default = false };
+                   CallableParamType.Variable (Concrete Type.integer);
+                   CallableParamType.Keywords Type.string;
                  ];
            };
          overloads = [];
@@ -255,7 +260,8 @@ let test_create_callable _ =
            {
              annotation = Type.integer;
              parameters =
-               Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }];
+               Defined
+                 [CallableParamType.Named { name = "a"; annotation = Type.integer; default = true }];
            };
          overloads = [];
        });
@@ -471,7 +477,7 @@ let test_create_type_operator _ =
                  ~parameters:
                    (Type.Callable.Defined
                       [
-                        Type.Callable.Parameter.PositionalOnly
+                        Type.Callable.CallableParamType.PositionalOnly
                           { index = 0; annotation = Type.string; default = false };
                       ])
                  ~annotation:Type.bool
@@ -502,7 +508,7 @@ let test_create_type_operator _ =
                  ~parameters:
                    (Type.Callable.Defined
                       [
-                        Type.Callable.Parameter.PositionalOnly
+                        Type.Callable.CallableParamType.PositionalOnly
                           { index = 0; annotation = Type.bool; default = false };
                       ])
                  ~annotation:Type.bytes
@@ -511,7 +517,7 @@ let test_create_type_operator _ =
                  ~parameters:
                    (Type.Callable.Defined
                       [
-                        Type.Callable.Parameter.PositionalOnly
+                        Type.Callable.CallableParamType.PositionalOnly
                           { index = 0; annotation = Type.bytes; default = false };
                       ])
                  ~annotation:Type.integer
@@ -520,7 +526,7 @@ let test_create_type_operator _ =
                  ~parameters:
                    (Type.Callable.Defined
                       [
-                        Type.Callable.Parameter.PositionalOnly
+                        Type.Callable.CallableParamType.PositionalOnly
                           { index = 0; annotation = Type.integer; default = false };
                       ])
                  ~annotation:Type.float
@@ -529,7 +535,7 @@ let test_create_type_operator _ =
                  ~parameters:
                    (Type.Callable.Defined
                       [
-                        Type.Callable.Parameter.PositionalOnly
+                        Type.Callable.CallableParamType.PositionalOnly
                           { index = 0; annotation = Type.float; default = false };
                       ])
                  ~annotation:Type.string
@@ -965,8 +971,8 @@ let test_expression _ =
        ~parameters:
          (Type.Callable.Defined
             [
-              Parameter.Named { name = "__0"; annotation = Type.integer; default = false };
-              Parameter.Named { name = "__1"; annotation = Type.string; default = false };
+              CallableParamType.Named { name = "__0"; annotation = Type.integer; default = false };
+              CallableParamType.Named { name = "__1"; annotation = Type.string; default = false };
             ])
        ~annotation:Type.integer
        ())
@@ -976,8 +982,8 @@ let test_expression _ =
        ~parameters:
          (Type.Callable.Defined
             [
-              Parameter.Named { name = "a"; annotation = Type.integer; default = false };
-              Parameter.Named { name = "b"; annotation = Type.string; default = false };
+              CallableParamType.Named { name = "a"; annotation = Type.integer; default = false };
+              CallableParamType.Named { name = "b"; annotation = Type.string; default = false };
             ])
        ~annotation:Type.integer
        ())
@@ -986,7 +992,7 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [Parameter.Named { name = "a"; annotation = Type.integer; default = true }])
+            [CallableParamType.Named { name = "a"; annotation = Type.integer; default = true }])
        ~annotation:Type.integer
        ())
     "typing.Callable[[Named(a, int, default)], int]";
@@ -1023,7 +1029,7 @@ let test_expression _ =
        ~parameters:
          (Defined
             [
-              Parameter.Variable
+              CallableParamType.Variable
                 (Concatenation
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.integer]
@@ -1078,8 +1084,10 @@ let test_concise _ =
        ~parameters:
          (Type.Callable.Defined
             [
-              Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
-              Type.Callable.Parameter.Named { name = "y"; annotation = Type.float; default = false };
+              Type.Callable.CallableParamType.Named
+                { name = "x"; annotation = Type.Any; default = false };
+              Type.Callable.CallableParamType.Named
+                { name = "y"; annotation = Type.float; default = false };
             ])
        ())
     "(x: Any, y: float) -> int";
@@ -1090,7 +1098,7 @@ let test_concise _ =
        ~parameters:
          (Type.Callable.Defined
             [
-              Type.Callable.Parameter.PositionalOnly
+              Type.Callable.CallableParamType.PositionalOnly
                 { index = 0; annotation = Type.Any; default = true };
             ])
        ())
@@ -1101,7 +1109,10 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = true }])
+            [
+              Type.Callable.CallableParamType.Named
+                { name = "x"; annotation = Type.Any; default = true };
+            ])
        ())
     "(x: Any = ...) -> int";
   assert_concise
@@ -1111,7 +1122,7 @@ let test_concise _ =
        ~parameters:
          (Type.Callable.Defined
             [
-              Type.Callable.Parameter.Named
+              Type.Callable.CallableParamType.Named
                 {
                   name = "callable";
                   default = false;
@@ -1122,7 +1133,7 @@ let test_concise _ =
                       ~parameters:
                         (Type.Callable.Defined
                            [
-                             Type.Callable.Parameter.Named
+                             Type.Callable.CallableParamType.Named
                                { name = "x"; annotation = Type.integer; default = false };
                            ])
                       ();
@@ -1770,7 +1781,7 @@ let test_overload_parameters _ =
       |> Type.Callable.Overload.parameters
       |> Option.value ~default:[]
       |> List.map ~f:(function
-             | Type.Callable.Parameter.PositionalOnly { annotation; _ } -> annotation
+             | Type.Callable.CallableParamType.PositionalOnly { annotation; _ } -> annotation
              | _ -> failwith "impossible")
       |> List.map ~f:Type.show
     in
@@ -3525,10 +3536,10 @@ let test_is_unit_test _ =
 
 let test_parameter_create _ =
   assert_equal
-    (Type.Callable.Parameter.create
-       [{ Type.Callable.Parameter.name = "__"; annotation = Type.integer; default = false }])
+    (Type.Callable.CallableParamType.create
+       [{ Type.Callable.CallableParamType.name = "__"; annotation = Type.integer; default = false }])
     [
-      Type.Callable.Parameter.PositionalOnly
+      Type.Callable.CallableParamType.PositionalOnly
         { index = 0; annotation = Type.integer; default = false };
     ]
 

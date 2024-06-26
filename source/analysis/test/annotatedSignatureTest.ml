@@ -535,7 +535,7 @@ let test_unresolved_select =
                    ~parameters:
                      (Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.PositionalOnly
+                          Type.Callable.CallableParamType.PositionalOnly
                             { index = 0; annotation = Type.Any; default = false };
                         ])
                    ~annotation:Type.integer

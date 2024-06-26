@@ -2867,7 +2867,7 @@ module State (Context : Context) = struct
                                global_resolution
                                ~left:Type.integer
                                ~right:
-                                 (Type.Callable.Parameter.annotation index_parameter
+                                 (Type.Callable.CallableParamType.annotation index_parameter
                                  |> Option.value ~default:Type.Bottom) ->
                           true
                       | _ -> false
@@ -3158,11 +3158,15 @@ module State (Context : Context) = struct
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
         let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
-          { Type.Callable.Parameter.name; annotation = Type.Any; default = Option.is_some value }
+          {
+            Type.Callable.CallableParamType.name;
+            annotation = Type.Any;
+            default = Option.is_some value;
+          }
         in
         let parameters =
           List.map parameters ~f:create_parameter
-          |> Type.Callable.Parameter.create
+          |> Type.Callable.CallableParamType.create
           |> fun parameters -> Type.Callable.Defined parameters
         in
         {
@@ -6820,8 +6824,8 @@ module State (Context : Context) = struct
                       parameter_annotations define ~resolution:global_resolution
                       |> List.map ~f:(fun (name, annotation, value) ->
                              let default = Option.is_some value in
-                             { Type.Callable.Parameter.name; annotation; default })
-                      |> Type.Callable.Parameter.create
+                             { Type.Callable.CallableParamType.name; annotation; default })
+                      |> Type.Callable.CallableParamType.create
                     in
                     let validate_match ~errors ~index ~overridden_parameter ~expected = function
                       | Some actual -> (
@@ -6903,8 +6907,8 @@ module State (Context : Context) = struct
                     let check_parameter index errors = function
                       | `Both (overridden_parameter, overriding_parameter) -> (
                           match
-                            ( Type.Callable.RecordParameter.annotation overridden_parameter,
-                              Type.Callable.RecordParameter.annotation overriding_parameter )
+                            ( Type.Callable.CallableParamType.annotation overridden_parameter,
+                              Type.Callable.CallableParamType.annotation overriding_parameter )
                           with
                           | Some expected, Some actual ->
                               validate_match
@@ -6919,14 +6923,14 @@ module State (Context : Context) = struct
                                  (Concatenation _). For now, let's just ignore this. *)
                               errors)
                       | `Left overridden_parameter -> (
-                          match Type.Callable.RecordParameter.annotation overridden_parameter with
+                          match Type.Callable.CallableParamType.annotation overridden_parameter with
                           | Some expected ->
                               validate_match ~errors ~index ~overridden_parameter ~expected None
                           | None -> errors)
                       | `Right overriding_parameter ->
                           let is_args_kwargs_or_has_default =
                             match overriding_parameter with
-                            | Type.Callable.RecordParameter.Keywords _ -> true
+                            | Type.Callable.CallableParamType.Keywords _ -> true
                             | Variable _ -> true
                             | Named { default = has_default; _ } -> has_default
                             | KeywordOnly { default = has_default; _ } -> has_default
@@ -7008,7 +7012,7 @@ module State (Context : Context) = struct
                     let overridden_parameters =
                       Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
                     in
-                    Type.Callable.Parameter.zip overridden_parameters overriding_parameters
+                    Type.Callable.CallableParamType.zip overridden_parameters overriding_parameters
                     |> List.foldi ~init:errors ~f:check_parameter
                 | _ -> errors)
             | _ -> None

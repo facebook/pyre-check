@@ -748,12 +748,12 @@ module State (Context : Context) = struct
     in
     match parameter, arguments with
     | _, []
-    | Parameter.Variable _, _ ->
+    | CallableParamType.Variable _, _ ->
         resolution
-    | Parameter.PositionalOnly { annotation = parameter_type; _ }, arguments
-    | Parameter.KeywordOnly { annotation = parameter_type; _ }, arguments
-    | Parameter.Named { annotation = parameter_type; _ }, arguments
-    | Parameter.Keywords parameter_type, arguments ->
+    | CallableParamType.PositionalOnly { annotation = parameter_type; _ }, arguments
+    | CallableParamType.KeywordOnly { annotation = parameter_type; _ }, arguments
+    | CallableParamType.Named { annotation = parameter_type; _ }, arguments
+    | CallableParamType.Keywords parameter_type, arguments ->
         List.fold
           ~f:(fun resolution argument -> refine_argument ~resolution ~parameter_type argument)
           ~init:resolution
@@ -1082,8 +1082,8 @@ let infer_parameters_from_parent
         let missing_parameter_error = function
           | `Both (overridden_parameter, overriding_parameter) -> (
               match
-                ( Type.Callable.RecordParameter.annotation overridden_parameter,
-                  Type.Callable.RecordParameter.annotation overriding_parameter )
+                ( Type.Callable.CallableParamType.annotation overridden_parameter,
+                  Type.Callable.CallableParamType.annotation overriding_parameter )
               with
               | ( Some overridden_annotation,
                   Some { Node.value = { Parameter.name; annotation = None; _ }; location } )
@@ -1108,11 +1108,11 @@ let infer_parameters_from_parent
         in
         let overriding_parameters =
           let to_type_parameter ({ Node.value = { Parameter.name; _ }; _ } as parameter) =
-            { Type.Callable.RecordParameter.name; annotation = parameter; default = false }
+            { Type.Callable.CallableParamType.name; annotation = parameter; default = false }
           in
-          List.map parameters ~f:to_type_parameter |> Type.Callable.Parameter.create
+          List.map parameters ~f:to_type_parameter |> Type.Callable.CallableParamType.create
         in
-        Type.Callable.Parameter.zip overridden_parameters overriding_parameters
+        Type.Callable.CallableParamType.zip overridden_parameters overriding_parameters
         |> List.filter_map ~f:missing_parameter_error
     | _ -> []
   in

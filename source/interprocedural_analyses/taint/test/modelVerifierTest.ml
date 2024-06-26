@@ -25,7 +25,7 @@ let assert_resolve ~context sources name ~expect =
 
 
 let create_parameter ?(annotation = Type.Any) ?(default = false) name =
-  Type.Callable.RecordParameter.Named { name = "$parameter$" ^ name; annotation; default }
+  Type.Callable.CallableParamType.Named { name = "$parameter$" ^ name; annotation; default }
 
 
 let create_callable ?name ?(overloads = []) ?(parameters = []) ?(annotation = Type.Any) () =

@@ -58,40 +58,44 @@ module OrderImplementation = struct
                 match sofar with
                 | Some sofar ->
                     let joined =
-                      if Type.Callable.Parameter.names_compatible left right then
+                      if Type.Callable.CallableParamType.names_compatible left right then
                         match left, right with
-                        | Parameter.PositionalOnly left, Parameter.PositionalOnly right
+                        | ( CallableParamType.PositionalOnly left,
+                            CallableParamType.PositionalOnly right )
                           when Bool.equal left.default right.default ->
                             Some
-                              (Parameter.PositionalOnly
+                              (CallableParamType.PositionalOnly
                                  {
                                    left with
                                    annotation =
                                      parameter_join order left.annotation right.annotation;
                                  })
-                        | Parameter.PositionalOnly anonymous, Parameter.Named named
-                        | Parameter.Named named, Parameter.PositionalOnly anonymous
+                        | CallableParamType.PositionalOnly anonymous, CallableParamType.Named named
+                        | CallableParamType.Named named, CallableParamType.PositionalOnly anonymous
                           when Bool.equal named.default anonymous.default ->
                             Some
-                              (Parameter.PositionalOnly
+                              (CallableParamType.PositionalOnly
                                  {
                                    anonymous with
                                    annotation =
                                      parameter_join order named.annotation anonymous.annotation;
                                  })
-                        | Parameter.Named left, Parameter.Named right
+                        | CallableParamType.Named left, CallableParamType.Named right
                           when Bool.equal left.default right.default ->
                             Some
-                              (Parameter.Named
+                              (CallableParamType.Named
                                  {
                                    left with
                                    annotation =
                                      parameter_join order left.annotation right.annotation;
                                  })
-                        | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
-                            Some (Parameter.Variable (Concrete (parameter_join order left right)))
-                        | Parameter.Keywords left, Parameter.Keywords right ->
-                            Some (Parameter.Keywords (parameter_join order left right))
+                        | ( CallableParamType.Variable (Concrete left),
+                            CallableParamType.Variable (Concrete right) ) ->
+                            Some
+                              (CallableParamType.Variable
+                                 (Concrete (parameter_join order left right)))
+                        | CallableParamType.Keywords left, CallableParamType.Keywords right ->
+                            Some (CallableParamType.Keywords (parameter_join order left right))
                         | _ -> None
                       else
                         None
@@ -399,31 +403,32 @@ module OrderImplementation = struct
         | Undefined, Undefined -> Some Undefined
         | Defined left, Defined right -> (
             let meet_of_parameters left right =
-              if Type.Callable.Parameter.names_compatible left right then
+              if Type.Callable.CallableParamType.names_compatible left right then
                 match left, right with
-                | Parameter.PositionalOnly left, Parameter.PositionalOnly right
+                | CallableParamType.PositionalOnly left, CallableParamType.PositionalOnly right
                   when Bool.equal left.default right.default ->
                     Some
-                      (Parameter.PositionalOnly
+                      (CallableParamType.PositionalOnly
                          { left with annotation = join order left.annotation right.annotation })
-                | Parameter.PositionalOnly anonymous, Parameter.Named named
-                | Parameter.Named named, Parameter.PositionalOnly anonymous
+                | CallableParamType.PositionalOnly anonymous, CallableParamType.Named named
+                | CallableParamType.Named named, CallableParamType.PositionalOnly anonymous
                   when Bool.equal named.default anonymous.default ->
                     Some
-                      (Parameter.Named
+                      (CallableParamType.Named
                          {
                            named with
                            annotation = join order named.annotation anonymous.annotation;
                          })
-                | Parameter.Named left, Parameter.Named right
+                | CallableParamType.Named left, CallableParamType.Named right
                   when Bool.equal left.default right.default ->
                     Some
-                      (Parameter.Named
+                      (CallableParamType.Named
                          { left with annotation = join order left.annotation right.annotation })
-                | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
-                    Some (Parameter.Variable (Concrete (join order left right)))
-                | Parameter.Keywords left, Parameter.Keywords right ->
-                    Some (Parameter.Keywords (join order left right))
+                | ( CallableParamType.Variable (Concrete left),
+                    CallableParamType.Variable (Concrete right) ) ->
+                    Some (CallableParamType.Variable (Concrete (join order left right)))
+                | CallableParamType.Keywords left, CallableParamType.Keywords right ->
+                    Some (CallableParamType.Keywords (join order left right))
                 | _ -> None
               else
                 None

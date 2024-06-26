@@ -184,7 +184,7 @@ module Record = struct
   end
 
   module Callable = struct
-    module RecordParameter = struct
+    module CallableParamType = struct
       type 'annotation named = {
         name: QualifiedParameterName.t;
         annotation: 'annotation;
@@ -228,7 +228,7 @@ module Record = struct
     }
 
     and 'annotation record_parameters =
-      | Defined of 'annotation RecordParameter.t list
+      | Defined of 'annotation CallableParamType.t list
       | Undefined
       | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
 
@@ -280,7 +280,7 @@ module Record = struct
   end
 end
 
-module CallableParameter = Record.Callable.RecordParameter
+module CallableParamType = Record.Callable.CallableParamType
 
 module Primitive = struct
   type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
@@ -527,19 +527,20 @@ module VisitWithTransform = struct
         let visit_parameters parameter =
           let open Record.Callable in
           let visit_defined = function
-            | RecordParameter.Named ({ annotation; _ } as named) ->
-                RecordParameter.Named { named with annotation = visit_annotation annotation ~state }
-            | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
-                RecordParameter.KeywordOnly
+            | CallableParamType.Named ({ annotation; _ } as named) ->
+                CallableParamType.Named
                   { named with annotation = visit_annotation annotation ~state }
-            | RecordParameter.Variable (Concrete annotation) ->
-                RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
-            | RecordParameter.Variable (Concatenation concatenation) ->
-                RecordParameter.Variable (Concatenation (visit_concatenation concatenation))
-            | RecordParameter.Keywords annotation ->
-                RecordParameter.Keywords (visit_annotation annotation ~state)
-            | RecordParameter.PositionalOnly ({ annotation; _ } as anonymous) ->
-                RecordParameter.PositionalOnly
+            | CallableParamType.KeywordOnly ({ annotation; _ } as named) ->
+                CallableParamType.KeywordOnly
+                  { named with annotation = visit_annotation annotation ~state }
+            | CallableParamType.Variable (Concrete annotation) ->
+                CallableParamType.Variable (Concrete (visit_annotation annotation ~state))
+            | CallableParamType.Variable (Concatenation concatenation) ->
+                CallableParamType.Variable (Concatenation (visit_concatenation concatenation))
+            | CallableParamType.Keywords annotation ->
+                CallableParamType.Keywords (visit_annotation annotation ~state)
+            | CallableParamType.PositionalOnly ({ annotation; _ } as anonymous) ->
+                CallableParamType.PositionalOnly
                   { anonymous with annotation = visit_annotation annotation ~state }
           in
           match parameter with
@@ -1100,7 +1101,7 @@ module PrettyPrinting = struct
     let pp_concise ~pp_type format = function
       | TypeVarVariable variable -> TypeVar.pp_concise format variable ~pp_type
       | ParamSpecVariable { name; _ } ->
-          Format.fprintf format "CallableParameterTypeVariable[%s]" name
+          Format.fprintf format "CallableParamTypeeterTypeVariable[%s]" name
       | TypeVarTupleVariable { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
   end
 
@@ -1142,8 +1143,8 @@ module PrettyPrinting = struct
   end
 
   module Callable = struct
-    module Parameter = struct
-      open Record.Callable.RecordParameter
+    module CallableParamType = struct
+      open Record.Callable.CallableParamType
 
       let show_concise ~pp_type parameter =
         let print_named ~kind { name; annotation; default } =
@@ -1179,7 +1180,7 @@ module PrettyPrinting = struct
         Canonicalization.parameter_variable_type_representation variable
         |> Format.asprintf "%a" pp_type
     | Defined parameters ->
-        List.map parameters ~f:(Callable.Parameter.show_concise ~pp_type)
+        List.map parameters ~f:(Callable.CallableParamType.show_concise ~pp_type)
         |> String.concat ~sep:", "
         |> fun parameters -> Format.asprintf "[%s]" parameters
 
@@ -1290,7 +1291,7 @@ module PrettyPrinting = struct
             |> Format.asprintf "%a" pp_concise
         | Defined parameters ->
             let parameter = function
-              | CallableParameter.PositionalOnly { annotation; default; _ } ->
+              | CallableParamType.PositionalOnly { annotation; default; _ } ->
                   if default then
                     Format.asprintf "%a=..." pp_concise annotation
                   else
@@ -1417,9 +1418,10 @@ end
 
 module Callable = struct
   open T
+  include Record.Callable
 
-  module Parameter = struct
-    include Record.Callable.RecordParameter
+  module CallableParamType = struct
+    include Record.Callable.CallableParamType
 
     type parameter = T.t t [@@deriving compare, eq, sexp, show, hash]
 
@@ -1447,7 +1449,7 @@ module Callable = struct
                   || String.is_prefix sanitized ~prefix:"__"
                      && not (String.is_suffix sanitized ~suffix:"__")
                 then
-                  CallableParameter.PositionalOnly { index; annotation; default }
+                  CallableParamType.PositionalOnly { index; annotation; default }
                 else
                   let named = { name; annotation; default } in
                   if keyword_only then
@@ -1471,7 +1473,9 @@ module Callable = struct
       |> snd
 
 
-    let show_concise = PrettyPrinting.Callable.Parameter.show_concise ~pp_type:PrettyPrinting.pp
+    let show_concise =
+      PrettyPrinting.Callable.CallableParamType.show_concise ~pp_type:PrettyPrinting.pp
+
 
     let default = function
       | PositionalOnly { default; _ }
@@ -1576,8 +1580,6 @@ module Callable = struct
       let right_matches = List.filter_map ~f:process_right right_parameters in
       left_matches @ right_matches
   end
-
-  include Record.Callable
 
   type t = T.t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -1688,10 +1690,11 @@ module Callable = struct
 
   let prepend_anonymous_parameters ~head ~tail =
     let make_anonymous annotation =
-      Parameter.PositionalOnly { index = 0; annotation; default = false }
+      CallableParamType.PositionalOnly { index = 0; annotation; default = false }
     in
     let correct_indices index = function
-      | Parameter.PositionalOnly anonymous -> Parameter.PositionalOnly { anonymous with index }
+      | CallableParamType.PositionalOnly anonymous ->
+          CallableParamType.PositionalOnly { anonymous with index }
       | parameter -> parameter
     in
     let head = List.map head ~f:make_anonymous in
@@ -2903,13 +2906,13 @@ module Variable = struct
           let replace_variadic parameters_so_far parameters =
             let expanded_parameters =
               match parameters with
-              | Callable.Parameter.Variable
+              | Callable.CallableParamType.Variable
                   (Concatenation ({ prefix; middle = unpackable; suffix } as concatenation)) ->
                   let encode_ordered_types_into_parameters = function
                     | OrderedTypes.Concrete concretes ->
                         let start_index = List.length parameters_so_far in
                         let make_anonymous_parameter index annotation =
-                          Callable.Parameter.PositionalOnly
+                          Callable.CallableParamType.PositionalOnly
                             { index = start_index + index; annotation; default = false }
                         in
                         List.mapi (prefix @ concretes @ suffix) ~f:make_anonymous_parameter
@@ -2933,7 +2936,7 @@ module Variable = struct
                     | other ->
                         Ok
                           [
-                            Callable.Parameter.PositionalOnly
+                            Callable.CallableParamType.PositionalOnly
                               {
                                 index = List.length parameters_so_far;
                                 annotation = other;
@@ -2944,7 +2947,8 @@ module Variable = struct
                   replace_unpackable unpackable
                   >>| handle_potential_error
                   |> Option.value
-                       ~default:(Ok [Callable.Parameter.Variable (Concatenation concatenation)])
+                       ~default:
+                         (Ok [Callable.CallableParamType.Variable (Concatenation concatenation)])
               | parameter -> Ok [parameter]
             in
             expanded_parameters
@@ -3480,7 +3484,7 @@ module ToExpression = struct
             |> Node.create ~location
           in
           match parameter with
-          | CallableParameter.PositionalOnly { annotation; default; _ } ->
+          | CallableParamType.PositionalOnly { annotation; default; _ } ->
               call ~default "PositionalOnly" (expression annotation)
           | Keywords annotation -> call "Keywords" (expression annotation)
           | Named { name; annotation; default } ->
@@ -3691,12 +3695,12 @@ module TypedDictionary = struct
 
 
   let self_parameter class_name =
-    CallableParameter.Named { name = "self"; annotation = Primitive class_name; default = false }
+    CallableParamType.Named { name = "self"; annotation = Primitive class_name; default = false }
 
 
   let field_named_parameters ?(all_default = false) ~class_name fields =
     let field_to_argument { name; annotation; required } =
-      Record.Callable.RecordParameter.KeywordOnly
+      Record.Callable.CallableParamType.KeywordOnly
         {
           name = Format.asprintf "$parameter$%s" name;
           annotation;
@@ -3726,9 +3730,9 @@ module TypedDictionary = struct
             parameters =
               Defined
                 [
-                  Record.Callable.RecordParameter.PositionalOnly
+                  Record.Callable.CallableParamType.PositionalOnly
                     { index = 0; annotation = Primitive name; default = false };
-                  Record.Callable.RecordParameter.PositionalOnly
+                  Record.Callable.CallableParamType.PositionalOnly
                     { index = 1; annotation = Primitive name; default = false };
                 ];
           };
@@ -3744,7 +3748,7 @@ module TypedDictionary = struct
       }
       when String.equal (Reference.last name) "__init__" ->
         let parameter_to_field = function
-          | Record.Callable.RecordParameter.KeywordOnly { name; annotation; default } ->
+          | Record.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
               Some
                 {
                   name = String.split ~on:'$' name |> List.last_exn;
@@ -3764,7 +3768,7 @@ module TypedDictionary = struct
   }
 
   let key_parameter name =
-    CallableParameter.Named
+    CallableParamType.Named
       { name = "k"; annotation = Constructors.literal_string name; default = false }
 
 
@@ -3845,9 +3849,9 @@ module TypedDictionary = struct
           parameters =
             Defined
               [
-                Record.Callable.RecordParameter.PositionalOnly
+                Record.Callable.CallableParamType.PositionalOnly
                   { index = 0; annotation = Primitive class_name; default = false };
-                Record.Callable.RecordParameter.PositionalOnly
+                Record.Callable.CallableParamType.PositionalOnly
                   { index = 1; annotation = Primitive class_name; default = false };
               ];
         };
@@ -4003,8 +4007,8 @@ let _ = show (* shadowed below *)
 let lambda ~parameters ~return_annotation =
   let parameters =
     List.map parameters ~f:(fun (name, annotation) ->
-        { CallableParameter.name; annotation; default = false })
-    |> Callable.Parameter.create
+        { CallableParamType.name; annotation; default = false })
+    |> Callable.CallableParamType.create
   in
   Callable
     {
@@ -4146,7 +4150,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               | [Name (Name.Identifier "default")] -> true
               | _ -> false
             in
-            CallableParameter.PositionalOnly
+            CallableParamType.PositionalOnly
               {
                 index;
                 annotation = create_logic (Node.create_with_default_location annotation);
@@ -4185,14 +4189,14 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                         create_logic (Node.create_with_default_location annotation))
                   in
                   OrderedTypes.concatenation_from_annotations ~variable_aliases elements
-                  >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
+                  >>| (fun concatenation -> CallableParamType.Concatenation concatenation)
                   |> Option.value
                        ~default:
-                         (CallableParameter.Concrete
+                         (CallableParamType.Concrete
                             (create_logic (Node.create_with_default_location head)))
-              | _ -> CallableParameter.Concrete Top
+              | _ -> CallableParamType.Concrete Top
             in
-            CallableParameter.Variable callable_parameter
+            CallableParamType.Variable callable_parameter
         | "Keywords", tail ->
             let annotation =
               match tail with
@@ -4953,11 +4957,11 @@ let infer_transform annotation =
             let parameters =
               let transform_parameter index parameter =
                 match parameter with
-                | CallableParameter.PositionalOnly { annotation; _ }
+                | CallableParamType.PositionalOnly { annotation; _ }
                 | KeywordOnly { annotation; _ }
                 | Named { annotation; _ }
                 | Variable (Concrete annotation) ->
-                    CallableParameter.PositionalOnly { annotation; default = false; index }
+                    CallableParamType.PositionalOnly { annotation; default = false; index }
                 | _ -> parameter
               in
               List.mapi parameters ~f:transform_parameter

@@ -157,7 +157,7 @@ and invalid_argument =
 and precondition_mismatch =
   | Found of mismatch
   | NotFound of {
-      parameter: Type.t Type.Callable.Parameter.t;
+      parameter: Type.t Type.Callable.CallableParamType.t;
       parameter_exists_in_overridden_signature: bool;
     }
 
@@ -1638,9 +1638,9 @@ let rec messages ~concise ~signature location kind =
               | PositionalOnly { index; _ } ->
                   Format.asprintf
                     "of type `%s` at index %d"
-                    (Type.Callable.Parameter.show_concise parameter)
+                    (Type.Callable.CallableParamType.show_concise parameter)
                     index
-              | _ -> Format.asprintf "`%s`" (Type.Callable.Parameter.show_concise parameter)
+              | _ -> Format.asprintf "`%s`" (Type.Callable.CallableParamType.show_concise parameter)
             in
             let signature_description =
               if parameter_exists_in_overridden_signature then "overriding" else "overridden"

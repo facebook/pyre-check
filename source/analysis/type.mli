@@ -99,7 +99,7 @@ module Record : sig
   end
 
   module Callable : sig
-    module RecordParameter : sig
+    module CallableParamType : sig
       type 'annotation named = {
         name: Identifier.t;
         annotation: 'annotation;
@@ -136,7 +136,7 @@ module Record : sig
     }
 
     and 'annotation record_parameters =
-      | Defined of 'annotation RecordParameter.t list
+      | Defined of 'annotation CallableParamType.t list
       | Undefined
       | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
 
@@ -364,9 +364,13 @@ module Alias : sig
 end
 
 module Callable : sig
-  module Parameter : sig
+  include module type of struct
+    include Record.Callable
+  end
+
+  module CallableParamType : sig
     include module type of struct
-      include Record.Callable.RecordParameter
+      include Record.Callable.CallableParamType
     end
 
     val show_concise : type_t t -> string
@@ -376,7 +380,7 @@ module Callable : sig
     module Map : Core.Map.S with type Key.t = parameter
 
     (** Used to indicate * when passing in a list of parameters and creating a callable *)
-    val dummy_star_parameter : type_t Record.Callable.RecordParameter.named
+    val dummy_star_parameter : type_t Record.Callable.CallableParamType.named
 
     val create : 'annotation named list -> 'annotation t list
 
@@ -390,17 +394,13 @@ module Callable : sig
       [ `Both of 'a t * 'b t | `Left of 'a t | `Right of 'b t ] list
   end
 
-  include module type of struct
-    include Record.Callable
-  end
-
   type t = type_t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
 
   type parameters = type_t Record.Callable.record_parameters
   [@@deriving compare, eq, sexp, show, hash]
 
   module Overload : sig
-    val parameters : type_t overload -> Parameter.parameter list option
+    val parameters : type_t overload -> CallableParamType.parameter list option
 
     val return_annotation : type_t overload -> type_t
 
@@ -436,8 +436,8 @@ module Callable : sig
 
   val prepend_anonymous_parameters
     :  head:type_t list ->
-    tail:type_t Parameter.t list ->
-    type_t Parameter.t list
+    tail:type_t CallableParamType.t list ->
+    type_t CallableParamType.t list
 
   val name : t -> Reference.t option
 end

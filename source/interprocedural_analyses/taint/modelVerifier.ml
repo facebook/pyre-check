@@ -197,7 +197,7 @@ type parameter_requirements = {
 
 let create_parameters_requirements ~type_parameters =
   let get_parameters_requirements requirements type_parameter =
-    let open Type.Callable.RecordParameter in
+    let open Type.Callable.CallableParamType in
     match type_parameter with
     | PositionalOnly { index; _ } ->
         {

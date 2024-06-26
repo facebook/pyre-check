@@ -16,7 +16,8 @@ let to_defined parameters =
   Type.Callable.Defined
     (List.mapi
        ~f:(fun i element ->
-         Type.Callable.Parameter.PositionalOnly { index = i; annotation = element; default = false })
+         Type.Callable.CallableParamType.PositionalOnly
+           { index = i; annotation = element; default = false })
        parameters)
 
 

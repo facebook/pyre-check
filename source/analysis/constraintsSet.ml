@@ -154,8 +154,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           =
           let before_first_keyword, after_first_keyword_inclusive =
             let is_not_keyword_only = function
-              | Type.Callable.Parameter.Keywords _
-              | Type.Callable.Parameter.KeywordOnly _ ->
+              | Type.Callable.CallableParamType.Keywords _
+              | Type.Callable.CallableParamType.KeywordOnly _ ->
                   false
               | _ -> true
             in
@@ -184,7 +184,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           in
           let ordered_type_from_non_keyword_parameters =
             let extract_component = function
-              | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
+              | Type.Callable.CallableParamType.PositionalOnly { annotation; _ } ->
                   Some (Type.OrderedTypes.Concrete [annotation])
               | Named { annotation; _ } when not is_lower_bound ->
                   (* Named arguments can be called positionally, but positionals can't be called
@@ -207,65 +207,78 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           |> Option.value ~default:impossible
         and solve_parameters ~left_parameters ~right_parameters constraints =
           match left_parameters, right_parameters with
-          | Parameter.PositionalOnly _ :: _, Parameter.Named _ :: _ -> []
-          | ( Parameter.PositionalOnly { annotation = left_annotation; _ } :: left_parameters,
-              Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters )
-          | ( Parameter.Named { annotation = left_annotation; _ } :: left_parameters,
-              Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters ) ->
-              solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-          | ( Parameter.Variable (Concrete left_annotation) :: left_parameters,
-              Parameter.Variable (Concrete right_annotation) :: right_parameters )
-          | ( Parameter.Keywords left_annotation :: left_parameters,
-              Parameter.Keywords right_annotation :: right_parameters ) ->
-              solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-          | ( Parameter.KeywordOnly ({ annotation = left_annotation; _ } as left) :: left_parameters,
-              Parameter.KeywordOnly ({ annotation = right_annotation; _ } as right)
+          | CallableParamType.PositionalOnly _ :: _, CallableParamType.Named _ :: _ -> []
+          | ( CallableParamType.PositionalOnly { annotation = left_annotation; _ } :: left_parameters,
+              CallableParamType.PositionalOnly { annotation = right_annotation; _ }
               :: right_parameters )
-          | ( Parameter.Named ({ annotation = left_annotation; _ } as left) :: left_parameters,
-              Parameter.Named ({ annotation = right_annotation; _ } as right) :: right_parameters )
-          | ( Parameter.Named ({ annotation = left_annotation; default = true; _ } as left)
-              :: left_parameters,
-              Parameter.KeywordOnly ({ annotation = right_annotation; _ } as right)
-              :: right_parameters )
-          | ( Parameter.Named ({ annotation = left_annotation; default = false; _ } as left)
-              :: left_parameters,
-              Parameter.KeywordOnly ({ annotation = right_annotation; default = false; _ } as right)
+          | ( CallableParamType.Named { annotation = left_annotation; _ } :: left_parameters,
+              CallableParamType.PositionalOnly { annotation = right_annotation; _ }
               :: right_parameters ) ->
-              if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
+              solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
+              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+          | ( CallableParamType.Variable (Concrete left_annotation) :: left_parameters,
+              CallableParamType.Variable (Concrete right_annotation) :: right_parameters )
+          | ( CallableParamType.Keywords left_annotation :: left_parameters,
+              CallableParamType.Keywords right_annotation :: right_parameters ) ->
+              solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
+              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+          | ( CallableParamType.KeywordOnly ({ annotation = left_annotation; _ } as left)
+              :: left_parameters,
+              CallableParamType.KeywordOnly ({ annotation = right_annotation; _ } as right)
+              :: right_parameters )
+          | ( CallableParamType.Named ({ annotation = left_annotation; _ } as left)
+              :: left_parameters,
+              CallableParamType.Named ({ annotation = right_annotation; _ } as right)
+              :: right_parameters )
+          | ( CallableParamType.Named ({ annotation = left_annotation; default = true; _ } as left)
+              :: left_parameters,
+              CallableParamType.KeywordOnly ({ annotation = right_annotation; _ } as right)
+              :: right_parameters )
+          | ( CallableParamType.Named ({ annotation = left_annotation; default = false; _ } as left)
+              :: left_parameters,
+              CallableParamType.KeywordOnly
+                ({ annotation = right_annotation; default = false; _ } as right)
+              :: right_parameters ) ->
+              if
+                CallableParamType.names_compatible
+                  (CallableParamType.Named left)
+                  (CallableParamType.Named right)
+              then
                 solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
               else
                 impossible
-          | ( Parameter.Variable (Concrete left_annotation) :: _,
-              Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters ) ->
+          | ( CallableParamType.Variable (Concrete left_annotation) :: _,
+              CallableParamType.PositionalOnly { annotation = right_annotation; _ }
+              :: right_parameters ) ->
               solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
               |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-          | ( Parameter.Variable (Concatenation left) :: left_parameters,
-              Parameter.Variable (Concatenation right) :: right_parameters ) ->
+          | ( CallableParamType.Variable (Concatenation left) :: left_parameters,
+              CallableParamType.Variable (Concatenation right) :: right_parameters ) ->
               solve_ordered_types_less_or_equal
                 order
                 ~left:(Type.OrderedTypes.Concatenation left)
                 ~right:(Type.OrderedTypes.Concatenation right)
                 ~constraints
               |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-          | left, Parameter.Variable (Concatenation concatenation) :: remaining_parameters ->
+          | left, CallableParamType.Variable (Concatenation concatenation) :: remaining_parameters
+            ->
               solve_parameters_against_tuple_variadic
                 ~is_lower_bound:false
                 ~concretes:left
                 ~ordered_type:(Concatenation concatenation)
                 ~remaining_parameters
-          | Parameter.Variable (Concatenation concatenation) :: remaining_parameters, right ->
+          | CallableParamType.Variable (Concatenation concatenation) :: remaining_parameters, right
+            ->
               solve_parameters_against_tuple_variadic
                 ~is_lower_bound:true
                 ~concretes:right
                 ~ordered_type:(Concatenation concatenation)
                 ~remaining_parameters
-          | ( Parameter.Variable (Concrete variable_annotation)
-              :: Parameter.Keywords keywords_annotation
+          | ( CallableParamType.Variable (Concrete variable_annotation)
+              :: CallableParamType.Keywords keywords_annotation
               :: _,
-              Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->
+              CallableParamType.Named { annotation = named_annotation; _ } :: right_parameters ) ->
               if Type.equal variable_annotation keywords_annotation then
                 solve_less_or_equal
                   order
@@ -275,11 +288,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
               else
                 impossible
-          | Parameter.Variable _ :: left_parameters, right_parameters
-          | Parameter.Keywords _ :: left_parameters, right_parameters ->
+          | CallableParamType.Variable _ :: left_parameters, right_parameters
+          | CallableParamType.Keywords _ :: left_parameters, right_parameters ->
               solve_parameters ~left_parameters ~right_parameters constraints
           | left :: left_parameters, [] ->
-              if Parameter.default left then
+              if CallableParamType.default left then
                 solve_parameters ~left_parameters ~right_parameters:[] constraints
               else
                 impossible

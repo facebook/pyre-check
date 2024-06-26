@@ -89,7 +89,8 @@ val location_insensitive_compare_reasons : reasons -> reasons -> int
 
 module ParameterArgumentMapping : sig
   type 'argument_type t = {
-    parameter_argument_mapping: 'argument_type matched_argument list Type.Callable.Parameter.Map.t;
+    parameter_argument_mapping:
+      'argument_type matched_argument list Type.Callable.CallableParamType.Map.t;
     reasons: reasons;
   }
 
@@ -108,7 +109,7 @@ type ranks = {
 
 type signature_match = {
   callable: Type.Callable.t;
-  parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: Type.t matched_argument list Type.Callable.CallableParamType.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
@@ -125,7 +126,7 @@ module SignatureSelection : sig
 
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
-    parameters:Type.t Type.Callable.RecordParameter.t list ->
+    parameters:Type.t Type.Callable.CallableParamType.t list ->
     self_argument:'argument_type option ->
     'argument_type Argument.WithPosition.t list ->
     'argument_type ParameterArgumentMapping.t

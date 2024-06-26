@@ -2559,19 +2559,19 @@ let port_annotations_from_signature ~root ~callable_annotation =
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (parameter_position, parameter) ->
                  Option.some_if (Int.equal parameter_position position) parameter)
-          |> List.filter_map ~f:Type.Callable.Parameter.annotation
+          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
       | AccessPath.Root.NamedParameter { name; _ } ->
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (_, parameter) ->
                  match parameter with
-                 | Type.Callable.Parameter.KeywordOnly { name = parameter_name; _ }
+                 | Type.Callable.CallableParamType.KeywordOnly { name = parameter_name; _ }
                    when String.equal parameter_name ("$parameter$" ^ name) ->
                      Some parameter
-                 | Type.Callable.Parameter.Named { name = parameter_name; _ }
+                 | Type.Callable.CallableParamType.Named { name = parameter_name; _ }
                    when String.equal parameter_name name ->
                      Some parameter
                  | _ -> None)
-          |> List.filter_map ~f:Type.Callable.Parameter.annotation
+          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
       | AccessPath.Root.LocalResult ->
           let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
             callable_annotation
@@ -3364,13 +3364,13 @@ let create_model_from_signature
         in
         let add_parameter_to_position map (position, parameter) =
           match parameter with
-          | Type.Callable.Parameter.Named { name; _ } ->
+          | Type.Callable.CallableParamType.Named { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map
                 map
                 name
                 (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
-          | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+          | Type.Callable.CallableParamType.KeywordOnly { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map map name (AccessPath.Root.NamedParameter { name })
           | _ -> map
