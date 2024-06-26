@@ -194,8 +194,12 @@ and invalid_assignment_kind =
 and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
-  | InvalidType of {
+  | InvalidTypeAnnotation of {
       annotation: Type.t;
+      expected: string;
+    }
+  | InvalidTypeAnnotationExpression of {
+      annotation: Expression.t;
       expected: string;
     }
   | NestedAlias of Identifier.t

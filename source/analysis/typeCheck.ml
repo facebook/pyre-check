@@ -585,9 +585,9 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.InvalidType
-                 (InvalidType
+                 (InvalidTypeAnnotationExpression
                     {
-                      annotation = Type.Primitive (Expression.show expression);
+                      annotation = expression;
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
       | Type.Callable
@@ -602,9 +602,9 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.InvalidType
-                 (InvalidType
+                 (InvalidTypeAnnotationExpression
                     {
-                      annotation = Type.Primitive (Expression.show expression);
+                      annotation = expression;
                       expected =
                         "`Callable[[<parameters>], <return type>]` or `Callable[..., <return \
                          type>]`";
@@ -615,9 +615,9 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.InvalidType
-                 (InvalidType
+                 (InvalidTypeAnnotationExpression
                     {
-                      annotation = Type.Primitive (Expression.show expression);
+                      annotation = expression;
                       expected = "annotation other than ... for return type";
                     }))
       | Type.Tuple (Concrete types) when List.find ~f:Type.is_ellipsis types |> Option.is_some ->
@@ -626,9 +626,9 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.InvalidType
-                 (InvalidType
+                 (InvalidTypeAnnotationExpression
                     {
-                      annotation = Type.Primitive (Expression.show expression);
+                      annotation = expression;
                       expected =
                         "a list of concrete type parameters, or an unbounded tuple type like \
                          tuple[int, ...]";
@@ -639,8 +639,7 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.InvalidType
-                 (InvalidType
-                    { annotation = Type.Primitive (Expression.show expression); expected = "" }))
+                 (InvalidTypeAnnotationExpression { annotation = expression; expected = "" }))
       | _ -> []
     in
     let errors, annotation =
@@ -5471,7 +5470,8 @@ module State (Context : Context) = struct
         emit_error
           ~errors
           ~location
-          ~kind:(Error.InvalidType (InvalidType { annotation; expected = "an Enum member" })))
+          ~kind:
+            (Error.InvalidType (InvalidTypeAnnotation { annotation; expected = "an Enum member" })))
 
 
   let forward_statement ~resolution ~statement:{ Node.location; value } =

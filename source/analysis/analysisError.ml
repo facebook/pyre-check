@@ -228,8 +228,12 @@ and invalid_assignment_kind =
 and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
-  | InvalidType of {
+  | InvalidTypeAnnotation of {
       annotation: Type.t;
+      expected: string;
+    }
+  | InvalidTypeAnnotationExpression of {
+      annotation: Expression.t;
       expected: string;
     }
   | NestedAlias of Identifier.t
@@ -1854,12 +1858,20 @@ let rec messages ~concise ~signature location kind =
           ]
       | FinalParameter name ->
           [Format.asprintf "Parameter `%a` cannot be annotated with Final." pp_identifier name]
-      | InvalidType { annotation; expected } ->
+      | InvalidTypeAnnotation { annotation; expected } ->
           if String.is_empty expected then
             [Format.asprintf "Expression `%a` is not a valid type." pp_type annotation]
           else
             [
               Format.asprintf "Expression `%a` is not a valid type." pp_type annotation;
+              Format.asprintf "Expected %s." expected;
+            ]
+      | InvalidTypeAnnotationExpression { annotation; expected } ->
+          if String.is_empty expected then
+            [Format.asprintf "Expression `%s` is not a valid type." (Expression.show annotation)]
+          else
+            [
+              Format.asprintf "Expression `%s` is not a valid type." (Expression.show annotation);
               Format.asprintf "Expected %s." expected;
             ]
       | NestedAlias name ->
@@ -3166,7 +3178,7 @@ let due_to_analysis_limitations { kind; _ } =
       (VariableArgumentsWithUnpackableType
         { mismatch = NotUnpackableType { annotation = actual; _ }; _ })
   | InvalidException { annotation = actual; _ }
-  | InvalidType (InvalidType { annotation = actual; _ })
+  | InvalidType (InvalidTypeAnnotation { annotation = actual; _ })
   | InvalidType (FinalNested actual)
   | NotCallable actual
   | ProhibitedAny { missing_annotation = { given_annotation = Some actual; _ }; _ }
@@ -3529,10 +3541,14 @@ let join ~resolution left right =
             annotation =
               Option.merge ~f:(GlobalResolution.join resolution) left.annotation right.annotation;
           }
-    | ( InvalidType (InvalidType { annotation = left; expected }),
-        InvalidType (InvalidType { annotation = right; _ }) )
+    | ( InvalidType (InvalidTypeAnnotation { annotation = left; expected }),
+        InvalidType (InvalidTypeAnnotation { annotation = right; _ }) )
       when Type.equal left right ->
-        InvalidType (InvalidType { annotation = left; expected })
+        InvalidType (InvalidTypeAnnotation { annotation = left; expected })
+    | ( InvalidType (InvalidTypeAnnotationExpression { annotation = left; expected }),
+        InvalidType (InvalidTypeAnnotationExpression { annotation = right; _ }) )
+      when Expression.equal left right ->
+        InvalidType (InvalidTypeAnnotationExpression { annotation = left; expected })
     | ( InvalidTypeVariable { annotation = left; origin = left_origin },
         InvalidTypeVariable { annotation = right; origin = right_origin } )
       when Type.Variable.equal left right
@@ -4198,8 +4214,10 @@ let dequalify
     | InvalidExceptionGroupHandler annotation -> InvalidExceptionGroupHandler (dequalify annotation)
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
         InvalidMethodSignature { kind with annotation = annotation >>| dequalify }
-    | InvalidType (InvalidType { annotation; expected }) ->
-        InvalidType (InvalidType { annotation = dequalify annotation; expected })
+    | InvalidType (InvalidTypeAnnotation { annotation; expected }) ->
+        InvalidType (InvalidTypeAnnotation { annotation = dequalify annotation; expected })
+    | InvalidType (InvalidTypeAnnotationExpression details) ->
+        InvalidType (InvalidTypeAnnotationExpression details)
     | InvalidType (FinalNested annotation) -> InvalidType (FinalNested (dequalify annotation))
     | InvalidType (FinalParameter name) -> InvalidType (FinalParameter name)
     | InvalidType (NestedAlias name) -> InvalidType (NestedAlias name)

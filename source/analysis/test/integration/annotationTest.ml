@@ -1380,6 +1380,18 @@ let test_check_incomplete_callable =
               Expected `Callable[[<parameters>], <return type>]` or `Callable[..., <return \
               type>]`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~concise:true
+           ~show_error_traces:true
+           {|
+              from typing import Callable
+              x: Callable[[...], str]
+            |}
+           [
+             "Invalid type [31]: Expression `typing.Callable[([...], str)]` is not a valid type.\n\
+              Expected `Callable[[<parameters>], <return type>]` or `Callable[..., <return type>]`.";
+           ];
     ]
 
 
