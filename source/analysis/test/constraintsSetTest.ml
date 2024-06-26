@@ -1526,9 +1526,7 @@ let test_instantiate_protocol_parameters context =
       |> GlobalResolution.parse_annotation resolution ~validation:NoValidation
     in
     let optional_ordered_types_printer optional =
-      optional
-      >>| Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp)
-      |> Option.value ~default:"None"
+      optional >>| Format.asprintf "%a" Type.Parameter.pp_list |> Option.value ~default:"None"
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =

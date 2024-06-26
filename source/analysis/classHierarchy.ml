@@ -435,10 +435,7 @@ let to_dot (module Handler : Handler) ~class_names =
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
             Format.asprintf "  %s -> %s" class_name successor |> Buffer.add_string buffer;
             if not (List.is_empty parameters) then
-              Format.asprintf
-                "[label=\"(%a)\"]"
-                (Type.pp_parameters ~pp_type:Type.pp_concise)
-                parameters
+              Format.asprintf "[label=\"(%a)\"]" Type.Parameter.pp_list parameters
               |> Buffer.add_string buffer;
             Buffer.add_string buffer "\n")
     |> ignore

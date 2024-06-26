@@ -78,35 +78,6 @@ module Record = struct
 
       let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
         { variable = name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
-
-
-      let pp_concise format { variable; constraints; variance; _ } ~pp_type =
-        let name =
-          match constraints with
-          | Bound _
-          | Explicit _
-          | Unconstrained ->
-              "Variable"
-          | LiteralIntegers -> "IntegerVariable"
-        in
-        let constraints =
-          match constraints with
-          | Bound bound -> Format.asprintf " (bound to %a)" pp_type bound
-          | Explicit constraints ->
-              Format.asprintf
-                " <: [%a]"
-                (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
-                constraints
-          | Unconstrained -> ""
-          | LiteralIntegers -> ""
-        in
-        let variance =
-          match variance with
-          | Covariant -> "(covariant)"
-          | Contravariant -> "(contravariant)"
-          | Invariant -> ""
-        in
-        Format.fprintf format "%s[%s%s]%s" name (Identifier.sanitized variable) constraints variance
     end
 
     (* TODO(T47346673): Handle variance on variadics. *)
@@ -132,14 +103,6 @@ module Record = struct
           variable_namespace: RecordNamespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
-
-        let component_name = function
-          | KeywordArguments -> "kwargs"
-          | PositionalArguments -> "args"
-
-
-        let pp_concise format { component; variable_name; _ } =
-          Format.fprintf format "%s.%s" variable_name (component_name component)
       end
 
       let create ?(variance = Invariant) name =
@@ -153,8 +116,6 @@ module Record = struct
         namespace: RecordNamespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
-
-      let pp_concise format { name; _ } = Format.fprintf format "%s" name
 
       let create name = { name; state = Free { escaped = false }; namespace = 1 }
     end
@@ -177,13 +138,6 @@ module Record = struct
 
     let unpack_public_names =
       ["typing.Unpack"; "pyre_extensions.Unpack"; "typing_extensions.Unpack"]
-
-
-    let show_type_list types ~pp_type =
-      Format.asprintf
-        "%a"
-        (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
-        types
 
 
     module Concatenation = struct
@@ -220,23 +174,6 @@ module Record = struct
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
-      let rec pp_unpackable ~pp_type format = function
-        | Variadic variadic -> Format.fprintf format "*%a" Variable.TypeVarTuple.pp_concise variadic
-        | UnboundedElements annotation -> Format.fprintf format "*Tuple[%a, ...]" pp_type annotation
-
-
-      and pp_concatenation format { prefix; middle; suffix } ~pp_type =
-        Format.fprintf
-          format
-          "%s%s%a%s%s"
-          (show_type_list ~pp_type prefix)
-          (if List.is_empty prefix then "" else ", ")
-          (pp_unpackable ~pp_type)
-          middle
-          (if List.is_empty suffix then "" else ", ")
-          (show_type_list ~pp_type suffix)
-
-
       let extract_sole_variadic = function
         | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
         | _ -> None
@@ -249,31 +186,6 @@ module Record = struct
 
       let is_fully_unbounded concatenation =
         extract_sole_unbounded_annotation concatenation |> Option.is_some
-
-
-      let unpackable_to_expression ~expression ~location unpackable =
-        let index_value =
-          match unpackable with
-          | Variadic variadic ->
-              Expression.Name
-                (create_name
-                   ~location
-                   (Format.asprintf "%a" Variable.TypeVarTuple.pp_concise variadic))
-          | UnboundedElements annotation ->
-              subscript
-                ~location
-                "typing.Tuple"
-                [
-                  expression annotation;
-                  Expression.Constant Constant.Ellipsis |> Node.create ~location;
-                ]
-        in
-        Expression.Subscript
-          {
-            base = Expression.Name (create_name ~location "typing.Unpack") |> Node.create ~location;
-            index = index_value |> Node.create ~location;
-          }
-        |> Node.create ~location
     end
 
     type 'annotation record =
@@ -308,13 +220,6 @@ module Record = struct
       suffix_pairs: ('annotation * 'annotation) list;
     }
     [@@deriving compare, eq, sexp, show, hash]
-
-    let pp_concise format variable ~pp_type =
-      match variable with
-      | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
-      | Concatenation concatenation ->
-          Format.fprintf format "%a" (Concatenation.pp_concatenation ~pp_type) concatenation
-
 
     let concatenate ~left ~right =
       match left, right with
@@ -655,31 +560,6 @@ module Record = struct
         | Variable of 'annotation variable
         | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
-
-      let show_concise ~pp_type parameter =
-        let print_named ~kind { name; annotation; default } =
-          let name = Identifier.sanitized name in
-          Format.asprintf
-            "%s(%s, %a%s)"
-            kind
-            name
-            pp_type
-            annotation
-            (if default then ", default" else "")
-        in
-        match parameter with
-        | PositionalOnly { default; annotation; _ } ->
-            Format.asprintf "%a%s" pp_type annotation (if default then ", default" else "")
-        | Named named -> print_named ~kind:"Named" named
-        | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
-        | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
-        | Variable (Concatenation concatenation) ->
-            Format.asprintf
-              "Variable(%a)"
-              (OrderedTypes.Concatenation.pp_concatenation ~pp_type)
-              concatenation
-        | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
-
 
       let annotation = function
         | PositionalOnly { annotation; _ } -> Some annotation
@@ -1514,6 +1394,135 @@ module Canonicalization = struct
 end
 
 module PrettyPrinting = struct
+  module Variable = struct
+    module TypeVar = struct
+      open Record.Variable.RecordTypeVar
+
+      let pp_concise format { variable; constraints; variance; _ } ~pp_type =
+        let name =
+          match constraints with
+          | Bound _
+          | Explicit _
+          | Unconstrained ->
+              "Variable"
+          | LiteralIntegers -> "IntegerVariable"
+        in
+        let constraints =
+          match constraints with
+          | Bound bound -> Format.asprintf " (bound to %a)" pp_type bound
+          | Explicit constraints ->
+              Format.asprintf
+                " <: [%a]"
+                (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
+                constraints
+          | Unconstrained -> ""
+          | LiteralIntegers -> ""
+        in
+        let variance =
+          match variance with
+          | Covariant -> "(covariant)"
+          | Contravariant -> "(contravariant)"
+          | Invariant -> ""
+        in
+        Format.fprintf format "%s[%s%s]%s" name (Identifier.sanitized variable) constraints variance
+    end
+
+    module ParamSpec = struct
+      module Components = struct
+        open Record.Variable.RecordParamSpec.RecordComponents
+
+        let component_name = function
+          | KeywordArguments -> "kwargs"
+          | PositionalArguments -> "args"
+
+
+        let pp_concise format { component; variable_name; _ } =
+          Format.fprintf format "%s.%s" variable_name (component_name component)
+      end
+    end
+
+    module TypeVarTuple = struct
+      open Record.Variable.TypeVarTuple
+
+      let pp_concise format { name; _ } = Format.fprintf format "%s" name
+    end
+
+    open Record.Variable
+
+    let pp_concise ~pp_type format = function
+      | TypeVarVariable variable -> TypeVar.pp_concise format variable ~pp_type
+      | ParamSpecVariable { name; _ } ->
+          Format.fprintf format "CallableParameterTypeVariable[%s]" name
+      | TypeVarTupleVariable { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
+  end
+
+  module OrderedTypes = struct
+    open Record.OrderedTypes
+
+    let show_type_list types ~pp_type =
+      Format.asprintf
+        "%a"
+        (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
+        types
+
+
+    module Concatenation = struct
+      open Record.OrderedTypes.Concatenation
+
+      let rec pp_unpackable ~pp_type format = function
+        | Variadic variadic -> Format.fprintf format "*%a" Variable.TypeVarTuple.pp_concise variadic
+        | UnboundedElements annotation -> Format.fprintf format "*Tuple[%a, ...]" pp_type annotation
+
+
+      and pp_concatenation format { prefix; middle; suffix } ~pp_type =
+        Format.fprintf
+          format
+          "%s%s%a%s%s"
+          (show_type_list ~pp_type prefix)
+          (if List.is_empty prefix then "" else ", ")
+          (pp_unpackable ~pp_type)
+          middle
+          (if List.is_empty suffix then "" else ", ")
+          (show_type_list ~pp_type suffix)
+    end
+
+    let pp_concise format variable ~pp_type =
+      match variable with
+      | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
+      | Concatenation concatenation ->
+          Format.fprintf format "%a" (Concatenation.pp_concatenation ~pp_type) concatenation
+  end
+
+  module Callable = struct
+    module Parameter = struct
+      open Record.Callable.RecordParameter
+
+      let show_concise ~pp_type parameter =
+        let print_named ~kind { name; annotation; default } =
+          let name = Identifier.sanitized name in
+          Format.asprintf
+            "%s(%s, %a%s)"
+            kind
+            name
+            pp_type
+            annotation
+            (if default then ", default" else "")
+        in
+        match parameter with
+        | PositionalOnly { default; annotation; _ } ->
+            Format.asprintf "%a%s" pp_type annotation (if default then ", default" else "")
+        | Named named -> print_named ~kind:"Named" named
+        | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
+        | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
+        | Variable (Concatenation concatenation) ->
+            Format.asprintf
+              "Variable(%a)"
+              (OrderedTypes.Concatenation.pp_concatenation ~pp_type)
+              concatenation
+        | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
+    end
+  end
+
   open T
 
   let show_callable_parameters ~pp_type = function
@@ -1522,7 +1531,7 @@ module PrettyPrinting = struct
         Canonicalization.parameter_variable_type_representation variable
         |> Format.asprintf "%a" pp_type
     | Defined parameters ->
-        List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
+        List.map parameters ~f:(Callable.Parameter.show_concise ~pp_type)
         |> String.concat ~sep:", "
         |> fun parameters -> Format.asprintf "[%s]" parameters
 
@@ -1543,7 +1552,7 @@ module PrettyPrinting = struct
               Format.fprintf
                 format
                 "%a"
-                (Record.OrderedTypes.Concatenation.pp_unpackable ~pp_type)
+                (OrderedTypes.Concatenation.pp_unpackable ~pp_type)
                 unpackable
         in
         Format.pp_print_list
@@ -1559,8 +1568,7 @@ module PrettyPrinting = struct
       | Record.OrderedTypes.Concatenation
           { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
           Format.asprintf "%a, ..." pp annotation
-      | ordered_type ->
-          Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
+      | ordered_type -> Format.asprintf "%a" (OrderedTypes.pp_concise ~pp_type:pp) ordered_type
     in
     match annotation with
     | Bottom -> Format.fprintf format "undefined"
@@ -1597,7 +1605,7 @@ module PrettyPrinting = struct
         let name = Canonicalization.reverse_substitute name in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
-        Record.Variable.RecordParamSpec.RecordComponents.pp_concise format component
+        Variable.ParamSpec.Components.pp_concise format component
     | Primitive name -> Format.fprintf format "%s" name
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
     | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
@@ -1613,7 +1621,7 @@ module PrettyPrinting = struct
           format
           "typing.Union[%s]"
           (List.map parameters ~f:show |> String.concat ~sep:", ")
-    | Variable unary -> Record.Variable.RecordTypeVar.pp_concise format unary ~pp_type:pp
+    | Variable unary -> Variable.TypeVar.pp_concise format unary ~pp_type:pp
 
 
   and show annotation = Format.asprintf "%a" pp annotation
@@ -1650,7 +1658,7 @@ module PrettyPrinting = struct
               | Variable (Concatenation concatenation) ->
                   Format.asprintf
                     "*(%a)"
-                    (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
+                    (OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
                     concatenation
               | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
             in
@@ -1681,7 +1689,7 @@ module PrettyPrinting = struct
         let name = strip_qualification (Canonicalization.reverse_substitute name) in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
-        Record.Variable.RecordParamSpec.RecordComponents.pp_concise format component
+        Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
@@ -1690,16 +1698,12 @@ module PrettyPrinting = struct
     | Tuple (Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] }) ->
         Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
     | Tuple ordered_type ->
-        Format.fprintf
-          format
-          "Tuple[%a]"
-          (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
-          ordered_type
+        Format.fprintf format "Tuple[%a]" (OrderedTypes.pp_concise ~pp_type:pp_concise) ordered_type
     | TypeOperation (Compose ordered_type) ->
         Format.fprintf
           format
           "Compose[%a]"
-          (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
+          (OrderedTypes.pp_concise ~pp_type:pp_concise)
           ordered_type
     | Union [NoneType; parameter]
     | Union [parameter; NoneType] ->
@@ -1730,6 +1734,9 @@ module Parameter = struct
   let is_unpacked = function
     | Unpacked _ -> true
     | _ -> false
+
+
+  let pp_list = PrettyPrinting.pp_parameters ~pp_type:PrettyPrinting.pp
 end
 
 module Transforms = struct
@@ -1816,7 +1823,7 @@ module Callable = struct
       |> snd
 
 
-    let show_concise = show_concise ~pp_type:PrettyPrinting.pp
+    let show_concise = PrettyPrinting.Callable.Parameter.show_concise ~pp_type:PrettyPrinting.pp
 
     let default = function
       | PositionalOnly { default; _ }
@@ -2119,11 +2126,42 @@ module OrderedTypes = struct
   open T
   include Record.OrderedTypes
 
+  module Concatenation = struct
+    include Concatenation
+
+    let pp_unpackable =
+      PrettyPrinting.OrderedTypes.Concatenation.pp_unpackable ~pp_type:PrettyPrinting.pp
+
+
+    let unpackable_to_expression ~expression ~location unpackable =
+      let index_value =
+        match unpackable with
+        | Record.OrderedTypes.Concatenation.Variadic variadic ->
+            Expression.Name
+              (create_name
+                 ~location
+                 (Format.asprintf "%a" PrettyPrinting.Variable.TypeVarTuple.pp_concise variadic))
+        | UnboundedElements annotation ->
+            Ast.Expression.subscript
+              ~location
+              "typing.Tuple"
+              [
+                expression annotation; Expression.Constant Constant.Ellipsis |> Node.create ~location;
+              ]
+      in
+      Expression.Subscript
+        {
+          base = Expression.Name (create_name ~location "typing.Unpack") |> Node.create ~location;
+          index = index_value |> Node.create ~location;
+        }
+      |> Node.create ~location
+  end
+
   type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
   type ordered_types_t = t
 
-  let pp_concise = pp_concise ~pp_type:PrettyPrinting.pp
+  let pp_concise = PrettyPrinting.OrderedTypes.pp_concise ~pp_type:PrettyPrinting.pp
 
   let union_upper_bound = function
     | Concrete concretes -> Constructors.union concretes
@@ -2690,6 +2728,7 @@ module Variable = struct
         | _ -> None
       in
       let open Record.Variable.RecordParamSpec.RecordComponents in
+      let open PrettyPrinting.Variable.ParamSpec.Components in
       match variable_parameter_annotation, keywords_parameter_annotation with
       | ( {
             Node.value =
@@ -3105,18 +3144,13 @@ module Variable = struct
     type t = T.t Record.Variable.record [@@deriving compare, sexp]
   end)
 
+  let pp_concise = PrettyPrinting.Variable.pp_concise ~pp_type:PrettyPrinting.pp
+
   type variable_zip_result = {
     variable_pair: pair;
     received_parameter: Parameter.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
-
-  let pp_concise format = function
-    | TypeVarVariable variable -> TypeVar.pp_concise format variable ~pp_type:PrettyPrinting.pp
-    | ParamSpecVariable { name; _ } ->
-        Format.fprintf format "CallableParameterTypeVariable[%s]" name
-    | TypeVarTupleVariable { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
-
 
   let parse_declaration expression ~target =
     match ParamSpec.parse_declaration expression ~target with
@@ -3480,7 +3514,7 @@ module ToExpression = struct
       { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
     =
     List.map ~f:expression prefix
-    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable]
+    @ [OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable]
     @ List.map ~f:expression suffix
 
 
@@ -3556,17 +3590,14 @@ module ToExpression = struct
             | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
             | Unpacked unpackable ->
-                Record.OrderedTypes.Concatenation.unpackable_to_expression
-                  ~expression
-                  ~location
-                  unpackable
+                OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable
           in
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
         subscript (Canonicalization.reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
-        let attribute = Record.Variable.RecordParamSpec.RecordComponents.component_name component in
+        let attribute = PrettyPrinting.Variable.ParamSpec.Components.component_name component in
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
@@ -5153,9 +5184,16 @@ let apply_type_map = Transforms.apply_type_map
 
 include Containers
 include Constructors
-include PrettyPrinting
 include Extractions
 include Predicates
+
+let pp = PrettyPrinting.pp
+
+let show = PrettyPrinting.show
+
+let pp_concise = PrettyPrinting.pp_concise
+
+let show_concise = PrettyPrinting.show_concise
 
 (* We always send types in the pretty printed form *)
 let to_yojson annotation = `String (PrettyPrinting.show annotation)

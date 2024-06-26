@@ -65,12 +65,6 @@ module Record : sig
 
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
-      val pp_unpackable
-        :  pp_type:(Format.formatter -> 'annotation -> unit) ->
-        Format.formatter ->
-        'annotation record_unpackable ->
-        unit
-
       val create_unpackable
         :  'annotation Variable.TypeVarTuple.record ->
         'annotation record_unpackable
@@ -115,12 +109,6 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
 
     val create_unbounded_concatenation : 'annotation -> 'annotation record
-
-    val pp_concise
-      :  Format.formatter ->
-      'a record ->
-      pp_type:(Format.formatter -> 'a -> unit) ->
-      unit
 
     val split_matching_elements_by_length
       :  'annotation record ->
@@ -275,15 +263,11 @@ module Parameter : sig
   val all_singles : t list -> type_t list option
 
   val to_variable : t -> type_t Record.Variable.record option
+
+  val pp_list : Format.formatter -> t list -> unit
 end
 
 val pp_concise : Format.formatter -> t -> unit
-
-val pp_parameters
-  :  pp_type:(Format.formatter -> type_t -> unit) ->
-  Format.formatter ->
-  Parameter.t list ->
-  unit
 
 val show_concise : t -> string
 
@@ -634,6 +618,14 @@ val weaken_to_arbitrary_literal_if_possible : t -> t
 module OrderedTypes : sig
   include module type of struct
     include Record.OrderedTypes
+  end
+
+  module Concatenation : sig
+    include module type of struct
+      include Record.OrderedTypes.Concatenation
+    end
+
+    val pp_unpackable : Format.formatter -> type_t record_unpackable -> unit
   end
 
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]

@@ -1715,9 +1715,9 @@ let rec messages ~concise ~signature location kind =
           [
             Format.asprintf
               "Argument types `%a` are not compatible with expected variadic elements `%a`."
-              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              Type.OrderedTypes.pp_concise
               ordered_types
-              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              Type.OrderedTypes.pp_concise
               variable;
           ]
       | VariableArgumentsWithUnpackableType
@@ -1732,16 +1732,14 @@ let rec messages ~concise ~signature location kind =
       | VariableArgumentsWithUnpackableType
           { variable; mismatch = CannotConcatenate unconcatenatable } ->
           let unconcatenatable =
-            List.map
-              unconcatenatable
-              ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
+            List.map unconcatenatable ~f:(Format.asprintf "%a" Type.OrderedTypes.pp_concise)
             |> String.concat ~sep:", "
           in
           [
             Format.asprintf
               "Variadic type variable `%a` cannot be made to contain `%s`; concatenation of \
                multiple variadic type variables is not yet implemented."
-              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              Type.OrderedTypes.pp_concise
               variable
               unconcatenatable;
           ])
@@ -1980,13 +1978,10 @@ let rec messages ~concise ~signature location kind =
         | CallableParameters actual ->
             Format.asprintf
               "callable parameters `%a`"
-              (Type.pp_parameters ~pp_type:Type.pp)
+              Type.Parameter.pp_list
               [CallableParameters actual]
         | Unpacked actual ->
-            Format.asprintf
-              "variadic `%a`"
-              (Type.OrderedTypes.Concatenation.pp_unpackable ~pp_type:Type.pp)
-              actual
+            Format.asprintf "variadic `%a`" Type.OrderedTypes.Concatenation.pp_unpackable actual
       in
       [Format.asprintf "%s, but a %s was given for generic type %s." expected actual name]
   | InvalidTypeVariable { annotation; origin } when concise -> (
