@@ -164,9 +164,22 @@ module Make (Analysis : ANALYSIS) = struct
 
     let get target registry = Target.Map.find_opt registry target
 
+    (* Pretty-print function for the registry *)
+    let pp formatter registry =
+      let pp_pair formatter (key, value) =
+        Format.fprintf formatter "@[%a -> %a@]" Target.pp key Model.pp value
+      in
+      let pp_pairs formatter pairs =
+        Format.pp_print_list pp_pair formatter (Target.Map.bindings registry)
+      in
+      Format.fprintf formatter "@[<v 2>{%a}@]" pp_pairs
+
+    (* Show function for the registry *)
+    let show = Format.asprintf "%a" pp
+  end
+
     let merge ~join left right =
       Target.Map.union (fun _ left right -> Some (join left right)) left right
-
 
     let of_alist ~join = Target.Map.of_alist ~f:join
 
