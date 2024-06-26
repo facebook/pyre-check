@@ -337,7 +337,7 @@ let test_get_typed_dictionary context =
   in
   let assert_typed_dictionary ~annotation expected_type =
     assert_equal
-      ~printer:[%show: Type.t Type.Record.TypedDictionary.record option]
+      ~printer:[%show: Type.TypedDictionary.t option]
       expected_type
       (GlobalResolution.get_typed_dictionary (Resolution.global_resolution resolution) annotation)
   in
@@ -349,12 +349,8 @@ let test_get_typed_dictionary context =
          name = "test.Movie";
          fields =
            [
-             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-             {
-               Type.Record.TypedDictionary.name = "year";
-               annotation = Type.integer;
-               required = true;
-             };
+             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
+             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = true };
            ];
        });
   assert_typed_dictionary
@@ -364,17 +360,9 @@ let test_get_typed_dictionary context =
          name = "test.Child";
          fields =
            [
-             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-             {
-               Type.Record.TypedDictionary.name = "rating";
-               annotation = Type.integer;
-               required = true;
-             };
-             {
-               Type.Record.TypedDictionary.name = "year";
-               annotation = Type.integer;
-               required = true;
-             };
+             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
+             { Type.TypedDictionary.name = "rating"; annotation = Type.integer; required = true };
+             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = true };
            ];
        });
   assert_typed_dictionary
@@ -384,16 +372,8 @@ let test_get_typed_dictionary context =
          name = "test.NonTotalMovie";
          fields =
            [
-             {
-               Type.Record.TypedDictionary.name = "name";
-               annotation = Type.string;
-               required = false;
-             };
-             {
-               Type.Record.TypedDictionary.name = "year";
-               annotation = Type.integer;
-               required = false;
-             };
+             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = false };
+             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
            ];
        });
   ()

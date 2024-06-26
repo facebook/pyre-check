@@ -3503,14 +3503,14 @@ let test_infer_transform _ =
 let test_fields_from_constructor _ =
   let assert_fields ~constructor ~expected =
     assert_equal
-      ~printer:[%show: Type.t Type.Record.TypedDictionary.typed_dictionary_field list option]
+      ~printer:[%show: Type.TypedDictionary.typed_dictionary_field list option]
       expected
       (Type.TypedDictionary.fields_from_constructor constructor)
   in
   let fields =
     [
-      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
+      { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
+      { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
     ]
   in
   let non_constructor =

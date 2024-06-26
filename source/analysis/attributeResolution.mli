@@ -203,7 +203,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Type.t ->
-    Type.t Type.Record.TypedDictionary.record option
+    Type.TypedDictionary.t option
 
   val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
@@ -310,7 +310,7 @@ module AttributeReadOnly : sig
   val constraints_solution_exists
     :  t ->
     ?dependency:DependencyKey.registered ->
-    get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+    get_typed_dictionary_override:(Type.t -> Type.TypedDictionary.t option) ->
     left:Type.t ->
     right:Type.t ->
     bool

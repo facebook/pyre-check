@@ -240,8 +240,8 @@ let infer ~pyre_api ~user_models =
   let compute_typed_dict_models class_name =
     let fields =
       PyrePysaApi.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
-      >>| (fun { Type.Record.TypedDictionary.fields; _ } -> fields)
-      >>| List.map ~f:(fun { Analysis.Type.Record.TypedDictionary.name; required = _; _ } -> name)
+      >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
+      >>| List.map ~f:(fun { Analysis.Type.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]
     in
     let self =

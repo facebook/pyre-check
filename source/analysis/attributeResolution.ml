@@ -2202,7 +2202,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
             | _ -> None
           in
-          fields >>| fun fields -> { Type.Record.TypedDictionary.fields; name = class_name }
+          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
       | _ -> None
 
     method full_order ~assumptions =
@@ -2671,9 +2671,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | _ -> None
         in
         let keep_last_declarations fields =
-          List.map
-            fields
-            ~f:(fun (field : Type.t Type.Record.TypedDictionary.typed_dictionary_field) ->
+          List.map fields ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
               field.name, field)
           |> Map.of_alist_multi (module String)
           |> Map.to_alist

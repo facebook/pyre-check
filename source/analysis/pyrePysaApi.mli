@@ -94,7 +94,7 @@ module ReadOnly : sig
 
   val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
-  val get_typed_dictionary : t -> Type.t -> Type.t Type.Record.TypedDictionary.record option
+  val get_typed_dictionary : t -> Type.t -> Type.TypedDictionary.t option
 
   val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 

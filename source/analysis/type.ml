@@ -745,21 +745,6 @@ module Record = struct
           None
   end
 
-  module TypedDictionary = struct
-    type 'annotation typed_dictionary_field = {
-      name: string;
-      annotation: 'annotation;
-      required: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'annotation record = {
-      name: Identifier.t;
-      fields: 'annotation typed_dictionary_field list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
   module RecursiveType = struct
     type 'annotation record = {
       name: Identifier.t;
@@ -1602,14 +1587,6 @@ module PrettyPrinting = struct
           s
           format
           parameters
-
-
-  let pp_typed_dictionary_field
-      ~pp_type
-      format
-      { Record.TypedDictionary.name; annotation; required }
-    =
-    Format.fprintf format "%s%s: %a" name (if required then "" else "?") pp_type annotation
 
 
   let rec pp format annotation =
@@ -3855,8 +3832,20 @@ module ToExpression = struct
 end
 
 module TypedDictionary = struct
+  type typed_dictionary_field = {
+    name: string;
+    annotation: T.t;
+    required: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = {
+    name: Identifier.t;
+    fields: typed_dictionary_field list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   open T
-  open Record.TypedDictionary
 
   let anonymous fields = { name = "$anonymous"; fields }
 
@@ -3880,7 +3869,7 @@ module TypedDictionary = struct
     { name; annotation; required }
 
 
-  let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
+  let are_fields_total = List.for_all ~f:(fun { required; _ } -> required)
 
   let same_name { name = left_name; required = _; _ } { name = right_name; required = _; _ } =
     String.equal left_name right_name
@@ -3983,7 +3972,7 @@ module TypedDictionary = struct
   type special_method = {
     name: string;
     special_index: int option;
-    overloads: t typed_dictionary_field list -> t Callable.overload list;
+    overloads: typed_dictionary_field list -> t Callable.overload list;
   }
 
   let key_parameter name =

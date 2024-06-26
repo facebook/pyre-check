@@ -179,7 +179,7 @@ let errors_from_not_found
                 ~mismatch
                 ~method_name
                 ~position
-                { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
+                { Type.TypedDictionary.fields; name = typed_dictionary_name }
               =
               if
                 Type.TypedDictionary.is_special_mismatch
@@ -192,7 +192,7 @@ let errors_from_not_found
                 | Type.Literal (Type.String (Type.LiteralValue field_name)) ->
                     let required_field_exists =
                       List.exists
-                        ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
+                        ~f:(fun { Type.TypedDictionary.name; required; _ } ->
                           String.equal name field_name && required)
                         fields
                     in
@@ -6529,7 +6529,7 @@ module State (Context : Context) = struct
         in
         let errors = List.fold ~init:errors ~f:check_base bases in
         if is_current_class_typed_dictionary then
-          let open Type.Record.TypedDictionary in
+          let open Type.TypedDictionary in
           let superclass_pairs_with_same_field_name =
             let field_name_to_successor_fields_map =
               let get_typed_dictionary_fields class_name =
@@ -7461,7 +7461,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         let attributes = ClassSummary.attributes ~include_generated_attributes:true class_summary in
 
         let override_errors_for_typed_dictionary class_name =
-          let open Type.Record.TypedDictionary in
           let get_typed_dictionary_fields class_name =
             GlobalResolution.get_typed_dictionary global_resolution (Type.Primitive class_name)
             >>| (fun typed_dictionary -> typed_dictionary.fields)
@@ -7470,20 +7469,20 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           let field_name_to_successor_fields_map =
             let get_successor_map_entries successor_name =
               get_typed_dictionary_fields successor_name
-              |> List.map ~f:(fun (field : Type.t typed_dictionary_field) ->
+              |> List.map ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
                      field.name, (successor_name, field))
             in
             GlobalResolution.successors global_resolution class_name
             |> List.concat_map ~f:get_successor_map_entries
             |> Map.of_alist_multi (module String)
           in
-          let colliding_successor_fields (field : Type.t typed_dictionary_field) =
+          let colliding_successor_fields (field : Type.TypedDictionary.typed_dictionary_field) =
             let matching_successors =
               Map.find_multi field_name_to_successor_fields_map field.name
             in
             let is_inherited_field =
               List.exists matching_successors ~f:(fun (_, successor_field) ->
-                  [%equal: Type.t typed_dictionary_field] field successor_field)
+                  [%equal: Type.TypedDictionary.typed_dictionary_field] field successor_field)
             in
             if is_inherited_field then
               []
@@ -7495,7 +7494,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             get_typed_dictionary_fields class_name |> List.concat_map ~f:colliding_successor_fields
           in
           let create_override_error
-              ((field : Type.t typed_dictionary_field), (successor_name, successor_field))
+              ( (field : Type.TypedDictionary.typed_dictionary_field),
+                (successor_name, successor_field) )
             =
             let kind =
               Error.InconsistentOverride
@@ -7507,7 +7507,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     Error.WeakenedPostcondition
                       {
                         actual = field.annotation;
-                        expected = successor_field.annotation;
+                        expected = successor_field.Type.TypedDictionary.annotation;
                         due_to_invariance = false;
                       };
                 }

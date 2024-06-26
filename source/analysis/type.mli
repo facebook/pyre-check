@@ -199,21 +199,6 @@ module Record : sig
       | Unpacked of 'annotation OrderedTypes.Concatenation.record_unpackable
   end
 
-  module TypedDictionary : sig
-    type 'annotation typed_dictionary_field = {
-      name: string;
-      annotation: 'annotation;
-      required: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'annotation record = {
-      name: Identifier.t;
-      fields: 'annotation typed_dictionary_field list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
   module RecursiveType : sig
     type 'annotation record [@@deriving compare, eq, sexp, show, hash]
 
@@ -295,12 +280,6 @@ module Parameter : sig
 
   val to_variable : t -> type_t Record.Variable.record option
 end
-
-val pp_typed_dictionary_field
-  :  pp_type:(Format.formatter -> type_t -> unit) ->
-  Format.formatter ->
-  t Record.TypedDictionary.typed_dictionary_field ->
-  unit
 
 val pp_concise : Format.formatter -> t -> unit
 
@@ -936,43 +915,51 @@ val variable
 val is_concrete : t -> bool
 
 module TypedDictionary : sig
-  open Record.TypedDictionary
+  type typed_dictionary_field = {
+    name: string;
+    annotation: type_t;
+    required: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
 
-  val base_typed_dictionary : t
+  type t = {
+    name: Identifier.t;
+    fields: typed_dictionary_field list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
 
-  val anonymous : t typed_dictionary_field list -> t record
+  val base_typed_dictionary : type_t
+
+  val anonymous : typed_dictionary_field list -> t
 
   val create_field
-    :  annotation:t ->
+    :  annotation:type_t ->
     has_non_total_typed_dictionary_base_class:bool ->
     string ->
-    t typed_dictionary_field
+    typed_dictionary_field
 
-  val are_fields_total : t typed_dictionary_field list -> bool
+  val are_fields_total : typed_dictionary_field list -> bool
 
-  val same_name : t typed_dictionary_field -> t typed_dictionary_field -> bool
+  val same_name : typed_dictionary_field -> typed_dictionary_field -> bool
 
-  val same_name_different_requiredness
-    :  t typed_dictionary_field ->
-    t typed_dictionary_field ->
-    bool
+  val same_name_different_requiredness : typed_dictionary_field -> typed_dictionary_field -> bool
 
-  val same_name_different_annotation : t typed_dictionary_field -> t typed_dictionary_field -> bool
+  val same_name_different_annotation : typed_dictionary_field -> typed_dictionary_field -> bool
 
   val fields_have_colliding_keys
-    :  t typed_dictionary_field list ->
-    t typed_dictionary_field list ->
+    :  typed_dictionary_field list ->
+    typed_dictionary_field list ->
     bool
 
-  val constructor : name:Identifier.t -> fields:t typed_dictionary_field list -> Callable.t
+  val constructor : name:Identifier.t -> fields:typed_dictionary_field list -> Callable.t
 
-  val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
+  val fields_from_constructor : Callable.t -> typed_dictionary_field list option
 
   val special_overloads
     :  class_name:Primitive.t ->
-    fields:t typed_dictionary_field list ->
+    fields:typed_dictionary_field list ->
     method_name:string ->
-    t Callable.overload list option
+    type_t Callable.overload list option
 
   val is_special_mismatch
     :  class_name:Primitive.t ->

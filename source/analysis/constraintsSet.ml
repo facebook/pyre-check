@@ -56,7 +56,7 @@ type order = {
     name:Ast.Identifier.t ->
     AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
-  get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
+  get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
   metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
   assumptions: Assumptions.t;
 }
@@ -449,7 +449,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~left
       ~right
     =
-    let open Type.Record.TypedDictionary in
+    let open Type.TypedDictionary in
     let add_fallbacks other =
       Type.Variable.all_free_variables other
       |> List.fold ~init:constraints ~f:OrderedConstraints.add_fallback_to_any
@@ -730,7 +730,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               not
                 (List.exists
                    left_fields
-                   ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
+                   ~f:([%equal: Type.TypedDictionary.typed_dictionary_field] field))
             in
             if not (List.exists right_fields ~f:field_not_found) then
               [constraints]
