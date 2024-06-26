@@ -71,17 +71,21 @@ module TriggeredSinkHashMap : sig
     BackwardTaint.t
 end
 
-(* A map from locations to a backward taint of triggered sinks.
- * This is used to store triggered sinks found in the forward analysis,
- * and propagate them up in the backward analysis. *)
+(* A map from locations to the triggered sinks that are created during the forward analysis on each
+   expression, but should be propagated by the backward analysis. *)
 module TriggeredSinkLocationMap : sig
   type t
 
   val create : unit -> t
 
-  val add : t -> location:Location.t -> BackwardState.t -> unit
+  val add
+    :  location:Location.t ->
+    expression:Ast.Expression.t ->
+    taint_tree:BackwardState.Tree.t ->
+    t ->
+    unit
 
-  val get : t -> location:Location.t -> BackwardState.t
+  val get : location:Location.t -> expression:Ast.Expression.t -> t -> BackwardState.Tree.t
 end
 
 (* Accumulate flows and generate issues. *)

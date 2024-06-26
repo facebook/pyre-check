@@ -120,7 +120,7 @@ def tito(x: str) -> str:
 
 def stradd_tito_triggered_user_controlled(arg):
     x: str = user_controlled_input()
-    x + tito(arg.f)  # False negative: Should see a triggered sink on arg.f
+    x + tito(arg.f)  # Should see a triggered sink on arg.f
 
 
 def test_large_string_add():

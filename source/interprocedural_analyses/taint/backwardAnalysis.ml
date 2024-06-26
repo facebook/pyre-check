@@ -401,9 +401,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Callee -> { Call.Argument.name = None; value = callee } :: arguments
       | None -> arguments
     in
-    let triggered_taint =
-      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location:call_location
-    in
     let taint_model =
       TaintProfiler.track_model_fetch
         ~profiler
@@ -424,16 +421,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let taint_model =
-      {
-        taint_model with
-        backward =
-          {
-            taint_model.backward with
-            sink_taint = BackwardState.join taint_model.backward.sink_taint triggered_taint;
-          };
-      }
-    in
     let call_taint =
       BackwardState.Tree.add_local_breadcrumbs
         (Features.type_breadcrumbs (Option.value_exn return_type))
@@ -608,6 +595,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves
           ~model:taint_model
+          ~auxiliary_triggered_taint:
+            (Issue.TriggeredSinkLocationMap.get
+               ~location:call_location
+               ~expression:argument
+               FunctionContext.triggered_sinks)
           ~location
           ~call_target
           ~arguments
@@ -2095,18 +2087,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
     in
-    let triggered_taint =
-      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location
-      |> BackwardState.transform
-           BackwardState.Tree.Self
-           Map
-           ~f:
-             (CallModel.StringFormatCall.apply_call
-                ~callee:call_target.CallGraph.CallTarget.target
-                ~pyre_in_context
-                ~location:location_with_module)
-    in
-    let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
       CallModel.StringFormatCall.implicit_string_literal_sinks
         ~pyre_in_context
@@ -2129,6 +2109,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_location
         ~base
         ~base_state
+        taint
       =
       let {
         arguments_taint = _;
@@ -2173,6 +2154,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       new_taint, join state_to_join new_state
     in
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
+      let taint =
+        FunctionContext.triggered_sinks
+        |> Issue.TriggeredSinkLocationMap.get ~location ~expression
+        |> CallModel.StringFormatCall.apply_call
+             ~callee:call_target.CallGraph.CallTarget.target
+             ~pyre_in_context
+             ~location:location_with_module
+        |> BackwardState.Tree.join taint
+      in
       let new_taint, new_state =
         match
           CallModel.StringFormatCall.get_string_format_callees
@@ -2191,7 +2181,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~call_target
                   ~call_location:expression_location
                   ~base:expression
-                  ~base_state:state)
+                  ~base_state:state
+                  taint)
         | _ -> taint, state
       in
       let new_taint =

@@ -438,21 +438,30 @@ module TriggeredSinkHashMap = struct
     |> Option.value ~default:BackwardTaint.bottom
 end
 
-(* A map from locations to a set of triggered sinks.
- * This is used to store triggered sinks found in the forward analysis,
- * and propagate them up in the backward analysis. *)
+(* A map from locations to the triggered sinks that are created during the forward analysis on each
+   expression, but should be propagated by the backward analysis. *)
 module TriggeredSinkLocationMap = struct
-  type t = BackwardState.t Location.Table.t
+  module ExpressionMap = Stdlib.Map.Make (Ast.Expression)
+
+  type t = BackwardState.Tree.t ExpressionMap.t Location.Table.t
 
   let create () = Location.Table.create ()
 
-  let add map ~location taint =
+  let add ~location ~expression ~taint_tree map =
+    let update_expression_map = function
+      | Some existing_tree -> Some (BackwardState.Tree.join existing_tree taint_tree)
+      | None -> Some taint_tree
+    in
     Hashtbl.update map location ~f:(function
-        | Some existing -> BackwardState.join existing taint
-        | None -> taint)
+        | Some existing_map -> ExpressionMap.update expression update_expression_map existing_map
+        | None -> ExpressionMap.singleton expression taint_tree)
 
 
-  let get map ~location = Hashtbl.find map location |> Option.value ~default:BackwardState.bottom
+  let get ~location ~expression map =
+    Hashtbl.find map location
+    |> Option.value ~default:ExpressionMap.empty
+    |> ExpressionMap.find_opt expression
+    |> Option.value ~default:BackwardState.Tree.bottom
 end
 
 let compute_triggered_flows

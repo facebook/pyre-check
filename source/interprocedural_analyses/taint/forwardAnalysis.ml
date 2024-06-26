@@ -236,8 +236,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~define:FunctionContext.definition
 
 
-  let create_triggered_sinks_to_propagate ~argument_location ~triggered_sinks ~root ~path taint_tree
-    =
+  let create_triggered_sinks_to_propagate ~argument_location ~triggered_sinks taint_tree =
     let transform_into_triggered_sinks sink so_far =
       match Sinks.extract_partial_sink sink with
       | Some partial_sink ->
@@ -249,52 +248,50 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardTaint.join so_far
       | None -> so_far
     in
-    let taint_tree =
-      BackwardState.Tree.fold
-        BackwardTaint.kind
-        ~f:transform_into_triggered_sinks
-        ~init:BackwardTaint.bottom
-        taint_tree
-      |> BackwardState.Tree.create_leaf
-    in
-    BackwardState.assign ~weak:true ~root ~path taint_tree BackwardState.bottom
+    taint_tree
+    |> BackwardState.Tree.fold
+         BackwardTaint.kind
+         ~f:transform_into_triggered_sinks
+         ~init:BackwardTaint.bottom
+    |> BackwardState.Tree.create_leaf
 
 
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
      analysis. *)
   let store_triggered_sinks_to_propagate_for_call
+      ~call_location
+      ~triggered_sinks
       ~arguments_matches
        (* Need this to know both the locations of the arguments and the sinks that would be
           generated on them (that are caused by the call). *)
-      ~call_location
-      ~triggered_sinks
       sink_taint
     =
     if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
-      let create_triggered_sinks ~argument_location { AccessPath.root; _ } =
-        create_triggered_sinks_to_propagate
-          ~argument_location
-          ~root
-          ~path:[]
-          ~triggered_sinks
-          (BackwardState.read ~transform_non_leaves:(fun _ tree -> tree) ~root ~path:[] sink_taint)
+      let create_triggered_sink ~sink_taint ~argument_location { AccessPath.root; _ } =
+        sink_taint
+        |> BackwardState.read ~transform_non_leaves:(fun _ tree -> tree) ~root ~path:[]
+        |> create_triggered_sinks_to_propagate ~argument_location ~triggered_sinks
       in
-      let create_triggered_sinks
+      let store_triggered_sinks
           {
-            CallModel.ArgumentMatches.argument = { Node.location = argument_location; _ };
+            CallModel.ArgumentMatches.argument =
+              { Node.location = argument_location; _ } as argument;
             sink_matches;
             _;
           }
         =
-        List.map sink_matches ~f:(create_triggered_sinks ~argument_location)
+        let taint_tree =
+          sink_matches
+          |> List.map ~f:(create_triggered_sink ~sink_taint ~argument_location)
+          |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
+        in
+        Issue.TriggeredSinkLocationMap.add
+          ~location:call_location
+          ~expression:argument
+          ~taint_tree
+          FunctionContext.triggered_sinks_to_propagate
       in
-      arguments_matches
-      |> List.map ~f:create_triggered_sinks
-      |> List.concat
-      |> Algorithms.fold_balanced ~f:BackwardState.join ~init:BackwardState.bottom
-      |> Issue.TriggeredSinkLocationMap.add
-           FunctionContext.triggered_sinks_to_propagate
-           ~location:call_location
+      List.iter arguments_matches ~f:store_triggered_sinks
 
 
   let store_triggered_sinks_to_propagate_for_string_combine
@@ -304,23 +301,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       nested_expressions
     =
     if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
-      let to_triggered_sink ({ Node.location; _ } as nested_expression) =
-        AccessPath.of_expression ~self_variable nested_expression
-        >>| fun access_path ->
-        create_triggered_sinks_to_propagate
-          ~argument_location:location
-          ~root:access_path.root
-          ~path:access_path.path
-          ~triggered_sinks
-          sink_tree
-        (* TODO(T146550300): False negative *)
+      let store_triggered_sink ({ Node.location; _ } as expression) =
+        Issue.TriggeredSinkLocationMap.add
+          ~location:call_location
+          ~expression
+          ~taint_tree:
+            (create_triggered_sinks_to_propagate
+               ~argument_location:location
+               ~triggered_sinks
+               sink_tree)
+          FunctionContext.triggered_sinks_to_propagate
       in
-      nested_expressions
-      |> List.filter_map ~f:to_triggered_sink
-      |> Algorithms.fold_balanced ~f:BackwardState.join ~init:BackwardState.bottom
-      |> Issue.TriggeredSinkLocationMap.add
-           FunctionContext.triggered_sinks_to_propagate
-           ~location:call_location
+      List.iter ~f:store_triggered_sink nested_expressions
 
 
   module StringFormatCall = struct
@@ -617,6 +609,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
+          ~auxiliary_triggered_taint:BackwardState.Tree.bottom
           ~location
           ~call_target
           ~arguments
