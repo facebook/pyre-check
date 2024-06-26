@@ -12,7 +12,7 @@ module Record : sig
   module Variable : sig
     type state [@@deriving compare, eq, sexp, show, hash]
 
-    module RecordNamespace : sig
+    module Namespace : sig
       type t [@@deriving compare, eq, sexp, show, hash]
     end
 
@@ -29,21 +29,21 @@ module Record : sig
       | Invariant
     [@@deriving compare, eq, sexp, show, hash]
 
-    module RecordTypeVar : sig
+    module TypeVar : sig
       type 'annotation record = {
         variable: Identifier.t;
         constraints: 'annotation constraints;
         variance: variance;
         state: state;
-        namespace: RecordNamespace.t;
+        namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
     end
 
-    module RecordParamSpec : sig
+    module ParamSpec : sig
       type 'annotation record [@@deriving compare, eq, sexp, show, hash]
 
-      module RecordComponents : sig
+      module Components : sig
         type t [@@deriving compare, eq, sexp, show, hash]
       end
     end
@@ -53,8 +53,8 @@ module Record : sig
     end
 
     type 'a record =
-      | TypeVarVariable of 'a RecordTypeVar.record
-      | ParamSpecVariable of 'a RecordParamSpec.record
+      | TypeVarVariable of 'a TypeVar.record
+      | ParamSpecVariable of 'a ParamSpec.record
       | TypeVarTupleVariable of 'a TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -132,7 +132,7 @@ module Record : sig
 
     and 'annotation parameter_variadic_type_variable = {
       head: 'annotation list;
-      variable: 'annotation Variable.RecordParamSpec.record;
+      variable: 'annotation Variable.ParamSpec.record;
     }
 
     and 'annotation record_parameters =
@@ -212,7 +212,7 @@ and t =
       name: Identifier.t;
       parameters: t Record.Parameter.record list;
     }
-  | ParameterVariadicComponent of Record.Variable.RecordParamSpec.RecordComponents.t
+  | ParameterVariadicComponent of Record.Variable.ParamSpec.Components.t
   | Primitive of Primitive.t
   | ReadOnly of t
   | RecursiveType of t Record.RecursiveType.record
@@ -220,7 +220,7 @@ and t =
   | Tuple of t Record.OrderedTypes.record
   | TypeOperation of t Record.TypeOperation.record
   | Union of t list
-  | Variable of t Record.Variable.RecordTypeVar.record
+  | Variable of t Record.Variable.TypeVar.record
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
@@ -676,9 +676,13 @@ val dequalify_identifier : Reference.t Reference.Map.t -> Identifier.t -> Identi
 val dequalify_reference : Reference.t Reference.Map.t -> Reference.t -> Reference.t
 
 module Variable : sig
+  include module type of struct
+    include Record.Variable
+  end
+
   module Namespace : sig
     include module type of struct
-      include Record.Variable.RecordNamespace
+      include Record.Variable.Namespace
     end
 
     val reset : unit -> unit
@@ -686,12 +690,11 @@ module Variable : sig
     val create_fresh : unit -> t
   end
 
-  type unary_t = type_t Record.Variable.RecordTypeVar.record
-  [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = type_t Record.Variable.TypeVar.record [@@deriving compare, eq, sexp, show, hash]
 
   type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_t = type_t Record.Variable.RecordParamSpec.record
+  type parameter_variadic_t = type_t Record.Variable.ParamSpec.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
@@ -743,7 +746,7 @@ module Variable : sig
 
   module TypeVar : sig
     include module type of struct
-      include Record.Variable.RecordTypeVar
+      include Record.Variable.TypeVar
     end
 
     include VariableKind with type t = unary_t and type domain = type_t
@@ -765,10 +768,6 @@ module Variable : sig
     val contains_subvariable : t -> bool
   end
 
-  include module type of struct
-    include Record.Variable
-  end
-
   module ParamSpec : sig
     include VariableKind with type t = parameter_variadic_t and type domain = Callable.parameters
 
@@ -788,7 +787,7 @@ module Variable : sig
 
     module Components : sig
       include module type of struct
-        include Record.Variable.RecordParamSpec.RecordComponents
+        include Record.Variable.ParamSpec.Components
       end
 
       type component =

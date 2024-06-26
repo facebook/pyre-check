@@ -62,17 +62,17 @@ module Record = struct
       | Invariant
     [@@deriving compare, eq, sexp, show, hash]
 
-    module RecordNamespace = struct
+    module Namespace = struct
       type t = int [@@deriving compare, eq, sexp, show, hash]
     end
 
-    module RecordTypeVar = struct
+    module TypeVar = struct
       type 'annotation record = {
         variable: Identifier.t;
         constraints: 'annotation constraints;
         variance: variance;
         state: state;
-        namespace: RecordNamespace.t;
+        namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -81,16 +81,16 @@ module Record = struct
     end
 
     (* TODO(T47346673): Handle variance on variadics. *)
-    module RecordParamSpec = struct
+    module ParamSpec = struct
       type 'annotation record = {
         name: Identifier.t;
         variance: variance;
         state: state;
-        namespace: RecordNamespace.t;
+        namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      module RecordComponents = struct
+      module Components = struct
         type component =
           | KeywordArguments
           | PositionalArguments
@@ -100,7 +100,7 @@ module Record = struct
           component: component;
           variance: variance;
           variable_name: Identifier.t;
-          variable_namespace: RecordNamespace.t;
+          variable_namespace: Namespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
       end
@@ -113,7 +113,7 @@ module Record = struct
       type 'annotation record = {
         name: Identifier.t;
         state: state;
-        namespace: RecordNamespace.t;
+        namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -121,8 +121,8 @@ module Record = struct
     end
 
     type 'a record =
-      | TypeVarVariable of 'a RecordTypeVar.record
-      | ParamSpecVariable of 'a RecordParamSpec.record
+      | TypeVarVariable of 'a TypeVar.record
+      | ParamSpecVariable of 'a ParamSpec.record
       | TypeVarTupleVariable of 'a TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -224,7 +224,7 @@ module Record = struct
 
     and 'annotation parameter_variadic_type_variable = {
       head: 'annotation list;
-      variable: 'annotation Variable.RecordParamSpec.record;
+      variable: 'annotation Variable.ParamSpec.record;
     }
 
     and 'annotation record_parameters =
@@ -322,7 +322,7 @@ module T = struct
         name: Identifier.t;
         parameters: t Record.Parameter.record list;
       }
-    | ParameterVariadicComponent of Record.Variable.RecordParamSpec.RecordComponents.t
+    | ParameterVariadicComponent of Record.Variable.ParamSpec.Components.t
     | Primitive of Primitive.t
     | ReadOnly of t
     | RecursiveType of t Record.RecursiveType.record
@@ -330,7 +330,7 @@ module T = struct
     | Tuple of t Record.OrderedTypes.record
     | TypeOperation of t Record.TypeOperation.record
     | Union of t list
-    | Variable of t Record.Variable.RecordTypeVar.record
+    | Variable of t Record.Variable.TypeVar.record
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -466,7 +466,7 @@ module Constructors = struct
 
 
   let variable ?constraints ?variance name =
-    Variable (Record.Variable.RecordTypeVar.create ?constraints ?variance name)
+    Variable (Record.Variable.TypeVar.create ?constraints ?variance name)
 
 
   let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
@@ -1043,8 +1043,10 @@ end
 
 module PrettyPrinting = struct
   module Variable = struct
+    open Record.Variable
+
     module TypeVar = struct
-      open Record.Variable.RecordTypeVar
+      open Record.Variable.TypeVar
 
       let pp_concise format { variable; constraints; variance; _ } ~pp_type =
         let name =
@@ -1077,7 +1079,7 @@ module PrettyPrinting = struct
 
     module ParamSpec = struct
       module Components = struct
-        open Record.Variable.RecordParamSpec.RecordComponents
+        open Record.Variable.ParamSpec.Components
 
         let component_name = function
           | KeywordArguments -> "kwargs"
@@ -1094,8 +1096,6 @@ module PrettyPrinting = struct
 
       let pp_concise format { name; _ } = Format.fprintf format "%s" name
     end
-
-    open Record.Variable
 
     let pp_concise ~pp_type format = function
       | TypeVarVariable variable -> TypeVar.pp_concise format variable ~pp_type
@@ -2401,9 +2401,10 @@ end
 
 module Variable = struct
   open T
+  include Record.Variable
 
   module Namespace = struct
-    include Record.Variable.RecordNamespace
+    include Record.Variable.Namespace
 
     let fresh = ref 1
 
@@ -2415,11 +2416,11 @@ module Variable = struct
       namespace
   end
 
-  type unary_t = T.t Record.Variable.RecordTypeVar.record [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = T.t Record.Variable.TypeVar.record [@@deriving compare, eq, sexp, show, hash]
 
   type unary_domain = T.t [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_t = T.t Record.Variable.RecordParamSpec.record
+  type parameter_variadic_t = T.t Record.Variable.ParamSpec.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
@@ -2464,7 +2465,7 @@ module Variable = struct
   end
 
   module TypeVar = struct
-    include Record.Variable.RecordTypeVar
+    include Record.Variable.TypeVar
 
     type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
@@ -2566,10 +2567,8 @@ module Variable = struct
       { variable with variable = dequalify_identifier dequalify_map name }
   end
 
-  include Record.Variable
-
   module ParamSpec = struct
-    include Record.Variable.RecordParamSpec
+    include Record.Variable.ParamSpec
 
     type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
@@ -2723,7 +2722,7 @@ module Variable = struct
         | Some (Alias.VariableAlias (ParamSpecVariable variable)) -> Some variable
         | _ -> None
       in
-      let open Record.Variable.RecordParamSpec.RecordComponents in
+      let open Record.Variable.ParamSpec.Components in
       let open PrettyPrinting.Variable.ParamSpec.Components in
       match variable_parameter_annotation, keywords_parameter_annotation with
       | ( {
@@ -2754,7 +2753,7 @@ module Variable = struct
 
 
     module Components = struct
-      include Record.Variable.RecordParamSpec.RecordComponents
+      include Record.Variable.ParamSpec.Components
 
       type decomposition = {
         positional_component: T.t;

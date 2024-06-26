@@ -1057,7 +1057,7 @@ let weaken_literals kind =
     let type_map = function
       | Type.Variable
           {
-            Type.Record.Variable.RecordTypeVar.constraints =
+            Type.Record.Variable.TypeVar.constraints =
               Type.Record.Variable.Bound (Type.Primitive "int");
             _;
           } ->
@@ -2765,7 +2765,7 @@ let rec messages ~concise ~signature location kind =
         | ProtocolBase -> "Duplicate type variable `%s` in Protocol[...]."
       in
       match variable with
-      | Type.Variable.TypeVarVariable { Type.Record.Variable.RecordTypeVar.variable = name; _ } ->
+      | Type.Variable.TypeVarVariable { Type.Record.Variable.TypeVar.variable = name; _ } ->
           [Format.asprintf format name]
       | Type.Variable.ParamSpecVariable variable ->
           let name = Type.Variable.ParamSpec.name variable in

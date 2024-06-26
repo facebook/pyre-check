@@ -5719,8 +5719,8 @@ module State (Context : Context) = struct
           in
           let check_pair errors extended actual =
             match extended, actual with
-            | ( Type.Variable { Type.Record.Variable.RecordTypeVar.variance = left; _ },
-                Type.Variable { Type.Record.Variable.RecordTypeVar.variance = right; _ } ) -> (
+            | ( Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ },
+                Type.Variable { Type.Record.Variable.TypeVar.variance = right; _ } ) -> (
                 match left, right with
                 | Type.Variable.Covariant, Type.Variable.Invariant
                 | Type.Variable.Contravariant, Type.Variable.Invariant
