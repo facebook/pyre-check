@@ -232,7 +232,8 @@ module OrderImplementation = struct
                 let right_parameters = instantiate_successors_parameters ~source:right ~target in
                 let variables = variables target in
                 let join_parameters_respecting_variance = function
-                  | Type.Variable.UnaryPair (unary, left), Type.Variable.UnaryPair (_, right) -> (
+                  | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right)
+                    -> (
                       match left, right, unary with
                       | Type.Bottom, other, _
                       | other, Type.Bottom, _ ->
@@ -253,8 +254,8 @@ module OrderImplementation = struct
                             Some left
                           else
                             None)
-                  | Type.Variable.TupleVariadicPair _, Type.Variable.TupleVariadicPair _
-                  | Type.Variable.ParameterVariadicPair _, Type.Variable.ParameterVariadicPair _ ->
+                  | Type.Variable.TypeVarTuplePair _, Type.Variable.TypeVarTuplePair _
+                  | Type.Variable.ParamSpecPair _, Type.Variable.ParamSpecPair _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
                       None
                   | _ -> None

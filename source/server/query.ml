@@ -506,7 +506,7 @@ let rec process_request_exn
             | Some generics
               when (not (List.is_empty generics))
                    && List.for_all generics ~f:(function
-                          | Type.Variable.Unary _ -> true
+                          | Type.Variable.TypeVarVariable _ -> true
                           | _ -> false) ->
                 Type.parametric
                   annotation

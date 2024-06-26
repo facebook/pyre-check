@@ -55,9 +55,9 @@ module Record : sig
     end
 
     type 'a record =
-      | Unary of 'a RecordTypeVar.record
-      | ParameterVariadic of 'a RecordVariadic.RecordParamSpec.record
-      | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
+      | TypeVarVariable of 'a RecordTypeVar.record
+      | ParamSpecVariable of 'a RecordVariadic.RecordParamSpec.record
+      | TypeVarTupleVariable of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -712,9 +712,9 @@ module Variable : sig
   type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
-    | UnaryPair of unary_t * unary_domain
-    | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-    | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
+    | TypeVarPair of unary_t * unary_domain
+    | ParamSpecPair of parameter_variadic_t * parameter_variadic_domain
+    | TypeVarTuplePair of tuple_variadic_t * tuple_variadic_domain
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]

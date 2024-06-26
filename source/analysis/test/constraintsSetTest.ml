@@ -270,7 +270,7 @@ let make_assert_functions context =
         let parse_pair (variable, value) =
           match parse_annotation variable with
           | Type.Variable variable ->
-              Type.Variable.UnaryPair (variable, parse_annotation value |> postprocess)
+              Type.Variable.TypeVarPair (variable, parse_annotation value |> postprocess)
           | Type.Primitive primitive -> (
               let parse_parameters parameters =
                 match
@@ -287,12 +287,12 @@ let make_assert_functions context =
               in
               let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.get_type_alias global_resolution primitive with
-              | Some (Type.Alias.VariableAlias (ParameterVariadic variable)) ->
-                  Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
-              | Some (Type.Alias.VariableAlias (TupleVariadic variable)) -> (
+              | Some (Type.Alias.VariableAlias (ParamSpecVariable variable)) ->
+                  Type.Variable.ParamSpecPair (variable, parse_parameters value)
+              | Some (Type.Alias.VariableAlias (TypeVarTupleVariable variable)) -> (
                   match Type.Tuple (parse_ordered_types value) |> postprocess with
                   | Type.Tuple ordered_type ->
-                      Type.Variable.TupleVariadicPair (variable, ordered_type)
+                      Type.Variable.TypeVarTuplePair (variable, ordered_type)
                   | _ -> failwith "expected a tuple")
               | _ -> failwith "not available")
           | _ -> failwith "not a variable"
@@ -315,14 +315,14 @@ let make_assert_functions context =
           lower_bound
           >>| parse_annotation
           >>| postprocess
-          >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+          >>| (fun bound -> Type.Variable.TypeVarPair (variable, bound))
           >>| (fun pair -> OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
           |> Option.value ~default:sofar
         in
         upper_bound
         >>| parse_annotation
         >>| postprocess
-        >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+        >>| (fun bound -> Type.Variable.TypeVarPair (variable, bound))
         >>| (fun pair -> OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
         |> Option.value ~default:sofar
       in

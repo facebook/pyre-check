@@ -266,11 +266,12 @@ let type_parameters_as_variables ?(default = None) (module Handler : Handler) = 
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some [Type.Variable.Unary (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
+      Some
+        [Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
   | "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
-      Some [Unary (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
+      Some [TypeVarVariable (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
   | primitive_name ->
       parents_and_generic_of_target (module Handler) primitive_name
       >>= List.find ~f:(fun { Target.target; _ } ->
@@ -291,9 +292,10 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   match source with
   | Type.Bottom ->
       let to_any = function
-        | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
-        | ParameterVariadic _ -> [CallableParameters Undefined]
-        | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.TypeVarTuple.any
+        | Type.Variable.TypeVarVariable _ -> [Type.Parameter.Single Type.Any]
+        | ParamSpecVariable _ -> [CallableParameters Undefined]
+        | TypeVarTupleVariable _ ->
+            Type.OrderedTypes.to_parameters Type.Variable.Variadic.TypeVarTuple.any
       in
       target
       |> parents_and_generic_of_target (module Handler)
@@ -331,11 +333,12 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   let replacement =
                     let to_any = function
-                      | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
-                      | ParameterVariadic variable ->
-                          Type.Variable.ParameterVariadicPair (variable, Undefined)
-                      | TupleVariadic variadic ->
-                          Type.Variable.TupleVariadicPair
+                      | Type.Variable.TypeVarVariable variable ->
+                          Type.Variable.TypeVarPair (variable, Type.Any)
+                      | ParamSpecVariable variable ->
+                          Type.Variable.ParamSpecPair (variable, Undefined)
+                      | TypeVarTupleVariable variadic ->
+                          Type.Variable.TypeVarTuplePair
                             (variadic, Type.Variable.Variadic.TypeVarTuple.any)
                     in
                     Type.Variable.zip_variables_with_parameters ~parameters variables

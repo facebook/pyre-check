@@ -4206,7 +4206,7 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (AnalysisError.InvalidType
-                 (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)))
+                 (AnalysisError.NestedTypeVariables (Type.Variable.TypeVarVariable variable)))
       | Variable { constraints = Explicit [explicit]; _ } ->
           emit_error
             ~errors
@@ -6441,7 +6441,7 @@ module State (Context : Context) = struct
                      ~reference:(make_parameter_name second_name)
                      ~type_info:(TypeInfo.Unit.create_mutable keyword_component)
               in
-              if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
+              if Resolution.type_variable_exists resolution ~variable:(ParamSpecVariable variable)
               then
                 let new_resolution =
                   Type.Variable.Variadic.ParamSpec.mark_as_bound variable
@@ -6464,7 +6464,7 @@ module State (Context : Context) = struct
                     ~errors
                     ~location
                     ~kind:
-                      (Error.InvalidTypeVariable { annotation = ParameterVariadic variable; origin })
+                      (Error.InvalidTypeVariable { annotation = ParamSpecVariable variable; origin })
                 in
                 ( add_annotations_to_resolution
                     { positional_component = Top; keyword_component = Top },
@@ -7053,12 +7053,12 @@ module State (Context : Context) = struct
             | _, Type.Variable unary -> unary
             | _ -> failwith "did not transform"
           in
-          fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.Unary unary
+          fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.TypeVarVariable unary
         in
         let extract = function
-          | Type.Variable.Unary unary -> unarize unary
-          | ParameterVariadic variable -> ParameterVariadic variable
-          | TupleVariadic variable -> TupleVariadic variable
+          | Type.Variable.TypeVarVariable unary -> unarize unary
+          | ParamSpecVariable variable -> ParamSpecVariable variable
+          | TypeVarTupleVariable variable -> TypeVarTupleVariable variable
         in
         Reference.show class_name
         |> GlobalResolution.type_parameters_as_variables global_resolution

@@ -1965,13 +1965,13 @@ let rec messages ~concise ~signature location kind =
     ->
       let expected =
         match expected with
-        | Unary expected ->
+        | TypeVarVariable expected ->
             Format.asprintf "Single type parameter `%a` expected" Type.pp (Type.Variable expected)
-        | ParameterVariadic expected ->
+        | ParamSpecVariable expected ->
             Format.asprintf
               "Callable parameters expected for parameter specification `%s`"
               (Type.Variable.Variadic.ParamSpec.name expected)
-        | TupleVariadic expected ->
+        | TypeVarTupleVariable expected ->
             Format.asprintf
               "Tuple expected for `%s`"
               (Type.Variable.Variadic.TypeVarTuple.name expected)
@@ -1999,12 +1999,12 @@ let rec messages ~concise ~signature location kind =
         | Toplevel -> "`%s` can only be used to annotate generic classes or functions."
       in
       match annotation with
-      | Type.Variable.Unary variable ->
+      | Type.Variable.TypeVarVariable variable ->
           [Format.asprintf format (Type.show (Type.Variable variable))]
-      | Type.Variable.ParameterVariadic variable ->
+      | Type.Variable.ParamSpecVariable variable ->
           let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
-      | Type.Variable.TupleVariadic variable ->
+      | Type.Variable.TypeVarTupleVariable variable ->
           let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | InvalidTypeVariable { annotation; origin } -> (
@@ -2021,7 +2021,7 @@ let rec messages ~concise ~signature location kind =
          `typing.Generic[%s]`."
       in
       match annotation with
-      | Type.Variable.Unary variable -> (
+      | Type.Variable.TypeVarVariable variable -> (
           match origin with
           | ClassToplevel ->
               [
@@ -2030,11 +2030,11 @@ let rec messages ~concise ~signature location kind =
               ]
           | Define -> [Format.asprintf format (Type.show (Type.Variable variable))]
           | Toplevel -> [Format.asprintf format (Type.show (Type.Variable variable))])
-      | Type.Variable.ParameterVariadic variable ->
+      | Type.Variable.ParamSpecVariable variable ->
           (* We don't give hints for the more complicated cases. *)
           let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
-      | Type.Variable.TupleVariadic variable ->
+      | Type.Variable.TypeVarTupleVariable variable ->
           (* We don't give hints for the more complicated cases. *)
           let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
@@ -2772,12 +2772,12 @@ let rec messages ~concise ~signature location kind =
         | ProtocolBase -> "Duplicate type variable `%s` in Protocol[...]."
       in
       match variable with
-      | Type.Variable.Unary { Type.Record.Variable.RecordTypeVar.variable = name; _ } ->
+      | Type.Variable.TypeVarVariable { Type.Record.Variable.RecordTypeVar.variable = name; _ } ->
           [Format.asprintf format name]
-      | Type.Variable.ParameterVariadic variable ->
+      | Type.Variable.ParamSpecVariable variable ->
           let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
-      | Type.Variable.TupleVariadic variable ->
+      | Type.Variable.TypeVarTupleVariable variable ->
           let name = Type.Variable.Variadic.TypeVarTuple.name variable in
           [Format.asprintf format name])
   | UnboundName name when concise ->

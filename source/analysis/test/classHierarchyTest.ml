@@ -236,12 +236,12 @@ let test_type_parameters_as_variables _ =
   in
   assert_type_parameters_as_variables ~expected:None "B";
   assert_type_parameters_as_variables
-    ~expected:(Some [Unary (Type.Variable.TypeVar.create "T")])
+    ~expected:(Some [TypeVarVariable (Type.Variable.TypeVar.create "T")])
     "A";
 
   assert_type_parameters_as_variables ~expected:None "Nonexistent";
   assert_type_parameters_as_variables
-    ~expected:(Some [TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "Ts")])
+    ~expected:(Some [TypeVarTupleVariable (Type.Variable.Variadic.TypeVarTuple.create "Ts")])
     "Tensor";
   ()
 

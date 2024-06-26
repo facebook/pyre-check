@@ -1195,7 +1195,7 @@ module SignatureSelection = struct
               TypeOrder.OrderedConstraintsSet.solve
                 constraints_set
                 ~order
-                ~only_solve_for:[Type.Record.Variable.Unary parameter_variable]
+                ~only_solve_for:[Type.Record.Variable.TypeVarVariable parameter_variable]
               >>= fun solution ->
               ConstraintsSet.Solution.instantiate_single_variable solution parameter_variable
             in
@@ -1234,7 +1234,7 @@ module SignatureSelection = struct
                   (* Once we've used this solution, we have to commit to it *)
                   |> TypeOrder.OrderedConstraintsSet.add
                        ~new_constraint:
-                         (VariableIsExactly (UnaryPair (parameter_variable, parameter_type)))
+                         (VariableIsExactly (TypeVarPair (parameter_variable, parameter_type)))
                        ~order
                 in
                 { signature_match with constraints_set = updated_constraints })
@@ -1341,7 +1341,7 @@ module SignatureSelection = struct
             (* If we use this option, we have to commit to it as to not move away from it later *)
             TypeOrder.OrderedConstraintsSet.add
               constraints_set
-              ~new_constraint:(VariableIsExactly (ParameterVariadicPair (variable, parameters)))
+              ~new_constraint:(VariableIsExactly (ParamSpecPair (variable, parameters)))
               ~order
           in
           check_arguments_against_signature
@@ -2301,11 +2301,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | "typing.Final"
               | "typing_extensions.Final"
               | "typing.Optional" ->
-                  [Type.Variable.Unary (Type.Variable.TypeVar.create "T")]
+                  [Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "T")]
               | "typing.Callable" ->
                   [
-                    Type.Variable.ParameterVariadic (Type.Variable.Variadic.ParamSpec.create "Ps");
-                    Type.Variable.Unary (Type.Variable.TypeVar.create "R");
+                    Type.Variable.ParamSpecVariable (Type.Variable.Variadic.ParamSpec.create "Ps");
+                    Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "R");
                   ]
               | _ -> variables name |> Option.value ~default:[]
             in
@@ -2320,7 +2320,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Some paired ->
                   let check_parameter { Type.Variable.variable_pair; received_parameter } =
                     match variable_pair, received_parameter with
-                    | Type.Variable.UnaryPair (unary, given), Type.Parameter.Single _ ->
+                    | Type.Variable.TypeVarPair (unary, given), Type.Parameter.Single _ ->
                         let invalid =
                           let order = self#full_order ~assumptions in
                           TypeOrder.OrderedConstraints.add_lower_bound
@@ -2341,12 +2341,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                               } )
                         else
                           [Type.Parameter.Single given], None
-                    | ParameterVariadicPair (_, given), CallableParameters _ ->
+                    | ParamSpecPair (_, given), CallableParameters _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         [CallableParameters given], None
-                    | TupleVariadicPair (_, given), Single (Tuple _) ->
+                    | TypeVarTuplePair (_, given), Single (Tuple _) ->
                         Type.OrderedTypes.to_parameters given, None
-                    | Type.Variable.UnaryPair (unary, given), _ ->
+                    | Type.Variable.TypeVarPair (unary, given), _ ->
                         ( [Single given],
                           Some
                             {
@@ -2354,11 +2354,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                               kind =
                                 UnexpectedKind
                                   {
-                                    expected = Type.Variable.Unary unary;
+                                    expected = Type.Variable.TypeVarVariable unary;
                                     actual = received_parameter;
                                   };
                             } )
-                    | ParameterVariadicPair (parameter_variadic, given), _ ->
+                    | ParamSpecPair (param_spec, given), _ ->
                         ( [CallableParameters given],
                           Some
                             {
@@ -2366,11 +2366,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                               kind =
                                 UnexpectedKind
                                   {
-                                    expected = ParameterVariadic parameter_variadic;
+                                    expected = ParamSpecVariable param_spec;
                                     actual = received_parameter;
                                   };
                             } )
-                    | TupleVariadicPair (tuple_variadic, given), _ ->
+                    | TypeVarTuplePair (type_var_tuple, given), _ ->
                         ( Type.OrderedTypes.to_parameters given,
                           Some
                             {
@@ -2378,7 +2378,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                               kind =
                                 UnexpectedKind
                                   {
-                                    expected = TupleVariadic tuple_variadic;
+                                    expected = TypeVarTupleVariable type_var_tuple;
                                     actual = received_parameter;
                                   };
                             } )
@@ -2401,16 +2401,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           true )
                     | _ ->
                         let is_tuple_variadic = function
-                          | Type.Variable.TupleVariadic _ -> true
+                          | Type.Variable.TypeVarTupleVariable _ -> true
                           | _ -> false
                         in
                         let annotation =
                           Type.parametric
                             name
                             (List.concat_map generics ~f:(function
-                                | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
-                                | ParameterVariadic _ -> [CallableParameters Undefined]
-                                | TupleVariadic _ ->
+                                | Type.Variable.TypeVarVariable _ ->
+                                    [Type.Parameter.Single Type.Any]
+                                | ParamSpecVariable _ -> [CallableParameters Undefined]
+                                | TypeVarTupleVariable _ ->
                                     Type.OrderedTypes.to_parameters
                                       Type.Variable.Variadic.TypeVarTuple.any))
                         in
@@ -3208,7 +3209,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           }
                     in
                     match generics with
-                    | [Unary generic] ->
+                    | [TypeVarVariable generic] ->
                         overload (create_parameter (Type.meta (Variable generic))), []
                     | _ ->
                         (* To support the value `GenericFoo[int, str]`, we need `class
@@ -3217,15 +3218,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                            `def __getitem__(cls, __x: Tuple[Type[T1], Type[T2]] ) -> GenericFoo[T1,
                            T2]`. *)
                         let meta_type_and_return_type = function
-                          | Type.Variable.Unary single ->
+                          | Type.Variable.TypeVarVariable single ->
                               ( Type.meta (Variable single),
                                 Type.Parameter.Single (Type.Variable single) )
-                          | ParameterVariadic _ ->
+                          | ParamSpecVariable _ ->
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                  without that we can't actually return the correct metatype, which
                                  is a bummer *)
                               Type.Any, Type.Parameter.CallableParameters Undefined
-                          | TupleVariadic _ -> Type.Any, Single Any
+                          | TypeVarTupleVariable _ -> Type.Any, Single Any
                         in
                         let meta_types, return_parameters =
                           List.map generics ~f:meta_type_and_return_type |> List.unzip

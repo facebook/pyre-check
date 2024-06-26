@@ -1115,7 +1115,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
         | _ -> None)
     ~given_type:"typing.List[typing.Unpack[Ts]]"
     ~expected_transformed_type:"typing.List[typing.Any]"
@@ -1126,7 +1126,7 @@ let test_invalid_type_parameters context =
           UnexpectedKind
             {
               actual = Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
-              expected = Unary (Type.Variable.TypeVar.create "_T");
+              expected = TypeVarVariable (Type.Variable.TypeVar.create "_T");
             };
       };
     ];
@@ -1152,7 +1152,7 @@ let test_invalid_type_parameters context =
           UnexpectedKind
             {
               actual = Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
-              expected = Type.Variable.ParameterVariadic parameter_variadic;
+              expected = Type.Variable.ParamSpecVariable parameter_variadic;
             };
       };
     ];
@@ -1170,7 +1170,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
         | _ -> None)
     ~source:
       {|
@@ -1185,7 +1185,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
         | _ -> None)
     ~source:
       {|
@@ -1201,7 +1201,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
         | _ -> None)
     ~source:
       {|
@@ -1249,14 +1249,15 @@ let test_invalid_type_parameters context =
                          (Type.Variable.Variadic.ParamSpec.self_reference parameter_variadic);
                      ]);
               expected =
-                Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "test.Ts");
+                Type.Variable.TypeVarTupleVariable
+                  (Type.Variable.Variadic.TypeVarTuple.create "test.Ts");
             };
       };
     ];
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
         | _ -> None)
     ~source:
       {|
@@ -1449,7 +1450,7 @@ let test_constraints context =
       GlobalResolution.constraints ~target resolution ?parameters ~instantiated ()
     in
     let expected =
-      List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))
+      List.map expected ~f:(fun (variable, value) -> Type.Variable.TypeVarPair (variable, value))
     in
     assert_equal
       ~printer:ConstraintsSet.Solution.show

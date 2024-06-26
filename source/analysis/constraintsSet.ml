@@ -309,13 +309,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               |> OrderedConstraints.add_upper_bound
                    ~order
                    ~pair:
-                     (Type.Variable.ParameterVariadicPair
+                     (Type.Variable.ParamSpecPair
                         ( right_variable,
                           ParameterVariadicTypeVariable { head = []; variable = left_variable } ))
               >>= OrderedConstraints.add_lower_bound
                     ~order
                     ~pair:
-                      (Type.Variable.ParameterVariadicPair
+                      (Type.Variable.ParamSpecPair
                          ( left_variable,
                            ParameterVariadicTypeVariable { head = []; variable = right_variable } ))
               |> Option.to_list
@@ -328,7 +328,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             |> List.concat_map ~f:add_parameter_specification_bounds
         | bound, ParameterVariadicTypeVariable { head = []; variable }
           when Type.Variable.Variadic.ParamSpec.is_free variable ->
-            let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
+            let pair = Type.Variable.ParamSpecPair (variable, bound) in
             OrderedConstraints.add_upper_bound initial_constraints ~order ~pair |> Option.to_list
         | bound, ParameterVariadicTypeVariable { head; variable }
           when Type.Variable.Variadic.ParamSpec.is_free variable ->
@@ -351,7 +351,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       initial_constraints,
                     Defined remainder )
             in
-            let pair = Type.Variable.ParameterVariadicPair (variable, remainder) in
+            let pair = Type.Variable.ParamSpecPair (variable, remainder) in
             List.filter_map constraints ~f:(OrderedConstraints.add_upper_bound ~order ~pair)
         | ParameterVariadicTypeVariable left, ParameterVariadicTypeVariable right
           when Type.Callable.equal_parameter_variadic_type_variable Type.equal left right ->
@@ -499,20 +499,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ( OrderedConstraints.add_lower_bound
               constraints
               ~order
-              ~pair:(Type.Variable.UnaryPair (right_variable, left))
+              ~pair:(Type.Variable.TypeVarPair (right_variable, left))
             |> Option.to_list,
             OrderedConstraints.add_upper_bound
               constraints
               ~order
-              ~pair:(Type.Variable.UnaryPair (left_variable, right))
+              ~pair:(Type.Variable.TypeVarPair (left_variable, right))
             |> Option.to_list )
         in
         right_greater_than_left @ left_less_than_right
     | Type.Variable variable, bound when Type.Variable.TypeVar.is_free variable ->
-        let pair = Type.Variable.UnaryPair (variable, bound) in
+        let pair = Type.Variable.TypeVarPair (variable, bound) in
         OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
     | bound, Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
-        let pair = Type.Variable.UnaryPair (variable, bound) in
+        let pair = Type.Variable.TypeVarPair (variable, bound) in
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
     | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.Bottom -> impossible
@@ -665,7 +665,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         List.append through_protocol_hierarchy through_meta_hierarchy
     | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
         let solve_respecting_variance constraints = function
-          | Type.Variable.UnaryPair (unary, left), Type.Variable.UnaryPair (_, right) -> (
+          | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right) -> (
               match left, right, unary with
               (* TODO kill these special cases *)
               | Type.Bottom, _, _ ->
@@ -690,13 +690,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                          solve_less_or_equal order ~constraints ~left ~right)
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left:right ~right:left))
-          | ( Type.Variable.ParameterVariadicPair (_, left),
-              Type.Variable.ParameterVariadicPair (_, right) ) ->
+          | Type.Variable.ParamSpecPair (_, left), Type.Variable.ParamSpecPair (_, right) ->
               let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
               let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
               List.concat_map constraints ~f:(fun constraints ->
                   solve_less_or_equal order ~constraints ~left ~right)
-          | Type.Variable.TupleVariadicPair (_, left), Type.Variable.TupleVariadicPair (_, right) ->
+          | Type.Variable.TypeVarTuplePair (_, left), Type.Variable.TypeVarTuplePair (_, right) ->
               (* We assume variadic classes are covariant by default since they represent the
                  immutable shape of a datatype. *)
               constraints
@@ -855,7 +854,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                      ~f:
                        (OrderedConstraints.add_lower_bound
                           ~order
-                          ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
+                          ~pair:(Type.Variable.TypeVarTuplePair (variadic, Concrete concrete)))
             | _, Some unbounded_element ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
                 |> List.concat_map ~f:(fun constraints ->
@@ -876,7 +875,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                      ~f:
                        (OrderedConstraints.add_upper_bound
                           ~order
-                          ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
+                          ~pair:(Type.Variable.TypeVarTuplePair (variadic, Concrete concrete)))
             | _ -> impossible)
         | Concatenation left_concatenation, Concatenation right_concatenation -> (
             match
@@ -890,7 +889,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                        (OrderedConstraints.add_lower_bound
                           ~order
                           ~pair:
-                            (Type.Variable.TupleVariadicPair
+                            (Type.Variable.TypeVarTuplePair
                                (variadic, Concatenation left_concatenation)))
             | Some variadic, _ when Type.Variable.Variadic.TypeVarTuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
@@ -899,7 +898,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                        (OrderedConstraints.add_upper_bound
                           ~order
                           ~pair:
-                            (Type.Variable.TupleVariadicPair
+                            (Type.Variable.TypeVarTuplePair
                                (variadic, Concatenation right_concatenation)))
             | _ -> (
                 match
@@ -1015,7 +1014,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                               Type.VisitWithTransform.transformed_annotation =
                                 Type.Variable transformed_variable;
                               new_state =
-                                Type.Variable.UnaryPair
+                                Type.Variable.TypeVarPair
                                   (transformed_variable, Type.Variable variable)
                                 :: sofar;
                             }
@@ -1053,17 +1052,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 List.concat_map ~f:instantiate
               in
               let instantiate = function
-                | Type.Variable.Unary variable ->
+                | Type.Variable.TypeVarVariable variable ->
                     TypeConstraints.Solution.instantiate_single_variable solution variable
                     |> Option.value ~default:(Type.Variable variable)
                     |> fun instantiated -> [Type.Parameter.Single instantiated]
-                | ParameterVariadic variable ->
+                | ParamSpecVariable variable ->
                     TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
                     |> Option.value
                          ~default:
                            (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
                     |> fun instantiated -> [Type.Parameter.CallableParameters instantiated]
-                | TupleVariadic variadic ->
+                | TypeVarTupleVariable variadic ->
                     TypeConstraints.Solution.instantiate_ordered_types
                       solution
                       (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
@@ -1206,7 +1205,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~f:
         (OrderedConstraints.extract_partial_solution
            ~order
-           ~variables:[Type.Variable.ParameterVariadic parameter_specification])
+           ~variables:[Type.Variable.ParamSpecVariable parameter_specification])
     |> List.map ~f:snd
     |> List.filter_map ~f:(fun solution ->
            TypeConstraints.Solution.instantiate_single_parameter_variadic

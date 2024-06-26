@@ -162,9 +162,9 @@ module Record = struct
     end
 
     type 'a record =
-      | Unary of 'a RecordTypeVar.record
-      | ParameterVariadic of 'a RecordVariadic.RecordParamSpec.record
-      | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
+      | TypeVarVariable of 'a RecordTypeVar.record
+      | ParamSpecVariable of 'a RecordVariadic.RecordParamSpec.record
+      | TypeVarTupleVariable of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -1216,10 +1216,10 @@ module Parameter = struct
   let all_singles parameters = List.map parameters ~f:is_single |> Option.all
 
   let to_variable = function
-    | Single (Variable variable) -> Some (Record.Variable.Unary variable)
+    | Single (Variable variable) -> Some (Record.Variable.TypeVarVariable variable)
     | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
-        Some (ParameterVariadic variable)
-    | Unpacked (Variadic variadic) -> Some (TupleVariadic variadic)
+        Some (ParamSpecVariable variable)
+    | Unpacked (Variadic variadic) -> Some (TypeVarTupleVariable variadic)
     | _ -> None
 
 
@@ -2190,7 +2190,7 @@ module OrderedTypes = struct
               -> (
                 variable_aliases variable_name
                 >>= function
-                | Record.Variable.TupleVariadic variadic ->
+                | Record.Variable.TypeVarTupleVariable variadic ->
                     Some (Concatenation.create ~prefix ~suffix variadic)
                 | _ -> None)
             | Parametric
@@ -2400,9 +2400,9 @@ module Variable = struct
   type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
-    | UnaryPair of unary_t * unary_domain
-    | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-    | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
+    | TypeVarPair of unary_t * unary_domain
+    | ParamSpecPair of parameter_variadic_t * parameter_variadic_domain
+    | TypeVarTuplePair of tuple_variadic_t * tuple_variadic_domain
   [@@deriving compare, eq, sexp, show, hash]
 
   module type VariableKind = sig
@@ -2448,7 +2448,7 @@ module Variable = struct
 
     let self_reference variable = Variable variable
 
-    let pair variable value = UnaryPair (variable, value)
+    let pair variable value = TypeVarPair (variable, value)
 
     let is_contravariant = function
       | { variance = Contravariant; _ } -> true
@@ -2554,7 +2554,7 @@ module Variable = struct
 
       let self_reference variable = Callable.ParameterVariadicTypeVariable { head = []; variable }
 
-      let pair variable value = ParameterVariadicPair (variable, value)
+      let pair variable value = ParamSpecPair (variable, value)
 
       let is_free = function
         | { state = Free _; _ } -> true
@@ -2690,7 +2690,7 @@ module Variable = struct
         =
         let get_variable name =
           match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-          | Some (Alias.VariableAlias (ParameterVariadic variable)) -> Some variable
+          | Some (Alias.VariableAlias (ParamSpecVariable variable)) -> Some variable
           | _ -> None
         in
         let open Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents in
@@ -2785,7 +2785,7 @@ module Variable = struct
         OrderedTypes.Concatenation (OrderedTypes.Concatenation.create variadic)
 
 
-      let pair variable value = TupleVariadicPair (variable, value)
+      let pair variable value = TypeVarTuplePair (variable, value)
 
       let is_free = function
         | { state = Free _; _ } -> true
@@ -2984,7 +2984,7 @@ module Variable = struct
     module type VariableKind = sig
       include VariableKind
 
-      (* We don't want these to be part of the public interface for Unary or Variadic.ParamSpec *)
+      (* We don't want these to be part of the public interface for TypeVar or ParamSpec *)
       val local_replace : (t -> domain option) -> T.t -> T.t option
 
       val local_collect : T.t -> t list
@@ -3121,45 +3121,46 @@ module Variable = struct
   [@@deriving compare, eq, sexp, show, hash]
 
   let pp_concise format = function
-    | Unary variable -> TypeVar.pp_concise format variable ~pp_type:PrettyPrinting.pp
-    | ParameterVariadic { name; _ } ->
+    | TypeVarVariable variable -> TypeVar.pp_concise format variable ~pp_type:PrettyPrinting.pp
+    | ParamSpecVariable { name; _ } ->
         Format.fprintf format "CallableParameterTypeVariable[%s]" name
-    | TupleVariadic { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
+    | TypeVarTupleVariable { name; _ } -> Format.fprintf format "TypeVarTuple[%s]" name
 
 
   let parse_declaration expression ~target =
     match Variadic.ParamSpec.parse_declaration expression ~target with
-    | Some variable -> Some (ParameterVariadic variable)
+    | Some variable -> Some (ParamSpecVariable variable)
     | None -> (
         match Variadic.TypeVarTuple.parse_declaration expression ~target with
-        | Some variable -> Some (TupleVariadic variable)
+        | Some variable -> Some (TypeVarTupleVariable variable)
         | None -> (
             match TypeVar.parse_declaration expression target with
-            | Some variable -> Some (Record.Variable.Unary variable)
+            | Some variable -> Some (Record.Variable.TypeVarVariable variable)
             | None -> None))
 
 
   let dequalify dequalify_map = function
-    | Unary variable -> Unary (TypeVar.dequalify variable ~dequalify_map)
-    | ParameterVariadic variable ->
-        ParameterVariadic (Variadic.ParamSpec.dequalify variable ~dequalify_map)
-    | TupleVariadic variable ->
-        TupleVariadic (Variadic.TypeVarTuple.dequalify variable ~dequalify_map)
+    | TypeVarVariable variable -> TypeVarVariable (TypeVar.dequalify variable ~dequalify_map)
+    | ParamSpecVariable variable ->
+        ParamSpecVariable (Variadic.ParamSpec.dequalify variable ~dequalify_map)
+    | TypeVarTupleVariable variable ->
+        TypeVarTupleVariable (Variadic.TypeVarTuple.dequalify variable ~dequalify_map)
 
 
   let namespace variable ~namespace =
     match variable with
-    | Unary variable -> Unary (TypeVar.namespace variable ~namespace)
-    | ParameterVariadic variable ->
-        ParameterVariadic (Variadic.ParamSpec.namespace variable ~namespace)
-    | TupleVariadic variable -> TupleVariadic (Variadic.TypeVarTuple.namespace variable ~namespace)
+    | TypeVarVariable variable -> TypeVarVariable (TypeVar.namespace variable ~namespace)
+    | ParamSpecVariable variable ->
+        ParamSpecVariable (Variadic.ParamSpec.namespace variable ~namespace)
+    | TypeVarTupleVariable variable ->
+        TypeVarTupleVariable (Variadic.TypeVarTuple.namespace variable ~namespace)
 
 
   let partition =
     let partitioner = function
-      | Unary variable -> `Fst variable
-      | ParameterVariadic variable -> `Snd variable
-      | TupleVariadic variable -> `Trd variable
+      | TypeVarVariable variable -> `Fst variable
+      | ParamSpecVariable variable -> `Snd variable
+      | TypeVarTupleVariable variable -> `Trd variable
     in
     List.partition3_map ~f:partitioner
 
@@ -3176,10 +3177,11 @@ module Variable = struct
 
 
   let mark_as_bound = function
-    | Unary variable -> Unary (GlobalTransforms.TypeVar.mark_as_bound variable)
-    | ParameterVariadic variable ->
-        ParameterVariadic (GlobalTransforms.ParamSpec.mark_as_bound variable)
-    | TupleVariadic variable -> TupleVariadic (GlobalTransforms.TypeVarTuple.mark_as_bound variable)
+    | TypeVarVariable variable -> TypeVarVariable (GlobalTransforms.TypeVar.mark_as_bound variable)
+    | ParamSpecVariable variable ->
+        ParamSpecVariable (GlobalTransforms.ParamSpec.mark_as_bound variable)
+    | TypeVarTupleVariable variable ->
+        TypeVarTupleVariable (GlobalTransforms.TypeVarTuple.mark_as_bound variable)
 
 
   let mark_all_variables_as_free ?specific annotation =
@@ -3202,15 +3204,15 @@ module Variable = struct
   let all_free_variables annotation =
     let unaries =
       GlobalTransforms.TypeVar.all_free_variables annotation
-      |> List.map ~f:(fun variable -> Unary variable)
+      |> List.map ~f:(fun variable -> TypeVarVariable variable)
     in
     let callable_variadics =
       GlobalTransforms.ParamSpec.all_free_variables annotation
-      |> List.map ~f:(fun variable -> ParameterVariadic variable)
+      |> List.map ~f:(fun variable -> ParamSpecVariable variable)
     in
     let tuple_variadics =
       GlobalTransforms.TypeVarTuple.all_free_variables annotation
-      |> List.map ~f:(fun variable -> TupleVariadic variable)
+      |> List.map ~f:(fun variable -> TypeVarTupleVariable variable)
     in
     unaries @ callable_variadics @ tuple_variadics
 
@@ -3295,15 +3297,15 @@ module Variable = struct
   let make_variable_pair variable received_parameter =
     let variable_pair =
       match variable, received_parameter with
-      | Unary unary, Parameter.Single annotation -> UnaryPair (unary, annotation)
-      | ParameterVariadic parameter_variadic, CallableParameters callable_parameters ->
-          ParameterVariadicPair (parameter_variadic, callable_parameters)
-      | Unary unary, _ -> UnaryPair (unary, TypeVar.any)
-      | ParameterVariadic parameter_variadic, _ ->
-          ParameterVariadicPair (parameter_variadic, Variadic.ParamSpec.any)
-      | TupleVariadic tuple_variadic, _ ->
+      | TypeVarVariable unary, Parameter.Single annotation -> TypeVarPair (unary, annotation)
+      | ParamSpecVariable parameter_variadic, CallableParameters callable_parameters ->
+          ParamSpecPair (parameter_variadic, callable_parameters)
+      | TypeVarVariable unary, _ -> TypeVarPair (unary, TypeVar.any)
+      | ParamSpecVariable parameter_variadic, _ ->
+          ParamSpecPair (parameter_variadic, Variadic.ParamSpec.any)
+      | TypeVarTupleVariable tuple_variadic, _ ->
           (* We should not hit this case at all. *)
-          TupleVariadicPair (tuple_variadic, Variadic.TypeVarTuple.any)
+          TypeVarTuplePair (tuple_variadic, Variadic.TypeVarTuple.any)
     in
     { variable_pair; received_parameter }
 
@@ -3311,7 +3313,7 @@ module Variable = struct
   let pairs_for_variadic_class ~non_variadic_prefix_length variables parameters =
     let variables_prefix, variables_rest = List.split_n variables non_variadic_prefix_length in
     match variables_rest with
-    | TupleVariadic variadic :: variables_suffix ->
+    | TypeVarTupleVariable variadic :: variables_suffix ->
         let parameters_prefix, parameters_rest =
           List.split_n parameters non_variadic_prefix_length
         in
@@ -3335,13 +3337,13 @@ module Variable = struct
                 ordered_type
                 >>| (fun ordered_type ->
                       {
-                        variable_pair = TupleVariadicPair (variadic, ordered_type);
+                        variable_pair = TypeVarTuplePair (variadic, ordered_type);
                         received_parameter = Single (Tuple ordered_type);
                       })
                 |> Option.value
                      ~default:
                        {
-                         variable_pair = TupleVariadicPair (variadic, Variadic.TypeVarTuple.any);
+                         variable_pair = TypeVarTuplePair (variadic, Variadic.TypeVarTuple.any);
                          received_parameter =
                            Single
                              (Constructors.parametric
@@ -3367,11 +3369,11 @@ module Variable = struct
   let zip_variables_with_parameters_including_mismatches ~parameters variables =
     let parameters =
       match variables with
-      | [ParameterVariadic _] -> coalesce_if_all_single parameters
+      | [ParamSpecVariable _] -> coalesce_if_all_single parameters
       | _ -> parameters
     in
     let variadic_index index = function
-      | TupleVariadic _ -> Some index
+      | TypeVarTupleVariable _ -> Some index
       | _ -> None
     in
     match List.filter_mapi variables ~f:variadic_index with
@@ -3404,18 +3406,18 @@ module Variable = struct
 
   let all_unary variables =
     List.map variables ~f:(function
-        | Unary unary -> Some unary
-        | ParameterVariadic _
-        | TupleVariadic _ ->
+        | TypeVarVariable unary -> Some unary
+        | ParamSpecVariable _
+        | TypeVarTupleVariable _ ->
             None)
     |> Option.all
 
 
   let to_parameter = function
-    | Unary variable -> Parameter.Single (TypeVar.self_reference variable)
-    | ParameterVariadic variable ->
+    | TypeVarVariable variable -> Parameter.Single (TypeVar.self_reference variable)
+    | ParamSpecVariable variable ->
         Parameter.CallableParameters (Variadic.ParamSpec.self_reference variable)
-    | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
+    | TypeVarTupleVariable variadic -> Parameter.Unpacked (Variadic variadic)
 end
 
 module ToExpression = struct
@@ -4086,7 +4088,7 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let unpacked_variadic_to_parameter = function
     | Primitive variable_name -> (
         match variable_aliases variable_name with
-        | Some (Record.Variable.TupleVariadic variadic) ->
+        | Some (Record.Variable.TypeVarTupleVariable variadic) ->
             Some (Parameter.Unpacked (Variadic variadic))
         | _ -> None)
     | _ -> None
@@ -4106,7 +4108,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   let substitute_parameter_variadic = function
     | Primitive name -> (
         match variable_aliases name with
-        | Some (Record.Variable.ParameterVariadic variable) ->
+        | Some (Record.Variable.ParamSpecVariable variable) ->
             Some { Record.Callable.variable; head = [] }
         | _ -> None)
     | Parametric { name; parameters }
@@ -4429,7 +4431,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   in
   let resolve_variables_then_aliases alias_name =
     match variable_aliases alias_name with
-    | Some (Record.Variable.Unary variable) -> Variable variable
+    | Some (Record.Variable.TypeVarVariable variable) -> Variable variable
     | _ -> Primitive alias_name |> resolve_aliases
   in
 
@@ -4778,13 +4780,13 @@ let resolve_aliases ~aliases annotation =
                     uninstantiated_alias_annotation
                     |> Variable.GlobalTransforms.TypeVar.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
-                               | UnaryPair (variable, replacement)
+                               | TypeVarPair (variable, replacement)
                                  when [%equal: Variable.unary_t] variable given_variable ->
                                    Some replacement
                                | _ -> None))
                     |> Variable.GlobalTransforms.ParamSpec.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
-                               | ParameterVariadicPair (variable, replacement)
+                               | ParamSpecPair (variable, replacement)
                                  when [%equal: Variable.parameter_variadic_t]
                                         variable
                                         given_variable ->
@@ -4792,7 +4794,7 @@ let resolve_aliases ~aliases annotation =
                                | _ -> None))
                     |> Variable.GlobalTransforms.TypeVarTuple.replace_all (fun given_variable ->
                            List.find_map variable_pairs ~f:(function
-                               | TupleVariadicPair (variable, replacement)
+                               | TypeVarTuplePair (variable, replacement)
                                  when [%equal: Variable.tuple_variadic_t] variable given_variable ->
                                    Some replacement
                                | _ -> None))
