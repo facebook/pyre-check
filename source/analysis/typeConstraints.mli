@@ -23,7 +23,7 @@ module Solution : sig
 
   val instantiate_single_parameter_variadic
     :  t ->
-    Type.Variable.Variadic.Parameters.t ->
+    Type.Variable.Variadic.ParamSpec.t ->
     Type.Callable.parameters option
 
   val instantiate_ordered_types : t -> Type.OrderedTypes.t -> Type.OrderedTypes.t

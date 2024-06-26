@@ -1227,8 +1227,8 @@ let test_check_arguments_against_parameters context =
                     ~index_into_starred_tuple:0
                     {
                       Argument.WithPosition.resolved =
-                        (Type.Variable.Variadic.Parameters.create "P"
-                        |> Type.Variable.Variadic.Parameters.decompose
+                        (Type.Variable.Variadic.ParamSpec.create "P"
+                        |> Type.Variable.Variadic.ParamSpec.decompose
                         |> fun { positional_component; _ } -> positional_component);
                       kind = SingleStar;
                       expression = None;

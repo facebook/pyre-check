@@ -111,7 +111,7 @@ module Record = struct
 
     module RecordVariadic = struct
       (* TODO(T47346673): Handle variance on variadics. *)
-      module RecordParameters = struct
+      module RecordParamSpec = struct
         type 'annotation record = {
           name: Identifier.t;
           variance: variance;
@@ -163,7 +163,7 @@ module Record = struct
 
     type 'a record =
       | Unary of 'a RecordUnary.record
-      | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
+      | ParameterVariadic of 'a RecordVariadic.RecordParamSpec.record
       | TupleVariadic of 'a RecordVariadic.TypeVarTuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -699,7 +699,7 @@ module Record = struct
 
     and 'annotation parameter_variadic_type_variable = {
       head: 'annotation list;
-      variable: 'annotation Variable.RecordVariadic.RecordParameters.record;
+      variable: 'annotation Variable.RecordVariadic.RecordParamSpec.record;
     }
 
     and 'annotation record_parameters =
@@ -798,7 +798,7 @@ module T = struct
         parameters: t Record.Parameter.record list;
       }
     | ParameterVariadicComponent of
-        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
+        Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents.t
     | Primitive of Primitive.t
     | ReadOnly of t
     | RecursiveType of t Record.RecursiveType.record
@@ -1622,7 +1622,7 @@ module PrettyPrinting = struct
         let name = Canonicalization.reverse_substitute name in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
-        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
+        Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents.pp_concise format component
     | Primitive name -> Format.fprintf format "%s" name
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
     | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
@@ -1706,7 +1706,7 @@ module PrettyPrinting = struct
         let name = strip_qualification (Canonicalization.reverse_substitute name) in
         Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
     | ParameterVariadicComponent component ->
-        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
+        Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
@@ -2389,7 +2389,7 @@ module Variable = struct
 
   type unary_domain = T.t [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_t = T.t Record.Variable.RecordVariadic.RecordParameters.record
+  type parameter_variadic_t = T.t Record.Variable.RecordVariadic.RecordParamSpec.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
@@ -2537,8 +2537,8 @@ module Variable = struct
   end
 
   module Variadic = struct
-    module Parameters = struct
-      include Record.Variable.RecordVariadic.RecordParameters
+    module ParamSpec = struct
+      include Record.Variable.RecordVariadic.RecordParamSpec
 
       type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
@@ -2693,7 +2693,7 @@ module Variable = struct
           | Some (Alias.VariableAlias (ParameterVariadic variable)) -> Some variable
           | _ -> None
         in
-        let open Record.Variable.RecordVariadic.RecordParameters.RecordComponents in
+        let open Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents in
         match variable_parameter_annotation, keywords_parameter_annotation with
         | ( {
               Node.value =
@@ -2724,7 +2724,7 @@ module Variable = struct
 
 
       module Components = struct
-        include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
+        include Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents
 
         type decomposition = {
           positional_component: T.t;
@@ -2984,7 +2984,7 @@ module Variable = struct
     module type VariableKind = sig
       include VariableKind
 
-      (* We don't want these to be part of the public interface for Unary or Variadic.Parameters *)
+      (* We don't want these to be part of the public interface for Unary or Variadic.ParamSpec *)
       val local_replace : (t -> domain option) -> T.t -> T.t option
 
       val local_collect : T.t -> t list
@@ -3100,7 +3100,7 @@ module Variable = struct
     end
 
     module Unary = Make (Unary)
-    module ParameterVariadic = Make (Variadic.Parameters)
+    module ParameterVariadic = Make (Variadic.ParamSpec)
     module TupleVariadic = Make (Variadic.TypeVarTuple)
   end
 
@@ -3128,7 +3128,7 @@ module Variable = struct
 
 
   let parse_declaration expression ~target =
-    match Variadic.Parameters.parse_declaration expression ~target with
+    match Variadic.ParamSpec.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
     | None -> (
         match Variadic.TypeVarTuple.parse_declaration expression ~target with
@@ -3142,7 +3142,7 @@ module Variable = struct
   let dequalify dequalify_map = function
     | Unary variable -> Unary (Unary.dequalify variable ~dequalify_map)
     | ParameterVariadic variable ->
-        ParameterVariadic (Variadic.Parameters.dequalify variable ~dequalify_map)
+        ParameterVariadic (Variadic.ParamSpec.dequalify variable ~dequalify_map)
     | TupleVariadic variable ->
         TupleVariadic (Variadic.TypeVarTuple.dequalify variable ~dequalify_map)
 
@@ -3151,7 +3151,7 @@ module Variable = struct
     match variable with
     | Unary variable -> Unary (Unary.namespace variable ~namespace)
     | ParameterVariadic variable ->
-        ParameterVariadic (Variadic.Parameters.namespace variable ~namespace)
+        ParameterVariadic (Variadic.ParamSpec.namespace variable ~namespace)
     | TupleVariadic variable -> TupleVariadic (Variadic.TypeVarTuple.namespace variable ~namespace)
 
 
@@ -3301,7 +3301,7 @@ module Variable = struct
           ParameterVariadicPair (parameter_variadic, callable_parameters)
       | Unary unary, _ -> UnaryPair (unary, Unary.any)
       | ParameterVariadic parameter_variadic, _ ->
-          ParameterVariadicPair (parameter_variadic, Variadic.Parameters.any)
+          ParameterVariadicPair (parameter_variadic, Variadic.ParamSpec.any)
       | TupleVariadic tuple_variadic, _ ->
           (* We should not hit this case at all. *)
           TupleVariadicPair (tuple_variadic, Variadic.TypeVarTuple.any)
@@ -3415,7 +3415,7 @@ module Variable = struct
   let to_parameter = function
     | Unary variable -> Parameter.Single (Unary.self_reference variable)
     | ParameterVariadic variable ->
-        Parameter.CallableParameters (Variadic.Parameters.self_reference variable)
+        Parameter.CallableParameters (Variadic.ParamSpec.self_reference variable)
     | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
 end
 
@@ -3579,7 +3579,7 @@ module ToExpression = struct
         subscript (Canonicalization.reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
         let attribute =
-          Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
+          Record.Variable.RecordVariadic.RecordParamSpec.RecordComponents.component_name component
         in
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
@@ -4750,7 +4750,7 @@ let resolve_aliases ~aliases annotation =
                         |> Variable.GlobalTransforms.Unary.replace_all (fun _ ->
                                Some Variable.Unary.any)
                         |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
-                               Some Variable.Variadic.Parameters.any)
+                               Some Variable.Variadic.ParamSpec.any)
                         |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
                                Some Variable.Variadic.TypeVarTuple.any)
                   in

@@ -619,8 +619,8 @@ let test_compute_inferred_generic_base context =
           "typing.Generic"
           [
             Type.Parameter.CallableParameters
-              (Type.Variable.Variadic.Parameters.self_reference
-                 (Type.Variable.Variadic.Parameters.create "test.TParams"));
+              (Type.Variable.Variadic.ParamSpec.self_reference
+                 (Type.Variable.Variadic.ParamSpec.create "test.TParams"));
           ]));
   assert_inferred_generic
     ~target:"test.Child"

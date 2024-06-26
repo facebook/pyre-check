@@ -110,7 +110,7 @@ let test_add_bound _ =
     ~preconstraints:
       (add_bound (Some empty) (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent))))
     (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "T" in
   (* Adding a constraint to a parameter variadic with no preconstraints should always work *)
   assert_add_bound_succeeds
     (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
@@ -272,7 +272,7 @@ let test_single_variable_solution _ =
            ( explicit_int_string_parent_A,
              Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
        ]);
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "T" in
   let empty_parameters = Type.Callable.Defined [] in
   let one_named_parameter =
     Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
@@ -404,8 +404,8 @@ let test_multiple_variable_solution _ =
         `Lower (UnaryPair (unconstrained_c, child));
       ]
     None;
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let parameters_a = Type.Variable.Variadic.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.ParamSpec.create "Tb" in
   let empty_parameters = Type.Callable.Defined [] in
   (* A is greater than B, and B is greater than empty => both A and B solve to empty *)
   assert_solution
@@ -624,8 +624,8 @@ let test_partial_solution _ =
       ]
     (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
     None;
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let parameters_a = Type.Variable.Variadic.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.ParamSpec.create "Tb" in
   expect_split_solution
     ~variables:[Type.Variable.ParameterVariadic parameters_a]
     ~bounds:
@@ -719,8 +719,8 @@ let test_exists _ =
     (TypeConstraints.exists_in_bounds
        constraints_with_unconstrained_b
        ~variables:[Type.Variable.Unary unconstrained_a]);
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let parameters_a = Type.Variable.Variadic.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.ParamSpec.create "Tb" in
   let constraints_with_parameters_b =
     let pair =
       Type.Variable.ParameterVariadicPair

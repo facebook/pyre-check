@@ -9,7 +9,7 @@
 
 open Core
 open Pyre
-module ParameterVariable = Type.Variable.Variadic.Parameters
+module ParameterVariable = Type.Variable.Variadic.ParamSpec
 module UnaryVariable = Type.Variable.Unary
 module TupleVariable = Type.Variable.Variadic.TypeVarTuple
 

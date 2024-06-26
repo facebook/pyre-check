@@ -1130,7 +1130,7 @@ let test_invalid_type_parameters context =
             };
       };
     ];
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "test.TParams" in
+  let parameter_variadic = Type.Variable.Variadic.ParamSpec.create "test.TParams" in
   assert_invalid_type_parameters_direct
     ~source:
       {|
@@ -1246,7 +1246,7 @@ let test_invalid_type_parameters context =
                      Type.Variable.Variadic.TypeVarTuple.synthetic_class_name_for_error
                      [
                        CallableParameters
-                         (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+                         (Type.Variable.Variadic.ParamSpec.self_reference parameter_variadic);
                      ]);
               expected =
                 Type.Variable.TupleVariadic (Type.Variable.Variadic.TypeVarTuple.create "test.Ts");

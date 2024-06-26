@@ -366,14 +366,14 @@ let make_assert_functions context =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.Parameters.name variable)
+            (Type.Variable.Variadic.ParamSpec.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
             (Type.Callable.ParameterVariadicTypeVariable
-               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
+               { head = []; variable = Type.Variable.Variadic.ParamSpec.mark_as_bound variable })
       in
       let mark_tuple_variadic variable =
         if
@@ -947,9 +947,8 @@ let test_add_constraint context =
     ~expected_solutions:[]
     ();
 
-  let { Type.Variable.Variadic.Parameters.Components.positional_component; keyword_component } =
-    Type.Variable.Variadic.Parameters.create "TParams"
-    |> Type.Variable.Variadic.Parameters.decompose
+  let { Type.Variable.Variadic.ParamSpec.Components.positional_component; keyword_component } =
+    Type.Variable.Variadic.ParamSpec.create "TParams" |> Type.Variable.Variadic.ParamSpec.decompose
   in
 
   assert_less_or_equal_direct

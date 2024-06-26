@@ -1958,7 +1958,7 @@ let rec messages ~concise ~signature location kind =
         | ParameterVariadic expected ->
             Format.asprintf
               "Callable parameters expected for parameter specification `%s`"
-              (Type.Variable.Variadic.Parameters.name expected)
+              (Type.Variable.Variadic.ParamSpec.name expected)
         | TupleVariadic expected ->
             Format.asprintf
               "Tuple expected for `%s`"
@@ -1990,7 +1990,7 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.Unary variable ->
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
-          let name = Type.Variable.Variadic.Parameters.name variable in
+          let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           let name = Type.Variable.Variadic.TypeVarTuple.name variable in
@@ -2020,7 +2020,7 @@ let rec messages ~concise ~signature location kind =
           | Toplevel -> [Format.asprintf format (Type.show (Type.Variable variable))])
       | Type.Variable.ParameterVariadic variable ->
           (* We don't give hints for the more complicated cases. *)
-          let name = Type.Variable.Variadic.Parameters.name variable in
+          let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           (* We don't give hints for the more complicated cases. *)
@@ -2763,7 +2763,7 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.Unary { Type.Record.Variable.RecordUnary.variable = name; _ } ->
           [Format.asprintf format name]
       | Type.Variable.ParameterVariadic variable ->
-          let name = Type.Variable.Variadic.Parameters.name variable in
+          let name = Type.Variable.Variadic.ParamSpec.name variable in
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           let name = Type.Variable.Variadic.TypeVarTuple.name variable in

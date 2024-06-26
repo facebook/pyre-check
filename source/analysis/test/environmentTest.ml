@@ -390,7 +390,7 @@ let test_register_aliases context =
     [
       ( "test.Tparams",
         Type.Alias.VariableAlias
-          (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "test.Tparams"))
+          (Type.Variable.ParameterVariadic (Type.Variable.Variadic.ParamSpec.create "test.Tparams"))
       );
     ];
   ()

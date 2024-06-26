@@ -353,8 +353,8 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.Variadic.ParamSpec.self_reference
+             (Type.Variable.Variadic.ParamSpec.create "TParams"));
       ];
   insert order "ChildClassParametricOnParamSpec";
   connect
@@ -364,8 +364,8 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.Variadic.ParamSpec.self_reference
+             (Type.Variable.Variadic.ParamSpec.create "TParams"));
       ];
   connect
     order
@@ -374,8 +374,8 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.Variadic.ParamSpec.self_reference
+             (Type.Variable.Variadic.ParamSpec.create "TParams"));
       ];
   insert order "ConcreteChildClassParametricOnParamSpec";
   connect

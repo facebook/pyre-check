@@ -74,7 +74,7 @@ module type OrderedConstraintsSetType = sig
   val get_parameter_specification_possibilities
     :  t ->
     order:order ->
-    parameter_specification:Type.Variable.Variadic.Parameters.t ->
+    parameter_specification:Type.Variable.Variadic.ParamSpec.t ->
     Type.Callable.parameters list
 
   (* Only exposed for testing *)
