@@ -177,16 +177,6 @@ module Make (Analysis : ANALYSIS) = struct
     (* Show function for the registry *)
     let show = Format.asprintf "%a" pp
   end
-  
-  (* Temporary code to demonstrate pretty-printing *)
-  let () =
-    (* Create example target and model *)
-    let target = Target.make_target "example_target"  (* Use actual creation method for target *)
-    and model = Model.make_model "example_model" (* Use actual creation method for model *) in
-    let registry = Registry.singleton ~target ~model in
-    (* Print the registry contents *)
-    Format.printf "%s\n" (Registry.show registry)
-
 
     let merge ~join left right =
       Target.Map.union (fun _ left right -> Some (join left right)) left right
@@ -898,3 +888,13 @@ struct
     else
       Format.ifprintf Format.err_formatter format
 end
+
+ 
+(* Temporary code to demonstrate pretty-printing *)
+let () =
+  (* Create example target and model *)
+  let target = Target.make_target "example_target"  (* Use actual creation method for target *)
+  and model = Model.make_model "example_model" (* Use actual creation method for model *) in
+  let registry = Registry.singleton ~target ~model in
+  (* Print the registry contents *)
+  Format.printf "%s\n" (Registry.show registry)
