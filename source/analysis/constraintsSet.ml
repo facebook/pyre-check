@@ -87,7 +87,7 @@ type kind =
   | VariableIsExactly of Type.Variable.pair
 
 module type OrderedConstraintsSetType = sig
-  val add : t -> new_constraint:kind -> order:order -> t
+  val add_and_simplify : t -> new_constraint:kind -> order:order -> t
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
@@ -1181,7 +1181,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~protocol:(Type.RecursiveType.name recursive_type)
 
 
-  let add existing_constraints ~new_constraint ~order =
+  let add_and_simplify existing_constraints ~new_constraint ~order =
     match new_constraint with
     | LessOrEqual { left; right } ->
         List.concat_map existing_constraints ~f:(fun constraints ->

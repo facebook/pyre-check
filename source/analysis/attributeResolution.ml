@@ -740,7 +740,7 @@ module SignatureSelection = struct
           { reasons with annotation = mismatch :: annotation }
         in
         let updated_constraints_set =
-          TypeOrder.OrderedConstraintsSet.add
+          TypeOrder.OrderedConstraintsSet.add_and_simplify
             constraints_set
             ~new_constraint:
               (LessOrEqual { left = argument_annotation; right = parameter_annotation })
@@ -756,7 +756,7 @@ module SignatureSelection = struct
           if Type.is_unbound resolved then
             ConstraintsSet.impossible
           else
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               ConstraintsSet.empty
               ~new_constraint:(LessOrEqual { left = resolved; right = generic_iterable_type })
               ~order
@@ -848,7 +848,7 @@ module SignatureSelection = struct
         in
         let solve (concatenated, extracted_ordered_types) =
           let updated_constraints_set =
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               signature_match.constraints_set
               ~new_constraint:(OrderedTypesLessOrEqual { left = concatenated; right = expected })
               ~order
@@ -885,7 +885,7 @@ module SignatureSelection = struct
                     |> Option.value ~default:location
                   in
                   let is_mismatch =
-                    TypeOrder.OrderedConstraintsSet.add
+                    TypeOrder.OrderedConstraintsSet.add_and_simplify
                       signature_match.constraints_set
                       ~new_constraint:
                         (LessOrEqual { left = item_type_for_error; right = expected_item_type })
@@ -1175,7 +1175,7 @@ module SignatureSelection = struct
         when String.equal (Reference.show name) "dict.__init__"
              && has_matched_keyword_parameter parameters ->
           let updated_constraints =
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               constraints_set
               ~new_constraint:(LessOrEqual { left = Type.string; right = key_type })
               ~order
@@ -1233,12 +1233,12 @@ module SignatureSelection = struct
                     in
                     Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
                   in
-                  TypeOrder.OrderedConstraintsSet.add
+                  TypeOrder.OrderedConstraintsSet.add_and_simplify
                     constraints_set
                     ~new_constraint:(LessOrEqual { left = resolved; right = annotation })
                     ~order
                   (* Once we've used this solution, we have to commit to it *)
-                  |> TypeOrder.OrderedConstraintsSet.add
+                  |> TypeOrder.OrderedConstraintsSet.add_and_simplify
                        ~new_constraint:
                          (VariableIsExactly (TypeVarPair (parameter_variable, parameter_type)))
                        ~order
@@ -1344,7 +1344,7 @@ module SignatureSelection = struct
         let solve_back parameters =
           let constraints_set =
             (* If we use this option, we have to commit to it as to not move away from it later *)
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               constraints_set
               ~new_constraint:(VariableIsExactly (ParamSpecPair (variable, parameters)))
               ~order
@@ -2103,7 +2103,7 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
     | { Type.Callable.parameters = Defined (Named { annotation; _ } :: _); _ }, _ -> (
         let solution =
           try
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               ConstraintsSet.empty
               ~new_constraint:(LessOrEqual { left = self_type; right = annotation })
               ~order
@@ -3278,7 +3278,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   let constraints =
                     match self_annotation with
                     | Some annotation ->
-                        TypeOrder.OrderedConstraintsSet.add
+                        TypeOrder.OrderedConstraintsSet.add_and_simplify
                           ConstraintsSet.empty
                           ~new_constraint:(LessOrEqual { left = instantiated; right = annotation })
                           ~order
@@ -3361,7 +3361,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                            ])
                       ()
                   in
-                  TypeOrder.OrderedConstraintsSet.add
+                  TypeOrder.OrderedConstraintsSet.add_and_simplify
                     ConstraintsSet.empty
                     ~new_constraint:(LessOrEqual { left = Type.Callable callable; right })
                     ~order
@@ -3820,7 +3820,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             ConstraintsSet.Solution.empty
         | _ ->
             let order = self#full_order ~assumptions in
-            TypeOrder.OrderedConstraintsSet.add
+            TypeOrder.OrderedConstraintsSet.add_and_simplify
               ConstraintsSet.empty
               ~new_constraint:(LessOrEqual { left = instantiated; right })
               ~order
@@ -4417,7 +4417,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 (get_typed_dictionary annotation));
         }
       in
-      TypeOrder.OrderedConstraintsSet.add
+      TypeOrder.OrderedConstraintsSet.add_and_simplify
         ConstraintsSet.empty
         ~new_constraint:(LessOrEqual { left; right })
         ~order

@@ -489,8 +489,8 @@ let is_consistent_with resolution ~resolve left right ~expression =
 module ConstraintsSet = struct
   include ConstraintsSet
 
-  let add constraints ~new_constraint ~global_resolution =
-    TypeOrder.OrderedConstraintsSet.add
+  let add_and_simplify constraints ~new_constraint ~global_resolution =
+    TypeOrder.OrderedConstraintsSet.add_and_simplify
       constraints
       ~new_constraint
       ~order:(full_order global_resolution)
@@ -523,7 +523,7 @@ let extract_type_parameters resolution ~source ~target =
         List.map unaries ~f:(fun unary -> Type.Parameter.Single (Type.Variable unary))
         |> Type.parametric target
       in
-      TypeOrder.OrderedConstraintsSet.add
+      TypeOrder.OrderedConstraintsSet.add_and_simplify
         ConstraintsSet.empty
         ~new_constraint:(LessOrEqual { left = source; right = solve_against })
         ~order:(full_order resolution)
@@ -606,7 +606,7 @@ let overrides resolution class_name ~name =
 
 let refine global_resolution annotation refined_type =
   let solve_less_or_equal ~left ~right =
-    ConstraintsSet.add
+    ConstraintsSet.add_and_simplify
       ConstraintsSet.empty
       ~new_constraint:(ConstraintsSet.LessOrEqual { left; right })
       ~global_resolution

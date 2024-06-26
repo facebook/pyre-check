@@ -33,7 +33,7 @@ module OrderImplementation = struct
     type t = order
 
     let rec always_less_or_equal order ~left ~right =
-      OrderedConstraintsSet.add
+      OrderedConstraintsSet.add_and_simplify
         ConstraintsSet.empty
         ~new_constraint:
           (LessOrEqual

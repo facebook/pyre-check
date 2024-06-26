@@ -346,7 +346,7 @@ let make_assert_functions context =
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
-      (TypeOrder.OrderedConstraintsSet.add
+      (TypeOrder.OrderedConstraintsSet.add_and_simplify
          [constraints]
          ~new_constraint:(LessOrEqual { left; right })
          ~order:handler
@@ -1736,7 +1736,7 @@ let test_mark_escaped_as_escaped context =
         metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
       }
     in
-    TypeOrder.OrderedConstraintsSet.add
+    TypeOrder.OrderedConstraintsSet.add_and_simplify
       ConstraintsSet.empty
       ~new_constraint:(LessOrEqual { left; right })
       ~order

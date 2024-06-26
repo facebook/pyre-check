@@ -67,7 +67,7 @@ type kind =
   | VariableIsExactly of Type.Variable.pair
 
 module type OrderedConstraintsSetType = sig
-  val add : t -> new_constraint:kind -> order:order -> t
+  val add_and_simplify : t -> new_constraint:kind -> order:order -> t
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
