@@ -406,9 +406,7 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower
-          (ParamSpecPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
         `Lower (ParamSpecPair (parameters_b, empty_parameters));
       ]
     (Some
@@ -422,12 +420,8 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower
-          (ParamSpecPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
-        `Lower
-          (ParamSpecPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_b, Type.Callable.FromParamSpec (empty_head parameters_a)));
       ]
     None;
   let parameters_with_unconstrained_a =
@@ -461,7 +455,7 @@ let test_multiple_variable_solution _ =
           (TypeVarPair
              ( unconstrained_a,
                Type.Callable.create
-                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a))
+                 ~parameters:(Type.Callable.FromParamSpec (empty_head parameters_a))
                  ~annotation:Type.integer
                  () ));
       ]
@@ -625,18 +619,10 @@ let test_partial_solution _ =
     ~variables:[Type.Variable.ParamSpecVariable parameters_a]
     ~bounds:
       [
-        `Lower
-          (ParamSpecPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
-        `Lower
-          (ParamSpecPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_b, Type.Callable.FromParamSpec (empty_head parameters_a)));
       ]
-    (Some
-       [
-         ParamSpecPair
-           (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b));
-       ])
+    (Some [ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b))])
     (Some []);
 
   (* Variadic tuples. *)
@@ -719,7 +705,7 @@ let test_exists _ =
   let constraints_with_parameters_b =
     let pair =
       Type.Variable.ParamSpecPair
-        (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b))
+        (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b))
     in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
     |> fun constraints_option -> Option.value_exn constraints_option

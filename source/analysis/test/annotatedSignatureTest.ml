@@ -924,7 +924,7 @@ let test_unresolved_select =
                  {
                    annotation = Type.integer;
                    parameters =
-                     ParameterVariadicTypeVariable
+                     FromParamSpec
                        {
                          head = [];
                          variable =
@@ -937,7 +937,7 @@ let test_unresolved_select =
            (NotFound
               {
                 closest_return_annotation = Type.integer;
-                reason = Some SignatureSelectionTypes.CallingParameterVariadicTypeVariable;
+                reason = Some SignatureSelectionTypes.CallingFromParamSpec;
               });
     ]
 

@@ -159,7 +159,7 @@ let errors_from_not_found
           Error.InvalidClassInstantiation
             (Error.AbstractClassInstantiation { class_name; abstract_methods }) );
       ]
-  | CallingParameterVariadicTypeVariable -> [None, Error.NotCallable (Type.Callable callable)]
+  | CallingFromParamSpec -> [None, Error.NotCallable (Type.Callable callable)]
   | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
       [
         ( Some location,

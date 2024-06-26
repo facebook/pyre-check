@@ -313,8 +313,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            the Python type system at the moment. *)
         | Defined _, Undefined -> [initial_constraints]
         | Undefined, Defined _ -> [initial_constraints]
-        | ( ParameterVariadicTypeVariable { head = left_head; variable = left_variable },
-            ParameterVariadicTypeVariable { head = right_head; variable = right_variable } )
+        | ( FromParamSpec { head = left_head; variable = left_variable },
+            FromParamSpec { head = right_head; variable = right_variable } )
           when Type.Variable.ParamSpec.is_free left_variable
                && Type.Variable.ParamSpec.is_free right_variable ->
             let add_parameter_specification_bounds constraints =
@@ -323,14 +323,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                    ~order
                    ~pair:
                      (Type.Variable.ParamSpecPair
-                        ( right_variable,
-                          ParameterVariadicTypeVariable { head = []; variable = left_variable } ))
+                        (right_variable, FromParamSpec { head = []; variable = left_variable }))
               >>= OrderedConstraints.add_lower_bound
                     ~order
                     ~pair:
                       (Type.Variable.ParamSpecPair
-                         ( left_variable,
-                           ParameterVariadicTypeVariable { head = []; variable = right_variable } ))
+                         (left_variable, FromParamSpec { head = []; variable = right_variable }))
               |> Option.to_list
             in
             solve_ordered_types_less_or_equal
@@ -339,23 +337,22 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               ~right:(Type.OrderedTypes.Concrete left_head)
               ~constraints:initial_constraints
             |> List.concat_map ~f:add_parameter_specification_bounds
-        | bound, ParameterVariadicTypeVariable { head = []; variable }
-          when Type.Variable.ParamSpec.is_free variable ->
+        | bound, FromParamSpec { head = []; variable } when Type.Variable.ParamSpec.is_free variable
+          ->
             let pair = Type.Variable.ParamSpecPair (variable, bound) in
             OrderedConstraints.add_upper_bound initial_constraints ~order ~pair |> Option.to_list
-        | bound, ParameterVariadicTypeVariable { head; variable }
-          when Type.Variable.ParamSpec.is_free variable ->
+        | bound, FromParamSpec { head; variable } when Type.Variable.ParamSpec.is_free variable ->
             let constraints, remainder =
               match bound with
               | Undefined -> [initial_constraints], Undefined
-              | ParameterVariadicTypeVariable { head = left_head; variable = left_variable } ->
+              | FromParamSpec { head = left_head; variable = left_variable } ->
                   let paired, remainder = List.split_n left_head (List.length head) in
                   ( solve_ordered_types_less_or_equal
                       order
                       ~left:(Type.OrderedTypes.Concrete paired)
                       ~right:(Type.OrderedTypes.Concrete head)
                       ~constraints:initial_constraints,
-                    ParameterVariadicTypeVariable { head = remainder; variable = left_variable } )
+                    FromParamSpec { head = remainder; variable = left_variable } )
               | Defined defined ->
                   let paired, remainder = List.split_n defined (List.length head) in
                   ( solve_parameters
@@ -366,8 +363,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             in
             let pair = Type.Variable.ParamSpecPair (variable, remainder) in
             List.filter_map constraints ~f:(OrderedConstraints.add_upper_bound ~order ~pair)
-        | ParameterVariadicTypeVariable left, ParameterVariadicTypeVariable right
-          when Type.Callable.equal_parameter_variadic_type_variable Type.equal left right ->
+        | FromParamSpec left, FromParamSpec right
+          when Type.Callable.equal_params_from_param_spec Type.equal left right ->
             [initial_constraints]
         | _, _ -> impossible
       with
@@ -1071,9 +1068,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     |> fun instantiated -> [Type.Parameter.Single instantiated]
                 | ParamSpecVariable variable ->
                     TypeConstraints.Solution.instantiate_single_param_spec solution variable
-                    |> Option.value
-                         ~default:
-                           (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
+                    |> Option.value ~default:(Type.Callable.FromParamSpec { head = []; variable })
                     |> fun instantiated -> [Type.Parameter.CallableParameters instantiated]
                 | TypeVarTupleVariable variadic ->
                     TypeConstraints.Solution.instantiate_ordered_types

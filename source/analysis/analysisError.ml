@@ -1791,9 +1791,7 @@ let rec messages ~concise ~signature location kind =
       let arguments = if has_arguments then "(...)" else "" in
       let recurse = messages ~concise ~signature location in
       let has_param_spec_variable = function
-        | Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ }
-          ->
-            true
+        | Type.Callable { implementation = { parameters = FromParamSpec _; _ }; _ } -> true
         | _ -> false
       in
       match reason, reason >>| recurse >>= List.hd with
@@ -2490,8 +2488,7 @@ let rec messages ~concise ~signature location kind =
         "See https://pyre-check.org/docs/errors/#62-non-literal-string for more details.";
       ]
   | NotCallable
-      (Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
-      annotation) ->
+      (Type.Callable { implementation = { parameters = FromParamSpec _; _ }; _ } as annotation) ->
       [
         Format.asprintf
           "`%a` cannot be safely called because the types and kinds of its parameters depend on a \

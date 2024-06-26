@@ -130,7 +130,7 @@ module Record : sig
       | Anonymous
       | Named of Reference.t
 
-    and 'annotation parameter_variadic_type_variable = {
+    and 'annotation params_from_param_spec = {
       head: 'annotation list;
       variable: 'annotation Variable.ParamSpec.record;
     }
@@ -138,7 +138,7 @@ module Record : sig
     and 'annotation record_parameters =
       | Defined of 'annotation CallableParamType.t list
       | Undefined
-      | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
+      | FromParamSpec of 'annotation params_from_param_spec
 
     and 'annotation overload = {
       annotation: 'annotation;

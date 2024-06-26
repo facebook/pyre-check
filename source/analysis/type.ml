@@ -222,7 +222,11 @@ module Record = struct
       | Anonymous
       | Named of Reference.t
 
-    and 'annotation parameter_variadic_type_variable = {
+    (* This represents a callable whose parameter signature is determined by a ParamSpec. This could
+       be a callable whose parameters are *just* a ParamSpec (e.g. `Callable[P, R]`), or it could be
+       one whose parameters add one or more positional-only arguments preceding the param spec, e.g.
+       `Callable[Concatenate[T0, T1, P], R]`. *)
+    and 'annotation params_from_param_spec = {
       head: 'annotation list;
       variable: 'annotation Variable.ParamSpec.record;
     }
@@ -230,7 +234,7 @@ module Record = struct
     and 'annotation record_parameters =
       | Defined of 'annotation CallableParamType.t list
       | Undefined
-      | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
+      | FromParamSpec of 'annotation params_from_param_spec
 
     and 'annotation overload = {
       annotation: 'annotation; (* return type annotation *)
@@ -545,9 +549,8 @@ module VisitWithTransform = struct
           in
           match parameter with
           | Defined defined -> Defined (List.map defined ~f:visit_defined)
-          | ParameterVariadicTypeVariable { head; variable } ->
-              ParameterVariadicTypeVariable
-                { head = List.map head ~f:(visit_annotation ~state); variable }
+          | FromParamSpec { head; variable } ->
+              FromParamSpec { head = List.map head ~f:(visit_annotation ~state); variable }
           | parameter -> parameter
         in
         match annotation with
@@ -1176,7 +1179,7 @@ module PrettyPrinting = struct
 
   let show_callable_parameters ~pp_type = function
     | Record.Callable.Undefined -> "..."
-    | ParameterVariadicTypeVariable variable ->
+    | FromParamSpec variable ->
         Canonicalization.parameter_variable_type_representation variable
         |> Format.asprintf "%a" pp_type
     | Defined parameters ->
@@ -1285,7 +1288,7 @@ module PrettyPrinting = struct
       let parameters =
         match parameters with
         | Undefined -> "..."
-        | ParameterVariadicTypeVariable variable ->
+        | FromParamSpec variable ->
             Canonicalization.parameter_variable_type_representation variable
             |> Format.asprintf "%a" pp_concise
         | Defined parameters ->
@@ -1372,7 +1375,7 @@ module Parameter = struct
 
   let to_variable = function
     | Single (Variable variable) -> Some (Record.Variable.TypeVarVariable variable)
-    | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
+    | CallableParameters (FromParamSpec { head = []; variable }) ->
         Some (ParamSpecVariable variable)
     | Unpacked (Variadic variadic) -> Some (TypeVarTupleVariable variadic)
     | _ -> None
@@ -1587,7 +1590,7 @@ module Callable = struct
     let parameters { parameters; _ } =
       match parameters with
       | Defined parameters -> Some parameters
-      | ParameterVariadicTypeVariable _
+      | FromParamSpec _
       | Undefined ->
           None
 
@@ -2583,7 +2586,7 @@ module Variable = struct
 
     let any = Callable.Undefined
 
-    let self_reference variable = Callable.ParameterVariadicTypeVariable { head = []; variable }
+    let self_reference variable = Callable.FromParamSpec { head = []; variable }
 
     let pair variable value = ParamSpecPair (variable, value)
 
@@ -2603,17 +2606,17 @@ module Variable = struct
 
     let local_replace replacement annotation =
       let map = function
-        | Record.Callable.ParameterVariadicTypeVariable { head; variable } ->
+        | Record.Callable.FromParamSpec { head; variable } ->
             let open Record.Callable in
             let apply_head ~head = function
-              | ParameterVariadicTypeVariable { head = inner_head; variable } ->
-                  ParameterVariadicTypeVariable { head = head @ inner_head; variable }
+              | FromParamSpec { head = inner_head; variable } ->
+                  FromParamSpec { head = head @ inner_head; variable }
               | Undefined -> Undefined
               | Defined tail -> Defined (Callable.prepend_anonymous_parameters ~head ~tail)
             in
             replacement variable
             >>| apply_head ~head
-            |> Option.value ~default:(ParameterVariadicTypeVariable { head; variable })
+            |> Option.value ~default:(FromParamSpec { head; variable })
         | parameters -> parameters
       in
       match annotation with
@@ -2641,15 +2644,13 @@ module Variable = struct
     let local_collect = function
       | Callable { implementation; overloads; _ } ->
           let extract = function
-            | { Record.Callable.parameters = ParameterVariadicTypeVariable { variable; _ }; _ } ->
-                Some variable
+            | { Record.Callable.parameters = FromParamSpec { variable; _ }; _ } -> Some variable
             | _ -> None
           in
           List.filter_map (implementation :: overloads) ~f:extract
       | Parametric { parameters; _ } ->
           let extract = function
-            | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; _ }) ->
-                Some variable
+            | Parameter.CallableParameters (FromParamSpec { variable; _ }) -> Some variable
             | _ -> None
           in
           List.filter_map parameters ~f:extract
@@ -3502,7 +3503,7 @@ module ToExpression = struct
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
-    | ParameterVariadicTypeVariable variable ->
+    | FromParamSpec variable ->
         Canonicalization.parameter_variable_type_representation variable |> expression
 
 
@@ -4126,8 +4127,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | Parametric { name; parameters }
       when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.concatenate_public_names -> (
         match List.rev parameters with
-        | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
-          :: reversed_head ->
+        | Parameter.CallableParameters (FromParamSpec { variable; head = [] }) :: reversed_head ->
             Parameter.all_singles reversed_head
             >>| List.rev
             >>| fun head -> { Record.Callable.variable; head }
@@ -4330,8 +4330,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             | _ -> (
                 let parsed = create_logic parameters in
                 match substitute_parameter_variadic parsed with
-                | Some variable ->
-                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
+                | Some variable -> make_signature ~parameters:(FromParamSpec variable)
                 | _ -> (
                     match parsed with
                     | Primitive "..." -> make_signature ~parameters:Undefined
@@ -4383,10 +4382,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 | None -> (
                     match substitute_parameter_variadic parsed with
                     | Some variable ->
-                        [
-                          Record.Parameter.CallableParameters
-                            (ParameterVariadicTypeVariable variable);
-                        ]
+                        [Record.Parameter.CallableParameters (FromParamSpec variable)]
                     | _ -> [Record.Parameter.Single parsed]))
           in
           match subscript_index with
@@ -5109,9 +5105,8 @@ let equivalent_for_assert_type left right =
         let simplify_record_parameters = function
           | Record.Callable.Defined parameters ->
               Record.Callable.Defined (simplify_parameters parameters)
-          | Record.Callable.ParameterVariadicTypeVariable { head; variable } ->
-              Record.Callable.ParameterVariadicTypeVariable
-                { head = simplify_parameters head; variable }
+          | Record.Callable.FromParamSpec { head; variable } ->
+              Record.Callable.FromParamSpec { head = simplify_parameters head; variable }
           | needs_no_change -> needs_no_change
         in
         let simplify_overload { Record.Callable.annotation; parameters } =

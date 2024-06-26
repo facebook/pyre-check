@@ -111,7 +111,7 @@ let create_overload_without_applying_decorators
                 |> Option.all
               in
               match parsed_head with
-              | Some head -> ParameterVariadicTypeVariable { head; variable }
+              | Some head -> FromParamSpec { head; variable }
               | None -> default ())
           | None -> default ())
       | _ -> Defined (List.map parameters ~f:parse)

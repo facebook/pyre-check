@@ -1307,8 +1307,7 @@ module SignatureSelection = struct
         |> check_arguments_against_parameters ~callable
         |> fun signature_match -> [signature_match]
     | Undefined -> [base_signature_match]
-    | ParameterVariadicTypeVariable { head; variable } when Type.Variable.ParamSpec.is_free variable
-      -> (
+    | FromParamSpec { head; variable } when Type.Variable.ParamSpec.is_free variable -> (
         (* Handle callables where an early parameter binds a ParamSpec and later parameters expect
            the corresponding arguments.
 
@@ -1379,7 +1378,7 @@ module SignatureSelection = struct
         |> function
         | [] -> [head_signature]
         | nonempty -> nonempty)
-    | ParameterVariadicTypeVariable { head; variable } -> (
+    | FromParamSpec { head; variable } -> (
         (* The ParamSpec variable `P` is in scope, so the only valid arguments are `*args` and
            `**kwargs` that have "type" `P.args` and `P.kwargs` respectively. If the ParamSpec has a
            `head` prefix of parameters, check for any prefix arguments. *)
@@ -1405,7 +1404,7 @@ module SignatureSelection = struct
             [
               {
                 base_signature_match with
-                reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
+                reasons = { arity = [CallingFromParamSpec]; annotation = [] };
               };
             ])
 
@@ -1448,7 +1447,7 @@ module SignatureSelection = struct
     | [], reason :: reasons ->
         let importance = function
           | AbstractClassInstantiation _ -> 1
-          | CallingParameterVariadicTypeVariable -> 1
+          | CallingFromParamSpec -> 1
           | InvalidKeywordArgument _ -> 0
           | InvalidVariableArgument _ -> 0
           | Mismatches _ -> -1
@@ -2127,8 +2126,7 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
     let parameters =
       match parameters with
       | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
-      | ParameterVariadicTypeVariable { head = _ :: head; variable } ->
-          ParameterVariadicTypeVariable { head; variable }
+      | FromParamSpec { head = _ :: head; variable } -> FromParamSpec { head; variable }
       | _ -> parameters
     in
     { Type.Callable.annotation; parameters }

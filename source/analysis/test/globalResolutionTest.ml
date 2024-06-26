@@ -1227,8 +1227,7 @@ let test_invalid_type_parameters context =
          "test.Foo"
          [
            CallableParameters
-             (ParameterVariadicTypeVariable
-                { Type.Callable.head = []; variable = parameter_variadic });
+             (FromParamSpec { Type.Callable.head = []; variable = parameter_variadic });
          ])
     ~expected_transformed_type:
       (Type.parametric

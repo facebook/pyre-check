@@ -115,7 +115,7 @@ let decorate
                   placed_single_star, new_parameter :: sofar
                 in
                 List.fold parameters ~f:convert ~init:(false, []) |> snd |> List.rev
-            | ParameterVariadicTypeVariable _
+            | FromParamSpec _
             | Undefined ->
                 original_parameters
           in

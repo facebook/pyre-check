@@ -55,7 +55,7 @@ type reason =
       class_name: Reference.t;
       abstract_methods: string list;
     }
-  | CallingParameterVariadicTypeVariable
+  | CallingFromParamSpec
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatches of mismatch_reason list

@@ -372,7 +372,7 @@ let make_assert_functions context =
           None
         else
           Some
-            (Type.Callable.ParameterVariadicTypeVariable
+            (Type.Callable.FromParamSpec
                { head = []; variable = Type.Variable.ParamSpec.mark_as_bound variable })
       in
       let mark_tuple_variadic variable =
