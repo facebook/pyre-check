@@ -102,7 +102,7 @@ class CodeGenerator:
         unpack_vars = ', '.join(self.generate_new_variable() for _ in range(3))
         unpack_operation = f"{unpack_vars} = {curr_var}"
         new_operation_var = self.generate_new_variable()
-        new_operation = f"{new_operation_var} = {self.variables[self.current_var-3]} + {self.variables[self.current_var-2]} + {self.variables[self.current_var-1]}"
+        new_operation = f"{new_operation_var} = {self.variables[self.current_var-4]} + {self.variables[self.current_var-3]} + {self.variables[self.current_var-2]}"
         return f"{tuple_creation}\n{unpack_operation}\n{new_operation}"
 
     def generate_randomized_data_structures(self) -> str:
@@ -192,9 +192,9 @@ class CodeGenerator:
             self.generate_dictionary,
             self.generate_set,
             self.generate_string_concatenation,
-            self.generate_string_slicing
-            #self.generate_string_formatting,
-            #self.generate_tuple_manipulation,
+            self.generate_string_slicing,
+            self.generate_string_formatting,
+            self.generate_tuple_manipulation
             #self.generate_loop_with_break_continue,
             #self.generate_if_else_elif,
             #self.generate_nested_loops,
@@ -221,6 +221,5 @@ x = 35  # Change this number to generate a different amount of functions
 
 #print(generator.generate_random_functions(x))
 
-#print(generator.generate_source())
-
-#print(generator.generate_sink())
+print(generator.generate_source())
+print(generator.generate_sink())
