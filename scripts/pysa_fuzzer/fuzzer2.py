@@ -38,7 +38,7 @@ class CodeGenerator:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
         addition_code = f"{curr_var} = {prev_var} + '{random.randint(1, 9)}'"
-
+        
         if depth > 1:
             nested_addition = self.generate_addition(depth - 1)
             return f"{addition_code}\n{nested_addition}"
@@ -70,18 +70,33 @@ class CodeGenerator:
         return f"{curr_var} = ''\ncounter{counter_name} = 0\nwhile counter{counter_name} < {random.randint(2, 5)}:\n{textwrap.indent(loop_body, '    ')}"
 
     def generate_list(self, depth: int = 1) -> str:
+        code_lines = []
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
         list_length = random.randint(2, 10)
         list_creation = f"{curr_var}_list = [{prev_var} for _ in range({list_length})]"
-        list_access = f"{curr_var} = random.choice({curr_var}_list)"
+        code_lines.append(list_creation)
         
-        if depth > 1:
-            nested_list = self.generate_list(depth - 1)
-            list_creation = f"{list_creation}\n{textwrap.indent(nested_list, '    ')}"
+        for _ in range(depth - 1):
+            prev_var = f"{curr_var}_list"
+            curr_var = self.generate_new_variable()
+            list_length = random.randint(2, 10)
+            list_creation = f"{curr_var}_list = [{prev_var} for _ in range({list_length})]"
+            code_lines.append(list_creation)
         
-        return f"{list_creation}\n{list_access}"
-    
+        last_var = f"{curr_var}_list"
+        curr_var = self.generate_new_variable()
+        list_access = f"{curr_var} = random.choice({last_var})"
+        code_lines.append(list_access)
+        
+        for _ in range(depth - 1):
+            prev_var = curr_var
+            curr_var = self.generate_new_variable()
+            list_access = f"{curr_var} = random.choice({prev_var})"
+            code_lines.append(list_access)
+        
+        return '\n'.join(code_lines)
+
     def generate_dictionary(self) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
