@@ -2,6 +2,7 @@ import random
 import textwrap
 import itertools
 import string
+import math
 
 class CodeGenerator:
     def __init__(self):
@@ -23,13 +24,14 @@ class CodeGenerator:
         return self.variables[index]
 
     def get_last_variable(self):
-        return self.variables[self.current_var - 1]
+        return self.variables[self.current_var - 2]
     
     def generate_source(self) -> str:
         curr_var = self.generate_new_variable()
-        return f"import random\n{curr_var} = input()"
+        return f"import random\nimport math\n{curr_var} = input()"
 
     def generate_sink(self) -> str: 
+        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
         return f"print({prev_var})"
 
@@ -159,11 +161,6 @@ class CodeGenerator:
 
         # Select a random operation
         operation = random.choice(operations)
-        
-        # Import math if not already imported
-        import_math = "import math"
-        
-        return f"{import_math}\n{operation[1]}"
 
     def generate_nested_loops(self) -> str:
         prev_var = self.get_last_variable()
@@ -221,5 +218,7 @@ class CodeGenerator:
         return full_code
 
 generator = CodeGenerator()
-x = 3  # Change this number to generate a different amount of functions
-print(generator.generate_random_functions(x))
+x = 6  # Change this number to generate a different amount of functions
+print(generator.generate_source())
+print(generator.generate_addition())
+print(generator.generate_sink())
