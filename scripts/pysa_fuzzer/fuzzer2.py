@@ -200,23 +200,6 @@ class CodeGenerator:
         if_else_elif_statements = "\n".join([f"{condition}\n{textwrap.indent(action, '    ')}" for condition, action in conditions])
         return if_else_elif_statements
 
-    # this is broken and needs work ! 
-    def generate_math_operations(self) -> str:
-        prev_var = self.get_last_variable()
-        curr_var = self.generate_new_variable()
-
-        # Choose a random mathematical operation from the math library
-        operations = [
-            ("sqrt", f"{curr_var} = str(math.sqrt(int({prev_var})))"),
-            ("log", f"{curr_var} = str(math.log(int({prev_var}) + 1))"),  # log(x) requires x > 0
-            ("sin", f"{curr_var} = str(math.sin(float({prev_var})))"),
-            ("cos", f"{curr_var} = str(math.cos(float({prev_var})))"),
-            ("tan", f"{curr_var} = str(math.tan(float({prev_var})))")
-        ]
-
-        # Select a random operation
-        operation = random.choice(operations)
-
     def generate_nested_loops(self) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
