@@ -162,8 +162,8 @@ class CodeGenerator:
         operation = random.choice(operations)
 
     def generate_nested_loops(self) -> str:
-        prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
+        prev_var = self.get_last_variable()
         loop_body = f"{curr_var} += {prev_var}"
         nested_loop = (
             f"{curr_var} = ''\n"
@@ -195,9 +195,9 @@ class CodeGenerator:
             self.generate_string_slicing,
             self.generate_string_formatting,
             self.generate_tuple_manipulation,
-            self.generate_loop_with_break_continue
-            #self.generate_if_else_elif,
-            #self.generate_nested_loops,
+            self.generate_loop_with_break_continue,
+            self.generate_if_else_elif,
+            self.generate_nested_loops
             #self.generate_try_except,
             #self.generate_math_operations
         ]
@@ -208,19 +208,24 @@ class CodeGenerator:
         # Select random functions, allowing for duplicates
         selected_functions = random.choices(function_generators, k=x - 2)  # -2 to account for source and sink
         generated_code = "\n".join(func() for func in selected_functions)
-        
-        # Generate sink last
         sink_code = self.generate_sink()
-        
-        # Concatenate source, random functions, and sink
         full_code = f"{source_code}\n{generated_code}\n{sink_code}"
         return full_code
 
 generator = CodeGenerator()
 x = 35 # Change this number to generate a different amount of functions
 
-print(generator.generate_random_functions(x))
+#print(generator.generate_random_functions(x))
 
-#print(generator.generate_source())
-#print(generator)
-#print(generator.generate_sink())
+print(generator.generate_source())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+print(generator.generate_nested_loops())
+
+print(generator.generate_sink())
