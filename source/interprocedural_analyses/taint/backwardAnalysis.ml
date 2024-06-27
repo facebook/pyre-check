@@ -1895,7 +1895,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = arguments_formatted_string;
             string_literal = { value; location = value_location };
@@ -1929,7 +1928,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -1967,7 +1965,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~state
           ~breadcrumbs:
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -2026,7 +2023,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = substrings;
             string_literal = { CallModel.StringFormatCall.value = string_literal; location };
@@ -2081,23 +2077,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~taint
       ~state
       ~breadcrumbs
-      ~increase_trace_length
       { CallModel.StringFormatCall.nested_expressions; string_literal; call_target; location }
     =
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
     in
     let taint =
-      CallModel.StringFormatCall.implicit_string_literal_sinks
-        ~pyre_in_context
-        ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
-        ~module_reference:FunctionContext.qualifier
-        string_literal
-      |> BackwardState.Tree.create_leaf
-      |> BackwardState.Tree.join taint
+      BackwardState.Tree.transform_call_info (* Treat as a call site for tito taint. *)
+        CallInfo.Tito
+        Domains.TraceLength.Self
+        Map
+        ~f:TraceLength.increase
+        taint
     in
     let taint =
-      taint
+      string_literal
+      |> CallModel.StringFormatCall.implicit_string_literal_sinks
+           ~pyre_in_context
+           ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
+           ~module_reference:FunctionContext.qualifier
+      |> BackwardState.Tree.create_leaf
+      |> BackwardState.Tree.join taint
       |> BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
       |> BackwardTaint.add_local_breadcrumbs breadcrumbs
       |> BackwardState.Tree.create_leaf
@@ -2189,16 +2189,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         new_taint
         |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:expression_location
         |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
-      in
-      let new_taint =
-        if increase_trace_length then
-          BackwardState.Tree.transform
-            Domains.TraceLength.Self
-            Map
-            ~f:TraceLength.increase
-            new_taint
-        else
-          new_taint
       in
       analyze_expression ~pyre_in_context ~taint:new_taint ~state:new_state ~expression
     in
@@ -2327,7 +2317,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          ~increase_trace_length:false
           {
             CallModel.StringFormatCall.nested_expressions = substrings;
             string_literal = { value = string_literal; location };

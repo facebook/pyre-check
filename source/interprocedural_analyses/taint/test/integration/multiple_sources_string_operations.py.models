@@ -1167,7 +1167,6 @@
                   }
                 ],
                 "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
@@ -1406,7 +1405,6 @@
                   }
                 ],
                 "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
@@ -1449,7 +1447,6 @@
                   }
                 ],
                 "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "length": 1,
                 "kind": "TriggeredPartialSink[StringMayBeSQLSink, UserControlled]"
               }
             ],
