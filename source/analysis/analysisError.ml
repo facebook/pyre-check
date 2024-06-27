@@ -1498,7 +1498,13 @@ let rec messages ~concise ~signature location kind =
             define_location.Location.start.Location.line
         in
         let message =
-          Format.asprintf "Function declared non-returnable, but got `%a`." pp_type actual
+          if is_implicit then
+            Format.asprintf
+              "Function declared non-returnable, but got implicit return value of `%a`."
+              pp_type
+              actual
+          else
+            Format.asprintf "Function declared non-returnable, but got `%a`." pp_type actual
         in
         [message; trace]
       else

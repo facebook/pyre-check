@@ -1078,6 +1078,12 @@ module State (Context : Context) = struct
                 define_location;
               }
         in
+        (* For invalid implicit returns, use the location of the return annotation, if it exists *)
+        let location =
+          match return_annotation_expression with
+          | Some { Node.location; _ } when is_implicit -> location
+          | _ -> location
+        in
         emit_error ~errors ~location ~kind
       else
         errors
