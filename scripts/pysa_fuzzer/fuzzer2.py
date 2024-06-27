@@ -92,7 +92,7 @@ class CodeGenerator:
     def generate_string_formatting(self) -> str:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        format_operation = f"{curr_var} = f'Formatted string with {{{prev_var}}}'"
+        format_operation = f"{curr_var} = f'string {{{prev_var}}}'"
         return format_operation
 
     def generate_tuple_manipulation(self) -> str:
@@ -109,9 +109,9 @@ class CodeGenerator:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
         list_var = self.generate_new_variable()
-        list_creation = f"{list_var} = [{prev_var} for _ in range({random.randint(5, 10)})]"
-        shuffle_operation = f"random.shuffle({list_var})"
-        access_operation = f"{curr_var} = random.choice({list_var})"
+        list_creation = f"{curr_var} = [{prev_var} for _ in range({random.randint(5, 10)})]"
+        shuffle_operation = f"random.shuffle({curr_var})"
+        access_operation = f"{list_var} = random.choice({curr_var})"
         return f"{list_creation}\n{shuffle_operation}\n{access_operation}"
 
     def generate_loop_with_break_continue(self) -> str:
@@ -138,9 +138,9 @@ class CodeGenerator:
         prev_var = self.get_last_variable()
 
         conditions = [
-            (f"if {prev_var} == '{random.randint(1, 10)}':", f"{curr_var} = {prev_var} + ' condition1'"),
-            (f"elif {prev_var} == '{random.randint(11, 20)}':", f"{curr_var} = {prev_var} + ' condition2'"),
-            (f"else:", f"{curr_var} = {prev_var} + ' condition3'")
+            (f"if {prev_var} == '{random.randint(1, 10)}':", f"{curr_var} = {prev_var} + ' c1'"),
+            (f"elif {prev_var} == '{random.randint(11, 20)}':", f"{curr_var} = {prev_var} + ' c2'"),
+            (f"else:", f"{curr_var} = {prev_var} + ' c3'")
         ]
         if_else_elif_statements = "\n".join([f"{condition}\n{textwrap.indent(action, '    ')}" for condition, action in conditions])
         return if_else_elif_statements
@@ -176,9 +176,10 @@ class CodeGenerator:
     def generate_try_except(self) -> str:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        try_block = f"{curr_var} = str(int({prev_var}))\n    print('Conversion successful')"
+        try_block = f"{curr_var} = str(int({prev_var}))\n    print('Conversion successful')\n    print({curr_var})"
         except_block = "print('Conversion failed')"
         return f"try:\n{textwrap.indent(try_block, '    ')}\nexcept ValueError:\n{textwrap.indent(except_block, '    ')}"
+
 
     def generate_random_functions(self, x: int) -> str:
         if x < 2:
@@ -197,8 +198,9 @@ class CodeGenerator:
             self.generate_tuple_manipulation,
             self.generate_loop_with_break_continue,
             self.generate_if_else_elif,
-            self.generate_nested_loops
-            #self.generate_try_except,
+            self.generate_nested_loops,
+            self.generate_randomized_data_structures
+            #self.generate_try_except
             #self.generate_math_operations
         ]
 
@@ -215,17 +217,7 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 35 # Change this number to generate a different amount of functions
 
-#print(generator.generate_random_functions(x))
+print(generator.generate_random_functions(x))
 
-print(generator.generate_source())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-print(generator.generate_nested_loops())
-
-print(generator.generate_sink())
+#print(generator.generate_source())
+#print(generator.generate_sink())
