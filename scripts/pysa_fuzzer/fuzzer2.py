@@ -56,7 +56,6 @@ class CodeGenerator:
 
         return f"{curr_var} = ''\nfor _ in range({random.randint(2, 5)}):\n{textwrap.indent(loop_body, '    ')}"
 
-
     def generate_while_loop(self, depth: int = 1) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
@@ -97,13 +96,33 @@ class CodeGenerator:
         
         return '\n'.join(code_lines)
 
-    def generate_dictionary(self) -> str:
+    def generate_dictionary(self, depth: int = 1) -> str:
+        code_lines = []
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
         dict_length = random.randint(2, 10)
         dict_creation = f"{curr_var}_dict = {{{', '.join(f'{random.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
-        dict_access = f"{curr_var} = random.choice(list({curr_var}_dict.values()))"
-        return f"{dict_creation}\n{dict_access}"
+        code_lines.append(dict_creation)
+        
+        for _ in range(depth - 1):
+            prev_var = f"{curr_var}_dict"
+            curr_var = self.generate_new_variable()
+            dict_length = random.randint(2, 10)
+            dict_creation = f"{curr_var}_dict = {{{', '.join(f'{random.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
+            code_lines.append(dict_creation)
+        
+        last_var = f"{curr_var}_dict"
+        curr_var = self.generate_new_variable()
+        dict_access = f"{curr_var} = random.choice(list({last_var}.values()))"
+        code_lines.append(dict_access)
+        
+        for _ in range(depth - 1):
+            prev_var = curr_var
+            curr_var = self.generate_new_variable()
+            dict_access = f"{curr_var} = random.choice(list({prev_var}.values()))"
+            code_lines.append(dict_access)
+        
+        return '\n'.join(code_lines)
 
     def generate_set(self) -> str:
         prev_var = self.get_last_variable()
@@ -257,6 +276,5 @@ x = 35 # Change this number to generate a different amount of functions
 
 
 print(generator.generate_source())
-print(generator.generate_list())
 print(generator.generate_sink())
 
