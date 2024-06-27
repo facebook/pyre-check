@@ -23,80 +23,79 @@ class CodeGenerator:
         return self.variables[index]
 
     def get_last_variable(self):
-        return self.variables[self.current_var - 2]
+        return self.variables[self.current_var - 1]
     
     def generate_source(self) -> str:
         curr_var = self.generate_new_variable()
         return f"import random\nimport math\n{curr_var} = input()"
 
     def generate_sink(self) -> str: 
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
         return f"print({prev_var})"
 
     def generate_addition(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         return f"{curr_var} = {prev_var} + '{random.randint(1, 9)}'"
 
     def generate_for_loop(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        loop_body = f"{curr_var} += {prev_var}"
-        return f"{curr_var} = ''\nfor _ in range({random.randint(2, 5)}):\n{textwrap.indent(loop_body, '    ')}"
+        curr_var = self.generate_new_variable()
+        loop_body = f"{curr_var} += {prev_var}\ncounter += 1"
+        return f"{curr_var} = ''\ncounter = 0\nwhile counter < {random.randint(2, 5)}:\n{textwrap.indent(loop_body, '    ')}"
 
     def generate_while_loop(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         loop_body = f"{curr_var} += {prev_var}\ncounter += 1"
         return f"{curr_var} = ''\ncounter = 0\nwhile counter < {random.randint(2, 5)}:\n{textwrap.indent(loop_body, '    ')}"
 
     def generate_list(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         list_length = random.randint(2, 10)
         list_creation = f"{curr_var}_list = [{prev_var} for _ in range({list_length})]"
         list_access = f"{curr_var} = random.choice({curr_var}_list)"
         return f"{list_creation}\n{list_access}"
 
     def generate_dictionary(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         dict_length = random.randint(2, 10)
         dict_creation = f"{curr_var}_dict = {{{', '.join(f'{random.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
         dict_access = f"{curr_var} = random.choice(list({curr_var}_dict.values()))"
         return f"{dict_creation}\n{dict_access}"
 
     def generate_set(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         set_length = random.randint(2, 10)
         set_creation = f"{curr_var}_set = {{{', '.join(prev_var for _ in range(set_length))}}}"
         set_access = f"{curr_var} = random.choice(list({curr_var}_set))"
         return f"{set_creation}\n{set_access}"
 
     def generate_string_concatenation(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         concat_operation = f"{curr_var} = {prev_var} + '.'"
         return concat_operation
 
     def generate_string_slicing(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         start_idx = 0
         slice_operation = f"{curr_var} = {prev_var}[{start_idx}:]"
         return slice_operation
 
     def generate_string_formatting(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         format_operation = f"{curr_var} = f'string {{{prev_var}}}'"
         return format_operation
 
     def generate_tuple_manipulation(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         tuple_creation = f"{curr_var} = ({', '.join([prev_var for _ in range(3)])})"
         unpack_vars = ', '.join(self.generate_new_variable() for _ in range(3))
         unpack_operation = f"{unpack_vars} = {curr_var}"
@@ -105,8 +104,8 @@ class CodeGenerator:
         return f"{tuple_creation}\n{unpack_operation}\n{new_operation}"
 
     def generate_randomized_data_structures(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         list_var = self.generate_new_variable()
         list_creation = f"{curr_var} = [{prev_var} for _ in range({random.randint(5, 10)})]"
         shuffle_operation = f"random.shuffle({curr_var})"
@@ -114,9 +113,8 @@ class CodeGenerator:
         return f"{list_creation}\n{shuffle_operation}\n{access_operation}"
 
     def generate_loop_with_break_continue(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-
+        curr_var = self.generate_new_variable()
         loop_type = random.choice(["break", "continue"])
         condition = random.randint(1, 5)
 
@@ -133,8 +131,8 @@ class CodeGenerator:
         )
 
     def generate_if_else_elif(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
 
         conditions = [
             (f"if {prev_var} == '{random.randint(1, 10)}':", f"{curr_var} = {prev_var} + ' c1'"),
@@ -145,8 +143,8 @@ class CodeGenerator:
         return if_else_elif_statements
 
     def generate_math_operations(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
 
         # Choose a random mathematical operation from the math library
         operations = [
@@ -161,8 +159,8 @@ class CodeGenerator:
         operation = random.choice(operations)
 
     def generate_nested_loops(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         loop_body = f"{curr_var} += {prev_var}"
         nested_loop = (
             f"{curr_var} = ''\n"
@@ -173,8 +171,8 @@ class CodeGenerator:
         return nested_loop
 
     def generate_try_except(self) -> str:
-        curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
+        curr_var = self.generate_new_variable()
         try_block = f"{curr_var} = str(int({prev_var}))\n    print('Conversion successful')\n    print({curr_var})"
         except_block = "print('Conversion failed')"
         return f"try:\n{textwrap.indent(try_block, '    ')}\nexcept ValueError:\n{textwrap.indent(except_block, '    ')}"
