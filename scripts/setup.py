@@ -34,7 +34,7 @@ DEPENDENCIES = [
     "cmdliner.1.1.1",
     "core.v0.16.2",
     "re2.v0.16.0",
-    "dune.3.7.1",
+    "dune.3.16.0",
     "yojson.2.0.2",
     "jsonm.1.0.2",
     "ppx_deriving_yojson.3.7.0",
@@ -45,8 +45,9 @@ DEPENDENCIES = [
     "lwt_ppx.2.1.0",
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.11",
-    "mtime.1.4.0",
+    "mtime.2.0.0",
     "errpy.0.0.9",
+    "kcas_data.0.7.0",
 ]
 
 
