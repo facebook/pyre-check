@@ -70,7 +70,7 @@ module type FUNCTION_CONTEXT = sig
 
   val existing_model : Model.t
 
-  val triggered_sinks_to_propagate : Issue.TriggeredSinkLocationMap.t
+  val triggered_sinks_to_propagate : Issue.TriggeredSinkForBackward.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
 end
@@ -241,7 +241,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match Sinks.extract_partial_sink sink with
       | Some partial_sink ->
           triggered_sinks
-          |> Issue.TriggeredSinkHashMap.create_triggered_sink_taint
+          |> Issue.TriggeredSinkForCall.create_triggered_sink_taint
                ~argument_location
                ~call_info:CallInfo.declaration (* The triggered sink is "declared" here *)
                ~partial_sink
@@ -259,14 +259,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
      analysis. *)
   let store_triggered_sinks_to_propagate_for_call
-      ~call_location
       ~triggered_sinks
       ~arguments_matches
        (* Need this to know both the locations of the arguments and the sinks that would be
           generated on them (that are caused by the call). *)
       sink_taint
     =
-    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
+    if not (Issue.TriggeredSinkForCall.is_empty triggered_sinks) then
       let create_triggered_sink ~sink_taint ~argument_location { AccessPath.root; _ } =
         sink_taint
         |> BackwardState.read ~transform_non_leaves:(fun _ tree -> tree) ~root ~path:[]
@@ -285,8 +284,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.map ~f:(create_triggered_sink ~sink_taint ~argument_location)
           |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
         in
-        Issue.TriggeredSinkLocationMap.add
-          ~location:call_location
+        Issue.TriggeredSinkForBackward.add
           ~expression:argument
           ~taint_tree
           FunctionContext.triggered_sinks_to_propagate
@@ -295,15 +293,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let store_triggered_sinks_to_propagate_for_string_combine
-      ~call_location
       ~triggered_sinks
       ~sink_tree
       nested_expressions
     =
-    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
+    if not (Issue.TriggeredSinkForCall.is_empty triggered_sinks) then
       let store_triggered_sink ({ Node.location; _ } as expression) =
-        Issue.TriggeredSinkLocationMap.add
-          ~location:call_location
+        Issue.TriggeredSinkForBackward.add
           ~expression
           ~taint_tree:
             (create_triggered_sinks_to_propagate
@@ -751,7 +747,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Need to be called after calling `check_triggered_flows` *)
       store_triggered_sinks_to_propagate_for_call
         ~arguments_matches
-        ~call_location
         ~triggered_sinks:triggered_sinks_for_call
         backward.sink_taint
     in
@@ -986,7 +981,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     (* Set of sinks of combined source rules triggered (i.e, a source flowed to
      * a partial sink) for the current call expression. *)
-    let triggered_sinks_for_call = Issue.TriggeredSinkHashMap.create () in
+    let triggered_sinks_for_call = Issue.TriggeredSinkForCall.create () in
 
     (* Extract the implicit self, if any *)
     let self =
@@ -2409,7 +2404,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~module_reference:FunctionContext.qualifier
         string_literal
     in
-    let triggered_sinks = Issue.TriggeredSinkHashMap.create () in
+    let triggered_sinks = Issue.TriggeredSinkForCall.create () in
     StringFormatCall.check_triggered_flows
       ~pyre_in_context
       ~triggered_sinks
@@ -2514,7 +2509,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardTaint.join string_literal_taint
     in
     store_triggered_sinks_to_propagate_for_string_combine
-      ~call_location
       ~triggered_sinks
       ~sink_tree:string_combine_partial_sink_tree
       nested_expressions;
@@ -3246,7 +3240,7 @@ let run
 
     let existing_model = existing_model
 
-    let triggered_sinks_to_propagate = Issue.TriggeredSinkLocationMap.create ()
+    let triggered_sinks_to_propagate = Issue.TriggeredSinkForBackward.create ()
 
     let caller_class_interval =
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition

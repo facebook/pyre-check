@@ -367,8 +367,8 @@ let generate_issues
 
 (* A map from triggered sink kinds (which is a string) to their triggers. A triggered sink here
    means we found one source, and must find the other source, in order to file an issue for a
-   multi-source. *)
-module TriggeredSinkHashMap = struct
+   multi-source. This map is created for each call site. *)
+module TriggeredSinkForCall = struct
   module Hashable = Core.Hashable.Make (String)
   module HashMap = Hashable.Table
 
@@ -438,30 +438,27 @@ module TriggeredSinkHashMap = struct
     |> Option.value ~default:BackwardTaint.bottom
 end
 
-(* A map from locations to the triggered sinks that are created during the forward analysis on each
-   expression, but should be propagated by the backward analysis. *)
-module TriggeredSinkLocationMap = struct
-  module ExpressionMap = Stdlib.Map.Make (Ast.Expression)
+(* A map from expressions to the triggered sinks that need to be propagated up in the backward
+   analysis, because one of the partial sinks was fulfilled. This map is created during the forward
+   analysis of a callable using `TriggeredSinkForCall` and is passed to the backward analysis. *)
+module TriggeredSinkForBackward = struct
+  module Hashable = Core.Hashable.Make (Ast.Expression)
+  module ExpressionMap = Hashable.Table
 
-  type t = BackwardState.Tree.t ExpressionMap.t Location.Table.t
+  type t = BackwardState.Tree.t ExpressionMap.t
 
-  let create () = Location.Table.create ()
+  let create () = ExpressionMap.create ()
 
-  let add ~location ~expression ~taint_tree map =
+  let add ~expression ~taint_tree map =
     let update_expression_map = function
-      | Some existing_tree -> Some (BackwardState.Tree.join existing_tree taint_tree)
-      | None -> Some taint_tree
+      | Some existing_tree -> BackwardState.Tree.join existing_tree taint_tree
+      | None -> taint_tree
     in
-    Hashtbl.update map location ~f:(function
-        | Some existing_map -> ExpressionMap.update expression update_expression_map existing_map
-        | None -> ExpressionMap.singleton expression taint_tree)
+    Hashtbl.update map expression ~f:update_expression_map
 
 
-  let get ~location ~expression map =
-    Hashtbl.find map location
-    |> Option.value ~default:ExpressionMap.empty
-    |> ExpressionMap.find_opt expression
-    |> Option.value ~default:BackwardState.Tree.bottom
+  let get ~expression map =
+    expression |> Hashtbl.find map |> Option.value ~default:BackwardState.Tree.bottom
 end
 
 let compute_triggered_flows
@@ -500,12 +497,12 @@ let compute_triggered_flows
         source_tree
   in
   let generate_issue_or_attach_subtraces ~call_info ~source ~partial_sink triggered_sink =
-    if TriggeredSinkHashMap.mem triggered_sinks_for_call partial_sink then
+    if TriggeredSinkForCall.mem triggered_sinks_for_call partial_sink then
       (* Since another flow has already been found, both flows are found and hence we emit an issue.
          No need to add subtraces for the discovered flow, since it is already an issue. *)
       let triggered_sink_taint =
         triggered_sinks_for_call
-        |> TriggeredSinkHashMap.create_triggered_sink_taint
+        |> TriggeredSinkForCall.create_triggered_sink_taint
              ~argument_location:(Location.strip_module location)
              ~call_info:CallInfo.declaration
              ~partial_sink
@@ -538,7 +535,7 @@ let compute_triggered_flows
         }
       in
       let () =
-        TriggeredSinkHashMap.add
+        TriggeredSinkForCall.add
           triggered_sinks_for_call
           ~argument_location:(Location.strip_module location)
           ~triggered_sink

@@ -53,8 +53,8 @@ val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
 (* A map from triggered sink kinds (which is a string) to their triggers. A triggered sink here
    means we found one source, and must find the other source, in order to file an issue for a
-   multi-source. *)
-module TriggeredSinkHashMap : sig
+   multi-source. This map is created for each call site. *)
+module TriggeredSinkForCall : sig
   type t
 
   val create : unit -> t
@@ -71,21 +71,17 @@ module TriggeredSinkHashMap : sig
     BackwardTaint.t
 end
 
-(* A map from locations to the triggered sinks that are created during the forward analysis on each
-   expression, but should be propagated by the backward analysis. *)
-module TriggeredSinkLocationMap : sig
+(* A map from expressions to the triggered sinks that need to be propagated up in the backward
+   analysis, because one of the partial sinks was fulfilled. This map is created during the forward
+   analysis of a callable using `TriggeredSinkForCall` and is passed to the backward analysis. *)
+module TriggeredSinkForBackward : sig
   type t
 
   val create : unit -> t
 
-  val add
-    :  location:Location.t ->
-    expression:Ast.Expression.t ->
-    taint_tree:BackwardState.Tree.t ->
-    t ->
-    unit
+  val add : expression:Ast.Expression.t -> taint_tree:BackwardState.Tree.t -> t -> unit
 
-  val get : location:Location.t -> expression:Ast.Expression.t -> t -> BackwardState.Tree.t
+  val get : expression:Ast.Expression.t -> t -> BackwardState.Tree.t
 end
 
 (* Accumulate flows and generate issues. *)
@@ -114,7 +110,7 @@ module Candidates : sig
     :  t ->
     pyre_in_context:PyrePysaApi.InContext.t ->
     taint_configuration:TaintConfiguration.Heap.t ->
-    triggered_sinks_for_call:TriggeredSinkHashMap.t ->
+    triggered_sinks_for_call:TriggeredSinkForCall.t ->
     location:Location.WithModule.t ->
     sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->

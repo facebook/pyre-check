@@ -61,7 +61,7 @@ module type FUNCTION_CONTEXT = sig
 
   val existing_model : Model.t
 
-  val triggered_sinks : Issue.TriggeredSinkLocationMap.t
+  val triggered_sinks : Issue.TriggeredSinkForBackward.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
 end
@@ -596,8 +596,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~transform_non_leaves
           ~model:taint_model
           ~auxiliary_triggered_taint:
-            (Issue.TriggeredSinkLocationMap.get
-               ~location:call_location
+            (Issue.TriggeredSinkForBackward.get
                ~expression:argument
                FunctionContext.triggered_sinks)
           ~location
@@ -2156,7 +2155,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let taint =
         FunctionContext.triggered_sinks
-        |> Issue.TriggeredSinkLocationMap.get ~location ~expression
+        |> Issue.TriggeredSinkForBackward.get ~expression
         |> CallModel.StringFormatCall.apply_call
              ~callee:call_target.CallGraph.CallTarget.target
              ~pyre_in_context
