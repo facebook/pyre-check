@@ -79,7 +79,7 @@ class CodeGenerator:
     def generate_string_concatenation(self) -> str:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        concat_operation = f"{curr_var} = {prev_var} + 'dawg'"
+        concat_operation = f"{curr_var} = {prev_var} + '.'"
         return concat_operation
 
     def generate_string_slicing(self) -> str:
@@ -194,8 +194,8 @@ class CodeGenerator:
             self.generate_string_concatenation,
             self.generate_string_slicing,
             self.generate_string_formatting,
-            self.generate_tuple_manipulation
-            #self.generate_loop_with_break_continue,
+            self.generate_tuple_manipulation,
+            self.generate_loop_with_break_continue
             #self.generate_if_else_elif,
             #self.generate_nested_loops,
             #self.generate_try_except,
@@ -217,9 +217,10 @@ class CodeGenerator:
         return full_code
 
 generator = CodeGenerator()
-x = 35  # Change this number to generate a different amount of functions
+x = 35 # Change this number to generate a different amount of functions
 
-#print(generator.generate_random_functions(x))
+print(generator.generate_random_functions(x))
 
-print(generator.generate_source())
-print(generator.generate_sink())
+#print(generator.generate_source())
+#print(generator)
+#print(generator.generate_sink())
