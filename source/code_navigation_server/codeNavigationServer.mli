@@ -586,7 +586,7 @@ module Testing : sig
         {!Request.t}, the server will process the request, send back a {!Response.t}, and close the
         connection immediately. *)
     type t =
-      | Ok  (** This response will be used for acknowledging successful processing of a request. *)
+      | Ok_  (** This response will be used for acknowledging successful processing of a request. *)
       | Error of ErrorKind.t
           (** This response will be sent when the server runs into errors when processing a request. *)
       | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }

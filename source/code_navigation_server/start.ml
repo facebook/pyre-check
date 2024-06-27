@@ -35,7 +35,7 @@ let handle_subscription
   (* Initial response acknowledge the subscription *)
   Log.info "Subscription established";
   let%lwt () =
-    LwtInputOutput.write_line_ignoring_errors ~output_channel (Response.to_string Response.Ok)
+    LwtInputOutput.write_line_ignoring_errors ~output_channel (Response.to_string Response.Ok_)
   in
 
   (* Block on reading the input channel so we could dispose the subscription immediately when it's

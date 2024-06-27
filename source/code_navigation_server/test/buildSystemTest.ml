@@ -303,11 +303,11 @@ let test_build_system_path_lookup context =
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_a; content = None; client_id }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_b; content = None; client_id }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_c; content = None; client_id }))
@@ -424,7 +424,7 @@ let assert_single_file_update path =
                  kind = FileUpdateEvent.Kind.CreatedOrChanged;
                };
              ]))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let test_build_system_file_update context =
@@ -513,7 +513,7 @@ let test_build_system_file_update context =
                        kind = FileUpdateEvent.Kind.CreatedOrChanged;
                      };
                    ]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         open_file ~client_id ~path:(PyrePath.absolute raw_source_path0);
         open_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
         assert_type_error_count_for_path
@@ -584,7 +584,7 @@ let test_build_system_external_file_update context =
                        kind = FileUpdateEvent.Kind.CreatedOrChanged;
                      };
                    ]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         (* Ensure not ModuleNotTracked *)
         assert_type_error_count_for_path
           ~path:(PyrePath.absolute external_path)
@@ -742,7 +742,7 @@ let test_build_system_failure_in_update_sources context =
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileUpdate [FileUpdateEvent.{ kind = Kind.Deleted; path }]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         (* Should rely on old file while build system is broken. *)
         assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
         inject_error ~error:false;
@@ -753,7 +753,7 @@ let test_build_system_failure_in_update_sources context =
               Command
                 (Command.FileUpdate
                    [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = "fake path" }]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         (* File should no loger exist until FileUpdateEvent adds it back. *)
         ScratchProject.ClientConnection.assert_error_response
           ~request:Request.(Query (Query.Hover { client_id; path; position = position 1 0 }))
@@ -762,7 +762,7 @@ let test_build_system_failure_in_update_sources context =
           ~request:
             Request.(
               Command (Command.FileUpdate [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path }]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
       ]
 
@@ -811,7 +811,7 @@ let test_build_system_failure_in_update_working_set context =
         (* File should be open even though there was a build system error. *)
         ScratchProject.ClientConnection.assert_response
           ~request:Request.(Command (Command.FileOpened { content = None; path; client_id }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
       ]
 

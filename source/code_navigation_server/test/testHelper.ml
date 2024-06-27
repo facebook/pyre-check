@@ -18,31 +18,31 @@ let range start_line start_column stop_line stop_column =
 let register_client ~client_id =
   ScratchProject.ClientConnection.assert_response
     ~request:Request.(Command (Command.RegisterClient { client_id }))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let dispose_client ~client_id =
   ScratchProject.ClientConnection.assert_response
     ~request:Request.(Command (Command.DisposeClient { client_id }))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let open_file ?content ~client_id ~path =
   ScratchProject.ClientConnection.assert_response
     ~request:Request.(Command (Command.FileOpened { path; content; client_id }))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let close_file ~client_id ~path =
   ScratchProject.ClientConnection.assert_response
     ~request:Request.(Command (Command.FileClosed { path; client_id }))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let local_update ~client_id ~path ~content =
   ScratchProject.ClientConnection.assert_response
     ~request:Request.(Command (Command.LocalUpdate { path; client_id; content }))
-    ~expected:Response.Ok
+    ~expected:Response.Ok_
 
 
 let assert_hover_contents ~client_id ~path ~position ~expected client =
