@@ -14,7 +14,7 @@
    before that statement into a new Resolution.t after that statement.
 
    The entrypoint is therefore usually `forward_statement`, which has a number of helpers like
-   `forward_assign` (used for assignment statements) and `forward_expression` (which traverses
+   `forward_assignment` (used for assignment statements) and `forward_expression` (which traverses
 
    expression trees within a statement, along the way inferring types, producing type errors, and
    possibly adding to the scope for features like the walrus operator).
