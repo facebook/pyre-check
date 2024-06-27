@@ -79,15 +79,14 @@ class CodeGenerator:
     def generate_string_concatenation(self) -> str:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        concat_operation = f"{curr_var} = {prev_var} + ' concatenated'"
+        concat_operation = f"{curr_var} = {prev_var} + 'dawg'"
         return concat_operation
 
     def generate_string_slicing(self) -> str:
         curr_var = self.generate_new_variable()
         prev_var = self.get_last_variable()
-        start_idx = random.randint(0, 3)
-        end_idx = random.randint(4, 7)
-        slice_operation = f"{curr_var} = {prev_var}[{start_idx}:{end_idx}]"
+        start_idx = 0
+        slice_operation = f"{curr_var} = {prev_var}[{start_idx}:]"
         return slice_operation
 
     def generate_string_formatting(self) -> str:
@@ -193,11 +192,11 @@ class CodeGenerator:
             self.generate_dictionary,
             self.generate_set,
             self.generate_string_concatenation,
-            self.generate_string_slicing,
-            self.generate_string_formatting,
-            self.generate_tuple_manipulation,
-            self.generate_loop_with_break_continue,
-            self.generate_if_else_elif
+            self.generate_string_slicing
+            #self.generate_string_formatting,
+            #self.generate_tuple_manipulation,
+            #self.generate_loop_with_break_continue,
+            #self.generate_if_else_elif,
             #self.generate_nested_loops,
             #self.generate_try_except,
             #self.generate_math_operations
@@ -218,7 +217,10 @@ class CodeGenerator:
         return full_code
 
 generator = CodeGenerator()
-x = 6  # Change this number to generate a different amount of functions
-print(generator.generate_source())
-print(generator.generate_addition())
-print(generator.generate_sink())
+x = 35  # Change this number to generate a different amount of functions
+
+#print(generator.generate_random_functions(x))
+
+#print(generator.generate_source())
+
+#print(generator.generate_sink())
