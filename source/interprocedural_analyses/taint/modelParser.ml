@@ -2948,6 +2948,7 @@ end = struct
       | None -> Either.Second decorator_expression
       | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator) -> (
           match Reference.as_list name with
+          | ["Obscure"]
           | ["Sanitize"]
           | ["SanitizeSingleTrace"]
           | ["SkipAnalysis"]

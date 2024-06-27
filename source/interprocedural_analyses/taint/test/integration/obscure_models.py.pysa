@@ -30,3 +30,6 @@ ModelQuery(
     Modes([SkipObscure])
   ]
 )
+
+@Obscure
+def obscure_models.obscure_from_model(): ...

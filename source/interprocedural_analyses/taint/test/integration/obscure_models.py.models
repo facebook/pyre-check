@@ -79,6 +79,75 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "obscure_models.test_obscure_from_model",
+    "callable_line": 102,
+    "code": 5002,
+    "line": 103,
+    "start": 15,
+    "end": 49,
+    "filename": "obscure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 103, "start": 34, "end": 48 } ],
+            "origin": {
+              "filename": "obscure_models.py",
+              "line": 103,
+              "start": 34,
+              "end": 48
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "obscure_models.py",
+              "line": 103,
+              "start": 15,
+              "end": 49
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "obscure:model" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "obscure_models.test_obscure_from_model:5002:0:Call|_test_sink|0|formal(arg):904e6d73bedf5d24bf9b6778064af1d6"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
