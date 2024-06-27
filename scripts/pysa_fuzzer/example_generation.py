@@ -95,3 +95,10 @@ elif am == '15':
 else:
     an = am + ' c3'
 print(an)
+
+
+
+
+#input: "a"
+
+#output: "super long; can probably be shorter"
