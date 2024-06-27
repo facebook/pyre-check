@@ -181,7 +181,7 @@ class CodeGenerator:
         return f"try:\n{textwrap.indent(try_block, '    ')}\nexcept ValueError:\n{textwrap.indent(except_block, '    ')}"
 
 
-    def generate_random_functions(self, x: int) -> str:
+    def generate_statements(self, x: int) -> str:
         if x < 2:
             raise ValueError("x should be at least 2 to include source and sink functions.")
         
@@ -217,7 +217,7 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 35 # Change this number to generate a different amount of functions
 
-print(generator.generate_random_functions(x))
+print(generator.generate_statements(x))
 
 #print(generator.generate_source())
 #print(generator.generate_sink())
