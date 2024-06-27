@@ -2,7 +2,6 @@ import random
 import textwrap
 import itertools
 import string
-import math
 
 class CodeGenerator:
     def __init__(self):
