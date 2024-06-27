@@ -200,8 +200,7 @@ class CodeGenerator:
             self.generate_if_else_elif,
             self.generate_nested_loops,
             self.generate_randomized_data_structures
-            #self.generate_try_except
-            #self.generate_math_operations
+            #try except and math functions have been ommited for now
         ]
 
         # Generate source first
@@ -219,5 +218,3 @@ x = 35 # Change this number to generate a different amount of functions
 
 print(generator.generate_statements(x))
 
-#print(generator.generate_source())
-#print(generator.generate_sink())

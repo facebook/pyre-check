@@ -1,89 +1,97 @@
 import random
+import math
 a = input()
 b = ''
-counter = 0
-while counter < 5:
-    b += a
-    counter += 1
-if b == '3':
-    c = b + ' condition1'
-elif b == '18':
-    c = b + ' condition2'
-else:
-    c = b + ' condition3'
-d = (c, c, c)
-e, f, g = d
-h = e + f + g
-i_set = {h, h, h, h, h, h}
-i = random.choice(list(i_set))
-j = ''
+for _ in range(5):
+    for __ in range(2):
+                b += a
+c = ''
+for _ in range(3):
+    c += b
+d = ''
 counter = 0
 while counter < 2:
-    j += i
+    d += c
     counter += 1
-k_list = [j for _ in range(5)]
-k = random.choice(k_list)
-l = (k, k, k)
-m, n, o = l
-p = m + n + o
-q = f'Formatted string with {p}'
-r_set = {q, q}
-r = random.choice(list(r_set))
-s = r[1:5]
-t = s + '6'
-u = ''
-for _ in range(5):
-    u += t
-v = ''
-for _ in range(3):
-    for __ in range(5):
-                v += u
-w_set = {v, v, v, v, v, v, v, v, v, v}
-w = random.choice(list(w_set))
-x = w[2:4]
-y = f'Formatted string with {x}'
-z = y[1:5]
-aa = ''
+e = f'string {d}'
+f = ''
+counter = 0
+while counter < 3:
+    f += e
+    counter += 1
+g = [f for _ in range(5)]
+random.shuffle(g)
+h = random.choice(g)
+i = ''
+for _ in range(2):
+    i += h
+j = ''
 for _ in range(7):
-        if _ == 4:
+        if _ == 5:
             continue
-        aa += z
-ab = ''
-for _ in range(6):
-        if _ == 2:
+        j += i
+k = ''
+counter = 0
+while counter < 2:
+    k += j
+    counter += 1
+l = ''
+for _ in range(4):
+    l += k
+m = ''
+for _ in range(2):
+    m += l
+n_set = {m, m, m}
+n = random.choice(list(n_set))
+o_dict = {61: n, 29: n, 59: n, 29: n}
+o = random.choice(list(o_dict.values()))
+p = o[0:]
+q = p[0:]
+r = ''
+for _ in range(4):
+    for __ in range(2):
+                r += q
+s = ''
+for _ in range(9):
+        if _ == 3:
             continue
-        ab += aa
-ac = ab + ' concatenated'
-ad_dict = {74: ac, 38: ac}
-ad = random.choice(list(ad_dict.values()))
-if ad == '5':
-    ae = ad + ' condition1'
-elif ad == '19':
-    ae = ad + ' condition2'
+        s += r
+if s == '3':
+    t = s + ' c1'
+elif s == '20':
+    t = s + ' c2'
 else:
-    ae = ad + ' condition3'
+    t = s + ' c3'
+u = ''
+for _ in range(2):
+    u += t
+v_dict = {58: u, 18: u}
+v = random.choice(list(v_dict.values()))
+w = v + '.'
+x = w[0:]
+y = [x for _ in range(7)]
+random.shuffle(y)
+z = random.choice(y)
+aa = z + '.'
+ab_set = {aa, aa, aa, aa}
+ab = random.choice(list(ab_set))
+ac = ''
+for _ in range(5):
+    ac += ab
+ad = f'string {ac}'
+ae_dict = {73: ad, 2: ad, 29: ad, 24: ad}
+ae = random.choice(list(ae_dict.values()))
 af = (ae, ae, ae)
 ag, ah, ai = af
 aj = ag + ah + ai
-ak = f'Formatted string with {aj}'
-al = ''
-for _ in range(6):
-        if _ == 5:
-            break
-        al += ak
-am = al + ' concatenated'
-an = am + '8'
-ao_list = [an for _ in range(5)]
-ao = random.choice(ao_list)
-ap = ao + '3'
-aq = f'Formatted string with {ap}'
-ar = (aq, aq, aq)
-at, au, av = ar
-aw = at + au + av
-ax = ''
-for _ in range(2):
-    ax += aw
-ay = (ax, ax, ax)
-az, ba, bb = ay
-bc = az + ba + bb
-print(bc)
+ak = aj + '.'
+al = ak + '.'
+am_set = {al, al, al, al, al, al, al}
+am = random.choice(list(am_set))
+if am == '1':
+    an = am + ' c1'
+elif am == '15':
+    an = am + ' c2'
+else:
+    an = am + ' c3'
+print(an)
