@@ -181,11 +181,9 @@ let load_shared_memory ~path ~configuration =
       raise (SavedStateLoadingFailure message)
 
 
-external pyre_reset : unit -> unit = "pyre_reset"
-
 let reset_shared_memory () =
   SharedMemory.invalidate_caches ();
-  pyre_reset ()
+  SharedMemory.pyre_reset ()
 
 
 module IntKey = struct
