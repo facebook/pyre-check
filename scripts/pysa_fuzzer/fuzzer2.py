@@ -225,11 +225,11 @@ class CodeGenerator:
             raise ValueError("x should be at least 2 to include source and sink functions.")
         
         function_generators = [
-            self.generate_addition,
-            self.generate_for_loop,
-            self.generate_while_loop,
-            self.generate_list,
-            self.generate_dictionary,
+            lambda: self.generate_addition(random.randint(1, 3)),
+            lambda: self.generate_for_loop(random.randint(1, 3)),
+            lambda: self.generate_while_loop(random.randint(1, 3)),
+            lambda: self.generate_list(random.randint(1, 3)),
+            lambda: self.generate_dictionary(random.randint(1, 3)),
             self.generate_set,
             self.generate_string_concatenation,
             self.generate_string_slicing,
@@ -239,7 +239,7 @@ class CodeGenerator:
             self.generate_if_else_elif,
             self.generate_nested_loops,
             self.generate_randomized_data_structures
-            #try except and math functions have been ommited for now
+            #self.generate_try_except
         ]
 
         # Generate source first
@@ -255,9 +255,5 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 35 # Change this number to generate a different amount of functions
 
-#print(generator.generate_statements(x))
-
-print(generator.generate_source())
-print(generator.generate_dictionary(5))
-print(generator.generate_sink())
+print(generator.generate_statements(x))
 
