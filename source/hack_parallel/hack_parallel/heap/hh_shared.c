@@ -222,10 +222,10 @@ typedef struct {
 /*****************************************************************************/
 
 /* Total size of allocated shared memory */
-static size_t shared_mem_size = 0;
+//static size_t shared_mem_size = 0;
 
 /* Beginning of shared memory */
-static char* shared_mem = NULL;
+//static char* shared_mem = NULL;
 
 /* A pair of a 31-bit unsigned number and a tag bit. */
 typedef struct {
@@ -369,7 +369,7 @@ static size_t allow_hashtable_writes_by_current_process = 1;
 static size_t worker_can_exit = 1;
 
 static char* db_filename = NULL;
-static char* hashtable_db_filename = NULL;
+//static char* hashtable_db_filename = NULL;
 
 #define FILE_INFO_ON_DISK_PATH "FILE_INFO_ON_DISK_PATH"
 
@@ -490,25 +490,25 @@ static void define_globals(size_t page_size) {
 //
 //  // The number of elements in the deptable
 //  assert(CACHE_LINE_SIZE >= sizeof(uint64_t));
-//  dcounter = (uint64_t*)(mem + 2 * CACHE_LINE_SIZE);
+  dcounter = (uint64_t*)malloc(sizeof(uint64_t));
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(uintptr_t));
-//  counter = (uintptr_t*)(mem + 3 * CACHE_LINE_SIZE);
+  counter = (uintptr_t*)malloc(sizeof(uintptr_t));
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(pid_t));
-//  master_pid = (pid_t*)(mem + 4 * CACHE_LINE_SIZE);
+  master_pid = (pid_t*)malloc(sizeof(pid_t));
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-//  log_level = (size_t*)(mem + 5 * CACHE_LINE_SIZE);
+  log_level = (size_t*)malloc(sizeof(size_t));
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(size_t));
 //  wasted_heap_size = (size_t*)(mem + 6 * CACHE_LINE_SIZE);
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-//  allow_removes = (size_t*)(mem + 7 * CACHE_LINE_SIZE);
+  allow_removes = (size_t*)malloc(sizeof(size_t));
 //
 //  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-//  allow_dependency_table_reads = (size_t*)(mem + 8 * CACHE_LINE_SIZE);
+  allow_dependency_table_reads = (size_t*)malloc(sizeof(size_t));
 //
 //  mem += page_size;
 //  // Just checking that the page is large enough.
@@ -525,10 +525,10 @@ static void define_globals(size_t page_size) {
 //  /* END OF THE SMALL OBJECTS PAGE */
 //
 //  /* Dependencies */
-//  deptbl = (deptbl_entry_t*)mem;
+  deptbl = (deptbl_entry_t*)malloc(dep_size_b);
 //  mem += dep_size_b;
 //
-//  deptbl_bindings = (uint64_t*)mem;
+  deptbl_bindings = (uint64_t*)malloc(bindings_size_b);
 //  mem += bindings_size_b;
 //
 //  /* Hashtable */
@@ -580,9 +580,8 @@ static void init_shared_globals(size_t page_size, size_t config_log_level) {
   //*heap = heap_init;
 
   //// Zero out this shared memory for a string
-  //memset(db_filename, 0, page_size);
+  memset(db_filename, 0, page_size);
   //memset(hashtable_db_filename, 0, page_size);
-  (void)page_size;
 }
 
 /*****************************************************************************/
@@ -593,7 +592,7 @@ CAMLprim value hh_shared_init(value config_val) {
   CAMLparam1(config_val);
   size_t page_size = getpagesize();
 
-  dep_size = 1ul << Long_val(Field(config_val, 1));
+  dep_size = 1ul << Long_val(Field(config_val, 0));
   dep_size_b = dep_size * sizeof(deptbl[0]);
   bindings_size_b = dep_size * sizeof(deptbl_bindings[0]);
   //hashtbl_size = 1ul << Long_val(Field(config_val, 2));
@@ -608,7 +607,7 @@ CAMLprim value hh_shared_init(value config_val) {
   *master_pid = getpid();
   my_pid = *master_pid;
 
-  //init_shared_globals(page_size, Long_val(Field(config_val, 3)));
+  init_shared_globals(page_size, Long_val(Field(config_val, 1)));
   //// Checking that we did the maths correctly.
   //assert(*heap + heap_size == shared_mem + shared_mem_size);
 
@@ -634,25 +633,27 @@ value hh_connect(value unit) {
   CAMLreturn(Val_unit);
 }
 
-//void pyre_reset() {
-//  // Reset the number of element in the table
+CAMLprim value hh_pyre_reset(value unit) {
+  CAMLparam1(unit);
+  // Reset the number of element in the table
 //  *hcounter = 0;
-//  *dcounter = 0;
+  *dcounter = 0;
 //  *wasted_heap_size = 0;
 //
 //  // Reset top heap pointers
 //  *heap = heap_init;
 //
-//  // Zero out this shared memory for a string
-//  size_t page_size = getpagesize();
-//  memset(db_filename, 0, page_size);
+  // Zero out this shared memory for a string
+  size_t page_size = getpagesize();
+  memset(db_filename, 0, page_size);
 //  memset(hashtable_db_filename, 0, page_size);
-//
-//  // Zero out the tables
-//  memset(deptbl, 0, dep_size_b);
-//  memset(deptbl_bindings, 0, bindings_size_b);
+
+  // Zero out the tables
+  memset(deptbl, 0, dep_size_b);
+  memset(deptbl_bindings, 0, bindings_size_b);
 //  memset(hashtbl, 0, hashtbl_size_b);
-//}
+  CAMLreturn(Val_unit);
+}
 
 /*****************************************************************************/
 /* Counter

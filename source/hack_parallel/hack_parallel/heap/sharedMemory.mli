@@ -14,10 +14,8 @@
 *)
 (*****************************************************************************)
 
-type config = {
-  heap_size        : int;
+type dep_config = {
   dep_table_pow    : int;
-  hash_table_pow   : int;
   log_level        : int;
 }
 
@@ -32,7 +30,7 @@ exception C_assertion_failure of string
 (* Initializes the shared memory. Must be called before forking! *)
 (*****************************************************************************)
 
-val init: config -> unit
+val init: dep_config -> unit
 
 (*****************************************************************************)
 (* Connect a slave to the shared heap *)

@@ -51,7 +51,7 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         allocation_policy = best_fit_allocation_policy;
         space_overhead = 120;
       };
-    let shared_mem_config = { SharedMemory.heap_size; dep_table_pow; hash_table_pow; log_level } in
+    let shared_mem_config = { SharedMemory.dep_table_pow; log_level } in
     Log.info
       "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
       heap_size
