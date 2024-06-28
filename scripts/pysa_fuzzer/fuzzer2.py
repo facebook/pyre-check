@@ -218,6 +218,20 @@ class CodeGenerator:
         try_block = f"{curr_var} = str(int({prev_var}))\n    print('Conversion successful')\n    print({curr_var})"
         except_block = "print('Conversion failed')"
         return f"try:\n{textwrap.indent(try_block, '    ')}\nexcept ValueError:\n{textwrap.indent(except_block, '    ')}"
+    
+    def generate_function_chain(self, num_functions: int) -> str:
+        function_definitions = []
+        prev_var = self.get_last_variable()
+        
+        for i in range(num_functions):
+            func_name = self.generate_new_variable()
+            func_def = f"def {func_name}():\n    return {prev_var}"
+            function_definitions.append(func_def)
+            prev_var = f"{func_name}()"
+        
+        last_var = self.generate_new_variable()
+        final_assignment = f"{last_var} = {prev_var}"
+        return '\n'.join(function_definitions) + '\n' + final_assignment
 
 
     def generate_statements(self, x: int) -> str:
@@ -255,5 +269,9 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 35 # Change this number to generate a different amount of functions
 
-print(generator.generate_statements(x))
+#print(generator.generate_statements(x))
 
+
+print(generator.generate_source())
+print(generator.generate_function_chain(10))
+print(generator.generate_sink())
