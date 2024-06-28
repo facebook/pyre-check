@@ -830,7 +830,7 @@ module State (Context : Context) = struct
     signature
 
 
-  let return_annotation ~global_resolution =
+  let parse_return_annotation ~global_resolution =
     let signature = define_signature in
     let annotation : Type.t =
       let parser = GlobalResolution.annotation_parser global_resolution in
@@ -1019,7 +1019,7 @@ module State (Context : Context) = struct
     let { Define.Signature.async; generator; return_annotation = return_annotation_expression; _ } =
       define.signature
     in
-    let return_annotation = return_annotation ~global_resolution in
+    let return_type = parse_return_annotation ~global_resolution in
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)
     let actual =
@@ -1028,7 +1028,7 @@ module State (Context : Context) = struct
         ~resolve:(resolve_expression_type ~resolution)
         ~expression
         ~resolved:actual
-        ~expected:return_annotation
+        ~expected:return_type
     in
     let check_incompatible_return actual errors =
       if
@@ -1038,11 +1038,11 @@ module State (Context : Context) = struct
                  global_resolution
                  ~get_typed_dictionary_override:(fun _ -> None)
                  ~left:actual
-                 ~right:return_annotation))
+                 ~right:return_type))
         && (not (Define.is_abstract_method define))
         && (not (Define.is_overloaded_function define))
         && (not (Type.is_none actual && async && generator))
-        && not (Type.is_noreturn_or_never actual && Type.is_noreturn_or_never return_annotation)
+        && not (Type.is_noreturn_or_never actual && Type.is_noreturn_or_never return_type)
       then
         let rec check_unimplemented = function
           | [
@@ -1064,10 +1064,10 @@ module State (Context : Context) = struct
             Error.create_mismatch
               ~resolution:global_resolution
               ~actual
-              ~expected:return_annotation
+              ~expected:return_type
               ~covariant:true
           in
-          if is_readonlyness_mismatch ~global_resolution ~actual ~expected:return_annotation then
+          if is_readonlyness_mismatch ~global_resolution ~actual ~expected:return_type then
             Error.ReadOnlynessMismatch (IncompatibleReturnType { mismatch; define_location })
           else
             Error.IncompatibleReturnType
@@ -1094,11 +1094,9 @@ module State (Context : Context) = struct
       in
       if
         (not (Define.has_return_annotation define))
-        || (contains_literal_any && Type.contains_prohibited_any return_annotation)
+        || (contains_literal_any && Type.contains_prohibited_any return_type)
       then
-        let given_annotation =
-          Option.some_if (Define.has_return_annotation define) return_annotation
-        in
+        let given_annotation = Option.some_if (Define.has_return_annotation define) return_type in
         emit_error
           ~errors
           ~location:define_location
@@ -3481,7 +3479,7 @@ module State (Context : Context) = struct
           validate_return ~location None ~resolution ~errors ~actual ~is_implicit:false
         in
         let send_type, _ =
-          return_annotation ~global_resolution
+          parse_return_annotation ~global_resolution
           |> GlobalResolution.type_of_generator_send_and_return global_resolution
         in
         { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
