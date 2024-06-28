@@ -233,6 +233,22 @@ class CodeGenerator:
         final_assignment = f"{last_var} = {prev_var}"
         return '\n'.join(function_definitions) + '\n' + final_assignment
 
+    # work in progress; not ready for review 
+    def generate_indirect_call_pattern(self) -> str:
+        source_func_name = self.generate_new_variable()
+        sink_func_name = self.generate_new_variable()
+        indirect_call_func_name = self.generate_new_variable()
+        data_var = self.generate_new_variable()
+
+        source_func = f"def {source_func_name}():\n    return input()"
+        sink_func = f"def {sink_func_name}(x):\n    print(x)"
+        indirect_call_func = f"def {indirect_call_func_name}(f, arg):\n    return f(arg)"
+        data_assignment = f"{data_var} = {source_func_name}()"
+        call = f"{indirect_call_func_name}({sink_func_name}, {data_var})"
+
+        return f"{source_func}\n\n{sink_func}\n\n{indirect_call_func}\n\n{data_assignment}\n\n{call}"
+
+
 
     def generate_statements(self, x: int) -> str:
         if x < 2:
@@ -244,6 +260,7 @@ class CodeGenerator:
             lambda: self.generate_while_loop(random.randint(1, 3)),
             lambda: self.generate_list(random.randint(1, 3)),
             lambda: self.generate_dictionary(random.randint(1, 3)),
+            lambda: self.generate_function_chain(random.randint(1, 3)),
             self.generate_set,
             self.generate_string_concatenation,
             self.generate_string_slicing,
@@ -267,11 +284,11 @@ class CodeGenerator:
         return full_code
 
 generator = CodeGenerator()
-x = 35 # Change this number to generate a different amount of functions
+x = 30 # Change this number to generate a different amount of functions
 
 #print(generator.generate_statements(x))
 
 
 print(generator.generate_source())
-print(generator.generate_function_chain(10))
+
 print(generator.generate_sink())

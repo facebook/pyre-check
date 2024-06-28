@@ -3,12 +3,14 @@ import math
 a = input()
 def b():
     return a
-def c():
-    return b()
-d = c()
-def e():
-    return d
-def f():
-    return e()
-g = f()
-print(g)
+
+def c(x):
+    print(x)
+
+def d(f, arg):
+    return f(arg)
+
+e = b()
+
+d(c, e)
+print(e)
