@@ -1,5 +1,5 @@
 opam-version: "1.2"
-version: ""
+version: "0.1"
 maintainer: "pyre@fb.com"
 authors: ["Pyre team"]
 homepage: "https://github.com/facebook/pyre-check"
