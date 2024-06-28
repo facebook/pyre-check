@@ -60,9 +60,18 @@ val call: t -> ('a -> 'b) -> 'a -> 'b handle
 (* Retrieves the result (once the worker is done) hangs otherwise *)
 val get_result: 'a handle -> 'a
 
+module Response : sig
+  type 'a t =
+    | Success of { result: 'a; stats: Hack_utils.Measure.record_data }
+    | Failure of { exn: string; backtrace: Printexc.raw_backtrace }
+
+  (** May raise {!cons:Worker_exception}. *)
+  val unpack : 'a t -> 'a
+end
+
 (* Selects among multiple handles those which are ready. *)
 type 'a selected = {
-  readys: 'a handle list;
+  readys: ('a Response.t * t) list;
   waiters: 'a handle list;
 }
 val select: 'a handle list -> 'a selected

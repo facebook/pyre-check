@@ -68,11 +68,11 @@ let multi_threaded_call
             dispatch workers (handle :: handles) acc
   and collect workers handles acc =
     let { Worker.readys; waiters } = Worker.select handles in
-    let workers = List.map ~f:Worker.get_worker readys @ workers in
+    let workers = List.map ~f:snd readys @ workers in
     (* Collect the results. *)
     let acc =
       List.fold_left
-        ~f:(fun acc h -> merge (Worker.get_result h) acc)
+        ~f:(fun acc (r,_) -> merge (Worker.Response.unpack r) acc)
         ~init:acc
         readys in
     (* And continue.. *)

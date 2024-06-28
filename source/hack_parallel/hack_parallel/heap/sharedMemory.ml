@@ -9,7 +9,6 @@
 
 
 module List = Core.List
-module ISet = Hack_collections.ISet
 module MyMap = Hack_collections.MyMap
 module Hh_logger = Hack_utils.Hh_logger
 module Measure = Hack_utils.Measure
@@ -17,10 +16,8 @@ module Ht = Kcas_data.Hashtbl
 
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)
-type config = {
-  heap_size        : int;
+type dep_config = {
   dep_table_pow    : int;
-  hash_table_pow   : int;
   log_level        : int;
 }
 
@@ -56,28 +53,14 @@ let () =
   Callback.register_exception
     "c_assertion_failure" (C_assertion_failure "dummy string")
 
-(* To extend by need *)
-type actual_config =
-  { heap_size : int;
-  }
-
-let config : actual_config ref =
-  ref { heap_size = -1; }
-
-type dep_config =
-  { dep_table_pow : int;
-  } [@@boxed] (* TODO remove *)
-
 (* Initialize the _dependency table_ parameters (formerly both tables). *)
 external hh_shared_init : dep_config -> unit = "hh_shared_init"
 
 (*****************************************************************************)
 (* Initializes the shared memory. Must be called before forking. *)
 (*****************************************************************************)
-let init (config' : config) : unit =
-  config :=
-    { heap_size = config'.heap_size };
-  hh_shared_init { dep_table_pow = config'.dep_table_pow }
+let init (config : dep_config) : unit =
+  hh_shared_init config
 
 (* Just sets a worker's PID on the C side. Can probably be removed later *)
 external hh_connect : unit -> unit = "hh_connect" [@@noalloc]
@@ -124,13 +107,19 @@ external load_dep_table_sqlite_c: string -> bool -> int = "hh_load_dep_table_sql
 let load_dep_table_sqlite : string -> bool -> int = fun fn ignore_hh_version ->
   load_dep_table_sqlite_c fn ignore_hh_version
 
-let hashtbl =
+(* Value of any type. *)
+type value = Value : 'a -> value
+
+let hashtbl : (string, value) Ht.t =
   Ht.create ~hashed_type:(module String) ()
 
 (*****************************************************************************)
 (* Empty the shared hash table *)
 (*****************************************************************************)
+external hh_pyre_reset : unit -> unit = "hh_pyre_reset"
+
 let pyre_reset () =
+  hh_pyre_reset ();
   Ht.clear hashtbl
 
 (*****************************************************************************)
@@ -144,7 +133,7 @@ let save_table (filename : string) : unit =
 
 let load_table (filename :string) : unit =
   let ic = In_channel.open_bin filename in
-  let new_ht = (Marshal.from_channel ic : (string, string) Ht.t) in
+  let new_ht = (Marshal.from_channel ic : (string, value) Ht.t) in
   Ht.swap hashtbl new_ht
 
 (*****************************************************************************)
@@ -355,16 +344,18 @@ module Raw (Key: Key) (Value : ValueType): sig
   val move   : Key.md5 -> Key.md5 -> unit
 end = struct
   (* Unsafely marshal values to and from strings *)
-  let string_of_value (value : Value.t) : string =
-    Marshal.to_string value []
+  let pack_value (value : Value.t) : value =
+    Value value
 
-  let value_of_string (s : string) : Value.t =
-    Marshal.from_string s 0
+  let unpack_value (Value v : value) : Value.t =
+    (* This is unsafe, but not more neither less unsafe than what was done
+       previously (marshalling in the C stub) *)
+    (Obj.magic v : Value.t)
 
   (* Returns the number of bytes allocated in the heap, or a negative number
    * if no new memory was allocated *)
   let hh_add : Key.md5 -> Value.t -> int * int = fun key value ->
-    Ht.add hashtbl (Key.string_of_md5 key) (string_of_value value);
+    Ht.add hashtbl (Key.string_of_md5 key) (pack_value value);
     1, 1
 
   let hh_mem         : Key.md5 -> bool            = fun key ->
@@ -375,7 +366,7 @@ end = struct
   (*external hh_get_size    : Key.md5 -> int             = "hh_get_size"*)
 
   let hh_get_and_deserialize: Key.md5 -> Value.t = fun key ->
-    Ht.find hashtbl (Key.string_of_md5 key) |> value_of_string
+    Ht.find hashtbl (Key.string_of_md5 key) |> unpack_value
 
   let hh_remove      : Key.md5 -> unit            = fun key ->
     Ht.remove hashtbl (Key.string_of_md5 key)

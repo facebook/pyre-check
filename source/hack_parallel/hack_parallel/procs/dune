@@ -1,4 +1,4 @@
 (library
  (name hack_procs)
  (package hack_parallel)
- (libraries hack_heap))
+ (libraries hack_heap domainslib))

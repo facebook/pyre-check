@@ -199,7 +199,7 @@ let once_per_worker scheduler ~configuration:_ ~f =
         | [] -> ()
         | handles ->
             let { Worker.readys; waiters } = Worker.select handles in
-            List.iter readys ~f:Worker.get_result;
+            List.iter readys ~f:(fun (r,_) -> Worker.Response.unpack r);
             collect_all waiters
       in
       collect_all handles
