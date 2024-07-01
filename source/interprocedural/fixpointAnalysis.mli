@@ -177,7 +177,8 @@ module Make (Analysis : ANALYSIS) : sig
   type shared_models
 
   val record_initial_models
-    :  initial_models:Registry.t ->
+    :  scheduler:Scheduler.t ->
+    initial_models:Registry.t ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->

@@ -219,12 +219,6 @@ module Make (Analysis : ANALYSIS) = struct
           end)
 
       include FirstClass
-
-      let from_alist list =
-        let save_entry ~handle (key, value) = FirstClass.add handle key value in
-        let handle = FirstClass.create () in
-        List.iter list ~f:(save_entry ~handle);
-        handle
     end
 
     module SharedResults =
@@ -378,14 +372,36 @@ module Make (Analysis : ANALYSIS) = struct
   type shared_models = State.SharedModels.t
 
   (* Save initial models in the shared memory. *)
-  let record_initial_models ~initial_models ~initial_callables ~stubs ~override_targets =
+  let record_initial_models ~scheduler ~initial_models ~initial_callables ~stubs ~override_targets =
     let timer = Timer.start () in
-    (* TODO(T117715045): Use a map reduce to make this faster. *)
     let record_models models =
-      let add_model_to_memory ~target ~model:_ = State.add_predefined Epoch.initial target in
-      Registry.iteri models ~f:add_model_to_memory;
+      let shared_models = State.SharedModels.create () in
       State.set_targets (models |> Registry.targets |> State.KeySet.of_list);
-      State.SharedModels.from_alist (Registry.to_alist models)
+      let map models =
+        let add_model (target, model) =
+          State.add_predefined Epoch.initial target;
+          State.SharedModels.add shared_models target model
+        in
+        List.iter models ~f:add_model
+      in
+      let policy =
+        Scheduler.Policy.fixed_chunk_size
+          ~minimum_chunks_per_worker:1
+          ~minimum_chunk_size:1
+          ~preferred_chunk_size:1000
+          ()
+      in
+      let () =
+        Scheduler.map_reduce
+          scheduler
+          ~policy
+          ~initial:()
+          ~map
+          ~reduce:(fun () () -> ())
+          ~inputs:(Registry.to_alist models)
+          ()
+      in
+      shared_models
     in
     (* Augment models with initial inferred and obscure models *)
     let add_missing_initial_models models =

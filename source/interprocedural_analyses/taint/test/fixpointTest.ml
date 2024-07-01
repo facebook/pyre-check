@@ -51,6 +51,7 @@ let assert_fixpoint
   in
   let shared_models =
     TaintFixpoint.record_initial_models
+      ~scheduler:(Test.mock_scheduler ())
       ~initial_callables:(FetchCallables.get_definitions initial_callables)
       ~stubs
       ~override_targets
