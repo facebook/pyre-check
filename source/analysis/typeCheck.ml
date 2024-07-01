@@ -3130,14 +3130,30 @@ module State (Context : Context) = struct
         let { Resolved.resolution; resolved; errors; _ } =
           forward_comprehension ~resolution ~errors:[] ~element ~generators
         in
-        let has_async_generator = List.exists ~f:(fun generator -> generator.async) generators in
-        let has_await =
-          match Node.value element with
-          | Expression.Await _ -> true
-          | _ -> false
+        let folder =
+          let fold_await ~folder:_ ~state:_ _ = true in
+          Folder.create_with_uniform_location_fold ~fold_await ()
+        in
+        let has_await expression = Folder.fold ~folder ~state:false expression in
+        (* We infer AsyncGenerator if any generator uses `async for`, or if any expression contains
+           an `await` except for the leftmost sequence expression *)
+        let is_async_generator =
+          List.find_mapi
+            ~f:(fun idx { Comprehension.Generator.async; iterator; conditions; _ } ->
+              if
+                async
+                || List.exists ~f:(fun condition -> has_await condition) conditions
+                || (idx <> 0 && has_await iterator)
+              then
+                Some ()
+              else
+                None)
+            generators
+          |> Option.is_some
+          || has_await element
         in
         let generator =
-          if has_async_generator || has_await then
+          if is_async_generator then
             Type.async_generator ~yield_type:resolved ()
           else
             Type.generator_expression resolved

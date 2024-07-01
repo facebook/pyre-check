@@ -317,8 +317,8 @@ let test_check_async context =
     |}
     [
       "Revealed type [-1]: Revealed type for `xs` is `typing.AsyncGenerator[int, typing.Any]`.";
-      "Revealed type [-1]: Revealed type for `ys` is `typing.Generator[typing.AsyncGenerator[int, \
-       typing.Any], None, None]`.";
+      "Revealed type [-1]: Revealed type for `ys` is \
+       `typing.AsyncGenerator[typing.AsyncGenerator[int, typing.Any], typing.Any]`.";
     ]
 
 

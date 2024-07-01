@@ -491,6 +491,46 @@ let test_check_generator_edge_cases context =
         yield from generator
     |}
     [];
+  assert_type_errors
+    {|
+      import typing
+      async def is_odd(i: int) -> bool:
+          return i % 2 != 0
+
+      async def foo() -> typing.AsyncGenerator[int, None]:
+          return (x for x in range(5) if await is_odd(x))
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      async def double(i: int) -> int:
+          return i * 2
+
+      async def foo() -> typing.AsyncGenerator[int, None]:
+          return (await double(x) for x in range(5))
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      async def get_list() -> typing.List[int]:
+          return [1]
+
+      async def foo() -> typing.AsyncGenerator[int, None]:
+          return (x for _ in [1] for x in await get_list())
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      async def get_list() -> typing.List[int]:
+          return [1]
+
+      async def foo() -> typing.Generator[int, None, None]:
+          return (x for x in await get_list())
+    |}
+    [];
   ()
 
 
