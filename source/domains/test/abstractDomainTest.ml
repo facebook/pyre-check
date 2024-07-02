@@ -2111,6 +2111,14 @@ module TreeOfStringSets = struct
     Format.sprintf "path:%s; tip:%s" (AbstractTreeDomain.Label.show_path path) (StringSet.show tip)
 
 
+  let show_path_ancestors_element { path; ancestors; element } =
+    Format.sprintf
+      "path:%s; ancestors:%s; tip:%s"
+      (AbstractTreeDomain.Label.show_path path)
+      (StringSet.show ancestors)
+      (StringSet.show element)
+
+
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = create initial in
@@ -2511,7 +2519,31 @@ module TreeOfStringSets = struct
     assert_equal
       ~printer:string_pair_list_printer
       (List.rev ["[a][b]", "x"; "[a][b]", "y"; "[c]", "z"; "[d]", "q"])
-      (reduce StringSet.Element ~using:(Context (Path, Acc)) ~f:path_value ~init:[] tree)
+      (reduce StringSet.Element ~using:(Context (Path, Acc)) ~f:path_value ~init:[] tree);
+    let tree = parse_tree ["", ["r"]; "a", ["a"]; "b", ["b"]] in
+    assert_equal
+      ~printer:Fn.id
+      "path:[b]; ancestors:[r]; tip:[b] path:[a]; ancestors:[r]; tip:[a] path:; ancestors:[]; \
+       tip:[r] "
+      (reduce
+         StringSet.Self
+         ~using:(Context (PathWithAncestors, Acc))
+         ~f:(fun path_with_ancestors _ acc ->
+           show_path_ancestors_element path_with_ancestors ^ " " ^ acc)
+         ~init:""
+         tree);
+    let tree = parse_tree ["", ["r"]; "a", ["a"]; "a.b", ["b"]] in
+    assert_equal
+      ~printer:Fn.id
+      "path:[a][b]; ancestors:[a, r]; tip:[b] path:[a]; ancestors:[r]; tip:[a] path:; \
+       ancestors:[]; tip:[r] "
+      (reduce
+         StringSet.Self
+         ~using:(Context (PathWithAncestors, Acc))
+         ~f:(fun path_with_ancestors _ acc ->
+           show_path_ancestors_element path_with_ancestors ^ " " ^ acc)
+         ~init:""
+         tree)
 end
 
 module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)

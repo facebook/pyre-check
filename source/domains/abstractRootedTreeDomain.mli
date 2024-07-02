@@ -7,16 +7,28 @@
 
 open AbstractTreeDomain
 
-module Make (_ : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) () : sig
+module Make (Config : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) () : sig
   include AbstractDomainCore.S
+
+  module Tree : module type of AbstractTreeDomain.Make (Config) (Element) ()
+
+  type path_with_ancestors = Tree.path_with_ancestors = {
+    path: Label.path;
+    ancestors: Element.t;
+    element: Element.t;
+  }
 
   type _ AbstractDomainCore.part +=
     | Root : Root.t AbstractDomainCore.part
     | (* The abstract value at the tip of each path, not including ancestors (only non-bottom points
-         are visitied *)
+         are visited *)
         Path :
         (Label.path * Element.t) AbstractDomainCore.part
     | RefinedPath : (Label.Refined.path * Element.t) AbstractDomainCore.part
+    | (* The abstract value at the tip of each path, including ancestors (only non-bottom points are
+         visited *)
+        PathWithAncestors :
+        path_with_ancestors AbstractDomainCore.part
 
   val create_leaf : Root.t -> Element.t -> t
 
