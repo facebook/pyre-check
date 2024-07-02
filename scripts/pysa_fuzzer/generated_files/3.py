@@ -1,135 +1,77 @@
 import random
 import math
-de = input()
-df = ''
-counterdf = 0
-while counterdf < 4:
-    dg = ''
-    counterdg = 0
-    while counterdg < 2:
-        dh = ''
-        counterdh = 0
-        while counterdh < 3:
-            dh += dg
-            counterdh += 1
-            dg += df
-            counterdg += 1
-        df += de
-        counterdf += 1
-di = ''
-counterdi = 0
-while counterdi < 2:
-    dj = ''
-    counterdj = 0
-    while counterdj < 3:
-        dk = ''
-        counterdk = 0
-        while counterdk < 3:
-            dk += dj
-            counterdk += 1
-            dj += di
-            counterdj += 1
-        di += dh
-        counterdi += 1
-dl_list = [dk for _ in range(4)]
-dm = random.choice(dl_list)
-dn = dm + '9'
-do = dn + '3'
-dp = do + '7'
-dq = (dp, dp, dp)
-dr, ds, dt = dq
-du = dr + ds + dt
-dv = [du for _ in range(6)]
-random.shuffle(dv)
-dw = random.choice(dv)
-dx = [dw for _ in range(5)]
-random.shuffle(dx)
-dy = random.choice(dx)
-def dz():
-    return dy
-def ea():
-    return dz()
-def eb():
-    return ea()
-ec = eb()
-ed = ''
-for _ in range(4):
-    ee = ''
-    for _ in range(3):
-        ee += ed
-        ed += ec
-ef = ''
-for _ in range(9):
-        if _ == 4:
-            continue
-        ef += ee
-eg = (ef, ef, ef)
-eh, ei, ej = eg
-ek = eh + ei + ej
-el_list = [ek for _ in range(7)]
-em_list = [el_list for _ in range(5)]
-en_list = [em_list for _ in range(9)]
-eo = random.choice(en_list)
-ep = random.choice(eo)
-eq = random.choice(ep)
-er_list = [eq for _ in range(6)]
-es_list = [er_list for _ in range(5)]
-et_list = [es_list for _ in range(7)]
-eu = random.choice(et_list)
-ev = random.choice(eu)
-ew = random.choice(ev)
-ex = ''
-for _ in range(8):
-        if _ == 1:
-            break
-        ex += ew
-ey = f'string {ex}'
-if ey == '10':
-    ez = ey + ' c1'
-elif ey == '11':
-    ez = ey + ' c2'
-else:
-    ez = ey + ' c3'
-fa = ez + '.'
-fb_dict = {65: fa, 32: fa, 79: fa, 79: fa, 84: fa, 52: fa, 78: fa, 63: fa, 26: fa, 100: fa}
-fc = random.choice(list(fb_dict.values()))
-fd = ''
-for _ in range(2):
+br = input()
+bs_list = [br for _ in range(2)]
+bt_list = [bs_list for _ in range(8)]
+bu_list = [bt_list for _ in range(3)]
+bv = random.choice(bu_list)
+bw = random.choice(bv)
+bx = random.choice(bw)
+by = bx + '.'
+bz = by + '7'
+ca = bz + '7'
+cb = ca + '2'
+cc = cb + '3'
+cd = cc + '.'
+ce = ''
+for _ in range(5):
     for __ in range(5):
-                fd += fc
-fe = fd[0:]
-ff = ''
+                ce += cd
+cf = ce + '.'
+cg_list = [cf for _ in range(10)]
+ch_list = [cg_list for _ in range(4)]
+ci = random.choice(ch_list)
+cj = random.choice(ci)
+ck = ''
 for _ in range(4):
-    fg = ''
-    for _ in range(3):
-        fh = ''
-        for _ in range(2):
-            fh += fg
-            fg += ff
-        ff += fe
-if fh == '9':
-    fi = fh + ' c1'
-elif fh == '11':
-    fi = fh + ' c2'
-else:
-    fi = fh + ' c3'
-fj = f'string {fi}'
-fk = (fj, fj, fj)
-fl, fm, fn = fk
-fo = fl + fm + fn
-fp = fo[0:]
-fq = fp + '.'
-if fq == '1':
-    fr = fq + ' c1'
-elif fq == '20':
-    fr = fq + ' c2'
-else:
-    fr = fq + ' c3'
-def fs():
-    return fr
-def ft():
-    return fs()
-def fu():
-    return ft()
-fv = fu()
-print(fv)
+    for __ in range(2):
+                ck += cj
+cl = ''
+for _ in range(8):
+        if _ == 2:
+            continue
+        cl += ck
+cm = (cl, cl, cl)
+cn, co, cp = cm
+cq = cn + co + cp
+cr = ''
+for _ in range(3):
+    cs = ''
+    for _ in range(2):
+        cs += cr
+        cr += cq
+ct = ''
+counterct = 0
+while counterct < 4:
+    ct += cs
+    counterct += 1
+cu = (ct, ct, ct)
+cv, cw, cx = cu
+cy = cv + cw + cx
+cz = ''
+for _ in range(3):
+    for __ in range(2):
+                cz += cy
+da = ''
+for _ in range(7):
+        if _ == 4:
+            break
+        da += cz
+db_set = {da, da, da, da}
+db = random.choice(list(db_set))
+dc = ''
+counterdc = 0
+while counterdc < 3:
+    dd = ''
+    counterdd = 0
+    while counterdd < 4:
+        de = ''
+        counterde = 0
+        while counterde < 4:
+            de += dd
+            counterde += 1
+            dd += dc
+            counterdd += 1
+        dc += db
+        counterdc += 1
+print(de)

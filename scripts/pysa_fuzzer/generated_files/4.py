@@ -1,126 +1,79 @@
 import random
 import math
-fw = input()
-fx = fw + '.'
-fy = (fx, fx, fx)
-fz, ga, gb = fy
-gc = fz + ga + gb
-gd = gc + '.'
-def ge():
-    return gd
-gf = ge()
-gg = ''
-for _ in range(10):
-        if _ == 3:
-            continue
-        gg += gf
-gh_set = {gg, gg, gg, gg, gg, gg, gg, gg, gg}
-gh = random.choice(list(gh_set))
-gi = ''
-for _ in range(6):
-        if _ == 1:
-            break
-        gi += gh
-gj_list = [gi for _ in range(9)]
-gk_list = [gj_list for _ in range(9)]
-gl = random.choice(gk_list)
-gm = random.choice(gl)
-gn_list = [gm for _ in range(7)]
-go_list = [gn_list for _ in range(3)]
-gp_list = [go_list for _ in range(6)]
-gq = random.choice(gp_list)
-gr = random.choice(gq)
-gs = random.choice(gr)
-gt_dict = {77: gs, 9: gs, 68: gs, 65: gs, 28: gs, 66: gs, 63: gs}
-gu_dict = {15: gt_dict, 43: gt_dict, 2: gt_dict, 70: gt_dict}
-gv = random.choice(list(gu_dict.values()))
-gw = random.choice(list(gv.values()))
-gx = ''
-for _ in range(9):
-        if _ == 2:
-            break
-        gx += gw
-gy = [gx for _ in range(5)]
-random.shuffle(gy)
-gz = random.choice(gy)
-ha_dict = {2: gz, 96: gz}
-hb_dict = {2: ha_dict, 61: ha_dict}
-hc_dict = {44: hb_dict, 80: hb_dict}
-hd = random.choice(list(hc_dict.values()))
-he = random.choice(list(hd.values()))
-hf = random.choice(list(he.values()))
-hg = [hf for _ in range(7)]
-random.shuffle(hg)
-hh = random.choice(hg)
-hi = ''
-for _ in range(5):
-    for __ in range(4):
-                hi += hh
-hj = hi + '.'
-if hj == '7':
-    hk = hj + ' c1'
-elif hj == '16':
-    hk = hj + ' c2'
+df = input()
+dg = ''
+for _ in range(4):
+    for __ in range(5):
+                dg += df
+dh = f'string {dg}'
+di_list = [dh for _ in range(5)]
+dj_list = [di_list for _ in range(2)]
+dk_list = [dj_list for _ in range(5)]
+dl = random.choice(dk_list)
+dm = random.choice(dl)
+dn = random.choice(dm)
+if dn == '2':
+    do = dn + ' c1'
+elif dn == '11':
+    do = dn + ' c2'
 else:
-    hk = hj + ' c3'
-if hk == '2':
-    hl = hk + ' c1'
-elif hk == '15':
-    hl = hk + ' c2'
-else:
-    hl = hk + ' c3'
-hm = ''
+    do = dn + ' c3'
+dp = (do, do, do)
+dq, dr, ds = dp
+dt = dq + dr + ds
+du_list = [dt for _ in range(2)]
+dv_list = [du_list for _ in range(2)]
+dw_list = [dv_list for _ in range(4)]
+dx = random.choice(dw_list)
+dy = random.choice(dx)
+dz = random.choice(dy)
+ea = (dz, dz, dz)
+eb, ec, ed = ea
+ee = eb + ec + ed
+ef = ''
 for _ in range(2):
-    hn = ''
-    for _ in range(2):
-        hn += hm
-        hm += hl
-ho = ''
-counterho = 0
-while counterho < 4:
-    hp = ''
-    counterhp = 0
-    while counterhp < 5:
-        hp += ho
-        counterhp += 1
-        ho += hn
-        counterho += 1
-hq = [hp for _ in range(6)]
-random.shuffle(hq)
-hr = random.choice(hq)
-hs_list = [hr for _ in range(7)]
-ht = random.choice(hs_list)
-hu = (ht, ht, ht)
-hv, hw, hx = hu
-hy = hv + hw + hx
-hz = hy + '.'
-ia = ''
-counteria = 0
-while counteria < 2:
-    ib = ''
-    counterib = 0
-    while counterib < 2:
-        ic = ''
-        counteric = 0
-        while counteric < 4:
-            ic += ib
-            counteric += 1
-            ib += ia
-            counterib += 1
-        ia += hz
-        counteria += 1
-id_list = [ic for _ in range(7)]
-ie_list = [id_list for _ in range(3)]
-ig = random.choice(ie_list)
-ih = random.choice(ig)
-ii_dict = {74: ih, 22: ih, 90: ih, 50: ih, 53: ih, 14: ih, 33: ih, 84: ih}
-ij_dict = {20: ii_dict, 40: ii_dict, 43: ii_dict, 79: ii_dict, 91: ii_dict, 73: ii_dict, 15: ii_dict, 7: ii_dict, 87: ii_dict}
-ik_dict = {23: ij_dict, 54: ij_dict, 92: ij_dict, 79: ij_dict, 82: ij_dict, 55: ij_dict}
-il = random.choice(list(ik_dict.values()))
-im = random.choice(list(il.values()))
-io = random.choice(list(im.values()))
-ip = ''
-for _ in range(3):
-    for __ in range(4):
-                ip += io
-print(ip)
+    for __ in range(5):
+                ef += ee
+eg_list = [ef for _ in range(4)]
+eh_list = [eg_list for _ in range(8)]
+ei_list = [eh_list for _ in range(2)]
+ej = random.choice(ei_list)
+ek = random.choice(ej)
+el = random.choice(ek)
+em = f'string {el}'
+en_list = [em for _ in range(7)]
+eo_list = [en_list for _ in range(6)]
+ep_list = [eo_list for _ in range(5)]
+eq = random.choice(ep_list)
+er = random.choice(eq)
+es = random.choice(er)
+et = [es for _ in range(5)]
+random.shuffle(et)
+eu = random.choice(et)
+def ev():
+    return eu
+def ew():
+    return ev()
+def ex():
+    return ew()
+ey = ex()
+ez = ''
+for _ in range(7):
+        if _ == 1:
+            continue
+        ez += ey
+fa_dict = {73: ez, 26: ez, 15: ez, 28: ez, 62: ez, 60: ez, 58: ez, 92: ez}
+fb_dict = {45: fa_dict, 39: fa_dict, 75: fa_dict, 3: fa_dict, 65: fa_dict, 4: fa_dict, 94: fa_dict, 9: fa_dict, 33: fa_dict, 22: fa_dict}
+fc_dict = {74: fb_dict, 69: fb_dict, 58: fb_dict, 51: fb_dict}
+fd = random.choice(list(fc_dict.values()))
+fe = random.choice(list(fd.values()))
+ff = random.choice(list(fe.values()))
+fg = ff[0:]
+fh_set = {fg, fg, fg, fg, fg}
+fh = random.choice(list(fh_set))
+fi = ''
+counterfi = 0
+while counterfi < 2:
+    fi += fh
+    counterfi += 1
+print(fi)

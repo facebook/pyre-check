@@ -3,8 +3,8 @@ from fuzzer2 import CodeGenerator
 
 def main():
     generator = CodeGenerator()
-    num_files = 10  # Change this number to generate a different amount of files
-    x = 30  # Change this number to generate a different amount of functions
+    num_files = 100  # Change this number to generate a different amount of files
+    x = 20  # Change this number to generate a different amount of functions
     output_dir = 'generated_files'
 
     # Create the directory if it doesn't exist

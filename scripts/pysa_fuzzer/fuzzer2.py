@@ -25,6 +25,9 @@ class CodeGenerator:
 
     def get_last_variable(self) -> str:
         return self.variables[self.current_var - 1]
+
+    def reset(self) -> None:
+        self.current_var = 0
     
     def generate_source(self) -> str:
         curr_var = self.generate_new_variable()
@@ -286,9 +289,3 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 30 # Change this number to generate a different amount of functions
 
-print(generator.generate_statements(x))
-
-
-#print(generator.generate_source())
-
-#print(generator.generate_sink())

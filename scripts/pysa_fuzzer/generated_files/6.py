@@ -1,127 +1,80 @@
 import random
 import math
-li = input()
-lj = ''
-for _ in range(2):
-    for __ in range(3):
-                lj += li
-lk = lj[0:]
-if lk == '7':
-    ll = lk + ' c1'
-elif lk == '16':
-    ll = lk + ' c2'
-else:
-    ll = lk + ' c3'
-lm = [ll for _ in range(7)]
-random.shuffle(lm)
-ln = random.choice(lm)
-lo = (ln, ln, ln)
-lp, lq, lr = lo
-ls = lp + lq + lr
-lt_set = {ls, ls, ls, ls, ls, ls}
-lt = random.choice(list(lt_set))
-lu_dict = {21: lt, 7: lt, 53: lt, 42: lt, 16: lt, 60: lt, 17: lt}
-lv_dict = {98: lu_dict, 92: lu_dict, 100: lu_dict, 30: lu_dict, 68: lu_dict, 57: lu_dict, 2: lu_dict, 100: lu_dict, 32: lu_dict, 50: lu_dict}
-lw = random.choice(list(lv_dict.values()))
-lx = random.choice(list(lw.values()))
-ly = ''
-counterly = 0
-while counterly < 3:
-    lz = ''
-    counterlz = 0
-    while counterlz < 3:
-        ma = ''
-        counterma = 0
-        while counterma < 4:
-            ma += lz
-            counterma += 1
-            lz += ly
-            counterlz += 1
-        ly += lx
-        counterly += 1
-mb = [ma for _ in range(6)]
-random.shuffle(mb)
-mc = random.choice(mb)
-md = ''
-for _ in range(3):
-    md += mc
-def me():
-    return md
-def mf():
-    return me()
-mg = mf()
-mh_dict = {49: mg, 13: mg}
-mi_dict = {63: mh_dict, 89: mh_dict, 47: mh_dict, 38: mh_dict}
-mj = random.choice(list(mi_dict.values()))
-mk = random.choice(list(mj.values()))
-ml = ''
+hc = input()
+def hd():
+    return hc
+def he():
+    return hd()
+hf = he()
+hg_dict = {85: hf, 85: hf, 6: hf, 42: hf, 7: hf, 61: hf, 68: hf, 100: hf, 68: hf}
+hh = random.choice(list(hg_dict.values()))
+hi = [hh for _ in range(5)]
+random.shuffle(hi)
+hj = random.choice(hi)
+hk = ''
+counterhk = 0
+while counterhk < 5:
+    hl = ''
+    counterhl = 0
+    while counterhl < 4:
+        hm = ''
+        counterhm = 0
+        while counterhm < 3:
+            hm += hl
+            counterhm += 1
+            hl += hk
+            counterhl += 1
+        hk += hj
+        counterhk += 1
+hn = f'string {hm}'
+def ho():
+    return hn
+def hp():
+    return ho()
+hq = hp()
+hr = (hq, hq, hq)
+hs, ht, hu = hr
+hv = hs + ht + hu
+hw = ''
 for _ in range(3):
     for __ in range(4):
-                ml += mk
-mm = ''
+                hw += hv
+hx = ''
+counterhx = 0
+while counterhx < 3:
+    hx += hw
+    counterhx += 1
+hy = ''
+counterhy = 0
+while counterhy < 3:
+    hy += hx
+    counterhy += 1
+hz_dict = {35: hy, 17: hy, 55: hy, 97: hy, 51: hy, 49: hy, 9: hy}
+ia = random.choice(list(hz_dict.values()))
+ib = ''
 for _ in range(5):
-    mn = ''
-    for _ in range(3):
-        mn += mm
-        mm += ml
-mo = ''
-for _ in range(5):
-        if _ == 5:
-            break
-        mo += mn
-mp = mo + '4'
-mq = mp + '6'
-mr = mq + '5'
-def ms():
-    return mr
-def mt():
-    return ms()
-mu = mt()
-mv = ''
-for _ in range(7):
-        if _ == 3:
-            continue
-        mv += mu
-mw = (mv, mv, mv)
-mx, my, mz = mw
-na = mx + my + mz
-if na == '2':
-    nb = na + ' c1'
-elif na == '15':
-    nb = na + ' c2'
-else:
-    nb = na + ' c3'
-nc = nb + '9'
-nd = nc + '4'
-ne = nd + '3'
-nf = ''
-for _ in range(2):
-    ng = ''
-    for _ in range(2):
-        nh = ''
-        for _ in range(2):
-            nh += ng
-            ng += nf
-        nf += ne
-ni = nh[0:]
-nj = ''
-for _ in range(3):
     for __ in range(2):
-                nj += ni
-nk = nj + '2'
-nl = nk + '3'
-nm = nl + '6'
-nn = nm[0:]
-no_list = [nn for _ in range(3)]
-np_list = [no_list for _ in range(8)]
-nq_list = [np_list for _ in range(5)]
-nr = random.choice(nq_list)
-ns = random.choice(nr)
-nt = random.choice(ns)
-if nt == '9':
-    nu = nt + ' c1'
-elif nt == '19':
-    nu = nt + ' c2'
-else:
-    nu = nt + ' c3'
-print(nu)
+                ib += ia
+ic = ib[0:]
+id_dict = {37: ic, 52: ic, 33: ic, 14: ic, 91: ic}
+ie_dict = {49: id_dict, 77: id_dict, 55: id_dict, 35: id_dict, 50: id_dict, 58: id_dict}
+ig_dict = {95: ie_dict, 64: ie_dict}
+ih = random.choice(list(ig_dict.values()))
+ii = random.choice(list(ih.values()))
+ij = random.choice(list(ii.values()))
+ik = ''
+counterik = 0
+while counterik < 4:
+    ik += ij
+    counterik += 1
+il = ik + '.'
+im_dict = {34: il, 71: il, 45: il, 61: il, 50: il, 49: il, 34: il, 29: il, 60: il}
+io_dict = {13: im_dict, 81: im_dict, 61: im_dict}
+ip_dict = {7: io_dict, 74: io_dict, 92: io_dict, 81: io_dict}
+iq = random.choice(list(ip_dict.values()))
+ir = random.choice(list(iq.values()))
+it = random.choice(list(ir.values()))
+iu = ''
+for _ in range(4):
+    iu += it
+print(iu)

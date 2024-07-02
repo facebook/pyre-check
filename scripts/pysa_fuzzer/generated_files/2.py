@@ -1,114 +1,86 @@
 import random
 import math
-be = input()
-bf = ''
-counterbf = 0
-while counterbf < 3:
-    bf += be
-    counterbf += 1
-bg = ''
-for _ in range(3):
-    bg += bf
-bh = ''
-for _ in range(7):
-        if _ == 5:
+ab = input()
+ac = f'string {ab}'
+ad_dict = {3: ac, 49: ac, 35: ac}
+ae_dict = {3: ad_dict, 16: ad_dict, 62: ad_dict, 40: ad_dict, 78: ad_dict, 67: ad_dict, 39: ad_dict}
+af = random.choice(list(ae_dict.values()))
+ag = random.choice(list(af.values()))
+ah = ''
+counterah = 0
+while counterah < 4:
+    ai = ''
+    counterai = 0
+    while counterai < 5:
+        ai += ah
+        counterai += 1
+        ah += ag
+        counterah += 1
+aj_set = {ai, ai, ai, ai, ai, ai, ai}
+aj = random.choice(list(aj_set))
+if aj == '2':
+    ak = aj + ' c1'
+elif aj == '13':
+    ak = aj + ' c2'
+else:
+    ak = aj + ' c3'
+al = ''
+for _ in range(5):
+    for __ in range(4):
+                al += ak
+am = ''
+counteram = 0
+while counteram < 2:
+    an = ''
+    counteran = 0
+    while counteran < 4:
+        ao = ''
+        counterao = 0
+        while counterao < 3:
+            ao += an
+            counterao += 1
+            an += am
+            counteran += 1
+        am += al
+        counteram += 1
+ap = (ao, ao, ao)
+aq, ar, at = ap
+au = aq + ar + at
+av = ''
+for _ in range(6):
+        if _ == 4:
             break
-        bh += bg
-bi = ''
-for _ in range(2):
-    for __ in range(2):
-                bi += bh
-bj = [bi for _ in range(5)]
-random.shuffle(bj)
-bk = random.choice(bj)
-bl_set = {bk, bk, bk, bk, bk, bk, bk, bk}
-bl = random.choice(list(bl_set))
-bm = (bl, bl, bl)
-bn, bo, bp = bm
-bq = bn + bo + bp
-def br():
-    return bq
-def bs():
-    return br()
-bt = bs()
-bu_set = {bt, bt, bt, bt, bt, bt, bt, bt, bt}
-bu = random.choice(list(bu_set))
-bv = f'string {bu}'
-bw = ''
-for _ in range(2):
-    bw += bv
-bx = bw[0:]
-def by():
-    return bx
-def bz():
-    return by()
-def ca():
-    return bz()
-cb = ca()
-if cb == '6':
-    cc = cb + ' c1'
-elif cb == '15':
-    cc = cb + ' c2'
-else:
-    cc = cb + ' c3'
-cd = cc[0:]
-ce = ''
-counterce = 0
-while counterce < 5:
-    cf = ''
-    countercf = 0
-    while countercf < 3:
-        cg = ''
-        countercg = 0
-        while countercg < 4:
-            cg += cf
-            countercg += 1
-            cf += ce
-            countercf += 1
-        ce += cd
-        counterce += 1
-ch = cg[0:]
-if ch == '7':
-    ci = ch + ' c1'
-elif ch == '17':
-    ci = ch + ' c2'
-else:
-    ci = ch + ' c3'
-cj = (ci, ci, ci)
-ck, cl, cm = cj
-cn = ck + cl + cm
-def co():
-    return cn
-def cp():
-    return co()
-def cq():
-    return cp()
-cr = cq()
-if cr == '5':
-    cs = cr + ' c1'
-elif cr == '14':
-    cs = cr + ' c2'
-else:
-    cs = cr + ' c3'
-ct = cs + '8'
-cu = ct + '3'
-cv = cu + '4'
-cw = ''
-countercw = 0
-while countercw < 3:
-    cw += cv
-    countercw += 1
-def cx():
-    return cw
-def cy():
-    return cx()
-cz = cy()
-da = cz + '.'
-db = ''
-for _ in range(10):
-        if _ == 1:
-            break
-        db += da
-dc = db[0:]
-dd = dc + '.'
-print(dd)
+        av += au
+aw = ''
+counteraw = 0
+while counteraw < 3:
+    ax = ''
+    counterax = 0
+    while counterax < 3:
+        ay = ''
+        counteray = 0
+        while counteray < 2:
+            ay += ax
+            counteray += 1
+            ax += aw
+            counterax += 1
+        aw += av
+        counteraw += 1
+az = (ay, ay, ay)
+ba, bb, bc = az
+bd = ba + bb + bc
+be = f'string {bd}'
+bf = [be for _ in range(8)]
+random.shuffle(bf)
+bg = random.choice(bf)
+bh_set = {bg, bg, bg, bg, bg, bg, bg}
+bh = random.choice(list(bh_set))
+bi = (bh, bh, bh)
+bj, bk, bl = bi
+bm = bj + bk + bl
+def bn():
+    return bm
+bo = bn()
+bp = bo[0:]
+bq = bp[0:]
+print(bq)

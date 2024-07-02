@@ -1,129 +1,92 @@
 import random
 import math
-sk = input()
-sl = [sk for _ in range(8)]
-random.shuffle(sl)
-sm = random.choice(sl)
-sn = sm + '1'
-so = sn + '4'
-sp = so + '5'
-sq = ''
-countersq = 0
-while countersq < 3:
-    sr = ''
-    countersr = 0
-    while countersr < 5:
-        ss = ''
-        counterss = 0
-        while counterss < 2:
-            ss += sr
-            counterss += 1
-            sr += sq
-            countersr += 1
-        sq += sp
-        countersq += 1
-st = ''
-for _ in range(5):
-        if _ == 5:
-            break
-        st += ss
-def su():
-    return st
-def sv():
-    return su()
-def sw():
-    return sv()
-sx = sw()
-sy_dict = {15: sx, 81: sx, 93: sx, 87: sx, 31: sx, 86: sx}
-sz_dict = {76: sy_dict, 99: sy_dict, 30: sy_dict, 43: sy_dict, 10: sy_dict}
-ta = random.choice(list(sz_dict.values()))
-tb = random.choice(list(ta.values()))
-tc = tb + '.'
-td = tc + '.'
-te_dict = {18: td, 80: td, 89: td, 6: td, 51: td}
-tf = random.choice(list(te_dict.values()))
-tg = tf[0:]
-th = ''
-for _ in range(2):
-    for __ in range(4):
-                th += tg
-ti = ''
-for _ in range(4):
-    tj = ''
+ll = input()
+lm = f'string {ll}'
+ln = lm + '.'
+lo_list = [ln for _ in range(6)]
+lp_list = [lo_list for _ in range(4)]
+lq_list = [lp_list for _ in range(2)]
+lr = random.choice(lq_list)
+ls = random.choice(lr)
+lt = random.choice(ls)
+lu_set = {lt, lt, lt, lt, lt}
+lu = random.choice(list(lu_set))
+lv_dict = {66: lu, 92: lu, 58: lu, 46: lu}
+lw_dict = {98: lv_dict, 53: lv_dict, 88: lv_dict, 44: lv_dict, 64: lv_dict}
+lx_dict = {59: lw_dict, 18: lw_dict, 41: lw_dict, 85: lw_dict, 9: lw_dict, 89: lw_dict, 98: lw_dict}
+ly = random.choice(list(lx_dict.values()))
+lz = random.choice(list(ly.values()))
+ma = random.choice(list(lz.values()))
+mb = ''
+for _ in range(10):
+        if _ == 3:
+            continue
+        mb += ma
+mc = ''
+countermc = 0
+while countermc < 2:
+    md = ''
+    countermd = 0
+    while countermd < 5:
+        me = ''
+        counterme = 0
+        while counterme < 3:
+            me += md
+            counterme += 1
+            md += mc
+            countermd += 1
+        mc += mb
+        countermc += 1
+mf = ''
+countermf = 0
+while countermf < 5:
+    mg = ''
+    countermg = 0
+    while countermg < 2:
+        mh = ''
+        countermh = 0
+        while countermh < 5:
+            mh += mg
+            countermh += 1
+            mg += mf
+            countermg += 1
+        mf += me
+        countermf += 1
+mi = ''
+for _ in range(3):
+    mj = ''
     for _ in range(5):
-        tj += ti
-        ti += th
-tk = f'string {tj}'
-tl = tk + '.'
-tm = ''
+        mk = ''
+        for _ in range(5):
+            mk += mj
+            mj += mi
+        mi += mh
+ml = ''
 for _ in range(3):
-    tn = ''
+    ml += mk
+mm = [ml for _ in range(6)]
+random.shuffle(mm)
+mn = random.choice(mm)
+mo = mn + '.'
+mp_dict = {86: mo, 5: mo, 7: mo, 32: mo, 93: mo, 52: mo}
+mq_dict = {58: mp_dict, 1: mp_dict, 16: mp_dict, 42: mp_dict, 63: mp_dict, 13: mp_dict, 85: mp_dict, 25: mp_dict, 20: mp_dict}
+mr = random.choice(list(mq_dict.values()))
+ms = random.choice(list(mr.values()))
+mt = (ms, ms, ms)
+mu, mv, mw = mt
+mx = mu + mv + mw
+my = ''
+for _ in range(4):
+    mz = ''
     for _ in range(4):
-        tn += tm
-        tm += tl
-if tn == '7':
-    to = tn + ' c1'
-elif tn == '17':
-    to = tn + ' c2'
-else:
-    to = tn + ' c3'
-tp_dict = {49: to, 27: to, 20: to, 89: to, 50: to}
-tq = random.choice(list(tp_dict.values()))
-if tq == '2':
-    tr = tq + ' c1'
-elif tq == '16':
-    tr = tq + ' c2'
-else:
-    tr = tq + ' c3'
-ts = ''
-counterts = 0
-while counterts < 5:
-    tt = ''
-    countertt = 0
-    while countertt < 4:
-        tt += ts
-        countertt += 1
-        ts += tr
-        counterts += 1
-tu = tt[0:]
-tv = tu + '.'
-tw_list = [tv for _ in range(8)]
-tx = random.choice(tw_list)
-def ty():
-    return tx
-def tz():
-    return ty()
-ua = tz()
-def ub():
-    return ua
-def uc():
-    return ub()
-ud = uc()
-ue = f'string {ud}'
-uf = ''
-for _ in range(3):
-    for __ in range(5):
-                uf += ue
-ug = ''
-counterug = 0
-while counterug < 5:
-    uh = ''
-    counteruh = 0
-    while counteruh < 5:
-        ui = ''
-        counterui = 0
-        while counterui < 5:
-            ui += uh
-            counterui += 1
-            uh += ug
-            counteruh += 1
-        ug += uf
-        counterug += 1
-def uj():
-    return ui
-def uk():
-    return uj()
-def ul():
-    return uk()
-um = ul()
-print(um)
+        na = ''
+        for _ in range(4):
+            na += mz
+            mz += my
+        my += mx
+nb = na + '.'
+nc = nb + '2'
+nd = [nc for _ in range(5)]
+random.shuffle(nd)
+ne = random.choice(nd)
+print(ne)
