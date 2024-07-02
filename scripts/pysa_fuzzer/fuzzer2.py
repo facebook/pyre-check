@@ -286,9 +286,9 @@ class CodeGenerator:
 generator = CodeGenerator()
 x = 30 # Change this number to generate a different amount of functions
 
-#print(generator.generate_statements(x))
+print(generator.generate_statements(x))
 
 
-print(generator.generate_source())
+#print(generator.generate_source())
 
-print(generator.generate_sink())
+#print(generator.generate_sink())
