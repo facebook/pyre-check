@@ -1,77 +1,79 @@
 import random
 import math
-br = input()
-bs_list = [br for _ in range(2)]
-bt_list = [bs_list for _ in range(8)]
-bu_list = [bt_list for _ in range(3)]
-bv = random.choice(bu_list)
-bw = random.choice(bv)
-bx = random.choice(bw)
-by = bx + '.'
-bz = by + '7'
-ca = bz + '7'
-cb = ca + '2'
-cc = cb + '3'
-cd = cc + '.'
-ce = ''
-for _ in range(5):
-    for __ in range(5):
-                ce += cd
-cf = ce + '.'
-cg_list = [cf for _ in range(10)]
-ch_list = [cg_list for _ in range(4)]
-ci = random.choice(ch_list)
-cj = random.choice(ci)
-ck = ''
-for _ in range(4):
-    for __ in range(2):
-                ck += cj
-cl = ''
-for _ in range(8):
-        if _ == 2:
-            continue
-        cl += ck
-cm = (cl, cl, cl)
-cn, co, cp = cm
-cq = cn + co + cp
-cr = ''
+a = input()
+b_list = [a for _ in range(6)]
+c = random.choice(b_list)
+d = c[0:]
+e_set = {d, d, d, d, d, d, d, d, d, d}
+e = random.choice(list(e_set))
+f = ''
+counterf = 0
+while counterf < 4:
+    f += e
+    counterf += 1
+g = [f for _ in range(8)]
+random.shuffle(g)
+h = random.choice(g)
+i = (h, h, h)
+j, k, l = i
+m = j + k + l
+n = ''
+countern = 0
+while countern < 5:
+    o = ''
+    countero = 0
+    while countero < 5:
+        o += n
+        countero += 1
+        n += m
+        countern += 1
+p = o + '.'
+q = f'string {p}'
+r = ''
 for _ in range(3):
-    cs = ''
-    for _ in range(2):
-        cs += cr
-        cr += cq
-ct = ''
-counterct = 0
-while counterct < 4:
-    ct += cs
-    counterct += 1
-cu = (ct, ct, ct)
-cv, cw, cx = cu
-cy = cv + cw + cx
-cz = ''
-for _ in range(3):
-    for __ in range(2):
-                cz += cy
-da = ''
-for _ in range(7):
+    s = ''
+    for _ in range(5):
+        t = ''
+        for _ in range(2):
+            t += s
+            s += r
+        r += q
+u = ''
+for _ in range(9):
         if _ == 4:
+            continue
+        u += t
+v = ''
+for _ in range(2):
+    v += u
+if v == '10':
+    w = v + ' c1'
+elif v == '16':
+    w = v + ' c2'
+else:
+    w = v + ' c3'
+x = ''
+for _ in range(6):
+        if _ == 3:
             break
-        da += cz
-db_set = {da, da, da, da}
-db = random.choice(list(db_set))
-dc = ''
-counterdc = 0
-while counterdc < 3:
-    dd = ''
-    counterdd = 0
-    while counterdd < 4:
-        de = ''
-        counterde = 0
-        while counterde < 4:
-            de += dd
-            counterde += 1
-            dd += dc
-            counterdd += 1
-        dc += db
-        counterdc += 1
-print(de)
+        x += w
+y = ''
+for _ in range(2):
+    for __ in range(5):
+                y += x
+z_dict = {91: y, 31: y, 64: y, 82: y, 98: y, 78: y, 96: y, 55: y}
+aa = random.choice(list(z_dict.values()))
+def ab():
+    return aa
+def ac():
+    return ab()
+def ad():
+    return ac()
+ae = ad()
+af_list = [ae for _ in range(3)]
+ag_list = [af_list for _ in range(3)]
+ah_list = [ag_list for _ in range(4)]
+ai = random.choice(ah_list)
+aj = random.choice(ai)
+ak = random.choice(aj)
+print(ak)

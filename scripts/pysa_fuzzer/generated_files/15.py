@@ -1,74 +1,64 @@
 import random
 import math
-up = input()
-uq = [up for _ in range(10)]
-random.shuffle(uq)
-ur = random.choice(uq)
-us_dict = {62: ur, 70: ur, 80: ur, 82: ur, 58: ur, 94: ur}
-ut_dict = {5: us_dict, 5: us_dict, 47: us_dict, 6: us_dict, 50: us_dict, 98: us_dict, 87: us_dict, 7: us_dict, 36: us_dict}
-uu_dict = {89: ut_dict, 18: ut_dict, 86: ut_dict, 82: ut_dict, 70: ut_dict, 65: ut_dict}
-uv = random.choice(list(uu_dict.values()))
-uw = random.choice(list(uv.values()))
-ux = random.choice(list(uw.values()))
-uy_list = [ux for _ in range(9)]
-uz = random.choice(uy_list)
-va = ''
+a = input()
+b = (a, a, a)
+c, d, e = b
+f = c + d + e
+g = ''
+for _ in range(5):
+    h = ''
+    for _ in range(5):
+        i = ''
+        for _ in range(2):
+            i += h
+            h += g
+        g += f
+j = ''
 for _ in range(2):
-    for __ in range(5):
-                va += uz
-def vb():
-    return va
-vc = vb()
-vd = vc + '3'
-ve = vd + '3'
-vf = ve + '1'
-vg_set = {vf, vf, vf, vf, vf, vf, vf}
-vg = random.choice(list(vg_set))
-vh = [vg for _ in range(6)]
-random.shuffle(vh)
-vi = random.choice(vh)
-vj = ''
-for _ in range(3):
-    vk = ''
-    for _ in range(4):
-        vk += vj
-        vj += vi
-vl = [vk for _ in range(9)]
-random.shuffle(vl)
-vm = random.choice(vl)
-vn = vm + '.'
-vo = (vn, vn, vn)
-vp, vq, vr = vo
-vs = vp + vq + vr
-if vs == '2':
-    vt = vs + ' c1'
-elif vs == '12':
-    vt = vs + ' c2'
+    for __ in range(4):
+                j += i
+k_set = {j, j, j, j, j, j, j, j}
+k = random.choice(list(k_set))
+l = k + '8'
+m = l + '7'
+n = m[0:]
+if n == '1':
+    o = n + ' c1'
+elif n == '14':
+    o = n + ' c2'
 else:
-    vt = vs + ' c3'
-if vt == '6':
-    vu = vt + ' c1'
-elif vt == '19':
-    vu = vt + ' c2'
+    o = n + ' c3'
+p = o[0:]
+q = p + '8'
+r = q + '7'
+if r == '8':
+    s = r + ' c1'
+elif r == '12':
+    s = r + ' c2'
 else:
-    vu = vt + ' c3'
-vv = ''
-for _ in range(2):
-    vw = ''
-    for _ in range(3):
-        vx = ''
-        for _ in range(3):
-            vx += vw
-            vw += vv
-        vv += vu
-vy = (vx, vx, vx)
-vz, wa, wb = vy
-wc = vz + wa + wb
-wd = ''
-for _ in range(3):
-    for __ in range(2):
-                wd += wc
-we = [wd for _ in range(5)]
-random.shuffle(we)
-wf = random.choice(we)
-print(wf)
+    s = r + ' c3'
+t_dict = {61: s, 72: s, 72: s, 42: s, 75: s, 47: s, 90: s}
+u_dict = {91: t_dict, 25: t_dict, 61: t_dict, 51: t_dict, 42: t_dict, 79: t_dict, 37: t_dict, 77: t_dict}
+v_dict = {11: u_dict, 68: u_dict, 19: u_dict}
+w = random.choice(list(v_dict.values()))
+x = random.choice(list(w.values()))
+y = random.choice(list(x.values()))
+z = y[0:]
+aa = (z, z, z)
+ab, ac, ad = aa
+ae = ab + ac + ad
+af_dict = {74: ae, 7: ae, 20: ae, 64: ae, 4: ae, 38: ae, 49: ae, 52: ae, 36: ae, 37: ae}
+ag_dict = {18: af_dict, 66: af_dict, 66: af_dict, 16: af_dict}
+ah = random.choice(list(ag_dict.values()))
+ai = random.choice(list(ah.values()))
+aj = ai + '7'
+ak = aj + '9'
+al = ak + '1'
+am = [al for _ in range(10)]
+random.shuffle(am)
+an = random.choice(am)
+ao = an + '6'
+ap = [ao for _ in range(8)]
+random.shuffle(ap)
+aq = random.choice(ap)
+print(aq)

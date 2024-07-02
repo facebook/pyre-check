@@ -1,80 +1,61 @@
 import random
 import math
-qe = input()
-qf_set = {qe, qe, qe, qe}
-qf = random.choice(list(qf_set))
-qg = ''
-for _ in range(9):
-        if _ == 4:
-            continue
-        qg += qf
-qh = [qg for _ in range(9)]
-random.shuffle(qh)
-qi = random.choice(qh)
-qj = ''
-for _ in range(8):
-        if _ == 3:
-            break
-        qj += qi
-qk = ''
+a = input()
+def b():
+    return a
+c = b()
+d = [c for _ in range(9)]
+random.shuffle(d)
+e = random.choice(d)
+f = f'string {e}'
+g_dict = {97: f, 62: f, 68: f}
+h = random.choice(list(g_dict.values()))
+i = h[0:]
+j_set = {i, i, i, i, i}
+j = random.choice(list(j_set))
+k = ''
 for _ in range(3):
-    ql = ''
-    for _ in range(3):
-        ql += qk
-        qk += qj
-qm = ''
-for _ in range(2):
-    for __ in range(4):
-                qm += ql
-qn = qm + '.'
-qo = ''
-counterqo = 0
-while counterqo < 5:
-    qo += qn
-    counterqo += 1
-qp = (qo, qo, qo)
-qq, qr, qs = qp
-qt = qq + qr + qs
-qu_list = [qt for _ in range(3)]
-qv_list = [qu_list for _ in range(3)]
-qw_list = [qv_list for _ in range(8)]
-qx = random.choice(qw_list)
-qy = random.choice(qx)
-qz = random.choice(qy)
-ra = qz + '4'
-rb = ra + '5'
-rc = rb + '9'
-if rc == '6':
-    rd = rc + ' c1'
-elif rc == '19':
-    rd = rc + ' c2'
-else:
-    rd = rc + ' c3'
-re = ''
-counterre = 0
-while counterre < 2:
-    rf = ''
-    counterrf = 0
-    while counterrf < 4:
-        rf += re
-        counterrf += 1
-        re += rd
-        counterre += 1
-rg = ''
-counterrg = 0
-while counterrg < 2:
-    rg += rf
-    counterrg += 1
-rh_dict = {20: rg, 26: rg, 87: rg}
-ri = random.choice(list(rh_dict.values()))
-rj_set = {ri, ri, ri, ri, ri, ri}
-rj = random.choice(list(rj_set))
-rk_list = [rj for _ in range(6)]
-rl_list = [rk_list for _ in range(3)]
-rm = random.choice(rl_list)
-rn = random.choice(rm)
-ro = ''
-for _ in range(5):
-    for __ in range(3):
-                ro += rn
-print(ro)
+    k += j
+l = ''
+counterl = 0
+while counterl < 5:
+    m = ''
+    counterm = 0
+    while counterm < 4:
+        m += l
+        counterm += 1
+        l += k
+        counterl += 1
+n = ''
+for _ in range(3):
+    n += m
+o = [n for _ in range(10)]
+random.shuffle(o)
+p = random.choice(o)
+q = ''
+for _ in range(9):
+        if _ == 1:
+            break
+        q += p
+r = ''
+for _ in range(7):
+        if _ == 3:
+            continue
+        r += q
+s = f'string {r}'
+t = s + '1'
+u = t + '6'
+v = u + '.'
+w = f'string {v}'
+def x():
+    return w
+def y():
+    return x()
+z = y()
+aa_dict = {98: z, 81: z, 9: z, 26: z, 96: z, 1: z, 76: z, 41: z, 13: z, 6: z}
+ab_dict = {77: aa_dict, 32: aa_dict, 69: aa_dict, 21: aa_dict}
+ac_dict = {73: ab_dict, 24: ab_dict, 80: ab_dict, 37: ab_dict, 70: ab_dict, 24: ab_dict, 1: ab_dict}
+ad = random.choice(list(ac_dict.values()))
+ae = random.choice(list(ad.values()))
+af = random.choice(list(ae.values()))
+print(af)

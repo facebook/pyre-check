@@ -1,78 +1,55 @@
 import random
 import math
-wg = input()
-wh_list = [wg for _ in range(2)]
-wi_list = [wh_list for _ in range(5)]
-wj = random.choice(wi_list)
-wk = random.choice(wj)
-wl_list = [wk for _ in range(5)]
-wm_list = [wl_list for _ in range(5)]
-wn_list = [wm_list for _ in range(5)]
-wo = random.choice(wn_list)
-wp = random.choice(wo)
-wq = random.choice(wp)
-wr = wq + '.'
-ws = (wr, wr, wr)
-wt, wu, wv = ws
-ww = wt + wu + wv
-wx = ''
-for _ in range(2):
-    for __ in range(4):
-                wx += ww
-wy = ''
-counterwy = 0
-while counterwy < 5:
-    wz = ''
-    counterwz = 0
-    while counterwz < 4:
-        wz += wy
-        counterwz += 1
-        wy += wx
-        counterwy += 1
-xa = wz[0:]
-xb = (xa, xa, xa)
-xc, xd, xe = xb
-xf = xc + xd + xe
-xg = ''
-for _ in range(4):
-    xh = ''
-    for _ in range(2):
-        xi = ''
-        for _ in range(3):
-            xi += xh
-            xh += xg
-        xg += xf
-xj = f'string {xi}'
-xk = xj[0:]
-if xk == '7':
-    xl = xk + ' c1'
-elif xk == '12':
-    xl = xk + ' c2'
+a = input()
+b = a + '8'
+c = (b, b, b)
+d, e, f = c
+g = d + e + f
+h = g + '.'
+i_dict = {75: h, 36: h, 65: h, 80: h, 42: h, 8: h, 73: h, 89: h, 22: h}
+j_dict = {85: i_dict, 44: i_dict, 83: i_dict, 38: i_dict, 67: i_dict, 26: i_dict}
+k = random.choice(list(j_dict.values()))
+l = random.choice(list(k.values()))
+m = f'string {l}'
+n_dict = {22: m, 38: m, 62: m, 30: m, 79: m, 94: m, 47: m, 14: m}
+o_dict = {54: n_dict, 7: n_dict, 94: n_dict, 6: n_dict, 96: n_dict, 85: n_dict, 11: n_dict, 1: n_dict, 47: n_dict, 18: n_dict}
+p = random.choice(list(o_dict.values()))
+q = random.choice(list(p.values()))
+r_set = {q, q, q, q, q}
+r = random.choice(list(r_set))
+s = r[0:]
+t = s + '.'
+if t == '8':
+    u = t + ' c1'
+elif t == '20':
+    u = t + ' c2'
 else:
-    xl = xk + ' c3'
-xm_list = [xl for _ in range(4)]
-xn = random.choice(xm_list)
-xo = xn + '3'
-xp = xo + '6'
-xq = xp + '2'
-xr = xq[0:]
-def xs():
-    return xr
-def xt():
-    return xs()
-xu = xt()
-xv = ''
-counterxv = 0
-while counterxv < 3:
-    xw = ''
-    counterxw = 0
-    while counterxw < 4:
-        xw += xv
-        counterxw += 1
-        xv += xu
-        counterxv += 1
-xx_dict = {13: xw, 71: xw, 67: xw, 79: xw, 30: xw, 32: xw}
-xy_dict = {17: xx_dict, 70: xx_dict, 29: xx_dict, 65: xx_dict, 44: xx_dict}
-xz = random.choice(list(xy_dict.values()))
-ya = random.choice(list(xz.values()))
-print(ya)
+    u = t + ' c3'
+v = ''
+for _ in range(5):
+        if _ == 4:
+            continue
+        v += u
+if v == '4':
+    w = v + ' c1'
+elif v == '20':
+    w = v + ' c2'
+else:
+    w = v + ' c3'
+x = [w for _ in range(5)]
+random.shuffle(x)
+y = random.choice(x)
+z = [y for _ in range(7)]
+random.shuffle(z)
+aa = random.choice(z)
+ab = ''
+for _ in range(2):
+    ab += aa
+ac = f'string {ab}'
+ad = ac + '6'
+ae = ad + '5'
+af = ae + '2'
+ag = [af for _ in range(6)]
+random.shuffle(ag)
+ah = random.choice(ag)
+print(ah)

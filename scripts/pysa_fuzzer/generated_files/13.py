@@ -1,60 +1,77 @@
 import random
 import math
-rp = input()
-def rq():
-    return rp
-def rr():
-    return rq()
-def rs():
-    return rr()
-rt = rs()
-ru = rt[0:]
-rv_dict = {49: ru, 58: ru, 41: ru}
-rw_dict = {35: rv_dict, 15: rv_dict, 93: rv_dict, 32: rv_dict, 6: rv_dict, 69: rv_dict, 46: rv_dict, 60: rv_dict, 14: rv_dict}
-rx_dict = {68: rw_dict, 85: rw_dict, 5: rw_dict}
-ry = random.choice(list(rx_dict.values()))
-rz = random.choice(list(ry.values()))
-sa = random.choice(list(rz.values()))
-sb = sa + '4'
-sc = sb + '9'
-sd = sc + '4'
-se = (sd, sd, sd)
-sf, sg, sh = se
-si = sf + sg + sh
-sj = f'string {si}'
-sk = f'string {sj}'
-sl = [sk for _ in range(8)]
-random.shuffle(sl)
-sm = random.choice(sl)
-sn = f'string {sm}'
-so = ''
-for _ in range(6):
-        if _ == 1:
-            break
-        so += sn
-sp_list = [so for _ in range(7)]
-sq_list = [sp_list for _ in range(5)]
-sr = random.choice(sq_list)
-ss = random.choice(sr)
-st = ''
+a = input()
+b_set = {a, a, a, a, a, a, a}
+b = random.choice(list(b_set))
+c = ''
+counterc = 0
+while counterc < 4:
+    d = ''
+    counterd = 0
+    while counterd < 4:
+        e = ''
+        countere = 0
+        while countere < 4:
+            e += d
+            countere += 1
+            d += c
+            counterd += 1
+        c += b
+        counterc += 1
+f = (e, e, e)
+g, h, i = f
+j = g + h + i
+k = j[0:]
+if k == '4':
+    l = k + ' c1'
+elif k == '13':
+    l = k + ' c2'
+else:
+    l = k + ' c3'
+m = ''
 for _ in range(5):
-        if _ == 2:
-            continue
-        st += ss
-su_set = {st, st, st, st, st, st, st, st, st}
-su = random.choice(list(su_set))
-sv = f'string {su}'
-sw = sv + '9'
-sx_dict = {75: sw, 4: sw, 40: sw, 43: sw, 97: sw, 87: sw}
-sy_dict = {75: sx_dict, 65: sx_dict, 5: sx_dict, 29: sx_dict, 81: sx_dict, 30: sx_dict, 23: sx_dict, 33: sx_dict}
-sz_dict = {84: sy_dict, 20: sy_dict, 82: sy_dict, 90: sy_dict, 39: sy_dict, 5: sy_dict}
-ta = random.choice(list(sz_dict.values()))
-tb = random.choice(list(ta.values()))
-tc = random.choice(list(tb.values()))
-td = f'string {tc}'
-def te():
-    return td
-def tf():
-    return te()
-tg = tf()
-print(tg)
+    n = ''
+    for _ in range(3):
+        o = ''
+        for _ in range(2):
+            o += n
+            n += m
+        m += l
+p = [o for _ in range(5)]
+random.shuffle(p)
+q = random.choice(p)
+r = q + '.'
+s = ''
+counters = 0
+while counters < 3:
+    t = ''
+    countert = 0
+    while countert < 2:
+        t += s
+        countert += 1
+        s += r
+        counters += 1
+u_set = {t, t, t, t, t, t}
+u = random.choice(list(u_set))
+v_list = [u for _ in range(9)]
+w_list = [v_list for _ in range(5)]
+x = random.choice(w_list)
+y = random.choice(x)
+def z():
+    return y
+def aa():
+    return z()
+ab = aa()
+ac = ab[0:]
+ad_set = {ac, ac, ac, ac, ac, ac, ac, ac}
+ad = random.choice(list(ad_set))
+if ad == '6':
+    ae = ad + ' c1'
+elif ad == '14':
+    ae = ad + ' c2'
+else:
+    ae = ad + ' c3'
+af = f'string {ae}'
+ag = af + '.'
+ah = ag + '.'
+print(ah)

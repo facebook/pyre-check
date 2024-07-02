@@ -1,86 +1,96 @@
 import random
 import math
-ab = input()
-ac = f'string {ab}'
-ad_dict = {3: ac, 49: ac, 35: ac}
-ae_dict = {3: ad_dict, 16: ad_dict, 62: ad_dict, 40: ad_dict, 78: ad_dict, 67: ad_dict, 39: ad_dict}
-af = random.choice(list(ae_dict.values()))
-ag = random.choice(list(af.values()))
-ah = ''
-counterah = 0
-while counterah < 4:
-    ai = ''
-    counterai = 0
-    while counterai < 5:
-        ai += ah
-        counterai += 1
-        ah += ag
-        counterah += 1
-aj_set = {ai, ai, ai, ai, ai, ai, ai}
-aj = random.choice(list(aj_set))
-if aj == '2':
-    ak = aj + ' c1'
-elif aj == '13':
-    ak = aj + ' c2'
-else:
-    ak = aj + ' c3'
-al = ''
-for _ in range(5):
+a = input()
+b = ''
+counterb = 0
+while counterb < 3:
+    c = ''
+    counterc = 0
+    while counterc < 3:
+        d = ''
+        counterd = 0
+        while counterd < 5:
+            d += c
+            counterd += 1
+            c += b
+            counterc += 1
+        b += a
+        counterb += 1
+e = d + '.'
+f = ''
+counterf = 0
+while counterf < 4:
+    g = ''
+    counterg = 0
+    while counterg < 5:
+        h = ''
+        counterh = 0
+        while counterh < 3:
+            h += g
+            counterh += 1
+            g += f
+            counterg += 1
+        f += e
+        counterf += 1
+i = [h for _ in range(10)]
+random.shuffle(i)
+j = random.choice(i)
+def k():
+    return j
+def l():
+    return k()
+def m():
+    return l()
+n = m()
+o_set = {n, n, n, n, n, n}
+o = random.choice(list(o_set))
+p = (o, o, o)
+q, r, s = p
+t = q + r + s
+u = ''
+for _ in range(3):
+    v = ''
+    for _ in range(5):
+        v += u
+        u += t
+w = ''
+for _ in range(3):
     for __ in range(4):
-                al += ak
-am = ''
-counteram = 0
-while counteram < 2:
-    an = ''
-    counteran = 0
-    while counteran < 4:
-        ao = ''
-        counterao = 0
-        while counterao < 3:
-            ao += an
-            counterao += 1
-            an += am
-            counteran += 1
-        am += al
-        counteram += 1
-ap = (ao, ao, ao)
-aq, ar, at = ap
-au = aq + ar + at
-av = ''
+                w += v
+x = w[0:]
+y = x + '6'
+if y == '5':
+    z = y + ' c1'
+elif y == '19':
+    z = y + ' c2'
+else:
+    z = y + ' c3'
+aa = ''
+counteraa = 0
+while counteraa < 4:
+    aa += z
+    counteraa += 1
+ab = ''
+for _ in range(4):
+    for __ in range(4):
+                ab += aa
+ac = ''
 for _ in range(6):
-        if _ == 4:
+        if _ == 3:
             break
-        av += au
-aw = ''
-counteraw = 0
-while counteraw < 3:
-    ax = ''
-    counterax = 0
-    while counterax < 3:
-        ay = ''
-        counteray = 0
-        while counteray < 2:
-            ay += ax
-            counteray += 1
-            ax += aw
-            counterax += 1
-        aw += av
-        counteraw += 1
-az = (ay, ay, ay)
-ba, bb, bc = az
-bd = ba + bb + bc
-be = f'string {bd}'
-bf = [be for _ in range(8)]
-random.shuffle(bf)
-bg = random.choice(bf)
-bh_set = {bg, bg, bg, bg, bg, bg, bg}
-bh = random.choice(list(bh_set))
-bi = (bh, bh, bh)
-bj, bk, bl = bi
-bm = bj + bk + bl
-def bn():
-    return bm
-bo = bn()
-bp = bo[0:]
-bq = bp[0:]
-print(bq)
+        ac += ab
+ad = ''
+for _ in range(6):
+        if _ == 3:
+            break
+        ad += ac
+ae = (ad, ad, ad)
+af, ag, ah = ae
+ai = af + ag + ah
+aj = ''
+for _ in range(5):
+    ak = ''
+    for _ in range(3):
+        ak += aj
+        aj += ai
+print(ak)

@@ -1,79 +1,93 @@
 import random
 import math
-df = input()
-dg = ''
+a = input()
+if a == '4':
+    b = a + ' c1'
+elif a == '13':
+    b = a + ' c2'
+else:
+    b = a + ' c3'
+c = ''
+for _ in range(5):
+    for __ in range(4):
+                c += b
+d = ''
+for _ in range(2):
+    e = ''
+    for _ in range(2):
+        f = ''
+        for _ in range(4):
+            f += e
+            e += d
+        d += c
+g = [f for _ in range(6)]
+random.shuffle(g)
+h = random.choice(g)
+i = (h, h, h)
+j, k, l = i
+m = j + k + l
+n = [m for _ in range(7)]
+random.shuffle(n)
+o = random.choice(n)
+if o == '7':
+    p = o + ' c1'
+elif o == '14':
+    p = o + ' c2'
+else:
+    p = o + ' c3'
+q = [p for _ in range(5)]
+random.shuffle(q)
+r = random.choice(q)
+s = (r, r, r)
+t, u, v = s
+w = t + u + v
+def x():
+    return w
+def y():
+    return x()
+def z():
+    return y()
+aa = z()
+ab = aa[0:]
+ac_set = {ab, ab, ab, ab, ab, ab, ab, ab, ab, ab}
+ac = random.choice(list(ac_set))
+ad = f'string {ac}'
+ae = ''
 for _ in range(4):
     for __ in range(5):
-                dg += df
-dh = f'string {dg}'
-di_list = [dh for _ in range(5)]
-dj_list = [di_list for _ in range(2)]
-dk_list = [dj_list for _ in range(5)]
-dl = random.choice(dk_list)
-dm = random.choice(dl)
-dn = random.choice(dm)
-if dn == '2':
-    do = dn + ' c1'
-elif dn == '11':
-    do = dn + ' c2'
-else:
-    do = dn + ' c3'
-dp = (do, do, do)
-dq, dr, ds = dp
-dt = dq + dr + ds
-du_list = [dt for _ in range(2)]
-dv_list = [du_list for _ in range(2)]
-dw_list = [dv_list for _ in range(4)]
-dx = random.choice(dw_list)
-dy = random.choice(dx)
-dz = random.choice(dy)
-ea = (dz, dz, dz)
-eb, ec, ed = ea
-ee = eb + ec + ed
-ef = ''
-for _ in range(2):
-    for __ in range(5):
-                ef += ee
-eg_list = [ef for _ in range(4)]
-eh_list = [eg_list for _ in range(8)]
-ei_list = [eh_list for _ in range(2)]
-ej = random.choice(ei_list)
-ek = random.choice(ej)
-el = random.choice(ek)
-em = f'string {el}'
-en_list = [em for _ in range(7)]
-eo_list = [en_list for _ in range(6)]
-ep_list = [eo_list for _ in range(5)]
-eq = random.choice(ep_list)
-er = random.choice(eq)
-es = random.choice(er)
-et = [es for _ in range(5)]
-random.shuffle(et)
-eu = random.choice(et)
-def ev():
-    return eu
-def ew():
-    return ev()
-def ex():
-    return ew()
-ey = ex()
-ez = ''
-for _ in range(7):
-        if _ == 1:
-            continue
-        ez += ey
-fa_dict = {73: ez, 26: ez, 15: ez, 28: ez, 62: ez, 60: ez, 58: ez, 92: ez}
-fb_dict = {45: fa_dict, 39: fa_dict, 75: fa_dict, 3: fa_dict, 65: fa_dict, 4: fa_dict, 94: fa_dict, 9: fa_dict, 33: fa_dict, 22: fa_dict}
-fc_dict = {74: fb_dict, 69: fb_dict, 58: fb_dict, 51: fb_dict}
-fd = random.choice(list(fc_dict.values()))
-fe = random.choice(list(fd.values()))
-ff = random.choice(list(fe.values()))
-fg = ff[0:]
-fh_set = {fg, fg, fg, fg, fg}
-fh = random.choice(list(fh_set))
-fi = ''
-counterfi = 0
-while counterfi < 2:
-    fi += fh
-    counterfi += 1
-print(fi)
+                ae += ad
+af = ''
+counteraf = 0
+while counteraf < 5:
+    ag = ''
+    counterag = 0
+    while counterag < 5:
+        ah = ''
+        counterah = 0
+        while counterah < 4:
+            ah += ag
+            counterah += 1
+            ag += af
+            counterag += 1
+        af += ae
+        counteraf += 1
+ai = [ah for _ in range(9)]
+random.shuffle(ai)
+aj = random.choice(ai)
+ak = aj[0:]
+al = ''
+counteral = 0
+while counteral < 3:
+    am = ''
+    counteram = 0
+    while counteram < 2:
+        an = ''
+        counteran = 0
+        while counteran < 3:
+            an += am
+            counteran += 1
+            am += al
+            counteram += 1
+        al += ak
+        counteral += 1
+print(an)

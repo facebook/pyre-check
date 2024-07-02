@@ -1,66 +1,85 @@
 import random
 import math
-fj = input()
-fk = ''
-for _ in range(5):
-        if _ == 5:
-            break
-        fk += fj
-fl_list = [fk for _ in range(8)]
-fm = random.choice(fl_list)
-fn_set = {fm, fm, fm, fm}
-fn = random.choice(list(fn_set))
-fo_list = [fn for _ in range(6)]
-fp_list = [fo_list for _ in range(3)]
-fq = random.choice(fp_list)
-fr = random.choice(fq)
-def fs():
-    return fr
-def ft():
-    return fs()
-def fu():
-    return ft()
-fv = fu()
-fw = [fv for _ in range(9)]
-random.shuffle(fw)
-fx = random.choice(fw)
-fy = fx + '5'
-fz = fy + '2'
-ga = (fz, fz, fz)
-gb, gc, gd = ga
-ge = gb + gc + gd
-gf_set = {ge, ge, ge}
-gf = random.choice(list(gf_set))
-gg = f'string {gf}'
-def gh():
-    return gg
-def gi():
-    return gh()
-def gj():
-    return gi()
-gk = gj()
-gl = ''
-for _ in range(4):
-    gm = ''
-    for _ in range(3):
-        gn = ''
-        for _ in range(3):
-            gn += gm
-            gm += gl
-        gl += gk
-go_dict = {89: gn, 20: gn, 66: gn, 67: gn, 89: gn, 20: gn}
-gp_dict = {88: go_dict, 100: go_dict, 34: go_dict, 44: go_dict, 56: go_dict, 62: go_dict, 64: go_dict, 46: go_dict, 91: go_dict, 1: go_dict}
-gq = random.choice(list(gp_dict.values()))
-gr = random.choice(list(gq.values()))
-gs = gr + '9'
-gt = gs + '5'
-gu_set = {gt, gt, gt, gt, gt, gt, gt, gt, gt}
-gu = random.choice(list(gu_set))
-gv_list = [gu for _ in range(8)]
-gw_list = [gv_list for _ in range(3)]
-gx_list = [gw_list for _ in range(6)]
-gy = random.choice(gx_list)
-gz = random.choice(gy)
-ha = random.choice(gz)
-hb = ha[0:]
-print(hb)
+a = input()
+b = [a for _ in range(5)]
+random.shuffle(b)
+c = random.choice(b)
+d = [c for _ in range(8)]
+random.shuffle(d)
+e = random.choice(d)
+f = ''
+for _ in range(3):
+    g = ''
+    for _ in range(5):
+        h = ''
+        for _ in range(4):
+            h += g
+            g += f
+        f += e
+i_list = [h for _ in range(8)]
+j = random.choice(i_list)
+if j == '5':
+    k = j + ' c1'
+elif j == '12':
+    k = j + ' c2'
+else:
+    k = j + ' c3'
+l = k + '4'
+m = l + '1'
+n = m + '7'
+o = ''
+countero = 0
+while countero < 2:
+    p = ''
+    counterp = 0
+    while counterp < 4:
+        q = ''
+        counterq = 0
+        while counterq < 3:
+            q += p
+            counterq += 1
+            p += o
+            counterp += 1
+        o += n
+        countero += 1
+r = ''
+for _ in range(2):
+    for __ in range(5):
+                r += q
+s = f'string {r}'
+t_list = [s for _ in range(6)]
+u_list = [t_list for _ in range(9)]
+v_list = [u_list for _ in range(8)]
+w = random.choice(v_list)
+x = random.choice(w)
+y = random.choice(x)
+z = ''
+for _ in range(10):
+        if _ == 1:
+            continue
+        z += y
+aa = (z, z, z)
+ab, ac, ad = aa
+ae = ab + ac + ad
+af = [ae for _ in range(9)]
+random.shuffle(af)
+ag = random.choice(af)
+ah = (ag, ag, ag)
+ai, aj, ak = ah
+al = ai + aj + ak
+am = (al, al, al)
+an, ao, ap = am
+aq = an + ao + ap
+ar = [aq for _ in range(10)]
+random.shuffle(ar)
+at = random.choice(ar)
+au = ''
+for _ in range(10):
+        if _ == 4:
+            continue
+        au += at
+av_dict = {26: au, 21: au, 87: au, 81: au, 69: au, 82: au, 23: au, 13: au, 70: au, 33: au}
+aw_dict = {58: av_dict, 75: av_dict, 92: av_dict, 87: av_dict, 16: av_dict, 51: av_dict, 45: av_dict, 55: av_dict}
+ax = random.choice(list(aw_dict.values()))
+ay = random.choice(list(ax.values()))
+print(ay)
