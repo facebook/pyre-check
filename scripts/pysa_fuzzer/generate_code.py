@@ -13,6 +13,7 @@ def main():
 
     for i in range(1, num_files + 1):
         generated_code = generator.generate_statements(x)
+        generator.reset()
         filename = os.path.join(output_dir, f'{i}.py')
         with open(filename, 'w') as file:
             file.write(generated_code)
