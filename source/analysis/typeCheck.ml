@@ -6020,8 +6020,8 @@ module State (Context : Context) = struct
       List.fold unbound_names ~init:errors ~f:add_unbound_name_error
     in
     let check_return_annotation resolution errors =
-      let add_missing_return_error ~errors annotation =
-        let return_annotation =
+      let add_missing_return_error annotation errors =
+        let return_type =
           let annotation =
             let parser = GlobalResolution.annotation_parser global_resolution in
             AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
@@ -6031,9 +6031,9 @@ module State (Context : Context) = struct
           else
             annotation
         in
-        let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
+        let return_type = Type.Variable.mark_all_variables_as_bound return_type in
         let contains_literal_any =
-          Type.contains_prohibited_any return_annotation
+          Type.contains_prohibited_any return_type
           && annotation >>| Type.expression_contains_any |> Option.value ~default:false
         in
         if
@@ -6050,22 +6050,22 @@ module State (Context : Context) = struct
                    name = Reference.create "$return_annotation";
                    annotation = None;
                    given_annotation =
-                     Option.some_if (Define.has_return_annotation define) return_annotation;
+                     Option.some_if (Define.has_return_annotation define) return_type;
                    thrown_at_source = true;
                  })
         else
           errors
       in
-      let add_variance_error ~errors annotation =
-        match annotation with
+      let add_variance_error return_type errors =
+        match return_type with
         | Type.Variable variable when Type.Variable.TypeVar.is_contravariant variable ->
             emit_error
               ~errors
               ~location
-              ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
+              ~kind:(Error.InvalidTypeVariance { annotation = return_type; origin = Error.Return })
         | _ -> errors
       in
-      let add_async_generator_error ~errors annotation =
+      let add_async_generator_error return_type errors =
         if async && generator then
           let async_generator_type =
             Type.parametric "typing.AsyncGenerator" [Single Type.Any; Single Type.Any]
@@ -6073,7 +6073,7 @@ module State (Context : Context) = struct
           if
             GlobalResolution.less_or_equal
               ~left:async_generator_type
-              ~right:annotation
+              ~right:return_type
               global_resolution
           then
             errors
@@ -6081,21 +6081,20 @@ module State (Context : Context) = struct
             emit_error
               ~errors
               ~location
-              ~kind:(Error.IncompatibleAsyncGeneratorReturnType annotation)
+              ~kind:(Error.IncompatibleAsyncGeneratorReturnType return_type)
         else
           errors
       in
-      let errors = add_missing_return_error ~errors return_annotation in
+      let errors = add_missing_return_error return_annotation errors in
       match return_annotation with
       | None -> errors
       | Some return_annotation ->
-          let annotation_errors, annotation =
+          let annotation_errors, return_type =
             parse_and_check_annotation ~resolution return_annotation
           in
           List.append annotation_errors errors
-          |> fun errors ->
-          add_async_generator_error ~errors annotation
-          |> fun errors -> add_variance_error ~errors annotation
+          |> add_async_generator_error return_type
+          |> add_variance_error return_type
     in
     let add_capture_annotations ~outer_scope_type_variables resolution errors =
       let process_signature ({ Define.Signature.nesting_define; _ } as signature) =
