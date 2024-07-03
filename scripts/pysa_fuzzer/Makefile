@@ -1,15 +1,16 @@
-.PHONY: generate analyze
+.PHONY: generate analyze clean
 
 generate:
 	python generate_code.py
 
 analyze: generate
 	python3 -m venv tutorial
-	source tutorial/bin/activate && \
+	. tutorial/bin/activate && \
 	pip3 install pyre-check fb-sapp django-stubs && \
 	cd generated_files && \
-	pyre analyze > analysis.json && \
+	pyre analyze > ../analysis_output.txt && \
+	cd .. && \
 	python analyze_output.py
 
 clean:
-	rm -rf tutorial generated_files
+	rm -rf tutorial generated_files analysis_output.txt
