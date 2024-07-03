@@ -17,11 +17,15 @@ analyze:
 	printf '{\n  "sources": [\n    { "name": "CustomUserControlled", "comment": "use to annotate user input" }\n  ],\n  "sinks": [\n    { "name": "CodeExecution", "comment": "use to annotate execution of python code" }\n  ],\n  "features": [],\n  "rules": [\n    { "name": "Possible RCE:", "code": 5001, "sources": [ "CustomUserControlled" ], "sinks": [ "CodeExecution" ], "message_format": "User specified data may reach a code execution sink" }\n  ]\n}' > taint.config && \
 	pyre analyze > analysis_output.tmp
 
-	
+# Run the script to find undetected files and print the output
+report:
+	. tutorial/bin/activate && \
+	python find_undetected_files.py
+
 # Clean generated files and virtual environment
 clean:
 	rm -rf tutorial
 	rm -rf generated_files
 
 # Default target
-all: generate setup analyze
+all: generate setup analyze report
