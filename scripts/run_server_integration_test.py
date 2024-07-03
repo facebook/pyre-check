@@ -337,6 +337,7 @@ def _watch_directory(source_directory) -> Generator[None, None, None]:
 def run(
     repository_location: str, typeshed_path: Optional[pathlib.Path], debug: bool
 ) -> int:
+    LOG.info("Running server integration tests defined in %s", __file__)
     retries = 3
     typeshed_path = typeshed_path or pathlib.Path.cwd() / "stubs/typeshed/typeshed"
     original_directory: str = os.getcwd()

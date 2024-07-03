@@ -320,10 +320,14 @@ def _print_discrepancies(
 
 
 def run(repository_location: str, typeshed_path: pathlib.Path, debug: bool) -> int:
+    LOG.info("Running unsaved changes test defined in %s", __file__)
     return run_unsaved_changes_test(typeshed_path, repository_location, debug)
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO, format=" >>> %(asctime)s %(levelname)s %(message)s"
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "repository_location", help="Path to directory with fake commit list"
