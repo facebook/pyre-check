@@ -35,7 +35,7 @@ let build_environment_data
     let annotated_global_environment =
       EnvironmentControls.create configuration
       |> AstEnvironment.create
-      |> UnannotatedGlobalEnvironment.CreateHandle.of_ast_environment
+      |> SourceCodeEnvironment.of_ast_environment
       |> AnnotatedGlobalEnvironment.create
     in
     Statistics.performance ~name:"full environment built" ~timer ();

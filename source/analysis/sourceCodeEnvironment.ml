@@ -61,6 +61,8 @@ let of_ast_environment ast_environment =
   { source_code_base; maybe_ast_environment = Some ast_environment }
 
 
+let of_source_code_base source_code_base = { source_code_base; maybe_ast_environment = None }
+
 let create = Fn.id
 
 let source_code_base { source_code_base; _ } = source_code_base

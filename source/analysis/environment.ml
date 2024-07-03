@@ -90,7 +90,7 @@ module PreviousEnvironment = struct
 
     type t
 
-    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
+    val create : SourceCodeEnvironment.t -> t
 
     val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
@@ -292,7 +292,7 @@ module EnvironmentTable = struct
 
     type t
 
-    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
+    val create : SourceCodeEnvironment.t -> t
 
     val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 

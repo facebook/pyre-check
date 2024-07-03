@@ -66,6 +66,10 @@ val update_this_and_all_preceding_environments
   ArtifactPath.Event.t list ->
   UpdateResult.t
 
+val of_ast_environment : AstEnvironment.t -> t
+
+val of_source_code_base : SourceCodeIncrementalApi.Base.t -> t
+
 module AssumeAstEnvironment : sig
   val ast_environment : t -> AstEnvironment.t
 

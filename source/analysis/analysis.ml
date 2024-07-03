@@ -53,6 +53,7 @@ module SharedMemoryKeys = SharedMemoryKeys
 module SignatureSelectionTypes = SignatureSelectionTypes
 module SourceCodeApi = SourceCodeApi
 module SourceCodeIncrementalApi = SourceCodeIncrementalApi
+module SourceCodeEnvironment = SourceCodeEnvironment
 module SourcePaths = SourcePaths
 module Type = Type
 module TypeAliasEnvironment = TypeAliasEnvironment

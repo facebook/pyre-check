@@ -289,9 +289,7 @@ let create_with_ast_environment controls =
     | None -> EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths
   in
   let environment =
-    AstEnvironment.create controls
-    |> UnannotatedGlobalEnvironment.CreateHandle.of_ast_environment
-    |> create
+    AstEnvironment.create controls |> SourceCodeEnvironment.of_ast_environment |> create
   in
   Statistics.performance ~name:"Full environment built" ~timer ();
   environment
