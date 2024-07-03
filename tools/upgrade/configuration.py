@@ -229,6 +229,13 @@ class Configuration:
         else:
             self.targets = targets
 
+    def has_single_wildcard_target(self) -> bool:
+        return (
+            self.targets is not None
+            and len(self.targets) == 1
+            and any(t.endswith("...") for t in self.targets)
+        )
+
     def deduplicate_targets(self) -> None:
         targets = self.targets
         if not targets:
