@@ -411,8 +411,6 @@ module UpdateResult = struct
     SourceCodeEnvironment.UpdateResult.invalidated_modules upstream
 
 
-  let module_updates { upstream; _ } = SourceCodeEnvironment.UpdateResult.module_updates upstream
-
   let source_code_update_result { upstream; _ } =
     SourceCodeEnvironment.UpdateResult.source_code_update_result upstream
 end
