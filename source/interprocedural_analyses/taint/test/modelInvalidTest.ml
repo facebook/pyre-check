@@ -11,7 +11,7 @@ open OUnit2
 open Test
 open Taint
 
-let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~expect () =
+let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect context =
   let source =
     match source with
     | Some source -> source
@@ -95,620 +95,663 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   assert_equal ~printer:Fn.id expect error_message
 
 
-let test_invalid_models context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_models =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error." ();
-  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement: `import foo`" ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
-    ~expect:
-      "`TaintSink[(X, Unsupported)]` is an invalid taint annotation: Unsupported taint sink \
-       `Unsupported`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[UserControlled]): ..."
-    ~expect:
-      "`TaintSink[UserControlled]` is an invalid taint annotation: Unsupported taint sink \
-       `UserControlled`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: SkipAnalysis): ..."
-    ~expect:
-      "`SkipAnalysis` is an invalid taint annotation: Failed to parse the given taint annotation."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
-    ~expect:
-      "`TaintSink[(X, Y, LocalReturn)]` is an invalid taint annotation: Unsupported taint sink \
-       `LocalReturn`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.source() -> TaintSource[Invalid]: ..."
-    ~expect:
-      "`TaintSource[Invalid]` is an invalid taint annotation: Unsupported taint source `Invalid`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.source() -> TaintInTaintOut: ..."
-    ~expect:"Invalid model for `test.source`: Invalid return annotation `TaintInTaintOut`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintInTaintOut[Test]): ..."
-    ~expect:
-      "`TaintInTaintOut[Test]` is an invalid taint annotation: Unsupported taint in taint out \
-       specification `Test`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintInTaintOut[Transform[Invalid]]): ..."
-    ~expect:
-      "`TaintInTaintOut[Transform[Invalid]]` is an invalid taint annotation: Unsupported transform \
-       `Invalid`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      "`InvalidTaintDirection[Test]` is an invalid taint annotation: Failed to parse the given \
-       taint annotation."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestFirst], y: PartialSink[TestB]): ..."
-    ~expect:
-      "`PartialSink[TestFirst]` is an invalid taint annotation: Unrecognized partial sink \
-       `TestFirst` (choices: `TestA, TestB, TestC, TestD`)"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestSecond]): ..."
-    ~expect:
-      "`PartialSink[TestSecond]` is an invalid taint annotation: Unrecognized partial sink \
-       `TestSecond` (choices: `TestA, TestB, TestC, TestD`)"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestD]): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestA]): ..."
-    ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"import foo"
+           ~expect:"Unexpected statement: `import foo`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
+           ~expect:
+             "`TaintSink[(X, Unsupported)]` is an invalid taint annotation: Unsupported taint sink \
+              `Unsupported`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[UserControlled]): ..."
+           ~expect:
+             "`TaintSink[UserControlled]` is an invalid taint annotation: Unsupported taint sink \
+              `UserControlled`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: SkipAnalysis): ..."
+           ~expect:
+             "`SkipAnalysis` is an invalid taint annotation: Failed to parse the given taint \
+              annotation.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
+           ~expect:
+             "`TaintSink[(X, Y, LocalReturn)]` is an invalid taint annotation: Unsupported taint \
+              sink `LocalReturn`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.source() -> TaintSource[Invalid]: ..."
+           ~expect:
+             "`TaintSource[Invalid]` is an invalid taint annotation: Unsupported taint source \
+              `Invalid`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.source() -> TaintInTaintOut: ..."
+           ~expect:"Invalid model for `test.source`: Invalid return annotation `TaintInTaintOut`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintInTaintOut[Test]): ..."
+           ~expect:
+             "`TaintInTaintOut[Test]` is an invalid taint annotation: Unsupported taint in taint \
+              out specification `Test`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintInTaintOut[Transform[Invalid]]): ..."
+           ~expect:
+             "`TaintInTaintOut[Transform[Invalid]]` is an invalid taint annotation: Unsupported \
+              transform `Invalid`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."
+           ~expect:
+             "`InvalidTaintDirection[Test]` is an invalid taint annotation: Failed to parse the \
+              given taint annotation.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.partial_sink(x: PartialSink[TestFirst], y: PartialSink[TestB]): ..."
+           ~expect:
+             "`PartialSink[TestFirst]` is an invalid taint annotation: Unrecognized partial sink \
+              `TestFirst` (choices: `TestA, TestB, TestC, TestD`)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestSecond]): ..."
+           ~expect:
+             "`PartialSink[TestSecond]` is an invalid taint annotation: Unrecognized partial sink \
+              `TestSecond` (choices: `TestA, TestB, TestC, TestD`)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestD]): ..."
+           ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.partial_sink(x: PartialSink[TestA], y): ..."
+           ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestA]): ..."
+           ~expect:"Cannot find any matching partial sink for `PartialSink[TestA]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       def test.partial_sink_3(
         x: PartialSink[TestA],
         y: PartialSink[TestB],
         z: PartialSink[TestB]
       ): ...
        |}
-    ~expect:"Cannot find any matching partial sink for `PartialSink[TestB]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"Cannot find any matching partial sink for `PartialSink[TestB]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       def test.partial_sink_4(
         w: PartialSink[TestA],
         x: PartialSink[TestB],
         y: PartialSink[TestC],
         z: PartialSink[TestD]
       ): ...
-      |}
-    ~expect:"no failure"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[XA], y: PartialSink[XB]): ..."
-    ~expect:
-      "`PartialSink[XA]` is an invalid taint annotation: Unrecognized partial sink `XA` (choices: \
-       `TestA, TestB, TestC, TestD`)"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
-    ~expect:
-      {|`TaintSource.foo(A)` is an invalid taint annotation: Failed to parse the given taint annotation.|}
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[WithSubkind[X, Y, Z]]: ..."
-    ~expect:
-      "`TaintSource[WithSubkind[(X, Y, Z)]]` is an invalid taint annotation: Invalid expression \
-       for taint subkind: (X, Y, Z)"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[Collapse[Subkind]]: ..."
-    ~expect:
-      "`TaintSource[Collapse[Subkind]]` is an invalid taint annotation: Unsupported taint source \
-       `Collapse`"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[Collapse]: ..."
-    ~expect:
-      "`TaintSource[Collapse]` is an invalid taint annotation: `Collapse` can only be used within \
-       `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[NoCollapse]: ..."
-    ~expect:
-      "`TaintSource[NoCollapse]` is an invalid taint annotation: `NoCollapse` can only be used \
-       within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[WithSubkind[A][B]]: ..."
-    ~expect:
-      "`TaintSource[WithSubkind[A][B]]` is an invalid taint annotation: Invalid expression for \
-       taint kind: WithSubkind[A][B]"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[Test.attribute]: ..."
-    ~expect:
-      "`TaintSource[Test.attribute]` is an invalid taint annotation: Invalid expression for taint \
-       kind: Test.attribute"
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[ViaAttributeName]: ..."
-    ~expect:
-      "`TaintSource[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
-       be used in attribute or global models."
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:{|def test.f(x) -> TaintSource[ViaAttributeName[WithTag["tag"]]]: ...|}
-    ~expect:
-      "`TaintSource[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
-       `ViaAttributeName` can only be used in attribute or global models."
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSink[ViaAttributeName]: ..."
-    ~expect:
-      "`TaintSink[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
-       be used in attribute or global models."
-    ();
-  assert_invalid_model
-    ~source:"def f(x: int): ..."
-    ~model_source:{|def test.f(x) -> TaintSink[ViaAttributeName[WithTag["tag"]]]: ...|}
-    ~expect:
-      "`TaintSink[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
-       `ViaAttributeName` can only be used in attribute or global models."
-    ();
-  assert_invalid_model
-    ~source:{|
+      |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.partial_sink(x: PartialSink[XA], y: PartialSink[XB]): ..."
+           ~expect:
+             "`PartialSink[XA]` is an invalid taint annotation: Unrecognized partial sink `XA` \
+              (choices: `TestA, TestB, TestC, TestD`)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
+           ~expect:
+             {|`TaintSource.foo(A)` is an invalid taint annotation: Failed to parse the given taint annotation.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[WithSubkind[X, Y, Z]]: ..."
+           ~expect:
+             "`TaintSource[WithSubkind[(X, Y, Z)]]` is an invalid taint annotation: Invalid \
+              expression for taint subkind: (X, Y, Z)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[Collapse[Subkind]]: ..."
+           ~expect:
+             "`TaintSource[Collapse[Subkind]]` is an invalid taint annotation: Unsupported taint \
+              source `Collapse`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[Collapse]: ..."
+           ~expect:
+             "`TaintSource[Collapse]` is an invalid taint annotation: `Collapse` can only be used \
+              within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[NoCollapse]: ..."
+           ~expect:
+             "`TaintSource[NoCollapse]` is an invalid taint annotation: `NoCollapse` can only be \
+              used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[WithSubkind[A][B]]: ..."
+           ~expect:
+             "`TaintSource[WithSubkind[A][B]]` is an invalid taint annotation: Invalid expression \
+              for taint kind: WithSubkind[A][B]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[Test.attribute]: ..."
+           ~expect:
+             "`TaintSource[Test.attribute]` is an invalid taint annotation: Invalid expression for \
+              taint kind: Test.attribute";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSource[ViaAttributeName]: ..."
+           ~expect:
+             "`TaintSource[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` \
+              can only be used in attribute or global models.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:{|def test.f(x) -> TaintSource[ViaAttributeName[WithTag["tag"]]]: ...|}
+           ~expect:
+             "`TaintSource[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
+              `ViaAttributeName` can only be used in attribute or global models.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:"def test.f(x) -> TaintSink[ViaAttributeName]: ..."
+           ~expect:
+             "`TaintSink[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can \
+              only be used in attribute or global models.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(x: int): ..."
+           ~model_source:{|def test.f(x) -> TaintSink[ViaAttributeName[WithTag["tag"]]]: ...|}
+           ~expect:
+             "`TaintSink[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
+              `ViaAttributeName` can only be used in attribute or global models.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:"test.C.x: ViaTypeOf[a.b] = ..."
-    ~expect:
-      "`ViaTypeOf[a.b]` is an invalid taint annotation: Invalid expression in `ViaTypeOf` \
-       declaration: a.b"
-    ();
-  assert_valid_model
-    ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestB]): ..."
-    ();
-  assert_valid_model ~model_source:"def test.sink(): ..." ();
-  assert_valid_model ~model_source:"def test.sink_with_optional(): ..." ();
-  assert_valid_model ~model_source:"def test.sink_with_optional(parameter): ..." ();
-  assert_valid_model ~model_source:"def test.sink_with_optional(parameter, firstOptional): ..." ();
-  assert_valid_model
-    ~model_source:"def test.sink_with_optional(parameter, firstOptional, secondOptional): ..."
-    ();
-  assert_invalid_model
-    ~model_source:
-      "def test.sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
-    ~expect:
-      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
-       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
-    ~expect:
-      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
-       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `firstBad`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink_with_optional(parameter, *args): ..."
-    ~expect:
-      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
-       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected star parameter."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
-    ~expect:
-      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
-       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected star star parameter."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink_with_optional(__parameter): ..."
-    ~expect:
-      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
-       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected positional only parameter: `__parameter`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_args` do not match implementation `def \
-       function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. Reason: \
-       unexpected named parameter: `named_arg`."
-    ();
-  assert_valid_model
-    ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ..."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_args` do not match implementation `def \
-       function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. Reason: \
-       unexpected named parameter: `named_arg`."
-    ();
-  assert_valid_model
-    ~model_source:
-      "def test.function_with_args(normal_arg, __random_name, __random_name_2, *args): ..."
-    ();
-  assert_valid_model ~model_source:"def test.function_with_kwargs(normal_arg, **kwargs): ..." ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_kwargs` do not match implementation `def \
-       function_with_kwargs(normal_arg: unknown, **(unknown)) -> None: ...`. Reason: unexpected \
-       named parameter: `crazy_arg`."
-    ();
-  assert_valid_model ~model_source:"def test.function_with_overloads(__key): ..." ();
-  assert_valid_model ~model_source:"def test.function_with_overloads(firstNamed): ..." ();
-  assert_valid_model ~model_source:"def test.function_with_overloads(secondNamed): ..." ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_overloads(unknownNamed): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_overloads` do not match implementation \
-       `def function_with_overloads(str) -> Union[int, str]: ...`. Reason: unexpected named \
-       parameter: `unknownNamed`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_overloads` do not match implementation \
-       `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
-       unexpected named parameter: `secondNamed` in overload `(str) -> Union[int, str]`\n\
-       unexpected named parameter: `firstNamed` in overload `(str) -> Union[int, str]`\n\
-       unexpected named parameter: `secondNamed` in overload `(str, firstNamed: int) -> int`\n\
-       unexpected named parameter: `firstNamed` in overload `(str, secondNamed: str) -> str`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_multiple_positions(c): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_multiple_positions` do not match \
-       implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, \
-       str]: ...`. Reason: invalid position 0 for named parameter `c` (valid options are \
-       {formal(c, position=1), formal(c, position=2)})."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_positional_and_named(__x): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_positional_and_named` do not match \
-       implementation `def function_with_positional_and_named(a: str, str, str, b: str) -> None: \
-       ...`. Reason: unexpected positional only parameter: `__x` at position: 0 (0 not in {1, 2})."
-    ();
-  assert_valid_model
-    ~model_source:"def test.function_with_positional_and_named(a, __random_name): ..."
-    ();
-  assert_valid_model
-    ~model_source:"def test.function_with_positional_and_named(a, __random_name, b): ..."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.function_with_positional_and_named(a, __x, b, __y): ..."
-    ~expect:
-      "Model signature parameters for `test.function_with_positional_and_named` do not match \
-       implementation `def function_with_positional_and_named(a: str, str, str, b: str) -> None: \
-       ...`. Reason: unexpected positional only parameter: `__y` at position: 3 (3 not in {1, 2})."
-    ();
-  assert_valid_model
-    ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ..."
-    ();
-  assert_valid_model ~model_source:"def test.anonymous_only(__a1, __a2, __a3): ..." ();
-  assert_invalid_model
-    ~model_source:"def test.anonymous_only(parameter: Any): ..."
-    ~expect:
-      "Model signature parameters for `test.anonymous_only` do not match implementation `def \
-       anonymous_only(unknown, unknown, unknown) -> None: ...`. Reason: unexpected named \
-       parameter: `parameter`."
-    ();
-  assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ..." ();
-  assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: Any): ..."
-    ~expect:"`Any` is an invalid taint annotation: Failed to parse the given taint annotation."
-    ();
-  assert_invalid_model
-    ~path:"broken_model.pysa"
-    ~model_source:"def test.sink(parameter: Any): ..."
-    ~expect:
-      "broken_model.pysa:1: `Any` is an invalid taint annotation: Failed to parse the given taint \
-       annotation."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
-    ~expect:
-      "`TaintSink[(Test, Via[bad_feature])]` is an invalid taint annotation: Unrecognized Via \
-       annotation `bad_feature`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Updates[self]]): ..."
-    ~expect:
-      "`TaintSink[Updates[self]]` is an invalid taint annotation: `Updates` can only be used \
-       within `TaintInTaintOut[]`"
-    ();
-  assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]" ();
-  assert_invalid_model
-    ~model_source:"test.missing_global: TaintSink[Test]"
-    ~expect:"Module `test` does not define `test.missing_global`."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"test.C.x: ViaTypeOf[a.b] = ..."
+           ~expect:
+             "`ViaTypeOf[a.b]` is an invalid taint annotation: Invalid expression in `ViaTypeOf` \
+              declaration: a.b";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.partial_sink(x: PartialSink[TestA], y: PartialSink[TestB]): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.sink(): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.sink_with_optional(): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.sink_with_optional(parameter): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.sink_with_optional(parameter, firstOptional): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             "def test.sink_with_optional(parameter, firstOptional, secondOptional): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink_with_optional(parameter, firstOptional, secondOptional, \
+              thirdOptional): ..."
+           ~expect:
+             "Model signature parameters for `test.sink_with_optional` do not match implementation \
+              `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected named parameter: \
+              `thirdOptional`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
+           ~expect:
+             "Model signature parameters for `test.sink_with_optional` do not match implementation \
+              `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected named parameter: \
+              `firstBad`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink_with_optional(parameter, *args): ..."
+           ~expect:
+             "Model signature parameters for `test.sink_with_optional` do not match implementation \
+              `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star parameter.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
+           ~expect:
+             "Model signature parameters for `test.sink_with_optional` do not match implementation \
+              `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star star \
+              parameter.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink_with_optional(__parameter): ..."
+           ~expect:
+             "Model signature parameters for `test.sink_with_optional` do not match implementation \
+              `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected positional only \
+              parameter: `__parameter`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_args` do not match implementation \
+              `def function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. \
+              Reason: unexpected named parameter: `named_arg`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_args` do not match implementation \
+              `def function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. \
+              Reason: unexpected named parameter: `named_arg`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             "def test.function_with_args(normal_arg, __random_name, __random_name_2, *args): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.function_with_kwargs(normal_arg, **kwargs): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_kwargs` do not match \
+              implementation `def function_with_kwargs(normal_arg: unknown, **(unknown)) -> None: \
+              ...`. Reason: unexpected named parameter: `crazy_arg`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.function_with_overloads(__key): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.function_with_overloads(firstNamed): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.function_with_overloads(secondNamed): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_overloads(unknownNamed): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_overloads` do not match \
+              implementation `def function_with_overloads(str) -> Union[int, str]: ...`. Reason: \
+              unexpected named parameter: `unknownNamed`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_overloads` do not match \
+              implementation `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
+              unexpected named parameter: `secondNamed` in overload `(str) -> Union[int, str]`\n\
+              unexpected named parameter: `firstNamed` in overload `(str) -> Union[int, str]`\n\
+              unexpected named parameter: `secondNamed` in overload `(str, firstNamed: int) -> int`\n\
+              unexpected named parameter: `firstNamed` in overload `(str, secondNamed: str) -> str`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_multiple_positions(c): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_multiple_positions` do not match \
+              implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> \
+              Union[int, str]: ...`. Reason: invalid position 0 for named parameter `c` (valid \
+              options are {formal(c, position=1), formal(c, position=2)}).";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_positional_and_named(__x): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_positional_and_named` do not \
+              match implementation `def function_with_positional_and_named(a: str, str, str, b: \
+              str) -> None: ...`. Reason: unexpected positional only parameter: `__x` at position: \
+              0 (0 not in {1, 2}).";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.function_with_positional_and_named(a, __random_name): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.function_with_positional_and_named(a, __random_name, b): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.function_with_positional_and_named(a, __x, b, __y): ..."
+           ~expect:
+             "Model signature parameters for `test.function_with_positional_and_named` do not \
+              match implementation `def function_with_positional_and_named(a: str, str, str, b: \
+              str) -> None: ...`. Reason: unexpected positional only parameter: `__y` at position: \
+              3 (3 not in {1, 2}).";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.anonymous_only(__a1, __a2, __a3): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.anonymous_only(parameter: Any): ..."
+           ~expect:
+             "Model signature parameters for `test.anonymous_only` do not match implementation \
+              `def anonymous_only(unknown, unknown, unknown) -> None: ...`. Reason: unexpected \
+              named parameter: `parameter`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.anonymous_with_optional(__a1, __a2, __a3=...): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: Any): ..."
+           ~expect:
+             "`Any` is an invalid taint annotation: Failed to parse the given taint annotation.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~path:"broken_model.pysa"
+           ~model_source:"def test.sink(parameter: Any): ..."
+           ~expect:
+             "broken_model.pysa:1: `Any` is an invalid taint annotation: Failed to parse the given \
+              taint annotation.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
+           ~expect:
+             "`TaintSink[(Test, Via[bad_feature])]` is an invalid taint annotation: Unrecognized \
+              Via annotation `bad_feature`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[Updates[self]]): ..."
+           ~expect:
+             "`TaintSink[Updates[self]]` is an invalid taint annotation: `Updates` can only be \
+              used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"test.missing_global: TaintSink[Test]"
+           ~expect:"Module `test` does not define `test.missing_global`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         a: int = 1
      |}
-    ~model_source:"test.C.b: TaintSink[Test] = ..."
-    ~expect:"Class `test.C` has no attribute `b`."
-    ();
-  assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]" ();
-  assert_invalid_model
-    ~model_source:"test.C.missing: TaintSink[Test]"
-    ~expect:"Class `test.C` has no attribute `missing`."
-    ();
-  assert_invalid_model
-    ~model_source:"test.C().unannotated_class_variable: TaintSink[Test]"
-    ~expect:
-      "Invalid identifier: `test.C().unannotated_class_variable`. Expected a fully-qualified name."
-    ();
-  assert_invalid_model
-    ~model_source:"test.C.unannotated_class_variable: Foo"
-    ~expect:"`Foo` is an invalid taint annotation: Unsupported annotation for attributes"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~model_source:"test.C.b: TaintSink[Test] = ..."
+           ~expect:"Class `test.C` has no attribute `b`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"test.C.missing: TaintSink[Test]"
+           ~expect:"Class `test.C` has no attribute `missing`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"test.C().unannotated_class_variable: TaintSink[Test]"
+           ~expect:
+             "Invalid identifier: `test.C().unannotated_class_variable`. Expected a \
+              fully-qualified name.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"test.C.unannotated_class_variable: Foo"
+           ~expect:"`Foo` is an invalid taint annotation: Unsupported annotation for attributes";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       class test.ClassSinkWithMethod(TaintSink[TestSink]):
           def method(self): ...
       |}
-    ~expect:"Class model for `test.ClassSinkWithMethod` must have a body of `...`."
-    ();
-  assert_invalid_model
-    ~model_source:{|
+           ~expect:"Class model for `test.ClassSinkWithMethod` must have a body of `...`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:{|
       def foo(): TaintSource[A]
     |}
-    ~expect:"Callable model for `foo` must have a body of `...`."
-    ();
-  (* Attach syntax. *)
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AttachToSink): ..."
-    ~expect:
-      "`AttachToSink` is an invalid taint annotation: Failed to parse the given taint annotation."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AttachToSink[feature]): ..."
-    ~expect:
-      "`AttachToSink[feature]` is an invalid taint annotation: All parameters to `AttachToSink` \
-       must be of the form `Via[feature]`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AttachToTito[feature]): ..."
-    ~expect:
-      "`AttachToTito[feature]` is an invalid taint annotation: All parameters to `AttachToTito` \
-       must be of the form `Via[feature]`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.source() -> AttachToSource[feature]: ..."
-    ~expect:
-      "`AttachToSource[feature]` is an invalid taint annotation: All parameters to \
-       `AttachToSource` must be of the form `Via[feature]`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.source() -> AttachToSource[Via[featureA], ReturnPath[_]]: ..."
-    ~expect:
-      "`AttachToSource[(Via[featureA], ReturnPath[_])]` is an invalid taint annotation: All \
-       parameters to `AttachToSource` must be of the form `Via[feature]`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AttachToSink[Via[featureA], ParameterPath[_]]): ..."
-    ~expect:
-      "`AttachToSink[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: All \
-       parameters to `AttachToSink` must be of the form `Via[feature]`."
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AttachToTito[Via[featureA], ParameterPath[_]]): ..."
-    ~expect:
-      "`AttachToTito[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: All \
-       parameters to `AttachToTito` must be of the form `Via[feature]`."
-    ();
-
-  (* Multiple features. *)
-  assert_valid_model
-    ~model_source:"def test.sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
-    ();
-
-  (* Default values must be `...`. *)
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter = TaintSink[Test]): ..."
-    ~expect:
-      "Default values of `test.sink`'s parameters must be `...`. Did you mean to write `parameter: \
-       TaintSink[Test]`?"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter = 1): ..."
-    ~expect:
-      "Default values of `test.sink`'s parameters must be `...`. Did you mean to write `parameter: \
-       1`?"
-    ();
-
-  (* Input and output path specification. *)
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Test, ParameterPath[test]]): ..."
-    ~expect:"`test` is an invalid access path: access path must start with `_`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Test, ParameterPath[_.unknown()]]): ..."
-    ~expect:
-      "`_.unknown()` is an invalid access path: unexpected method call `unknown` (allowed: `keys`, \
-       `all`, `all_static_fields`, `parameter_name`)"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Test, ReturnPath[_[0]]]): ..."
-    ~expect:
-      "`TaintSink[(Test, ReturnPath[_[0]])]` is an invalid taint annotation: `ReturnPath[]` can \
-       only be used as a return annotation or within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: TaintSink[Test, UpdatePath[_[0]]]): ..."
-    ~expect:
-      "`TaintSink[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` can only \
-       be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      "def test.sink(parameter: AppliesTo[0, TaintSink[Test, ParameterPath[_[1]]]]): ..."
-    ~expect:
-      "`AppliesTo[(0, TaintSink[(Test, ParameterPath[_[1]])])]` is an invalid taint annotation: \
-       `AppliesTo[]` cannot be used with `ParameterPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink(parameter: AppliesTo[1, TaintSink[Test, UpdatePath[_[0]]]]): ..."
-    ~expect:
-      "`AppliesTo[(1, TaintSink[(Test, UpdatePath[_[0]])])]` is an invalid taint annotation: \
-       `UpdatePath` can only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(y: TaintSource[Test, ReturnPath[_[0]]]): ..."
-    ~expect:
-      "`TaintSource[(Test, ReturnPath[_[0]])]` is an invalid taint annotation: `ReturnPath[]` can \
-       only be used as a return annotation or within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(y: TaintSource[Test, UpdatePath[_[0]]]): ..."
-    ~expect:
-      "`TaintSource[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` can \
-       only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(y: AppliesTo[0, TaintSource[Test, ParameterPath[_[1]]]]): ..."
-    ~expect:
-      "`AppliesTo[(0, TaintSource[(Test, ParameterPath[_[1]])])]` is an invalid taint annotation: \
-       `AppliesTo[]` cannot be used with `ParameterPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(y: AppliesTo[1, TaintSource[Test, UpdatePath[_[0]]]]): ..."
-    ~expect:
-      "`AppliesTo[(1, TaintSource[(Test, UpdatePath[_[0]])])]` is an invalid taint annotation: \
-       `UpdatePath` can only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink() -> TaintSink[Test, ParameterPath[_[0]]]: ..."
-    ~expect:
-      "`TaintSink[(Test, ParameterPath[_[0]])]` is an invalid taint annotation: `ParameterPath` \
-       can only be used on parameters"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink() -> TaintSink[Test, UpdatePath[_[0]]]: ..."
-    ~expect:
-      "`TaintSink[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` can only \
-       be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.sink() -> AppliesTo[1, TaintSink[Test, ReturnPath[_[0]]]]: ..."
-    ~expect:
-      "`AppliesTo[(1, TaintSink[(Test, ReturnPath[_[0]])])]` is an invalid taint annotation: \
-       `AppliesTo[]` cannot be used with `ReturnPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint() -> TaintSource[Test, ParameterPath[_[0]]]: ..."
-    ~expect:
-      "`TaintSource[(Test, ParameterPath[_[0]])]` is an invalid taint annotation: `ParameterPath` \
-       can only be used on parameters"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint() -> TaintSource[Test, UpdatePath[_[0]]]: ..."
-    ~expect:
-      "`TaintSource[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` can \
-       only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint() -> AppliesTo[1, TaintSource[Test, ReturnPath[_[0]]]]: ..."
-    ~expect:
-      "`AppliesTo[(1, TaintSource[(Test, ReturnPath[_[0]])])]` is an invalid taint annotation: \
-       `AppliesTo[]` cannot be used with `ReturnPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[UpdatePath[_[0]]]): ..."
-    ~expect:
-      "Invalid model for `test.taint`: Invalid UpdatePath annotation for TaintInTaintOut annotation"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: AppliesTo[0, TaintInTaintOut[ParameterPath[_[0]]]]): ..."
-    ~expect:
-      "`AppliesTo[(0, TaintInTaintOut[ParameterPath[_[0]]])]` is an invalid taint annotation: \
-       `AppliesTo[]` cannot be used with `ParameterPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x, y: TaintInTaintOut[Updates[x], ReturnPath[_[0]]]): ..."
-    ~expect:"Invalid model for `test.taint`: Invalid ReturnPath annotation for Updates annotation"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[UpdatePath[_.all_static_fields()]]): ..."
-    ~expect:
-      "`TaintInTaintOut[UpdatePath[_.all_static_fields()]]` is an invalid taint annotation: \
-       `all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[ParameterPath[_.all_static_fields()]]): ..."
-    ~expect:
-      "`TaintInTaintOut[ParameterPath[_.all_static_fields()]]` is an invalid taint annotation: \
-       `all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[ReturnPath[_.all_static_fields()]]): ..."
-    ~expect:
-      "`TaintInTaintOut[ReturnPath[_.all_static_fields()]]` is an invalid taint annotation: \
-       `all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    ();
-
-  (* Collapse depth specification. *)
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[a]]): ..."
-    ~expect:
-      "`TaintInTaintOut[CollapseDepth[a]]` is an invalid taint annotation: expected non-negative \
-       int literal argument for CollapseDepth, got `a`"
-    ();
-  assert_invalid_model
-    ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[-1]]): ..."
-    ~expect:
-      "`TaintInTaintOut[CollapseDepth[-1]]` is an invalid taint annotation: expected non-negative \
-       int literal argument for CollapseDepth, got `-1`"
-    ();
-
-  (* ViaValueOf models must specify existing parameters. *)
-  assert_invalid_model
-    ~model_source:
-      "def test.sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
-    ~expect:
-      "`TaintSource[(Test, ViaValueOf[nonexistent_parameter])]` is an invalid taint annotation: No \
-       such parameter `nonexistent_parameter`"
-    ();
-  assert_invalid_model
-    ~source:
-      {|
+           ~expect:"Callable model for `foo` must have a body of `...`.";
+      (* Attach syntax. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: AttachToSink): ..."
+           ~expect:
+             "`AttachToSink` is an invalid taint annotation: Failed to parse the given taint \
+              annotation.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: AttachToSink[feature]): ..."
+           ~expect:
+             "`AttachToSink[feature]` is an invalid taint annotation: All parameters to \
+              `AttachToSink` must be of the form `Via[feature]`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: AttachToTito[feature]): ..."
+           ~expect:
+             "`AttachToTito[feature]` is an invalid taint annotation: All parameters to \
+              `AttachToTito` must be of the form `Via[feature]`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.source() -> AttachToSource[feature]: ..."
+           ~expect:
+             "`AttachToSource[feature]` is an invalid taint annotation: All parameters to \
+              `AttachToSource` must be of the form `Via[feature]`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.source() -> AttachToSource[Via[featureA], ReturnPath[_]]: ..."
+           ~expect:
+             "`AttachToSource[(Via[featureA], ReturnPath[_])]` is an invalid taint annotation: All \
+              parameters to `AttachToSource` must be of the form `Via[feature]`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: AttachToSink[Via[featureA], ParameterPath[_]]): ..."
+           ~expect:
+             "`AttachToSink[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: \
+              All parameters to `AttachToSink` must be of the form `Via[feature]`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: AttachToTito[Via[featureA], ParameterPath[_]]): ..."
+           ~expect:
+             "`AttachToTito[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: \
+              All parameters to `AttachToTito` must be of the form `Via[feature]`.";
+      (* Multiple features. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:"def test.sink(parameter: AttachToSink[Via[featureA, featureB]]): ...";
+      (* Default values must be `...`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter = TaintSink[Test]): ..."
+           ~expect:
+             "Default values of `test.sink`'s parameters must be `...`. Did you mean to write \
+              `parameter: TaintSink[Test]`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter = 1): ..."
+           ~expect:
+             "Default values of `test.sink`'s parameters must be `...`. Did you mean to write \
+              `parameter: 1`?";
+      (* Input and output path specification. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[Test, ParameterPath[test]]): ..."
+           ~expect:"`test` is an invalid access path: access path must start with `_`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: TaintSink[Test, ParameterPath[_.unknown()]]): ..."
+           ~expect:
+             "`_.unknown()` is an invalid access path: unexpected method call `unknown` (allowed: \
+              `keys`, `all`, `all_static_fields`, `parameter_name`)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[Test, ReturnPath[_[0]]]): ..."
+           ~expect:
+             "`TaintSink[(Test, ReturnPath[_[0]])]` is an invalid taint annotation: `ReturnPath[]` \
+              can only be used as a return annotation or within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink(parameter: TaintSink[Test, UpdatePath[_[0]]]): ..."
+           ~expect:
+             "`TaintSink[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` \
+              can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: AppliesTo[0, TaintSink[Test, ParameterPath[_[1]]]]): ..."
+           ~expect:
+             "`AppliesTo[(0, TaintSink[(Test, ParameterPath[_[1]])])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ParameterPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter: AppliesTo[1, TaintSink[Test, UpdatePath[_[0]]]]): ..."
+           ~expect:
+             "`AppliesTo[(1, TaintSink[(Test, UpdatePath[_[0]])])]` is an invalid taint \
+              annotation: `UpdatePath` can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(y: TaintSource[Test, ReturnPath[_[0]]]): ..."
+           ~expect:
+             "`TaintSource[(Test, ReturnPath[_[0]])]` is an invalid taint annotation: \
+              `ReturnPath[]` can only be used as a return annotation or within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(y: TaintSource[Test, UpdatePath[_[0]]]): ..."
+           ~expect:
+             "`TaintSource[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` \
+              can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint(y: AppliesTo[0, TaintSource[Test, ParameterPath[_[1]]]]): ..."
+           ~expect:
+             "`AppliesTo[(0, TaintSource[(Test, ParameterPath[_[1]])])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ParameterPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(y: AppliesTo[1, TaintSource[Test, UpdatePath[_[0]]]]): ..."
+           ~expect:
+             "`AppliesTo[(1, TaintSource[(Test, UpdatePath[_[0]])])]` is an invalid taint \
+              annotation: `UpdatePath` can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink() -> TaintSink[Test, ParameterPath[_[0]]]: ..."
+           ~expect:
+             "`TaintSink[(Test, ParameterPath[_[0]])]` is an invalid taint annotation: \
+              `ParameterPath` can only be used on parameters";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink() -> TaintSink[Test, UpdatePath[_[0]]]: ..."
+           ~expect:
+             "`TaintSink[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` \
+              can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.sink() -> AppliesTo[1, TaintSink[Test, ReturnPath[_[0]]]]: ..."
+           ~expect:
+             "`AppliesTo[(1, TaintSink[(Test, ReturnPath[_[0]])])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ReturnPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint() -> TaintSource[Test, ParameterPath[_[0]]]: ..."
+           ~expect:
+             "`TaintSource[(Test, ParameterPath[_[0]])]` is an invalid taint annotation: \
+              `ParameterPath` can only be used on parameters";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint() -> TaintSource[Test, UpdatePath[_[0]]]: ..."
+           ~expect:
+             "`TaintSource[(Test, UpdatePath[_[0]])]` is an invalid taint annotation: `UpdatePath` \
+              can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint() -> AppliesTo[1, TaintSource[Test, ReturnPath[_[0]]]]: ..."
+           ~expect:
+             "`AppliesTo[(1, TaintSource[(Test, ReturnPath[_[0]])])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ReturnPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(x: TaintInTaintOut[UpdatePath[_[0]]]): ..."
+           ~expect:
+             "Invalid model for `test.taint`: Invalid UpdatePath annotation for TaintInTaintOut \
+              annotation";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint(x: AppliesTo[0, TaintInTaintOut[ParameterPath[_[0]]]]): ..."
+           ~expect:
+             "`AppliesTo[(0, TaintInTaintOut[ParameterPath[_[0]]])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ParameterPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(x, y: TaintInTaintOut[Updates[x], ReturnPath[_[0]]]): ..."
+           ~expect:
+             "Invalid model for `test.taint`: Invalid ReturnPath annotation for Updates annotation";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint(x: TaintInTaintOut[UpdatePath[_.all_static_fields()]]): ..."
+           ~expect:
+             "`TaintInTaintOut[UpdatePath[_.all_static_fields()]]` is an invalid taint annotation: \
+              `all_static_fields()` is not allowed within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint(x: TaintInTaintOut[ParameterPath[_.all_static_fields()]]): ..."
+           ~expect:
+             "`TaintInTaintOut[ParameterPath[_.all_static_fields()]]` is an invalid taint \
+              annotation: `all_static_fields()` is not allowed within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.taint(x: TaintInTaintOut[ReturnPath[_.all_static_fields()]]): ..."
+           ~expect:
+             "`TaintInTaintOut[ReturnPath[_.all_static_fields()]]` is an invalid taint annotation: \
+              `all_static_fields()` is not allowed within `TaintInTaintOut[]`";
+      (* Collapse depth specification. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[a]]): ..."
+           ~expect:
+             "`TaintInTaintOut[CollapseDepth[a]]` is an invalid taint annotation: expected \
+              non-negative int literal argument for CollapseDepth, got `a`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[-1]]): ..."
+           ~expect:
+             "`TaintInTaintOut[CollapseDepth[-1]]` is an invalid taint annotation: expected \
+              non-negative int literal argument for CollapseDepth, got `-1`";
+      (* ViaValueOf models must specify existing parameters. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def test.sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
+           ~expect:
+             "`TaintSource[(Test, ViaValueOf[nonexistent_parameter])]` is an invalid taint \
+              annotation: No such parameter `nonexistent_parameter`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
     class C:
       @property
       def foo(self) -> int:
@@ -717,18 +760,18 @@ let test_invalid_models context =
       def foo(self, value) -> None:
         self.x = value
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @property
       def test.C.foo(self, value) -> TaintSource[Test]: ...
     |}
-    ~expect:
-      "Model signature parameters for `test.C.foo` do not match implementation `(self: C) -> int`. \
-       Reason: unexpected named parameter: `value`."
-    ();
-  assert_valid_model
-    ~source:
-      {|
+           ~expect:
+             "Model signature parameters for `test.C.foo` do not match implementation `(self: C) \
+              -> int`. Reason: unexpected named parameter: `value`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
     class C:
       @property
       def foo(self) -> int:
@@ -737,133 +780,139 @@ let test_invalid_models context =
       def foo(self, value: int) -> None:
         self.x = value
     |}
-    ~model_source:{|
+           ~model_source:
+             {|
       @foo.setter
       def test.C.foo(self) -> TaintSource[A]: ...
-    |}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       @decorated
       def accidental_decorator_passed_in() -> TaintSource[Test]: ...
     |}
-    ~expect:
-      "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
-       `decorated`."
-    ();
-  assert_invalid_model
-    ~source:
-      {|
+           ~expect:
+             "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
+              `decorated`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
       class C:
         @property
         def foo(self) -> int: ...
         @foo.setter
         def foo(self, value) -> None: ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @wrong_name.setter
       def test.C.foo(self, value: TaintSink[Test]): ...
     |}
-    ~expect:"Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       @custom_property
       def accidental_decorator_passed_in() -> TaintSource[Test]: ...
     |}
-    ~expect:
-      "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
-       `custom_property`. If you're looking to model a custom property decorator, use the \
-       @property decorator."
-    ();
-
-  assert_valid_model
-    ~source:
-      {|
+           ~expect:
+             "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
+              `custom_property`. If you're looking to model a custom property decorator, use the \
+              @property decorator.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
       class C:
         @property
         def foo(self) -> int: ...
         @foo.setter
         def foo(self, value) -> None: ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @foo.setter
       def test.C.foo(self, value: TaintSink[Test]): ...
-    |}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       def unittest.TestCase.assertIsNotNone(self, x: TaintSink[Test]): ...
     |}
-    ~expect:
-      "The modelled function `unittest.TestCase.assertIsNotNone` is an imported function, please \
-       model `unittest.case.TestCase.assertIsNotNone` directly."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "The modelled function `unittest.TestCase.assertIsNotNone` is an imported function, \
+              please model `unittest.case.TestCase.assertIsNotNone` directly.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
         def test.sink(parameter: TaintSink[Test, Via[a-feature]]):
           ...
     |}
-    ~expect:
-      "`TaintSink[(Test, Via[a - feature])]` is an invalid taint annotation: Invalid expression \
-       for breadcrumb: a - feature"
-    ();
-  assert_invalid_model
-    ~source:"def partial_sink(x, y) -> None: ..."
-    ~model_source:
-      "def test.partial_sink(x: PartialSink[NonexistentA], y: PartialSink[NonexistentB]): ..."
-    ~expect:
-      "`PartialSink[NonexistentA]` is an invalid taint annotation: Unrecognized partial sink \
-       `NonexistentA` (choices: `TestA, TestB, TestC, TestD`)"
-    ();
-  assert_invalid_model
-    ~source:"def f(parameter): ..."
-    ~model_source:"def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled]]): ..."
-    ~expect:
-      "`CrossRepositoryTaint[TaintSource[UserControlled]]` is an invalid taint annotation: Cross \
-       repository taint must be of the form CrossRepositoryTaint[taint, canonical_name, \
-       canonical_port, producer_id, trace_length]."
-    ();
-  assert_invalid_model
-    ~source:"def f(parameter): ..."
-    ~model_source:
-      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
-       some_canonical_name, 'formal(0)', 0]): ..."
-    ~expect:
-      "`CrossRepositoryTaint[(TaintSource[UserControlled], some_canonical_name, \"formal(0)\", \
-       0)]` is an invalid taint annotation: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
-    ();
-  assert_invalid_model
-    ~source:"def f(parameter): ..."
-    ~model_source:
-      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
-       'some_canonical_name', 0, 0]): ..."
-    ~expect:
-      "`CrossRepositoryTaint[(TaintSource[UserControlled], \"some_canonical_name\", 0, 0)]` is an \
-       invalid taint annotation: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
-    ();
-  assert_invalid_model
-    ~source:"def f(parameter): ..."
-    ~model_source:
-      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], 'canonical_name', \
-       'formal(x)', 0, 'oh']): ..."
-    ~expect:
-      "`CrossRepositoryTaint[(TaintSource[UserControlled], \"canonical_name\", \"formal(x)\", 0, \
-       \"oh\")]` is an invalid taint annotation: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
-    ();
-  (* Ensure that we're verifying models against the undecorated signature. *)
-  assert_valid_model
-    ~source:
-      {|
+           ~expect:
+             "`TaintSink[(Test, Via[a - feature])]` is an invalid taint annotation: Invalid \
+              expression for breadcrumb: a - feature";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def partial_sink(x, y) -> None: ..."
+           ~model_source:
+             "def test.partial_sink(x: PartialSink[NonexistentA], y: PartialSink[NonexistentB]): \
+              ..."
+           ~expect:
+             "`PartialSink[NonexistentA]` is an invalid taint annotation: Unrecognized partial \
+              sink `NonexistentA` (choices: `TestA, TestB, TestC, TestD`)";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(parameter): ..."
+           ~model_source:
+             "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled]]): ..."
+           ~expect:
+             "`CrossRepositoryTaint[TaintSource[UserControlled]]` is an invalid taint annotation: \
+              Cross repository taint must be of the form CrossRepositoryTaint[taint, \
+              canonical_name, canonical_port, producer_id, trace_length].";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(parameter): ..."
+           ~model_source:
+             "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
+              some_canonical_name, 'formal(0)', 0]): ..."
+           ~expect:
+             "`CrossRepositoryTaint[(TaintSource[UserControlled], some_canonical_name, \
+              \"formal(0)\", 0)]` is an invalid taint annotation: Cross repository taint must be \
+              of the form CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, \
+              trace_length].";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(parameter): ..."
+           ~model_source:
+             "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
+              'some_canonical_name', 0, 0]): ..."
+           ~expect:
+             "`CrossRepositoryTaint[(TaintSource[UserControlled], \"some_canonical_name\", 0, 0)]` \
+              is an invalid taint annotation: Cross repository taint must be of the form \
+              CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, \
+              trace_length].";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:"def f(parameter): ..."
+           ~model_source:
+             "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
+              'canonical_name', 'formal(x)', 0, 'oh']): ..."
+           ~expect:
+             "`CrossRepositoryTaint[(TaintSource[UserControlled], \"canonical_name\", \
+              \"formal(x)\", 0, \"oh\")]` is an invalid taint annotation: Cross repository taint \
+              must be of the form CrossRepositoryTaint[taint, canonical_name, canonical_port, \
+              producer_id, trace_length].";
+      (* Ensure that we're verifying models against the undecorated signature. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
     from typing import Callable
     def decorate(f: Callable[[int], int]) -> Callable[[], int]:
       def g() -> int:
@@ -873,11 +922,11 @@ let test_invalid_models context =
     def foo(parameter: int) -> int:
       return parameter
     |}
-    ~model_source:"def test.foo(parameter): ..."
-    ();
-  assert_valid_model
-    ~source:
-      {|
+           ~model_source:"def test.foo(parameter): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
     from typing import Callable
     def decorate(f: Callable[[int], int]) -> Callable[[], int]:
       def g() -> int:
@@ -887,204 +936,205 @@ let test_invalid_models context =
     def foo(parameter: int) -> int:
       return parameter
     |}
-    ~model_source:"def test.foo(): ..."
-    ();
-  assert_valid_model
-    ~source:{|
+           ~model_source:"def test.foo(): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       def foo(__: int, kwonly: str) -> None: ...
     |}
-    ~model_source:"def test.foo(__: TaintSource[A], kwonly): ..."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"def test.foo(__: TaintSource[A], kwonly): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         @property
         def foo(self) -> int: ...
     |}
-    ~model_source:"test.C.foo: TaintSource[A] = ..."
-    ~expect:
-      "The function, method or property `test.C.foo` is not a valid attribute - did you mean to \
-       use `def test.C.foo(): ...`?"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"test.C.foo: TaintSource[A] = ..."
+           ~expect:
+             "The function, method or property `test.C.foo` is not a valid attribute - did you \
+              mean to use `def test.C.foo(): ...`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         foo = 1
       class D(C):
         pass
     |}
-    ~model_source:"test.D.foo: TaintSource[A] = ..."
-    ~expect:"Class `test.D` has no attribute `foo`."
-    ();
-  assert_valid_model
-    ~source:{|
+           ~model_source:"test.D.foo: TaintSource[A] = ..."
+           ~expect:"Class `test.D` has no attribute `foo`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         foo = 1
       class D(C):
         pass
     |}
-    ~model_source:"test.C.foo: TaintSource[A] = ..."
-    ();
-  assert_valid_model
-    ~source:
-      {|
+           ~model_source:"test.C.foo: TaintSource[A] = ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
       class C:
         foo = 1
       class D(C):
         def __init__(self):
           self.foo = 2
     |}
-    ~model_source:"test.D.foo: TaintSource[A] = ..."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"test.D.foo: TaintSource[A] = ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:"def test.foo(x) -> TaintSource[A[Subkind]]: ..."
-    ~expect:"`TaintSource[A[Subkind]]` is an invalid taint annotation: Unsupported taint source `A`"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"def test.foo(x) -> TaintSource[A[Subkind]]: ..."
+           ~expect:
+             "`TaintSource[A[Subkind]]` is an invalid taint annotation: Unsupported taint source \
+              `A`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:"def test.foo(x: TaintSink[X[Subkind]]): ..."
-    ~expect:"`TaintSink[X[Subkind]]` is an invalid taint annotation: Unsupported taint sink `X`"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~model_source:"def test.foo(x: TaintSink[X[Subkind]]): ..."
+           ~expect:
+             "`TaintSink[X[Subkind]]` is an invalid taint annotation: Unsupported taint sink `X`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:{|
+           ~model_source:
+             {|
       @Sanitize(TaintInTaintOut[LocalReturn])
       def test.foo(x): ...
     |}
-    ~expect:
-      {|`Sanitize(TaintInTaintOut[LocalReturn])` is an invalid taint annotation: Failed to parse the given taint annotation.|}
-    ();
-
-  (* Test source- and sink- specific tito parsing. *)
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|`Sanitize(TaintInTaintOut[LocalReturn])` is an invalid taint annotation: Failed to parse the given taint annotation.|};
+      (* Test source- and sink- specific tito parsing. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @Sanitize(TaintInTaintOut[TaintSource[A]])
       def test.foo(x): ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @Sanitize(TaintInTaintOut[TaintSink[Test]])
       def test.foo(x): ...
-    |}
-    ();
-  assert_invalid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:{|
+           ~model_source:{|
       @Sanitize(TaintSource[A])
       def test.foo(x): ...
     |}
-    ~expect:
-      "`Sanitize(TaintSource[A])` is an invalid taint annotation: `TaintSource` is not supported \
-       within `Sanitize(...)`. Did you mean to use `SanitizeSingleTrace(...)`?"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "`Sanitize(TaintSource[A])` is an invalid taint annotation: `TaintSource` is not \
+              supported within `Sanitize(...)`. Did you mean to use `SanitizeSingleTrace(...)`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       @Sanitize(TaintSource[A, Via[featureA]])
       def test.foo(x): ...
     |}
-    ~expect:
-      {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `TaintSource[A, Via[featureA]]` is not supported within `Sanitize[...]`|}
-    ();
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `TaintSource[A, Via[featureA]]` is not supported within `Sanitize[...]`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       def outer():
         def inner():
           return 1
     |}
-    ~model_source:"def test.outer.inner() -> TaintSource[Test]: ..."
-    ();
-  ()
+           ~model_source:"def test.outer.inner() -> TaintSource[Test]: ...";
+    ]
 
 
-let test_invalid_model_queries context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_model_queries =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  assert_invalid_model
-    ~model_source:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         find = "functions",
         where = name.matches("foo"),
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|Missing required parameter `name` in model query.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|Missing required parameter `name` in model query.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         where = name.matches("foo"),
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|Missing required parameter `find` in model query.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|Missing required parameter `find` in model query.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|Missing required parameter `where` in model query.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|Missing required parameter `where` in model query.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
         where = name.matches("foo")
       )
     |}
-    ~expect:{|Missing required parameter `model` in model query.|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:{|Missing required parameter `model` in model query.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       @d("1")
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "same_name",
         find = "functions",
@@ -1098,18 +1148,18 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[A])
       )
     |}
-    ~expect:
-      "Multiple model queries have the same name `same_name`. Model\n\
-      \   query names should be unique within each file."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "Multiple model queries have the same name `same_name`. Model\n\
+             \   query names should be unique within each file.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       @d("1")
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "same_name",
         find = "functions",
@@ -1129,13 +1179,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[A])
       )
     |}
-    ~expect:
-      "Multiple model queries have the same name `same_name`. Model\n\
-      \   query names should be unique within each file."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "Multiple model queries have the same name `same_name`. Model\n\
+             \   query names should be unique within each file.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1143,12 +1193,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`Returns` is not a valid model for model queries with find clause of kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`Returns` is not a valid model for model queries with find clause of kind \
+              `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1156,13 +1207,13 @@ let test_invalid_model_queries context =
         model = NamedParameter(name="x", taint = TaintSource[Test, Via[foo]])
       )
     |}
-    ~expect:
-      "`NamedParameter` is not a valid model for model queries with find clause of kind \
-       `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`NamedParameter` is not a valid model for model queries with find clause of kind \
+              `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1170,13 +1221,13 @@ let test_invalid_model_queries context =
         model = AllParameters(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`AllParameters` is not a valid model for model queries with find clause of kind \
-       `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`AllParameters` is not a valid model for model queries with find clause of kind \
+              `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1184,13 +1235,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`AttributeModel` is not a valid model for model queries with find clause of kind \
-       `functions`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`AttributeModel` is not a valid model for model queries with find clause of kind \
+              `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1198,12 +1249,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`AttributeModel` is not a valid model for model queries with find clause of kind `methods`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`AttributeModel` is not a valid model for model queries with find clause of kind \
+              `methods`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1211,13 +1263,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
-       with find clause of kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model \
+              queries with find clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1228,13 +1280,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
-       with find clause of kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model \
+              queries with find clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1245,13 +1297,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`any_parameter.annotation.equals` is not a valid constraint for model queries with find \
-       clause of kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`any_parameter.annotation.equals` is not a valid constraint for model queries with \
+              find clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1262,13 +1314,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`any_parameter.annotation.matches` is not a valid constraint for model queries with find \
-       clause of kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`any_parameter.annotation.matches` is not a valid constraint for model queries with \
+              find clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1279,13 +1331,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`return_annotation.equals` is not a valid constraint for model queries with find clause of \
-       kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`return_annotation.equals` is not a valid constraint for model queries with find \
+              clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1296,13 +1348,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`return_annotation.matches` is not a valid constraint for model queries with find clause of \
-       kind `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`return_annotation.matches` is not a valid constraint for model queries with find \
+              clause of kind `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
@@ -1310,13 +1362,13 @@ let test_invalid_model_queries context =
         model = AttributeModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`Decorator` is not a valid constraint for model queries with find clause of kind \
-       `attributes`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`Decorator` is not a valid constraint for model queries with find clause of kind \
+              `attributes`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1324,13 +1376,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`cls.name.matches` is not a valid constraint for model queries with find clause of kind \
-       `functions`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`cls.name.matches` is not a valid constraint for model queries with find clause of \
+              kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1338,13 +1390,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.equals` is not a valid constraint for model queries with find clause of \
-       kind `functions`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.equals` is not a valid constraint for model queries with find \
+              clause of kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1352,13 +1404,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.equals` is not a valid constraint for model queries with find clause of \
-       kind `methods`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.equals` is not a valid constraint for model queries with find \
+              clause of kind `methods`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1366,13 +1418,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.matches` is not a valid constraint for model queries with find clause of \
-       kind `functions`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.matches` is not a valid constraint for model queries with find \
+              clause of kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1380,13 +1432,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.matches` is not a valid constraint for model queries with find clause of \
-       kind `methods`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.matches` is not a valid constraint for model queries with find \
+              clause of kind `methods`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1394,13 +1446,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
-       clause of kind `functions`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.is_annotated_type` is not a valid constraint for model queries with \
+              find clause of kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1408,49 +1460,46 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
-       clause of kind `methods`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`type_annotation.is_annotated_type` is not a valid constraint for model queries with \
+              find clause of kind `methods`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
         where = name.equals("hello"),
         model = Modes([Entrypoint])
       )
-    |}
-    ~expect:"no failure"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
         where = name.equals("hello"),
         model = Modes([Entrypoint, Obscure])
       )
-    |}
-    ~expect:"no failure"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "functions",
         where = name.equals("hello"),
         model = Modes([Entrypoint])
       )
-    |}
-    ~expect:"no failure"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1458,11 +1507,11 @@ let test_invalid_model_queries context =
         model = Modes()
       )
     |}
-    ~expect:"Unexpected model expression: `Modes()`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"Unexpected model expression: `Modes()`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -1470,11 +1519,12 @@ let test_invalid_model_queries context =
         model = Modes([Entrypoint])
       )
     |}
-    ~expect:"`Modes` is not a valid model for model queries with find clause of kind `globals`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`Modes` is not a valid model for model queries with find clause of kind `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1482,11 +1532,11 @@ let test_invalid_model_queries context =
         model = Modes([Entrypoint])
       )
     |}
-    ~expect:"Unsupported callee for constraint: `annotation.equals`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"Unsupported callee for constraint: `annotation.equals`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1494,11 +1544,11 @@ let test_invalid_model_queries context =
         model = Modes([ThisModeDoesntExist])
       )
     |}
-    ~expect:"`ThisModeDoesntExist`: unknown mode"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"`ThisModeDoesntExist`: unknown mode";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1506,11 +1556,11 @@ let test_invalid_model_queries context =
         model = Modes([SkipDecoratorWhenInlining])
       )
     |}
-    ~expect:"`SkipDecoratorWhenInlining`: mode cannot be used in a model query"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"`SkipDecoratorWhenInlining`: mode cannot be used in a model query";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1518,13 +1568,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` \
-       with string literal arguments, got `read_from_cache()`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and \
+              `name` with string literal arguments, got `read_from_cache()`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1532,13 +1582,13 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` \
-       with string literal arguments, got `read_from_cache(kind = 1)`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and \
+              `name` with string literal arguments, got `read_from_cache(kind = 1)`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1546,12 +1596,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache("foo", "bar")`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache("foo", "bar")`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1559,12 +1609,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache(kind = "thrift", name = f"{class_name}")`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache(kind = "thrift", name = f"{class_name}")`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1572,12 +1622,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `Not(read_from_cache(kind = "thrift", name = "foo:bar"))`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `Not(read_from_cache(kind = "thrift", name = "foo:bar"))`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1588,12 +1638,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(read_from_cache(kind = "thrift", name = "foo:bar"), name.matches("foo"))`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(read_from_cache(kind = "thrift", name = "foo:bar"), name.matches("foo"))`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1604,12 +1654,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(AllOf(read_from_cache(kind = "thrift", name = "foo:bar")), name.matches("foo"))`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(AllOf(read_from_cache(kind = "thrift", name = "foo:bar")), name.matches("foo"))`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1617,12 +1667,12 @@ let test_invalid_model_queries context =
         model = WriteToCache()
       )
     |}
-    ~expect:
-      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache()`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache()`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1630,12 +1680,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(1, 2)
       )
     |}
-    ~expect:
-      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(1, 2)`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(1, 2)`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1643,12 +1693,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name="foo")
       )
     |}
-    ~expect:
-      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(kind = "thrift", name = "foo")`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(kind = "thrift", name = "foo")`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1656,12 +1706,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{func()}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: unsupported expression `func()`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: unsupported expression `func()`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1669,12 +1719,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{unknown}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `unknown`|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `unknown`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1682,12 +1732,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{function_name}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `function_name` for find="methods"|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `function_name` for find="methods"|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1695,12 +1745,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{method_name}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `method_name` for find="functions"|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `method_name` for find="functions"|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1708,12 +1758,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{class_name}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `class_name` for find="functions"|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `class_name` for find="functions"|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1721,12 +1771,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{parameter_name}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_name` is invalid in this context|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_name` is invalid in this context|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1734,12 +1784,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{parameter_position}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_position` is invalid in this context|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_position` is invalid in this context|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1747,12 +1797,12 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="thrift", name=f"{parameter_position * 2}")
       )
     |}
-    ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_position` is invalid in this context|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_position` is invalid in this context|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1760,11 +1810,11 @@ let test_invalid_model_queries context =
         model = WriteToCache(kind="second", name=f"{function_name}")
       )
     |}
-    ~expect:{|WriteToCache and read_from_cache cannot be used in the same model query|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|WriteToCache and read_from_cache cannot be used in the same model query|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1777,11 +1827,12 @@ let test_invalid_model_queries context =
         ]
       )
     |}
-    ~expect:{|WriteToCache cannot be used with other taint annotations in the same model query|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|WriteToCache cannot be used with other taint annotations in the same model query|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1789,13 +1840,13 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "The Extends and AnyChild `is_transitive` attribute must be either True or False, got: \
-       `foobar`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "The Extends and AnyChild `is_transitive` attribute must be either True or False, \
+              got: `foobar`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1803,13 +1854,13 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "The Extends and AnyChild `includes_self` attribute must be either True or False, got: \
-       `foobar`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "The Extends and AnyChild `includes_self` attribute must be either True or False, \
+              got: `foobar`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1817,11 +1868,11 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"Unsupported arguments for `cls.extends`: `cls.extends(\"foo\", foobar)`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"Unsupported arguments for `cls.extends`: `cls.extends(\"foo\", foobar)`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1829,11 +1880,11 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:{|`cls.name.matches("foo", is_transitive = foobar)` is not a valid name clause.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|`cls.name.matches("foo", is_transitive = foobar)` is not a valid name clause.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1841,12 +1892,12 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Constraint `cls.matches` is deprecated, use `cls.fully_qualified_name.matches` instead.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Constraint `cls.matches` is deprecated, use `cls.fully_qualified_name.matches` instead.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1854,11 +1905,11 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:{|`name.foo("foo")` is not a valid name clause.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|`name.foo("foo")` is not a valid name clause.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1866,11 +1917,11 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"`name.matches(foobar, 1, 2)` is not a valid name clause."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"`name.matches(foobar, 1, 2)` is not a valid name clause.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -1878,11 +1929,11 @@ let test_invalid_model_queries context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"`name.equals(foobar, 1, 2)` is not a valid name clause."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"`name.equals(foobar, 1, 2)` is not a valid name clause.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         fnid = "functions",
@@ -1890,12 +1941,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Unsupported named parameter `fnid` in model query (expected: name, find, where, model, expected_models, unexpected_models).|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             {|Unsupported named parameter `fnid` in model query (expected: name, find, where, model, expected_models, unexpected_models).|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1904,13 +1955,12 @@ let test_invalid_model_queries context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|Duplicate parameter `find` in model query.|}
-    ();
-
-  (* Test expected_models and unexpected_models clauses *)
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|Duplicate parameter `find` in model query.|};
+      (* Test expected_models and unexpected_models clauses *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1924,15 +1974,15 @@ let test_invalid_model_queries context =
         ]
       )
     |}
-    ~expect:{|Duplicate parameter `expected_models` in model query.|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:{|Duplicate parameter `expected_models` in model query.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1952,8 +2002,8 @@ let test_invalid_model_queries context =
         ]
       )
     |}
-    ~expect:
-      {|In ModelQuery `invalid_model`: Model string `ModelQuery(
+           ~expect:
+             {|In ModelQuery `invalid_model`: Model string `ModelQuery(
           name = "nested_model_query",
           find = "functions",
           where = [
@@ -1963,17 +2013,17 @@ let test_invalid_model_queries context =
               Parameters(TaintSource[A])
           ]
       )` is a ModelQuery, not a model.
-    Please make sure that the model string is a syntactically correct model.|}
-    ();
-  assert_invalid_model
-    ~source:{|
+    Please make sure that the model string is a syntactically correct model.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
       def food(y):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -1985,21 +2035,22 @@ let test_invalid_model_queries context =
         ]
       )
     |}
-    ~expect:{|Multiple errors:
+           ~expect:
+             {|Multiple errors:
 [
 Unexpected statement: `foo(x)`
 Unexpected statement: `food(y)`
-]|}
-    ();
-  assert_invalid_model
-    ~source:{|
+]|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
       def bar(z):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -2010,15 +2061,15 @@ Unexpected statement: `food(y)`
         ]
       )
     |}
-    ~expect:"Syntax error."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:"Syntax error.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -2027,22 +2078,21 @@ Unexpected statement: `food(y)`
         expected_models = foo(x)
       )
     |}
-    ~expect:
-      "In ModelQuery `invalid_model`: Clause `foo(x)` is not a valid expected_models or \
-       unexpected_models clause.\n\
-      \   The clause should be a list of syntactically correct model strings."
-    ();
-
-  (* Test cls.any_child clause in model queries *)
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             "In ModelQuery `invalid_model`: Clause `foo(x)` is not a valid expected_models or \
+              unexpected_models clause.\n\
+             \   The clause should be a list of syntactically correct model strings.";
+      (* Test cls.any_child clause in model queries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       @d("1")
       class A:
         def foo(x):
           ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
@@ -2051,17 +2101,17 @@ Unexpected statement: `food(y)`
         ],
         model = Returns(TaintSource[A])
       )
-    |}
-    ();
-  assert_invalid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
       def bar(z):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -2071,18 +2121,18 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintSource[A])
       )
     |}
-    ~expect:
-      {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|}
-    ();
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       @d("1")
       class A:
         def foo(x):
           ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
@@ -2096,19 +2146,18 @@ Unexpected statement: `food(y)`
         ],
         model = Returns(TaintSource[A])
       )
-    |}
-    ();
-
-  (* Test cls.any_parent clause in model queries *)
-  assert_valid_model
-    ~source:{|
+    |};
+      (* Test cls.any_parent clause in model queries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       @d("1")
       class A:
         def foo(x):
           ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
@@ -2117,17 +2166,17 @@ Unexpected statement: `food(y)`
         ],
         model = Returns(TaintSource[A])
       )
-    |}
-    ();
-  assert_invalid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x):
         ...
       def bar(z):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "methods",
@@ -2137,18 +2186,18 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintSource[A])
       )
     |}
-    ~expect:
-      {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|}
-    ();
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       @d("1")
       class A:
         def foo(x):
           ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "methods",
@@ -2162,29 +2211,28 @@ Unexpected statement: `food(y)`
         ],
         model = Returns(TaintSource[A])
       )
-    |}
-    ();
-
-  (* Test Decorator clause in model queries *)
-  assert_valid_model
-    ~source:{|
+    |};
+      (* Test Decorator clause in model queries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       @d("1")
       def foo(x):
         ...
     |}
-    ~model_source:
-      {|
+           ~model_source:
+             {|
       ModelQuery(
         name = "valid_model",
         find = "functions",
         where = Decorator(arguments.contains("1"), name.matches("d")),
         model = Returns(TaintSource[A])
       )
-    |}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -2192,11 +2240,11 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:"Unsupported decorator constraint expression: `foo`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:"Unsupported decorator constraint expression: `foo`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -2204,11 +2252,11 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|`name.matches(a, b)` is not a valid name clause.|}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|`name.matches(a, b)` is not a valid name clause.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "functions",
@@ -2216,12 +2264,12 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|`name.equals(a, b)` is not a valid name clause.|}
-    ();
-  (* Model queries *)
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:{|`name.equals(a, b)` is not a valid name clause.|};
+      (* Model queries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -2229,11 +2277,12 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:"`Returns` is not a valid model for model queries with find clause of kind `globals`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`Returns` is not a valid model for model queries with find clause of kind `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -2241,23 +2290,24 @@ Unexpected statement: `food(y)`
         model = AttributeModel(TaintSource[X])
       )
     |}
-    ~expect:
-      "`AttributeModel` is not a valid model for model queries with find clause of kind `globals`."
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`AttributeModel` is not a valid model for model queries with find clause of kind \
+              `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
         where = type_annotation.is_annotated_type(),
         model = GlobalModel(TaintSource[A])
       )
-    |}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -2265,13 +2315,13 @@ Unexpected statement: `food(y)`
         model = GlobalModel(TaintSource[X])
       )
     |}
-    ~expect:
-      "`cls.any_child` is not a valid constraint for model queries with find clause of kind \
-       `globals`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`cls.any_child` is not a valid constraint for model queries with find clause of kind \
+              `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -2279,13 +2329,13 @@ Unexpected statement: `food(y)`
         model = GlobalModel(TaintSource[X])
       )
     |}
-    ~expect:
-      "`cls.any_parent` is not a valid constraint for model queries with find clause of kind \
-       `globals`."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`cls.any_parent` is not a valid constraint for model queries with find clause of \
+              kind `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
@@ -2296,92 +2346,91 @@ Unexpected statement: `food(y)`
         model = GlobalModel(TaintSource[X])
       )
     |}
-    ~expect:
-      "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
-       with find clause of kind `globals`."
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model \
+              queries with find clause of kind `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "attributes",
         find = "attributes",
         where = type_annotation.is_annotated_type(),
         model = AttributeModel(ViaTypeOf)
       )
-    |}
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "attributes",
         find = "attributes",
         where = type_annotation.is_annotated_type(),
         model = AttributeModel(ViaAttributeName)
       )
-    |}
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "attributes",
         find = "attributes",
         where = type_annotation.is_annotated_type(),
         model = AttributeModel(ViaAttributeName[WithTag["foo"]])
       )
-    |}
-    ();
-
-  (* ParameterPath/ReturnPath/UpdatePath on model queries *)
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      (* ParameterPath/ReturnPath/UpdatePath on model queries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
         where = name.matches("foo"),
         model = Returns(TaintSource[Test, ReturnPath[_.bar]])
       )
-    |}
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
         where = name.matches("foo"),
         model = Parameters(TaintSource[Test, ParameterPath[_.bar]])
       )
-    |}
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
         where = name.matches("foo"),
         model = Parameters(TaintSink[Test, ParameterPath[_.bar]])
       )
-    |}
-    ();
-  assert_valid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
         where = name.matches("foo"),
         model = Parameters(TaintInTaintOut[LocalReturn, ParameterPath[_.bar], ReturnPath[_.baz]])
       )
-    |}
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2389,13 +2438,13 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test, ParameterPath[_.bar]])
       )
     |}
-    ~expect:
-      "`TaintSource[(Test, ParameterPath[_.bar])]` is an invalid taint annotation: `ParameterPath` \
-       can only be used on parameters"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintSource[(Test, ParameterPath[_.bar])]` is an invalid taint annotation: \
+              `ParameterPath` can only be used on parameters";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2403,13 +2452,13 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintSource[Test, ReturnPath[_.bar]])
       )
     |}
-    ~expect:
-      "`TaintSource[(Test, ReturnPath[_.bar])]` is an invalid taint annotation: `ReturnPath[]` can \
-       only be used as a return annotation or within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintSource[(Test, ReturnPath[_.bar])]` is an invalid taint annotation: \
+              `ReturnPath[]` can only be used as a return annotation or within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2417,13 +2466,13 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test, UpdatePath[_.bar]])
       )
     |}
-    ~expect:
-      "`TaintSource[(Test, UpdatePath[_.bar])]` is an invalid taint annotation: `UpdatePath` can \
-       only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintSource[(Test, UpdatePath[_.bar])]` is an invalid taint annotation: \
+              `UpdatePath` can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2431,13 +2480,13 @@ Unexpected statement: `food(y)`
         model = Returns(TaintInTaintOut[LocalReturn])
       )
     |}
-    ~expect:
-      "`TaintInTaintOut[LocalReturn]` is an invalid taint annotation: `TaintInTaintOut[]` can only \
-       be used on parameters, attributes or globals"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintInTaintOut[LocalReturn]` is an invalid taint annotation: `TaintInTaintOut[]` \
+              can only be used on parameters, attributes or globals";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2445,13 +2494,13 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintInTaintOut[LocalReturn, ParameterPath[_.all_static_fields()]])
       )
     |}
-    ~expect:
-      "`TaintInTaintOut[(LocalReturn, ParameterPath[_.all_static_fields()])]` is an invalid taint \
-       annotation: `all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintInTaintOut[(LocalReturn, ParameterPath[_.all_static_fields()])]` is an invalid \
+              taint annotation: `all_static_fields()` is not allowed within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2459,13 +2508,13 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintInTaintOut[LocalReturn, ReturnPath[_.all_static_fields()]])
       )
     |}
-    ~expect:
-      "`TaintInTaintOut[(LocalReturn, ReturnPath[_.all_static_fields()])]` is an invalid taint \
-       annotation: `all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintInTaintOut[(LocalReturn, ReturnPath[_.all_static_fields()])]` is an invalid \
+              taint annotation: `all_static_fields()` is not allowed within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2473,13 +2522,13 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintSource[Test, ParameterPath[_.parameter_name()]])
       )
     |}
-    ~expect:
-      "`TaintSource[(Test, ParameterPath[_.parameter_name()])]` is an invalid taint annotation: \
-       `parameter_name()` can only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintSource[(Test, ParameterPath[_.parameter_name()])]` is an invalid taint \
+              annotation: `parameter_name()` can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2487,13 +2536,13 @@ Unexpected statement: `food(y)`
         model = Parameters(TaintSink[Test, ParameterPath[_.parameter_name()]])
       )
     |}
-    ~expect:
-      "`TaintSink[(Test, ParameterPath[_.parameter_name()])]` is an invalid taint annotation: \
-       `parameter_name()` can only be used within `TaintInTaintOut[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`TaintSink[(Test, ParameterPath[_.parameter_name()])]` is an invalid taint \
+              annotation: `parameter_name()` can only be used within `TaintInTaintOut[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "functions",
@@ -2501,13 +2550,13 @@ Unexpected statement: `food(y)`
         model = Parameters(AppliesTo["bar", TaintSink[Test, ParameterPath[_.foo]]])
       )
     |}
-    ~expect:
-      "`AppliesTo[(\"bar\", TaintSink[(Test, ParameterPath[_.foo])])]` is an invalid taint \
-       annotation: `AppliesTo[]` cannot be used with `ParameterPath[]`"
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
+           ~expect:
+             "`AppliesTo[(\"bar\", TaintSink[(Test, ParameterPath[_.foo])])]` is an invalid taint \
+              annotation: `AppliesTo[]` cannot be used with `ParameterPath[]`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
       ModelQuery(
         name = "query",
         find = "attributes",
@@ -2515,200 +2564,202 @@ Unexpected statement: `food(y)`
         model = AttributeModel(TaintInTaintOut[LocalReturn, ParameterPath[_.foo]])
       )
     |}
-    ~expect:
-      "`TaintInTaintOut[(LocalReturn, ParameterPath[_.foo])]` is an invalid taint annotation: \
-       `ParameterPath` can only be used on parameters"
-    ();
-  ()
+           ~expect:
+             "`TaintInTaintOut[(LocalReturn, ParameterPath[_.foo])]` is an invalid taint \
+              annotation: `ParameterPath` can only be used on parameters";
+    ]
 
 
-let test_invalid_decorators context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_decorators =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  assert_invalid_model
-    ~path:"a.py"
-    ~model_source:{|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~path:"a.py"
+           ~model_source:{|
       @Sanitize
       def a.not_in_environment(self): ...
     |}
-    ~expect:
-      "a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in search path."
-    ();
-  assert_invalid_model
-    ~path:"a.py"
-    ~model_source:
-      {|
+           ~expect:
+             "a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in \
+              search path.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~path:"a.py"
+           ~model_source:
+             {|
       @Sanitize(TaintSink)
       @Sanitize(TaintSource)
       def a.not_in_environment(self): ...
     |}
-    ~expect:
-      "a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in search path."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in \
+              search path.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
       class C:
           def __init__(self, x) -> None:
               ...
     |}
-    ~model_source:{|
+           ~model_source:{|
       @Sanitize
       def test.C(): ...
     |}
-    ~expect:"The class `test.C` is not a valid define - did you mean to model `test.C.__init__()`?"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "The class `test.C` is not a valid define - did you mean to model `test.C.__init__()`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         pass
     |}
-    ~model_source:{|
+           ~model_source:{|
       test.C: Sanitize
     |}
-    ~expect:
-      "The class `test.C` is not a valid attribute - did you mean to model `test.C.__init__()`?"
-    ();
-  (* Class models don't error. *)
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             "The class `test.C` is not a valid attribute - did you mean to model \
+              `test.C.__init__()`?";
+      (* Class models don't error. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
       class C:
           def __init__(self, x) -> None:
               ...
     |}
-    ~model_source:{|
+           ~model_source:{|
       @Sanitize
       class test.C: ...
-    |}
-    ();
-  (* Decorators. *)
-  assert_valid_model
-    ~source:
-      {|
+    |};
+      (* Decorators. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
         class Foo:
           @unknown_decorator
           def bar(self):
             pass
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.Foo.bar() -> TaintSource[A]: ...
-    |}
-    ();
-  assert_invalid_model
-    ~source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
         class Foo:
           @unknown_decorator
           def bar(self):
             pass
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.Foo.bar: TaintSource[A]
     |}
-    ~expect:
-      "The function, method or property `test.Foo.bar` is not a valid attribute - did you mean to \
-       use `def test.Foo.bar(): ...`?"
-    ();
-  ()
+           ~expect:
+             "The function, method or property `test.Foo.bar` is not a valid attribute - did you \
+              mean to use `def test.Foo.bar(): ...`?";
+    ]
 
 
-let test_invalid_callables context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_callables =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  (* Error on non-existenting callables. *)
-  assert_invalid_model
-    ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      "`not_in_the_environment` is not part of the environment, no module `not_in_the_environment` \
-       in search path."
-    ();
-  assert_invalid_model
-    ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      "`not_in_the_environment.derp` is not part of the environment, no module \
-       `not_in_the_environment` in search path."
-    ();
-  assert_invalid_model
-    ~model_source:"def test(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"The module `test` is not a valid define."
-    ();
-  assert_invalid_model
-    ~model_source:"test: Sanitize"
-    ~expect:"The module `test` is not a valid attribute."
-    ();
-  assert_invalid_model
-    ~source:{|
+  test_list
+    [
+      (* Error on non-existing callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
+           ~expect:
+             "`not_in_the_environment` is not part of the environment, no module \
+              `not_in_the_environment` in search path.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             "def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
+           ~expect:
+             "`not_in_the_environment.derp` is not part of the environment, no module \
+              `not_in_the_environment` in search path.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test(parameter: InvalidTaintDirection[Test]): ..."
+           ~expect:"The module `test` is not a valid define.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"test: Sanitize"
+           ~expect:"The module `test` is not a valid attribute.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class Foo:
         x: int = 1
     |}
-    ~model_source:{|
+           ~model_source:{|
       def test.Foo.x(self) -> TaintSource[Test]: ...
     |}
-    ~expect:
-      "The attribute `test.Foo.x` is not a valid define - did you mean to use `test.Foo.x: ...`?"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "The attribute `test.Foo.x` is not a valid define - did you mean to use `test.Foo.x: \
+              ...`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo():
         return
     |}
-    ~model_source:{|
+           ~model_source:{|
       test.foo: TaintSource[Test]
     |}
-    ~expect:
-      "The function, method or property `test.foo` is not a valid attribute - did you mean to use \
-       `def test.foo(): ...`?"
-    ();
-  (* Accept callable models for Any or Top because of type error. *)
-  assert_valid_model
-    ~source:
-      {|
+           ~expect:
+             "The function, method or property `test.foo` is not a valid attribute - did you mean \
+              to use `def test.foo(): ...`?";
+      (* Accept callable models for Any or Top because of type error. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
         class Foo:
           def bar(self):
             pass
           baz = bar
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.Foo.baz() -> TaintSource[A]: ...
-    |}
-    ();
-  assert_valid_model
-    ~source:
-      {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:
+             {|
         class Foo:
           def bar(self):
             pass
           baz = bar
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.Foo.baz: TaintSource[A]
-    |}
-    ();
-  ()
+    |};
+    ]
 
 
-let test_invalid_overloads context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_overloads =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  assert_valid_model
-    ~sources:
-      [
-        ( "test.pyi",
-          {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~sources:
+             [
+               ( "test.pyi",
+                 {|
             from typing import overload
             class Foo:
               @overload
@@ -2716,17 +2767,17 @@ let test_invalid_overloads context =
               @overload
               def bar(self, x: str) -> int: ...
           |}
-        );
-      ]
-    ~model_source:{|
+               );
+             ]
+           ~model_source:{|
       def test.Foo.bar(self, x: TaintSink[Test]): ...
-    |}
-    ();
-  assert_invalid_model
-    ~sources:
-      [
-        ( "test.pyi",
-          {|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~sources:
+             [
+               ( "test.pyi",
+                 {|
             from typing import overload
             class Foo:
               @overload
@@ -2734,246 +2785,245 @@ let test_invalid_overloads context =
               @overload
               def bar(self, x: str) -> int: ...
           |}
-        );
-      ]
-    ~model_source:{|
+               );
+             ]
+           ~model_source:{|
       test.Foo.bar: TaintSink[Test]
     |}
-    ~expect:
-      "The function, method or property `test.Foo.bar` is not a valid attribute - did you mean to \
-       use `def test.Foo.bar(): ...`?"
-    ();
-  assert_invalid_model
-    ~source:
-      {|
+           ~expect:
+             "The function, method or property `test.Foo.bar` is not a valid attribute - did you \
+              mean to use `def test.Foo.bar(): ...`?";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
       class Parent:
         def foo(self) -> int: ...
       class Child(Parent):
         pass
     |}
-    ~model_source:{|
+           ~model_source:{|
       def test.Child.foo(self) -> TaintSource[Test]: ...
     |}
-    ~expect:
-      "The modelled function `test.Child.foo` is an imported function, please model \
-       `test.Parent.foo` directly."
-    ();
-  assert_invalid_model
-    ~source:
-      {|
+           ~expect:
+             "The modelled function `test.Child.foo` is an imported function, please model \
+              `test.Parent.foo` directly.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:
+             {|
       class Parent:
         @property
         def foo(self) -> int: ...
       class Child(Parent):
         pass
     |}
-    ~model_source:{|
+           ~model_source:
+             {|
       @property
       def test.Child.foo(self) -> TaintSource[Test]: ...
     |}
-    ~expect:"Module `test` does not define `test.Child.foo`."
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:"Module `test` does not define `test.Child.foo`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         x = ...
       |}
-    ~model_source:{|
+           ~model_source:
+             {|
       test.C.x: Sanitize[TaintInTaintOut[TaintSource[Test]]] = ...
     |}
-    ~expect:
-      "`Sanitize[TaintInTaintOut[TaintSource[Test]]]` is an invalid taint annotation: \
-       TaintInTaintOut sanitizers cannot be modelled on attributes"
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             "`Sanitize[TaintInTaintOut[TaintSource[Test]]]` is an invalid taint annotation: \
+              TaintInTaintOut sanitizers cannot be modelled on attributes";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         x = ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: Sanitize[TaintInTaintOut[TaintSink[Test]]] = ...
     |}
-    ~expect:
-      "`Sanitize[TaintInTaintOut[TaintSink[Test]]]` is an invalid taint annotation: \
-       TaintInTaintOut sanitizers cannot be modelled on attributes"
-    ();
-  ()
+           ~expect:
+             "`Sanitize[TaintInTaintOut[TaintSink[Test]]]` is an invalid taint annotation: \
+              TaintInTaintOut sanitizers cannot be modelled on attributes";
+    ]
 
 
-let test_invalid_via context =
-  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
-    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
+let test_invalid_via =
+  let assert_valid_model ?path ?source ?sources ~model_source =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure"
   in
-
-  let assert_valid_model ?path ?source ?sources ~model_source () =
-    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
-  in
-  (* ViaTypeOf on attributes *)
-  assert_invalid_model
-    ~source:{|
+  test_list
+    [
+      (* ViaTypeOf on attributes *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.foo(x: ViaTypeOf): ...
     |}
-    ~expect:
-      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.foo(x) -> ViaTypeOf: ...
     |}
-    ~expect:
-      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.C.foo(x: ViaTypeOf): ...
     |}
-    ~expect:
-      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.C.foo() -> ViaTypeOf: ...
     |}
-    ~expect:
-      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|}
-    ();
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: ViaTypeOf = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintInTaintOut[ViaTypeOf] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: ViaTypeOf[WithTag["tag"]] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintSource[A, ViaTypeOf] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintSink[X, ViaTypeOf] = ...
-    |}
-    ();
-  (* ViaAttributeName *)
-  assert_invalid_model
-    ~source:{|
+    |};
+      (* ViaAttributeName *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.foo(x: ViaAttributeName): ...
     |}
-    ~expect:
-      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|}
-    ();
-  assert_invalid_model
-    ~source:{|
+           ~expect:
+             {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source:{|
       class C:
         def foo(x: int) -> int: ...
       |}
-    ~model_source:{|
+           ~model_source:{|
       def test.C.foo() -> ViaAttributeName: ...
     |}
-    ~expect:
-      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|}
-    ();
-  assert_valid_model
-    ~source:{|
+           ~expect:
+             {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: ViaAttributeName = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintInTaintOut[ViaAttributeName] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: ViaAttributeName[WithTag["tag"]] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintSource[A, ViaAttributeName] = ...
-    |}
-    ();
-  assert_valid_model
-    ~source:{|
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model
+           ~source:{|
       class C:
         x: int = 0
       |}
-    ~model_source:{|
+           ~model_source:{|
       test.C.x: TaintSink[X, ViaAttributeName] = ...
-    |}
-    ();
-  ()
+    |};
+    ]
 
 
 let () =
   "taint_model"
   >::: [
-         "invalid_models" >:: test_invalid_models;
-         "invalid_model_queries" >:: test_invalid_model_queries;
-         "invalid_decorators" >:: test_invalid_decorators;
-         "invalid_callables" >:: test_invalid_callables;
-         "invalid_overloads" >:: test_invalid_overloads;
-         "invalid_via" >:: test_invalid_via;
+         test_invalid_models;
+         test_invalid_model_queries;
+         test_invalid_decorators;
+         test_invalid_callables;
+         test_invalid_overloads;
+         test_invalid_via;
        ]
   |> Test.run
