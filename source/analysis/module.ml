@@ -15,7 +15,7 @@ module UnannotatedGlobal = struct
     signature: Statement.Define.Signature.t;
     location: Location.WithModule.t;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   type import =
     | ImportModule of {
@@ -27,7 +27,7 @@ module UnannotatedGlobal = struct
         target: Identifier.t;
         implicit_alias: bool;
       }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   type t =
     | SimpleAssign of {
@@ -44,7 +44,7 @@ module UnannotatedGlobal = struct
     | Imported of import
     | Define of define_signature list
     | Class
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   let raw_alist_of_source { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
     let open Ast.Statement in
@@ -148,7 +148,7 @@ module Export = struct
       | Class
       | Define of { is_getattr_any: bool }
       | GlobalVariable
-    [@@deriving sexp, compare, hash, show]
+    [@@deriving sexp, equal, compare, hash, show]
   end
 
   type t =
@@ -158,11 +158,11 @@ module Export = struct
       }
     | Module of Reference.t
     | Name of Name.t
-  [@@deriving sexp, compare, hash]
+  [@@deriving sexp, equal, compare, hash]
 end
 
 module ExportMap = struct
-  type t = Export.t Identifier.Map.Tree.t [@@deriving sexp]
+  type t = Export.t Identifier.Map.Tree.t [@@deriving sexp, equal]
 
   let empty = Identifier.Map.Tree.empty
 
@@ -195,7 +195,7 @@ module Metadata = struct
         empty_stub: bool;
       }
     | Implicit of { empty_stub: bool }
-  [@@deriving eq, sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   let empty_stub = function
     | Implicit { empty_stub }
@@ -337,6 +337,7 @@ module Components = struct
     unannotated_globals: UnannotatedGlobal.t Identifier.Map.Tree.t;
     function_definitions: FunctionDefinition.t Reference.Map.Tree.t;
   }
+  [@@deriving equal, sexp]
 
   let unannotated_globals_of_source source =
     let merge_defines unannotated_globals_alist =

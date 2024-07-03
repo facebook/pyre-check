@@ -20,13 +20,13 @@ module Attribute = struct
     self: Expression.t option;
     return: Expression.t option;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type setter_property = {
     self: Expression.t option;
     value: Expression.t option;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type property_kind =
     | ReadOnly of { getter: getter_property }
@@ -34,18 +34,18 @@ module Attribute = struct
         getter: getter_property;
         setter: setter_property;
       }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type origin =
     | Explicit
     | Implicit
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type value_and_origin = {
     value: Expression.t;
     origin: origin;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type simple = {
     annotation: Expression.t option;
@@ -55,35 +55,35 @@ module Attribute = struct
     implicit: bool;
     nested_class: bool;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type method_ = {
     signatures: Define.Signature.t list;
     static: bool;
     final: bool;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type property = {
     async: bool;
     class_property: bool;
     kind: property_kind;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type kind =
     | Simple of simple
     | Method of method_
     | Property of property
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type attribute = {
     kind: kind;
     name: Identifier.t;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
-  type t = attribute Node.t [@@deriving compare, sexp, show, hash]
+  type t = attribute Node.t [@@deriving equal, compare, sexp, show, hash]
 
   let location_insensitive_compare_property_kind left right =
     match left, right with
@@ -216,7 +216,7 @@ end
 
 module ClassAttributes = struct
   type attribute_map = Attribute.attribute Node.t Identifier.SerializableMap.t
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   type t = {
     explicitly_assigned_attributes: attribute_map;
@@ -224,7 +224,7 @@ module ClassAttributes = struct
     test_setup_attributes: attribute_map;
     additional_attributes: attribute_map;
   }
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving equal, compare, sexp, show, hash]
 
   let assigned_by_define
       ({ Define.body; signature = { parameters; _ }; _ } as define)
@@ -883,7 +883,7 @@ type bases = {
   metaclass: Expression.t option;
   init_subclass_arguments: Expression.Call.Argument.t list;
 }
-[@@deriving compare, sexp, show, hash, to_yojson]
+[@@deriving equal, compare, sexp, show, hash, to_yojson]
 
 type t = {
   name: Reference.t;
@@ -892,7 +892,7 @@ type t = {
   decorators: Expression.t list;
   class_attributes: ClassAttributes.t;
 }
-[@@deriving compare, sexp, show, hash]
+[@@deriving equal, compare, sexp, show, hash]
 
 let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
   (* Pyre currently makes `type` generic. This seems incorrect, and in fact leads to some odd

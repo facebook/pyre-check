@@ -10,7 +10,7 @@ module UnannotatedGlobal : sig
     signature: Ast.Statement.Define.Signature.t;
     location: Ast.Location.WithModule.t;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   type import =
     | ImportModule of {
@@ -22,7 +22,7 @@ module UnannotatedGlobal : sig
         target: Ast.Identifier.t;
         implicit_alias: bool;
       }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   type t =
     | SimpleAssign of {
@@ -39,7 +39,7 @@ module UnannotatedGlobal : sig
     | Imported of import
     | Define of define_signature list
     | Class
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   (* Only exposed in the API for testing purposes *)
   val raw_alist_of_source : Ast.Source.t -> (Ast.Identifier.t * t) list
@@ -51,7 +51,7 @@ module Export : sig
       | Class
       | Define of { is_getattr_any: bool }
       | GlobalVariable
-    [@@deriving sexp, compare, hash, show]
+    [@@deriving sexp, equal, compare, hash, show]
   end
 
   type t =
@@ -61,11 +61,11 @@ module Export : sig
       }
     | Module of Ast.Reference.t
     | Name of Name.t
-  [@@deriving sexp, compare, hash]
+  [@@deriving sexp, equal, compare, hash]
 end
 
 module Metadata : sig
-  type t [@@deriving eq, sexp, show, compare]
+  type t [@@deriving sexp, show, equal, compare]
 
   val empty_stub : t -> bool
 
@@ -90,6 +90,7 @@ module Components : sig
     unannotated_globals: UnannotatedGlobal.t Ast.Identifier.Map.Tree.t;
     function_definitions: FunctionDefinition.t Ast.Reference.Map.Tree.t;
   }
+  [@@deriving equal, sexp]
 
   val of_source : Ast.Source.t -> t
 
