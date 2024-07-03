@@ -2,52 +2,82 @@ import random
 import math
 a = input()
 b = ''
-for _ in range(9):
+for _ in range(5):
+    for __ in range(5):
+                b += a
+c = ''
+counterc = 0
+while counterc < 2:
+    c += b
+    counterc += 1
+d_dict = {43: c, 32: c, 83: c, 18: c}
+e_dict = {82: d_dict, 49: d_dict, 40: d_dict}
+f_dict = {10: e_dict, 78: e_dict, 43: e_dict, 25: e_dict, 19: e_dict, 58: e_dict}
+g = random.choice(list(f_dict.values()))
+h = random.choice(list(g.values()))
+i = random.choice(list(h.values()))
+def j():
+    return i
+def k():
+    return j()
+l = k()
+m = ''
+for _ in range(10):
         if _ == 2:
-            break
-        b += a
-c = b[0:]
-d_dict = {26: c, 44: c, 90: c, 1: c, 91: c, 87: c, 91: c, 85: c, 66: c}
-e = random.choice(list(d_dict.values()))
-if e == '5':
-    f = e + ' c1'
-elif e == '12':
-    f = e + ' c2'
-else:
-    f = e + ' c3'
-g_set = {f, f, f}
-g = random.choice(list(g_set))
-h = [g for _ in range(10)]
-random.shuffle(h)
-i = random.choice(h)
-j_dict = {90: i, 27: i, 94: i, 42: i}
-k = random.choice(list(j_dict.values()))
-l = k[0:]
-def m():
-    return l
-def n():
-    return m()
-o = n()
-p = o + '9'
-q = p + '4'
-r_set = {q, q, q, q, q, q, q, q}
-r = random.choice(list(r_set))
-s = r[0:]
-t_set = {s, s, s, s, s, s, s, s}
-t = random.choice(list(t_set))
-u = [t for _ in range(10)]
-random.shuffle(u)
-v = random.choice(u)
-w = [v for _ in range(8)]
-random.shuffle(w)
-x = random.choice(w)
-y = f'string {x}'
-z_dict = {31: y, 80: y, 46: y, 59: y, 30: y, 27: y, 11: y, 68: y, 67: y, 100: y}
-aa = random.choice(list(z_dict.values()))
-if aa == '10':
-    ab = aa + ' c1'
-elif aa == '19':
-    ab = aa + ' c2'
-else:
-    ab = aa + ' c3'
-print(ab)
+            continue
+        m += l
+n = ''
+for _ in range(5):
+    n += m
+o = [n for _ in range(7)]
+random.shuffle(o)
+p = random.choice(o)
+q = f'string {p}'
+r = q + '8'
+s = r + '6'
+t = s + '8'
+u_set = {t, t, t, t}
+u = random.choice(list(u_set))
+def v():
+    return u
+w = v()
+x_list = [w for _ in range(9)]
+y_list = [x_list for _ in range(8)]
+z = random.choice(y_list)
+aa = random.choice(z)
+ab = aa + '2'
+ac = ab + '9'
+ad_set = {ac, ac, ac, ac, ac, ac, ac, ac, ac}
+ad = random.choice(list(ad_set))
+ae = [ad for _ in range(10)]
+random.shuffle(ae)
+af = random.choice(ae)
+ag = ''
+for _ in range(3):
+    ah = ''
+    for _ in range(4):
+        ai = ''
+        for _ in range(5):
+            ai += ah
+            ah += ag
+        ag += af
+aj = ''
+counteraj = 0
+while counteraj < 2:
+    ak = ''
+    counterak = 0
+    while counterak < 2:
+        al = ''
+        counteral = 0
+        while counteral < 4:
+            al += ak
+            counteral += 1
+            ak += aj
+            counterak += 1
+        aj += ai
+        counteraj += 1
+am = ''
+for _ in range(3):
+    for __ in range(3):
+                am += al
+print(am)

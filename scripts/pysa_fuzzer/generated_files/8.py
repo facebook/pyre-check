@@ -1,85 +1,67 @@
 import random
 import math
 a = input()
-b = (a, a, a)
-c, d, e = b
-f = c + d + e
+b = a + '2'
+c = b + '5'
+d = ''
+for _ in range(6):
+        if _ == 1:
+            continue
+        d += c
+e_set = {d, d, d, d, d, d, d}
+e = random.choice(list(e_set))
+f = ''
+for _ in range(5):
+    for __ in range(5):
+                f += e
 g = ''
-counterg = 0
-while counterg < 3:
-    h = ''
-    counterh = 0
-    while counterh < 4:
-        h += g
-        counterh += 1
+for _ in range(10):
+        if _ == 5:
+            continue
         g += f
-        counterg += 1
-i = f'string {h}'
-j = ''
-counterj = 0
-while counterj < 3:
-    k = ''
-    counterk = 0
-    while counterk < 2:
-        l = ''
-        counterl = 0
-        while counterl < 2:
-            l += k
-            counterl += 1
-            k += j
-            counterk += 1
-        j += i
-        counterj += 1
-m = l + '.'
-n = m[0:]
-o = n + '7'
-p = o + '6'
-q = ''
-for _ in range(5):
-    for __ in range(4):
-                q += p
-r = ''
-counterr = 0
-while counterr < 4:
-    s = ''
-    counters = 0
-    while counters < 3:
-        s += r
-        counters += 1
-        r += q
-        counterr += 1
-def t():
-    return s
-def u():
-    return t()
-def v():
-    return u()
-w = v()
+h_set = {g, g}
+h = random.choice(list(h_set))
+i = [h for _ in range(7)]
+random.shuffle(i)
+j = random.choice(i)
+k = (j, j, j)
+l, m, n = k
+o = l + m + n
+p_set = {o, o, o, o, o, o, o, o, o, o}
+p = random.choice(list(p_set))
+q_dict = {50: p, 95: p, 6: p, 35: p, 38: p, 67: p, 41: p, 54: p}
+r_dict = {40: q_dict, 92: q_dict, 56: q_dict, 2: q_dict, 44: q_dict}
+s_dict = {12: r_dict, 11: r_dict}
+t = random.choice(list(s_dict.values()))
+u = random.choice(list(t.values()))
+v = random.choice(list(u.values()))
+if v == '4':
+    w = v + ' c1'
+elif v == '15':
+    w = v + ' c2'
+else:
+    w = v + ' c3'
 x = ''
-for _ in range(5):
-        if _ == 4:
+for _ in range(6):
+        if _ == 2:
             continue
         x += w
-if x == '5':
+if x == '8':
     y = x + ' c1'
-elif x == '19':
+elif x == '17':
     y = x + ' c2'
 else:
     y = x + ' c3'
-z = f'string {y}'
-aa_set = {z, z, z, z, z}
-aa = random.choice(list(aa_set))
-ab_set = {aa, aa}
-ab = random.choice(list(ab_set))
-if ab == '6':
-    ac = ab + ' c1'
-elif ab == '16':
-    ac = ab + ' c2'
-else:
-    ac = ab + ' c3'
-ad = ac[0:]
-ae_dict = {41: ad, 37: ad, 38: ad, 55: ad}
-af_dict = {74: ae_dict, 16: ae_dict, 84: ae_dict, 42: ae_dict, 14: ae_dict, 10: ae_dict, 80: ae_dict, 69: ae_dict, 77: ae_dict, 95: ae_dict}
-ag = random.choice(list(af_dict.values()))
-ah = random.choice(list(ag.values()))
-print(ah)
+z = y + '2'
+aa = z + '1'
+ab = [aa for _ in range(8)]
+random.shuffle(ab)
+ac = random.choice(ab)
+ad_set = {ac, ac, ac, ac, ac, ac, ac, ac, ac, ac}
+ad = random.choice(list(ad_set))
+ae = f'string {ad}'
+af = ''
+for _ in range(3):
+    for __ in range(4):
+                af += ae
+print(af)

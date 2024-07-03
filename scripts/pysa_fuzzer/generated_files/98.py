@@ -1,83 +1,83 @@
 import random
 import math
 a = input()
-def b():
-    return a
-def c():
-    return b()
-def d():
-    return c()
-e = d()
-f_dict = {93: e, 7: e, 100: e, 50: e, 45: e, 93: e, 84: e}
-g = random.choice(list(f_dict.values()))
-h = ''
-for _ in range(5):
-        if _ == 4:
-            continue
-        h += g
-i = ''
-for _ in range(4):
-    for __ in range(5):
-                i += h
+b = (a, a, a)
+c, d, e = b
+f = c + d + e
+g = f + '.'
+h = g[0:]
+def i():
+    return h
 def j():
-    return i
-k = j()
-l = k + '.'
-m_dict = {86: l, 55: l, 50: l, 34: l, 94: l, 66: l}
-n_dict = {96: m_dict, 27: m_dict, 5: m_dict, 98: m_dict, 18: m_dict, 100: m_dict}
-o = random.choice(list(n_dict.values()))
-p = random.choice(list(o.values()))
-def q():
-    return p
-def r():
-    return q()
-def s():
-    return r()
-t = s()
-def u():
-    return t
-def v():
-    return u()
-def w():
-    return v()
-x = w()
-y_list = [x for _ in range(2)]
-z_list = [y_list for _ in range(6)]
-aa_list = [z_list for _ in range(2)]
+    return i()
+def k():
+    return j()
+l = k()
+m = l + '.'
+n = ''
+for _ in range(2):
+    for __ in range(2):
+                n += m
+o = n + '4'
+p = o + '2'
+q = p + '8'
+r = q + '4'
+s = r + '7'
+t = s + '5'
+u = (t, t, t)
+v, w, x = u
+y = v + w + x
+z_list = [y for _ in range(3)]
+aa_list = [z_list for _ in range(7)]
 ab = random.choice(aa_list)
 ac = random.choice(ab)
-ad = random.choice(ac)
-ae = f'string {ad}'
-af = ae + '.'
-ag = f'string {af}'
-ah = (ag, ag, ag)
-ai, aj, ak = ah
-al = ai + aj + ak
-if al == '4':
-    am = al + ' c1'
-elif al == '11':
-    am = al + ' c2'
-else:
-    am = al + ' c3'
-an = ''
-counteran = 0
-while counteran < 5:
-    ao = ''
-    counterao = 0
-    while counterao < 5:
-        ap = ''
-        counterap = 0
-        while counterap < 3:
-            ap += ao
-            counterap += 1
-            ao += an
-            counterao += 1
-        an += am
-        counteran += 1
-aq = [ap for _ in range(9)]
-random.shuffle(aq)
-ar = random.choice(aq)
-def at():
-    return ar
-au = at()
-print(au)
+ad_set = {ac, ac, ac, ac, ac, ac, ac}
+ad = random.choice(list(ad_set))
+ae_set = {ad, ad}
+ae = random.choice(list(ae_set))
+af = ae + '4'
+ag = af + '1'
+ah = ag + '4'
+ai = ''
+counterai = 0
+while counterai < 3:
+    ai += ah
+    counterai += 1
+aj = ''
+for _ in range(3):
+    ak = ''
+    for _ in range(2):
+        ak += aj
+        aj += ai
+al_list = [ak for _ in range(3)]
+am_list = [al_list for _ in range(3)]
+an_list = [am_list for _ in range(7)]
+ao = random.choice(an_list)
+ap = random.choice(ao)
+aq = random.choice(ap)
+ar = ''
+counterar = 0
+while counterar < 5:
+    at = ''
+    counterat = 0
+    while counterat < 3:
+        au = ''
+        counterau = 0
+        while counterau < 5:
+            au += at
+            counterau += 1
+            at += ar
+            counterat += 1
+        ar += aq
+        counterar += 1
+av = ''
+counterav = 0
+while counterav < 5:
+    aw = ''
+    counteraw = 0
+    while counteraw < 5:
+        aw += av
+        counteraw += 1
+        av += au
+        counterav += 1
+print(aw)

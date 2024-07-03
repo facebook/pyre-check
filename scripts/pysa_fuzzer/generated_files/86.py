@@ -1,69 +1,65 @@
 import random
 import math
 a = input()
-b = a + '9'
-c = b + '9'
-d = c + '9'
-e_dict = {2: d, 91: d, 67: d, 8: d, 54: d, 86: d, 40: d, 20: d, 73: d}
-f = random.choice(list(e_dict.values()))
-def g():
-    return f
-def h():
-    return g()
-def i():
-    return h()
-j = i()
-k = j[0:]
-l = ''
-for _ in range(2):
-    m = ''
-    for _ in range(5):
-        m += l
-        l += k
-n = (m, m, m)
-o, p, q = n
-r = o + p + q
-if r == '7':
-    s = r + ' c1'
-elif r == '18':
-    s = r + ' c2'
-else:
-    s = r + ' c3'
-t = s + '.'
-u = t + '.'
-v_list = [u for _ in range(3)]
-w_list = [v_list for _ in range(8)]
-x = random.choice(w_list)
-y = random.choice(x)
-z = ''
+b = ''
 for _ in range(5):
-        if _ == 2:
+    c = ''
+    for _ in range(5):
+        d = ''
+        for _ in range(4):
+            d += c
+            c += b
+        b += a
+e = [d for _ in range(7)]
+random.shuffle(e)
+f = random.choice(e)
+g_dict = {93: f, 37: f, 16: f, 72: f, 7: f, 35: f}
+h = random.choice(list(g_dict.values()))
+i = h + '.'
+j = i + '1'
+k = j + '5'
+if k == '5':
+    l = k + ' c1'
+elif k == '17':
+    l = k + ' c2'
+else:
+    l = k + ' c3'
+m = l + '6'
+n = m + '3'
+o = ''
+for _ in range(10):
+        if _ == 3:
             break
-        z += y
+        o += n
+p_set = {o, o, o, o, o, o}
+p = random.choice(list(p_set))
+q = p + '.'
+def r():
+    return q
+s = r()
+t = s + '4'
+u_dict = {71: t, 27: t, 30: t, 52: t, 15: t, 55: t}
+v = random.choice(list(u_dict.values()))
+w = ''
+for _ in range(5):
+    for __ in range(4):
+                w += v
+def x():
+    return w
+def y():
+    return x()
+z = y()
 if z == '1':
     aa = z + ' c1'
-elif z == '16':
+elif z == '15':
     aa = z + ' c2'
 else:
     aa = z + ' c3'
-ab = ''
-for _ in range(5):
-    ac = ''
-    for _ in range(3):
-        ad = ''
-        for _ in range(4):
-            ad += ac
-            ac += ab
-        ab += aa
-ae = (ad, ad, ad)
-af, ag, ah = ae
-ai = af + ag + ah
-aj = [ai for _ in range(7)]
-random.shuffle(aj)
-ak = random.choice(aj)
-al = f'string {ak}'
-am = (al, al, al)
-an, ao, ap = am
-aq = an + ao + ap
-ar = aq + '.'
-print(ar)
+ab_dict = {17: aa, 87: aa, 56: aa, 81: aa, 95: aa, 65: aa, 49: aa, 60: aa, 42: aa}
+ac = random.choice(list(ab_dict.values()))
+ad = ''
+for _ in range(8):
+        if _ == 5:
+            continue
+        ad += ac
+print(ad)

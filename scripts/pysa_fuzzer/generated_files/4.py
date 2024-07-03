@@ -1,93 +1,73 @@
 import random
 import math
 a = input()
-if a == '4':
-    b = a + ' c1'
-elif a == '13':
-    b = a + ' c2'
-else:
-    b = a + ' c3'
-c = ''
-for _ in range(5):
-    for __ in range(4):
-                c += b
-d = ''
-for _ in range(2):
-    e = ''
-    for _ in range(2):
-        f = ''
-        for _ in range(4):
-            f += e
-            e += d
-        d += c
-g = [f for _ in range(6)]
-random.shuffle(g)
-h = random.choice(g)
-i = (h, h, h)
-j, k, l = i
-m = j + k + l
-n = [m for _ in range(7)]
-random.shuffle(n)
-o = random.choice(n)
-if o == '7':
-    p = o + ' c1'
-elif o == '14':
-    p = o + ' c2'
-else:
-    p = o + ' c3'
-q = [p for _ in range(5)]
-random.shuffle(q)
-r = random.choice(q)
-s = (r, r, r)
-t, u, v = s
-w = t + u + v
-def x():
-    return w
-def y():
-    return x()
-def z():
-    return y()
-aa = z()
-ab = aa[0:]
-ac_set = {ab, ab, ab, ab, ab, ab, ab, ab, ab, ab}
-ac = random.choice(list(ac_set))
-ad = f'string {ac}'
-ae = ''
+b = ''
 for _ in range(4):
+    c = ''
+    for _ in range(2):
+        d = ''
+        for _ in range(4):
+            d += c
+            c += b
+        b += a
+def e():
+    return d
+def f():
+    return e()
+g = f()
+h = g + '6'
+i = ''
+for _ in range(5):
     for __ in range(5):
-                ae += ad
-af = ''
-counteraf = 0
-while counteraf < 5:
-    ag = ''
-    counterag = 0
-    while counterag < 5:
-        ah = ''
-        counterah = 0
-        while counterah < 4:
-            ah += ag
-            counterah += 1
-            ag += af
-            counterag += 1
-        af += ae
-        counteraf += 1
-ai = [ah for _ in range(9)]
-random.shuffle(ai)
-aj = random.choice(ai)
-ak = aj[0:]
-al = ''
-counteral = 0
-while counteral < 3:
-    am = ''
-    counteram = 0
-    while counteram < 2:
-        an = ''
-        counteran = 0
-        while counteran < 3:
-            an += am
-            counteran += 1
-            am += al
-            counteram += 1
-        al += ak
-        counteral += 1
-print(an)
+                i += h
+j = [i for _ in range(9)]
+random.shuffle(j)
+k = random.choice(j)
+l = ''
+for _ in range(5):
+    m = ''
+    for _ in range(5):
+        m += l
+        l += k
+n_set = {m, m, m, m, m, m}
+n = random.choice(list(n_set))
+o_list = [n for _ in range(6)]
+p_list = [o_list for _ in range(2)]
+q_list = [p_list for _ in range(9)]
+r = random.choice(q_list)
+s = random.choice(r)
+t = random.choice(s)
+u = ''
+for _ in range(4):
+    v = ''
+    for _ in range(5):
+        v += u
+        u += t
+w = (v, v, v)
+x, y, z = w
+aa = x + y + z
+ab = f'string {aa}'
+ac = ab + '1'
+ad = ac + '2'
+ae = [ad for _ in range(9)]
+random.shuffle(ae)
+af = random.choice(ae)
+ag = af + '.'
+ah = ''
+for _ in range(4):
+    for __ in range(4):
+                ah += ag
+if ah == '3':
+    ai = ah + ' c1'
+elif ah == '19':
+    ai = ah + ' c2'
+else:
+    ai = ah + ' c3'
+aj = ''
+counteraj = 0
+while counteraj < 2:
+    aj += ai
+    counteraj += 1
+ak_list = [aj for _ in range(3)]
+al = random.choice(ak_list)
+print(al)

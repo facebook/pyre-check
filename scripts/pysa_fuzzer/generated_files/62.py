@@ -1,76 +1,88 @@
 import random
 import math
 a = input()
-b = [a for _ in range(10)]
-random.shuffle(b)
-c = random.choice(b)
-d = ''
+def b():
+    return a
+def c():
+    return b()
+def d():
+    return c()
+e = d()
+f = e + '.'
+if f == '8':
+    g = f + ' c1'
+elif f == '17':
+    g = f + ' c2'
+else:
+    g = f + ' c3'
+h = ''
 for _ in range(5):
-    e = ''
-    for _ in range(4):
-        e += d
-        d += c
-f = f'string {e}'
-g = f + '.'
-h = [g for _ in range(6)]
-random.shuffle(h)
-i = random.choice(h)
-j_dict = {81: i, 52: i, 64: i, 8: i}
-k_dict = {36: j_dict, 18: j_dict, 81: j_dict, 48: j_dict}
-l_dict = {95: k_dict, 43: k_dict, 14: k_dict, 52: k_dict, 80: k_dict, 33: k_dict, 58: k_dict, 67: k_dict}
-m = random.choice(list(l_dict.values()))
-n = random.choice(list(m.values()))
-o = random.choice(list(n.values()))
-p = ''
-for _ in range(3):
-    for __ in range(4):
-                p += o
-q = f'string {p}'
-r = [q for _ in range(6)]
-random.shuffle(r)
-s = random.choice(r)
-t = ''
+        if _ == 1:
+            continue
+        h += g
+i = h[0:]
+if i == '1':
+    j = i + ' c1'
+elif i == '16':
+    j = i + ' c2'
+else:
+    j = i + ' c3'
+k = ''
+for _ in range(7):
+        if _ == 5:
+            continue
+        k += j
+def l():
+    return k
+m = l()
+if m == '5':
+    n = m + ' c1'
+elif m == '14':
+    n = m + ' c2'
+else:
+    n = m + ' c3'
+o = [n for _ in range(9)]
+random.shuffle(o)
+p = random.choice(o)
+q = ''
 for _ in range(4):
-    for __ in range(5):
-                t += s
+    q += p
+r = ''
+for _ in range(3):
+    for __ in range(3):
+                r += q
+def s():
+    return r
+def t():
+    return s()
 def u():
-    return t
+    return t()
 v = u()
-w = v + '7'
-x = w + '2'
-def y():
-    return x
-def z():
-    return y()
+w = v + '.'
+x = ''
+for _ in range(3):
+    y = ''
+    for _ in range(4):
+        y += x
+        x += w
+z = ''
+for _ in range(2):
+    for __ in range(4):
+                z += y
 def aa():
-    return z()
-ab = aa()
-ac = ''
-for _ in range(5):
-    for __ in range(3):
-                ac += ab
-ad = f'string {ac}'
+    return z
+def ab():
+    return aa()
+def ac():
+    return ab()
+ad = ac()
 ae = ''
-for _ in range(5):
-    for __ in range(3):
-                ae += ad
-af_list = [ae for _ in range(7)]
-ag_list = [af_list for _ in range(9)]
-ah = random.choice(ag_list)
-ai = random.choice(ah)
-aj = ''
-counteraj = 0
-while counteraj < 4:
-    ak = ''
-    counterak = 0
-    while counterak < 2:
-        al = ''
-        counteral = 0
-        while counteral < 5:
-            al += ak
-            counteral += 1
-            ak += aj
-            counterak += 1
-        aj += ai
-        counteraj += 1
-print(al)
+for _ in range(4):
+    af = ''
+    for _ in range(3):
+        ag = ''
+        for _ in range(2):
+            ag += af
+            af += ae
+        ae += ad
+print(ag)

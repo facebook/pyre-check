@@ -1,85 +1,84 @@
 import random
 import math
 a = input()
-b = [a for _ in range(7)]
-random.shuffle(b)
-c = random.choice(b)
-d = ''
-counterd = 0
-while counterd < 5:
-    e = ''
-    countere = 0
-    while countere < 4:
-        f = ''
-        counterf = 0
-        while counterf < 3:
-            f += e
-            counterf += 1
-            e += d
-            countere += 1
-        d += c
-        counterd += 1
-def g():
-    return f
-def h():
-    return g()
-i = h()
-j = (i, i, i)
-k, l, m = j
-n = k + l + m
-o = f'string {n}'
-p_list = [o for _ in range(4)]
-q_list = [p_list for _ in range(5)]
-r_list = [q_list for _ in range(4)]
-s = random.choice(r_list)
-t = random.choice(s)
-u = random.choice(t)
-v = [u for _ in range(7)]
-random.shuffle(v)
-w = random.choice(v)
-def x():
-    return w
-def y():
-    return x()
-def z():
-    return y()
-aa = z()
-ab = aa + '9'
-if ab == '7':
-    ac = ab + ' c1'
-elif ab == '14':
-    ac = ab + ' c2'
+b = a + '.'
+c = b[0:]
+d = [c for _ in range(7)]
+random.shuffle(d)
+e = random.choice(d)
+if e == '8':
+    f = e + ' c1'
+elif e == '20':
+    f = e + ' c2'
 else:
-    ac = ab + ' c3'
-ad = ''
-counterad = 0
-while counterad < 3:
-    ad += ac
-    counterad += 1
-ae = ''
-counterae = 0
-while counterae < 2:
-    ae += ad
-    counterae += 1
-af_list = [ae for _ in range(5)]
-ag_list = [af_list for _ in range(3)]
-ah_list = [ag_list for _ in range(7)]
-ai = random.choice(ah_list)
-aj = random.choice(ai)
-ak = random.choice(aj)
-al = ''
-for _ in range(2):
-    am = ''
-    for _ in range(3):
-        am += al
-        al += ak
-an = f'string {am}'
-ao = (an, an, an)
-ap, aq, ar = ao
-at = ap + aq + ar
-au = f'string {at}'
-av = ''
+    f = e + ' c3'
+g = ''
 for _ in range(4):
+    for __ in range(5):
+                g += f
+h = ''
+for _ in range(8):
+        if _ == 3:
+            continue
+        h += g
+i = ''
+for _ in range(2):
+    j = ''
+    for _ in range(3):
+        j += i
+        i += h
+k = ''
+counterk = 0
+while counterk < 5:
+    l = ''
+    counterl = 0
+    while counterl < 3:
+        l += k
+        counterl += 1
+        k += j
+        counterk += 1
+def m():
+    return l
+def n():
+    return m()
+o = n()
+p = [o for _ in range(7)]
+random.shuffle(p)
+q = random.choice(p)
+r = ''
+counterr = 0
+while counterr < 3:
+    s = ''
+    counters = 0
+    while counters < 4:
+        s += r
+        counters += 1
+        r += q
+        counterr += 1
+t_set = {s, s, s, s, s, s, s, s, s, s}
+t = random.choice(list(t_set))
+def u():
+    return t
+def v():
+    return u()
+w = v()
+if w == '2':
+    x = w + ' c1'
+elif w == '14':
+    x = w + ' c2'
+else:
+    x = w + ' c3'
+y_list = [x for _ in range(3)]
+z_list = [y_list for _ in range(9)]
+aa = random.choice(z_list)
+ab = random.choice(aa)
+ac = [ab for _ in range(8)]
+random.shuffle(ac)
+ad = random.choice(ac)
+ae = ''
+for _ in range(5):
     for __ in range(4):
-                av += au
-print(av)
+                ae += ad
+af_dict = {51: ae, 20: ae, 74: ae, 97: ae, 48: ae}
+ag = random.choice(list(af_dict.values()))
+print(ag)

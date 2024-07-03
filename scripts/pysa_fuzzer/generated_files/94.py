@@ -1,107 +1,79 @@
 import random
 import math
 a = input()
-b = ''
-counterb = 0
-while counterb < 3:
-    c = ''
-    counterc = 0
-    while counterc < 5:
-        d = ''
-        counterd = 0
-        while counterd < 4:
+b = f'string {a}'
+c = ''
+counterc = 0
+while counterc < 2:
+    d = ''
+    counterd = 0
+    while counterd < 2:
+        e = ''
+        countere = 0
+        while countere < 2:
+            e += d
+            countere += 1
             d += c
             counterd += 1
-            c += b
-            counterc += 1
-        b += a
-        counterb += 1
-e = ''
-countere = 0
-while countere < 2:
-    f = ''
-    counterf = 0
-    while counterf < 3:
-        g = ''
-        counterg = 0
-        while counterg < 3:
-            g += f
-            counterg += 1
-            f += e
-            counterf += 1
-        e += d
-        countere += 1
-h = g + '.'
-i = h + '7'
-j = i + '6'
-k = j + '3'
-l = ''
-counterl = 0
-while counterl < 5:
-    m = ''
-    counterm = 0
-    while counterm < 5:
-        n = ''
-        countern = 0
-        while countern < 3:
-            n += m
-            countern += 1
-            m += l
-            counterm += 1
-        l += k
-        counterl += 1
-o = ''
-for _ in range(2):
-    for __ in range(4):
-                o += n
-p = (o, o, o)
-q, r, s = p
-t = q + r + s
-u = f'string {t}'
-v_dict = {21: u, 78: u, 41: u, 87: u, 78: u, 18: u, 80: u, 11: u, 9: u, 81: u}
-w_dict = {76: v_dict, 21: v_dict, 49: v_dict, 4: v_dict, 51: v_dict}
-x = random.choice(list(w_dict.values()))
+        c += b
+        counterc += 1
+f_set = {e, e, e, e, e, e, e}
+f = random.choice(list(f_set))
+g_dict = {72: f, 62: f, 100: f, 50: f, 90: f}
+h_dict = {49: g_dict, 71: g_dict, 34: g_dict, 87: g_dict, 86: g_dict}
+i = random.choice(list(h_dict.values()))
+j = random.choice(list(i.values()))
+k = j[0:]
+l_list = [k for _ in range(10)]
+m = random.choice(l_list)
+n = ''
+countern = 0
+while countern < 4:
+    o = ''
+    countero = 0
+    while countero < 3:
+        o += n
+        countero += 1
+        n += m
+        countern += 1
+p = o + '.'
+q = ''
+for _ in range(4):
+    r = ''
+    for _ in range(2):
+        s = ''
+        for _ in range(4):
+            s += r
+            r += q
+        q += p
+t_dict = {42: s, 22: s, 97: s, 23: s, 41: s, 4: s, 64: s, 69: s, 23: s}
+u_dict = {76: t_dict, 87: t_dict, 19: t_dict, 75: t_dict, 35: t_dict, 78: t_dict}
+v_dict = {17: u_dict, 21: u_dict, 84: u_dict, 7: u_dict, 82: u_dict, 86: u_dict, 7: u_dict, 28: u_dict}
+w = random.choice(list(v_dict.values()))
+x = random.choice(list(w.values()))
 y = random.choice(list(x.values()))
-z_list = [y for _ in range(4)]
-aa_list = [z_list for _ in range(7)]
-ab = random.choice(aa_list)
-ac = random.choice(ab)
-ad_list = [ac for _ in range(10)]
-ae_list = [ad_list for _ in range(5)]
-af = random.choice(ae_list)
-ag = random.choice(af)
-def ah():
-    return ag
-ai = ah()
-aj = (ai, ai, ai)
-ak, al, am = aj
-an = ak + al + am
-ao = an + '.'
-ap = ''
-counterap = 0
-while counterap < 2:
-    aq = ''
-    counteraq = 0
-    while counteraq < 2:
-        ar = ''
-        counterar = 0
-        while counterar < 3:
-            ar += aq
-            counterar += 1
-            aq += ap
-            counteraq += 1
-        ap += ao
-        counterap += 1
-at = ar + '5'
-au = at + '9'
-av = au + '3'
-def aw():
-    return av
-ax = aw()
-ay_list = [ax for _ in range(4)]
-az_list = [ay_list for _ in range(6)]
-ba_list = [az_list for _ in range(4)]
-bb = random.choice(ba_list)
-bc = random.choice(bb)
-bd = random.choice(bc)
-print(bd)
+z_dict = {14: y, 8: y}
+aa_dict = {6: z_dict, 31: z_dict, 27: z_dict, 20: z_dict}
+ab = random.choice(list(aa_dict.values()))
+ac = random.choice(list(ab.values()))
+ad = ac[0:]
+def ae():
+    return ad
+def af():
+    return ae()
+ag = af()
+ah_set = {ag, ag, ag, ag}
+ah = random.choice(list(ah_set))
+ai = ''
+for _ in range(6):
+        if _ == 3:
+            continue
+        ai += ah
+aj = f'string {ai}'
+ak = ''
+for _ in range(5):
+    for __ in range(3):
+                ak += aj
+al = ak + '9'
+am = al + '3'
+print(am)

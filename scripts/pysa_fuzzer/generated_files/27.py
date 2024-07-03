@@ -1,62 +1,71 @@
 import random
 import math
 a = input()
-b_list = [a for _ in range(9)]
-c = random.choice(b_list)
-d = f'string {c}'
-e = d[0:]
-f = ''
-for _ in range(8):
-        if _ == 5:
-            break
-        f += e
-g = [f for _ in range(7)]
-random.shuffle(g)
-h = random.choice(g)
-i = ''
-for _ in range(2):
-    for __ in range(5):
-                i += h
-def j():
-    return i
-k = j()
-if k == '6':
-    l = k + ' c1'
-elif k == '12':
-    l = k + ' c2'
-else:
-    l = k + ' c3'
-m_list = [l for _ in range(9)]
-n_list = [m_list for _ in range(4)]
-o = random.choice(n_list)
-p = random.choice(o)
+b_list = [a for _ in range(7)]
+c_list = [b_list for _ in range(10)]
+d_list = [c_list for _ in range(7)]
+e = random.choice(d_list)
+f = random.choice(e)
+g = random.choice(f)
+h = (g, g, g)
+i, j, k = h
+l = i + j + k
+m = ''
+for _ in range(5):
+        if _ == 3:
+            continue
+        m += l
+n = m + '4'
+o = n[0:]
+p_set = {o, o, o, o, o}
+p = random.choice(list(p_set))
 q = ''
-counterq = 0
-while counterq < 2:
-    r = ''
-    counterr = 0
-    while counterr < 3:
-        r += q
-        counterr += 1
-        q += p
-        counterq += 1
-s = f'string {r}'
-t = s[0:]
-u = f'string {t}'
-v = u[0:]
-w = [v for _ in range(6)]
-random.shuffle(w)
-x = random.choice(w)
-def y():
-    return x
-def z():
-    return y()
+for _ in range(4):
+    for __ in range(2):
+                q += p
+r = [q for _ in range(10)]
+random.shuffle(r)
+s = random.choice(r)
+t_list = [s for _ in range(4)]
+u = random.choice(t_list)
+v = ''
+counterv = 0
+while counterv < 2:
+    w = ''
+    counterw = 0
+    while counterw < 2:
+        x = ''
+        counterx = 0
+        while counterx < 3:
+            x += w
+            counterx += 1
+            w += v
+            counterw += 1
+        v += u
+        counterv += 1
+y_dict = {9: x, 57: x}
+z = random.choice(list(y_dict.values()))
 def aa():
-    return z()
-ab = aa()
-ac_list = [ab for _ in range(5)]
-ad = random.choice(ac_list)
-def ae():
-    return ad
-af = ae()
-print(af)
+    return z
+def ab():
+    return aa()
+def ac():
+    return ab()
+ad = ac()
+ae_dict = {28: ad, 13: ad, 87: ad, 81: ad, 88: ad, 4: ad, 78: ad, 7: ad, 60: ad}
+af_dict = {67: ae_dict, 33: ae_dict, 78: ae_dict}
+ag_dict = {95: af_dict, 22: af_dict}
+ah = random.choice(list(ag_dict.values()))
+ai = random.choice(list(ah.values()))
+aj = random.choice(list(ai.values()))
+ak = [aj for _ in range(5)]
+random.shuffle(ak)
+al = random.choice(ak)
+am = ''
+for _ in range(5):
+    for __ in range(4):
+                am += al
+an = am + '.'
+ao = an + '.'
+ap = f'string {ao}'
+print(ap)

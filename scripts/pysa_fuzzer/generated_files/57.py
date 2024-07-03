@@ -1,83 +1,65 @@
 import random
 import math
 a = input()
-b = ''
-counterb = 0
-while counterb < 2:
-    c = ''
-    counterc = 0
-    while counterc < 3:
-        d = ''
-        counterd = 0
-        while counterd < 3:
-            d += c
-            counterd += 1
-            c += b
-            counterc += 1
-        b += a
-        counterb += 1
-e = [d for _ in range(10)]
-random.shuffle(e)
-f = random.choice(e)
-g = [f for _ in range(6)]
-random.shuffle(g)
-h = random.choice(g)
+b = a + '.'
+c = f'string {b}'
+if c == '1':
+    d = c + ' c1'
+elif c == '11':
+    d = c + ' c2'
+else:
+    d = c + ' c3'
+e_set = {d, d, d, d, d, d, d, d, d, d}
+e = random.choice(list(e_set))
+if e == '10':
+    f = e + ' c1'
+elif e == '11':
+    f = e + ' c2'
+else:
+    f = e + ' c3'
+g = f[0:]
+h = f'string {g}'
 i = ''
-counteri = 0
-while counteri < 4:
-    j = ''
-    counterj = 0
-    while counterj < 3:
-        j += i
-        counterj += 1
-        i += h
-        counteri += 1
-k = j[0:]
+for _ in range(5):
+    for __ in range(3):
+                i += h
+j = f'string {i}'
+k = ''
+for _ in range(7):
+        if _ == 3:
+            continue
+        k += j
 l = ''
 for _ in range(5):
-    m = ''
-    for _ in range(2):
+    l += k
+m = ''
+for _ in range(8):
+        if _ == 3:
+            break
         m += l
-        l += k
-if m == '9':
-    n = m + ' c1'
-elif m == '19':
-    n = m + ' c2'
-else:
-    n = m + ' c3'
+def n():
+    return m
 def o():
-    return n
-def p():
-    return o()
-def q():
-    return p()
-r = q()
-s = (r, r, r)
-t, u, v = s
-w = t + u + v
-x = w + '4'
-y = x[0:]
-z = y + '.'
-aa = [z for _ in range(10)]
-random.shuffle(aa)
-ab = random.choice(aa)
-ac = ''
-for _ in range(4):
+    return n()
+p = o()
+q = p + '7'
+r = q + '2'
+s = r + '3'
+def t():
+    return s
+def u():
+    return t()
+v = u()
+w = ''
+for _ in range(5):
     for __ in range(5):
-                ac += ab
-ad = ''
-for _ in range(7):
-        if _ == 1:
-            continue
-        ad += ac
-def ae():
-    return ad
-def af():
-    return ae()
-def ag():
-    return af()
-ah = ag()
-ai = ah + '4'
-aj = ai + '5'
-ak = aj + '.'
-print(ak)
+                w += v
+x = ''
+for _ in range(5):
+    for __ in range(4):
+                x += w
+y = ''
+for _ in range(2):
+    for __ in range(2):
+                y += x
+print(y)

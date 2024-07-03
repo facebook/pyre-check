@@ -1,63 +1,81 @@
 import random
 import math
 a = input()
-b = a + '8'
-c_dict = {47: b, 92: b, 10: b, 66: b}
-d = random.choice(list(c_dict.values()))
-e = d[0:]
-f = e + '.'
-def g():
-    return f
-h = g()
-i = ''
-counteri = 0
-while counteri < 5:
-    j = ''
-    counterj = 0
-    while counterj < 2:
-        j += i
-        counterj += 1
-        i += h
-        counteri += 1
-k = j + '6'
-l = k + '8'
-m = (l, l, l)
-n, o, p = m
-q = n + o + p
-r = q + '.'
-s_set = {r, r, r, r, r, r, r, r}
-s = random.choice(list(s_set))
-t = f'string {s}'
-if t == '7':
-    u = t + ' c1'
-elif t == '20':
-    u = t + ' c2'
-else:
-    u = t + ' c3'
-v_set = {u, u, u, u, u, u, u, u}
-v = random.choice(list(v_set))
-w = f'string {v}'
-x = w + '.'
-y_set = {x, x, x, x, x, x, x, x, x}
-y = random.choice(list(y_set))
+b = ''
+for _ in range(5):
+    c = ''
+    for _ in range(3):
+        c += b
+        b += a
+d_dict = {66: c, 98: c, 77: c}
+e_dict = {75: d_dict, 43: d_dict, 59: d_dict, 21: d_dict, 45: d_dict, 92: d_dict, 15: d_dict}
+f_dict = {65: e_dict, 97: e_dict, 15: e_dict}
+g = random.choice(list(f_dict.values()))
+h = random.choice(list(g.values()))
+i = random.choice(list(h.values()))
+j = ''
+for _ in range(4):
+    for __ in range(2):
+                j += i
+k = ''
+for _ in range(5):
+        if _ == 2:
+            continue
+        k += j
+l = ''
+for _ in range(5):
+        if _ == 4:
+            continue
+        l += k
+m_list = [l for _ in range(3)]
+n_list = [m_list for _ in range(5)]
+o_list = [n_list for _ in range(8)]
+p = random.choice(o_list)
+q = random.choice(p)
+r = random.choice(q)
+s = ''
+for _ in range(9):
+        if _ == 3:
+            continue
+        s += r
+t = (s, s, s)
+u, v, w = t
+x = u + v + w
+y = x + '.'
 z = ''
-counterz = 0
-while counterz < 4:
-    aa = ''
-    counteraa = 0
-    while counteraa < 5:
-        aa += z
-        counteraa += 1
-        z += y
-        counterz += 1
-ab = ''
-counterab = 0
-while counterab < 5:
-    ac = ''
-    counterac = 0
-    while counterac < 5:
-        ac += ab
-        counterac += 1
-        ab += aa
-        counterab += 1
-print(ac)
+for _ in range(5):
+    for __ in range(5):
+                z += y
+if z == '10':
+    aa = z + ' c1'
+elif z == '14':
+    aa = z + ' c2'
+else:
+    aa = z + ' c3'
+ab_dict = {87: aa, 62: aa, 40: aa, 23: aa, 99: aa}
+ac = random.choice(list(ab_dict.values()))
+ad_dict = {49: ac, 63: ac, 88: ac, 25: ac, 95: ac, 83: ac, 93: ac, 95: ac, 74: ac}
+ae_dict = {32: ad_dict, 25: ad_dict, 3: ad_dict}
+af_dict = {23: ae_dict, 60: ae_dict, 99: ae_dict, 60: ae_dict, 36: ae_dict, 50: ae_dict, 64: ae_dict, 39: ae_dict}
+ag = random.choice(list(af_dict.values()))
+ah = random.choice(list(ag.values()))
+ai = random.choice(list(ah.values()))
+aj_list = [ai for _ in range(5)]
+ak = random.choice(aj_list)
+al = ak + '3'
+am = al + '7'
+an = am + '7'
+def ao():
+    return an
+ap = ao()
+if ap == '1':
+    aq = ap + ' c1'
+elif ap == '17':
+    aq = ap + ' c2'
+else:
+    aq = ap + ' c3'
+ar = ''
+for _ in range(3):
+    for __ in range(5):
+                ar += aq
+print(ar)

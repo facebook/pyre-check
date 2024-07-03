@@ -1,61 +1,81 @@
 import random
 import math
 a = input()
-def b():
-    return a
-c = b()
-d = [c for _ in range(9)]
-random.shuffle(d)
-e = random.choice(d)
-f = f'string {e}'
-g_dict = {97: f, 62: f, 68: f}
-h = random.choice(list(g_dict.values()))
-i = h[0:]
-j_set = {i, i, i, i, i}
-j = random.choice(list(j_set))
-k = ''
-for _ in range(3):
-    k += j
-l = ''
-counterl = 0
-while counterl < 5:
-    m = ''
-    counterm = 0
-    while counterm < 4:
-        m += l
-        counterm += 1
-        l += k
-        counterl += 1
-n = ''
-for _ in range(3):
-    n += m
-o = [n for _ in range(10)]
-random.shuffle(o)
-p = random.choice(o)
-q = ''
-for _ in range(9):
-        if _ == 1:
+b = ''
+for _ in range(2):
+    c = ''
+    for _ in range(2):
+        c += b
+        b += a
+if c == '5':
+    d = c + ' c1'
+elif c == '12':
+    d = c + ' c2'
+else:
+    d = c + ' c3'
+e = ''
+for _ in range(5):
+        if _ == 5:
             break
-        q += p
+        e += d
+if e == '6':
+    f = e + ' c1'
+elif e == '16':
+    f = e + ' c2'
+else:
+    f = e + ' c3'
+if f == '4':
+    g = f + ' c1'
+elif f == '15':
+    g = f + ' c2'
+else:
+    g = f + ' c3'
+h = g + '.'
+i = ''
+counteri = 0
+while counteri < 3:
+    j = ''
+    counterj = 0
+    while counterj < 3:
+        k = ''
+        counterk = 0
+        while counterk < 4:
+            k += j
+            counterk += 1
+            j += i
+            counterj += 1
+        i += h
+        counteri += 1
+l = ''
+for _ in range(5):
+    for __ in range(3):
+                l += k
+m_set = {l, l, l, l, l, l}
+m = random.choice(list(m_set))
+n = f'string {m}'
+o = f'string {n}'
+p = o + '2'
+q = f'string {p}'
 r = ''
-for _ in range(7):
-        if _ == 3:
-            continue
+for _ in range(3):
+    s = ''
+    for _ in range(2):
+        s += r
         r += q
-s = f'string {r}'
-t = s + '1'
-u = t + '6'
-v = u + '.'
-w = f'string {v}'
-def x():
-    return w
-def y():
-    return x()
-z = y()
-aa_dict = {98: z, 81: z, 9: z, 26: z, 96: z, 1: z, 76: z, 41: z, 13: z, 6: z}
-ab_dict = {77: aa_dict, 32: aa_dict, 69: aa_dict, 21: aa_dict}
-ac_dict = {73: ab_dict, 24: ab_dict, 80: ab_dict, 37: ab_dict, 70: ab_dict, 24: ab_dict, 1: ab_dict}
-ad = random.choice(list(ac_dict.values()))
-ae = random.choice(list(ad.values()))
-af = random.choice(list(ae.values()))
-print(af)
+def t():
+    return s
+u = t()
+v = [u for _ in range(9)]
+random.shuffle(v)
+w = random.choice(v)
+x = ''
+for _ in range(3):
+    y = ''
+    for _ in range(5):
+        z = ''
+        for _ in range(3):
+            z += y
+            y += x
+        x += w
+aa = z + '1'
+print(aa)

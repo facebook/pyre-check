@@ -1,79 +1,61 @@
 import random
 import math
 a = input()
-b_list = [a for _ in range(6)]
-c = random.choice(b_list)
-d = c[0:]
-e_set = {d, d, d, d, d, d, d, d, d, d}
-e = random.choice(list(e_set))
-f = ''
-counterf = 0
-while counterf < 4:
-    f += e
-    counterf += 1
-g = [f for _ in range(8)]
-random.shuffle(g)
-h = random.choice(g)
-i = (h, h, h)
-j, k, l = i
-m = j + k + l
-n = ''
-countern = 0
-while countern < 5:
-    o = ''
-    countero = 0
-    while countero < 5:
-        o += n
-        countero += 1
-        n += m
-        countern += 1
-p = o + '.'
-q = f'string {p}'
-r = ''
-for _ in range(3):
-    s = ''
-    for _ in range(5):
-        t = ''
-        for _ in range(2):
-            t += s
-            s += r
-        r += q
-u = ''
-for _ in range(9):
-        if _ == 4:
-            continue
-        u += t
-v = ''
+b = ''
 for _ in range(2):
-    v += u
-if v == '10':
-    w = v + ' c1'
-elif v == '16':
-    w = v + ' c2'
-else:
-    w = v + ' c3'
-x = ''
-for _ in range(6):
+    c = ''
+    for _ in range(2):
+        d = ''
+        for _ in range(2):
+            d += c
+            c += b
+        b += a
+e = d + '.'
+f = e + '.'
+def g():
+    return f
+def h():
+    return g()
+i = h()
+j_list = [i for _ in range(3)]
+k_list = [j_list for _ in range(6)]
+l = random.choice(k_list)
+m = random.choice(l)
+n = f'string {m}'
+o = ''
+for _ in range(4):
+    for __ in range(3):
+                o += n
+p = [o for _ in range(6)]
+random.shuffle(p)
+q = random.choice(p)
+r = [q for _ in range(9)]
+random.shuffle(r)
+s = random.choice(r)
+t = ''
+for _ in range(2):
+    t += s
+u_dict = {95: t, 98: t, 11: t}
+v = random.choice(list(u_dict.values()))
+w = v[0:]
+x = f'string {w}'
+y = ''
+countery = 0
+while countery < 2:
+    z = ''
+    counterz = 0
+    while counterz < 2:
+        z += y
+        counterz += 1
+        y += x
+        countery += 1
+aa = ''
+for _ in range(5):
         if _ == 3:
             break
-        x += w
-y = ''
-for _ in range(2):
-    for __ in range(5):
-                y += x
-z_dict = {91: y, 31: y, 64: y, 82: y, 98: y, 78: y, 96: y, 55: y}
-aa = random.choice(list(z_dict.values()))
-def ab():
-    return aa
-def ac():
-    return ab()
-def ad():
-    return ac()
-ae = ad()
-af_list = [ae for _ in range(3)]
-ag_list = [af_list for _ in range(3)]
-ah_list = [ag_list for _ in range(4)]
-ai = random.choice(ah_list)
-aj = random.choice(ai)
-ak = random.choice(aj)
-print(ak)
+        aa += z
+ab = aa[0:]
+ac = ab[0:]
+ad_set = {ac, ac}
+ad = random.choice(list(ad_set))
+print(ad)

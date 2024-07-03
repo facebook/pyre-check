@@ -1,74 +1,67 @@
 import random
 import math
 a = input()
-b = [a for _ in range(5)]
-random.shuffle(b)
-c = random.choice(b)
-if c == '1':
-    d = c + ' c1'
-elif c == '14':
-    d = c + ' c2'
+b = f'string {a}'
+if b == '10':
+    c = b + ' c1'
+elif b == '15':
+    c = b + ' c2'
 else:
-    d = c + ' c3'
-e = d + '7'
-f = e + '2'
-g = [f for _ in range(9)]
-random.shuffle(g)
-h = random.choice(g)
-def i():
-    return h
-def j():
-    return i()
-k = j()
-l_list = [k for _ in range(6)]
-m = random.choice(l_list)
-n = ''
-countern = 0
-while countern < 4:
-    o = ''
-    countero = 0
-    while countero < 5:
-        o += n
-        countero += 1
-        n += m
-        countern += 1
-p_set = {o, o, o, o, o}
-p = random.choice(list(p_set))
-q_set = {p, p, p, p, p, p, p, p, p}
-q = random.choice(list(q_set))
-if q == '7':
-    r = q + ' c1'
-elif q == '15':
-    r = q + ' c2'
+    c = b + ' c3'
+d = c + '.'
+e_set = {d, d, d}
+e = random.choice(list(e_set))
+f = (e, e, e)
+g, h, i = f
+j = g + h + i
+k = ''
+for _ in range(10):
+        if _ == 5:
+            break
+        k += j
+if k == '7':
+    l = k + ' c1'
+elif k == '16':
+    l = k + ' c2'
 else:
-    r = q + ' c3'
-def s():
-    return r
-t = s()
-u = t + '.'
-v = u + '.'
-w_dict = {67: v, 82: v, 63: v, 39: v}
-x_dict = {11: w_dict, 83: w_dict, 41: w_dict, 48: w_dict, 3: w_dict, 75: w_dict, 21: w_dict, 18: w_dict}
-y_dict = {60: x_dict, 98: x_dict}
-z = random.choice(list(y_dict.values()))
-aa = random.choice(list(z.values()))
-ab = random.choice(list(aa.values()))
-ac = (ab, ab, ab)
-ad, ae, af = ac
-ag = ad + ae + af
-def ah():
-    return ag
-def ai():
-    return ah()
-aj = ai()
-if aj == '5':
-    ak = aj + ' c1'
-elif aj == '16':
-    ak = aj + ' c2'
-else:
-    ak = aj + ' c3'
-al = ''
-for _ in range(5):
-    for __ in range(3):
-                al += ak
-print(al)
+    l = k + ' c3'
+m = ''
+for _ in range(4):
+    for __ in range(2):
+                m += l
+n = m[0:]
+def o():
+    return n
+p = o()
+q_list = [p for _ in range(7)]
+r_list = [q_list for _ in range(8)]
+s_list = [r_list for _ in range(8)]
+t = random.choice(s_list)
+u = random.choice(t)
+v = random.choice(u)
+w = ''
+for _ in range(4):
+    for __ in range(5):
+                w += v
+x = ''
+for _ in range(2):
+    for __ in range(2):
+                x += w
+y = ''
+countery = 0
+while countery < 3:
+    z = ''
+    counterz = 0
+    while counterz < 4:
+        z += y
+        counterz += 1
+        y += x
+        countery += 1
+aa_set = {z, z, z, z}
+aa = random.choice(list(aa_set))
+ab = aa + '.'
+ac = ab + '3'
+ad = ac + '7'
+ae = ad + '6'
+af = ae[0:]
+print(af)

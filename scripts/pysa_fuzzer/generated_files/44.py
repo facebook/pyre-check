@@ -1,72 +1,57 @@
 import random
 import math
 a = input()
-b_list = [a for _ in range(7)]
-c_list = [b_list for _ in range(3)]
-d = random.choice(c_list)
-e = random.choice(d)
-f = e[0:]
-g = f'string {f}'
-h = [g for _ in range(9)]
-random.shuffle(h)
-i = random.choice(h)
-if i == '5':
-    j = i + ' c1'
-elif i == '16':
-    j = i + ' c2'
-else:
-    j = i + ' c3'
-k_set = {j, j, j, j, j, j, j, j, j}
-k = random.choice(list(k_set))
-l = ''
-counterl = 0
-while counterl < 2:
-    m = ''
-    counterm = 0
-    while counterm < 4:
-        m += l
-        counterm += 1
-        l += k
-        counterl += 1
-n = [m for _ in range(9)]
-random.shuffle(n)
-o = random.choice(n)
-p = f'string {o}'
-q = ''
-counterq = 0
-while counterq < 3:
-    r = ''
-    counterr = 0
-    while counterr < 4:
-        s = ''
-        counters = 0
-        while counters < 2:
-            s += r
-            counters += 1
-            r += q
-            counterr += 1
-        q += p
-        counterq += 1
-t_set = {s, s, s, s, s, s, s, s, s}
-t = random.choice(list(t_set))
-u = t + '4'
-v = u + '4'
-w = (v, v, v)
-x, y, z = w
-aa = x + y + z
-ab_set = {aa, aa, aa}
-ab = random.choice(list(ab_set))
-ac = (ab, ab, ab)
-ad, ae, af = ac
-ag = ad + ae + af
-ah = (ag, ag, ag)
-ai, aj, ak = ah
-al = ai + aj + ak
-if al == '8':
-    am = al + ' c1'
-elif al == '15':
-    am = al + ' c2'
-else:
-    am = al + ' c3'
+b = ''
+counterb = 0
+while counterb < 4:
+    b += a
+    counterb += 1
+c = ''
+for _ in range(2):
+    for __ in range(2):
+                c += b
+def d():
+    return c
+e = d()
+f = [e for _ in range(8)]
+random.shuffle(f)
+g = random.choice(f)
+h = (g, g, g)
+i, j, k = h
+l = i + j + k
+m_set = {l, l, l, l, l, l, l, l, l, l}
+m = random.choice(list(m_set))
+n = (m, m, m)
+o, p, q = n
+r = o + p + q
+s = (r, r, r)
+t, u, v = s
+w = t + u + v
+x = w + '1'
+y = x[0:]
+z = [y for _ in range(10)]
+random.shuffle(z)
+aa = random.choice(z)
+ab = [aa for _ in range(6)]
+random.shuffle(ab)
+ac = random.choice(ab)
+ad = ''
+for _ in range(6):
+        if _ == 3:
+            break
+        ad += ac
+ae = ad[0:]
+af_list = [ae for _ in range(5)]
+ag_list = [af_list for _ in range(4)]
+ah_list = [ag_list for _ in range(7)]
+ai = random.choice(ah_list)
+aj = random.choice(ai)
+ak = random.choice(aj)
+al = ak[0:]
+am = ''
+for _ in range(10):
+        if _ == 2:
+            continue
+        am += al
 an = am + '.'
 print(an)

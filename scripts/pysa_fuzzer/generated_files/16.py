@@ -1,55 +1,68 @@
 import random
 import math
 a = input()
-b = a + '8'
-c = (b, b, b)
-d, e, f = c
-g = d + e + f
-h = g + '.'
-i_dict = {75: h, 36: h, 65: h, 80: h, 42: h, 8: h, 73: h, 89: h, 22: h}
-j_dict = {85: i_dict, 44: i_dict, 83: i_dict, 38: i_dict, 67: i_dict, 26: i_dict}
-k = random.choice(list(j_dict.values()))
-l = random.choice(list(k.values()))
-m = f'string {l}'
-n_dict = {22: m, 38: m, 62: m, 30: m, 79: m, 94: m, 47: m, 14: m}
-o_dict = {54: n_dict, 7: n_dict, 94: n_dict, 6: n_dict, 96: n_dict, 85: n_dict, 11: n_dict, 1: n_dict, 47: n_dict, 18: n_dict}
-p = random.choice(list(o_dict.values()))
-q = random.choice(list(p.values()))
-r_set = {q, q, q, q, q}
-r = random.choice(list(r_set))
-s = r[0:]
-t = s + '.'
-if t == '8':
-    u = t + ' c1'
-elif t == '20':
-    u = t + ' c2'
-else:
-    u = t + ' c3'
-v = ''
-for _ in range(5):
+b = a + '.'
+c = [b for _ in range(7)]
+random.shuffle(c)
+d = random.choice(c)
+e = ''
+for _ in range(8):
         if _ == 4:
             continue
-        v += u
-if v == '4':
-    w = v + ' c1'
-elif v == '20':
-    w = v + ' c2'
+        e += d
+f = e[0:]
+if f == '1':
+    g = f + ' c1'
+elif f == '13':
+    g = f + ' c2'
 else:
-    w = v + ' c3'
-x = [w for _ in range(5)]
-random.shuffle(x)
-y = random.choice(x)
-z = [y for _ in range(7)]
-random.shuffle(z)
-aa = random.choice(z)
-ab = ''
-for _ in range(2):
-    ab += aa
-ac = f'string {ab}'
-ad = ac + '6'
-ae = ad + '5'
-af = ae + '2'
-ag = [af for _ in range(6)]
-random.shuffle(ag)
-ah = random.choice(ag)
-print(ah)
+    g = f + ' c3'
+h_list = [g for _ in range(5)]
+i_list = [h_list for _ in range(10)]
+j_list = [i_list for _ in range(2)]
+k = random.choice(j_list)
+l = random.choice(k)
+m = random.choice(l)
+n = ''
+for _ in range(5):
+    for __ in range(5):
+                n += m
+o = [n for _ in range(10)]
+random.shuffle(o)
+p = random.choice(o)
+q = (p, p, p)
+r, s, t = q
+u = r + s + t
+v_set = {u, u, u, u}
+v = random.choice(list(v_set))
+w = v + '4'
+x = w + '9'
+y = x + '4'
+z = f'string {y}'
+aa = ''
+counteraa = 0
+while counteraa < 4:
+    ab = ''
+    counterab = 0
+    while counterab < 4:
+        ac = ''
+        counterac = 0
+        while counterac < 4:
+            ac += ab
+            counterac += 1
+            ab += aa
+            counterab += 1
+        aa += z
+        counteraa += 1
+ad = (ac, ac, ac)
+ae, af, ag = ad
+ah = ae + af + ag
+ai = ah + '.'
+aj = ai + '6'
+ak = ''
+for _ in range(4):
+    ak += aj
+al = [ak for _ in range(5)]
+random.shuffle(al)
+am = random.choice(al)
+print(am)

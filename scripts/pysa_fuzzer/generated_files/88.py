@@ -1,62 +1,78 @@
 import random
 import math
 a = input()
-def b():
-    return a
-def c():
-    return b()
-d = c()
-e = d + '.'
-f = f'string {e}'
-g_dict = {58: f, 24: f, 5: f, 65: f, 22: f}
-h_dict = {78: g_dict, 15: g_dict, 39: g_dict, 56: g_dict}
-i_dict = {66: h_dict, 52: h_dict, 52: h_dict, 85: h_dict, 99: h_dict, 38: h_dict, 26: h_dict}
-j = random.choice(list(i_dict.values()))
-k = random.choice(list(j.values()))
-l = random.choice(list(k.values()))
-m_list = [l for _ in range(2)]
-n_list = [m_list for _ in range(8)]
-o_list = [n_list for _ in range(5)]
-p = random.choice(o_list)
-q = random.choice(p)
-r = random.choice(q)
-def s():
-    return r
-t = s()
-u = ''
-for _ in range(4):
-    u += t
-v_set = {u, u, u}
-v = random.choice(list(v_set))
-w_dict = {22: v, 33: v, 43: v, 9: v, 79: v}
-x = random.choice(list(w_dict.values()))
-y = x + '5'
-z = y + '7'
-aa = z + '6'
-ab_dict = {95: aa, 84: aa, 73: aa}
-ac_dict = {72: ab_dict, 46: ab_dict, 1: ab_dict, 49: ab_dict, 52: ab_dict, 71: ab_dict, 1: ab_dict}
-ad_dict = {53: ac_dict, 44: ac_dict, 26: ac_dict, 92: ac_dict, 6: ac_dict, 17: ac_dict, 72: ac_dict, 52: ac_dict, 20: ac_dict, 10: ac_dict}
-ae = random.choice(list(ad_dict.values()))
-af = random.choice(list(ae.values()))
-ag = random.choice(list(af.values()))
-if ag == '8':
-    ah = ag + ' c1'
-elif ag == '18':
-    ah = ag + ' c2'
+b_list = [a for _ in range(4)]
+c_list = [b_list for _ in range(10)]
+d = random.choice(c_list)
+e = random.choice(d)
+f = (e, e, e)
+g, h, i = f
+j = g + h + i
+def k():
+    return j
+def l():
+    return k()
+def m():
+    return l()
+n = m()
+o = (n, n, n)
+p, q, r = o
+s = p + q + r
+t_list = [s for _ in range(4)]
+u_list = [t_list for _ in range(3)]
+v_list = [u_list for _ in range(3)]
+w = random.choice(v_list)
+x = random.choice(w)
+y = random.choice(x)
+z = ''
+for _ in range(5):
+    for __ in range(4):
+                z += y
+aa_list = [z for _ in range(6)]
+ab_list = [aa_list for _ in range(10)]
+ac = random.choice(ab_list)
+ad = random.choice(ac)
+ae = ''
+for _ in range(3):
+    for __ in range(3):
+                ae += ad
+af_list = [ae for _ in range(3)]
+ag = random.choice(af_list)
+ah_list = [ag for _ in range(9)]
+ai_list = [ah_list for _ in range(4)]
+aj = random.choice(ai_list)
+ak = random.choice(aj)
+al = ''
+for _ in range(5):
+    for __ in range(2):
+                al += ak
+if al == '2':
+    am = al + ' c1'
+elif al == '11':
+    am = al + ' c2'
 else:
-    ah = ag + ' c3'
-ai_set = {ah, ah, ah, ah}
-ai = random.choice(list(ai_set))
-aj = (ai, ai, ai)
-ak, al, am = aj
-an = ak + al + am
-ao = ''
-for _ in range(9):
-        if _ == 3:
-            continue
-        ao += an
-ap = ao + '.'
-aq = f'string {ap}'
+    am = al + ' c3'
+an_dict = {38: am, 85: am, 9: am, 22: am, 17: am}
+ao_dict = {7: an_dict, 92: an_dict}
+ap = random.choice(list(ao_dict.values()))
+aq = random.choice(list(ap.values()))
 ar = aq + '3'
-at = ar + '9'
-print(at)
+at = ar + '4'
+au = ''
+for _ in range(5):
+        if _ == 1:
+            continue
+        au += at
+av = ''
+for _ in range(5):
+    for __ in range(2):
+                av += au
+aw = [av for _ in range(8)]
+random.shuffle(aw)
+ax = random.choice(aw)
+ay = ''
+counteray = 0
+while counteray < 5:
+    ay += ax
+    counteray += 1
+print(ay)

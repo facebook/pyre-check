@@ -1,78 +1,74 @@
 import random
 import math
 a = input()
-b = [a for _ in range(8)]
-random.shuffle(b)
-c = random.choice(b)
-d = (c, c, c)
-e, f, g = d
-h = e + f + g
-i_list = [h for _ in range(6)]
-j_list = [i_list for _ in range(2)]
-k = random.choice(j_list)
-l = random.choice(k)
-m = f'string {l}'
-n = [m for _ in range(8)]
-random.shuffle(n)
-o = random.choice(n)
-p = ''
-for _ in range(4):
-    q = ''
-    for _ in range(5):
-        r = ''
-        for _ in range(3):
-            r += q
-            q += p
-        p += o
-def s():
-    return r
-def t():
-    return s()
-u = t()
-v = u + '5'
-w = v + '2'
-if w == '8':
-    x = w + ' c1'
-elif w == '19':
-    x = w + ' c2'
-else:
-    x = w + ' c3'
-def y():
-    return x
-z = y()
-aa_set = {z, z, z, z, z, z, z, z, z}
-aa = random.choice(list(aa_set))
-ab = ''
-for _ in range(8):
-        if _ == 5:
-            continue
-        ab += aa
-ac = ''
-for _ in range(2):
-    for __ in range(3):
-                ac += ab
-ad = ''
+b = ''
 for _ in range(5):
+    c = ''
+    for _ in range(5):
+        c += b
+        b += a
+d_set = {c, c, c, c, c, c, c, c}
+d = random.choice(list(d_set))
+e = d[0:]
+f_list = [e for _ in range(7)]
+g = random.choice(f_list)
+h = ''
+for _ in range(5):
+        if _ == 5:
+            break
+        h += g
+def i():
+    return h
+def j():
+    return i()
+def k():
+    return j()
+l = k()
+m = f'string {l}'
+n = ''
+for _ in range(3):
     for __ in range(4):
-                ad += ac
-ae = ''
-for _ in range(4):
-    ae += ad
-if ae == '7':
-    af = ae + ' c1'
-elif ae == '15':
-    af = ae + ' c2'
+                n += m
+o_dict = {93: n, 48: n, 94: n, 4: n}
+p = random.choice(list(o_dict.values()))
+q = [p for _ in range(8)]
+random.shuffle(q)
+r = random.choice(q)
+s = f'string {r}'
+t_dict = {92: s, 76: s, 78: s}
+u_dict = {41: t_dict, 10: t_dict, 86: t_dict, 68: t_dict}
+v = random.choice(list(u_dict.values()))
+w = random.choice(list(v.values()))
+x = [w for _ in range(9)]
+random.shuffle(x)
+y = random.choice(x)
+z = ''
+for _ in range(9):
+        if _ == 1:
+            continue
+        z += y
+if z == '7':
+    aa = z + ' c1'
+elif z == '18':
+    aa = z + ' c2'
 else:
-    af = ae + ' c3'
-ag = ''
-counterag = 0
-while counterag < 5:
-    ag += af
-    counterag += 1
-ah_list = [ag for _ in range(4)]
-ai_list = [ah_list for _ in range(9)]
-aj_list = [ai_list for _ in range(9)]
-ak = random.choice(aj_list)
-al = random.choice(ak)
-am = random.choice(al)
-print(am)
+    aa = z + ' c3'
+ab_dict = {38: aa, 74: aa}
+ac_dict = {20: ab_dict, 71: ab_dict, 6: ab_dict, 69: ab_dict, 80: ab_dict, 44: ab_dict, 1: ab_dict}
+ad_dict = {56: ac_dict, 69: ac_dict, 29: ac_dict, 7: ac_dict, 33: ac_dict}
+ae = random.choice(list(ad_dict.values()))
+af = random.choice(list(ae.values()))
+ag = random.choice(list(af.values()))
+ah = (ag, ag, ag)
+ai, aj, ak = ah
+al = ai + aj + ak
+am = ''
+for _ in range(3):
+    an = ''
+    for _ in range(3):
+        ao = ''
+        for _ in range(2):
+            ao += an
+            an += am
+        am += al
+print(ao)

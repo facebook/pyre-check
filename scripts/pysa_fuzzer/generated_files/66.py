@@ -1,66 +1,82 @@
 import random
 import math
 a = input()
-b = f'string {a}'
-c = [b for _ in range(7)]
-random.shuffle(c)
-d = random.choice(c)
-e = d + '.'
-f = ''
-for _ in range(2):
-    for __ in range(2):
-                f += e
-g = f + '9'
+def b():
+    return a
+c = b()
+d_set = {c, c}
+d = random.choice(list(d_set))
+e_set = {d, d, d, d, d, d, d}
+e = random.choice(list(e_set))
+if e == '4':
+    f = e + ' c1'
+elif e == '11':
+    f = e + ' c2'
+else:
+    f = e + ' c3'
+if f == '1':
+    g = f + ' c1'
+elif f == '19':
+    g = f + ' c2'
+else:
+    g = f + ' c3'
 def h():
     return g
 def i():
     return h()
-j = i()
-if j == '4':
-    k = j + ' c1'
-elif j == '17':
-    k = j + ' c2'
-else:
-    k = j + ' c3'
-l_set = {k, k, k, k, k, k, k, k, k}
-l = random.choice(list(l_set))
-m_dict = {15: l, 5: l, 89: l}
-n_dict = {39: m_dict, 84: m_dict}
-o = random.choice(list(n_dict.values()))
-p = random.choice(list(o.values()))
-q = ''
+def j():
+    return i()
+k = j()
+l = ''
+for _ in range(7):
+        if _ == 5:
+            break
+        l += k
+m = ''
+counterm = 0
+while counterm < 2:
+    n = ''
+    countern = 0
+    while countern < 5:
+        n += m
+        countern += 1
+        m += l
+        counterm += 1
+o = f'string {n}'
+p_set = {o, o, o, o}
+p = random.choice(list(p_set))
+q_list = [p for _ in range(6)]
+r_list = [q_list for _ in range(5)]
+s = random.choice(r_list)
+t = random.choice(s)
+u = ''
+for _ in range(6):
+        if _ == 3:
+            break
+        u += t
+v = ''
+for _ in range(7):
+        if _ == 2:
+            break
+        v += u
+w = v + '.'
+x_set = {w, w, w}
+x = random.choice(list(x_set))
+y_set = {x, x, x, x, x, x, x, x, x}
+y = random.choice(list(y_set))
+z = ''
 for _ in range(2):
-    q += p
-r = ''
-counterr = 0
-while counterr < 3:
-    r += q
-    counterr += 1
-s = ''
-counters = 0
-while counters < 3:
-    t = ''
-    countert = 0
-    while countert < 2:
-        t += s
-        countert += 1
-        s += r
-        counters += 1
-if t == '10':
-    u = t + ' c1'
-elif t == '13':
-    u = t + ' c2'
-else:
-    u = t + ' c3'
-v = (u, u, u)
-w, x, y = v
-z = w + x + y
-aa_dict = {63: z, 20: z, 54: z}
-ab = random.choice(list(aa_dict.values()))
-ac = f'string {ab}'
-ad_dict = {26: ac, 57: ac, 34: ac, 80: ac}
-ae_dict = {87: ad_dict, 24: ad_dict, 32: ad_dict, 43: ad_dict}
-af = random.choice(list(ae_dict.values()))
-ag = random.choice(list(af.values()))
-ah = ag[0:]
+    aa = ''
+    for _ in range(5):
+        ab = ''
+        for _ in range(4):
+            ab += aa
+            aa += z
+        z += y
+ac_list = [ab for _ in range(8)]
+ad_list = [ac_list for _ in range(10)]
+ae_list = [ad_list for _ in range(4)]
+af = random.choice(ae_list)
+ag = random.choice(af)
+ah = random.choice(ag)
 print(ah)

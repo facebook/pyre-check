@@ -1,63 +1,65 @@
 import random
 import math
 a = input()
-b = (a, a, a)
-c, d, e = b
-f = c + d + e
-g = f + '2'
-h = g[0:]
-def i():
-    return h
-def j():
-    return i()
-k = j()
-l = [k for _ in range(5)]
-random.shuffle(l)
-m = random.choice(l)
-def n():
-    return m
-o = n()
+b = a + '.'
+c_set = {b, b, b, b}
+c = random.choice(list(c_set))
+d = ''
+for _ in range(4):
+    for __ in range(4):
+                d += c
+e = d + '.'
+f = ''
+for _ in range(4):
+    g = ''
+    for _ in range(3):
+        h = ''
+        for _ in range(5):
+            h += g
+            g += f
+        f += e
+i = ''
+for _ in range(4):
+    i += h
+if i == '1':
+    j = i + ' c1'
+elif i == '11':
+    j = i + ' c2'
+else:
+    j = i + ' c3'
+k = [j for _ in range(7)]
+random.shuffle(k)
+l = random.choice(k)
+m = f'string {l}'
+n = m[0:]
+o = n[0:]
 p = ''
-for _ in range(8):
+for _ in range(10):
         if _ == 5:
             continue
         p += o
-q_set = {p, p, p, p, p, p, p, p, p}
-q = random.choice(list(q_set))
-def r():
-    return q
-def s():
-    return r()
-def t():
-    return s()
-u = t()
-v = ''
-for _ in range(10):
-        if _ == 1:
-            break
-        v += u
-w = ''
-counterw = 0
-while counterw < 5:
-    w += v
-    counterw += 1
-x = w + '3'
-y = x + '6'
-z = y + '.'
-aa = [z for _ in range(10)]
-random.shuffle(aa)
-ab = random.choice(aa)
-ac = ''
-for _ in range(3):
-    ac += ab
-def ad():
-    return ac
-def ae():
-    return ad()
-af = ae()
-ag = af[0:]
-ah = ''
-for _ in range(2):
-    for __ in range(5):
-                ah += ag
-print(ah)
+if p == '1':
+    q = p + ' c1'
+elif p == '13':
+    q = p + ' c2'
+else:
+    q = p + ' c3'
+r_set = {q, q, q, q, q, q, q, q, q}
+r = random.choice(list(r_set))
+s_set = {r, r, r, r}
+s = random.choice(list(s_set))
+t = ''
+for _ in range(5):
+    for __ in range(2):
+                t += s
+u = ''
+for _ in range(5):
+    u += t
+def v():
+    return u
+def w():
+    return v()
+def x():
+    return w()
+y = x()
+print(y)

@@ -1,79 +1,57 @@
 import random
 import math
 a = input()
-b_set = {a, a, a, a, a}
-b = random.choice(list(b_set))
-c = f'string {b}'
+b = [a for _ in range(5)]
+random.shuffle(b)
+c = random.choice(b)
 d = c + '.'
 e = ''
+countere = 0
+while countere < 4:
+    e += d
+    countere += 1
+f = (e, e, e)
+g, h, i = f
+j = g + h + i
+def k():
+    return j
+l = k()
+m = l + '5'
+n = m + '3'
+o = n + '9'
+p = o[0:]
+q = [p for _ in range(7)]
+random.shuffle(q)
+r = random.choice(q)
+if r == '10':
+    s = r + ' c1'
+elif r == '13':
+    s = r + ' c2'
+else:
+    s = r + ' c3'
+t = (s, s, s)
+u, v, w = t
+x = u + v + w
+y_dict = {47: x, 90: x, 11: x, 57: x}
+z_dict = {21: y_dict, 15: y_dict, 30: y_dict, 89: y_dict, 24: y_dict}
+aa = random.choice(list(z_dict.values()))
+ab = random.choice(list(aa.values()))
+ac = ab[0:]
+ad = ''
 for _ in range(2):
-    for __ in range(3):
-                e += d
-f = e[0:]
-g = (f, f, f)
-h, i, j = g
-k = h + i + j
-l = k[0:]
-m = l + '3'
-n = m + '9'
-o = ''
-for _ in range(3):
     for __ in range(4):
-                o += n
-p_list = [o for _ in range(6)]
-q_list = [p_list for _ in range(3)]
-r_list = [q_list for _ in range(3)]
-s = random.choice(r_list)
-t = random.choice(s)
-u = random.choice(t)
-v = ''
-for _ in range(5):
-        if _ == 1:
-            break
-        v += u
-w_list = [v for _ in range(2)]
-x_list = [w_list for _ in range(4)]
-y = random.choice(x_list)
-z = random.choice(y)
-aa = ''
-for _ in range(4):
-    aa += z
-def ab():
-    return aa
-def ac():
-    return ab()
-def ad():
-    return ac()
-ae = ad()
-af = ''
-for _ in range(4):
-    ag = ''
-    for _ in range(2):
-        ag += af
-        af += ae
-ah = ''
-for _ in range(3):
-    ai = ''
-    for _ in range(2):
-        aj = ''
-        for _ in range(4):
-            aj += ai
-            ai += ah
-        ah += ag
-ak = ''
-counterak = 0
-while counterak < 4:
-    al = ''
-    counteral = 0
-    while counteral < 5:
-        al += ak
-        counteral += 1
-        ak += aj
-        counterak += 1
-am = ''
-for _ in range(2):
-    an = ''
-    for _ in range(4):
-        an += am
-        am += al
-print(an)
+                ad += ac
+def ae():
+    return ad
+af = ae()
+ag_list = [af for _ in range(7)]
+ah_list = [ag_list for _ in range(3)]
+ai_list = [ah_list for _ in range(5)]
+aj = random.choice(ai_list)
+ak = random.choice(aj)
+al = random.choice(ak)
+am = al[0:]
+an = am + '.'
+ao_set = {an, an}
+ao = random.choice(list(ao_set))
+print(ao)

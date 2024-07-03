@@ -1,96 +1,76 @@
 import random
 import math
 a = input()
-b = ''
-counterb = 0
-while counterb < 3:
-    c = ''
-    counterc = 0
-    while counterc < 3:
-        d = ''
-        counterd = 0
-        while counterd < 5:
-            d += c
-            counterd += 1
-            c += b
-            counterc += 1
-        b += a
-        counterb += 1
-e = d + '.'
-f = ''
-counterf = 0
-while counterf < 4:
-    g = ''
-    counterg = 0
-    while counterg < 5:
-        h = ''
-        counterh = 0
-        while counterh < 3:
-            h += g
-            counterh += 1
-            g += f
-            counterg += 1
-        f += e
-        counterf += 1
-i = [h for _ in range(10)]
-random.shuffle(i)
-j = random.choice(i)
-def k():
-    return j
-def l():
-    return k()
-def m():
-    return l()
-n = m()
-o_set = {n, n, n, n, n, n}
-o = random.choice(list(o_set))
-p = (o, o, o)
-q, r, s = p
-t = q + r + s
-u = ''
-for _ in range(3):
-    v = ''
-    for _ in range(5):
-        v += u
-        u += t
-w = ''
-for _ in range(3):
-    for __ in range(4):
-                w += v
-x = w[0:]
-y = x + '6'
-if y == '5':
-    z = y + ' c1'
-elif y == '19':
-    z = y + ' c2'
-else:
-    z = y + ' c3'
-aa = ''
-counteraa = 0
-while counteraa < 4:
-    aa += z
-    counteraa += 1
-ab = ''
-for _ in range(4):
-    for __ in range(4):
-                ab += aa
-ac = ''
-for _ in range(6):
-        if _ == 3:
-            break
-        ac += ab
-ad = ''
-for _ in range(6):
-        if _ == 3:
-            break
-        ad += ac
-ae = (ad, ad, ad)
-af, ag, ah = ae
-ai = af + ag + ah
-aj = ''
+b = (a, a, a)
+c, d, e = b
+f = c + d + e
+g = ''
+counterg = 0
+while counterg < 5:
+    h = ''
+    counterh = 0
+    while counterh < 5:
+        h += g
+        counterh += 1
+        g += f
+        counterg += 1
+i_set = {h, h, h, h, h, h}
+i = random.choice(list(i_set))
+j = ''
 for _ in range(5):
-    ak = ''
-    for _ in range(3):
-        ak += aj
-        aj += ai
-print(ak)
+        if _ == 3:
+            break
+        j += i
+k = f'string {j}'
+l_dict = {7: k, 62: k, 94: k, 9: k}
+m = random.choice(list(l_dict.values()))
+n = ''
+for _ in range(5):
+    for __ in range(4):
+                n += m
+o = n[0:]
+p = o[0:]
+q = ''
+for _ in range(6):
+        if _ == 3:
+            continue
+        q += p
+if q == '1':
+    r = q + ' c1'
+elif q == '16':
+    r = q + ' c2'
+else:
+    r = q + ' c3'
+s = ''
+counters = 0
+while counters < 3:
+    t = ''
+    countert = 0
+    while countert < 2:
+        u = ''
+        counteru = 0
+        while counteru < 3:
+            u += t
+            counteru += 1
+            t += s
+            countert += 1
+        s += r
+        counters += 1
+v_dict = {4: u, 89: u, 61: u, 46: u, 75: u, 19: u, 45: u, 91: u, 80: u}
+w = random.choice(list(v_dict.values()))
+x = w[0:]
+y = (x, x, x)
+z, aa, ab = y
+ac = z + aa + ab
+if ac == '10':
+    ad = ac + ' c1'
+elif ac == '12':
+    ad = ac + ' c2'
+else:
+    ad = ac + ' c3'
+ae_dict = {2: ad, 75: ad, 98: ad}
+af_dict = {35: ae_dict, 78: ae_dict, 80: ae_dict, 18: ae_dict, 50: ae_dict, 35: ae_dict}
+ag = random.choice(list(af_dict.values()))
+ah = random.choice(list(ag.values()))
+ai = ah[0:]
+print(ai)

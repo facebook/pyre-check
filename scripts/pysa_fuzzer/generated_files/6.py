@@ -1,57 +1,84 @@
 import random
 import math
 a = input()
-b_list = [a for _ in range(7)]
-c_list = [b_list for _ in range(6)]
-d = random.choice(c_list)
-e = random.choice(d)
-f = f'string {e}'
-g = f'string {f}'
-h = g + '.'
-i = h[0:]
-j_set = {i, i, i, i, i}
-j = random.choice(list(j_set))
-k = ''
-for _ in range(10):
+b = ''
+counterb = 0
+while counterb < 2:
+    c = ''
+    counterc = 0
+    while counterc < 3:
+        c += b
+        counterc += 1
+        b += a
+        counterb += 1
+d = ''
+for _ in range(3):
+    d += c
+e = d[0:]
+f = e + '4'
+g = f + '6'
+h = g + '6'
+i = ''
+for _ in range(7):
         if _ == 4:
+            break
+        i += h
+j = ''
+for _ in range(5):
+        if _ == 5:
             continue
-        k += j
-l = f'string {k}'
-m_dict = {17: l, 100: l, 25: l}
+        j += i
+k = f'string {j}'
+l_dict = {85: k, 4: k, 56: k}
+m_dict = {29: l_dict, 34: l_dict, 36: l_dict}
 n = random.choice(list(m_dict.values()))
-o = (n, n, n)
-p, q, r = o
-s = p + q + r
-t = ''
-for _ in range(4):
-    u = ''
-    for _ in range(3):
-        u += t
-        t += s
-v = ''
-counterv = 0
-while counterv < 3:
-    w = ''
-    counterw = 0
-    while counterw < 4:
+o = random.choice(list(n.values()))
+p_set = {o, o}
+p = random.choice(list(p_set))
+q = ''
+counterq = 0
+while counterq < 3:
+    q += p
+    counterq += 1
+r = (q, q, q)
+s, t, u = r
+v = s + t + u
+w = ''
+for _ in range(6):
+        if _ == 1:
+            continue
         w += v
-        counterw += 1
-        v += u
-        counterv += 1
-x_set = {w, w, w, w, w, w, w}
-x = random.choice(list(x_set))
-y_list = [x for _ in range(3)]
-z_list = [y_list for _ in range(9)]
-aa_list = [z_list for _ in range(10)]
-ab = random.choice(aa_list)
-ac = random.choice(ab)
-ad = random.choice(ac)
-ae = ad + '.'
-af = ae + '6'
-ag = [af for _ in range(6)]
-random.shuffle(ag)
-ah = random.choice(ag)
-ai = [ah for _ in range(6)]
-random.shuffle(ai)
-aj = random.choice(ai)
-print(aj)
+def x():
+    return w
+y = x()
+z = ''
+counterz = 0
+while counterz < 3:
+    aa = ''
+    counteraa = 0
+    while counteraa < 3:
+        aa += z
+        counteraa += 1
+        z += y
+        counterz += 1
+ab = aa[0:]
+ac = (ab, ab, ab)
+ad, ae, af = ac
+ag = ad + ae + af
+ah = ''
+counterah = 0
+while counterah < 2:
+    ai = ''
+    counterai = 0
+    while counterai < 4:
+        aj = ''
+        counteraj = 0
+        while counteraj < 2:
+            aj += ai
+            counteraj += 1
+            ai += ah
+            counterai += 1
+        ah += ag
+        counterah += 1
+ak = aj + '7'
+print(ak)

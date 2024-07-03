@@ -1,68 +1,68 @@
 import random
 import math
 a = input()
-b = a[0:]
-c = b + '5'
-if c == '8':
-    d = c + ' c1'
-elif c == '15':
-    d = c + ' c2'
-else:
-    d = c + ' c3'
-e_set = {d, d, d}
-e = random.choice(list(e_set))
-f_list = [e for _ in range(7)]
-g = random.choice(f_list)
-h_set = {g, g, g, g, g, g}
-h = random.choice(list(h_set))
-i = ''
-counteri = 0
-while counteri < 4:
-    j = ''
-    counterj = 0
-    while counterj < 2:
-        j += i
-        counterj += 1
-        i += h
-        counteri += 1
-def k():
-    return j
-l = k()
-def m():
-    return l
-n = m()
-o = ''
-countero = 0
-while countero < 2:
-    o += n
-    countero += 1
-p = o + '.'
-q = p + '5'
-r_dict = {16: q, 61: q, 47: q}
-s_dict = {93: r_dict, 62: r_dict, 9: r_dict, 65: r_dict}
-t = random.choice(list(s_dict.values()))
-u = random.choice(list(t.values()))
-v = ''
-for _ in range(3):
-    w = ''
+b = ''
+for _ in range(5):
+    c = ''
     for _ in range(2):
-        x = ''
-        for _ in range(3):
-            x += w
-            w += v
-        v += u
-y_dict = {95: x, 22: x, 59: x, 66: x, 91: x, 31: x, 86: x}
-z_dict = {14: y_dict, 76: y_dict, 44: y_dict}
-aa = random.choice(list(z_dict.values()))
-ab = random.choice(list(aa.values()))
-ac = ab[0:]
-if ac == '2':
-    ad = ac + ' c1'
-elif ac == '16':
-    ad = ac + ' c2'
+        c += b
+        b += a
+d = ''
+for _ in range(2):
+    for __ in range(2):
+                d += c
+e = d + '.'
+f = e + '.'
+g = f'string {f}'
+h_dict = {33: g, 85: g}
+i_dict = {44: h_dict, 64: h_dict, 25: h_dict, 3: h_dict}
+j = random.choice(list(i_dict.values()))
+k = random.choice(list(j.values()))
+l = ''
+counterl = 0
+while counterl < 3:
+    m = ''
+    counterm = 0
+    while counterm < 5:
+        n = ''
+        countern = 0
+        while countern < 2:
+            n += m
+            countern += 1
+            m += l
+            counterm += 1
+        l += k
+        counterl += 1
+o = n + '.'
+p = f'string {o}'
+q = p + '.'
+r_list = [q for _ in range(3)]
+s_list = [r_list for _ in range(8)]
+t_list = [s_list for _ in range(4)]
+u = random.choice(t_list)
+v = random.choice(u)
+w = random.choice(v)
+x = ''
+for _ in range(5):
+    y = ''
+    for _ in range(5):
+        y += x
+        x += w
+if y == '5':
+    z = y + ' c1'
+elif y == '20':
+    z = y + ' c2'
 else:
-    ad = ac + ' c3'
-ae = (ad, ad, ad)
-af, ag, ah = ae
-ai = af + ag + ah
-print(ai)
+    z = y + ' c3'
+aa = z + '.'
+ab = aa + '.'
+ac = ''
+for _ in range(3):
+    ac += ab
+ad = ac + '7'
+ae = ad + '8'
+af = ''
+for _ in range(3):
+    for __ in range(4):
+                af += ae
+print(af)

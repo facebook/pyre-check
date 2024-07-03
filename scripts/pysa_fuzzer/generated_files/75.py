@@ -1,63 +1,76 @@
 import random
 import math
 a = input()
-b = a[0:]
-c = ''
-for _ in range(8):
-        if _ == 1:
-            continue
-        c += b
-d = f'string {c}'
-e = [d for _ in range(5)]
-random.shuffle(e)
+b_list = [a for _ in range(2)]
+c_list = [b_list for _ in range(6)]
+d_list = [c_list for _ in range(10)]
+e = random.choice(d_list)
 f = random.choice(e)
-g = [f for _ in range(8)]
-random.shuffle(g)
-h = random.choice(g)
-i = [h for _ in range(9)]
-random.shuffle(i)
-j = random.choice(i)
-k = [j for _ in range(10)]
-random.shuffle(k)
-l = random.choice(k)
-m = ''
-for _ in range(2):
-    n = ''
-    for _ in range(4):
-        n += m
-        m += l
-def o():
-    return n
-p = o()
-q = [p for _ in range(10)]
-random.shuffle(q)
-r = random.choice(q)
-s = f'string {r}'
-t = ''
-for _ in range(6):
-        if _ == 5:
-            continue
-        t += s
-u = f'string {t}'
-v = ''
-counterv = 0
-while counterv < 2:
-    v += u
-    counterv += 1
-if v == '6':
-    w = v + ' c1'
-elif v == '18':
-    w = v + ' c2'
+g = random.choice(f)
+if g == '1':
+    h = g + ' c1'
+elif g == '15':
+    h = g + ' c2'
 else:
-    w = v + ' c3'
-x = ''
+    h = g + ' c3'
+def i():
+    return h
+j = i()
+k = j + '4'
+l = k + '8'
+m = l[0:]
+def n():
+    return m
+def o():
+    return n()
+def p():
+    return o()
+q = p()
+r = ''
+for _ in range(3):
+    for __ in range(4):
+                r += q
+def s():
+    return r
+def t():
+    return s()
+u = t()
+v_set = {u, u, u, u}
+v = random.choice(list(v_set))
+w = [v for _ in range(9)]
+random.shuffle(w)
+x = random.choice(w)
+y = ''
 for _ in range(5):
-        if _ == 2:
+        if _ == 4:
             break
-        x += w
-y_dict = {39: x, 85: x, 22: x, 26: x}
-z = random.choice(list(y_dict.values()))
-aa = [z for _ in range(8)]
-random.shuffle(aa)
-ab = random.choice(aa)
-print(ab)
+        y += x
+z_set = {y, y, y, y, y, y, y, y, y}
+z = random.choice(list(z_set))
+aa = ''
+for _ in range(3):
+    ab = ''
+    for _ in range(4):
+        ab += aa
+        aa += z
+if ab == '2':
+    ac = ab + ' c1'
+elif ab == '11':
+    ac = ab + ' c2'
+else:
+    ac = ab + ' c3'
+ad = ac[0:]
+ae = ''
+for _ in range(4):
+    ae += ad
+af = ''
+for _ in range(3):
+    ag = ''
+    for _ in range(4):
+        ag += af
+        af += ae
+ah_list = [ag for _ in range(2)]
+ai_list = [ah_list for _ in range(2)]
+aj = random.choice(ai_list)
+ak = random.choice(aj)
+print(ak)
