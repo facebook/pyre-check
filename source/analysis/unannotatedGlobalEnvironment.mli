@@ -20,7 +20,7 @@ module ReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val unannotated_global_environment : t -> t
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   (* All other functions are dependency tracked *)
 
@@ -115,14 +115,14 @@ module UpdateResult : sig
 
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
-  val unannotated_global_environment_update_result : t -> t
+  val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
 end
 
 module Overlay : sig
   type t
 
   (* This handle to self is needed to fulfill the recursive interface of the Environment functor *)
-  val unannotated_global_environment : t -> t
+  val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
   val owns_qualifier : t -> Ast.Reference.t -> bool
 
@@ -155,7 +155,7 @@ val create : CreateHandle.t -> t
 
 (* This handle to self is needed to fulfill the (recursive) interface used in the Environment.ml
    functor *)
-val unannotated_global_environment : t -> t
+val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
 val controls : t -> EnvironmentControls.t
 

@@ -117,8 +117,8 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let equal_value = Option.equal [%compare.equal: Location.WithModule.t]
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay
+  let overlay_owns_key source_code_api =
+    SourceCodeIncrementalApi.Overlay.owns_reference source_code_api
 end)
 
 include GlobalLocationTable
@@ -132,6 +132,11 @@ module ReadOnly = struct
 
   let class_metadata_environment read_only =
     attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment
+
+
+  let unannotated_global_environment read_only =
+    class_metadata_environment read_only
+    |> ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
 
 
   let get_tracked_source_code_api environment =

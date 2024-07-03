@@ -48,7 +48,7 @@ open Pyre
 module type ReadOnly = sig
   type t
 
-  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   val controls : t -> EnvironmentControls.t
 end
@@ -61,9 +61,7 @@ module UpdateResult = struct
 
     val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
 
-    val unannotated_global_environment_update_result
-      :  t ->
-      UnannotatedGlobalEnvironment.UpdateResult.t
+    val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
 
     val invalidated_modules : t -> Ast.Reference.t list
   end
@@ -78,7 +76,7 @@ module PreviousEnvironment = struct
     module Overlay : sig
       type t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
+      val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -94,7 +92,7 @@ module PreviousEnvironment = struct
 
     val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
-    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+    val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
     val read_only : t -> ReadOnly.t
 
@@ -226,7 +224,7 @@ module EnvironmentTable = struct
      * overlay owns a given key. We prevent incremental updates for
      * keys that are not owned.
      *)
-    val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
+    val overlay_owns_key : SourceCodeIncrementalApi.Overlay.t -> Key.t -> bool
 
     (* In a nonlazy environment table, incremental updates lead to us:
      * - recomputing values for all invalidated keys
@@ -270,7 +268,7 @@ module EnvironmentTable = struct
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+      val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
       val controls : t -> EnvironmentControls.t
     end
@@ -280,7 +278,7 @@ module EnvironmentTable = struct
     module Overlay : sig
       type t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
+      val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -296,7 +294,7 @@ module EnvironmentTable = struct
 
     val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
-    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+    val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
     val read_only : t -> ReadOnly.t
 
@@ -345,8 +343,8 @@ module EnvironmentTable = struct
 
       let upstream_environment { upstream_environment; _ } = upstream_environment
 
-      let unannotated_global_environment { upstream_environment; _ } =
-        In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
+      let source_code_read_only { upstream_environment; _ } =
+        In.PreviousEnvironment.ReadOnly.source_code_read_only upstream_environment
 
 
       let controls { upstream_environment; _ } =
@@ -366,13 +364,13 @@ module EnvironmentTable = struct
         :: In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
 
 
-      let unannotated_global_environment_update_result { upstream; _ } =
-        In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
+      let source_code_update_result { upstream; _ } =
+        In.PreviousEnvironment.UpdateResult.source_code_update_result upstream
 
 
       let invalidated_modules previous =
-        unannotated_global_environment_update_result previous
-        |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
+        source_code_update_result previous
+        |> SourceCodeIncrementalApi.UpdateResult.invalidated_modules
 
 
       let upstream { upstream; _ } = upstream
@@ -520,13 +518,11 @@ module EnvironmentTable = struct
         from_read_only_upstream: FromReadOnlyUpstream.t;
       }
 
-      let unannotated_global_environment { upstream_environment; _ } =
-        In.PreviousEnvironment.Overlay.unannotated_global_environment upstream_environment
+      let source_code_overlay { upstream_environment; _ } =
+        In.PreviousEnvironment.Overlay.source_code_overlay upstream_environment
 
 
-      let overlay_owns_key environment =
-        unannotated_global_environment environment |> In.overlay_owns_key
-
+      let overlay_owns_key environment = source_code_overlay environment |> In.overlay_owns_key
 
       let owns_trigger environment trigger =
         In.convert_trigger trigger |> overlay_owns_key environment
@@ -625,8 +621,8 @@ module EnvironmentTable = struct
 
       let create controls = In.PreviousEnvironment.create controls |> from_upstream_environment
 
-      let unannotated_global_environment { upstream_environment; _ } =
-        In.PreviousEnvironment.unannotated_global_environment upstream_environment
+      let source_code_base { upstream_environment; _ } =
+        In.PreviousEnvironment.source_code_base upstream_environment
 
 
       let read_only { from_read_only_upstream; _ } =

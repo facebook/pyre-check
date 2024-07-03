@@ -14,9 +14,11 @@ module TypeEnvironmentReadOnly : sig
 
   val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val global_resolution : t -> GlobalResolution.t
 
-  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   val get_tracked_source_code_api
     :  t ->
@@ -89,4 +91,6 @@ module AssumeAstEnvironment : sig
   val store_without_dependency_keys : t -> unit
 
   val load_without_dependency_keys : EnvironmentControls.t -> t
+
+  val ast_environment : t -> AstEnvironment.t
 end

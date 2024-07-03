@@ -187,8 +187,8 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Fn.id
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_identifier unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_identifier source_code_overlay
 
 
   let equal_value = Option.equal [%compare.equal: class_metadata]
@@ -208,6 +208,11 @@ module ReadOnly = struct
 
 
   let class_hierarchy_environment = upstream_environment
+
+  let unannotated_global_environment read_only =
+    class_hierarchy_environment read_only
+    |> ClassHierarchyEnvironment.ReadOnly.unannotated_global_environment
+
 
   let from_pure_logic ?dependency read_only f =
     let get_class_hierarchy () =

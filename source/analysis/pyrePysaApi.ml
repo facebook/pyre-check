@@ -119,8 +119,7 @@ module ReadWrite = struct
 
   let read_write_module_tracker api =
     read_write_type_environment api
-    |> TypeEnvironment.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+    |> TypeEnvironment.AssumeAstEnvironment.ast_environment
     |> AstEnvironment.module_tracker
 
 
@@ -159,9 +158,7 @@ module ReadWrite = struct
     Log.info "Purging shared memory...";
     let timer = Timer.start () in
     let ast_environment =
-      read_write_type_environment api
-      |> TypeEnvironment.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+      read_write_type_environment api |> TypeEnvironment.AssumeAstEnvironment.ast_environment
     in
     let qualifiers =
       read_write_type_environment api

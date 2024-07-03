@@ -40,8 +40,8 @@ let build_environment_data
     in
     Statistics.performance ~name:"full environment built" ~timer ();
     ( AnnotatedGlobalEnvironment.read_only annotated_global_environment,
-      AnnotatedGlobalEnvironment.unannotated_global_environment annotated_global_environment
-      |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+      AnnotatedGlobalEnvironment.source_code_base annotated_global_environment
+      |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
       |> GlobalModulePathsApi.type_check_qualifiers )
   in
   { global_environment; qualifiers }

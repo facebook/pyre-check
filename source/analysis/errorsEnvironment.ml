@@ -61,8 +61,8 @@ module QualifierErrorsTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Reference.show
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_qualifier unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_overlay
 
 
   let lazy_incremental = false
@@ -87,8 +87,7 @@ module ReadOnly = struct
   let type_environment environment = upstream_environment environment
 
   let get_untracked_source_code_api environment =
-    unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
+    source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
 
 
   let controls environment = type_environment environment |> TypeEnvironment.ReadOnly.controls
@@ -121,8 +120,8 @@ end
 
 module AssumeGlobalModuleListing = struct
   let global_module_paths_api errors_environment =
-    unannotated_global_environment errors_environment
-    |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+    source_code_base errors_environment
+    |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
 end
 
 module ErrorsEnvironmentReadOnly = ReadOnly
@@ -191,14 +190,9 @@ module UpdateStatistics = struct
       Set.length rechecked_functions, Set.length rechecked_modules
     in
     let module_updates_count, invalidated_modules_count =
-      let unannotated_global_environment_update_result =
-        UpdateResult.unannotated_global_environment_update_result update_result
-      in
-      ( UnannotatedGlobalEnvironment.UpdateResult.module_updates
-          unannotated_global_environment_update_result
-        |> List.length,
-        UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
-          unannotated_global_environment_update_result
+      let source_code_update_result = UpdateResult.source_code_update_result update_result in
+      ( SourceCodeIncrementalApi.UpdateResult.module_updates source_code_update_result |> List.length,
+        SourceCodeIncrementalApi.UpdateResult.invalidated_modules source_code_update_result
         |> List.length )
     in
     {

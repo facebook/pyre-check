@@ -73,8 +73,8 @@ module CheckResultsTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Reference.show
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_reference source_code_overlay
 
 
   let lazy_incremental = false
@@ -97,8 +97,8 @@ let global_environment = CheckResultsTable.AssumeDownstreamNeverNeedsUpdates.ups
 
 module AssumeGlobalModuleListing = struct
   let global_module_paths_api type_environment =
-    unannotated_global_environment type_environment
-    |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+    source_code_base type_environment
+    |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
 end
 
 let populate_for_definitions ~scheduler ~scheduler_policies environment defines =
@@ -206,18 +206,21 @@ module ReadOnly = struct
 
   let global_resolution environment = global_environment environment |> GlobalResolution.create
 
+  let unannotated_global_environment read_only =
+    global_environment read_only
+    |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
+
+
   let get_tracked_source_code_api environment =
-    unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api
+    source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api
 
 
   let get_untracked_source_code_api environment =
-    unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
+    source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
 
 
   let get_environment_controls environment =
-    unannotated_global_environment environment |> UnannotatedGlobalEnvironment.ReadOnly.controls
+    source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.controls
 
 
   let get_errors environment ?dependency reference =
@@ -249,11 +252,11 @@ module ReadOnly = struct
         TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution name
 end
 
-(* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
-   before loading / after storing. These functions only handle serializing and deserializing the
-   non-SharedMemory data *)
-
 module AssumeAstEnvironment = struct
+  (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
+     before loading / after storing. These functions only handle serializing and deserializing the
+     non-SharedMemory data *)
+
   let store environment =
     CheckResultsTable.AssumeAstEnvironment.store environment;
     SharedMemoryKeys.DependencyKey.Registry.store ()
@@ -269,6 +272,20 @@ module AssumeAstEnvironment = struct
   let store_without_dependency_keys = CheckResultsTable.AssumeAstEnvironment.store
 
   let load_without_dependency_keys = CheckResultsTable.AssumeAstEnvironment.load
+
+  (* Pysa sometimes directly relies on the AstEnvironment (mainly for cache logic rather than the
+     core business logic) and we therefore need this handle. Some legacy testing code likelwise
+     needs direct access to the ast environment in order to wipe shared memory between tests. *)
+
+  let ast_environment environment =
+    global_environment environment
+    |> AnnotatedGlobalEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> AttributeResolution.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> ClassSuccessorMetadataEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> ClassHierarchyEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> TypeAliasEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> EmptyStubEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
 end
 
 module TypeEnvironmentReadOnly = ReadOnly

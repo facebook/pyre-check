@@ -16,6 +16,7 @@
  * - An updatable Base representing a read-write incremental root source tree.
  * - An updatable Overlay, which includes qualifier ownership hooks.
  *)
+open Base
 
 module ReadOnly = struct
   type t = {
@@ -83,6 +84,13 @@ module Overlay = struct
   let read_only { read_only; _ } = read_only
 
   let owns_qualifier { owns_qualifier; _ } = owns_qualifier
+
+  let owns_reference api reference =
+    Ast.Reference.possible_qualifiers_after_delocalize reference
+    |> List.exists ~f:(owns_qualifier api)
+
+
+  let owns_identifier environment name = Ast.Reference.create name |> owns_reference environment
 
   let update_overlaid_code { update_overlaid_code; _ } = update_overlaid_code
 end

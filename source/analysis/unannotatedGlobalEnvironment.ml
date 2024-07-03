@@ -327,7 +327,9 @@ module ReadOnly = struct
     source_code_incremental_read_only environment |> SourceCodeIncrementalApi.ReadOnly.controls
 
 
-  let unannotated_global_environment = Fn.id
+  let source_code_read_only { source_code_incremental_read_only; _ } =
+    source_code_incremental_read_only
+
 
   let get_module_metadata { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.get_module_metadata
@@ -417,7 +419,7 @@ module UpdateResult = struct
 
   let module_updates { upstream; _ } = SourceCodeIncrementalApi.UpdateResult.module_updates upstream
 
-  let unannotated_global_environment_update_result = Fn.id
+  let source_code_update_result { upstream; _ } = upstream
 end
 
 module FromReadOnlyUpstream = struct
@@ -1100,18 +1102,19 @@ module Overlay = struct
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
-  let unannotated_global_environment = Fn.id
+  let source_code_overlay { source_code_incremental_overlay; _ } = source_code_incremental_overlay
 
   let owns_qualifier { source_code_incremental_overlay; _ } =
     SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_incremental_overlay
 
 
-  let owns_reference environment reference =
-    Reference.possible_qualifiers_after_delocalize reference
-    |> List.exists ~f:(owns_qualifier environment)
+  let owns_reference { source_code_incremental_overlay; _ } =
+    SourceCodeIncrementalApi.Overlay.owns_reference source_code_incremental_overlay
 
 
-  let owns_identifier environment name = Reference.create name |> owns_reference environment
+  let owns_identifier { source_code_incremental_overlay; _ } =
+    SourceCodeIncrementalApi.Overlay.owns_identifier source_code_incremental_overlay
+
 
   let consume_upstream_update
       { from_read_only_upstream; source_code_incremental_overlay; _ }
@@ -1260,7 +1263,7 @@ module Base = struct
     FromReadOnlyUpstream.controls from_read_only_upstream
 
 
-  let unannotated_global_environment = Fn.id
+  let source_code_base { source_code_incremental_base; _ } = source_code_incremental_base
 
   module AssumeGlobalModuleListing = struct
     let global_module_paths_api { source_code_incremental_base; _ } =

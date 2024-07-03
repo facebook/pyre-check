@@ -3247,8 +3247,8 @@ module ScratchProject = struct
            need to clean up in that case, and the cleanup relies on APIs that are only available
            using nonlazy module tracking *)
         let ast_environment =
-          ErrorsEnvironment.unannotated_global_environment errors_environment
-          |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+          ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
+          |> TypeEnvironment.AssumeAstEnvironment.ast_environment
         in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
@@ -3319,8 +3319,8 @@ module ScratchProject = struct
        assume there is an underlying AstEnvironment or ModuleTracker. *)
     module AssumeBackedByAstEnvironment = struct
       let ast_environment { errors_environment; _ } =
-        ErrorsEnvironment.unannotated_global_environment errors_environment
-        |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+        ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
+        |> TypeEnvironment.AssumeAstEnvironment.ast_environment
 
 
       let module_tracker project = ast_environment project |> AstEnvironment.module_tracker

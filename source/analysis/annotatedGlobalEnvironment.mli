@@ -21,6 +21,8 @@ module AnnotatedReadOnly : sig
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val get_tracked_source_code_api
     :  t ->
     dependency:SharedMemoryKeys.DependencyKey.registered ->
