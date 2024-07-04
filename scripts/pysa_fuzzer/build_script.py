@@ -96,13 +96,29 @@ def find_undetected_files():
     undetected_percentage = (undetected_count / total_files) * 100
     print(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
+def clean_detected_files():
+    # Load the analysis output from the file
+    with open('generated_files/analysis_output.tmp', 'r') as file:
+        analysis_output = json.load(file)
+
+    # Extract the list of files where the flow has been detected
+    detected_files = set()
+    for entry in analysis_output:
+        detected_files.add(entry['path'])
+
+    # Remove detected files
+    for file in detected_files:
+        if os.path.exists(file):
+            os.remove(file)
+            print(f"Removed {file}")
+
 def clean_up():
     run_command('rm -rf tutorial')
     run_command('rm -rf generated_files')
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
-    parser.add_argument('action', choices=['all', 'clean'], help="Action to perform")
+    parser.add_argument('action', choices=['all', 'clean', 'clean_detected'], help="Action to perform")
 
     args = parser.parse_args()
 
@@ -113,6 +129,8 @@ def main():
         find_undetected_files()
     elif args.action == 'clean':
         clean_up()
+    elif args.action == 'clean_detected':
+        clean_detected_files()
 
 if __name__ == "__main__":
     main()
