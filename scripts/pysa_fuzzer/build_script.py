@@ -1,6 +1,7 @@
 import subprocess
 import os
 import json
+import argparse
 
 def run_command(command):
     process = subprocess.Popen(command, shell=True)
@@ -60,10 +61,18 @@ def clean_up():
     run_command('rm -rf generated_files')
 
 def main():
-    generate_python_files()
-    setup_virtual_environment()
-    configure_and_analyze()
-    run_report()
+    parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
+    parser.add_argument('action', choices=['all', 'clean'], help="Action to perform")
+
+    args = parser.parse_args()
+
+    if args.action == 'all':
+        generate_python_files()
+        setup_virtual_environment()
+        configure_and_analyze()
+        run_report()
+    elif args.action == 'clean':
+        clean_up()
 
 if __name__ == "__main__":
     main()
