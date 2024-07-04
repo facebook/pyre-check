@@ -28,7 +28,7 @@ def generate_python_files():
 
 def setup_virtual_environment():
     run_command('python3 -m venv tutorial')
-    run_command('. tutorial/bin/activate && pip3 install pyre-check fb-sapp django-stubs')
+    run_command('. tutorial/bin/activate && pip3 install pyre-check')
 
 def configure_and_analyze():
     os.makedirs('generated_files', exist_ok=True)
