@@ -28,10 +28,14 @@ class CodeGenerator:
 
     def reset(self) -> None:
         self.current_var = 0
+
+    def generate_import_statements(self) -> str:
+        return "import random\nimport math\n"
     
     def generate_source(self) -> str:
+        import_statements = self.generate_import_statements()
         curr_var = self.generate_new_variable()
-        return f"import random\nimport math\n{curr_var} = input()"
+        return f"{import_statements}{curr_var} = input()"
 
     def generate_sink(self) -> str: 
         prev_var = self.get_last_variable()
