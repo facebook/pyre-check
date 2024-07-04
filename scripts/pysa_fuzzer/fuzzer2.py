@@ -292,4 +292,7 @@ class CodeGenerator:
 
 generator = CodeGenerator()
 
+print(generator.generate_source())
+print(generator.generate_if_else_elif())
+print(generator.generate_sink())
 
