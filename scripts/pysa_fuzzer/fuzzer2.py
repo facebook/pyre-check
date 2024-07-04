@@ -257,9 +257,9 @@ class CodeGenerator:
 
 
 
-    def generate_statements(self, x: int) -> str:
-        if x < 2:
-            raise ValueError("x should be at least 2 to include source and sink functions.")
+    def generate_statements(self, number_statements: int) -> str:
+        if number_statements < 2:
+            raise ValueError("number_statements should be at least 2 to include source and sink functions.")
         
         function_generators = [
             lambda: self.generate_addition(random.randint(1, 3)),
@@ -284,12 +284,12 @@ class CodeGenerator:
         source_code = self.generate_source()
         
         # Select random functions, allowing for duplicates
-        selected_functions = random.choices(function_generators, k=x - 2)  # -2 to account for source and sink
+        selected_functions = random.choices(function_generators, k = number_statements - 2)  # -2 to account for source and sink
         generated_code = "\n".join(func() for func in selected_functions)
         sink_code = self.generate_sink()
         full_code = f"{source_code}\n{generated_code}\n{sink_code}"
         return full_code
 
 generator = CodeGenerator()
-x = 30 # Change this number to generate a different amount of functions
+
 
