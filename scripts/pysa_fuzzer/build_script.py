@@ -2,17 +2,33 @@ import subprocess
 import os
 import json
 import argparse
+from fuzzer2 import CodeGenerator
 
 def run_command(command):
     process = subprocess.Popen(command, shell=True)
     process.communicate()
 
 def generate_python_files():
-    run_command('python generate_code.py')
+    generator = CodeGenerator()
+    num_files = 100  # Change this number to generate a different amount of files
+    x = 20  # Change this number to generate a different amount of functions
+    output_dir = 'generated_files'
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for i in range(1, num_files + 1):
+        generated_code = generator.generate_statements(x)
+        generator.reset()
+        filename = os.path.join(output_dir, f'{i}.py')
+        with open(filename, 'w') as file:
+            file.write(generated_code)
+        print(f"Generated {filename}")
 
 def setup_virtual_environment():
     run_command('python3 -m venv tutorial')
-    run_command('. tutorial/bin/activate && pip3 install pyre-check')
+    run_command('. tutorial/bin/activate && pip3 install pyre-check fb-sapp django-stubs')
 
 def configure_and_analyze():
     os.makedirs('generated_files', exist_ok=True)
