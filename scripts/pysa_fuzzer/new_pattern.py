@@ -1,3 +1,5 @@
+# example starts here 
+
 a = input()
 class Node:
     def __init__(self, val=None):
@@ -11,3 +13,5 @@ d.next = c
 c.next = b
 e = d.next.next.val
 print(e)
+
+
