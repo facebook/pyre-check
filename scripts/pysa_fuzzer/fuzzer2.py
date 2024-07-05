@@ -33,9 +33,8 @@ class CodeGenerator:
         return "import random\nimport math\n"
     
     def generate_source(self) -> str:
-        import_statements = self.generate_import_statements()
         curr_var = self.generate_new_variable()
-        return f"{import_statements}{curr_var} = input()"
+        return f"{curr_var} = input()"
 
     def generate_sink(self) -> str: 
         prev_var = self.get_last_variable()
