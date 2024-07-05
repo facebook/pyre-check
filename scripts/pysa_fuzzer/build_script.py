@@ -5,8 +5,8 @@ import argparse
 from fuzzer2 import CodeGenerator
 
 def run_command(command):
-    process = subprocess.Popen(command, shell=True)
-    process.communicate()
+    result = subprocess.run(command, shell=True, check=True, executable='/bin/bash')
+    return result
 
 def generate_python_files():
     generator = CodeGenerator()
