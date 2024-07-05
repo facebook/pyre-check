@@ -287,6 +287,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 614,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -310,6 +312,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 615,
     "sources": [
       {
         "port": "result",
@@ -349,6 +353,8 @@
   "kind": "model",
   "data": {
     "callable": "dict.__setitem__",
+    "filename": "builtins.pyi",
+    "callable_line": 398,
     "sinks": [
       {
         "port": "formal(__value, position=2)",

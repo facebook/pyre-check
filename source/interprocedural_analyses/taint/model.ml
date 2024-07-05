@@ -856,10 +856,34 @@ let may_breadcrumbs_to_must
       modes;
     }
   =
-  let generations = ForwardState.may_breadcrumbs_to_must generations in
-  let parameter_sources = ForwardState.may_breadcrumbs_to_must parameter_sources in
-  let taint_in_taint_out = BackwardState.may_breadcrumbs_to_must taint_in_taint_out in
-  let sink_taint = BackwardState.may_breadcrumbs_to_must sink_taint in
+  let generations =
+    ForwardState.transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:Features.BreadcrumbSet.over_to_under
+      generations
+  in
+  let parameter_sources =
+    ForwardState.transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:Features.BreadcrumbSet.over_to_under
+      parameter_sources
+  in
+  let taint_in_taint_out =
+    BackwardState.transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:Features.BreadcrumbSet.over_to_under
+      taint_in_taint_out
+  in
+  let sink_taint =
+    BackwardState.transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:Features.BreadcrumbSet.over_to_under
+      sink_taint
+  in
   {
     forward = { generations };
     backward = { taint_in_taint_out; sink_taint };

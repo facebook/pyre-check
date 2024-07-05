@@ -132,7 +132,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val local_annotations : LocalAnnotationMap.ReadOnly.t option
+  val local_annotations : TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val resolution : Resolution.t
 end
@@ -694,6 +694,9 @@ module State (Context : Context) = struct
           state = forward_setitem ~resolution ~state ~base ~index ~value_expression;
           nested_awaitable_expressions = [];
         }
+    | Slice slice ->
+        let lowered = Slice.lowered ~location slice in
+        forward_expression ~resolution ~state ~expression:lowered
     | Subscript { Subscript.base; index } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:base
@@ -945,14 +948,12 @@ module State (Context : Context) = struct
 
 
   let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
-    let annotation_store =
+    let type_info_store =
       local_annotations
-      >>= LocalAnnotationMap.ReadOnly.get_precondition ~statement_key
+      >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     in
-    resolution
-    |> Resolution.with_annotation_store ~annotation_store
-    |> Resolution.with_parent ~parent
+    resolution |> Resolution.with_type_info_store ~type_info_store |> Resolution.with_parent ~parent
 
 
   let forward ~statement_key state ~statement:{ Node.value; location } =

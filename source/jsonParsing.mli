@@ -206,7 +206,13 @@ module JsonAst : sig
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show, compare]
+    and t = expression Node.t [@@deriving equal, compare]
+
+    val to_yojson : t -> Yojson.Safe.t
+
+    val show_internal : t -> string
+
+    val pp_internal : Format.formatter -> t -> unit
 
     exception
       TypeError of {
@@ -238,6 +244,8 @@ module JsonAst : sig
       val to_list_exn : t -> t list
 
       val to_location_exn : t -> Location.t (* throws Type Error *)
+
+      val is_string : t -> bool
     end
   end
 end

@@ -37,9 +37,9 @@ open Analysis
 module Error = AnalysisError
 open TypeInferenceData
 
-let refine_local ~resolution ~name ~annotation =
+let refine_local ~resolution ~name ~type_info =
   match name_to_reference name with
-  | Some reference -> Resolution.refine_local resolution ~reference ~annotation
+  | Some reference -> Resolution.refine_local resolution ~reference ~type_info
   | None -> resolution
 
 
@@ -72,7 +72,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val resolution_fixpoint : LocalAnnotationMap.t option
+  val resolution_fixpoint : TypeInfo.ForFunctionBody.t option
 
   val error_map : TypeCheck.LocalErrorMap.t option
 end
@@ -188,7 +188,7 @@ module State (Context : Context) = struct
         ~errors:ErrorMap.Map.empty
         ~resolution
         ~snapshot_resolution:
-          (Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty)
+          (Resolution.with_type_info_store resolution ~type_info_store:TypeInfo.Store.empty)
 
 
   let errors = function
@@ -219,9 +219,9 @@ module State (Context : Context) = struct
         &&
         let global_resolution = Resolution.global_resolution left.resolution in
         TypeInfo.Store.less_or_equal
-          ~global_resolution
-          ~left:(Resolution.annotation_store left.resolution)
-          ~right:(Resolution.annotation_store right.resolution)
+          ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
+          ~left:(Resolution.type_info_store left.resolution)
+          ~right:(Resolution.type_info_store right.resolution)
 
 
   let widening_threshold = 3
@@ -277,13 +277,13 @@ module State (Context : Context) = struct
     | Bottom -> Bottom
     | Value ({ resolution; snapshot_resolution; _ } as state_value) ->
         let resolution_without_unknowns =
-          let filter _ (annotation : Annotation.t) =
-            let resolved_type = Annotation.annotation annotation in
+          let filter _ (annotation : TypeInfo.Unit.t) =
+            let resolved_type = TypeInfo.Unit.annotation annotation in
             not (Type.is_top resolved_type || Type.is_any resolved_type)
           in
           Resolution.update_refinements_with_filter
             ~old_resolution:
-              (Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty)
+              (Resolution.with_type_info_store resolution ~type_info_store:TypeInfo.Store.empty)
             ~new_resolution:resolution
             ~filter
         in
@@ -305,8 +305,8 @@ module State (Context : Context) = struct
             let reference = Reference.create name in
             Resolution.get_local resolution ~reference
             >>= (fun actual ->
-                  Option.some_if (not (Type.is_any (Annotation.annotation actual))) actual)
-            >>| (fun { Annotation.annotation; _ } ->
+                  Option.some_if (not (Type.is_any (TypeInfo.Unit.annotation actual))) actual)
+            >>| (fun { TypeInfo.Unit.annotation; _ } ->
                   let error =
                     Error.create
                       ~location:(Location.with_module ~module_reference:Context.qualifier location)
@@ -382,7 +382,7 @@ module State (Context : Context) = struct
             Resolution.new_local
               resolution
               ~reference:(make_parameter_name name)
-              ~annotation:(Annotation.create_mutable annotation)
+              ~type_info:(TypeInfo.Unit.create_mutable annotation)
           in
           let snapshot_resolution =
             (* Capture default parameter values as annotation snapshots to be joined into the final
@@ -427,13 +427,13 @@ module State (Context : Context) = struct
                 GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
               in
               let { Node.value = { Define.signature; _ }; _ } = Context.define in
-              Annotation.create_mutable
+              TypeInfo.Unit.create_mutable
                 (AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser)
             in
-            Resolution.with_annotation_store resolution ~annotation_store:TypeInfo.Store.empty
-            |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
+            Resolution.with_type_info_store resolution ~type_info_store:TypeInfo.Store.empty
+            |> Resolution.new_local ~reference:return_reference ~type_info:expected_return
           in
-          let filter name (annotation : Annotation.t) =
+          let filter name (annotation : TypeInfo.Unit.t) =
             not
               (Type.contains_undefined annotation.annotation
               || Type.is_not_instantiated annotation.annotation
@@ -545,8 +545,9 @@ module State (Context : Context) = struct
               refine_local
                 ~resolution
                 ~name
-                ~annotation:
-                  (Annotation.create_mutable (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
+                ~type_info:
+                  (TypeInfo.Unit.create_mutable
+                     (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
             in
             Value { state with resolution }
         | Statement.Assign
@@ -556,7 +557,7 @@ module State (Context : Context) = struct
               refine_local
                 ~resolution
                 ~name
-                ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
+                ~type_info:(TypeInfo.Unit.create_mutable (Type.list Type.Bottom))
             in
             Value { state with resolution }
         | Statement.Assign
@@ -576,8 +577,8 @@ module State (Context : Context) = struct
               refine_local
                 ~resolution
                 ~name
-                ~annotation:
-                  (Annotation.create_mutable
+                ~type_info:
+                  (TypeInfo.Unit.create_mutable
                      (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
             in
             Value { state with resolution }
@@ -607,8 +608,8 @@ module State (Context : Context) = struct
               refine_local
                 ~resolution
                 ~name
-                ~annotation:
-                  (Annotation.create_mutable
+                ~type_info:
+                  (TypeInfo.Unit.create_mutable
                      (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
             in
             Value { state with resolution }
@@ -639,15 +640,15 @@ module State (Context : Context) = struct
               | Type.Parametric { name = "list"; parameters = [Single parameter] } -> parameter
               | base -> base
             in
-            let annotation =
+            let type_info =
               GlobalResolution.join
                 (Resolution.global_resolution resolution)
                 (resolve value)
                 base_element
               |> Type.list
-              |> Annotation.create_mutable
+              |> TypeInfo.Unit.create_mutable
             in
-            Value { state with resolution = refine_local ~resolution ~name ~annotation }
+            Value { state with resolution = refine_local ~resolution ~name ~type_info }
         | Statement.Expression { Node.value = Expression.Yield yielded; _ } ->
             let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
             let yield_type =
@@ -720,8 +721,8 @@ module State (Context : Context) = struct
               |> inferred_type_for_rhs_variable
                    ~global_resolution:(Resolution.global_resolution resolution)
                    ~target_type:parameter_type
-              >>| Annotation.create_mutable
-              >>| (fun annotation -> Resolution.refine_local resolution ~reference ~annotation)
+              >>| TypeInfo.Unit.create_mutable
+              >>| (fun type_info -> Resolution.refine_local resolution ~reference ~type_info)
               |> Option.value ~default:resolution
           | _ -> resolution)
       | { Node.value = Expression.Tuple argument_names; _ }, Type.Tuple (Concrete parameter_types)
@@ -747,12 +748,12 @@ module State (Context : Context) = struct
     in
     match parameter, arguments with
     | _, []
-    | Parameter.Variable _, _ ->
+    | CallableParamType.Variable _, _ ->
         resolution
-    | Parameter.PositionalOnly { annotation = parameter_type; _ }, arguments
-    | Parameter.KeywordOnly { annotation = parameter_type; _ }, arguments
-    | Parameter.Named { annotation = parameter_type; _ }, arguments
-    | Parameter.Keywords parameter_type, arguments ->
+    | CallableParamType.PositionalOnly { annotation = parameter_type; _ }, arguments
+    | CallableParamType.KeywordOnly { annotation = parameter_type; _ }, arguments
+    | CallableParamType.Named { annotation = parameter_type; _ }, arguments
+    | CallableParamType.Keywords parameter_type, arguments ->
         List.fold
           ~f:(fun resolution argument -> refine_argument ~resolution ~parameter_type argument)
           ~init:resolution
@@ -795,7 +796,7 @@ module State (Context : Context) = struct
             ~parent:resolved_callee
             ~name:"__call__"
           >>| AnnotatedAttribute.annotation
-          >>| Annotation.annotation
+          >>| TypeInfo.Unit.annotation
           >>= function
           | Type.Callable callable -> Some callable
           | _ -> None)
@@ -831,7 +832,7 @@ module State (Context : Context) = struct
                     Resolution.refine_local
                       resolution
                       ~reference:(Reference.create identifier)
-                      ~annotation:(Annotation.create_mutable refined))
+                      ~type_info:(TypeInfo.Unit.create_mutable refined))
               |> Option.value ~default:resolution
             in
             infer_argument_types_using_parameter_types ~state ~resolution statement
@@ -851,7 +852,7 @@ module State (Context : Context) = struct
               forward_expression ~state value
               |> inferred_type_for_rhs_variable ~global_resolution ~target_type
               >>| (fun refined ->
-                    refine_local ~resolution ~name ~annotation:(Annotation.create_mutable refined))
+                    refine_local ~resolution ~name ~type_info:(TypeInfo.Unit.create_mutable refined))
               |> Option.value ~default:resolution
             in
             infer_argument_types_using_parameter_types ~state ~resolution statement
@@ -905,14 +906,14 @@ module State (Context : Context) = struct
           propagate_assign lowered_assignment resolution resolved call
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
-          let return_annotation =
+          let return_type_info =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
           in
-          refine_local ~resolution ~name ~annotation:return_annotation
+          refine_local ~resolution ~name ~type_info:return_type_info
       | Return { Return.expression = Some { Node.value = Tuple expressions; _ }; _ } -> (
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
-            |> Annotation.annotation
+            |> TypeInfo.Unit.annotation
           in
           match return_annotation with
           | Tuple (Concrete parameters)
@@ -927,7 +928,7 @@ module State (Context : Context) = struct
                       refine_local
                         ~resolution
                         ~name
-                        ~annotation:(Annotation.create_mutable annotation)
+                        ~type_info:(TypeInfo.Unit.create_mutable annotation)
                   | _ -> resolution)
           | _ -> resolution)
       | _ -> infer_argument_types_using_parameter_types ~state ~resolution statement
@@ -957,9 +958,9 @@ module State (Context : Context) = struct
                   Some (GlobalResolution.join global_resolution existing_snapshot current_snapshot)
             in
             snapshot
-            >>| Annotation.create_mutable
-            >>| (fun annotation ->
-                  Resolution.new_local snapshot_resolution ~reference:target_reference ~annotation)
+            >>| TypeInfo.Unit.create_mutable
+            >>| (fun type_info ->
+                  Resolution.new_local snapshot_resolution ~reference:target_reference ~type_info)
             |> Option.value ~default:snapshot_resolution
           in
           wiped_resolution, augmented_snapshot_resolution
@@ -990,7 +991,7 @@ let infer_local
 
     let define = Node.create ~location define
 
-    let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+    let resolution_fixpoint = Some (TypeInfo.ForFunctionBody.empty ())
 
     let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)
@@ -1057,7 +1058,7 @@ let infer_parameters_from_parent
           ~name:(Define.unqualified_name (Node.value define))
   in
   let missing_parameter_errors overridden_attribute =
-    match Annotation.annotation (AnnotatedAttribute.annotation overridden_attribute) with
+    match TypeInfo.Unit.annotation (AnnotatedAttribute.annotation overridden_attribute) with
     | Type.Parametric
         {
           name = "BoundMethod";
@@ -1081,8 +1082,8 @@ let infer_parameters_from_parent
         let missing_parameter_error = function
           | `Both (overridden_parameter, overriding_parameter) -> (
               match
-                ( Type.Callable.RecordParameter.annotation overridden_parameter,
-                  Type.Callable.RecordParameter.annotation overriding_parameter )
+                ( Type.Callable.CallableParamType.annotation overridden_parameter,
+                  Type.Callable.CallableParamType.annotation overriding_parameter )
               with
               | ( Some overridden_annotation,
                   Some { Node.value = { Parameter.name; annotation = None; _ }; location } )
@@ -1107,11 +1108,11 @@ let infer_parameters_from_parent
         in
         let overriding_parameters =
           let to_type_parameter ({ Node.value = { Parameter.name; _ }; _ } as parameter) =
-            { Type.Callable.RecordParameter.name; annotation = parameter; default = false }
+            { Type.Callable.CallableParamType.name; annotation = parameter; default = false }
           in
-          List.map parameters ~f:to_type_parameter |> Type.Callable.Parameter.create
+          List.map parameters ~f:to_type_parameter |> Type.Callable.CallableParamType.create
         in
-        Type.Callable.Parameter.zip overridden_parameters overriding_parameters
+        Type.Callable.CallableParamType.zip overridden_parameters overriding_parameters
         |> List.filter_map ~f:missing_parameter_error
     | _ -> []
   in

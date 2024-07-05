@@ -61,8 +61,8 @@ module QualifierErrorsTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Reference.show
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_qualifier unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_overlay
 
 
   let lazy_incremental = false
@@ -87,8 +87,7 @@ module ReadOnly = struct
   let type_environment environment = upstream_environment environment
 
   let get_untracked_source_code_api environment =
-    unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
+    source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
 
 
   let controls environment = type_environment environment |> TypeEnvironment.ReadOnly.controls
@@ -108,6 +107,7 @@ module AssumeDownstreamNeverNeedsUpdates = struct
     type_environment environment
     |> TypeEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> AnnotatedGlobalEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> FunctionDefinitionEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> AttributeResolution.AssumeDownstreamNeverNeedsUpdates.upstream
 
 
@@ -121,8 +121,8 @@ end
 
 module AssumeGlobalModuleListing = struct
   let global_module_paths_api errors_environment =
-    unannotated_global_environment errors_environment
-    |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+    source_code_base errors_environment
+    |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
 end
 
 module ErrorsEnvironmentReadOnly = ReadOnly
@@ -149,7 +149,7 @@ let populate_for_modules ~scheduler environment qualifiers =
       ~policy:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
+           ~minimum_chunk_size:1
            ~preferred_chunks_per_worker:1
            ())
       ~initial:(0, [])
@@ -191,14 +191,9 @@ module UpdateStatistics = struct
       Set.length rechecked_functions, Set.length rechecked_modules
     in
     let module_updates_count, invalidated_modules_count =
-      let unannotated_global_environment_update_result =
-        UpdateResult.unannotated_global_environment_update_result update_result
-      in
-      ( UnannotatedGlobalEnvironment.UpdateResult.module_updates
-          unannotated_global_environment_update_result
-        |> List.length,
-        UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
-          unannotated_global_environment_update_result
+      let source_code_update_result = UpdateResult.source_code_update_result update_result in
+      ( SourceCodeIncrementalApi.UpdateResult.module_updates source_code_update_result |> List.length,
+        SourceCodeIncrementalApi.UpdateResult.invalidated_modules source_code_update_result
         |> List.length )
     in
     {
@@ -221,9 +216,14 @@ module Testing = struct
       type_environment environment |> TypeEnvironment.Testing.ReadOnly.upstream
 
 
-    let attribute_resolution environment =
+    let function_definition_environment environment =
       annotated_global_environment environment
       |> AnnotatedGlobalEnvironment.Testing.ReadOnly.upstream
+
+
+    let attribute_resolution environment =
+      function_definition_environment environment
+      |> FunctionDefinitionEnvironment.Testing.ReadOnly.upstream
 
 
     let class_metadata_environment environment =
@@ -258,9 +258,14 @@ module Testing = struct
       type_environment update_result |> TypeEnvironment.Testing.UpdateResult.upstream
 
 
-    let attribute_resolution update_result =
+    let function_definition_environment update_result =
       annotated_global_environment update_result
       |> AnnotatedGlobalEnvironment.Testing.UpdateResult.upstream
+
+
+    let attribute_resolution update_result =
+      function_definition_environment update_result
+      |> FunctionDefinitionEnvironment.Testing.UpdateResult.upstream
 
 
     let class_metadata_environment update_result =
@@ -295,18 +300,16 @@ let create_with_ast_environment controls =
     | None -> EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths
   in
   let environment =
-    AstEnvironment.create controls
-    |> UnannotatedGlobalEnvironment.CreateHandle.of_ast_environment
-    |> create
+    AstEnvironment.create controls |> SourceCodeEnvironment.of_ast_environment |> create
   in
   Statistics.performance ~name:"Full environment built" ~timer ();
   environment
 
 
-let check_and_preprocess ~scheduler ~scheduler_policies environment qualifiers =
+let check_and_postprocess ~scheduler ~scheduler_policies environment qualifiers =
   (AssumeDownstreamNeverNeedsUpdates.type_environment environment
   |> TypeEnvironment.populate_for_modules ~scheduler ~scheduler_policies)
     qualifiers;
   populate_for_modules ~scheduler environment qualifiers;
-  PyreProfiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
+  PyreProfiling.track_shared_memory_usage ~name:"After checking and postprocess" ();
   ()

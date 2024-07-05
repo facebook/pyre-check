@@ -15,26 +15,26 @@
         "name": "forward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 97, "start": 27, "end": 33 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 97, "start": 27, "end": 33 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:1" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 97, "start": 27, "end": 33 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -93,33 +93,34 @@
         "name": "forward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 113, "start": 27, "end": 33 },
-                  "resolves_to": [
-                    "extra_trace.OverrideTransform.transform"
-                  ],
-                  "port": "formal(arg, position=1)"
-                },
-                "receiver_interval": [ { "lower": 2, "upper": 5 } ],
-                "is_self_call": false,
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 113, "start": 27, "end": 33 },
+                      "resolves_to": [
+                        "extra_trace.OverrideTransform.transform"
+                      ],
+                      "port": "formal(arg, position=1)"
+                    },
+                    "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+                    "is_self_call": false,
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "via": "transform-tito-depth:2" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 113, "start": 27, "end": 33 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -151,7 +152,7 @@
       }
     ],
     "features": [
-      { "via": "transform-tito-depth:2" }, { "always-via": "tito" }
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -265,6 +266,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 614,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -280,6 +283,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 615,
     "sources": [
       {
         "port": "result",
@@ -373,39 +378,43 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 70, "start": 27, "end": 30 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 68, "start": 34, "end": 37 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 68, "start": 34, "end": 37 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 70, "start": 27, "end": 30 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformY@TestSink"
               }
             ],
-            "local_features": [
-              { "via": "transform-tito-depth:1" },
-              { "via": "transform-tito-depth:2" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 68, "start": 34, "end": 37 },
               { "line": 70, "start": 27, "end": 30 }
@@ -433,53 +442,58 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 62, "start": 25, "end": 27 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 59, "start": 32, "end": 34 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 61, "start": 32, "end": 34 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 59, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 62, "start": 25, "end": 27 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 61, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "via": "transform-tito-depth:1" },
-              { "always-via": "transform-tito-depth:2" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 59, "start": 32, "end": 34 },
               { "line": 61, "start": 32, "end": 34 },
@@ -555,27 +569,28 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 83, "start": 26, "end": 29 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TestSink"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 83, "start": 26, "end": 29 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               }
             ],
-            "local_features": [
-              { "via": "transform-tito-depth:1" }, { "via": "tito" }
-            ],
+            "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 83, "start": 26, "end": 29 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -600,14 +615,6 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "origin": { "line": 77, "start": 25, "end": 27 },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
                 "leaves": [
@@ -616,15 +623,24 @@
                 "kind": "TestSource"
               },
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 77, "start": 25, "end": 27 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "via": "transform-tito-depth:1" }, { "via": "tito" }
-            ],
+            "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 77, "start": 25, "end": 27 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -699,38 +715,38 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 50, "start": 30, "end": 33 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformY:TransformZ",
-                "call": {
-                  "position": { "line": 52, "start": 24, "end": 28 },
-                  "resolves_to": [ "extra_trace.transform_yz" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 50, "start": 30, "end": 33 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 52, "start": 24, "end": 28 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX:TransformY:TransformZ@TestSink"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:2" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 50, "start": 30, "end": 33 },
               { "line": 51, "start": 16, "end": 20 },
@@ -759,40 +775,40 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 43, "start": 28, "end": 30 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              },
-              {
-                "message": "TransformY:TransformZ",
-                "call": {
-                  "position": { "line": 45, "start": 22, "end": 24 },
-                  "resolves_to": [ "extra_trace.transform_yz" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 43, "start": 28, "end": 30 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 45, "start": 22, "end": 24 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformZ:TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:2" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 43, "start": 28, "end": 30 },
               { "line": 44, "start": 14, "end": 16 },
@@ -821,30 +837,30 @@
         "port": "result",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX:TransformY",
-                "call": {
-                  "position": { "line": 92, "start": 32, "end": 46 },
-                  "resolves_to": [ "extra_trace.transform_nested_x_y" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX:TransformY",
+                    "call": {
+                      "position": { "line": 92, "start": 32, "end": 46 },
+                      "resolves_to": [ "extra_trace.transform_nested_x_y" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:3" }
+                ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:3" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 92, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -888,30 +904,30 @@
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "TransformX",
-                "call": {
-                  "position": { "line": 88, "start": 42, "end": 45 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg, position=0)"
-                },
-                "leaf_kind": "TransformX:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 88, "start": 42, "end": 45 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
                 "leaves": [
                   { "name": "extra_trace.transform_y", "port": "leaf:arg" }
                 ],
                 "kind": "TransformX@TransformY:ExtraTraceSink"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:2" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 88, "start": 42, "end": 45 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -1053,26 +1069,26 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "TransformY",
-                "origin": { "line": 27, "start": 23, "end": 27 },
-                "leaf_kind": "TransformY:ExtraTraceSink",
-                "trace_kind": "sink"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 27, "start": 23, "end": 27 },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
                 "leaves": [
                   { "name": "extra_trace.transform_z", "port": "leaf:arg" }
                 ],
                 "kind": "TransformY@TransformZ:ExtraTraceSink"
               }
             ],
-            "local_features": [
-              { "always-via": "transform-tito-depth:1" },
-              { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 26, "start": 16, "end": 19 },
               { "line": 27, "start": 23, "end": 27 },

@@ -77,11 +77,6 @@
       | Some lower -> lower.Node.location
       | None -> Location.create ~start:bound_colon ~stop:bound_colon
     in
-    let upper_location =
-      match upper with
-      | Some upper -> upper.Node.location
-      | None -> Location.create ~start:bound_colon ~stop:bound_colon |> increment
-    in
     let step_location =
       match step with
       | Some step -> step.Node.location
@@ -101,24 +96,7 @@
     let slice_location =
       { lower_location with Location.stop = step_location.Location.stop  }
     in
-    let arguments =
-      let argument argument location =
-        let none =
-          Node.create ~location (Expression.Constant AstExpression.Constant.NoneLiteral)
-        in
-        Option.value argument ~default:none
-      in
-      [
-        { Call.Argument.name = None; value = argument lower lower_location };
-        { Call.Argument.name = None; value = argument upper upper_location };
-        { Call.Argument.name = None; value = argument step step_location };
-      ]
-    in
-    let callee =
-      Expression.Name (Name.Identifier "slice")
-      |> Node.create ~location:slice_location
-    in
-    Expression.Call { Call.callee; arguments }
+    Expression.Slice { Slice.start = lower; stop = upper; step }
     |> Node.create ~location:slice_location
 
 

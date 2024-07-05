@@ -313,13 +313,13 @@ let resolve_method ~pyre_api ~class_type ~method_name =
   match callable_implementation with
   | Some callable when Analysis.AnnotatedAttribute.defined callable ->
       Analysis.AnnotatedAttribute.annotation callable
-      |> Analysis.Annotation.annotation
+      |> Analysis.TypeInfo.Unit.annotation
       |> Type.callable_name
       >>| create_method
   | _ -> None
 
 
-module StringCombineArtificialTargets = struct
+module ArtificialTargets = struct
   let format_string = Object "<format-string>"
 
   let str_add = Object "<str.__add__>"
@@ -327,6 +327,10 @@ module StringCombineArtificialTargets = struct
   let str_mod = Object "<str.__mod__>"
 
   let str_format = Object "<str.format>"
+
+  let str_literal = Object "<literal-string>"
+
+  let condition = Object "<condition>"
 end
 
 module SharedMemoryKey = struct

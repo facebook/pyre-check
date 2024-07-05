@@ -70,33 +70,33 @@ let decorate
                   let location = Location.any in
                   let placed_single_star, sofar =
                     match placed_single_star, parameter with
-                    | false, Type.Callable.Parameter.KeywordOnly _ ->
+                    | false, Type.Callable.CallableParamType.KeywordOnly _ ->
                         true, Expression.Parameter.create ~location ~name:"*" () :: sofar
                     | _ -> placed_single_star, sofar
                   in
                   let new_parameter =
                     match parameter with
-                    | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
+                    | Type.Callable.CallableParamType.PositionalOnly { annotation; _ } ->
                         (* This means it will be read back in as an anonymous *)
                         Expression.Parameter.create
                           ~location
                           ~annotation:(Type.expression annotation)
                           ~name:"__"
                           ()
-                    | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
-                    | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                    | Type.Callable.CallableParamType.KeywordOnly { name; annotation; _ }
+                    | Type.Callable.CallableParamType.Named { name; annotation; _ } ->
                         Expression.Parameter.create
                           ~location
                           ~annotation:(Type.expression annotation)
                           ~name
                           ()
-                    | Type.Callable.Parameter.Variable (Concrete annotation) ->
+                    | Type.Callable.CallableParamType.Variable (Concrete annotation) ->
                         Expression.Parameter.create
                           ~location
                           ~annotation:(Type.expression annotation)
                           ~name:"*args"
                           ()
-                    | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
+                    | Type.Callable.CallableParamType.Variable (Concatenation concatenation) ->
                         Expression.Parameter.create
                           ~location
                           ~annotation:
@@ -105,7 +105,7 @@ let decorate
                                concatenation)
                           ~name:"*args"
                           ()
-                    | Type.Callable.Parameter.Keywords annotation ->
+                    | Type.Callable.CallableParamType.Keywords annotation ->
                         Expression.Parameter.create
                           ~location
                           ~annotation:(Type.expression annotation)
@@ -115,7 +115,7 @@ let decorate
                   placed_single_star, new_parameter :: sofar
                 in
                 List.fold parameters ~f:convert ~init:(false, []) |> snd |> List.rev
-            | ParameterVariadicTypeVariable _
+            | FromParamSpec _
             | Undefined ->
                 original_parameters
           in

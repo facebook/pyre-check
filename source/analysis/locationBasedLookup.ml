@@ -175,10 +175,10 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     =
     let resolve ~resolution ~expression =
       try
-        let annotation = Resolution.resolve_expression_to_annotation resolution expression in
-        let original = Annotation.original annotation in
+        let type_info = Resolution.resolve_expression_to_type_info resolution expression in
+        let original = TypeInfo.Unit.original type_info in
         if Type.is_top original || Type.is_unbound original then
-          let annotation = Annotation.annotation annotation in
+          let annotation = TypeInfo.Unit.annotation type_info in
           if Type.is_top annotation || Type.is_unbound annotation then
             None
           else
@@ -409,29 +409,31 @@ let create_of_module type_environment qualifier =
       TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
       |> function
       | Some coverage_data_lookup_map -> coverage_data_lookup_map
-      | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+      | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
+        ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
           |> Option.value ~default:TypeInfo.Store.empty,
-          LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
+          TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
+            coverage_data_lookup_map
+            ~statement_key
           |> Option.value ~default:TypeInfo.Store.empty )
       in
       let pre_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:pre_annotations
+          ~type_info_store:pre_annotations
           (module TypeCheck.DummyContext)
       in
       let post_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:post_annotations
+          ~type_info_store:post_annotations
           (module TypeCheck.DummyContext)
       in
       CreateLookupsIncludingTypeAnnotationsVisitor.visit
@@ -890,6 +892,7 @@ let get_expression_constructor expression : string =
   | Name _ -> "Name"
   | Set _ -> "Set"
   | SetComprehension _ -> "SetComprehension"
+  | Slice _ -> "Slice"
   | Starred _ -> "Starred"
   | Subscript _ -> "Subscript"
   | Ternary _ -> "Ternary"
@@ -990,19 +993,19 @@ let resolution_from_cfg_data
     TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
     |> function
     | Some coverage_data_lookup_map -> coverage_data_lookup_map
-    | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+    | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
   in
-  let annotation_store =
+  let type_info_store =
     let statement_key = [%hash: int * int] (node_id, statement_index) in
     if use_postcondition_info then
-      LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
+      TypeInfo.ForFunctionBody.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     else
-      LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
+      TypeInfo.ForFunctionBody.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-  TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+  TypeCheck.resolution global_resolution ~type_info_store (module TypeCheck.DummyContext)
 
 
 let resolve_definition_for_symbol
@@ -1101,7 +1104,7 @@ let classify_coverage_data { expression; type_ } =
       make_coverage_gap CallableReturnIsAny
   | Callable { implementation = { parameters = Defined (_ :: _ as parameter_list); _ }; _ } ->
       let parameter_is_top_or_any = function
-        | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
+        | Type.Callable.CallableParamType.Named { annotation = Type.Any | Type.Top; _ } -> true
         | _ -> false
       in
       (* This will treat parameters that use default values, which will never have a runtime error,

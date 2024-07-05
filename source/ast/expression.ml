@@ -795,6 +795,55 @@ end = struct
     | Twice _, Once _ -> 1
 end
 
+and Slice : sig
+  type t = {
+    start: Expression.t option;
+    stop: Expression.t option;
+    step: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val lowered : location:Location.t -> t -> Expression.t
+end = struct
+  type t = {
+    start: Expression.t option;
+    stop: Expression.t option;
+    step: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match left, right with
+    | ( { start = left_start; stop = left_stop; step = left_step },
+        { start = right_start; stop = right_stop; step = right_step } ) -> (
+        match Option.compare Expression.location_insensitive_compare left_start right_start with
+        | x when not (Int.equal x 0) -> x
+        | _ -> (
+            match Option.compare Expression.location_insensitive_compare left_stop right_stop with
+            | x when not (Int.equal x 0) -> x
+            | _ -> Option.compare Expression.location_insensitive_compare left_step right_step))
+
+
+  let lowered ~location { Slice.start; stop; step } =
+    let default_none = function
+      | None -> Expression.Constant Constant.NoneLiteral |> Node.create ~location
+      | Some expr -> expr
+    in
+    Expression.Call
+      {
+        Call.callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location;
+        arguments =
+          [
+            { Call.Argument.value = default_none start; name = None };
+            { Call.Argument.value = default_none stop; name = None };
+            { Call.Argument.value = default_none step; name = None };
+          ];
+      }
+    |> Node.create ~location
+end
+
 and Subscript : sig
   type t = {
     base: Expression.t;
@@ -990,6 +1039,7 @@ and Expression : sig
     | Name of Name.t
     | Set of t list
     | SetComprehension of t Comprehension.t
+    | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
     | Ternary of Ternary.t
@@ -1026,6 +1076,7 @@ end = struct
     | Name of Name.t
     | Set of t list
     | SetComprehension of t Comprehension.t
+    | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
     | Ternary of Ternary.t
@@ -1068,6 +1119,7 @@ end = struct
     | Set left, Set right -> List.compare location_insensitive_compare left right
     | SetComprehension left, SetComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
+    | Slice left, Slice right -> Slice.location_insensitive_compare left right
     | Starred left, Starred right -> Starred.location_insensitive_compare left right
     | Subscript left, Subscript right -> Subscript.location_insensitive_compare left right
     | Ternary left, Ternary right -> Ternary.location_insensitive_compare left right
@@ -1094,6 +1146,7 @@ end = struct
     | Name _, _ -> -1
     | Set _, _ -> -1
     | SetComprehension _, _ -> -1
+    | Slice _, _ -> -1
     | Starred _, _ -> -1
     | Subscript _, _ -> -1
     | Ternary _, _ -> -1
@@ -1223,6 +1276,32 @@ end = struct
       | Starred.Twice expression -> Format.fprintf formatter "**%a" pp_expression_t expression
 
 
+    and pp_slice formatter = function
+      | { Slice.start = None; stop = None; step = None } -> Format.fprintf formatter ":"
+      | { Slice.start = Some start; stop = None; step = None } ->
+          Format.fprintf formatter "%a:" pp_expression_t start
+      | { Slice.start = Some start; stop = Some stop; step = None } ->
+          Format.fprintf formatter "%a:%a" pp_expression_t start pp_expression_t stop
+      | { Slice.start = None; stop = Some stop; step = None } ->
+          Format.fprintf formatter ":%a" pp_expression_t stop
+      | { Slice.start = Some start; stop = None; step = Some step } ->
+          Format.fprintf formatter "%a::%a" pp_expression_t start pp_expression_t step
+      | { Slice.start = Some start; stop = Some stop; step = Some step } ->
+          Format.fprintf
+            formatter
+            "%a:%a:%a"
+            pp_expression_t
+            start
+            pp_expression_t
+            stop
+            pp_expression_t
+            step
+      | { Slice.start = None; stop = Some stop; step = Some step } ->
+          Format.fprintf formatter ":%a:%a" pp_expression_t stop pp_expression_t step
+      | { Slice.start = None; stop = None; step = Some step } ->
+          Format.fprintf formatter ":%a" pp_expression_t step
+
+
     and pp_subscript formatter { Subscript.base; index } =
       Format.fprintf formatter "%a[%a]" pp_expression_t base pp_expression_t index
 
@@ -1317,6 +1396,7 @@ end = struct
       | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
       | SetComprehension set_comprehension ->
           Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
+      | Slice slice -> Format.fprintf formatter "%a" pp_slice slice
       | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
       | Subscript subscript -> Format.fprintf formatter "%a" pp_subscript subscript
       | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
@@ -1377,6 +1457,7 @@ module Mapper = struct
     map_name: mapper:'a t -> location:Location.t -> Name.t -> 'a;
     map_set: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
     map_set_comprehension: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_slice: mapper:'a t -> location:Location.t -> Slice.t -> 'a;
     map_starred: mapper:'a t -> location:Location.t -> Starred.t -> 'a;
     map_subscript: mapper:'a t -> location:Location.t -> Subscript.t -> 'a;
     map_ternary: mapper:'a t -> location:Location.t -> Ternary.t -> 'a;
@@ -1406,6 +1487,7 @@ module Mapper = struct
            map_name;
            map_set;
            map_set_comprehension;
+           map_slice;
            map_starred;
            map_subscript;
            map_ternary;
@@ -1440,6 +1522,7 @@ module Mapper = struct
     | Expression.Set set -> map_set ~mapper ~location set
     | Expression.SetComprehension set_comprehension ->
         map_set_comprehension ~mapper ~location set_comprehension
+    | Expression.Slice slice -> map_slice ~mapper ~location slice
     | Expression.Starred starred -> map_starred ~mapper ~location starred
     | Expression.Subscript subscript -> map_subscript ~mapper ~location subscript
     | Expression.Ternary ternary -> map_ternary ~mapper ~location ternary
@@ -1674,6 +1757,18 @@ module Mapper = struct
       (Expression.SetComprehension (default_map_set_comprehension ~mapper comprehension))
 
 
+  let default_map_slice ~mapper { Slice.start; stop; step } =
+    {
+      Slice.start = map_option ~mapper start;
+      stop = map_option ~mapper stop;
+      step = map_option ~mapper step;
+    }
+
+
+  let default_map_slice_node ~mapper ~location slice =
+    Node.create ~location (Expression.Slice (default_map_slice ~mapper slice))
+
+
   let default_map_starred ~mapper = function
     | Starred.Once expression -> Starred.Once (map ~mapper expression)
     | Starred.Twice expression -> Starred.Twice (map ~mapper expression)
@@ -1758,6 +1853,7 @@ module Mapper = struct
       ~map_name
       ~map_set
       ~map_set_comprehension
+      ~map_slice
       ~map_starred
       ~map_subscript
       ~map_ternary
@@ -1785,6 +1881,7 @@ module Mapper = struct
       map_name;
       map_set;
       map_set_comprehension;
+      map_slice;
       map_starred;
       map_subscript;
       map_ternary;
@@ -1813,6 +1910,7 @@ module Mapper = struct
       ?(map_name = default_map_name_node)
       ?(map_set = default_map_set_node)
       ?(map_set_comprehension = default_map_set_comprehension_node)
+      ?(map_slice = default_map_slice_node)
       ?(map_starred = default_map_starred_node)
       ?(map_subscript = default_map_subscript_node)
       ?(map_ternary = default_map_ternary_node)
@@ -1840,6 +1938,7 @@ module Mapper = struct
       map_name;
       map_set;
       map_set_comprehension;
+      map_slice;
       map_starred;
       map_subscript;
       map_ternary;
@@ -1868,6 +1967,7 @@ module Mapper = struct
       ?(map_name = default_map_name)
       ?(map_set = default_map_set)
       ?(map_set_comprehension = default_map_set_comprehension)
+      ?(map_slice = default_map_slice)
       ?(map_starred = default_map_starred)
       ?(map_subscript = default_map_subscript)
       ?(map_ternary = default_map_ternary)
@@ -1969,6 +2069,9 @@ module Mapper = struct
         ~location:(map_location location)
         (Expression.SetComprehension (map_set_comprehension ~mapper comprehension))
     in
+    let map_slice ~mapper ~location slice =
+      Node.create ~location:(map_location location) (Expression.Slice (map_slice ~mapper slice))
+    in
     let map_starred ~mapper ~location starred =
       Node.create
         ~location:(map_location location)
@@ -2024,6 +2127,7 @@ module Mapper = struct
       ~map_name
       ~map_set
       ~map_set_comprehension
+      ~map_slice
       ~map_starred
       ~map_subscript
       ~map_ternary
@@ -2063,6 +2167,7 @@ module Folder = struct
     fold_set: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
     fold_set_comprehension:
       folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_slice: folder:'a t -> state:'a -> location:Location.t -> Slice.t -> 'a;
     fold_starred: folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a;
     fold_subscript: folder:'a t -> state:'a -> location:Location.t -> Subscript.t -> 'a;
     fold_ternary: folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a;
@@ -2092,6 +2197,7 @@ module Folder = struct
            fold_name;
            fold_set;
            fold_set_comprehension;
+           fold_slice;
            fold_starred;
            fold_subscript;
            fold_ternary;
@@ -2127,6 +2233,7 @@ module Folder = struct
     | Expression.Set set -> fold_set ~folder ~state ~location set
     | Expression.SetComprehension set_comprehension ->
         fold_set_comprehension ~folder ~state ~location set_comprehension
+    | Expression.Slice slice -> fold_slice ~folder ~state ~location slice
     | Expression.Starred starred -> fold_starred ~folder ~state ~location starred
     | Expression.Subscript subscript -> fold_subscript ~folder ~state ~location subscript
     | Expression.Ternary ternary -> fold_ternary ~folder ~state ~location ternary
@@ -2304,6 +2411,12 @@ module Folder = struct
     | Name.Attribute { Name.Attribute.base; attribute = _; special = _ } -> fold ~folder ~state base
 
 
+  let default_fold_slice ~folder ~state { Slice.start; stop; step } =
+    let state = fold_option ~folder ~state start in
+    let state = fold_option ~folder ~state stop in
+    fold_option ~folder ~state step
+
+
   let default_fold_starred ~folder ~state = function
     | Starred.Once expression
     | Starred.Twice expression ->
@@ -2354,6 +2467,7 @@ module Folder = struct
       ?(fold_name = fold_ignoring_location default_fold_name)
       ?(fold_set = fold_ignoring_location default_fold_list)
       ?(fold_set_comprehension = fold_ignoring_location default_fold_generator)
+      ?(fold_slice = fold_ignoring_location default_fold_slice)
       ?(fold_starred = fold_ignoring_location default_fold_starred)
       ?(fold_subscript = fold_ignoring_location default_fold_subscript)
       ?(fold_ternary = fold_ignoring_location default_fold_ternary)
@@ -2381,6 +2495,7 @@ module Folder = struct
       fold_name;
       fold_set;
       fold_set_comprehension;
+      fold_slice;
       fold_starred;
       fold_subscript;
       fold_ternary;
@@ -2409,6 +2524,7 @@ module Folder = struct
       ?(fold_name = default_fold_name)
       ?(fold_set = default_fold_list)
       ?(fold_set_comprehension = default_fold_generator)
+      ?(fold_slice = default_fold_slice)
       ?(fold_starred = default_fold_starred)
       ?(fold_subscript = default_fold_subscript)
       ?(fold_ternary = default_fold_ternary)
@@ -2458,6 +2574,7 @@ module Folder = struct
       fold_name = fold_with_location fold_name;
       fold_set = fold_with_location fold_set;
       fold_set_comprehension = fold_with_location fold_set_comprehension;
+      fold_slice = fold_with_location fold_slice;
       fold_starred = fold_with_location fold_starred;
       fold_subscript = fold_with_location fold_subscript;
       fold_ternary = fold_with_location fold_ternary;
@@ -2668,6 +2785,13 @@ let rec delocalize ({ Node.value; location } as expression) =
     match value with
     | Subscript { Subscript.base; index } ->
         Subscript { Subscript.base = delocalize base; index = delocalize index }
+    | Slice { Slice.start; stop; step } ->
+        Slice
+          {
+            Slice.start = Option.map ~f:delocalize start;
+            stop = Option.map ~f:delocalize stop;
+            step = Option.map ~f:delocalize step;
+          }
     | Call { Call.callee; arguments } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }

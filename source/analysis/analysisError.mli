@@ -18,7 +18,7 @@ type missing_annotation = {
 
 type revealed_local = {
   name: Reference.t;
-  annotation: Annotation.t;
+  annotation: TypeInfo.Unit.t;
 }
 [@@deriving compare, sexp, show, hash]
 
@@ -123,7 +123,7 @@ and invalid_argument =
 and precondition_mismatch =
   | Found of mismatch
   | NotFound of {
-      parameter: Type.t Type.Callable.Parameter.t;
+      parameter: Type.t Type.Callable.CallableParamType.t;
       parameter_exists_in_overridden_signature: bool;
     }
 
@@ -194,8 +194,12 @@ and invalid_assignment_kind =
 and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
-  | InvalidType of {
+  | InvalidTypeAnnotation of {
       annotation: Type.t;
+      expected: string;
+    }
+  | InvalidTypeAnnotationExpression of {
+      annotation: Expression.t;
       expected: string;
     }
   | NestedAlias of Identifier.t
@@ -461,7 +465,7 @@ and kind =
   | RevealedLocals of revealed_local list
   | RevealedType of {
       expression: Expression.t;
-      annotation: Annotation.t;
+      annotation: TypeInfo.Unit.t;
       qualify: bool;
     }
   | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }

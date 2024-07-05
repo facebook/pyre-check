@@ -118,7 +118,7 @@ let test_unresolved_select =
       TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
       |> Resolution.new_local
            ~reference:(Reference.create "optional")
-           ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
+           ~type_info:(TypeInfo.Unit.create_mutable (Type.optional Type.integer))
     in
     Type.Variable.Namespace.reset ();
     let arguments_of_call, callable_type_expression =
@@ -535,7 +535,7 @@ let test_unresolved_select =
                    ~parameters:
                      (Type.Callable.Defined
                         [
-                          Type.Callable.Parameter.PositionalOnly
+                          Type.Callable.CallableParamType.PositionalOnly
                             { index = 0; annotation = Type.Any; default = false };
                         ])
                    ~annotation:Type.integer
@@ -924,12 +924,12 @@ let test_unresolved_select =
                  {
                    annotation = Type.integer;
                    parameters =
-                     ParameterVariadicTypeVariable
+                     FromParamSpec
                        {
                          head = [];
                          variable =
-                           Type.Variable.Variadic.Parameters.create "TParams"
-                           |> Type.Variable.Variadic.Parameters.mark_as_bound;
+                           Type.Variable.ParamSpec.create "TParams"
+                           |> Type.Variable.ParamSpec.mark_as_bound;
                        };
                  };
                overloads = [];
@@ -937,7 +937,7 @@ let test_unresolved_select =
            (NotFound
               {
                 closest_return_annotation = Type.integer;
-                reason = Some SignatureSelectionTypes.CallingParameterVariadicTypeVariable;
+                reason = Some SignatureSelectionTypes.CallingFromParamSpec;
               });
     ]
 
@@ -1107,9 +1107,9 @@ let test_resolved_select =
                        (* Only "local" variables should be marked as escaped *)
                        Single
                          (Variable
-                            (Type.Variable.Unary.create "X"
-                            |> Type.Variable.Unary.mark_as_escaped
-                            |> Type.Variable.Unary.namespace ~namespace));
+                            (Type.Variable.TypeVar.create "X"
+                            |> Type.Variable.TypeVar.mark_as_escaped
+                            |> Type.Variable.TypeVar.namespace ~namespace));
                      ];
                }));
     ]

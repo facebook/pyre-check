@@ -47,7 +47,7 @@ end
 module RegisteredPartialSinks : sig
   type t [@@deriving compare, show, equal]
 
-  val from_kind_label : kind:string -> label:string -> Sinks.PartialSink.t
+  val empty : t
 
   type registration_result =
     | Yes
@@ -89,14 +89,18 @@ module PartialSinkConverter : sig
     second_sink:Sinks.PartialSink.t ->
     t ->
     t
+
+  val merge : t -> t -> t
 end
 
 module StringOperationPartialSinks : sig
-  type t
+  type t [@@deriving show]
 
   val equal : t -> t -> bool
 
   val singleton : Sinks.PartialSink.t -> t
+
+  val of_list : Sinks.PartialSink.t list -> t
 
   val get_partial_sinks : t -> Sinks.t list
 end
@@ -167,6 +171,7 @@ module Error : sig
     | UnsupportedSink of string
     | UnsupportedTransform of string
     | UnexpectedCombinedSourceRule of JsonParsing.JsonAst.Json.t
+    | UnexpectedStringCombineRule of JsonParsing.JsonAst.Json.t
     | InvalidMultiSink of {
         sink: string;
         registered: Sinks.PartialSink.Set.t;

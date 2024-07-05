@@ -20,14 +20,14 @@ let test_simple_registration context =
       |> ErrorsEnvironment.Testing.ReadOnly.attribute_resolution
     in
     let location_insensitive_compare left right =
-      Option.compare Annotation.compare left right = 0
+      Option.compare TypeInfo.Unit.compare left right = 0
     in
     let printer global =
-      global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
+      global >>| TypeInfo.Unit.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
     in
-    let expectation = expected >>| Annotation.create_immutable ?original in
+    let expectation = expected >>| TypeInfo.Unit.create_immutable ?original in
     AttributeResolution.ReadOnly.global read_only (Reference.create name)
-    >>| (fun { annotation; _ } -> annotation)
+    >>| (fun { type_info; _ } -> type_info)
     |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
   in
   assert_registers "x = 1" "test.x" (Some Type.integer);
@@ -91,14 +91,17 @@ let test_updates context =
     let execute_action = function
       | global_name, dependency, expectation ->
           let location_insensitive_compare left right =
-            Option.compare Annotation.compare left right = 0
+            Option.compare TypeInfo.Unit.compare left right = 0
           in
           let printer global =
-            global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
+            global
+            >>| TypeInfo.Unit.sexp_of_t
+            >>| Sexp.to_string_hum
+            |> Option.value ~default:"None"
           in
-          let expectation = expectation >>| Annotation.create_immutable in
+          let expectation = expectation >>| TypeInfo.Unit.create_immutable in
           AttributeResolution.ReadOnly.global read_only (Reference.create global_name) ~dependency
-          >>| (fun { annotation; _ } -> annotation)
+          >>| (fun { type_info; _ } -> type_info)
           |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
@@ -202,6 +205,6 @@ let test_updates context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: ["simple_registration" >:: test_simple_registration; "updates" >:: test_updates]
   |> Test.run

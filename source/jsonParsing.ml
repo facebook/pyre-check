@@ -78,21 +78,29 @@ module JsonAst = struct
       line: int;
       column: int;
     }
-    [@@deriving equal, show, compare]
+    [@@deriving equal, compare]
 
     and t = {
       start: position;
       stop: position;
     }
-    [@@deriving equal, show, compare]
+    [@@deriving equal, compare]
+
+    let pp_position formatter { line; column } = Format.fprintf formatter "%d:%d" line column
+
+    let show_position = Format.asprintf "%a" pp_position
 
     let null_position = { line = -1; column = -1 }
 
     let null_location = { start = null_position; stop = null_position }
 
-    let pp_start formatter { start = { line; column }; _ } =
-      Format.fprintf formatter "%d:%d" line column
+    let pp_start formatter { start; _ } = Format.fprintf formatter "%a" pp_position start
 
+    let pp formatter { start; stop } =
+      Format.fprintf formatter "%a-%a" pp_position start pp_position stop
+
+
+    let show = Format.asprintf "%a" pp
 
     let from_decoded_range range =
       let (start_line, start_column), (end_line, end_column) = range in
@@ -144,7 +152,63 @@ module JsonAst = struct
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show, compare]
+    and t = expression Node.t [@@deriving equal, compare]
+
+    (* Pretty-print each node with their location. Useful for debugging. *)
+    module PrettyPrint = struct
+      let rec pp_expression_t formatter { Node.value = expression; location } =
+        Format.fprintf formatter "%a (loc: %a)" pp_expression expression Location.pp location
+
+
+      and pp_expression formatter = function
+        | `Null -> Format.fprintf formatter "Null"
+        | `Bool value -> Format.fprintf formatter "%b" value
+        | `String value -> Format.fprintf formatter "\"%s\"" value
+        | `Float value -> Format.fprintf formatter "%f" value
+        | `Int value -> Format.fprintf formatter "%d" value
+        | `List values -> Format.fprintf formatter "%a" pp_value_list values
+        | `Assoc values -> Format.fprintf formatter "%a" pp_assoc_value_list values
+
+
+      and pp_value_list formatter = function
+        | [] -> ()
+        | [element] -> Format.fprintf formatter "[%a]" pp_expression_t element
+        | elements ->
+            let pp_element formatter element =
+              Format.fprintf formatter "@,%a" pp_expression_t element
+            in
+            let pp_elements formatter = List.iter ~f:(pp_element formatter) in
+            Format.fprintf formatter "[@[<v 2>%a@]@,]" pp_elements elements
+
+
+      and pp_assoc_value_list formatter = function
+        | [] -> ()
+        | [(key, value)] -> Format.fprintf formatter "{\"%s\" -> %a}" key pp_expression_t value
+        | pairs ->
+            let pp_pair formatter (key, value) =
+              Format.fprintf formatter "@,\"%s\" -> %a" key pp_expression_t value
+            in
+            let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+            Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
+    end
+
+    let pp_internal = PrettyPrint.pp_expression_t
+
+    let show_internal = Format.asprintf "%a" pp_internal
+
+    let rec to_yojson { Node.value; _ } =
+      match value with
+      | `Null -> `Null
+      | `Bool value -> `Bool value
+      | `String value -> `String value
+      | `Float value -> `Float value
+      | `Int value -> `Int value
+      | `List elements -> elements |> List.map ~f:to_yojson |> fun elements -> `List elements
+      | `Assoc pairs ->
+          pairs
+          |> List.map ~f:(fun (name, value) -> name, to_yojson value)
+          |> fun pairs -> `Assoc pairs
+
 
     exception
       TypeError of {
@@ -289,6 +353,12 @@ module JsonAst = struct
         match node.Node.value with
         | `Null -> raise (type_error "non-null" node)
         | _ -> node.Node.location
+
+
+      let is_string node =
+        match node.Node.value with
+        | `String _ -> true
+        | _ -> false
     end
   end
 end

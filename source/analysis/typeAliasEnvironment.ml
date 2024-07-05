@@ -26,18 +26,12 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
-let preprocess_alias_value value =
-  value
-  |> Preprocessing.replace_union_shorthand_in_annotation_expression
-  |> Preprocessing.expand_strings_in_annotation_expression
-
-
 module IncomingDataComputation = struct
   module Queries = struct
     type t = {
       class_exists: string -> bool;
       module_exists: Ast.Reference.t -> bool;
-      get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
+      get_unannotated_global: Ast.Reference.t -> Module.UnannotatedGlobal.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
     }
   end
@@ -55,7 +49,7 @@ module IncomingDataComputation = struct
           unparsed
       with
       | Type.Variable variable ->
-          if Type.Variable.Unary.contains_subvariable variable then
+          if Type.Variable.TypeVar.contains_subvariable variable then
             Type.Any
           else
             Type.Variable { variable with variable = Reference.show target }
@@ -124,65 +118,14 @@ module IncomingDataComputation = struct
     | TypeAlias of UnresolvedAlias.t
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
+    let open Module.UnannotatedGlobal in
     let extract_alias = function
-      | UnannotatedGlobal.SimpleAssign { value = None; _ } -> None
-      | UnannotatedGlobal.SimpleAssign { explicit_annotation; value = Some value; _ } -> (
+      | SimpleAssign { value = None; _ } -> None
+      | SimpleAssign { explicit_annotation; value = Some value; _ } -> (
           let target_annotation =
             Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
-          | ( _,
-              Some
-                {
-                  Node.value =
-                    Subscript
-                      {
-                        base =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Attribute
-                                  {
-                                    base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                    attribute = "Type";
-                                    _;
-                                  });
-                            _;
-                          };
-                        index =
-                          {
-                            Node.value =
-                              Subscript
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          (Name.Attribute
-                                            {
-                                              base =
-                                                {
-                                                  Node.value =
-                                                    Name (Name.Identifier "mypy_extensions");
-                                                  _;
-                                                };
-                                              attribute = "TypedDict";
-                                              _;
-                                            });
-                                      _;
-                                    };
-                                  _;
-                                };
-                            _;
-                          };
-                      };
-                  _;
-                } ) ->
-              if not (Type.is_top target_annotation) then
-                let value = delocalize value in
-                Some (TypeAlias { target = name; value })
-              else
-                None
           | ( (BinaryOperator _ | Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
               Some
                 {
@@ -204,7 +147,7 @@ module IncomingDataComputation = struct
               match Type.Variable.parse_declaration (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->
-                  let value = preprocess_alias_value value |> delocalize in
+                  let value = Type.preprocess_alias_value value |> delocalize in
                   let value_annotation = Type.create ~aliases:Type.empty_aliases value in
                   if
                     not
@@ -216,18 +159,31 @@ module IncomingDataComputation = struct
                   else
                     None)
           | _ -> None)
-      | UnannotatedGlobal.Imported import -> (
+      | Imported import -> (
           if class_exists (Reference.show name) then
             None
           else
-            let original_name = UnannotatedGlobal.ImportEntry.deprecated_original_name import in
-            match Reference.as_list name, Reference.as_list original_name with
+            let original_name_of_alias =
+              match import with
+              | ImportModule { target; implicit_alias } ->
+                  if implicit_alias then
+                    Option.value_exn (Reference.head target)
+                  else
+                    target
+              | ImportFrom { from; target; _ } -> (
+                  match Reference.show from with
+                  | "future.builtins"
+                  | "builtins" ->
+                      Reference.create target
+                  | _ -> Reference.create target |> Reference.combine from)
+            in
+            match Reference.as_list name, Reference.as_list original_name_of_alias with
             | [single_identifier], [typing; identifier]
               when String.equal typing "typing" && String.equal single_identifier identifier ->
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 None
             | _ ->
-                let value = from_reference ~location:Location.any original_name in
+                let value = from_reference ~location:Location.any original_name_of_alias in
                 Some (TypeAlias { target = name; value }))
       | TupleAssign _
       | Class
@@ -313,7 +269,7 @@ module OutgoingDataComputation = struct
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
     let parsed =
-      let expression = preprocess_alias_value expression |> delocalize in
+      let expression = Type.preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in
@@ -349,7 +305,7 @@ module OutgoingDataComputation = struct
     let variable_parameter_annotation, keywords_parameter_annotation =
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
-    Type.Variable.Variadic.Parameters.parse_instance_annotation
+    Type.Variable.ParamSpec.parse_instance_annotation
       ~create_type:Type.create
       ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> get_type_alias name)
       ~variable_parameter_annotation
@@ -416,8 +372,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let show_key = Fn.id
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_identifier unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_identifier source_code_overlay
 
 
   let equal_value = Option.equal Type.Alias.equal

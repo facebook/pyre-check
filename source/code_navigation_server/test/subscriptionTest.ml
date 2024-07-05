@@ -79,7 +79,7 @@ let test_server_subscription_establish context =
     in
     ScratchProject.ClientConnection.assert_response_equal
       connection
-      ~expected:Response.Ok
+      ~expected:Response.Ok_
       ~actual:response;
     Lwt.return_unit
   in

@@ -12,7 +12,7 @@ module type Context = sig
 
   val define : Ast.Statement.Define.t Ast.Node.t
 
-  val resolution_fixpoint : Analysis.LocalAnnotationMap.t option
+  val resolution_fixpoint : Analysis.TypeInfo.ForFunctionBody.t option
 
   val error_map : Analysis.TypeCheck.LocalErrorMap.t option
 end

@@ -65,12 +65,12 @@ module.exports = {
       external: {
         type: 'link',
         label: 'Contributing',
-        href: 'https://github.com/facebook/pyre-check/blob/main/CONTRIBUTING.md'
+        href: 'https://github.com/facebook/pyre-check/blob/main/CONTRIBUTING.md',
       },
       internal: {
         type: 'doc',
         label: 'Contributing',
-        id: 'fb/development-getting-started'
+        id: 'fb/development-getting-started',
       },
     }),
     'pyre-faq',
@@ -164,6 +164,9 @@ module.exports = {
             'fb/warning_codes/code-5045',
             'fb/warning_codes/code-5046',
             'fb/warning_codes/code-5047',
+            'fb/warning_codes/code-5048',
+            'fb/warning_codes/code-5049',
+            'fb/warning_codes/code-5050',
             'fb/warning_codes/code-5100',
             'fb/warning_codes/code-5101',
             'fb/warning_codes/code-5102',
@@ -190,6 +193,7 @@ module.exports = {
             'fb/warning_codes/code-6310',
             'fb/warning_codes/code-6312',
             'fb/warning_codes/code-6432',
+            'fb/warning_codes/code-6433',
             'fb/warning_codes/code-6445',
             'fb/warning_codes/code-6446',
             'fb/warning_codes/code-6449',

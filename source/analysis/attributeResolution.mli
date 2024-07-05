@@ -12,7 +12,7 @@ open Core
 
 module Global : sig
   type t = {
-    annotation: Annotation.t;
+    type_info: TypeInfo.Unit.t;
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }
@@ -32,7 +32,7 @@ type generic_type_problems =
     }
   | ViolateConstraints of {
       actual: Type.t;
-      expected: Type.Variable.Unary.t;
+      expected: Type.Variable.TypeVar.t;
     }
   | UnexpectedKind of {
       actual: Type.Parameter.t;
@@ -89,7 +89,8 @@ val location_insensitive_compare_reasons : reasons -> reasons -> int
 
 module ParameterArgumentMapping : sig
   type 'argument_type t = {
-    parameter_argument_mapping: 'argument_type matched_argument list Type.Callable.Parameter.Map.t;
+    parameter_argument_mapping:
+      'argument_type matched_argument list Type.Callable.CallableParamType.Map.t;
     reasons: reasons;
   }
 
@@ -108,7 +109,7 @@ type ranks = {
 
 type signature_match = {
   callable: Type.Callable.t;
-  parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: Type.t matched_argument list Type.Callable.CallableParamType.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
@@ -125,7 +126,7 @@ module SignatureSelection : sig
 
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
-    parameters:Type.t Type.Callable.RecordParameter.t list ->
+    parameters:Type.t Type.Callable.CallableParamType.t list ->
     self_argument:'argument_type option ->
     'argument_type Argument.WithPosition.t list ->
     'argument_type ParameterArgumentMapping.t
@@ -138,7 +139,7 @@ module SignatureSelection : sig
       resolved:Type.t ->
       expected:Type.t ->
       WeakenMutableLiterals.weakened_type) ->
-    resolve_with_locals:(locals:(Reference.t * Annotation.t) list -> Expression.t -> Type.t) ->
+    resolve_with_locals:(locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.t -> Type.t) ->
     location:Location.t ->
     callable:Type.Callable.t ->
     Type.t ParameterArgumentMapping.t ->
@@ -164,7 +165,7 @@ module SignatureSelection : sig
   val select_closest_signature_for_function_call
     :  order:ConstraintsSet.order ->
     resolve_with_locals:
-      (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
+      (locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.expression Node.t -> Type.t) ->
     resolve_mutable_literals:
       (resolve:(Expression.t -> Type.t) ->
       expression:Expression.t option ->
@@ -203,7 +204,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Type.t ->
-    Type.t Type.Record.TypedDictionary.record option
+    Type.TypedDictionary.t option
 
   val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
@@ -291,7 +292,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     resolve_with_locals:
-      (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
+      (locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.expression Node.t -> Type.t) ->
     arguments:Type.t Argument.t list ->
     location:Location.t ->
     callable:Type.Callable.t ->
@@ -310,7 +311,7 @@ module AttributeReadOnly : sig
   val constraints_solution_exists
     :  t ->
     ?dependency:DependencyKey.registered ->
-    get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+    get_typed_dictionary_override:(Type.t -> Type.TypedDictionary.t option) ->
     left:Type.t ->
     right:Type.t ->
     bool

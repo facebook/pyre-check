@@ -9,17 +9,17 @@
 
 open Core
 open Pyre
-module ParameterVariable = Type.Variable.Variadic.Parameters
-module UnaryVariable = Type.Variable.Unary
-module TupleVariable = Type.Variable.Variadic.Tuple
+module ParamSpec = Type.Variable.ParamSpec
+module TypeVar = Type.Variable.TypeVar
+module TypeVarTuple = Type.Variable.TypeVarTuple
 
-type unary_interval = {
+type type_var_interval = {
   upper_bound: Type.t;
   lower_bound: Type.t;
 }
 [@@deriving compare, show]
 
-type callable_parameter_interval =
+type param_spec_interval =
   | Top
   | Singleton of Type.Callable.parameters
   | Bottom
@@ -43,16 +43,16 @@ type callable_parameter_interval =
 
    In other words, the type lattice is just Top, Bottom, and individual tuples. The `join` of
    unequal types is Top and the `meet` of unequal types is Bottom. *)
-type tuple_interval =
+type type_var_tuple_interval =
   | TopTuple
   | BottomTuple
   | SingletonTuple of Type.t Type.OrderedTypes.record
 [@@deriving compare, show]
 
 type t = {
-  unaries: unary_interval UnaryVariable.Map.t;
-  callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
-  tuple_variadics: tuple_interval TupleVariable.Map.t;
+  type_vars: type_var_interval TypeVar.Map.t;
+  param_specs: param_spec_interval ParamSpec.Map.t;
+  type_var_tuples: type_var_tuple_interval TypeVarTuple.Map.t;
   have_fallbacks: Type.Variable.Set.t;
 }
 [@@deriving compare]
@@ -67,22 +67,22 @@ let show_map map ~show_key ~show_data ~short_name =
     Map.fold map ~init:[] ~f:show |> String.concat ~sep:"\n" |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format { unaries; callable_parameters; tuple_variadics; have_fallbacks } =
-  let unaries =
-    show_map unaries ~show_key:UnaryVariable.show ~show_data:show_unary_interval ~short_name:"un"
+let pp format { type_vars; param_specs; type_var_tuples; have_fallbacks } =
+  let type_vars =
+    show_map type_vars ~show_key:TypeVar.show ~show_data:show_type_var_interval ~short_name:"un"
   in
-  let callable_parameters =
+  let param_specs =
     show_map
-      callable_parameters
-      ~show_key:ParameterVariable.show
-      ~show_data:show_callable_parameter_interval
+      param_specs
+      ~show_key:ParamSpec.show
+      ~show_data:show_param_spec_interval
       ~short_name:"cb"
   in
-  let tuple_variadics =
+  let type_var_tuples =
     show_map
-      tuple_variadics
-      ~show_key:TupleVariable.show
-      ~show_data:show_tuple_interval
+      type_var_tuples
+      ~show_key:TypeVarTuple.show
+      ~show_data:show_type_var_tuple_interval
       ~short_name:"variadic_tuple"
   in
   let have_fallbacks =
@@ -90,142 +90,140 @@ let pp format { unaries; callable_parameters; tuple_variadics; have_fallbacks } 
     |> List.to_string ~f:Type.Variable.show
     |> Format.sprintf "\nHave Fallbacks to Any: %s"
   in
-  Format.fprintf format "{%s%s%s%s}" unaries callable_parameters tuple_variadics have_fallbacks
+  Format.fprintf format "{%s%s%s%s}" type_vars param_specs type_var_tuples have_fallbacks
 
 
 let show annotation = Format.asprintf "%a" pp annotation
 
 let empty =
   {
-    unaries = UnaryVariable.Map.empty;
-    callable_parameters = ParameterVariable.Map.empty;
-    tuple_variadics = TupleVariable.Map.empty;
+    type_vars = TypeVar.Map.empty;
+    param_specs = ParamSpec.Map.empty;
+    type_var_tuples = TypeVarTuple.Map.empty;
     have_fallbacks = Type.Variable.Set.empty;
   }
 
 
-let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~variables =
+let exists_in_bounds { type_vars; param_specs; type_var_tuples; _ } ~variables =
   let contains_variable annotation =
     let contains_unary =
-      Type.Variable.GlobalTransforms.Unary.collect_all annotation
+      Type.Variable.GlobalTransforms.TypeVar.collect_all annotation
       |> List.exists ~f:(fun variable ->
-             List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
+             List.mem variables (Type.Variable.TypeVarVariable variable) ~equal:Type.Variable.equal)
     in
     let contains_parameter_variadic =
       let parameter_variadic_contained_in_list variable =
-        List.mem variables (Type.Variable.ParameterVariadic variable) ~equal:Type.Variable.equal
+        List.mem variables (Type.Variable.ParamSpecVariable variable) ~equal:Type.Variable.equal
       in
-      Type.Variable.GlobalTransforms.ParameterVariadic.collect_all annotation
+      Type.Variable.GlobalTransforms.ParamSpec.collect_all annotation
       |> List.exists ~f:parameter_variadic_contained_in_list
     in
     let contains_tuple_variadic =
-      Type.Variable.GlobalTransforms.TupleVariadic.collect_all annotation
+      Type.Variable.GlobalTransforms.TypeVarTuple.collect_all annotation
       |> List.exists ~f:(fun variable ->
-             List.mem variables (Type.Variable.TupleVariadic variable) ~equal:Type.Variable.equal)
+             List.mem
+               variables
+               (Type.Variable.TypeVarTupleVariable variable)
+               ~equal:Type.Variable.equal)
     in
     contains_unary || contains_parameter_variadic || contains_tuple_variadic
   in
   let exists_in_interval_bounds { upper_bound; lower_bound } =
     contains_variable upper_bound || contains_variable lower_bound
   in
-  let exists_in_callable_parameter_interval_bounds = function
+  let exists_in_param_spec_interval_bounds = function
     | Singleton parameters ->
         Type.Callable.create ~parameters ~annotation:Type.Any () |> contains_variable
     | _ -> false
   in
-  let exists_in_tuple_interval_bound = function
+  let exists_in_type_var_tuple_interval = function
     | SingletonTuple ordered_type -> Type.Tuple ordered_type |> contains_variable
     | _ -> false
   in
-  Map.exists unaries ~f:exists_in_interval_bounds
-  || Map.exists callable_parameters ~f:exists_in_callable_parameter_interval_bounds
-  || Map.exists tuple_variadics ~f:exists_in_tuple_interval_bound
+  Map.exists type_vars ~f:exists_in_interval_bounds
+  || Map.exists param_specs ~f:exists_in_param_spec_interval_bounds
+  || Map.exists type_var_tuples ~f:exists_in_type_var_tuple_interval
 
 
 module Solution = struct
   type t = {
-    unaries: Type.t UnaryVariable.Map.t;
-    callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
-    tuple_variadics: Type.t Type.OrderedTypes.record TupleVariable.Map.t;
+    type_vars: Type.t TypeVar.Map.t;
+    param_specs: Type.Callable.parameters ParamSpec.Map.t;
+    type_var_tuples: Type.t Type.OrderedTypes.record TypeVarTuple.Map.t;
   }
   [@@deriving sexp]
 
   let equal left right =
-    UnaryVariable.Map.equal Type.equal left.unaries right.unaries
-    && ParameterVariable.Map.equal
-         Type.Callable.equal_parameters
-         left.callable_parameters
-         right.callable_parameters
-    && TupleVariable.Map.equal
+    TypeVar.Map.equal Type.equal left.type_vars right.type_vars
+    && ParamSpec.Map.equal Type.Callable.equal_parameters left.param_specs right.param_specs
+    && TypeVarTuple.Map.equal
          (Type.OrderedTypes.equal_record Type.equal)
-         left.tuple_variadics
-         right.tuple_variadics
+         left.type_var_tuples
+         right.type_var_tuples
 
 
-  let show { unaries; callable_parameters; tuple_variadics } =
-    let unaries =
-      show_map unaries ~show_key:UnaryVariable.show ~show_data:Type.show ~short_name:"un"
+  let show { type_vars; param_specs; type_var_tuples } =
+    let type_vars =
+      show_map type_vars ~show_key:TypeVar.show ~show_data:Type.show ~short_name:"un"
     in
-    let callable_parameters =
+    let param_specs =
       show_map
-        callable_parameters
-        ~show_key:ParameterVariable.show
+        param_specs
+        ~show_key:ParamSpec.show
         ~show_data:Type.Callable.show_parameters
         ~short_name:"cb"
     in
-    let tuple_variadics =
+    let type_var_tuples =
       show_map
-        tuple_variadics
-        ~show_key:TupleVariable.show
+        type_var_tuples
+        ~show_key:TypeVarTuple.show
         ~show_data:(Type.OrderedTypes.show_record Type.pp)
         ~short_name:"variadic_tuple"
     in
-    Format.sprintf "{%s%s%s}" unaries callable_parameters tuple_variadics
+    Format.sprintf "{%s%s%s}" type_vars param_specs type_var_tuples
 
 
   let pp format solution = Format.fprintf format "%s" (show solution)
 
   let empty =
     {
-      unaries = UnaryVariable.Map.empty;
-      callable_parameters = ParameterVariable.Map.empty;
-      tuple_variadics = TupleVariable.Map.empty;
+      type_vars = TypeVar.Map.empty;
+      param_specs = ParamSpec.Map.empty;
+      type_var_tuples = TypeVarTuple.Map.empty;
     }
 
 
-  let instantiate { unaries; callable_parameters; tuple_variadics } annotation =
+  let instantiate { type_vars; param_specs; type_var_tuples } annotation =
     let annotation =
-      if Map.is_empty unaries then
+      if Map.is_empty type_vars then
         annotation
       else
-        Type.Variable.GlobalTransforms.Unary.replace_all
-          (fun variable -> Map.find unaries variable)
+        Type.Variable.GlobalTransforms.TypeVar.replace_all
+          (fun variable -> Map.find type_vars variable)
           annotation
     in
     let annotation =
-      if Map.is_empty callable_parameters then
+      if Map.is_empty param_specs then
         annotation
       else
-        Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
-          (fun variable -> Map.find callable_parameters variable)
+        Type.Variable.GlobalTransforms.ParamSpec.replace_all
+          (fun variable -> Map.find param_specs variable)
           annotation
     in
     let annotation =
-      if Map.is_empty tuple_variadics then
+      if Map.is_empty type_var_tuples then
         annotation
       else
-        Type.Variable.GlobalTransforms.TupleVariadic.replace_all
-          (fun variable -> Map.find tuple_variadics variable)
+        Type.Variable.GlobalTransforms.TypeVarTuple.replace_all
+          (fun variable -> Map.find type_var_tuples variable)
           annotation
     in
     annotation
 
 
-  let instantiate_single_variable { unaries; _ } = Map.find unaries
+  let instantiate_single_type_var { type_vars; _ } = Map.find type_vars
 
-  let instantiate_single_parameter_variadic { callable_parameters; _ } =
-    Map.find callable_parameters
-
+  let instantiate_single_param_spec { param_specs; _ } = Map.find param_specs
 
   let instantiate_ordered_types solution ordered_type =
     match instantiate solution (Type.Tuple ordered_type) with
@@ -239,12 +237,13 @@ module Solution = struct
     | _ -> failwith "instantiate is not preserving callables"
 
 
-  let set ({ unaries; callable_parameters; tuple_variadics } as solution) = function
-    | Type.Variable.UnaryPair (key, data) -> { solution with unaries = Map.set unaries ~key ~data }
-    | Type.Variable.ParameterVariadicPair (key, data) ->
-        { solution with callable_parameters = Map.set callable_parameters ~key ~data }
-    | Type.Variable.TupleVariadicPair (key, data) ->
-        { solution with tuple_variadics = Map.set tuple_variadics ~key ~data }
+  let set ({ type_vars; param_specs; type_var_tuples } as solution) = function
+    | Type.Variable.TypeVarPair (key, data) ->
+        { solution with type_vars = Map.set type_vars ~key ~data }
+    | Type.Variable.ParamSpecPair (key, data) ->
+        { solution with param_specs = Map.set param_specs ~key ~data }
+    | Type.Variable.TypeVarTuplePair (key, data) ->
+        { solution with type_var_tuples = Map.set type_var_tuples ~key ~data }
 
 
   let create = List.fold ~f:set ~init:empty
@@ -331,12 +330,12 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
       let partition_independent_dependent container ~with_regards_to =
-        let contains_key { unaries; callable_parameters; tuple_variadics; have_fallbacks } key =
+        let contains_key { type_vars; param_specs; type_var_tuples; have_fallbacks } key =
           let has_constraints =
             match key with
-            | Type.Variable.Unary unary -> Map.mem unaries unary
-            | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
-            | Type.Variable.TupleVariadic variadic -> Map.mem tuple_variadics variadic
+            | Type.Variable.TypeVarVariable unary -> Map.mem type_vars unary
+            | Type.Variable.ParamSpecVariable parameters -> Map.mem param_specs parameters
+            | Type.Variable.TypeVarTupleVariable variadic -> Map.mem type_var_tuples variadic
           in
           has_constraints || Set.mem have_fallbacks key
         in
@@ -358,10 +357,10 @@ module OrderedConstraints (Order : OrderType) = struct
     end
   end
 
-  module UnaryTypeInterval = struct
-    module Variable = UnaryVariable
+  module TypeVarInterval = struct
+    module Variable = TypeVar
 
-    type t = unary_interval
+    type t = type_var_interval
 
     let lower_bound { lower_bound; _ } = lower_bound
 
@@ -382,7 +381,7 @@ module OrderedConstraints (Order : OrderType) = struct
     let narrowest_valid_value
         interval
         ~order
-        ~variable:{ UnaryVariable.constraints = exogenous_constraint; _ }
+        ~variable:{ TypeVar.constraints = exogenous_constraint; _ }
       =
       let lowest_non_bottom_member interval ~order =
         let non_empty { upper_bound; lower_bound } ~order =
@@ -398,7 +397,7 @@ module OrderedConstraints (Order : OrderType) = struct
           let collect annotation sofar =
             let add_to_explicits_if_safe sofar candidate =
               match candidate with
-              | { Type.Variable.Unary.constraints = Explicit left_constraints; _ } as candidate ->
+              | { Type.Variable.TypeVar.constraints = Explicit left_constraints; _ } as candidate ->
                   let exists_in_explicits left_constraint =
                     List.exists explicits ~f:(Type.equal left_constraint)
                   in
@@ -410,7 +409,7 @@ module OrderedConstraints (Order : OrderType) = struct
                     sofar
               | _ -> sofar
             in
-            Type.Variable.GlobalTransforms.Unary.collect_all annotation
+            Type.Variable.GlobalTransforms.TypeVar.collect_all annotation
             |> List.fold ~f:add_to_explicits_if_safe ~init:sofar
           in
           let explicits =
@@ -460,10 +459,10 @@ module OrderedConstraints (Order : OrderType) = struct
       Type.Variable.all_free_variables upper_bound @ Type.Variable.all_free_variables lower_bound
   end
 
-  module CallableParametersInterval = struct
-    module Variable = ParameterVariable
+  module ParamSpecInterval = struct
+    module Variable = ParamSpec
 
-    type t = callable_parameter_interval
+    type t = param_spec_interval
 
     let create ?upper_bound ?lower_bound () =
       match upper_bound, lower_bound with
@@ -511,9 +510,8 @@ module OrderedConstraints (Order : OrderType) = struct
 
     let is_trivial interval ~variable =
       match interval with
-      | Singleton
-          (Type.Callable.ParameterVariadicTypeVariable { head = []; variable = target_variable }) ->
-          ParameterVariable.equal variable target_variable
+      | Singleton (Type.Callable.FromParamSpec { head = []; variable = target_variable }) ->
+          ParamSpec.equal variable target_variable
       | _ -> false
 
 
@@ -526,10 +524,10 @@ module OrderedConstraints (Order : OrderType) = struct
           |> Type.Variable.all_free_variables
   end
 
-  module TupleInterval = struct
-    module Variable = TupleVariable
+  module TypeVarTupleInterval = struct
+    module Variable = TypeVarTuple
 
-    type t = tuple_interval
+    type t = type_var_tuple_interval
 
     let create ?upper_bound ?lower_bound () =
       match lower_bound, upper_bound with
@@ -583,7 +581,7 @@ module OrderedConstraints (Order : OrderType) = struct
       match interval with
       | SingletonTuple (Type.OrderedTypes.Concatenation concatenation) ->
           Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation
-          >>| (fun variadic -> TupleVariable.equal variadic variable)
+          >>| (fun variadic -> TypeVarTuple.equal variadic variable)
           |> Option.value ~default:false
       | _ -> (* TODO(T84854853): Should this be true? *) false
 
@@ -595,33 +593,33 @@ module OrderedConstraints (Order : OrderType) = struct
       | SingletonTuple ordered_type -> Type.Variable.all_free_variables (Type.Tuple ordered_type)
   end
 
-  module CallableParametersIntervalContainer = IntervalContainer.Make (CallableParametersInterval)
-  module UnaryIntervalContainer = IntervalContainer.Make (UnaryTypeInterval)
-  module TupleIntervalContainer = IntervalContainer.Make (TupleInterval)
+  module ParamSpecIntervalContainer = IntervalContainer.Make (ParamSpecInterval)
+  module TypeVarIntervalContainer = IntervalContainer.Make (TypeVarInterval)
+  module TypeVarTupleIntervalContainer = IntervalContainer.Make (TypeVarTupleInterval)
 
   type order = Order.t
 
   let add_bound
-      ({ unaries; callable_parameters; tuple_variadics; _ } as constraints)
+      ({ type_vars; param_specs; type_var_tuples; _ } as constraints)
       ~order
       ~pair
       ~is_lower_bound
     =
     match pair with
-    | Type.Variable.UnaryPair (variable, bound) ->
-        UnaryIntervalContainer.add_bound unaries ~order ~variable ~bound ~is_lower_bound
-        >>| fun unaries -> { constraints with unaries }
-    | Type.Variable.ParameterVariadicPair (variable, bound) ->
-        CallableParametersIntervalContainer.add_bound
-          callable_parameters
+    | Type.Variable.TypeVarPair (variable, bound) ->
+        TypeVarIntervalContainer.add_bound type_vars ~order ~variable ~bound ~is_lower_bound
+        >>| fun type_vars -> { constraints with type_vars }
+    | Type.Variable.ParamSpecPair (variable, bound) ->
+        ParamSpecIntervalContainer.add_bound param_specs ~order ~variable ~bound ~is_lower_bound
+        >>| fun param_specs -> { constraints with param_specs }
+    | Type.Variable.TypeVarTuplePair (variable, bound) ->
+        TypeVarTupleIntervalContainer.add_bound
+          type_var_tuples
           ~order
           ~variable
           ~bound
           ~is_lower_bound
-        >>| fun callable_parameters -> { constraints with callable_parameters }
-    | Type.Variable.TupleVariadicPair (variable, bound) ->
-        TupleIntervalContainer.add_bound tuple_variadics ~order ~variable ~bound ~is_lower_bound
-        >>| fun tuple_variadics -> { constraints with tuple_variadics }
+        >>| fun type_var_tuples -> { constraints with type_var_tuples }
 
 
   let add_lower_bound = add_bound ~is_lower_bound:true
@@ -632,12 +630,11 @@ module OrderedConstraints (Order : OrderType) = struct
     { constraints with have_fallbacks = Set.add have_fallbacks addition }
 
 
-  let merge_solution { unaries; callable_parameters; tuple_variadics; have_fallbacks } solution =
+  let merge_solution { type_vars; param_specs; type_var_tuples; have_fallbacks } solution =
     {
-      unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
-      callable_parameters =
-        CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
-      tuple_variadics = TupleIntervalContainer.merge_solution tuple_variadics ~solution;
+      type_vars = TypeVarIntervalContainer.merge_solution type_vars ~solution;
+      param_specs = ParamSpecIntervalContainer.merge_solution param_specs ~solution;
+      type_var_tuples = TypeVarTupleIntervalContainer.merge_solution type_var_tuples ~solution;
       have_fallbacks;
     }
 
@@ -648,20 +645,13 @@ module OrderedConstraints (Order : OrderType) = struct
       | `Ok map -> map
       | `Duplicate -> map
     in
-    let add_fallback ({ Solution.unaries; callable_parameters; tuple_variadics } as solution)
-      = function
-      | Type.Variable.Unary variable ->
-          { solution with unaries = optional_add unaries variable Type.Any }
-      | Type.Variable.ParameterVariadic variable ->
-          {
-            solution with
-            callable_parameters = optional_add callable_parameters variable Type.Callable.Undefined;
-          }
-      | Type.Variable.TupleVariadic variadic ->
-          {
-            solution with
-            tuple_variadics = optional_add tuple_variadics variadic TupleVariable.any;
-          }
+    let add_fallback ({ Solution.type_vars; param_specs; type_var_tuples } as solution) = function
+      | Type.Variable.TypeVarVariable variable ->
+          { solution with type_vars = optional_add type_vars variable Type.Any }
+      | Type.Variable.ParamSpecVariable variable ->
+          { solution with param_specs = optional_add param_specs variable Type.Callable.Undefined }
+      | Type.Variable.TypeVarTupleVariable variadic ->
+          { solution with type_var_tuples = optional_add type_var_tuples variadic TypeVarTuple.any }
     in
     Set.to_list have_fallbacks |> List.fold ~init:solution ~f:add_fallback
 
@@ -669,47 +659,47 @@ module OrderedConstraints (Order : OrderType) = struct
   let solve constraints ~order =
     let rec build_solution ~remaining_constraints ~partial_solution =
       let independent_constraints, dependent_constraints =
-        let independent_unaries, dependent_unaries =
-          UnaryIntervalContainer.partition_independent_dependent
-            remaining_constraints.unaries
+        let independent_type_vars, dependent_type_vars =
+          TypeVarIntervalContainer.partition_independent_dependent
+            remaining_constraints.type_vars
             ~with_regards_to:remaining_constraints
         in
-        let independent_tuple_variadics, dependent_tuple_variadics =
-          TupleIntervalContainer.partition_independent_dependent
-            remaining_constraints.tuple_variadics
+        let independent_type_var_tuples, dependent_type_var_tuples =
+          TypeVarTupleIntervalContainer.partition_independent_dependent
+            remaining_constraints.type_var_tuples
             ~with_regards_to:remaining_constraints
         in
         let independent_parameters, dependent_parameters =
-          CallableParametersIntervalContainer.partition_independent_dependent
-            remaining_constraints.callable_parameters
+          ParamSpecIntervalContainer.partition_independent_dependent
+            remaining_constraints.param_specs
             ~with_regards_to:remaining_constraints
         in
         let independent_fallbacks, dependent_fallbacks =
           let matches = function
-            | Type.Variable.Unary key -> not (Map.mem dependent_unaries key)
-            | ParameterVariadic key -> not (Map.mem dependent_parameters key)
-            | TupleVariadic key -> not (Map.mem dependent_tuple_variadics key)
+            | Type.Variable.TypeVarVariable key -> not (Map.mem dependent_type_vars key)
+            | ParamSpecVariable key -> not (Map.mem dependent_parameters key)
+            | TypeVarTupleVariable key -> not (Map.mem dependent_type_var_tuples key)
           in
           Set.partition_tf remaining_constraints.have_fallbacks ~f:matches
         in
         ( {
-            unaries = independent_unaries;
-            callable_parameters = independent_parameters;
-            tuple_variadics = independent_tuple_variadics;
+            type_vars = independent_type_vars;
+            param_specs = independent_parameters;
+            type_var_tuples = independent_type_var_tuples;
             have_fallbacks = independent_fallbacks;
           },
           {
-            unaries = dependent_unaries;
-            callable_parameters = dependent_parameters;
-            tuple_variadics = dependent_tuple_variadics;
+            type_vars = dependent_type_vars;
+            param_specs = dependent_parameters;
+            type_var_tuples = dependent_type_var_tuples;
             have_fallbacks = dependent_fallbacks;
           } )
       in
       let handle_dependent_constraints partial_solution =
-        let is_empty { unaries; callable_parameters; tuple_variadics; have_fallbacks } =
-          Map.is_empty unaries
-          && Map.is_empty callable_parameters
-          && Map.is_empty tuple_variadics
+        let is_empty { type_vars; param_specs; type_var_tuples; have_fallbacks } =
+          Map.is_empty type_vars
+          && Map.is_empty param_specs
+          && Map.is_empty type_var_tuples
           && Set.is_empty have_fallbacks
         in
         if is_empty dependent_constraints then
@@ -720,11 +710,12 @@ module OrderedConstraints (Order : OrderType) = struct
           let remaining_constraints = merge_solution dependent_constraints partial_solution in
           build_solution ~remaining_constraints ~partial_solution
       in
-      UnaryIntervalContainer.add_solution independent_constraints.unaries partial_solution ~order
-      >>= CallableParametersIntervalContainer.add_solution
-            independent_constraints.callable_parameters
-            ~order
-      >>= TupleIntervalContainer.add_solution independent_constraints.tuple_variadics ~order
+      TypeVarIntervalContainer.add_solution
+        independent_constraints.type_vars
+        partial_solution
+        ~order
+      >>= ParamSpecIntervalContainer.add_solution independent_constraints.param_specs ~order
+      >>= TypeVarTupleIntervalContainer.add_solution independent_constraints.type_var_tuples ~order
       >>| apply_fallbacks ~have_fallbacks:independent_constraints.have_fallbacks
       >>= handle_dependent_constraints
     in
@@ -732,45 +723,45 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
   let extract_partial_solution
-      { unaries; callable_parameters; tuple_variadics; have_fallbacks }
+      { type_vars; param_specs; type_var_tuples; have_fallbacks }
       ~order
       ~variables
     =
     let extracted_constraints, remaining_constraints =
       let unary_matches ~key ~data:_ =
-        List.exists variables ~f:(Type.Variable.equal (Type.Variable.Unary key))
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.TypeVarVariable key))
       in
-      let callable_parameters_matches ~key ~data:_ =
-        List.exists variables ~f:(Type.Variable.equal (Type.Variable.ParameterVariadic key))
+      let param_specs_matches ~key ~data:_ =
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.ParamSpecVariable key))
       in
       let tuple_variadic_matches ~key ~data:_ =
-        List.exists variables ~f:(Type.Variable.equal (Type.Variable.TupleVariadic key))
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.TypeVarTupleVariable key))
       in
-      let extracted_unaries, remaining_unaries = Map.partitioni_tf unaries ~f:unary_matches in
+      let extracted_type_vars, remaining_type_vars = Map.partitioni_tf type_vars ~f:unary_matches in
       let extracted_variadics, remaining_variadics =
-        Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
+        Map.partitioni_tf param_specs ~f:param_specs_matches
       in
-      let extracted_tuple_variadics, remaining_tuple_variadics =
-        Map.partitioni_tf tuple_variadics ~f:tuple_variadic_matches
+      let extracted_type_var_tuples, remaining_type_var_tuples =
+        Map.partitioni_tf type_var_tuples ~f:tuple_variadic_matches
       in
       let extracted_fallbacks, remaining_fallbacks =
         let matches = function
-          | Type.Variable.Unary key -> unary_matches ~key ~data:()
-          | ParameterVariadic key -> callable_parameters_matches ~key ~data:()
-          | TupleVariadic key -> tuple_variadic_matches ~key ~data:()
+          | Type.Variable.TypeVarVariable key -> unary_matches ~key ~data:()
+          | ParamSpecVariable key -> param_specs_matches ~key ~data:()
+          | TypeVarTupleVariable key -> tuple_variadic_matches ~key ~data:()
         in
         Set.partition_tf have_fallbacks ~f:matches
       in
       ( {
-          unaries = extracted_unaries;
-          callable_parameters = extracted_variadics;
-          tuple_variadics = extracted_tuple_variadics;
+          type_vars = extracted_type_vars;
+          param_specs = extracted_variadics;
+          type_var_tuples = extracted_type_var_tuples;
           have_fallbacks = extracted_fallbacks;
         },
         {
-          unaries = remaining_unaries;
-          callable_parameters = remaining_variadics;
-          tuple_variadics = remaining_tuple_variadics;
+          type_vars = remaining_type_vars;
+          param_specs = remaining_variadics;
+          type_var_tuples = remaining_type_var_tuples;
           have_fallbacks = remaining_fallbacks;
         } )
     in

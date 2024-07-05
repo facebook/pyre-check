@@ -811,6 +811,7 @@ let end_to_end_integration_test path context =
     in
     let shared_models =
       TaintFixpoint.record_initial_models
+        ~scheduler:(Test.mock_scheduler ())
         ~initial_models
         ~initial_callables:(FetchCallables.get_definitions initial_callables)
         ~stubs

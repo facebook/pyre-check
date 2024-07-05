@@ -93,3 +93,11 @@ def test_collapse_depth():
 
 def test_skip_obscure_via_model_query(arg):
     ...
+
+
+def obscure_from_model(a):
+    return 0
+
+
+def test_obscure_from_model():
+    _test_sink(obscure_from_model(_test_source()))

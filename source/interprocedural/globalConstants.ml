@@ -119,7 +119,7 @@ module SharedMemory = struct
         ~default:
           (Scheduler.Policy.fixed_chunk_count
              ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:50
+             ~minimum_chunk_size:1
              ~preferred_chunks_per_worker:1
              ())
     in

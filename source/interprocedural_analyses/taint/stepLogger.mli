@@ -5,4 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* Blank to catch unused tests *)
+type t
+
+val start : start_message:string -> end_message:string -> t
+
+val finish : ?integers:(string * int) list -> t -> unit

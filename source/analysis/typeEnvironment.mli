@@ -14,9 +14,13 @@ module TypeEnvironmentReadOnly : sig
 
   val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
-  val global_resolution : t -> GlobalResolution.t
+  val function_definition_environment : t -> FunctionDefinitionEnvironment.ReadOnly.t
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+  val global_resolution : t -> GlobalResolution.t
+
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   val get_tracked_source_code_api
     :  t ->
@@ -35,9 +39,18 @@ module TypeEnvironmentReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
-    LocalAnnotationMap.ReadOnly.t option
+    TypeInfo.ForFunctionBody.ReadOnly.t option
 
-  val get_or_recompute_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
+  val get_or_recompute_local_annotations
+    :  t ->
+    Reference.t ->
+    TypeInfo.ForFunctionBody.ReadOnly.t option
+
+  val get_callees
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    Callgraph.callee_with_locations list option
 end
 
 include
@@ -80,4 +93,6 @@ module AssumeAstEnvironment : sig
   val store_without_dependency_keys : t -> unit
 
   val load_without_dependency_keys : EnvironmentControls.t -> t
+
+  val ast_environment : t -> AstEnvironment.t
 end

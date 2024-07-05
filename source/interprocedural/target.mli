@@ -145,7 +145,7 @@ val resolve_method
   method_name:string ->
   t option
 
-module StringCombineArtificialTargets : sig
+module ArtificialTargets : sig
   val format_string : t
 
   val str_add : t
@@ -153,6 +153,10 @@ module StringCombineArtificialTargets : sig
   val str_mod : t
 
   val str_format : t
+
+  val str_literal : t
+
+  val condition : t
 end
 
 module SharedMemoryKey : sig

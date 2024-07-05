@@ -25,8 +25,8 @@ module PyrePysaApi = Analysis.PyrePysaApi
 module Cfg = Analysis.Cfg
 module ResolvedReference = Analysis.ResolvedReference
 module ClassSummary = Analysis.ClassSummary
-module Annotation = Analysis.Annotation
 module AnnotatedAttribute = Analysis.AnnotatedAttribute
+module TypeInfo = Analysis.TypeInfo
 
 module JsonHelper = struct
   let add_optional name value to_json bindings =
@@ -1784,7 +1784,7 @@ let redirect_special_calls ~pyre_in_context call =
       PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
 
 
-let redirect_expressions ~pyre_in_context = function
+let redirect_expressions ~pyre_in_context ~location = function
   | Expression.BinaryOperator { BinaryOperator.operator; left; right } ->
       Expression.Call
         {
@@ -1816,6 +1816,7 @@ let redirect_expressions ~pyre_in_context = function
   | Expression.Call call ->
       let call = redirect_special_calls ~pyre_in_context call in
       Expression.Call call
+  | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | expression -> expression
 
 
@@ -2109,15 +2110,15 @@ let resolve_callee_ignoring_decorators
   targets
 
 
-let get_defining_attributes ~pyre_in_context ~base_annotation ~attribute =
+let get_defining_attributes ~pyre_in_context ~base_type_info ~attribute =
   let rec get_defining_parents annotation =
     match annotation with
     | Type.Union annotations
-    | Type.Variable { Type.Variable.Unary.constraints = Type.Variable.Explicit annotations; _ } ->
+    | Type.Variable { Type.Variable.TypeVar.constraints = Type.Variable.Explicit annotations; _ } ->
         List.concat_map annotations ~f:get_defining_parents
     | _ -> [CallResolution.defining_attribute ~pyre_in_context annotation attribute]
   in
-  base_annotation |> strip_meta |> strip_optional |> get_defining_parents
+  base_type_info |> strip_meta |> strip_optional |> get_defining_parents
 
 
 type attribute_access_properties = {
@@ -2129,7 +2130,7 @@ let resolve_attribute_access_properties
     ~pyre_in_context
     ~override_graph
     ~call_indexer
-    ~base_annotation
+    ~base_type_info
     ~attribute
     ~setter
   =
@@ -2140,20 +2141,20 @@ let resolve_attribute_access_properties
       else
         let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
         AnnotatedAttribute.annotation property
-        |> Annotation.annotation
+        |> TypeInfo.Unit.annotation
         |> ReturnType.from_annotation ~pyre_api
     in
     let parent = AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
-      if Type.is_meta base_annotation then
+      if Type.is_meta base_type_info then
         [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
       else
         let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
         compute_indirect_targets
           ~pyre_in_context
           ~override_graph
-          ~receiver_type:base_annotation
+          ~receiver_type:base_type_info
           callee
     in
     List.map
@@ -2164,7 +2165,7 @@ let resolve_attribute_access_properties
            ~return_type:(Some return_type))
       property_targets
   in
-  let attributes = get_defining_attributes ~pyre_in_context ~base_annotation ~attribute in
+  let attributes = get_defining_attributes ~pyre_in_context ~base_type_info ~attribute in
   let properties, non_properties =
     List.partition_map
       ~f:(function
@@ -2208,7 +2209,7 @@ let is_builtin_reference = function
 let resolve_attribute_access_global_targets
     ~define
     ~pyre_in_context
-    ~base_annotation
+    ~base_type_info
     ~base
     ~attribute
     ~special
@@ -2268,7 +2269,7 @@ let resolve_attribute_access_global_targets
             let target = Reference.create ~prefix:(Type.class_name annotation) attribute in
             target :: targets
       in
-      find_targets [] base_annotation
+      find_targets [] base_type_info
 
 
 let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
@@ -2462,7 +2463,7 @@ struct
       ~special
       ~setter
     =
-    let base_annotation = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
+    let base_type_info = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
 
     log
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \
@@ -2471,14 +2472,14 @@ struct
       Expression.pp
       base
       Type.pp
-      base_annotation;
+      base_type_info;
 
     let { property_targets; is_attribute } =
       resolve_attribute_access_properties
         ~pyre_in_context
         ~override_graph
         ~call_indexer
-        ~base_annotation
+        ~base_type_info
         ~attribute
         ~setter
     in
@@ -2487,7 +2488,7 @@ struct
       resolve_attribute_access_global_targets
         ~define:Context.name
         ~pyre_in_context
-        ~base_annotation
+        ~base_type_info
         ~base
         ~attribute
         ~special
@@ -2565,7 +2566,7 @@ struct
             | Some existing_callees ->
                 UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
       in
-      let value = redirect_expressions ~pyre_in_context value in
+      let value = redirect_expressions ~pyre_in_context ~location value in
       let () =
         match value with
         | Expression.Call call ->
@@ -2612,7 +2613,7 @@ struct
                 call_indexer
                 ~implicit_dunder_call:false
                 ~return_type:None
-                Target.StringCombineArtificialTargets.format_string
+                Target.ArtificialTargets.format_string
             in
             let callees =
               ExpressionCallees.from_string_format
@@ -3181,8 +3182,8 @@ let build_whole_program_call_graph
         ~default:
           (Scheduler.Policy.fixed_chunk_size
              ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:100
-             ~preferred_chunk_size:2000
+             ~minimum_chunk_size:1
+             ~preferred_chunk_size:6000
              ())
     in
     Scheduler.map_reduce

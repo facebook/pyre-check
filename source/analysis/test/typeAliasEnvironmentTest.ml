@@ -317,7 +317,7 @@ let test_harder_registrations =
                         Single Type.float;
                         Unpacked
                           (Type.OrderedTypes.Concatenation.create_unpackable
-                             (Type.Variable.Variadic.Tuple.create "test.Ts"));
+                             (Type.Variable.TypeVarTuple.create "test.Ts"));
                       ])));
       (* An alias containing "..." should not mistake the "..." for some unknown alias. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -506,6 +506,6 @@ let test_updates context =
 
 
 let () =
-  "environment"
+  Test.sanitized_module_name __MODULE__
   >::: [test_simple_registration; test_harder_registrations; "updates" >:: test_updates]
   |> Test.run

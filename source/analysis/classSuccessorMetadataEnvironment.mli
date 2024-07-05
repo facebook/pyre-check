@@ -35,6 +35,8 @@ module MetadataReadOnly : sig
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val successors : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> string list
 
   val has_transitive_successor

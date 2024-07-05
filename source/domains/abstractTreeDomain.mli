@@ -65,14 +65,24 @@ end
 module Make (_ : CONFIG) (Element : ELEMENT) () : sig
   include AbstractDomainCore.S
 
+  type path_with_ancestors = {
+    path: Label.path;
+    ancestors: Element.t;
+    element: Element.t;
+  }
+
   type _ AbstractDomainCore.part +=
     | (* The abstract value at the tip of each path, not including ancestors (only non-bottom points
-         are visitied *)
+         are visited *)
         Path :
         (Label.path * Element.t) AbstractDomainCore.part
     | (* Same as Path, but every AnyIndex in the path keeps a set of its Index siblings *)
         RefinedPath :
         (Label.Refined.path * Element.t) AbstractDomainCore.part
+    | (* The abstract value at the tip of each path, including ancestors (only non-bottom points are
+         visited *)
+        PathWithAncestors :
+        path_with_ancestors AbstractDomainCore.part
 
   val create_leaf : Element.t -> t
 

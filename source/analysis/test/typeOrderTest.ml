@@ -421,7 +421,7 @@ let default =
   connect order ~predecessor:"int" ~successor:"float";
   connect order ~predecessor:"float" ~successor:"object";
   let type_builtin = "type" in
-  let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
+  let type_variable = Type.Variable (Type.Variable.TypeVar.create "_T") in
   insert order type_builtin;
   connect
     order
@@ -1780,11 +1780,11 @@ let test_join _ =
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
 
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1793,7 +1793,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
       | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1802,7 +1802,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
       | _ -> None)
     "typing.Tuple[typing_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -2497,8 +2497,8 @@ let test_meet _ =
     insert order "typing.Generic";
     insert order "str";
     insert order "int";
-    let variable = Type.Variable (Type.Variable.Unary.create "T") in
-    let variable2 = Type.Variable (Type.Variable.Unary.create "T2") in
+    let variable = Type.Variable (Type.Variable.TypeVar.create "T") in
+    let variable2 = Type.Variable (Type.Variable.TypeVar.create "T2") in
     concrete_connect order ~predecessor:"M" ~successor:"typing.Generic" ~parameters:[variable];
     concrete_connect order ~predecessor:"M" ~successor:"A" ~parameters:[variable];
     concrete_connect order ~predecessor:"M" ~successor:"X" ~parameters:[variable];
@@ -2573,7 +2573,8 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.integer; default = false };
            ])
       ~annotation:Type.integer
       ()
@@ -2583,7 +2584,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.string; default = false };
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -2592,7 +2596,7 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.PositionalOnly
+             Type.Callable.CallableParamType.PositionalOnly
                { index = 0; annotation = Type.string; default = false };
            ])
       ~annotation:Type.integer
@@ -2603,7 +2607,8 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.integer; default = false };
            ])
       ~annotation:Type.float
       ()
@@ -2613,7 +2618,7 @@ let test_meet_callable _ =
       ~parameters:
         (Defined
            [
-             Type.Callable.Parameter.Named
+             Type.Callable.CallableParamType.Named
                { name = "a"; annotation = Type.union [Type.integer; Type.string]; default = false };
            ])
       ~annotation:Type.integer
@@ -2628,7 +2633,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "b"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "b"; annotation = Type.string; default = false };
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -2647,7 +2655,10 @@ let test_meet_callable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "a"; annotation = Type.string; default = false };
+           ])
       ~annotation:(Type.union [Type.integer; Type.string])
       ~overloads:
         [
@@ -2655,7 +2666,7 @@ let test_meet_callable _ =
             parameters =
               Defined
                 [
-                  Type.Callable.Parameter.Named
+                  Type.Callable.CallableParamType.Named
                     { name = "a"; annotation = Type.string; default = false };
                 ];
             annotation = Type.integer;

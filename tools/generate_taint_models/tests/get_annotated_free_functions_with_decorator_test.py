@@ -5,8 +5,6 @@
 
 # pyre-strict
 
-import os  # noqa
-import re
 import textwrap
 import unittest
 from typing import List, Set
@@ -597,7 +595,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             AnnotatedFreeFunctionWithDecoratorGenerator(
                 root="/root",
                 annotation_specifications=unused_specification,
-                exclude_paths=[re.compile(r"one\.py"), re.compile(r"two\.py")],
+                exclude_paths=[r"one\.py", r"two\.py"],
             ).paths,
             ["/root/three.py"],
         )

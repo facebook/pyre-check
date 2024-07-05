@@ -20,8 +20,7 @@ let test_partition_call_map context =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in
   let callee =
-    Some
-      (Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal })
+    Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
   in
   let call_taint1 =
     ForwardTaint.apply_call
@@ -31,10 +30,10 @@ let test_partition_call_map context =
       ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
-      ~element:taint
       ~is_class_method:false
       ~is_static_method:false
       ~call_info_intervals:Domains.ClassIntervals.top
+      taint
   in
   let call_taint2 =
     ForwardTaint.apply_call
@@ -44,10 +43,10 @@ let test_partition_call_map context =
       ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
-      ~element:taint
       ~is_class_method:false
       ~is_static_method:false
       ~call_info_intervals:Domains.ClassIntervals.top
+      taint
   in
   let joined = ForwardTaint.join call_taint1 call_taint2 in
   assert_equal

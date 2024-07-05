@@ -10,13 +10,13 @@ module Error = AnalysisError
 
 val check_define
   :  resolution:Resolution.t ->
-  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+  local_annotations:TypeInfo.ForFunctionBody.ReadOnly.t option ->
   qualifier:Reference.t ->
   Statement.Define.t Node.t ->
   Error.t list
 
 val check_module_TESTING_ONLY
   :  resolution:Resolution.t ->
-  local_annotations_for_define:(Ast.Reference.t -> LocalAnnotationMap.ReadOnly.t option) ->
+  local_annotations_for_define:(Ast.Reference.t -> TypeInfo.ForFunctionBody.ReadOnly.t option) ->
   Source.t ->
   Error.t list

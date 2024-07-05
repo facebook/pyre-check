@@ -34,7 +34,7 @@ val produce_errors
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   callables:Target.Set.t ->
-  fixpoint_timer:Timer.t ->
+  fixpoint_step_logger:StepLogger.t ->
   fixpoint_state:TaintFixpoint.t ->
   Yojson.Safe.t list
 

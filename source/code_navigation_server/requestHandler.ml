@@ -398,13 +398,13 @@ let with_broadcast_busy_building ~subscriptions f =
 let handle_register_client ~client_id { State.client_states; _ } =
   match State.Client.register client_states client_id with
   | false -> Response.(Error (ErrorKind.ClientAlreadyRegistered { client_id }))
-  | true -> Response.Ok
+  | true -> Response.Ok_
 
 
 let handle_dispose_client ~client_id { State.client_states; _ } =
   match State.Client.dispose client_states client_id with
   | false -> Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
-  | true -> Response.Ok
+  | true -> Response.Ok_
 
 
 let get_raw_path { Request.FileUpdateEvent.path; _ } = PyrePath.create_absolute path
@@ -517,7 +517,7 @@ let handle_file_update
                 ~environment
                 artifact_path_events
             in
-            Lwt.return_ok Response.Ok
+            Lwt.return_ok Response.Ok_
         | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
             (* On build errors, stash away the current update and defer their processing until next
                update, hoping that the user could fix the error by then. This prevents the Pyre
@@ -531,7 +531,7 @@ let handle_file_update
               ~events:current_source_path_events
               ~error_message
               build_failure;
-            Lwt.return_ok Response.Ok
+            Lwt.return_ok Response.Ok_
         | Result.Error error ->
             (* We do not currently know how to recover from these exceptions *)
             Lwt.fail error
@@ -602,7 +602,7 @@ let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~
             in
             Lwt.return_unit
       in
-      Lwt.return Response.Ok
+      Lwt.return Response.Ok_
 
 
 let handle_local_update
@@ -678,7 +678,7 @@ let handle_file_closed
       in
       let () = OverlaidEnvironment.remove_overlay environment overlay_id in
       let%lwt () = handle_working_set_update ~subscriptions state in
-      Lwt.return Response.Ok
+      Lwt.return Response.Ok_
 
 
 let response_from_result = function

@@ -757,7 +757,7 @@ let test_pp _ =
           i = 2
         j = 2
       i[j] = 3
-      i[slice(j, None, 1)] = i[slice(None, j, None)]
+      i[j::1] = i[:j]
     |};
   assert_pretty_print
     {|

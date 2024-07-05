@@ -39,10 +39,17 @@ module Make (Config : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) 
 
   module Product = AbstractProductDomain.Make (ProductConfig)
 
+  type path_with_ancestors = Tree.path_with_ancestors = {
+    path: Label.path;
+    ancestors: Element.t;
+    element: Element.t;
+  }
+
   type _ AbstractDomainCore.part +=
     | Root = Root.Self
     | Path = Tree.Path
     | RefinedPath = Tree.RefinedPath
+    | PathWithAncestors = Tree.PathWithAncestors
 
   include Product
 

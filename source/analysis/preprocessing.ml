@@ -1162,6 +1162,13 @@ module Qualify (Context : QualifyContext) = struct
               Comprehension.element = qualify_expression ~qualify_strings ~scope element;
               generators;
             }
+      | Slice { Slice.start; stop; step } ->
+          Slice
+            {
+              Slice.start = start >>| qualify_expression ~qualify_strings ~scope;
+              stop = stop >>| qualify_expression ~qualify_strings ~scope;
+              step = step >>| qualify_expression ~qualify_strings ~scope;
+            }
       | Starred (Starred.Once expression) ->
           Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
       | Starred (Starred.Twice expression) ->
@@ -3057,6 +3064,10 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
+    | Slice { Slice.start; stop; step } ->
+        let collected = Option.value_map start ~default:collected ~f:(from_expression collected) in
+        let collected = Option.value_map stop ~default:collected ~f:(from_expression collected) in
+        Option.value_map step ~default:collected ~f:(from_expression collected)
     | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index

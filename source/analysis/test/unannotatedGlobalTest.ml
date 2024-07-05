@@ -7,15 +7,16 @@
 
 open OUnit2
 open Ast
+open Analysis
 open Core
 open Test
-open UnannotatedGlobal
 
 let test_collection context =
   let assert_collected_names ~expected source_text =
     let source = parse ~handle:"test.py" source_text in
     let actual =
-      Collector.from_source source |> List.map ~f:(fun { Collector.Result.name; _ } -> name)
+      UnannotatedGlobal.Collector.from_source source
+      |> List.map ~f:(fun { UnannotatedGlobal.Collector.Result.name; _ } -> name)
     in
     assert_equal
       ~ctxt:context
@@ -101,56 +102,70 @@ let test_import context =
   let assert_imports ~expected source_text =
     let source = parse ~handle:"test.py" source_text in
     let actual =
-      Collector.from_source source
+      UnannotatedGlobal.Collector.from_source source
       |> List.filter_map ~f:(function
-             | { Collector.Result.name; unannotated_global = Imported import } -> Some (name, import)
+             | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Imported import } ->
+                 Some (name, import)
              | _ -> None)
     in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: (Identifier.t * ImportEntry.t) list]
+      ~cmp:[%compare.equal: (Identifier.t * UnannotatedGlobal.import) list]
       ~printer:(fun result ->
-        Sexp.to_string_hum [%message (result : (Identifier.t * ImportEntry.t) list)])
+        Sexp.to_string_hum [%message (result : (Identifier.t * UnannotatedGlobal.import) list)])
       expected
       actual
   in
 
   assert_imports
     "import foo"
-    ~expected:["foo", ImportEntry.Module { target = !&"foo"; implicit_alias = true }];
+    ~expected:["foo", UnannotatedGlobal.ImportModule { target = !&"foo"; implicit_alias = true }];
   assert_imports
     "import foo as bar"
-    ~expected:["bar", ImportEntry.Module { target = !&"foo"; implicit_alias = false }];
+    ~expected:["bar", UnannotatedGlobal.ImportModule { target = !&"foo"; implicit_alias = false }];
   assert_imports
     "import foo.bar"
-    ~expected:["foo", ImportEntry.Module { target = !&"foo.bar"; implicit_alias = true }];
+    ~expected:
+      ["foo", UnannotatedGlobal.ImportModule { target = !&"foo.bar"; implicit_alias = true }];
   assert_imports
     "import foo.bar as baz"
-    ~expected:["baz", ImportEntry.Module { target = !&"foo.bar"; implicit_alias = false }];
+    ~expected:
+      ["baz", UnannotatedGlobal.ImportModule { target = !&"foo.bar"; implicit_alias = false }];
   assert_imports
     "from foo import bar"
-    ~expected:["bar", ImportEntry.Name { from = !&"foo"; target = "bar"; implicit_alias = true }];
+    ~expected:
+      [
+        "bar", UnannotatedGlobal.ImportFrom { from = !&"foo"; target = "bar"; implicit_alias = true };
+      ];
   assert_imports
     "from foo import bar as baz"
-    ~expected:["baz", ImportEntry.Name { from = !&"foo"; target = "bar"; implicit_alias = false }];
+    ~expected:
+      [
+        ( "baz",
+          UnannotatedGlobal.ImportFrom { from = !&"foo"; target = "bar"; implicit_alias = false } );
+      ];
   assert_imports
     "from foo.bar import baz as qux"
     ~expected:
-      ["qux", ImportEntry.Name { from = !&"foo.bar"; target = "baz"; implicit_alias = false }];
+      [
+        ( "qux",
+          UnannotatedGlobal.ImportFrom
+            { from = !&"foo.bar"; target = "baz"; implicit_alias = false } );
+      ];
 
   assert_imports
     "import a as b, c.d"
     ~expected:
       [
-        "b", ImportEntry.Module { target = !&"a"; implicit_alias = false };
-        "c", ImportEntry.Module { target = !&"c.d"; implicit_alias = true };
+        "b", UnannotatedGlobal.ImportModule { target = !&"a"; implicit_alias = false };
+        "c", UnannotatedGlobal.ImportModule { target = !&"c.d"; implicit_alias = true };
       ];
   assert_imports
     "from a.b import c as d, e"
     ~expected:
       [
-        "d", ImportEntry.Name { from = !&"a.b"; target = "c"; implicit_alias = false };
-        "e", ImportEntry.Name { from = !&"a.b"; target = "e"; implicit_alias = true };
+        "d", UnannotatedGlobal.ImportFrom { from = !&"a.b"; target = "c"; implicit_alias = false };
+        "e", UnannotatedGlobal.ImportFrom { from = !&"a.b"; target = "e"; implicit_alias = true };
       ];
 
   assert_imports "from foo import *" ~expected:[];

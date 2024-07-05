@@ -596,12 +596,7 @@ let rec parse_annotations
   in
   let get_partial_sink_kind expression =
     match Node.value expression with
-    | Expression.Subscript
-        {
-          base = { Node.value = Expression.Name (Name.Identifier kind); _ };
-          index = { Node.value = Name (Name.Identifier label); _ };
-        } -> (
-        let partial_sink = TaintConfiguration.RegisteredPartialSinks.from_kind_label ~kind ~label in
+    | Expression.Name (Name.Identifier partial_sink) -> (
         match
           TaintConfiguration.RegisteredPartialSinks.is_registered
             ~partial_sink
@@ -965,7 +960,7 @@ let rec class_names_from_annotation = function
   | Type.TypeOperation _
   | Type.Variable _
   | Type.RecursiveType _
-  | Type.ParameterVariadicComponent _ ->
+  | Type.ParamSpecComponent _ ->
       []
   | Type.Primitive class_name
   | Type.Parametric { name = class_name; _ } ->
@@ -1232,7 +1227,7 @@ let introduce_sink_taint
     let leaf_taint =
       Frame.initial
       |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
       |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
       |> transform_trace_length
       |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
@@ -1297,7 +1292,7 @@ let introduce_taint_in_taint_out
   >>= fun output_path ->
   let tito_result_taint =
     Domains.local_return_frame ~output_path ~collapse_depth
-    |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+    |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
     |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
     |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
     |> BackwardState.Tree.create_leaf
@@ -1341,7 +1336,7 @@ let introduce_taint_in_taint_out
     | Sinks.Attach ->
         let attach_taint =
           Frame.initial
-          |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+          |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
           |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
           |> BackwardState.Tree.create_leaf
@@ -1423,7 +1418,7 @@ let introduce_source_taint
       in
       Frame.initial
       |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
       |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
       |> transform_trace_length
       |> ForwardTaint.singleton CallInfo.declaration taint_source_kind
@@ -2564,19 +2559,19 @@ let port_annotations_from_signature ~root ~callable_annotation =
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (parameter_position, parameter) ->
                  Option.some_if (Int.equal parameter_position position) parameter)
-          |> List.filter_map ~f:Type.Callable.Parameter.annotation
+          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
       | AccessPath.Root.NamedParameter { name; _ } ->
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (_, parameter) ->
                  match parameter with
-                 | Type.Callable.Parameter.KeywordOnly { name = parameter_name; _ }
+                 | Type.Callable.CallableParamType.KeywordOnly { name = parameter_name; _ }
                    when String.equal parameter_name ("$parameter$" ^ name) ->
                      Some parameter
-                 | Type.Callable.Parameter.Named { name = parameter_name; _ }
+                 | Type.Callable.CallableParamType.Named { name = parameter_name; _ }
                    when String.equal parameter_name name ->
                      Some parameter
                  | _ -> None)
-          |> List.filter_map ~f:Type.Callable.Parameter.annotation
+          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
       | AccessPath.Root.LocalResult ->
           let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
             callable_annotation
@@ -2953,6 +2948,7 @@ end = struct
       | None -> Either.Second decorator_expression
       | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator) -> (
           match Reference.as_list name with
+          | ["Obscure"]
           | ["Sanitize"]
           | ["SanitizeSingleTrace"]
           | ["SkipAnalysis"]
@@ -3369,13 +3365,13 @@ let create_model_from_signature
         in
         let add_parameter_to_position map (position, parameter) =
           match parameter with
-          | Type.Callable.Parameter.Named { name; _ } ->
+          | Type.Callable.CallableParamType.Named { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map
                 map
                 name
                 (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
-          | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+          | Type.Callable.CallableParamType.KeywordOnly { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map map name (AccessPath.Root.NamedParameter { name })
           | _ -> map

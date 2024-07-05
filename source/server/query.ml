@@ -506,7 +506,7 @@ let rec process_request_exn
             | Some generics
               when (not (List.is_empty generics))
                    && List.for_all generics ~f:(function
-                          | Type.Variable.Unary _ -> true
+                          | Type.Variable.TypeVarVariable _ -> true
                           | _ -> false) ->
                 Type.parametric
                   annotation
@@ -587,7 +587,8 @@ let rec process_request_exn
               _;
             }
           =
-          Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+          TypeEnvironment.ReadOnly.get_callees type_environment caller
+          |> Option.value ~default:[]
           |> fun callees ->
           Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
               Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
@@ -612,7 +613,7 @@ let rec process_request_exn
               attribute
           in
           let annotation =
-            instantiated_annotation |> AnnotatedAttribute.annotation |> Annotation.annotation
+            instantiated_annotation |> AnnotatedAttribute.annotation |> TypeInfo.Unit.annotation
           in
           let property = AnnotatedAttribute.property attribute in
           let kind =
@@ -646,19 +647,20 @@ let rec process_request_exn
                   ~build_system)
              requests)
     | Callees caller ->
-        (* We don't yet support a syntax for fetching property setters. *)
-        Single
-          (Base.Callees
-             (Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
-             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
+        let callees =
+          TypeEnvironment.ReadOnly.get_callees type_environment caller
+          |> Option.value ~default:[]
+          |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)
+        in
+        Single (Base.Callees callees)
     | CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
             ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api)
         in
         let callees =
-          (* We don't yet support a syntax for fetching property setters. *)
-          Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+          TypeEnvironment.ReadOnly.get_callees type_environment caller
+          |> Option.value ~default:[]
           |> List.map ~f:(fun { Callgraph.callee; locations } ->
                  { Base.callee; locations = List.map locations ~f:instantiate })
         in
@@ -1013,7 +1015,7 @@ let rec process_request_exn
                 ~policy:
                   (Scheduler.Policy.fixed_chunk_count
                      ~minimum_chunks_per_worker:1
-                     ~minimum_chunk_size:100
+                     ~minimum_chunk_size:1
                      ~preferred_chunks_per_worker:5
                      ())
                 ~f:load_modules

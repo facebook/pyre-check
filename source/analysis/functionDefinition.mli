@@ -13,14 +13,14 @@ module Sibling : sig
     type t =
       | Overload
       | PropertySetter
-    [@@deriving sexp, compare]
+    [@@deriving sexp, equal, compare]
   end
 
   type t = {
     kind: Kind.t;
     body: Define.t Node.t;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 end
 
 type t = {
@@ -28,7 +28,7 @@ type t = {
   body: Define.t Node.t option;
   siblings: Sibling.t list;
 }
-[@@deriving sexp, compare]
+[@@deriving sexp, equal, compare]
 
 val all_bodies : t -> Define.t Node.t list
 

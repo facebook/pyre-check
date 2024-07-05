@@ -39,23 +39,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestC",
-                "origin": { "line": 249, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 249, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
+                "kind": "TriggeredPartialSink[ShareBothSinksRight, TestC]"
               }
             ],
             "origin": {
@@ -118,23 +118,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestC",
-                "origin": { "line": 248, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 248, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
+                "kind": "TriggeredPartialSink[ShareBothSinksRight, TestC]"
               }
             ],
             "origin": {
@@ -197,20 +197,20 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 30, "start": 9, "end": 32 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 30, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -273,23 +273,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestA",
-                "origin": { "line": 129, "start": 8, "end": 18 },
-                "leaf_kind": "TestA",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestA",
+                    "origin": { "line": 129, "start": 8, "end": 18 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTestB, TestA]"
               }
             ],
             "origin": {
@@ -352,23 +352,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestB",
-                "origin": { "line": 90, "start": 31, "end": 41 },
-                "leaf_kind": "TestB",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestB",
+                    "origin": { "line": 90, "start": 31, "end": 41 },
+                    "leaf_kind": "TestB",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestB]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTestB, TestB]"
               }
             ],
             "origin": {
@@ -431,23 +431,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestA",
-                "origin": { "line": 89, "start": 31, "end": 41 },
-                "leaf_kind": "TestA",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestA",
+                    "origin": { "line": 89, "start": 31, "end": 41 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.combines_tests_and_context",
                     "port": "leaf:vc"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b], TestA]"
+                "kind": "TriggeredPartialSink[ExpectsEitherTestB, TestA]"
               }
             ],
             "origin": {
@@ -519,7 +519,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "call": {
@@ -597,7 +597,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestE]"
               }
             ],
             "call": {
@@ -675,7 +675,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "call": {
@@ -753,7 +753,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestE]"
               }
             ],
             "call": {
@@ -831,7 +831,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "call": {
@@ -906,7 +906,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "call": {
@@ -981,7 +981,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "call": {
@@ -1059,7 +1059,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
+                "kind": "TriggeredPartialSink[ShareBothSinksRight, TestC]"
               }
             ],
             "call": {
@@ -1137,7 +1137,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
+                "kind": "TriggeredPartialSink[ShareBothSinksRight, TestC]"
               }
             ],
             "call": {
@@ -1220,7 +1220,7 @@
                   }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]"
+                "kind": "TriggeredPartialSink[UserControlledSink, PermissiveContext]"
               }
             ],
             "call": {
@@ -1293,23 +1293,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 166, "start": 22, "end": 45 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.B.multi_sink",
                     "port": "leaf:permissive_context"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1372,23 +1372,23 @@
         "name": "backward",
         "roots": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 166, "start": 22, "end": 45 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.A.multi_sink",
                     "port": "leaf:permissive_context"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1457,7 +1457,7 @@
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "length": 1,
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "call": {
@@ -1497,7 +1497,7 @@
         "port": "formal(permissive_context, position=2)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
             "declaration": null
           }
         ]
@@ -1506,7 +1506,7 @@
         "port": "formal(user_controlled, position=1)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
             "declaration": null
           }
         ]
@@ -1525,7 +1525,7 @@
         "port": "formal(permissive_context, position=2)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
             "declaration": null
           }
         ]
@@ -1534,7 +1534,7 @@
         "port": "formal(user_controlled, position=1)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
             "declaration": null
           }
         ]
@@ -1604,7 +1604,7 @@
         "port": "formal(vc, position=1)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
             "declaration": null
           }
         ]
@@ -1613,7 +1613,7 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
             "declaration": null
           }
         ]
@@ -1698,7 +1698,7 @@
         "port": "formal(vc, position=1)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ],
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTestB]" } ],
             "declaration": null
           }
         ]
@@ -1707,7 +1707,7 @@
         "port": "formal(test, position=0)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ],
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTestA]" } ],
             "declaration": null
           }
         ]
@@ -1743,23 +1743,23 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestD",
-                "origin": { "line": 218, "start": 35, "end": 45 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 218, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "origin": {
@@ -1785,23 +1785,23 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestD",
-                "origin": { "line": 208, "start": 35, "end": 45 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 208, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "origin": {
@@ -1812,23 +1812,23 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestE",
-                "origin": { "line": 209, "start": 35, "end": 45 },
-                "leaf_kind": "TestE",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestE",
+                    "origin": { "line": 209, "start": 35, "end": 45 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestE]"
               }
             ],
             "origin": {
@@ -1854,23 +1854,23 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestD",
-                "origin": { "line": 228, "start": 39, "end": 49 },
-                "leaf_kind": "TestD",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestD",
+                    "origin": { "line": 228, "start": 39, "end": 49 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestD]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestD]"
               }
             ],
             "origin": {
@@ -1881,23 +1881,23 @@
             }
           },
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestE",
-                "origin": { "line": 230, "start": 39, "end": 49 },
-                "leaf_kind": "TestE",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestE",
+                    "origin": { "line": 230, "start": 39, "end": 49 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:x"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[left], TestE]"
+                "kind": "TriggeredPartialSink[ShareBothSinksLeft, TestE]"
               }
             ],
             "origin": {
@@ -1923,20 +1923,20 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 36, "start": 9, "end": 32 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 36, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -1964,26 +1964,26 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "call": {
-                  "position": { "line": 145, "start": 9, "end": 40 },
-                  "resolves_to": [
-                    "multiple_sources.user_controlled_input_wrapper"
-                  ],
-                  "port": "result"
-                },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "call": {
+                      "position": { "line": 145, "start": 9, "end": 40 },
+                      "resolves_to": [
+                        "multiple_sources.user_controlled_input_wrapper"
+                      ],
+                      "port": "result"
+                    },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -2011,23 +2011,23 @@
         "port": "formal(y, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for TestC",
-                "origin": { "line": 239, "start": 32, "end": 42 },
-                "leaf_kind": "TestC",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source TestC",
+                    "origin": { "line": 239, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.multi_sink_share_both_sinks",
                     "port": "leaf:y"
                   }
                 ],
-                "kind": "TriggeredPartialSink[ShareBothSinks[right], TestC]"
+                "kind": "TriggeredPartialSink[ShareBothSinksRight, TestC]"
               }
             ],
             "origin": {
@@ -2053,23 +2053,23 @@
         "port": "formal(id, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for PermissiveContext",
-                "origin": { "line": 41, "start": 9, "end": 29 },
-                "leaf_kind": "PermissiveContext",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source PermissiveContext",
+                    "origin": { "line": 41, "start": 9, "end": 29 },
+                    "leaf_kind": "PermissiveContext",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   {
                     "name": "multiple_sources.Node.send",
                     "port": "leaf:self"
                   }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id], PermissiveContext]"
+                "kind": "TriggeredPartialSink[UserControlledSink, PermissiveContext]"
               }
             ],
             "local_features": [
@@ -2120,7 +2120,7 @@
         "port": "formal(y, position=1)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[ShareBothSinks[right]]" } ],
+            "kinds": [ { "kind": "PartialSink[ShareBothSinksRight]" } ],
             "declaration": null
           }
         ]
@@ -2129,7 +2129,7 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "kind": "PartialSink[ShareBothSinks[left]]" } ],
+            "kinds": [ { "kind": "PartialSink[ShareBothSinksLeft]" } ],
             "declaration": null
           }
         ]
@@ -2149,20 +2149,20 @@
         "port": "formal(vc, position=0)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 176, "start": 10, "end": 33 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 176, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {
@@ -2175,20 +2175,20 @@
             "is_self_call": false
           },
           {
-            "extra_traces": [
-              {
-                "message": "Source trace for UserControlled",
-                "origin": { "line": 178, "start": 10, "end": 33 },
-                "leaf_kind": "UserControlled",
-                "trace_kind": "source"
-              }
-            ],
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 178, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
                 "leaves": [
                   { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc], UserControlled]"
+                "kind": "TriggeredPartialSink[PermissiveContextSink, UserControlled]"
               }
             ],
             "origin": {

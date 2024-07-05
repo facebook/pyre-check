@@ -96,6 +96,7 @@ type dependency =
   | ParseAnnotation of ParseAnnotationKey.t
   | Metaclass of Type.Primitive.t
   | WildcardImport of Reference.t
+  | FunctionDefinitions of Reference.t
 [@@deriving show, compare, sexp, hash]
 
 module In = struct

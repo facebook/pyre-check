@@ -137,6 +137,18 @@ module FirstIndexSet = struct
       existing_indices
 end
 
+module LocalFirstIndexSet = Abstract.WrapperDomain.Make (struct
+  include FirstIndexSet
+
+  let name = "local indexes"
+end)
+
+module PropagatedFirstIndexSet = Abstract.WrapperDomain.Make (struct
+  include FirstIndexSet
+
+  let name = "propagated indexes"
+end)
+
 module FirstField = First (struct
   let kind = "field"
 end)
@@ -164,6 +176,18 @@ module FirstFieldSet = struct
     else
       existing_fields
 end
+
+module LocalFirstFieldSet = Abstract.WrapperDomain.Make (struct
+  include FirstFieldSet
+
+  let name = "local fields"
+end)
+
+module PropagatedFirstFieldSet = Abstract.WrapperDomain.Make (struct
+  include FirstFieldSet
+
+  let name = "propagated fields"
+end)
 
 module TitoPosition = struct
   let name = "tito positions"
@@ -384,6 +408,29 @@ module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
   let show_element = BreadcrumbInterned.show
 
   let element_name = BreadcrumbInterned.name
+end)
+
+(* Stores local breadcrumbs (also called trace breadcrumbs) inferred during the analysis of the
+   current function. *)
+module LocalBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "local breadcrumbs"
+end)
+
+(* Stores local breadcrumbs that are kind-specific, unlike `LocalBreadcrumbSet`. For instance,
+   `via:transform-tito-depth:N` should only be emitted on transform kinds. *)
+module LocalKindSpecificBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "local kind-specific breadcrumbs"
+end)
+
+(* Stores breadcrumbs propagated from the callee. *)
+module PropagatedBreadcrumbSet = Abstract.WrapperDomain.Make (struct
+  include BreadcrumbSet
+
+  let name = "propagated breadcrumbs"
 end)
 
 module ViaFeature = struct
@@ -740,7 +787,7 @@ let type_breadcrumbs_from_annotation ~pyre_api type_ =
   |> type_breadcrumbs
 
 
-let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
+let expand_via_features ~pyre_in_context ~callee ~arguments via_features =
   let expand_via_feature via_feature breadcrumbs =
     let match_all_arguments_to_parameter parameter =
       AccessPath.match_actuals_to_formals arguments [parameter]
@@ -761,8 +808,8 @@ let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
         BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments ()) breadcrumbs
     | ViaFeature.ViaTypeOf { parameter; tag } ->
         let breadcrumb =
-          match callees with
-          | [Interprocedural.Target.Object object_target] ->
+          match callee with
+          | Interprocedural.Target.Object object_target ->
               ViaFeature.via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target ()
           | _ ->
               ViaFeature.via_type_of_breadcrumb
@@ -773,8 +820,8 @@ let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
         in
         BreadcrumbSet.add breadcrumb breadcrumbs
     | ViaFeature.ViaAttributeName { tag } -> (
-        match callees with
-        | [Interprocedural.Target.Object object_target] ->
+        match callee with
+        | Interprocedural.Target.Object object_target ->
             let breadcrumb =
               ViaFeature.via_attribute_name_breadcrumb_for_object ?tag ~object_target ()
             in

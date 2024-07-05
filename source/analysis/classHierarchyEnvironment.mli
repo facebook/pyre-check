@@ -18,6 +18,8 @@ module HierarchyReadOnly : sig
 
   val alias_environment : t -> TypeAliasEnvironment.ReadOnly.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val class_hierarchy : ?dependency:DependencyKey.registered -> t -> (module ClassHierarchy.Handler)
 
   val type_parameters_as_variables

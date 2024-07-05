@@ -12,7 +12,7 @@ open Pyre
 open Ast
 open Expression
 module PyrePysaApi = Analysis.PyrePysaApi
-module Annotation = Analysis.Annotation
+module TypeInfo = Analysis.TypeInfo
 module ClassSummary = Analysis.ClassSummary
 
 module DefinitionsCache (Type : sig
@@ -173,14 +173,14 @@ let resolve_global ~pyre_api name =
             (* Fall back for anything else. *)
             let annotation =
               from_reference name ~location:Location.any
-              |> PyrePysaApi.ReadOnly.resolve_expression_to_annotation pyre_api
+              |> PyrePysaApi.ReadOnly.resolve_expression_to_type_info pyre_api
             in
-            match Annotation.annotation annotation with
+            match TypeInfo.Unit.annotation annotation with
             | Type.Parametric { name = "type"; _ }
               when PyrePysaApi.ReadOnly.class_exists pyre_api (Reference.show name) ->
                 Some Global.Class
             | Type.Top when PyrePysaApi.ReadOnly.module_exists pyre_api name -> Some Global.Module
-            | Type.Top when not (Annotation.is_immutable annotation) ->
+            | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
                 (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
                    to mutable annotation, while existing ones resolve to immutable annotation. This
                    is fragile! *)
@@ -197,7 +197,7 @@ type parameter_requirements = {
 
 let create_parameters_requirements ~type_parameters =
   let get_parameters_requirements requirements type_parameter =
-    let open Type.Callable.RecordParameter in
+    let open Type.Callable.CallableParamType in
     match type_parameter with
     | PositionalOnly { index; _ } ->
         {

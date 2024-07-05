@@ -33,7 +33,7 @@ let assert_equivalent_typed_dictionary_attribute_types
           parameters =
             [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
         } ->
-        let open Type.Callable.Parameter in
+        let open Type.Callable.CallableParamType in
         (* TypedDictionary methods have `self` annotation as `Top`, whereas the equivalent class has
            the annotation as, say, `Movie`. So, clear the annotation. *)
         let sanitize_self_annotation = function
@@ -80,14 +80,14 @@ let assert_equivalent_typed_dictionary_attribute_types
     | type_ -> type_
   in
   let with_sanitized_type_variables =
-    Type.Variable.GlobalTransforms.Unary.replace_all (fun ({ variable; _ } as unary_variable) ->
+    Type.Variable.GlobalTransforms.TypeVar.replace_all (fun ({ variable; _ } as unary_variable) ->
         Type.Variable { unary_variable with variable = Reference.create variable |> Reference.last }
         |> Option.some)
   in
   let transform_attribute_annotation attribute =
     attribute
     |> AnnotatedAttribute.annotation
-    |> Annotation.annotation
+    |> TypeInfo.Unit.annotation
     |> with_sanitized_callable_parameters
     |> with_sanitized_type_variables
   in

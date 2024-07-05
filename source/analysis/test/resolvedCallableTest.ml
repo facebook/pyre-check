@@ -95,7 +95,10 @@ let test_strip_first_parameter context =
        ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
        ~return_annotation:None)
     (Type.Callable.Defined
-       [Type.Callable.Parameter.Named { name = "other"; annotation = Type.Top; default = false }])
+       [
+         Type.Callable.CallableParamType.Named
+           { name = "other"; annotation = Type.Top; default = false };
+       ])
 
 
 let () =

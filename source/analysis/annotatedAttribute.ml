@@ -197,11 +197,11 @@ let annotation
       | ReadOnly _ -> true
       | ReadWrite -> false
     in
-    Annotation.create_immutable ~original:(Some original) ~final annotation
+    TypeInfo.Unit.create_immutable ~original:(Some original) ~final annotation
   else
     (* We need to distinguish between unannotated attributes and non-existent ones - ensure that the
        annotation is viewed as mutable to distinguish from user-defined globals. *)
-    Annotation.create_mutable annotation
+    TypeInfo.Unit.create_mutable annotation
 
 
 let uninstantiated_annotation { payload; _ } = payload

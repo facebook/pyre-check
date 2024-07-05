@@ -28,9 +28,14 @@ let create ?dependency annotated_global_environment = { annotated_global_environ
 
 let annotated_global_environment { annotated_global_environment; _ } = annotated_global_environment
 
-let attribute_resolution resolution =
+let function_definition_environment resolution =
   annotated_global_environment resolution
-  |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+  |> AnnotatedGlobalEnvironment.ReadOnly.function_definition_environment
+
+
+let attribute_resolution resolution =
+  function_definition_environment resolution
+  |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
 
 
 let class_metadata_environment resolution =
@@ -101,17 +106,17 @@ let get_class_summary ({ dependency; _ } as resolution) =
 (* This will return an empty list if the qualifier isn't part of the project we are type
    checking. *)
 let get_define_names_for_qualifier_in_project ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
+  FunctionDefinitionEnvironment.ReadOnly.define_names_of_qualifier
     ?dependency
-    (unannotated_global_environment resolution)
+    (function_definition_environment resolution)
 
 
 (* This will return None if called on a function definition that is not part of the project we are
    type checking (i.e. defined in dependencies). *)
 let get_function_definition_in_project ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
+  FunctionDefinitionEnvironment.ReadOnly.function_definition
     ?dependency
-    (unannotated_global_environment resolution)
+    (function_definition_environment resolution)
 
 
 (* This will return None if called on a function definition that is not part of the project we are
@@ -358,11 +363,6 @@ let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen
 
-let less_or_equal_either_way resolution type0 type1 =
-  less_or_equal resolution ~left:type0 ~right:type1
-  || less_or_equal resolution ~left:type1 ~right:type0
-
-
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },
@@ -373,7 +373,7 @@ let is_invariance_mismatch resolution ~left ~right =
           ClassHierarchy.type_parameters_as_variables (class_hierarchy resolution) left_name
           (* TODO(T47346673): Do this check when list variadics have variance *)
           >>= Type.Variable.all_unary
-          >>| List.map ~f:(fun { Type.Variable.Unary.variance; _ } -> variance)
+          >>| List.map ~f:(fun { Type.Variable.TypeVar.variance; _ } -> variance)
         in
         match variances with
         | Some variances -> (
@@ -494,8 +494,8 @@ let is_consistent_with resolution ~resolve left right ~expression =
 module ConstraintsSet = struct
   include ConstraintsSet
 
-  let add constraints ~new_constraint ~global_resolution =
-    TypeOrder.OrderedConstraintsSet.add
+  let add_and_simplify constraints ~new_constraint ~global_resolution =
+    TypeOrder.OrderedConstraintsSet.add_and_simplify
       constraints
       ~new_constraint
       ~order:(full_order global_resolution)
@@ -528,13 +528,13 @@ let extract_type_parameters resolution ~source ~target =
         List.map unaries ~f:(fun unary -> Type.Parameter.Single (Type.Variable unary))
         |> Type.parametric target
       in
-      TypeOrder.OrderedConstraintsSet.add
+      TypeOrder.OrderedConstraintsSet.add_and_simplify
         ConstraintsSet.empty
         ~new_constraint:(LessOrEqual { left = source; right = solve_against })
         ~order:(full_order resolution)
       |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
-      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)
+      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_type_var solution)
       |> Option.all
 
 
@@ -611,7 +611,7 @@ let overrides resolution class_name ~name =
 
 let refine global_resolution annotation refined_type =
   let solve_less_or_equal ~left ~right =
-    ConstraintsSet.add
+    ConstraintsSet.add_and_simplify
       ConstraintsSet.empty
       ~new_constraint:(ConstraintsSet.LessOrEqual { left; right })
       ~global_resolution
@@ -619,4 +619,4 @@ let refine global_resolution annotation refined_type =
     >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
   in
   let type_less_or_equal = less_or_equal global_resolution in
-  Annotation.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation
+  TypeInfo.Unit.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation

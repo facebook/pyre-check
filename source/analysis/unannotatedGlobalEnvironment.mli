@@ -20,7 +20,7 @@ module ReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val unannotated_global_environment : t -> t
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   (* All other functions are dependency tracked *)
 
@@ -28,7 +28,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    Module.t option
+    Module.Metadata.t option
 
   val get_class_summary
     :  t ->
@@ -40,27 +40,11 @@ module ReadOnly : sig
 
   val module_exists : t -> ?dependency:DependencyKey.registered -> Reference.t -> bool
 
-  (* This will return an empty list if the qualifier isn't part of the project we are type
-     checking. *)
-  val get_define_names_for_qualifier_in_project
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    Reference.t list
-
-  (* This will return None if called on a function definition that is not part of the project we are
-     type checking (i.e. defined in dependencies). *)
-  val get_function_definition_in_project
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    FunctionDefinition.t option
-
   val get_unannotated_global
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    UnannotatedGlobal.t option
+    Module.UnannotatedGlobal.t option
 
   val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 
@@ -111,24 +95,16 @@ module UpdateResult : sig
 
   val invalidated_modules : t -> Reference.t list
 
-  val module_updates : t -> SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
-
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
-  val unannotated_global_environment_update_result : t -> t
+  val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
 end
 
 module Overlay : sig
   type t
 
   (* This handle to self is needed to fulfill the recursive interface of the Environment functor *)
-  val unannotated_global_environment : t -> t
-
-  val owns_qualifier : t -> Ast.Reference.t -> bool
-
-  val owns_reference : t -> Ast.Reference.t -> bool
-
-  val owns_identifier : t -> Ast.Identifier.t -> bool
+  val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
   val update_overlaid_code
     :  t ->
@@ -140,22 +116,13 @@ module Overlay : sig
   val read_only : t -> ReadOnly.t
 end
 
-module CreateHandle : sig
-  type t = {
-    source_code_incremental_base: SourceCodeIncrementalApi.Base.t;
-    maybe_ast_environment: AstEnvironment.t option;
-  }
-
-  val of_ast_environment : AstEnvironment.t -> t
-end
-
 type t
 
-val create : CreateHandle.t -> t
+val create : SourceCodeEnvironment.t -> t
 
 (* This handle to self is needed to fulfill the (recursive) interface used in the Environment.ml
    functor *)
-val unannotated_global_environment : t -> t
+val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
 val controls : t -> EnvironmentControls.t
 

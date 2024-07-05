@@ -45,8 +45,11 @@ module FeatureSet = struct
 end
 
 let infer ~pyre_api ~user_models =
-  Log.info "Computing inferred models...";
-  let timer = Timer.start () in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Computing inferred models"
+      ~end_message:"Computed inferred models"
+  in
   (* Translate ViaXXX features on attributes to ViaXX features on callables. *)
   let translate_via_features_on_attribute attribute root tree =
     let expand_via_feature via_feature taint =
@@ -237,8 +240,8 @@ let infer ~pyre_api ~user_models =
   let compute_typed_dict_models class_name =
     let fields =
       PyrePysaApi.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
-      >>| (fun { Type.Record.TypedDictionary.fields; _ } -> fields)
-      >>| List.map ~f:(fun { Analysis.Type.Record.TypedDictionary.name; required = _; _ } -> name)
+      >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
+      >>| List.map ~f:(fun { Analysis.Type.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]
     in
     let self =
@@ -337,10 +340,5 @@ let infer ~pyre_api ~user_models =
   let models =
     List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
   in
-  Statistics.performance
-    ~name:"Computed inferred models"
-    ~phase_name:"Computing inferred models"
-    ~timer
-    ~integers:["models", Registry.size models]
-    ();
+  let () = StepLogger.finish ~integers:["models", Registry.size models] step_logger in
   models

@@ -52,7 +52,7 @@ module type In = sig
 
   val trigger_to_dependency : Key.t -> SharedMemoryKeys.dependency
 
-  val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
+  val overlay_owns_key : SourceCodeIncrementalApi.Overlay.t -> Key.t -> bool
 end
 
 module Make (In : In) = struct
@@ -87,7 +87,11 @@ module Make (In : In) = struct
 
   let create create_handle =
     let table = EnvironmentTable.create create_handle in
-    let controls = unannotated_global_environment table |> UnannotatedGlobalEnvironment.controls in
+    let controls =
+      source_code_base table
+      |> SourceCodeIncrementalApi.Base.read_only
+      |> SourceCodeIncrementalApi.ReadOnly.controls
+    in
     let () = UnmanagedCache.enabled := not (EnvironmentControls.track_dependencies controls) in
     table
 

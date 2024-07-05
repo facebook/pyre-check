@@ -29,7 +29,7 @@
 open Core
 open Ast
 open Pyre
-module PreviousEnvironment = AttributeResolution
+module PreviousEnvironment = FunctionDefinitionEnvironment
 
 module GlobalLocationValue = struct
   type t = Location.WithModule.t option
@@ -45,7 +45,7 @@ module IncomingDataComputation = struct
   module Queries = struct
     type t = {
       get_class_summary: Identifier.t -> ClassSummary.t Node.t option;
-      get_unannotated_global: Reference.t -> UnannotatedGlobal.t option;
+      get_unannotated_global: Reference.t -> Module.UnannotatedGlobal.t option;
     }
   end
 
@@ -59,9 +59,9 @@ module IncomingDataComputation = struct
     match class_location with
     | Some location -> Some location
     | None ->
+        let open Module.UnannotatedGlobal in
         let extract_location = function
-          | UnannotatedGlobal.Define ({ UnannotatedGlobal.UnannotatedDefine.location; _ } :: _) ->
-              Some location
+          | Define ({ location; _ } :: _) -> Some location
           | SimpleAssign { target_location; _ } -> Some target_location
           | TupleAssign { target_location; _ } -> Some target_location
           | _ -> None
@@ -70,7 +70,7 @@ module IncomingDataComputation = struct
 end
 
 module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
-  module PreviousEnvironment = AttributeResolution
+  module PreviousEnvironment = PreviousEnvironment
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalLocationValue
 
@@ -86,9 +86,10 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let lazy_incremental = false
 
-  let produce_value attribute_resolution key ~dependency =
+  let produce_value function_definition_environment key ~dependency =
     let unannotated_global_environment =
-      attribute_resolution
+      function_definition_environment
+      |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
       |> AttributeResolution.ReadOnly.class_metadata_environment
       |> ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
     in
@@ -117,8 +118,8 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let equal_value = Option.equal [%compare.equal: Location.WithModule.t]
 
-  let overlay_owns_key unannotated_global_environment_overlay =
-    UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay
+  let overlay_owns_key source_code_api =
+    SourceCodeIncrementalApi.Overlay.owns_reference source_code_api
 end)
 
 include GlobalLocationTable
@@ -128,10 +129,20 @@ module ReadOnly = struct
 
   let location_of_global = get
 
-  let attribute_resolution read_only = upstream_environment read_only
+  let function_definition_environment read_only = upstream_environment read_only
+
+  let attribute_resolution read_only =
+    function_definition_environment read_only
+    |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
+
 
   let class_metadata_environment read_only =
     attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment
+
+
+  let unannotated_global_environment read_only =
+    class_metadata_environment read_only
+    |> ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
 
 
   let get_tracked_source_code_api environment =

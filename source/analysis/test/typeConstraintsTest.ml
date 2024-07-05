@@ -65,7 +65,7 @@ end
 
 module DiamondOrderedConstraints = OrderedConstraints (DiamondOrder)
 
-let variable ?(name = "_V") constraints = Type.Variable.Unary.create name ~constraints
+let variable ?(name = "_V") constraints = Type.Variable.TypeVar.create name ~constraints
 
 let add_bound constraints bound =
   let order = () in
@@ -86,65 +86,61 @@ let test_add_bound _ =
   let assert_add_bound_succeeds = assert_add_bound_has_result ~expected_is_some:true in
   let assert_add_bound_fails = assert_add_bound_has_result ~expected_is_some:false in
   let unconstrained = variable Type.Variable.Unconstrained in
-  assert_add_bound_succeeds (`Lower (UnaryPair (unconstrained, child)));
+  assert_add_bound_succeeds (`Lower (TypeVarPair (unconstrained, child)));
   assert_add_bound_fails
-    ~preconstraints:(add_bound (Some empty) (`Lower (UnaryPair (unconstrained, left_parent))))
-    (`Upper (UnaryPair (unconstrained, right_parent)));
-  assert_add_bound_fails (`Lower (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
-  assert_add_bound_succeeds (`Lower (UnaryPair (variable (Type.Variable.Bound child), child)));
-  assert_add_bound_succeeds (`Upper (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
+    ~preconstraints:(add_bound (Some empty) (`Lower (TypeVarPair (unconstrained, left_parent))))
+    (`Upper (TypeVarPair (unconstrained, right_parent)));
+  assert_add_bound_fails (`Lower (TypeVarPair (variable (Type.Variable.Bound child), left_parent)));
+  assert_add_bound_succeeds (`Lower (TypeVarPair (variable (Type.Variable.Bound child), child)));
+  assert_add_bound_succeeds
+    (`Upper (TypeVarPair (variable (Type.Variable.Bound child), left_parent)));
   let explicit_parent_a_parent_b = variable (Type.Variable.Explicit [left_parent; right_parent]) in
-  assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent)));
-  assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
+  assert_add_bound_succeeds (`Lower (TypeVarPair (explicit_parent_a_parent_b, left_parent)));
+  assert_add_bound_succeeds (`Lower (TypeVarPair (explicit_parent_a_parent_b, right_parent)));
   assert_add_bound_succeeds
     (`Lower
-      (UnaryPair
+      (TypeVarPair
          ( explicit_parent_a_parent_b,
-           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
+           Variable (Type.Variable.TypeVar.mark_as_bound explicit_parent_a_parent_b) )));
   assert_add_bound_succeeds
     (`Upper
-      (UnaryPair
+      (TypeVarPair
          ( explicit_parent_a_parent_b,
-           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
+           Variable (Type.Variable.TypeVar.mark_as_bound explicit_parent_a_parent_b) )));
   assert_add_bound_fails
     ~preconstraints:
-      (add_bound (Some empty) (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent))))
-    (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+      (add_bound (Some empty) (`Lower (TypeVarPair (explicit_parent_a_parent_b, left_parent))))
+    (`Lower (TypeVarPair (explicit_parent_a_parent_b, right_parent)));
+  let parameter_variadic = Type.Variable.ParamSpec.create "T" in
   (* Adding a constraint to a parameter variadic with no preconstraints should always work *)
-  assert_add_bound_succeeds
-    (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
+  assert_add_bound_succeeds (`Lower (ParamSpecPair (parameter_variadic, Type.Callable.Defined [])));
   let preconstraints =
-    add_bound
-      (Some empty)
-      (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])))
+    add_bound (Some empty) (`Lower (ParamSpecPair (parameter_variadic, Type.Callable.Defined [])))
   in
   (* Adding the same constraint twice should be permitted *)
   assert_add_bound_succeeds
     ~preconstraints
-    (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
+    (`Lower (ParamSpecPair (parameter_variadic, Type.Callable.Defined [])));
 
   (* We currently always reject adding a different bound to something with a bound already *)
   assert_add_bound_fails
     ~preconstraints
     (`Lower
-      (ParameterVariadicPair
+      (ParamSpecPair
          ( parameter_variadic,
            Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
          )));
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let bound =
-    TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])
-  in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let bound = TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]) in
   assert_add_bound_succeeds (`Lower bound);
   let preconstraints = add_bound (Some empty) (`Lower bound) in
   (* Adding an equal bound succeeds because the interval is the same as before. *)
   assert_add_bound_succeeds ~preconstraints (`Lower bound);
   assert_add_bound_fails
     ~preconstraints
-    (`Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.bool; Type.bool])));
+    (`Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.bool; Type.bool])));
   ()
 
 
@@ -170,109 +166,112 @@ let test_single_variable_solution _ =
   assert_solution ~sequentially_applied_bounds:[] (Some []);
   let unconstrained = variable Type.Variable.Unconstrained in
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained, child))]
-    (Some [UnaryPair (unconstrained, child)]);
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (unconstrained, child))]
+    (Some [TypeVarPair (unconstrained, child)]);
 
   (* Solving unconstrained to bottom would be sound as it fulfills the bound, but we want to
      eliminate bottoms whenever possible, so this should be fine *)
   assert_solution
-    ~sequentially_applied_bounds:[`Upper (UnaryPair (unconstrained, child))]
-    (Some [UnaryPair (unconstrained, child)]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [`Lower (UnaryPair (unconstrained, child)); `Lower (UnaryPair (unconstrained, left_parent))]
-    (Some [UnaryPair (unconstrained, left_parent)]);
+    ~sequentially_applied_bounds:[`Upper (TypeVarPair (unconstrained, child))]
+    (Some [TypeVarPair (unconstrained, child)]);
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained, left_parent));
-        `Lower (UnaryPair (unconstrained, right_parent));
+        `Lower (TypeVarPair (unconstrained, child));
+        `Lower (TypeVarPair (unconstrained, left_parent));
       ]
-    (Some [UnaryPair (unconstrained, grandparent)]);
+    (Some [TypeVarPair (unconstrained, left_parent)]);
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Upper (UnaryPair (unconstrained, left_parent));
-        `Lower (UnaryPair (unconstrained, grandparent));
+        `Lower (TypeVarPair (unconstrained, left_parent));
+        `Lower (TypeVarPair (unconstrained, right_parent));
+      ]
+    (Some [TypeVarPair (unconstrained, grandparent)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Upper (TypeVarPair (unconstrained, left_parent));
+        `Lower (TypeVarPair (unconstrained, grandparent));
       ]
     None;
   assert_solution
-    ~sequentially_applied_bounds:[`Upper (UnaryPair (unconstrained, Type.Variable unconstrained))]
+    ~sequentially_applied_bounds:[`Upper (TypeVarPair (unconstrained, Type.Variable unconstrained))]
     (Some []);
   assert_solution
     ~sequentially_applied_bounds:
-      [`Upper (UnaryPair (unconstrained, Type.list (Type.Variable unconstrained)))]
+      [`Upper (TypeVarPair (unconstrained, Type.list (Type.Variable unconstrained)))]
     None;
   let bounded_by_parent_A = variable (Type.Variable.Bound left_parent) in
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, child))]
-    (Some [UnaryPair (bounded_by_parent_A, child)]);
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (bounded_by_parent_A, child))]
+    (Some [TypeVarPair (bounded_by_parent_A, child)]);
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, right_parent))]
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (bounded_by_parent_A, right_parent))]
     None;
   let explicit_int_string_parent_A =
     variable (Type.Variable.Explicit [Type.integer; Type.string; left_parent])
   in
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, child))]
-    (Some [UnaryPair (explicit_int_string_parent_A, left_parent)]);
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (explicit_int_string_parent_A, child))]
+    (Some [TypeVarPair (explicit_int_string_parent_A, left_parent)]);
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, grandparent))]
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (explicit_int_string_parent_A, grandparent))]
     None;
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Lower
-          (UnaryPair
+          (TypeVarPair
              ( explicit_int_string_parent_A,
-               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+               Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) ));
       ]
     (Some
        [
-         UnaryPair
+         TypeVarPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Upper
-          (UnaryPair
+          (TypeVarPair
              ( explicit_int_string_parent_A,
-               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+               Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) ));
       ]
     (Some
        [
-         UnaryPair
+         TypeVarPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Lower
-          (UnaryPair
+          (TypeVarPair
              ( explicit_int_string_parent_A,
                Type.optional
-                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+                 (Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A)) ));
       ]
     None;
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Upper
-          (UnaryPair
+          (TypeVarPair
              ( explicit_int_string_parent_A,
                Type.optional
-                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+                 (Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A)) ));
       ]
     (Some
        [
-         UnaryPair
+         TypeVarPair
            ( explicit_int_string_parent_A,
-             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+             Variable (Type.Variable.TypeVar.mark_as_bound explicit_int_string_parent_A) );
        ]);
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let parameter_variadic = Type.Variable.ParamSpec.create "T" in
   let empty_parameters = Type.Callable.Defined [] in
   let one_named_parameter =
     Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
@@ -280,40 +279,36 @@ let test_single_variable_solution _ =
   (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to a
      variable yields a solution of a replacement of that variable with empty parameters *)
   assert_solution
-    ~sequentially_applied_bounds:
-      [`Lower (ParameterVariadicPair (parameter_variadic, empty_parameters))]
-    (Some [ParameterVariadicPair (parameter_variadic, empty_parameters)]);
+    ~sequentially_applied_bounds:[`Lower (ParamSpecPair (parameter_variadic, empty_parameters))]
+    (Some [ParamSpecPair (parameter_variadic, empty_parameters)]);
 
   (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
      fails *)
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (ParameterVariadicPair (parameter_variadic, empty_parameters));
-        `Lower (ParameterVariadicPair (parameter_variadic, one_named_parameter));
+        `Lower (ParamSpecPair (parameter_variadic, empty_parameters));
+        `Lower (ParamSpecPair (parameter_variadic, one_named_parameter));
       ]
     None;
 
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]))]
+    (Some [TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
       ]
-    (Some [TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
+    (Some [TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
-        `Lower
-          (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
-      ]
-    (Some [TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.bool]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.bool]));
       ]
     None;
   (* We pick one of the provided concrete types, if the others are consistent with it. *)
@@ -321,17 +316,17 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              (variadic, Type.OrderedTypes.Concrete [Type.Primitive "Child"; Type.Primitive "Child"]));
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concrete
                  [Type.Primitive "Grandparent"; Type.Primitive "Grandparent"] ));
       ]
     (Some
        [
-         TupleVariadicPair
+         TypeVarTuplePair
            ( variadic,
              Type.OrderedTypes.Concrete [Type.Primitive "Grandparent"; Type.Primitive "Grandparent"]
            );
@@ -340,11 +335,11 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concrete [Type.Primitive "Child"; Type.Primitive "Grandparent"] ));
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concrete [Type.Primitive "Grandparent"; Type.Primitive "Child"] ));
       ]
@@ -352,8 +347,8 @@ let test_single_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.Primitive "Child"]));
-        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.string]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.Primitive "Child"]));
+        `Lower (TypeVarTuplePair (variadic, Type.OrderedTypes.Concrete [Type.string]));
       ]
     None;
   ()
@@ -365,61 +360,59 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, child));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, child));
       ]
-    (Some [UnaryPair (unconstrained_a, child); UnaryPair (unconstrained_b, child)]);
+    (Some [TypeVarPair (unconstrained_a, child); TypeVarPair (unconstrained_b, child)]);
 
   (* Could be solvable, choosing not to deal with this yet *)
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_a));
       ]
     None;
   let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_c));
-        `Lower (UnaryPair (unconstrained_c, child));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_c));
+        `Lower (TypeVarPair (unconstrained_c, child));
       ]
     (Some
        [
-         UnaryPair (unconstrained_a, child);
-         UnaryPair (unconstrained_b, child);
-         UnaryPair (unconstrained_c, child);
+         TypeVarPair (unconstrained_a, child);
+         TypeVarPair (unconstrained_b, child);
+         TypeVarPair (unconstrained_c, child);
        ]);
   let unrelated = variable ~name:"unrelated" Type.Variable.Unconstrained in
   assert_solution
-    ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained_a, Type.Variable unrelated))]
-    (Some [UnaryPair (unconstrained_a, Type.Variable unrelated)]);
+    ~sequentially_applied_bounds:[`Lower (TypeVarPair (unconstrained_a, Type.Variable unrelated))]
+    (Some [TypeVarPair (unconstrained_a, Type.Variable unrelated)]);
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a));
-        `Lower (UnaryPair (unconstrained_c, child));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_a));
+        `Lower (TypeVarPair (unconstrained_c, child));
       ]
     None;
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let parameters_a = Type.Variable.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.ParamSpec.create "Tb" in
   let empty_parameters = Type.Callable.Defined [] in
   (* A is greater than B, and B is greater than empty => both A and B solve to empty *)
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower
-          (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
-        `Lower (ParameterVariadicPair (parameters_b, empty_parameters));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_b, empty_parameters));
       ]
     (Some
        [
-         ParameterVariadicPair (parameters_a, empty_parameters);
-         ParameterVariadicPair (parameters_b, empty_parameters);
+         ParamSpecPair (parameters_a, empty_parameters);
+         ParamSpecPair (parameters_b, empty_parameters);
        ]);
 
   (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with this
@@ -427,12 +420,8 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower
-          (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
-        `Lower
-          (ParameterVariadicPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_b, Type.Callable.FromParamSpec (empty_head parameters_a)));
       ]
     None;
   let parameters_with_unconstrained_a =
@@ -447,13 +436,13 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (ParameterVariadicPair (parameters_a, parameters_with_unconstrained_a));
-        `Lower (UnaryPair (unconstrained_a, Type.integer));
+        `Lower (ParamSpecPair (parameters_a, parameters_with_unconstrained_a));
+        `Lower (TypeVarPair (unconstrained_a, Type.integer));
       ]
     (Some
        [
-         ParameterVariadicPair (parameters_a, parameters_with_integer);
-         UnaryPair (unconstrained_a, Type.integer);
+         ParamSpecPair (parameters_a, parameters_with_integer);
+         TypeVarPair (unconstrained_a, Type.integer);
        ]);
 
   (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to be
@@ -461,12 +450,12 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (ParameterVariadicPair (parameters_a, parameters_with_unconstrained_a));
+        `Lower (ParamSpecPair (parameters_a, parameters_with_unconstrained_a));
         `Lower
-          (UnaryPair
+          (TypeVarPair
              ( unconstrained_a,
                Type.Callable.create
-                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a))
+                 ~parameters:(Type.Callable.FromParamSpec (empty_head parameters_a))
                  ~annotation:Type.integer
                  () ));
       ]
@@ -475,44 +464,44 @@ let test_multiple_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Fallback (Unary unconstrained_b);
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Fallback (TypeVarVariable unconstrained_b);
       ]
-    (Some [UnaryPair (unconstrained_a, Type.Any); UnaryPair (unconstrained_b, Type.Any)]);
+    (Some [TypeVarPair (unconstrained_a, Type.Any); TypeVarPair (unconstrained_b, Type.Any)]);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     ~prefix:[Type.integer]
                     ~suffix:[Type.string]
                     variadic2) ));
-        `Lower (TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
+        `Lower (TypeVarTuplePair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
       ]
     (Some
        [
-         TupleVariadicPair
+         TypeVarTuplePair
            (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.bool; Type.string]);
-         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
+         TypeVarTuplePair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
        ]);
   (* The constraint-solver doesn't solve for cycles, just like with unaries. *)
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic2,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) ));
@@ -523,46 +512,46 @@ let test_multiple_variable_solution _ =
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     ~prefix:[Type.Variable unconstrained_a]
                     ~suffix:[Type.string]
                     variadic2) ));
-        `Lower (TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
-        `Lower (UnaryPair (unconstrained_a, Type.integer));
+        `Lower (TypeVarTuplePair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
+        `Lower (TypeVarPair (unconstrained_a, Type.integer));
       ]
     (Some
        [
-         UnaryPair (unconstrained_a, Type.integer);
-         TupleVariadicPair
+         TypeVarPair (unconstrained_a, Type.integer);
+         TypeVarTuplePair
            (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.bool; Type.string]);
-         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
+         TypeVarTuplePair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
        ]);
   assert_solution
     ~sequentially_applied_bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     ~prefix:[Type.integer]
                     ~suffix:[Type.string]
                     variadic2) ));
-        `Fallback (TupleVariadic variadic2);
+        `Fallback (TypeVarTupleVariable variadic2);
       ]
     (Some
        [
-         TupleVariadicPair
+         TypeVarTuplePair
            ( variadic,
              Concatenation
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element
                   ~prefix:[Type.integer]
                   ~suffix:[Type.string]
                   Type.Any) );
-         TupleVariadicPair
+         TypeVarTuplePair
            ( variadic2,
              Concatenation (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.Any)
            );
@@ -597,75 +586,67 @@ let test_partial_solution _ =
   let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
   let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
   expect_split_solution
-    ~variables:[Type.Variable.Unary unconstrained_a]
+    ~variables:[Type.Variable.TypeVarVariable unconstrained_a]
     ~bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_a));
       ]
-    (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
+    (Some [TypeVarPair (unconstrained_a, Type.Variable unconstrained_b)])
     (Some []);
   expect_split_solution
-    ~variables:[Type.Variable.Unary unconstrained_a]
+    ~variables:[Type.Variable.TypeVarVariable unconstrained_a]
     ~bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.list (Type.Variable unconstrained_b)));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a));
+        `Lower (TypeVarPair (unconstrained_a, Type.list (Type.Variable unconstrained_b)));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_a));
       ]
-    (Some [UnaryPair (unconstrained_a, Type.list (Type.Variable unconstrained_b))])
+    (Some [TypeVarPair (unconstrained_a, Type.list (Type.Variable unconstrained_b))])
     None;
   expect_split_solution
-    ~variables:[Type.Variable.Unary unconstrained_a]
+    ~variables:[Type.Variable.TypeVarVariable unconstrained_a]
     ~bounds:
       [
-        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
-        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_c));
-        `Lower (UnaryPair (unconstrained_c, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (TypeVarPair (unconstrained_b, Type.Variable unconstrained_c));
+        `Lower (TypeVarPair (unconstrained_c, Type.Variable unconstrained_b));
       ]
-    (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
+    (Some [TypeVarPair (unconstrained_a, Type.Variable unconstrained_b)])
     None;
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let parameters_a = Type.Variable.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.ParamSpec.create "Tb" in
   expect_split_solution
-    ~variables:[Type.Variable.ParameterVariadic parameters_a]
+    ~variables:[Type.Variable.ParamSpecVariable parameters_a]
     ~bounds:
       [
-        `Lower
-          (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
-        `Lower
-          (ParameterVariadicPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
+        `Lower (ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b)));
+        `Lower (ParamSpecPair (parameters_b, Type.Callable.FromParamSpec (empty_head parameters_a)));
       ]
-    (Some
-       [
-         ParameterVariadicPair
-           (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b));
-       ])
+    (Some [ParamSpecPair (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b))])
     (Some []);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
   (* Ts <: Ts2 and Ts2 <: Ts. Solve for Ts. *)
   expect_split_solution
-    ~variables:[Type.Variable.TupleVariadic variadic]
+    ~variables:[Type.Variable.TypeVarTupleVariable variadic]
     ~bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic2,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) ));
       ]
     (Some
        [
-         TupleVariadicPair
+         TypeVarTuplePair
            ( variadic,
              Type.OrderedTypes.Concatenation
                (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) );
@@ -673,16 +654,16 @@ let test_partial_solution _ =
     (* This is a trivial solution because the remaining constraint just becomes `Ts2 <: Ts2`. *)
     (Some []);
   expect_split_solution
-    ~variables:[Type.Variable.TupleVariadic variadic]
+    ~variables:[Type.Variable.TypeVarTupleVariable variadic]
     ~bounds:
       [
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
         `Lower
-          (TupleVariadicPair
+          (TypeVarTuplePair
              ( variadic2,
                Type.OrderedTypes.Concatenation
                  (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[] variadic)
@@ -690,7 +671,7 @@ let test_partial_solution _ =
       ]
     (Some
        [
-         TupleVariadicPair
+         TypeVarTuplePair
            ( variadic,
              Type.OrderedTypes.Concatenation
                (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) );
@@ -705,7 +686,7 @@ let test_exists _ =
   let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
   let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
   let constraints_with_unconstrained_b =
-    let pair = Type.Variable.UnaryPair (unconstrained_a, Type.Variable unconstrained_b) in
+    let pair = Type.Variable.TypeVarPair (unconstrained_a, Type.Variable unconstrained_b) in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
     |> function
     | Some constraints -> constraints
@@ -714,17 +695,17 @@ let test_exists _ =
   assert_true
     (TypeConstraints.exists_in_bounds
        constraints_with_unconstrained_b
-       ~variables:[Type.Variable.Unary unconstrained_b]);
+       ~variables:[Type.Variable.TypeVarVariable unconstrained_b]);
   assert_false
     (TypeConstraints.exists_in_bounds
        constraints_with_unconstrained_b
-       ~variables:[Type.Variable.Unary unconstrained_a]);
-  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
-  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+       ~variables:[Type.Variable.TypeVarVariable unconstrained_a]);
+  let parameters_a = Type.Variable.ParamSpec.create "Ta" in
+  let parameters_b = Type.Variable.ParamSpec.create "Tb" in
   let constraints_with_parameters_b =
     let pair =
-      Type.Variable.ParameterVariadicPair
-        (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b))
+      Type.Variable.ParamSpecPair
+        (parameters_a, Type.Callable.FromParamSpec (empty_head parameters_b))
     in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
     |> fun constraints_option -> Option.value_exn constraints_option
@@ -732,18 +713,18 @@ let test_exists _ =
   assert_true
     (TypeConstraints.exists_in_bounds
        constraints_with_parameters_b
-       ~variables:[Type.Variable.ParameterVariadic parameters_b]);
+       ~variables:[Type.Variable.ParamSpecVariable parameters_b]);
   assert_false
     (TypeConstraints.exists_in_bounds
        constraints_with_parameters_b
-       ~variables:[Type.Variable.ParameterVariadic parameters_a]);
+       ~variables:[Type.Variable.ParamSpecVariable parameters_a]);
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
   let constraints_with_variadic2_in_bounds =
     let pair =
-      TupleVariadicPair
+      TypeVarTuplePair
         ( variadic,
           Type.OrderedTypes.Concatenation
             (Type.OrderedTypes.Concatenation.create
@@ -757,15 +738,15 @@ let test_exists _ =
   assert_true
     (TypeConstraints.exists_in_bounds
        constraints_with_variadic2_in_bounds
-       ~variables:[Type.Variable.TupleVariadic variadic2]);
+       ~variables:[Type.Variable.TypeVarTupleVariable variadic2]);
   assert_false
     (TypeConstraints.exists_in_bounds
        constraints_with_variadic2_in_bounds
-       ~variables:[Type.Variable.TupleVariadic variadic]);
+       ~variables:[Type.Variable.TypeVarTupleVariable variadic]);
   assert_true
     (TypeConstraints.exists_in_bounds
        constraints_with_variadic2_in_bounds
-       ~variables:[Type.Variable.Unary unconstrained_a]);
+       ~variables:[Type.Variable.TypeVarVariable unconstrained_a]);
   ()
 
 

@@ -94,7 +94,7 @@ module ReadOnly : sig
 
   val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
-  val get_typed_dictionary : t -> Type.t -> Type.t Type.Record.TypedDictionary.record option
+  val get_typed_dictionary : t -> Type.t -> Type.TypedDictionary.t option
 
   val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
@@ -141,13 +141,13 @@ module ReadOnly : sig
 
   val named_tuple_attributes : t -> string -> string list option
 
-  val resolve_expression_to_annotation : t -> Ast.Expression.t -> Annotation.t
+  val resolve_expression_to_type_info : t -> Ast.Expression.t -> TypeInfo.Unit.t
 
   val get_unannotated_global
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Ast.Reference.t ->
-    Ast.UnannotatedGlobal.t option
+    Module.UnannotatedGlobal.t option
 
   val all_classes : t -> string list
 

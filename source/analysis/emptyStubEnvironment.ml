@@ -33,7 +33,7 @@ module IncomingDataComputation = struct
           let lead = lead @ [head] in
           let reference = Reference.create_from_list lead in
           match get_module_metadata reference with
-          | Some definition when Module.empty_stub definition -> true
+          | Some definition when Module.Metadata.empty_stub definition -> true
           | Some _ -> is_from_empty_stub ~lead ~tail
           | _ -> false)
       | _ -> false
@@ -76,8 +76,8 @@ module EmptyStubCache = ManagedCache.Make (struct
 
   let trigger_to_dependency reference = SharedMemoryKeys.FromEmptyStub reference
 
-  let overlay_owns_key unannotated_global_environment_overlay key =
-    UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay key
+  let overlay_owns_key source_code_overlay key =
+    SourceCodeIncrementalApi.Overlay.owns_reference source_code_overlay key
 end)
 
 include EmptyStubCache

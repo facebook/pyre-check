@@ -10,7 +10,7 @@ open Core
 module type ReadOnly = sig
   type t
 
-  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+  val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
   val controls : t -> EnvironmentControls.t
 end
@@ -23,9 +23,7 @@ module UpdateResult : sig
 
     val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
 
-    val unannotated_global_environment_update_result
-      :  t ->
-      UnannotatedGlobalEnvironment.UpdateResult.t
+    val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
 
     val invalidated_modules : t -> Ast.Reference.t list
   end
@@ -40,7 +38,7 @@ module PreviousEnvironment : sig
     module Overlay : sig
       type t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
+      val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -54,9 +52,9 @@ module PreviousEnvironment : sig
 
     type t
 
-    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
+    val create : SourceCodeEnvironment.t -> t
 
-    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+    val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
     val read_only : t -> ReadOnly.t
 
@@ -138,7 +136,7 @@ module EnvironmentTable : sig
       dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
-    val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
+    val overlay_owns_key : SourceCodeIncrementalApi.Overlay.t -> Key.t -> bool
 
     val lazy_incremental : bool
   end
@@ -153,7 +151,7 @@ module EnvironmentTable : sig
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+      val source_code_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
       val controls : t -> EnvironmentControls.t
     end
@@ -163,7 +161,7 @@ module EnvironmentTable : sig
     module Overlay : sig
       type t
 
-      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
+      val source_code_overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -177,9 +175,9 @@ module EnvironmentTable : sig
 
     type t
 
-    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
+    val create : SourceCodeEnvironment.t -> t
 
-    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+    val source_code_base : t -> SourceCodeIncrementalApi.Base.t
 
     val read_only : t -> ReadOnly.t
 

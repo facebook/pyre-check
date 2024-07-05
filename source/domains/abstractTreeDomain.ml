@@ -338,23 +338,29 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   (** Fold over tree, where each non-bottom element node is visited. The function ~f is passed the
       path to the node, the non-bottom element at the node and the accumulator. *)
-  let fold_tree_paths ~init ~f tree =
-    let rec walk_children path { element; children } first_accumulator =
+  let fold_tree_paths ~with_ancestors ~init ~f tree =
+    let rec walk_children ancestors path { element; children } first_accumulator =
       let second_accumulator =
         if Element.is_bottom element then
           first_accumulator
         else
-          f ~path ~element first_accumulator
+          f ~path ~ancestors ~element first_accumulator
       in
       if LabelMap.is_empty children then
         second_accumulator
       else
+        let ancestors =
+          if with_ancestors then
+            Element.join ancestors element |> Element.transform_on_sink
+          else
+            ancestors
+        in
         let walk ~key:label_element ~data:subtree =
-          walk_children (path @ [label_element]) subtree
+          walk_children ancestors (path @ [label_element]) subtree
         in
         LabelMap.fold children ~init:second_accumulator ~f:walk
     in
-    walk_children [] tree init
+    walk_children Element.bottom [] tree init
 
 
   let fold_refined_tree_paths ~init ~f tree =
@@ -392,12 +398,12 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     if LabelMap.is_empty children then
       Element.pp formatter element
     else
-      let pp_node ~path ~element _ =
+      let pp_node ~path ~ancestors:_ ~element _ =
         match path with
         | [] -> Format.fprintf formatter "@,%a" Element.pp element
         | _ -> Format.fprintf formatter "@,%a -> %a" Label.pp_path path Element.pp element
       in
-      let pp _ = fold_tree_paths ~init:() ~f:pp_node in
+      let pp _ = fold_tree_paths ~with_ancestors:false ~init:() ~f:pp_node in
       Format.fprintf formatter "{@[<v 2>%a@]@,}" pp tree
 
 
@@ -1148,15 +1154,15 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   (** Filter map over tree, where each non-bottom element node is visited. The function ~f is passed
       the path to the node and the non-bottom element at the node and returns a new Element to
       substitute (possibly bottom). *)
-  let filter_map_tree_paths ~f tree =
-    let build ~path ~element access_path_tree =
-      let new_path, element = f ~path ~element in
+  let filter_map_tree_paths ~with_ancestors ~f tree =
+    let build ~path ~ancestors ~element access_path_tree =
+      let new_path, element = f ~path ~ancestors ~element in
       if Element.is_bottom element then
         access_path_tree
       else
         assign_tree_path ~tree:access_path_tree new_path ~subtree:(create_leaf element)
     in
-    let result = fold_tree_paths ~init:empty_tree ~f:build tree in
+    let result = fold_tree_paths ~with_ancestors ~init:empty_tree ~f:build tree in
     let message () = "filter_map_tree_paths" in
     Checks.check (fun () -> check_minimal ~message result);
     result
@@ -1165,13 +1171,13 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   (** Removes all subtrees at depth. Used to limit amount of propagation across function boundaries,
       in particular for scaling. *)
   let cut_tree_after ~depth tree =
-    let filter ~path ~element =
+    let filter ~path ~ancestors:_ ~element =
       if List.length path > depth then
         path, Element.bottom
       else
         path, element
     in
-    filter_map_tree_paths ~f:filter tree
+    filter_map_tree_paths ~with_ancestors:false ~f:filter tree
 
 
   let create_tree path element =
@@ -1181,9 +1187,16 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   open AbstractDomainCore
 
+  type path_with_ancestors = {
+    path: Label.path;
+    ancestors: Element.t;
+    element: Element.t;
+  }
+
   type _ part +=
     | Path : (Label.path * Element.t) part
     | RefinedPath : (Label.Refined.path * Element.t) part
+    | PathWithAncestors : path_with_ancestors part
 
   module rec Base : (BASE with type t := t) = MakeBase (struct
     type nonrec t = t
@@ -1234,14 +1247,15 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       match part, op with
       | RefinedPath, _ -> failwith "Not Implemented"
       | Path, Map ->
-          let transform_node ~path ~element = f (path, element) in
-          filter_map_tree_paths ~f:transform_node tree
+          let transform_node ~path ~ancestors:_ ~element = f (path, element) in
+          filter_map_tree_paths ~with_ancestors:false ~f:transform_node tree
       | Path, Add ->
           let path, element = f in
           join tree (create_tree path (create_leaf element))
       | Path, Filter ->
           filter_map_tree_paths
-            ~f:(fun ~path ~element ->
+            ~with_ancestors:false
+            ~f:(fun ~path ~ancestors:_ ~element ->
               if f (path, element) then
                 path, element
               else
@@ -1249,20 +1263,51 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
             tree
       | Path, FilterMap ->
           filter_map_tree_paths
-            ~f:(fun ~path ~element ->
+            ~with_ancestors:false
+            ~f:(fun ~path ~ancestors:_ ~element ->
               match f (path, element) with
               | Some (path, element) -> path, element
               | None -> path, Element.bottom)
             tree
+      | PathWithAncestors, Map ->
+          let transform_node ~path ~ancestors ~element =
+            let { path; ancestors = _; element } = f { path; ancestors; element } in
+            path, element
+          in
+          filter_map_tree_paths ~with_ancestors:true ~f:transform_node tree
+      | PathWithAncestors, Filter ->
+          filter_map_tree_paths
+            ~with_ancestors:true
+            ~f:(fun ~path ~ancestors ~element ->
+              if f { path; ancestors; element } then
+                path, element
+              else
+                path, Element.bottom)
+            tree
+      | PathWithAncestors, FilterMap ->
+          filter_map_tree_paths
+            ~with_ancestors:true
+            ~f:(fun ~path ~ancestors ~element ->
+              match f { path; ancestors; element } with
+              | Some { path; ancestors = _; element } -> path, element
+              | None -> path, Element.bottom)
+            tree
       | _, Context (Path, op) ->
-          let transform_node ~path ~element =
+          let transform_node ~path ~ancestors:_ ~element =
             path, Element.transform part op ~f:(f (path, element)) element
           in
-          filter_map_tree_paths ~f:transform_node tree
+          filter_map_tree_paths ~with_ancestors:false ~f:transform_node tree
+      | _, Context (PathWithAncestors, op) ->
+          let transform_node ~path ~ancestors ~element =
+            path, Element.transform part op ~f:(f { path; ancestors; element }) element
+          in
+          filter_map_tree_paths ~with_ancestors:true ~f:transform_node tree
       | (Path | Self), _ -> Base.transform part op ~f tree
       | _ ->
-          let transform_node ~path ~element = path, Element.transform part op ~f element in
-          filter_map_tree_paths ~f:transform_node tree
+          let transform_node ~path ~ancestors:_ ~element =
+            path, Element.transform part op ~f element
+          in
+          filter_map_tree_paths ~with_ancestors:false ~f:transform_node tree
 
 
     let reduce
@@ -1275,22 +1320,46 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           fold_refined_tree_paths ~init ~f:fold_tree_node tree
       | RefinedPath, _ -> failwith "Not Implemented"
       | Path, Acc ->
-          let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          let fold_tree_node ~path ~ancestors:_ ~element accumulator =
+            f (path, element) accumulator
+          in
+          fold_tree_paths ~with_ancestors:false ~init ~f:fold_tree_node tree
       | Path, Exists ->
-          let fold_tree_node ~path ~element accumulator = accumulator || f (path, element) in
-          init || fold_tree_paths ~init ~f:fold_tree_node tree
+          let fold_tree_node ~path ~ancestors:_ ~element accumulator =
+            accumulator || f (path, element)
+          in
+          init || fold_tree_paths ~with_ancestors:false ~init ~f:fold_tree_node tree
+      | PathWithAncestors, Acc ->
+          let fold_tree_node ~path ~ancestors ~element accumulator =
+            f { path; ancestors; element } accumulator
+          in
+          fold_tree_paths ~with_ancestors:true ~init ~f:fold_tree_node tree
+      | PathWithAncestors, Exists ->
+          let fold_tree_node ~path ~ancestors ~element accumulator =
+            accumulator || f { path; ancestors; element }
+          in
+          init || fold_tree_paths ~with_ancestors:true ~init ~f:fold_tree_node tree
       | _, Context (Path, op) ->
-          let fold_tree_node ~path ~element accumulator =
+          let fold_tree_node ~path ~ancestors:_ ~element accumulator =
             Element.reduce part ~using:op ~f:(f (path, element)) ~init:accumulator element
           in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          fold_tree_paths ~with_ancestors:false ~init ~f:fold_tree_node tree
+      | _, Context (PathWithAncestors, op) ->
+          let fold_tree_node ~path ~ancestors ~element accumulator =
+            Element.reduce
+              part
+              ~using:op
+              ~f:(f { path; ancestors; element })
+              ~init:accumulator
+              element
+          in
+          fold_tree_paths ~with_ancestors:true ~init ~f:fold_tree_node tree
       | (Path | Self), _ -> Base.reduce part ~using:op ~f ~init tree
       | _ ->
-          let fold_tree_node ~path:_ ~element accumulator =
+          let fold_tree_node ~path:_ ~ancestors:_ ~element accumulator =
             Element.reduce part ~using:op ~init:accumulator ~f element
           in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          fold_tree_paths ~with_ancestors:false ~init ~f:fold_tree_node tree
 
 
     let partition
@@ -1306,33 +1375,55 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       match part, op with
       | RefinedPath, _ -> failwith "Not Implemented"
       | Path, By ->
-          let partition ~path ~element result =
+          let partition ~path ~ancestors:_ ~element result =
             let partition_key = f (path, element) in
             MapPoly.update result partition_key ~f:(update path element)
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths ~with_ancestors:false ~init:MapPoly.empty ~f:partition tree
       | Path, ByFilter ->
-          let partition ~path ~element result =
+          let partition ~path ~ancestors:_ ~element result =
             match f (path, element) with
             | None -> result
             | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths ~with_ancestors:false ~init:MapPoly.empty ~f:partition tree
+      | PathWithAncestors, By ->
+          let partition ~path ~ancestors ~element result =
+            let partition_key = f { path; ancestors; element } in
+            MapPoly.update result partition_key ~f:(update path element)
+          in
+          fold_tree_paths ~with_ancestors:true ~init:MapPoly.empty ~f:partition tree
+      | PathWithAncestors, ByFilter ->
+          let partition ~path ~ancestors ~element result =
+            match f { path; ancestors; element } with
+            | None -> result
+            | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
+          in
+          fold_tree_paths ~with_ancestors:true ~init:MapPoly.empty ~f:partition tree
       | _, Context (Path, op) ->
-          let partition ~path ~element result =
+          let partition ~path ~ancestors:_ ~element result =
             let element_partition = Element.partition part op ~f:(f (path, element)) element in
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths ~with_ancestors:false ~init:MapPoly.empty ~f:partition tree
+      | _, Context (PathWithAncestors, op) ->
+          let partition ~path ~ancestors ~element result =
+            let element_partition =
+              Element.partition part op ~f:(f { path; ancestors; element }) element
+            in
+            let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
+            MapPoly.fold ~init:result ~f:distribute element_partition
+          in
+          fold_tree_paths ~with_ancestors:false ~init:MapPoly.empty ~f:partition tree
       | (Path | Self), _ -> Base.partition part op ~f tree
       | _ ->
-          let partition ~path ~element result =
+          let partition ~path ~ancestors:_ ~element result =
             let element_partition = Element.partition part op ~f element in
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths ~with_ancestors:false ~init:MapPoly.empty ~f:partition tree
 
 
     let introspect (type a) (op : a introspect) : a =
@@ -1341,6 +1432,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           f#report Self;
           f#report Path;
           f#report RefinedPath;
+          f#report PathWithAncestors;
           Element.introspect op
       | Structure ->
           let range = Element.introspect op in
@@ -1349,6 +1441,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           match part with
           | RefinedPath -> Format.sprintf "Tree.RefinedPath"
           | Path -> Format.sprintf "Tree.Path"
+          | PathWithAncestors -> Format.sprintf "Tree.PathWithAncestors"
           | Self -> Format.sprintf "Tree.Self"
           | _ -> Element.introspect op)
 

@@ -225,11 +225,11 @@ let test_possible_qualifiers_after_delocalize _ =
       actual
   in
   assert_result "" [];
-  assert_result "a" [];
-  assert_result "a.b" ["a"];
-  assert_result "a.b.c" ["a"; "a.b"];
-  assert_result "$local_a$b" ["a"];
-  assert_result "$local_a?b$c" ["a"; "a.b"];
+  assert_result "a" [""];
+  assert_result "a.b" [""; "a"];
+  assert_result "a.b.c" [""; "a"; "a.b"];
+  assert_result "$local_a$b" [""; "a"];
+  assert_result "$local_a?b$c" [""; "a"; "a.b"];
   ()
 
 

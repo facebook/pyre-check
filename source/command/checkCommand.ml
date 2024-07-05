@@ -157,7 +157,7 @@ let do_check configuration =
               read_write_environment
             |> Analysis.GlobalModulePathsApi.type_check_qualifiers
           in
-          Analysis.ErrorsEnvironment.check_and_preprocess
+          Analysis.ErrorsEnvironment.check_and_postprocess
             read_write_environment
             ~scheduler
             ~scheduler_policies:Configuration.SchedulerPolicies.empty

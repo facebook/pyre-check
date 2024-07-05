@@ -1081,6 +1081,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 614,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1104,6 +1106,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 615,
     "sources": [
       {
         "port": "result",
@@ -1127,6 +1131,8 @@
   "kind": "model",
   "data": {
     "callable": "eval",
+    "filename": "builtins.pyi",
+    "callable_line": 473,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1377,7 +1383,13 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -1400,7 +1412,13 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "via": "obscure:model" },
               { "always-via": "format-string" },
@@ -1425,7 +1443,13 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -1898,7 +1922,13 @@
         "port": "formal(d, position=1)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "via": "obscure:model" },
               { "always-type": "integer" },
@@ -1915,7 +1945,13 @@
         "port": "formal(b_or_c, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -1969,7 +2005,13 @@
         "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],

@@ -33,7 +33,7 @@ module OrderImplementation = struct
     type t = order
 
     let rec always_less_or_equal order ~left ~right =
-      OrderedConstraintsSet.add
+      OrderedConstraintsSet.add_and_simplify
         ConstraintsSet.empty
         ~new_constraint:
           (LessOrEqual
@@ -58,40 +58,44 @@ module OrderImplementation = struct
                 match sofar with
                 | Some sofar ->
                     let joined =
-                      if Type.Callable.Parameter.names_compatible left right then
+                      if Type.Callable.CallableParamType.names_compatible left right then
                         match left, right with
-                        | Parameter.PositionalOnly left, Parameter.PositionalOnly right
+                        | ( CallableParamType.PositionalOnly left,
+                            CallableParamType.PositionalOnly right )
                           when Bool.equal left.default right.default ->
                             Some
-                              (Parameter.PositionalOnly
+                              (CallableParamType.PositionalOnly
                                  {
                                    left with
                                    annotation =
                                      parameter_join order left.annotation right.annotation;
                                  })
-                        | Parameter.PositionalOnly anonymous, Parameter.Named named
-                        | Parameter.Named named, Parameter.PositionalOnly anonymous
+                        | CallableParamType.PositionalOnly anonymous, CallableParamType.Named named
+                        | CallableParamType.Named named, CallableParamType.PositionalOnly anonymous
                           when Bool.equal named.default anonymous.default ->
                             Some
-                              (Parameter.PositionalOnly
+                              (CallableParamType.PositionalOnly
                                  {
                                    anonymous with
                                    annotation =
                                      parameter_join order named.annotation anonymous.annotation;
                                  })
-                        | Parameter.Named left, Parameter.Named right
+                        | CallableParamType.Named left, CallableParamType.Named right
                           when Bool.equal left.default right.default ->
                             Some
-                              (Parameter.Named
+                              (CallableParamType.Named
                                  {
                                    left with
                                    annotation =
                                      parameter_join order left.annotation right.annotation;
                                  })
-                        | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
-                            Some (Parameter.Variable (Concrete (parameter_join order left right)))
-                        | Parameter.Keywords left, Parameter.Keywords right ->
-                            Some (Parameter.Keywords (parameter_join order left right))
+                        | ( CallableParamType.Variable (Concrete left),
+                            CallableParamType.Variable (Concrete right) ) ->
+                            Some
+                              (CallableParamType.Variable
+                                 (Concrete (parameter_join order left right)))
+                        | CallableParamType.Keywords left, CallableParamType.Keywords right ->
+                            Some (CallableParamType.Keywords (parameter_join order left right))
                         | _ -> None
                       else
                         None
@@ -143,8 +147,8 @@ module OrderImplementation = struct
         | Type.Any, _
         | _, Type.Any ->
             Type.Any
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
+        | Type.ParamSpecComponent _, _
+        | _, Type.ParamSpecComponent _ ->
             union
         | Type.NoneType, _
         | _, Type.NoneType ->
@@ -232,7 +236,8 @@ module OrderImplementation = struct
                 let right_parameters = instantiate_successors_parameters ~source:right ~target in
                 let variables = variables target in
                 let join_parameters_respecting_variance = function
-                  | Type.Variable.UnaryPair (unary, left), Type.Variable.UnaryPair (_, right) -> (
+                  | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right)
+                    -> (
                       match left, right, unary with
                       | Type.Bottom, other, _
                       | other, Type.Bottom, _ ->
@@ -253,8 +258,8 @@ module OrderImplementation = struct
                             Some left
                           else
                             None)
-                  | Type.Variable.TupleVariadicPair _, Type.Variable.TupleVariadicPair _
-                  | Type.Variable.ParameterVariadicPair _, Type.Variable.ParameterVariadicPair _ ->
+                  | Type.Variable.TypeVarTuplePair _, Type.Variable.TypeVarTuplePair _
+                  | Type.Variable.ParamSpecPair _, Type.Variable.ParamSpecPair _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
                       None
                   | _ -> None
@@ -263,9 +268,9 @@ module OrderImplementation = struct
                 | Some left_parameters, Some right_parameters, Some variables ->
                     let replace_free_unary_variables_with_top =
                       let replace_if_free variable =
-                        Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                        Option.some_if (Type.Variable.TypeVar.is_free variable) Type.Top
                       in
-                      Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
+                      Type.Variable.GlobalTransforms.TypeVar.replace_all replace_if_free
                     in
                     Type.Variable.zip_variables_with_two_parameter_lists
                       ~left_parameters
@@ -398,31 +403,32 @@ module OrderImplementation = struct
         | Undefined, Undefined -> Some Undefined
         | Defined left, Defined right -> (
             let meet_of_parameters left right =
-              if Type.Callable.Parameter.names_compatible left right then
+              if Type.Callable.CallableParamType.names_compatible left right then
                 match left, right with
-                | Parameter.PositionalOnly left, Parameter.PositionalOnly right
+                | CallableParamType.PositionalOnly left, CallableParamType.PositionalOnly right
                   when Bool.equal left.default right.default ->
                     Some
-                      (Parameter.PositionalOnly
+                      (CallableParamType.PositionalOnly
                          { left with annotation = join order left.annotation right.annotation })
-                | Parameter.PositionalOnly anonymous, Parameter.Named named
-                | Parameter.Named named, Parameter.PositionalOnly anonymous
+                | CallableParamType.PositionalOnly anonymous, CallableParamType.Named named
+                | CallableParamType.Named named, CallableParamType.PositionalOnly anonymous
                   when Bool.equal named.default anonymous.default ->
                     Some
-                      (Parameter.Named
+                      (CallableParamType.Named
                          {
                            named with
                            annotation = join order named.annotation anonymous.annotation;
                          })
-                | Parameter.Named left, Parameter.Named right
+                | CallableParamType.Named left, CallableParamType.Named right
                   when Bool.equal left.default right.default ->
                     Some
-                      (Parameter.Named
+                      (CallableParamType.Named
                          { left with annotation = join order left.annotation right.annotation })
-                | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
-                    Some (Parameter.Variable (Concrete (join order left right)))
-                | Parameter.Keywords left, Parameter.Keywords right ->
-                    Some (Parameter.Keywords (join order left right))
+                | ( CallableParamType.Variable (Concrete left),
+                    CallableParamType.Variable (Concrete right) ) ->
+                    Some (CallableParamType.Variable (Concrete (join order left right)))
+                | CallableParamType.Keywords left, CallableParamType.Keywords right ->
+                    Some (CallableParamType.Keywords (join order left right))
                 | _ -> None
               else
                 None
@@ -458,8 +464,8 @@ module OrderImplementation = struct
         | Type.Bottom, _
         | _, Type.Bottom ->
             Type.Bottom
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
+        | Type.ParamSpecComponent _, _
+        | _, Type.ParamSpecComponent _ ->
             Type.Bottom
         | ReadOnly left, ReadOnly right -> Type.ReadOnly.create (meet order left right)
         | ReadOnly left, _ -> meet order left right

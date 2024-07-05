@@ -19,3 +19,4 @@ module AbstractSetDomain = Abstract.SetDomain
 module AbstractSimpleDomain = Abstract.SimpleDomain
 module AbstractToppedSetDomain = Abstract.ToppedSetDomain
 module AbstractTreeDomain = Abstract.TreeDomain
+module AbstractWrapperDomain = Abstract.WrapperDomain

@@ -66,20 +66,13 @@ module MatchTranslate = struct
 
 
   let create_slice ~location ~lower ~upper =
-    let to_constant = function
-      | None -> Constant.NoneLiteral
-      | Some index -> Constant.Integer index
-    in
-    let step = None in
-    create_call
-      ~location
-      ~callee:(create_identifier_name ~location "slice")
-      ~arguments:
-        [
-          { Call.Argument.value = create_constant ~location (to_constant lower); name = None };
-          { Call.Argument.value = create_constant ~location (to_constant upper); name = None };
-          { Call.Argument.value = create_constant ~location (to_constant step); name = None };
-        ]
+    Expression.Slice
+      {
+        Slice.start = lower >>| (fun x -> Constant.Integer x) >>| create_constant ~location;
+        stop = upper >>| (fun x -> Constant.Integer x) >>| create_constant ~location;
+        step = None;
+      }
+    |> Node.create ~location
 
 
   let create_isinstance ~location object_expression type_expression =

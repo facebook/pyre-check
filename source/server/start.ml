@@ -226,7 +226,7 @@ let initialize_server_state
       else
         Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers
-        |> Analysis.ErrorsEnvironment.check_and_preprocess
+        |> Analysis.ErrorsEnvironment.check_and_postprocess
              environment
              ~scheduler
              ~scheduler_policies:Configuration.SchedulerPolicies.empty

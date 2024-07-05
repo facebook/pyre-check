@@ -149,7 +149,7 @@ type empty_reason =
 [@@deriving sexp, compare, yojson { strict = false }]
 
 type t =
-  | Ok
+  | Ok_ [@name "Ok"]
   | Error of ErrorKind.t
   | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }

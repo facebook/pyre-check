@@ -27,7 +27,7 @@ module type Context = sig
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
-  val resolution_fixpoint : LocalAnnotationMap.t option
+  val resolution_fixpoint : TypeInfo.ForFunctionBody.t option
 
   (* Where to store errors found during the fixpoint. `None` discards them. *)
   val error_map : LocalErrorMap.t option
@@ -71,13 +71,13 @@ module DummyContext : Context
 
 val resolution
   :  GlobalResolution.t ->
-  ?annotation_store:TypeInfo.Store.t ->
+  ?type_info_store:TypeInfo.Store.t ->
   (module Context) ->
   Resolution.t
 
 val resolution_at_key
   :  global_resolution:GlobalResolution.t ->
-  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+  local_annotations:TypeInfo.ForFunctionBody.ReadOnly.t option ->
   parent:Reference.t option ->
   statement_key:int ->
   (module Context) ->
@@ -87,18 +87,21 @@ val compute_local_annotations
   :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
   global_resolution:GlobalResolution.t ->
   Reference.t ->
-  LocalAnnotationMap.ReadOnly.t option
+  TypeInfo.ForFunctionBody.ReadOnly.t option
 
 module CheckResult : sig
   type t = {
     errors: Error.t list option;
-    local_annotations: LocalAnnotationMap.ReadOnly.t option;
+    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
+    callees: Callgraph.callee_with_locations list option;
   }
   [@@deriving equal]
 
   val errors : t -> Error.t list option
 
-  val local_annotations : t -> LocalAnnotationMap.ReadOnly.t option
+  val local_annotations : t -> TypeInfo.ForFunctionBody.ReadOnly.t option
+
+  val callees : t -> Callgraph.callee_with_locations list option
 end
 
 val check_define_by_name

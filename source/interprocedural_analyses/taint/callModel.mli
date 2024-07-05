@@ -78,6 +78,7 @@ val sink_trees_of_argument
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   model:Model.t ->
+  auxiliary_triggered_taint:BackwardState.Tree.t ->
   location:Location.WithModule.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
@@ -133,7 +134,7 @@ module StringFormatCall : sig
   type t = {
     nested_expressions: Ast.Expression.Expression.t list;
     string_literal: string_literal;
-    call_target: CallGraph.CallTarget.t option;
+    call_target: CallGraph.CallTarget.t;
     location: Location.t;
   }
 
@@ -145,20 +146,22 @@ module StringFormatCall : sig
     CallGraph.StringFormatCallees.t option
 
   val apply_call
-    :  callee_target:CallGraph.CallTarget.t option ->
+    :  callee:Target.t ->
     pyre_in_context:PyrePysaApi.InContext.t ->
     location:Location.WithModule.t ->
     BackwardState.Tree.t ->
     BackwardState.Tree.t
 
   val implicit_string_literal_sources
-    :  implicit_sources:TaintConfiguration.implicit_sources ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
+    implicit_sources:TaintConfiguration.implicit_sources ->
     module_reference:Reference.t ->
     string_literal ->
     ForwardTaint.t
 
   val implicit_string_literal_sinks
-    :  implicit_sinks:TaintConfiguration.implicit_sinks ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
+    implicit_sinks:TaintConfiguration.implicit_sinks ->
     module_reference:Reference.t ->
     string_literal ->
     BackwardTaint.t

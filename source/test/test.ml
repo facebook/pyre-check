@@ -103,6 +103,13 @@ let run tests =
   tests |> bracket |> OUnit2.run_test_tt_main
 
 
+let sanitized_module_name raw_module_name =
+  if String.is_prefix ~prefix:"Dune__exe__" raw_module_name then
+    String.drop_prefix raw_module_name (String.length "Dune__exe__")
+  else
+    raw_module_name
+
+
 let labeled_test_case function_name line_number ?name test_callback =
   let description =
     let function_name =
@@ -3240,8 +3247,8 @@ module ScratchProject = struct
            need to clean up in that case, and the cleanup relies on APIs that are only available
            using nonlazy module tracking *)
         let ast_environment =
-          ErrorsEnvironment.unannotated_global_environment errors_environment
-          |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+          ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
+          |> TypeEnvironment.AssumeAstEnvironment.ast_environment
         in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
@@ -3312,8 +3319,8 @@ module ScratchProject = struct
        assume there is an underlying AstEnvironment or ModuleTracker. *)
     module AssumeBackedByAstEnvironment = struct
       let ast_environment { errors_environment; _ } =
-        ErrorsEnvironment.unannotated_global_environment errors_environment
-        |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+        ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
+        |> TypeEnvironment.AssumeAstEnvironment.ast_environment
 
 
       let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
@@ -3535,7 +3542,7 @@ let assert_instantiated_attribute_equal expected actual =
   in
   let simple_print l =
     let simple attribute =
-      let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+      let annotation = AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation in
       let name = AnnotatedAttribute.name attribute in
       Printf.sprintf "%s, %s" name (Type.show annotation)
     in
@@ -3613,7 +3620,7 @@ module MockClassHierarchyHandler = struct
     let print_edge (source, { ClassHierarchy.Edges.parents; _ }) =
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
-          Format.asprintf "%s [%a]" target (Type.pp_parameters ~pp_type:Type.pp_concise) parameters
+          Format.asprintf "%s [%a]" target Type.Parameter.pp_list parameters
         in
         List.map parents ~f:target |> String.concat ~sep:", "
       in

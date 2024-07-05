@@ -10,7 +10,14 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "IPAddress" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "IPAddress"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 25,
@@ -34,7 +41,14 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "IPAddress" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "IPAddress"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 15,
@@ -58,7 +72,14 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "IPAddress" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "IPAddress"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 20,
@@ -82,7 +103,14 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "IPAddress" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "IPAddress"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 10,
@@ -106,7 +134,20 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "HTMLPattern" }, { "kind": "IPAddress" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "HTMLPattern"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "IPAddress"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 33,
@@ -181,7 +222,14 @@
         "port": "result[key]",
         "taint": [
           {
-            "kinds": [ { "kind": "GoogleAPIKey" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "GoogleAPIKey"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 45,
@@ -205,7 +253,14 @@
         "port": "result[key]",
         "taint": [
           {
-            "kinds": [ { "kind": "GoogleAPIKey" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "GoogleAPIKey"
+              }
+            ],
             "origin": {
               "filename": "implicit_sources.py",
               "line": 40,
@@ -229,7 +284,14 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [ { "kind": "HTMLPattern" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "HTMLPattern"
+              }
+            ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 66, "start": 11, "end": 16 },
@@ -243,7 +305,14 @@
             }
           },
           {
-            "kinds": [ { "kind": "HTMLPattern" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "HTMLPattern"
+              }
+            ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 66, "start": 26, "end": 29 } ],
             "origin": {

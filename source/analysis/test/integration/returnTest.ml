@@ -230,7 +230,7 @@ let test_check_return =
       def foo() -> type(x):
         return x
     |}
-           ["Invalid type [31]: Expression `type($local_test$x)` is not a valid type."];
+           ["Invalid type [31]: Expression `type(x)` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -241,7 +241,7 @@ let test_check_return =
       def foo() -> Type(x):
         return x
     |}
-           ["Invalid type [31]: Expression `typing.Type($local_test$x)` is not a valid type."];
+           ["Invalid type [31]: Expression `typing.Type(x)` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -252,10 +252,7 @@ let test_check_return =
       def foo() -> Tuple[Type(x)]:
         return (x,)
     |}
-           [
-             "Invalid type [31]: Expression `typing.Tuple[typing.Type($local_test$x)]` is not a \
-              valid type.";
-           ];
+           ["Invalid type [31]: Expression `typing.Tuple[typing.Type(x)]` is not a valid type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
@@ -302,9 +299,9 @@ let test_check_return_control_flow =
           return 1
     |}
            [
+             "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
              "Unbound name [10]: Name `unknown_condition` is used but not defined in the current \
               scope.";
-             "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -316,9 +313,9 @@ let test_check_return_control_flow =
           x = 1
     |}
            [
+             "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
              "Unbound name [10]: Name `unknown_condition` is used but not defined in the current \
               scope.";
-             "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -728,10 +725,12 @@ let test_check_noreturn =
         return
     |}
            [
+             "Incompatible return type [7]: Function declared non-returnable, but got implicit \
+              return value of `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
-             "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+             "Incompatible return type [7]: Function declared non-returnable, but got implicit \
+              return value of `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
-             "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -902,10 +901,12 @@ let test_check_never =
         return
     |}
            [
+             "Incompatible return type [7]: Function declared non-returnable, but got implicit \
+              return value of `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
-             "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+             "Incompatible return type [7]: Function declared non-returnable, but got implicit \
+              return value of `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
-             "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
              "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__

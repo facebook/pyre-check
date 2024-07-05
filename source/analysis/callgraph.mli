@@ -29,28 +29,9 @@ type callee_with_locations = {
   callee: callee;
   locations: Location.WithModule.t list;
 }
+[@@deriving eq]
 
 val callee_to_yojson : ?locations:Location.WithPath.t list -> callee -> Yojson.Safe.t
-
-type caller =
-  | FunctionCaller of Reference.t
-  | PropertySetterCaller of Reference.t
-[@@deriving compare, sexp]
-
-module CalleeValue : Memory.ValueType with type t = callee_with_locations list
-
-module CallerKey : Memory.KeyType with type t = caller
-
-module SharedMemory :
-  Memory.WithCache.S
-    with type value = CalleeValue.t
-     and type key = caller
-     and module KeySet = Stdlib.Set.Make(CallerKey)
-     and module KeyMap = Hack_parallel.Std.MyMap.Make(CallerKey)
-
-val set : caller:caller -> callees:callee_with_locations list -> unit
-
-val get : caller:caller -> callee_with_locations list
 
 module type Builder = sig
   val initialize : unit -> unit

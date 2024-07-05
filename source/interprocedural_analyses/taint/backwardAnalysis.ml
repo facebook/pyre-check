@@ -61,7 +61,7 @@ module type FUNCTION_CONTEXT = sig
 
   val existing_model : Model.t
 
-  val triggered_sinks : Issue.TriggeredSinkLocationMap.t
+  val triggered_sinks : Issue.TriggeredSinkForBackward.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
 end
@@ -401,9 +401,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Callee -> { Call.Argument.name = None; value = callee } :: arguments
       | None -> arguments
     in
-    let triggered_taint =
-      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location:call_location
-    in
     let taint_model =
       TaintProfiler.track_model_fetch
         ~profiler
@@ -424,16 +421,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let taint_model =
-      {
-        taint_model with
-        backward =
-          {
-            taint_model.backward with
-            sink_taint = BackwardState.join taint_model.backward.sink_taint triggered_taint;
-          };
-      }
-    in
     let call_taint =
       BackwardState.Tree.add_local_breadcrumbs
         (Features.type_breadcrumbs (Option.value_exn return_type))
@@ -517,9 +504,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               let breadcrumb = CallModel.transform_tito_depth_breadcrumb tito_taint in
               let taint_to_propagate =
-                BackwardState.Tree.add_local_breadcrumb
-                  ~add_on_tito:false
-                  breadcrumb
+                BackwardState.Tree.transform_non_tito
+                  Features.LocalKindSpecificBreadcrumbSet.Self
+                  Map
+                  ~f:(Features.BreadcrumbSet.add breadcrumb)
                   taint_to_propagate
               in
               add_extra_traces_for_transforms
@@ -607,6 +595,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves
           ~model:taint_model
+          ~auxiliary_triggered_taint:
+            (Issue.TriggeredSinkForBackward.get
+               ~expression:argument
+               FunctionContext.triggered_sinks)
           ~location
           ~call_target
           ~arguments
@@ -1893,18 +1885,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           List.map ~f:(fun call_argument -> call_argument.value) arguments
         in
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
         in
         analyze_joined_string
           ~pyre_in_context
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = arguments_formatted_string;
             string_literal = { value; location = value_location };
@@ -1928,19 +1917,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        ];
     } ->
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallGraph.CallTarget.create
-                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -1967,12 +1953,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments = [{ Call.Argument.value = expression; name = None }];
     } ->
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallGraph.CallTarget.create
-                    Interprocedural.Target.StringCombineArtificialTargets.str_add))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -1980,7 +1964,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~state
           ~breadcrumbs:
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -2030,18 +2013,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
         let call_target =
-          Some
-            (CallModel.StringFormatCall.CallTarget.create
-               ~call_targets:callees.call_targets
-               ~default_target:
-                 (CallModel.StringFormatCall.CallTarget.from_function_name function_name))
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
         in
         analyze_joined_string
           ~pyre_in_context
           ~taint
           ~state
           ~breadcrumbs
-          ~increase_trace_length:true
           {
             CallModel.StringFormatCall.nested_expressions = substrings;
             string_literal = { CallModel.StringFormatCall.value = string_literal; location };
@@ -2096,34 +2076,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~taint
       ~state
       ~breadcrumbs
-      ~increase_trace_length
       { CallModel.StringFormatCall.nested_expressions; string_literal; call_target; location }
     =
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
     in
-    let triggered_taint =
-      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location
-      |> BackwardState.transform
-           BackwardState.Tree.Self
-           Map
-           ~f:
-             (CallModel.StringFormatCall.apply_call
-                ~callee_target:call_target
-                ~pyre_in_context
-                ~location:location_with_module)
-    in
-    let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
-      CallModel.StringFormatCall.implicit_string_literal_sinks
-        ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
-        ~module_reference:FunctionContext.qualifier
-        string_literal
+      BackwardState.Tree.transform_call_info (* Treat as a call site for tito taint. *)
+        CallInfo.Tito
+        Domains.TraceLength.Self
+        Map
+        ~f:TraceLength.increase
+        taint
+    in
+    let taint =
+      string_literal
+      |> CallModel.StringFormatCall.implicit_string_literal_sinks
+           ~pyre_in_context
+           ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
+           ~module_reference:FunctionContext.qualifier
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.join taint
-    in
-    let taint =
-      taint
       |> BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
       |> BackwardTaint.add_local_breadcrumbs breadcrumbs
       |> BackwardState.Tree.create_leaf
@@ -2135,6 +2108,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_location
         ~base
         ~base_state
+        taint
       =
       let {
         arguments_taint = _;
@@ -2179,6 +2153,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       new_taint, join state_to_join new_state
     in
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
+      let taint =
+        FunctionContext.triggered_sinks
+        |> Issue.TriggeredSinkForBackward.get ~expression
+        |> CallModel.StringFormatCall.apply_call
+             ~callee:call_target.CallGraph.CallTarget.target
+             ~pyre_in_context
+             ~location:location_with_module
+        |> BackwardState.Tree.join taint
+      in
       let new_taint, new_state =
         match
           CallModel.StringFormatCall.get_string_format_callees
@@ -2197,23 +2180,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~call_target
                   ~call_location:expression_location
                   ~base:expression
-                  ~base_state:state)
+                  ~base_state:state
+                  taint)
         | _ -> taint, state
       in
       let new_taint =
         new_taint
         |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:expression_location
         |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
-      in
-      let new_taint =
-        if increase_trace_length then
-          BackwardState.Tree.transform
-            Domains.TraceLength.Self
-            Map
-            ~f:TraceLength.increase
-            new_taint
-        else
-          new_taint
       in
       analyze_expression ~pyre_in_context ~taint:new_taint ~state:new_state ~expression
     in
@@ -2232,7 +2206,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       value
       BackwardState.Tree.pp
       taint;
-    let value = CallGraph.redirect_expressions ~pyre_in_context value in
+    let value = CallGraph.redirect_expressions ~pyre_in_context ~location value in
     match value with
     | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
     | BinaryOperator _ -> failwith "T101299882"
@@ -2314,6 +2288,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Starred (Starred.Twice expression) ->
         let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
         analyze_expression ~pyre_in_context ~taint ~state ~expression
+    | Slice _ ->
+        (* This case should be unreachable, fail if we hit it *)
+        failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
     | Subscript _ ->
         (* This case should be unreachable, fail if we hit it *)
         failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
@@ -2339,11 +2316,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          ~increase_trace_length:false
           {
             CallModel.StringFormatCall.nested_expressions = substrings;
             string_literal = { value = string_literal; location };
-            call_target = Some call_target;
+            call_target;
             location;
           }
     | Ternary { target; test; alternative } ->

@@ -10,16 +10,162 @@ open OUnit2
 open Analysis
 open Test
 
+let test_collected_names context =
+  let assert_collected_names ~expected source_text =
+    let source = parse ~handle:"test.py" source_text in
+    let actual =
+      Module.UnannotatedGlobal.raw_alist_of_source source |> List.map ~f:(fun (name, _) -> name)
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(String.concat ~sep:", ")
+      expected
+      actual
+  in
+
+  assert_collected_names {|
+       x = 1
+       y = 2
+       z = 3
+    |} ~expected:["x"; "y"; "z"];
+  assert_collected_names
+    {|
+      x, y = 1, 2
+      z[3] = 4
+      u, (v, w) = derp
+    |}
+    ~expected:["x"; "y"];
+  assert_collected_names
+    {|
+       def foo(): pass
+       def bar(): pass
+       def foo(): pass
+    |}
+    ~expected:["foo"; "bar"; "foo"];
+  assert_collected_names
+    {|
+       class Foo: pass
+       class Bar:
+         class Nested: pass
+       class Baz:
+         def foo(self): ...
+    |}
+    ~expected:["Foo"; "Bar"; "Baz"];
+  assert_collected_names
+    {|
+       import x
+       import y as z
+       from u.v import w
+       from a.b import c as d
+    |}
+    ~expected:["x"; "z"; "w"; "d"];
+  assert_collected_names
+    {|
+       if derp():
+         x = 1
+         z = 2
+       else:
+         x = 3
+         y = 4
+    |}
+    ~expected:["x"; "z"; "x"; "y"];
+  assert_collected_names
+    {|
+       try:
+         x = 1
+         z = 2
+       except:
+         y = 3
+    |}
+    ~expected:["x"; "z"; "y"];
+  assert_collected_names
+    {|
+       with derp():
+         x = 1
+         import y
+    |}
+    ~expected:["x"; "y"];
+  assert_collected_names {|
+       x, y, z = (1, 2, 3)
+    |} ~expected:["x"; "y"; "z"];
+  (* TODO(T191635350): Pyre's global scope analysis cannot handle nested target patterns. *)
+  assert_collected_names {|
+       x, (y, z) = (1, (2, 3))
+    |} ~expected:[];
+  ()
+
+
+let test_collected_imports context =
+  let assert_imports ~expected source_text =
+    let source = parse ~handle:"test.py" source_text in
+    let actual =
+      Module.UnannotatedGlobal.raw_alist_of_source source
+      |> List.filter_map ~f:(function
+             | name, Module.UnannotatedGlobal.Imported import -> Some (name, import)
+             | _ -> None)
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: (Ast.Identifier.t * Module.UnannotatedGlobal.import) list]
+      ~printer:(fun result ->
+        Sexp.to_string_hum
+          [%message (result : (Ast.Identifier.t * Module.UnannotatedGlobal.import) list)])
+      expected
+      actual
+  in
+  let open Module.UnannotatedGlobal in
+  assert_imports
+    "import foo"
+    ~expected:["foo", ImportModule { target = !&"foo"; implicit_alias = true }];
+  assert_imports
+    "import foo as bar"
+    ~expected:["bar", ImportModule { target = !&"foo"; implicit_alias = false }];
+  assert_imports
+    "import foo.bar"
+    ~expected:["foo", ImportModule { target = !&"foo.bar"; implicit_alias = true }];
+  assert_imports
+    "import foo.bar as baz"
+    ~expected:["baz", ImportModule { target = !&"foo.bar"; implicit_alias = false }];
+  assert_imports
+    "from foo import bar"
+    ~expected:["bar", ImportFrom { from = !&"foo"; target = "bar"; implicit_alias = true }];
+  assert_imports
+    "from foo import bar as baz"
+    ~expected:["baz", ImportFrom { from = !&"foo"; target = "bar"; implicit_alias = false }];
+  assert_imports
+    "from foo.bar import baz as qux"
+    ~expected:["qux", ImportFrom { from = !&"foo.bar"; target = "baz"; implicit_alias = false }];
+
+  assert_imports
+    "import a as b, c.d"
+    ~expected:
+      [
+        "b", ImportModule { target = !&"a"; implicit_alias = false };
+        "c", ImportModule { target = !&"c.d"; implicit_alias = true };
+      ];
+  assert_imports
+    "from a.b import c as d, e"
+    ~expected:
+      [
+        "d", ImportFrom { from = !&"a.b"; target = "c"; implicit_alias = false };
+        "e", ImportFrom { from = !&"a.b"; target = "e"; implicit_alias = true };
+      ];
+
+  assert_imports "from foo import *" ~expected:[];
+  ()
+
+
 let test_empty_stub _ =
-  assert_true (Module.create_for_testing ~stub:true |> Module.empty_stub);
-  assert_false (Module.create_for_testing ~stub:false |> Module.empty_stub)
+  assert_true (Module.Metadata.create_for_testing ~stub:true |> Module.Metadata.empty_stub);
+  assert_false (Module.Metadata.create_for_testing ~stub:false |> Module.Metadata.empty_stub)
 
 
 let test_exports context =
   let assert_exports ?(is_stub = false) ~expected source_text =
     let actual =
       let handle = if is_stub then "test.pyi" else "test.py" in
-      parse ~handle source_text |> Module.create |> Module.get_all_exports
+      parse ~handle source_text |> Module.Metadata.create |> Module.Metadata.get_all_exports
     in
     let expected = List.sort expected ~compare:[%compare: Ast.Identifier.t * Module.Export.t] in
     assert_equal
@@ -154,4 +300,12 @@ let test_exports context =
   ()
 
 
-let () = "module" >::: ["empty_stub" >:: test_empty_stub; "exports" >:: test_exports] |> Test.run
+let () =
+  "module"
+  >::: [
+         "collected_names" >:: test_collected_names;
+         "collected_imports" >:: test_collected_imports;
+         "empty_stub" >:: test_empty_stub;
+         "exports" >:: test_exports;
+       ]
+  |> Test.run

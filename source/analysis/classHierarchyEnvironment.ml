@@ -307,9 +307,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Fn.id
 
-  let overlay_owns_key unannotated_global_environment_overlay index =
-    key_to_trigger index
-    |> UnannotatedGlobalEnvironment.Overlay.owns_identifier unannotated_global_environment_overlay
+  let overlay_owns_key source_code_overlay index =
+    key_to_trigger index |> SourceCodeIncrementalApi.Overlay.owns_identifier source_code_overlay
 
 
   let equal_value = [%compare.equal: ClassHierarchy.Edges.t option]
@@ -324,15 +323,16 @@ module ReadOnly = struct
 
   let get_edges = get
 
+  let unannotated_global_environment read_only =
+    alias_environment read_only |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
+
+
   let outgoing_queries ?dependency read_only =
-    let unannotated_global_environment =
-      alias_environment read_only |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
-    in
     OutgoingDataComputation.Queries.
       {
         class_exists =
           UnannotatedGlobalEnvironment.ReadOnly.class_exists
-            unannotated_global_environment
+            (unannotated_global_environment read_only)
             ?dependency;
         get_edges = get_edges read_only ?dependency;
       }

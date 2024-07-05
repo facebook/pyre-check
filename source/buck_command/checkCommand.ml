@@ -58,16 +58,12 @@ let instantiate_error ~source_code_api ~lookup:{ Sourcedb.Lookup.get_source; _ }
 
 let compute_errors buck_based_source_code_api =
   let open Analysis in
-  let source_code_incremental_base =
-    BuckBasedSourceCodeApi.get_source_code_incremental_api buck_based_source_code_api
-  in
   let errors_environment =
-    {
-      UnannotatedGlobalEnvironment.CreateHandle.source_code_incremental_base;
-      maybe_ast_environment = None;
-    }
-    |> ErrorsEnvironment.create
-    |> ErrorsEnvironment.read_only
+    let source_code_environment =
+      BuckBasedSourceCodeApi.get_source_code_incremental_api buck_based_source_code_api
+      |> SourceCodeEnvironment.of_source_code_base
+    in
+    ErrorsEnvironment.create source_code_environment |> ErrorsEnvironment.read_only
   in
   let type_check_qualifiers =
     BuckBasedSourceCodeApi.get_type_check_qualifiers buck_based_source_code_api

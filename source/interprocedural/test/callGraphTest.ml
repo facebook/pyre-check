@@ -2169,9 +2169,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "7:18-7:23",
                  LocationCallees.Compound
@@ -3158,9 +3156,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "7:12-7:13",
                  LocationCallees.Singleton
@@ -3277,9 +3273,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "4:5-4:16",
                  LocationCallees.Singleton
@@ -3301,7 +3295,7 @@ let test_call_graph_of_define =
                            CallTarget.create
                              ~return_type:None
                              ~index:1
-                             Target.StringCombineArtificialTargets.format_string;
+                             Target.ArtificialTargets.format_string;
                          ])) );
              ]
            ();
@@ -3319,9 +3313,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "3:12-3:13",
                  LocationCallees.Singleton
@@ -3351,9 +3343,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "3:12-3:13",
                  LocationCallees.Singleton
@@ -3396,9 +3386,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                (* TODO(T112761296): Probably wrong call resolution. Expect an additional call
                   target. *)
@@ -3469,9 +3457,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "3:5-3:6",
                  LocationCallees.Singleton
@@ -3496,7 +3482,7 @@ let test_call_graph_of_define =
                            CallTarget.create
                              ~return_type:None
                              ~index:1
-                             Target.StringCombineArtificialTargets.format_string;
+                             Target.ArtificialTargets.format_string;
                          ])) );
                ( "4:5-4:12",
                  LocationCallees.Compound
@@ -3560,9 +3546,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "3:12-3:22",
                  LocationCallees.Singleton
@@ -3595,9 +3579,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "3:12-3:22",
                  LocationCallees.Singleton
@@ -3636,9 +3618,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "8:5-8:16",
                  LocationCallees.Compound
@@ -3693,9 +3673,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "6:5-6:16",
                  LocationCallees.Compound
@@ -5593,9 +5571,7 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "25:12-25:13",
                  LocationCallees.Singleton
@@ -5654,9 +5630,7 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_f_string_targets
                          [
-                           CallTarget.create
-                             ~return_type:None
-                             Target.StringCombineArtificialTargets.format_string;
+                           CallTarget.create ~return_type:None Target.ArtificialTargets.format_string;
                          ])) );
                ( "28:12-28:13",
                  LocationCallees.Singleton

@@ -66,11 +66,10 @@ let combine_weakened_types weakened_types =
 
 let undefined_field_mismatches
     ~location
-    ~expected_typed_dictionary:
-      { Type.Record.TypedDictionary.fields = expected_fields; name = class_name }
-    ~resolved_typed_dictionary:{ Type.Record.TypedDictionary.fields = resolved_fields; _ }
+    ~expected_typed_dictionary:{ Type.TypedDictionary.fields = expected_fields; name = class_name }
+    ~resolved_typed_dictionary:{ Type.TypedDictionary.fields = resolved_fields; _ }
   =
-  let make_undefined_field_mismatch { Type.Record.TypedDictionary.name; annotation = _; _ } =
+  let make_undefined_field_mismatch { Type.TypedDictionary.name; annotation = _; _ } =
     UndefinedField { field_name = name; class_name } |> Node.create ~location
   in
   let is_undefined_field field =
@@ -282,12 +281,12 @@ let rec weaken_mutable_literals
       |> Option.value ~default:(make_weakened_type resolved)
   | Some { Node.value = Expression.Dictionary entries; location }, _, Type.Primitive _
     when Dictionary.has_no_keywords entries -> (
-      let open Type.Record.TypedDictionary in
+      let open Type.TypedDictionary in
       match get_typed_dictionary expected with
       | Some ({ fields = expected_fields; name = expected_class_name } as expected_typed_dictionary)
         ->
           let find_matching_field ~name =
-            let matching_name ({ name = expected_name; _ } : Type.t typed_dictionary_field) =
+            let matching_name ({ name = expected_name; _ } : typed_dictionary_field) =
               String.equal name expected_name
             in
             List.find ~f:matching_name
@@ -298,7 +297,7 @@ let rec weaken_mutable_literals
                 let key = resolve key in
                 match key with
                 | Type.Literal (Type.String (Type.LiteralValue name)) ->
-                    let annotation, required =
+                    let { resolved; typed_dictionary_errors }, required =
                       let resolved = resolve value in
                       let relax { annotation; _ } =
                         if
@@ -322,13 +321,13 @@ let rec weaken_mutable_literals
                       >>| (fun field -> relax field, field.required)
                       |> Option.value ~default:(make_weakened_type resolved, true)
                     in
-                    Some { name; annotation; required }
+                    Some ({ name; annotation = resolved; required }, typed_dictionary_errors)
                 | _ -> None
               end
             | Splat _ -> None
           in
           let add_missing_fields_if_all_non_required sofar =
-            let is_missing ({ name; _ } : Type.t typed_dictionary_field) =
+            let is_missing ({ name; _ } : typed_dictionary_field) =
               Option.is_none (find_matching_field sofar ~name)
             in
             let missing_fields = List.filter expected_fields ~f:is_missing in
@@ -366,11 +365,11 @@ let rec weaken_mutable_literals
               let type_mismatches =
                 let make_type_mismatch
                     {
-                      Type.Record.TypedDictionary.name = expected_field_name;
+                      Type.TypedDictionary.name = expected_field_name;
                       annotation = expected_type;
                       _;
                     }
-                    { Type.Record.TypedDictionary.annotation = actual_type; required = _; _ }
+                    { Type.TypedDictionary.annotation = actual_type; required = _; _ }
                   =
                   FieldTypeMismatch
                     {
@@ -394,7 +393,7 @@ let rec weaken_mutable_literals
                   not (List.exists actual_fields ~f:(Type.TypedDictionary.same_name expected_field))
                 in
                 let make_missing_field_mismatch
-                    { Type.Record.TypedDictionary.name = field_name; required; _ }
+                    { Type.TypedDictionary.name = field_name; required; _ }
                   =
                   MissingRequiredField { field_name; class_name = expected_class_name }
                   |> Node.create ~location
@@ -408,15 +407,11 @@ let rec weaken_mutable_literals
                 resolved
           in
           let valid_field_or_typed_dictionary_error
-              {
-                name;
-                required;
-                annotation = { resolved; typed_dictionary_errors } as weakened_type;
-              }
+              (({ annotation; _ } as field), typed_dictionary_errors)
             =
             match typed_dictionary_errors with
-            | [] -> Ok { name; required; annotation = resolved }
-            | _ -> Error weakened_type
+            | [] -> Ok field
+            | _ -> Error { resolved = annotation; typed_dictionary_errors }
           in
           List.map entries ~f:resolve_entry
           |> Option.all

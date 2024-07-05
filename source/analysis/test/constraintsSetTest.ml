@@ -270,7 +270,7 @@ let make_assert_functions context =
         let parse_pair (variable, value) =
           match parse_annotation variable with
           | Type.Variable variable ->
-              Type.Variable.UnaryPair (variable, parse_annotation value |> postprocess)
+              Type.Variable.TypeVarPair (variable, parse_annotation value |> postprocess)
           | Type.Primitive primitive -> (
               let parse_parameters parameters =
                 match
@@ -287,12 +287,12 @@ let make_assert_functions context =
               in
               let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.get_type_alias global_resolution primitive with
-              | Some (Type.Alias.VariableAlias (ParameterVariadic variable)) ->
-                  Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
-              | Some (Type.Alias.VariableAlias (TupleVariadic variable)) -> (
+              | Some (Type.Alias.VariableAlias (ParamSpecVariable variable)) ->
+                  Type.Variable.ParamSpecPair (variable, parse_parameters value)
+              | Some (Type.Alias.VariableAlias (TypeVarTupleVariable variable)) -> (
                   match Type.Tuple (parse_ordered_types value) |> postprocess with
                   | Type.Tuple ordered_type ->
-                      Type.Variable.TupleVariadicPair (variable, ordered_type)
+                      Type.Variable.TypeVarTuplePair (variable, ordered_type)
                   | _ -> failwith "expected a tuple")
               | _ -> failwith "not available")
           | _ -> failwith "not a variable"
@@ -315,14 +315,14 @@ let make_assert_functions context =
           lower_bound
           >>| parse_annotation
           >>| postprocess
-          >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+          >>| (fun bound -> Type.Variable.TypeVarPair (variable, bound))
           >>| (fun pair -> OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
           |> Option.value ~default:sofar
         in
         upper_bound
         >>| parse_annotation
         >>| postprocess
-        >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+        >>| (fun bound -> Type.Variable.TypeVarPair (variable, bound))
         >>| (fun pair -> OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
         |> Option.value ~default:sofar
       in
@@ -346,7 +346,7 @@ let make_assert_functions context =
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
-      (TypeOrder.OrderedConstraintsSet.add
+      (TypeOrder.OrderedConstraintsSet.add_and_simplify
          [constraints]
          ~new_constraint:(LessOrEqual { left; right })
          ~order:handler
@@ -356,42 +356,42 @@ let make_assert_functions context =
     let parse_annotation = parse_annotation ~do_prep in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
     let left =
-      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
+      let mark_unary ({ Type.Variable.TypeVar.variable = name; _ } as variable) =
         if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
           None
         else
-          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
+          Some (Type.Variable (Type.Variable.TypeVar.mark_as_bound variable))
       in
       let mark_parameter_variadic variable =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.Parameters.name variable)
+            (Type.Variable.ParamSpec.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
-            (Type.Callable.ParameterVariadicTypeVariable
-               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
+            (Type.Callable.FromParamSpec
+               { head = []; variable = Type.Variable.ParamSpec.mark_as_bound variable })
       in
       let mark_tuple_variadic variable =
         if
           List.mem
             leave_unbound_in_left
-            (Type.Variable.Variadic.Tuple.name variable)
+            (Type.Variable.TypeVarTuple.name variable)
             ~equal:Identifier.equal
         then
           None
         else
           Some
-            (Type.Variable.Variadic.Tuple.self_reference
-               (Type.Variable.Variadic.Tuple.mark_as_bound variable))
+            (Type.Variable.TypeVarTuple.self_reference
+               (Type.Variable.TypeVarTuple.mark_as_bound variable))
       in
       parse_annotation left
-      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
-      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
-      |> Type.Variable.GlobalTransforms.TupleVariadic.replace_all mark_tuple_variadic
+      |> Type.Variable.GlobalTransforms.TypeVar.replace_all mark_unary
+      |> Type.Variable.GlobalTransforms.ParamSpec.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.TypeVarTuple.replace_all mark_tuple_variadic
     in
     let right = parse_annotation right in
     assert_less_or_equal_direct ~left ~right ~do_prep
@@ -947,9 +947,8 @@ let test_add_constraint context =
     ~expected_solutions:[]
     ();
 
-  let { Type.Variable.Variadic.Parameters.Components.positional_component; keyword_component } =
-    Type.Variable.Variadic.Parameters.create "TParams"
-    |> Type.Variable.Variadic.Parameters.decompose
+  let { Type.Variable.ParamSpec.Components.positional_component; keyword_component } =
+    Type.Variable.ParamSpec.create "TParams" |> Type.Variable.ParamSpec.decompose
   in
 
   assert_less_or_equal_direct
@@ -1194,8 +1193,8 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, bool, typing.Unpack[Ts2], bool, str]"
     ~expected_solutions:[]
     ();
-  let variadic = Type.Variable.Variadic.Tuple.create "test.Ts" in
-  let variadic2 = Type.Variable.Variadic.Tuple.create "test.Ts2" in
+  let variadic = Type.Variable.TypeVarTuple.create "test.Ts" in
+  let variadic2 = Type.Variable.TypeVarTuple.create "test.Ts2" in
   assert_less_or_equal_direct
     ~left:
       (Type.Tuple
@@ -1527,9 +1526,7 @@ let test_instantiate_protocol_parameters context =
       |> GlobalResolution.parse_annotation resolution ~validation:NoValidation
     in
     let optional_ordered_types_printer optional =
-      optional
-      >>| Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp)
-      |> Option.value ~default:"None"
+      optional >>| Format.asprintf "%a" Type.Parameter.pp_list |> Option.value ~default:"None"
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =
@@ -1739,7 +1736,7 @@ let test_mark_escaped_as_escaped context =
         metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
       }
     in
-    TypeOrder.OrderedConstraintsSet.add
+    TypeOrder.OrderedConstraintsSet.add_and_simplify
       ConstraintsSet.empty
       ~new_constraint:(LessOrEqual { left; right })
       ~order

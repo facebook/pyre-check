@@ -221,6 +221,20 @@ end = struct
     | Twice of Expression.t
 end
 
+and Slice : sig
+  type t = {
+    start: Expression.t option;
+    stop: Expression.t option;
+    step: Expression.t option;
+  }
+end = struct
+  type t = {
+    start: Expression.t option;
+    stop: Expression.t option;
+    step: Expression.t option;
+  }
+end
+
 and Subscript : sig
   type t = {
     base: Expression.t;
@@ -290,6 +304,7 @@ and Expression : sig
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
+    | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
     | Ternary of Ternary.t
@@ -319,6 +334,7 @@ end = struct
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
+    | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
     | Ternary of Ternary.t

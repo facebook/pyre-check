@@ -861,32 +861,16 @@ let test_call_locations =
                                 node
                                   ~start:(1, 2)
                                   ~stop:(1, 4)
-                                  (Expression.Call
+                                  (Expression.Slice
                                      {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 4)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value =
-                                               node
-                                                 ~start:(1, 3)
-                                                 ~stop:(1, 4)
-                                                 (Expression.Constant (Constant.Integer 1));
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                         ];
+                                       Slice.start = None;
+                                       stop =
+                                         Some
+                                           (node
+                                              ~start:(1, 3)
+                                              ~stop:(1, 4)
+                                              (Expression.Constant (Constant.Integer 1)));
+                                       step = None;
                                      });
                             })));
                ];
@@ -913,32 +897,16 @@ let test_call_locations =
                                 node
                                   ~start:(1, 2)
                                   ~stop:(1, 5)
-                                  (Expression.Call
+                                  (Expression.Slice
                                      {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 5)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value =
-                                               node
-                                                 ~start:(1, 4)
-                                                 ~stop:(1, 5)
-                                                 (Expression.Constant (Constant.Integer 2));
-                                           };
-                                         ];
+                                       Slice.start = None;
+                                       stop = None;
+                                       step =
+                                         Some
+                                           (node
+                                              ~start:(1, 4)
+                                              ~stop:(1, 5)
+                                              (Expression.Constant (Constant.Integer 2)));
                                      });
                             })));
                ];
@@ -965,29 +933,7 @@ let test_call_locations =
                                 node
                                   ~start:(1, 2)
                                   ~stop:(1, 3)
-                                  (Expression.Call
-                                     {
-                                       Call.callee =
-                                         node
-                                           ~start:(1, 2)
-                                           ~stop:(1, 3)
-                                           (Expression.Name (Name.Identifier "slice"));
-                                       arguments =
-                                         [
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                           {
-                                             Call.Argument.name = None;
-                                             value = +Expression.Constant Constant.NoneLiteral;
-                                           };
-                                         ];
-                                     });
+                                  (Expression.Slice { Slice.start = None; stop = None; step = None });
                             })));
                ];
       ]

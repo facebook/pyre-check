@@ -59,7 +59,7 @@ let assert_taint ~context source expected =
         ~call_graph_of_define
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
-        ~triggered_sinks:(Issue.TriggeredSinkLocationMap.create ())
+        ~triggered_sinks:(Issue.TriggeredSinkForBackward.create ())
         ()
     in
     let model = { Model.empty_model with backward } in

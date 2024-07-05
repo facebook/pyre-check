@@ -43,12 +43,12 @@ val distribute_union_over_parametric
 
 val weaken_mutable_literals
   :  resolve:(Expression.expression Node.t -> Type.t) ->
-  get_typed_dictionary:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+  get_typed_dictionary:(Type.t -> Type.TypedDictionary.t option) ->
   expression:Expression.expression Node.t option ->
   resolved:Type.t ->
   expected:Type.t ->
   comparator:
-    (get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+    (get_typed_dictionary_override:(Type.t -> Type.TypedDictionary.t option) ->
     left:Type.t ->
     right:Type.t ->
     bool) ->

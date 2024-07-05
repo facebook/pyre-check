@@ -16,14 +16,14 @@ module Sibling = struct
     type t =
       | Overload
       | PropertySetter
-    [@@deriving sexp, compare]
+    [@@deriving sexp, equal, compare]
   end
 
   type t = {
     kind: Kind.t;
     body: Define.t Node.t;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 end
 
 type t = {
@@ -31,7 +31,7 @@ type t = {
   body: Define.t Node.t option;
   siblings: Sibling.t list;
 }
-[@@deriving sexp, compare]
+[@@deriving sexp, equal, compare]
 
 let all_bodies { body; siblings; _ } =
   let sibling_bodies = List.map siblings ~f:(fun { Sibling.body; _ } -> body) in

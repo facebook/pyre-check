@@ -174,7 +174,7 @@ let test_local_update_request context =
                      content = Some "reveal_type(43)\nreveal_type(44)";
                      client_id = client_foo;
                    }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:2;
         ScratchProject.ClientConnection.assert_error_response
@@ -194,7 +194,7 @@ let test_local_update_request context =
                      content = Some "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
                      client_id = client_foo;
                    }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:3;
         ScratchProject.ClientConnection.assert_response
@@ -207,7 +207,7 @@ let test_local_update_request context =
                      content = Some "reveal_type(43)\nreveal_type(44)";
                      client_id = client_bar;
                    }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:2;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:3;
         ScratchProject.ClientConnection.assert_response
@@ -215,14 +215,14 @@ let test_local_update_request context =
             Request.(
               Command
                 (Command.LocalUpdate { path = test_path; content = None; client_id = client_foo }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:1;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command
                 (Command.LocalUpdate { path = test_path; content = None; client_id = client_bar }))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
         close_file ~path:test_path ~client_id:client_foo;
         close_file ~path:test_path ~client_id:client_bar;
@@ -262,7 +262,7 @@ let test_file_update_request context =
               Command
                 (Command.FileUpdate
                    [FileUpdateEvent.{ kind = Kind.Deleted; path = PyrePath.absolute test_path }]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
@@ -286,7 +286,7 @@ let test_file_update_request context =
                      FileUpdateEvent.
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         open_file ~client_id ~path:(PyrePath.absolute test2_path);
         assert_type_error_count_for_path ~path:(PyrePath.absolute test2_path) ~client_id ~expected:2;
         close_file ~client_id ~path:(PyrePath.absolute test2_path);
@@ -332,7 +332,7 @@ let test_file_and_local_update context =
                      FileUpdateEvent.
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
-          ~expected:Response.Ok;
+          ~expected:Response.Ok_;
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:0;
         close_file ~path:(PyrePath.absolute test_path) ~client_id;
         close_file ~path:(PyrePath.absolute test2_path) ~client_id;
@@ -795,6 +795,11 @@ let test_watchman_failure context =
   | Watchman.SubscriptionError _ -> Lwt.return_unit
 
 
+let test_response_ok_repr _context =
+  assert_equal ~printer:Fun.id "[\"Ok\"]" (Yojson.Safe.to_string (Response.to_yojson Response.Ok_));
+  Lwt.return_unit
+
+
 let ( >:: ) name test = name >:: OUnitLwt.lwt_wrapper test
 
 let () =
@@ -817,5 +822,6 @@ let () =
          "superclasses" >:: test_superclasses;
          "watchman_integration" >:: test_watchman_integration;
          "watchman_failure" >:: test_watchman_failure;
+         "response_ok_repr" >:: test_response_ok_repr;
        ]
   |> Test.run

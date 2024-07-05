@@ -143,7 +143,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "some_argument"; annotation = Type.string; default = false },
               [
@@ -189,7 +189,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
               [
@@ -238,7 +238,10 @@ let test_get_parameter_argument_mapping _ =
         position = 1;
       };
     ]
-    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+    {
+      parameter_argument_mapping = CallableParamType.Map.empty;
+      reasons = { arity = []; annotation = [] };
+    };
   (* TODO(T107236583): We should raise an error about the extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[], None]"
@@ -258,7 +261,7 @@ let test_get_parameter_argument_mapping _ =
       };
     ]
     {
-      parameter_argument_mapping = Parameter.Map.empty;
+      parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
           arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
@@ -291,7 +294,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Variable (Concrete Type.integer),
               [
@@ -339,7 +342,7 @@ let test_get_parameter_argument_mapping _ =
       };
     ]
     {
-      parameter_argument_mapping = Parameter.Map.empty;
+      parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
           arity = [SignatureSelectionTypes.TooManyArguments { expected = 1; provided = 3 }];
@@ -358,7 +361,10 @@ let test_get_parameter_argument_mapping _ =
         position = 1;
       };
     ]
-    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+    {
+      parameter_argument_mapping = CallableParamType.Map.empty;
+      reasons = { arity = []; annotation = [] };
+    };
   (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Keywords(int)], None]"
@@ -377,7 +383,10 @@ let test_get_parameter_argument_mapping _ =
         position = 2;
       };
     ]
-    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+    {
+      parameter_argument_mapping = CallableParamType.Map.empty;
+      reasons = { arity = []; annotation = [] };
+    };
   (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[KeywordOnly(x, int)], None]"
@@ -392,7 +401,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [KeywordOnly { name = "x"; annotation = Type.integer; default = false }, []];
       reasons = { arity = []; annotation = [] };
     };
@@ -415,7 +424,7 @@ let test_get_parameter_argument_mapping _ =
       };
     ]
     {
-      parameter_argument_mapping = Parameter.Map.empty;
+      parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
           arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
@@ -437,7 +446,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
@@ -474,7 +483,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
@@ -526,7 +535,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
@@ -571,7 +580,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
@@ -616,7 +625,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
@@ -666,7 +675,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
@@ -717,7 +726,7 @@ let test_get_parameter_argument_mapping _ =
     ]
     {
       parameter_argument_mapping =
-        Parameter.Map.of_alist_exn
+        CallableParamType.Map.of_alist_exn
           [
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
@@ -812,7 +821,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concrete Type.integer),
                 [
@@ -844,7 +853,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Named { name = "x"; annotation = Type.string; default = false },
                 [
@@ -889,7 +898,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
@@ -935,7 +944,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
@@ -997,7 +1006,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concatenation tuple_int_unbounded_int),
                 [
@@ -1019,7 +1028,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concatenation tuple_int_unbounded_int),
                 [
@@ -1062,7 +1071,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concatenation tuple_int_unbounded_int),
                 [
@@ -1117,7 +1126,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concatenation tuple_unbounded_int),
                 [
@@ -1157,7 +1166,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concatenation tuple_unbounded_int),
                 [
@@ -1197,7 +1206,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concrete Type.integer),
                 [
@@ -1219,7 +1228,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Variable (Concrete Type.object_primitive),
                 [
@@ -1227,8 +1236,8 @@ let test_check_arguments_against_parameters context =
                     ~index_into_starred_tuple:0
                     {
                       Argument.WithPosition.resolved =
-                        (Type.Variable.Variadic.Parameters.create "P"
-                        |> Type.Variable.Variadic.Parameters.decompose
+                        (Type.Variable.ParamSpec.create "P"
+                        |> Type.Variable.ParamSpec.decompose
                         |> fun { positional_component; _ } -> positional_component);
                       kind = SingleStar;
                       expression = None;
@@ -1244,7 +1253,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
@@ -1291,7 +1300,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
@@ -1332,7 +1341,7 @@ let test_check_arguments_against_parameters context =
     ~expected_reasons:
       { arity = [SignatureSelectionTypes.MissingArgument (PositionalOnly 2)]; annotation = [] }
     [TypeConstraints.empty];
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let ordered_type_int_variadic =
     Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic
   in
@@ -1342,7 +1351,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
@@ -1418,7 +1427,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
@@ -1471,7 +1480,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
@@ -1530,7 +1539,7 @@ let test_check_arguments_against_parameters context =
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
-          Parameter.Map.of_alist_exn
+          CallableParamType.Map.of_alist_exn
             [
               ( PositionalOnly { index = 0; annotation = Type.integer; default = true },
                 [
@@ -1696,7 +1705,7 @@ let test_most_important_error_reason _ =
 
 
 let () =
-  "attributeResolution"
+  Test.sanitized_module_name __MODULE__
   >::: [
          "prepare_arguments" >:: test_prepare_arguments_for_signature_selection;
          "parameter_argument_mapping" >:: test_get_parameter_argument_mapping;

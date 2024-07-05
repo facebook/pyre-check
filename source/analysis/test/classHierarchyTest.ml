@@ -215,7 +215,7 @@ let test_to_dot _ =
 
 
 let test_type_parameters_as_variables _ =
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
@@ -235,11 +235,13 @@ let test_type_parameters_as_variables _ =
     assert_equal expected (type_parameters_as_variables order source)
   in
   assert_type_parameters_as_variables ~expected:None "B";
-  assert_type_parameters_as_variables ~expected:(Some [Unary (Type.Variable.Unary.create "T")]) "A";
+  assert_type_parameters_as_variables
+    ~expected:(Some [TypeVarVariable (Type.Variable.TypeVar.create "T")])
+    "A";
 
   assert_type_parameters_as_variables ~expected:None "Nonexistent";
   assert_type_parameters_as_variables
-    ~expected:(Some [TupleVariadic (Type.Variable.Variadic.Tuple.create "Ts")])
+    ~expected:(Some [TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "Ts")])
     "Tensor";
   ()
 
@@ -353,8 +355,7 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
       ];
   insert order "ChildClassParametricOnParamSpec";
   connect
@@ -364,8 +365,7 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
       ];
   connect
     order
@@ -374,8 +374,7 @@ let variadic_order =
     ~parameters:
       [
         CallableParameters
-          (Type.Variable.Variadic.Parameters.self_reference
-             (Type.Variable.Variadic.Parameters.create "TParams"));
+          (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
       ];
   insert order "ConcreteChildClassParametricOnParamSpec";
   connect
@@ -384,7 +383,7 @@ let variadic_order =
     ~successor:"ClassParametricOnParamSpec"
     ~parameters:[Single Type.integer];
 
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let variadic_parameter =
     Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
   in
@@ -400,7 +399,7 @@ let variadic_order =
     order
     ~predecessor:"DTypedTensor"
     ~successor:"typing.Generic"
-    ~parameters:[Single (Type.Variable (Type.Variable.Unary.create "DType")); variadic_parameter];
+    ~parameters:[Single (Type.Variable (Type.Variable.TypeVar.create "DType")); variadic_parameter];
   insert order "IntTensor";
   connect
     order
@@ -528,7 +527,7 @@ let test_instantiate_successors_parameters _ =
        ~source:(Type.parametric "IntTensor" ![Type.literal_integer 1; Type.literal_integer 2])
        ~target:"DTypedTensor")
     (Some ![Type.integer; Type.literal_integer 1; Type.literal_integer 2]);
-  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let variadic_parameter =
     Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
   in

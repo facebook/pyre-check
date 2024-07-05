@@ -27,49 +27,6 @@ open Core
 open Ast
 open Pyre
 
-let wildcard_exports_of ({ Source.module_path; _ } as source) =
-  let open Expression in
-  let open UnannotatedGlobal in
-  let extract_dunder_all = function
-    | {
-        Collector.Result.name = "__all__";
-        unannotated_global =
-          SimpleAssign { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ };
-      } ->
-        let to_identifier = function
-          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
-              Some name
-          | _ -> None
-        in
-        Some (List.filter_map ~f:to_identifier names)
-    | _ -> None
-  in
-  let unannotated_globals = Collector.from_source source in
-  match List.find_map unannotated_globals ~f:extract_dunder_all with
-  | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
-  | _ ->
-      let unannotated_globals =
-        (* Stubs have a slightly different rule with re-export *)
-        let filter_unaliased_import = function
-          | {
-              Collector.Result.unannotated_global =
-                Imported
-                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
-              _;
-            } ->
-              not implicit_alias
-          | _ -> true
-        in
-        if ModulePath.is_stub module_path then
-          List.filter unannotated_globals ~f:filter_unaliased_import
-        else
-          unannotated_globals
-      in
-      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
-      |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
-      |> List.dedup_and_sort ~compare:Identifier.compare
-
-
 let expand_wildcard_imports ~parse_result_of_qualifier source =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
@@ -108,7 +65,8 @@ let expand_wildcard_imports ~parse_result_of_qualifier source =
                   | Some (Result.Error _) ->
                       ()
                   | Some (Result.Ok source) ->
-                      wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
+                      Module.wildcard_exports_of_raw_source source
+                      |> List.iter ~f:(Hash_set.add transitive_exports);
                       Visitor.visit [] source |> Queue.enqueue_all worklist)
             in
             search_wildcard_imports ()

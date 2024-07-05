@@ -298,6 +298,7 @@ val call_graph_of_define
 
 val redirect_expressions
   :  pyre_in_context:PyrePysaApi.InContext.t ->
+  location:Location.t ->
   Expression.expression ->
   Expression.expression
 

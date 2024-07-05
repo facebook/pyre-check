@@ -47,7 +47,7 @@ val module_exists : t -> Reference.t -> bool
 
 val class_exists : t -> Type.Primitive.t -> bool
 
-val get_module_metadata : t -> Reference.t -> Module.t option
+val get_module_metadata : t -> Reference.t -> Module.Metadata.t option
 
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
@@ -70,7 +70,7 @@ val parse_as_parameter_specification_instance_annotation
   :  t ->
   variable_parameter_annotation:Expression.t ->
   keywords_parameter_annotation:Expression.t ->
-  Type.Variable.Variadic.Parameters.t option
+  Type.Variable.ParamSpec.t option
 
 val immediate_parents : t -> Type.Primitive.t -> string list
 
@@ -104,11 +104,11 @@ val parse_annotation
 
 val global : t -> Reference.t -> AttributeResolution.Global.t option
 
-val get_typed_dictionary : t -> Type.t -> Type.t Type.Record.TypedDictionary.record option
+val get_typed_dictionary : t -> Type.t -> Type.TypedDictionary.t option
 
 val constraints_solution_exists
   :  t ->
-  get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+  get_typed_dictionary_override:(Type.t -> Type.TypedDictionary.t option) ->
   left:Type.t ->
   right:Type.t ->
   bool
@@ -164,7 +164,7 @@ val resolve_define
 val signature_select
   :  t ->
   resolve_with_locals:
-    (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
+    (locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.expression Node.t -> Type.t) ->
   arguments:Type.t AttributeResolution.Argument.t list ->
   location:Location.t ->
   callable:Type.Callable.t ->
@@ -202,8 +202,6 @@ val join : t -> Type.t -> Type.t -> Type.t
 val meet : t -> Type.t -> Type.t -> Type.t
 
 val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
-
-val less_or_equal_either_way : t -> Type.t -> Type.t -> bool
 
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
@@ -248,4 +246,4 @@ val nonvalidating_annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val overrides : t -> Type.Primitive.t -> name:Identifier.t -> AnnotatedAttribute.instantiated option
 
-val refine : t -> Annotation.t -> Type.t -> Annotation.t
+val refine : t -> TypeInfo.Unit.t -> Type.t -> TypeInfo.Unit.t

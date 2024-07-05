@@ -15,8 +15,11 @@ let start () = Mtime_clock.counter ()
 
 let stop counter = Mtime_clock.count counter
 
-let stop_in_sec counter = stop counter |> Mtime.Span.to_s
+let stop_in_us counter =
+  let ns = Mtime.Span.to_uint64_ns (stop counter) in
+  Int64.(to_int_trunc (ns / 1000L))
 
-let stop_in_ms counter = stop counter |> Mtime.Span.to_ms |> Int.of_float
 
-let stop_in_us counter = stop counter |> Mtime.Span.to_us |> Int.of_float
+let stop_in_ms counter = stop_in_us counter / 1000
+
+let stop_in_sec counter = Float.of_int (stop_in_ms counter) /. 1000.

@@ -111,7 +111,10 @@ let test_create_overload context =
       Type.Callable.annotation = Type.none;
       parameters =
         Type.Callable.Defined
-          [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
+          [
+            Type.Callable.CallableParamType.Named
+              { name = "x"; default = false; annotation = Type.integer };
+          ];
     };
   assert_overload
     {|
@@ -123,9 +126,10 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.PositionalOnly
+            Type.Callable.CallableParamType.PositionalOnly
               { index = 0; default = false; annotation = Type.integer };
-            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+            Type.Callable.CallableParamType.Named
+              { name = "y"; default = false; annotation = Type.string };
           ];
     };
   assert_overload
@@ -141,9 +145,10 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.Named
+            Type.Callable.CallableParamType.Named
               { name = "x"; default = false; annotation = Type.Primitive "test.C" };
-            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+            Type.Callable.CallableParamType.Named
+              { name = "y"; default = false; annotation = Type.string };
           ];
     };
   assert_overload
@@ -161,13 +166,14 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.Named
+            Type.Callable.CallableParamType.Named
               {
                 name = "x";
                 default = false;
                 annotation = Type.parametric "test.C" [Single (Type.variable "test.T")];
               };
-            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+            Type.Callable.CallableParamType.Named
+              { name = "y"; default = false; annotation = Type.string };
           ];
     };
   assert_overload
@@ -184,9 +190,10 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.Named
+            Type.Callable.CallableParamType.Named
               { name = "x"; default = false; annotation = Type.meta (Primitive "test.C") };
-            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+            Type.Callable.CallableParamType.Named
+              { name = "y"; default = false; annotation = Type.string };
           ];
     };
   assert_overload
@@ -203,8 +210,10 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.Top };
-            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+            Type.Callable.CallableParamType.Named
+              { name = "x"; default = false; annotation = Type.Top };
+            Type.Callable.CallableParamType.Named
+              { name = "y"; default = false; annotation = Type.string };
           ];
     };
   ()

@@ -64,6 +64,15 @@ def format_string_issue():
     f"{query}{user_controlled}{x}"
 
 
+def format_string_no_issue_when_single_sink_parameter():
+    if 1 == 1:
+        x: str = "SELECT"
+    else:
+        x = user_controlled_input()
+    # Should not see an issue here
+    f"{x}"
+
+
 def format_string_triggered_user_controlled(arg):
     query: str = "SELECT"
     f"{query}{arg}"
@@ -103,6 +112,15 @@ def nested_stradd_and_fstring():
 def stradd_triggered_user_controlled(arg):
     x: str = user_controlled_input()
     x + arg.f  # The triggered sink should be on arg.f, not arg
+
+
+def tito(x: str) -> str:
+    return x
+
+
+def stradd_tito_triggered_user_controlled(arg):
+    x: str = user_controlled_input()
+    x + tito(arg.f)  # Should see a triggered sink on arg.f
 
 
 def test_large_string_add():
