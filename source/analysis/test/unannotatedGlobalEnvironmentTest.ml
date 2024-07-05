@@ -897,16 +897,29 @@ let assert_update
     |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
     |> List.to_string ~f:SharedMemoryKeys.show_dependency
   in
-  let expected_triggers = SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers in
+  let expected_trigger_set =
+    SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
+  in
+  let actual_downstream_trigger_set =
+    let fold_trigger_set sofar triggered =
+      let fold_one registered sofar =
+        match SharedMemoryKeys.DependencyKey.get_key registered with
+        | WildcardImport _ -> sofar
+        | _ -> SharedMemoryKeys.DependencyKey.RegisteredSet.add registered sofar
+      in
+      SharedMemoryKeys.DependencyKey.RegisteredSet.fold fold_one triggered sofar
+    in
+    List.fold
+      ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
+      ~f:fold_trigger_set
+      (UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result)
+  in
   post_queries_with_expectations >>| List.iter ~f:execute_action |> Option.value ~default:();
   assert_equal
     ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
     ~printer
-    expected_triggers
-    (UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
-    |> List.fold
-         ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
-         ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union)
+    expected_trigger_set
+    actual_downstream_trigger_set
 
 
 let type_check_dependency =
@@ -1046,7 +1059,7 @@ let test_get_class_summary =
           x: str
       |})]
            ~middle_queries_with_expectations:[`Get ("test.Missing", dependency, None)]
-           ~expected_triggers:[];
+           ~expected_triggers:[dependency];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -1151,7 +1164,7 @@ let test_get_class_summary =
                  );
              ]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)]
-           ~expected_triggers:[]
+           ~expected_triggers:[dependency]
            ~post_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)];
     ]
 
@@ -1208,7 +1221,7 @@ let test_class_exists_and_all_classes =
           x: str
       |})]
            ~middle_queries_with_expectations:[`Mem ("test.Foo", dependency, true)]
-           ~expected_triggers:[];
+           ~expected_triggers:[dependency];
       (* all_classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -1358,7 +1371,7 @@ let test_get_unannotated_global =
                  );
              ]
              (* Location insensitive *)
-           ~expected_triggers:[]
+           ~expected_triggers:[dependency]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1632,7 +1645,7 @@ let test_get_unannotated_global =
                                   (Expression.Constant Constant.NoneLiteral)));
                         ]) );
              ]
-           ~expected_triggers:[]
+           ~expected_triggers:[dependency]
            ~post_queries_with_expectations:
              [
                `Global
@@ -2644,7 +2657,7 @@ let test_get_define_names_for_qualifier_in_project =
       |});
              ]
            ~middle_queries_with_expectations:[`GetDefineNames (!&"test", dependency, 2)]
-           ~expected_triggers:[]
+           ~expected_triggers:[dependency]
            ~post_queries_with_expectations:[`GetDefineNames (!&"test", dependency, 2)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -2789,7 +2802,11 @@ let create_overlay_test_functions ~project ~parent ~environment =
       UnannotatedGlobalEnvironment.Overlay.update_overlaid_code environment ~code_updates
       |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
     in
-    assert_equal ~cmp:[%equal: Reference.t list] expected invalidated_modules
+    assert_equal
+      ~printer:[%show: Reference.t list]
+      ~cmp:[%equal: Reference.t list]
+      expected
+      invalidated_modules
   in
   assert_values_are_overlaid, assert_values_not_overlaid, update_and_assert_invalidated_modules
 
@@ -2908,6 +2925,7 @@ let test_overlay_update_filters context =
   assert_global ~exists:false !&"in_overlay_dependent.z";
   assert_global ~exists:true !&"not_in_overlay.x";
   assert_global ~exists:false !&"not_in_overlay.y";
+  assert_global ~exists:false !&"not_in_overlay.z";
   (* Run the second update *)
   update_and_assert_invalidated_modules
     [
@@ -2921,6 +2939,7 @@ let test_overlay_update_filters context =
   assert_global ~exists:true !&"in_overlay_dependent.z";
   assert_global ~exists:true !&"not_in_overlay.x";
   assert_global ~exists:false !&"not_in_overlay.y";
+  assert_global ~exists:false !&"not_in_overlay.z";
   ()
 
 

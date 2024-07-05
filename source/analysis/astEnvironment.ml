@@ -29,22 +29,6 @@ open Core
 module ReadOnly = struct
   include SourceCodeIncrementalApi.ReadOnly
 
-  (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
-     `update`. No need to explicitly record the dependency. But we do need to record all other
-     modules used *)
-  let filter_dependency ~track_dependencies ~qualifier ~dependency =
-    if not track_dependencies then
-      None
-    else
-      match Option.map dependency ~f:SharedMemoryKeys.DependencyKey.get_key with
-      | Some (SharedMemoryKeys.WildcardImport wildcard_qualifier)
-        when Reference.equal qualifier wildcard_qualifier ->
-          None
-      | Some _
-      | None ->
-          dependency
-
-
   let source_code_api_of_optional_dependency
       ~module_tracker
       ~get_parse_result_of_qualifier
@@ -53,10 +37,7 @@ module ReadOnly = struct
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let track_dependencies = EnvironmentControls.track_dependencies controls in
     let dependency = if track_dependencies then dependency else None in
-    let parse_result_of_qualifier qualifier =
-      let dependency = filter_dependency ~track_dependencies ~qualifier ~dependency in
-      get_parse_result_of_qualifier ?dependency qualifier
-    in
+    let parse_result_of_qualifier qualifier = get_parse_result_of_qualifier ?dependency qualifier in
     SourceCodeApi.create
       ~controls
       ~look_up_qualifier:(ModuleTracker.ReadOnly.look_up_qualifier module_tracker)
@@ -219,21 +200,25 @@ module FromReadOnlyUpstream = struct
             ~scheduler)
     in
     let triggered_dependencies, invalidated_modules =
+      (* WildcardImport dependencies are tracked as invalidated modules as well. *)
       let fold_key registered (triggered_dependencies, invalidated_modules) =
-        (* WildcardImport dependencies should be handled internally by converting them
-         * to invalidated_modules, which UnannotatedGlobalEnvironment will load. Other dependencies
-         * should be forwarded to later environments. *)
         match SharedMemoryKeys.DependencyKey.get_key registered with
         | SharedMemoryKeys.WildcardImport qualifier ->
-            triggered_dependencies, RawSources.KeySet.add qualifier invalidated_modules
+            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
+              RawSources.KeySet.add qualifier invalidated_modules )
         | _ ->
             ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
               invalidated_modules )
       in
+      let register_wildcard qualifier =
+        SharedMemoryKeys.WildcardImport qualifier
+        |> SharedMemoryKeys.DependencyKey.Registry.register
+      in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold
         fold_key
         raw_source_dependencies
-        ( SharedMemoryKeys.DependencyKey.RegisteredSet.empty,
+        ( List.map invalidated_modules_before_preprocessing ~f:register_wildcard
+          |> SharedMemoryKeys.DependencyKey.RegisteredSet.of_list,
           RawSources.KeySet.of_list invalidated_modules_before_preprocessing )
     in
     SourceCodeIncrementalApi.UpdateResult.create
@@ -262,12 +247,26 @@ module OverlayImplementation = struct
 
   let owns_qualifier { module_tracker; _ } = ModuleTracker.Overlay.owns_qualifier module_tracker
 
-  let update_overlaid_code { module_tracker; from_read_only_upstream; _ } ~code_updates =
-    (* No ownership filtering is needed, since raw sources correspond 1:1 with raw code. *)
-    ModuleTracker.Overlay.update_overlaid_code module_tracker ~code_updates
-    |> FromReadOnlyUpstream.process_module_updates
-         ~scheduler:(Scheduler.create_sequential ())
-         from_read_only_upstream
+  let update_overlaid_code ({ module_tracker; from_read_only_upstream; _ } as overlay) ~code_updates
+    =
+    (* No ownership filtering of upstream update is needed, since raw sources correspond 1:1 with
+       raw code. *)
+    let raw_update_result =
+      ModuleTracker.Overlay.update_overlaid_code module_tracker ~code_updates
+      |> FromReadOnlyUpstream.process_module_updates
+           ~scheduler:(Scheduler.create_sequential ())
+           from_read_only_upstream
+    in
+    (* Filter the invalidated modules, to prevent wildcard imports that aren't in the overlay from
+       being treated as invalidated.
+
+       If we do not filter, then the overlay update result may include type errors on modules that
+       are not part of the overlay. *)
+    let invalidated_modules =
+      SourceCodeIncrementalApi.UpdateResult.invalidated_modules raw_update_result
+      |> List.filter ~f:(owns_qualifier overlay)
+    in
+    { raw_update_result with invalidated_modules }
 
 
   let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =

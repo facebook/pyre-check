@@ -53,7 +53,6 @@ open Core
 open Pyre
 open Ast
 open Statement
-open SharedMemoryKeys
 
 module IncomingDataComputation = struct
   module Queries = struct
@@ -75,51 +74,75 @@ end
 
 module OutgoingDataComputation = struct
   module Queries = struct
-    type t = {
-      class_exists: string -> bool;
-      get_define_names_for_qualifier_in_project: Reference.t -> Reference.t list;
-      get_class_summary: string -> ClassSummary.t Node.t option;
-      get_unannotated_global: Reference.t -> Module.UnannotatedGlobal.t option;
-      get_function_definition_in_project: Reference.t -> FunctionDefinition.t option;
-      get_module_metadata: Reference.t -> Module.Metadata.t option;
-      module_exists: Reference.t -> bool;
-    }
+    type t = { get_module_components: Reference.t -> Module.Components.t option }
   end
 
-  let get_define_names_for_qualifier_in_project
-      Queries.{ get_define_names_for_qualifier_in_project; _ }
-    =
-    get_define_names_for_qualifier_in_project
+  let get_module_components { Queries.get_module_components; _ } = get_module_components
+
+  let module_exists queries qualifier = get_module_components queries qualifier |> Option.is_some
+
+  let get_module_metadata queries qualifier =
+    get_module_components queries qualifier
+    >>| fun { Module.Components.module_metadata; _ } -> module_metadata
 
 
-  let get_module_metadata Queries.{ get_module_metadata; _ } = get_module_metadata
-
-  let module_exists Queries.{ module_exists; _ } = module_exists
-
-  let get_class_summary Queries.{ get_class_summary; _ } = get_class_summary
-
-  let class_exists Queries.{ class_exists; _ } = class_exists
-
-  let get_function_definition_in_project Queries.{ get_function_definition_in_project; _ } =
-    get_function_definition_in_project
+  let search_possible_containing_modules ~f reference =
+    (* String.equal (Reference.show reference) "str" in *)
+    let ancestors_descending = Reference.possible_qualifiers_after_delocalize reference in
+    List.find_map ~f ancestors_descending
 
 
-  let get_unannotated_global Queries.{ get_unannotated_global; _ } = get_unannotated_global
+  let get_class_summary queries class_name =
+    let load_class_summary_if_in_module qualifier =
+      get_module_components queries qualifier
+      >>= fun { Module.Components.class_summaries; _ } ->
+      Identifier.Map.Tree.find class_summaries class_name
+    in
+    search_possible_containing_modules
+      ~f:load_class_summary_if_in_module
+      (Reference.create class_name)
+
+
+  let class_exists queries class_name = get_class_summary queries class_name |> Option.is_some
+
+  let get_define_names_for_qualifier_in_project queries qualifier =
+    get_module_components queries qualifier
+    >>| (fun { Module.Components.function_definitions; _ } ->
+          Reference.Map.Tree.keys function_definitions)
+    |> Option.value ~default:[]
+
+
+  let get_function_definition_in_project queries function_name =
+    let load_function_definition_if_in_module qualifier =
+      get_module_components queries qualifier
+      >>= fun { Module.Components.function_definitions; _ } ->
+      Reference.Map.Tree.find function_definitions function_name
+    in
+    search_possible_containing_modules ~f:load_function_definition_if_in_module function_name
+
+
+  let get_unannotated_global queries reference =
+    Reference.prefix reference
+    >>= get_module_components queries
+    >>= fun { Module.Components.unannotated_globals; _ } ->
+    let name = Reference.last reference in
+    Identifier.Map.Tree.find unannotated_globals name
+
 
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
     Type.primitive_name primitive
 
 
-  let is_protocol Queries.{ get_class_summary; _ } annotation =
+  let is_protocol queries annotation =
     primitive_name annotation
-    >>= get_class_summary
+    >>= get_class_summary queries
     >>| Node.value
     >>| ClassSummary.is_protocol
     |> Option.value ~default:false
 
 
-  let resolve_exports Queries.{ get_module_metadata; _ } ?(from = Reference.empty) reference =
+  let resolve_exports queries ?(from = Reference.empty) reference =
     let module ResolveExportItem = struct
       module T = struct
         type t = {
@@ -135,7 +158,7 @@ module OutgoingDataComputation = struct
     in
     let visited_set = ResolveExportItem.Hash_set.create () in
     let rec resolve_module_alias ~current_module ~names_to_resolve () =
-      match get_module_metadata current_module with
+      match get_module_metadata queries current_module with
       | None -> (
           (* No module was found *)
           match names_to_resolve with
@@ -167,7 +190,7 @@ module OutgoingDataComputation = struct
                 | name :: prefixes -> (
                     let checked_module = List.rev prefixes |> Reference.create_from_list in
                     let sofar = name :: sofar in
-                    match get_module_metadata checked_module with
+                    match get_module_metadata queries checked_module with
                     | Some module_metadata when Module.Metadata.empty_stub module_metadata ->
                         Some
                           (ResolvedReference.PlaceholderStub
@@ -299,18 +322,89 @@ module OutgoingDataComputation = struct
     first_matching_class_decorator queries ~names class_summary |> Option.is_some
 end
 
+module ModuleComponentsTable = Environment.EnvironmentTable.WithCache (struct
+  module PreviousEnvironment = SourceCodeEnvironment
+  module Key = SharedMemoryKeys.ReferenceKey
+
+  module Value = struct
+    type t = Module.Components.t option [@@deriving equal]
+
+    let prefix = Hack_parallel.Std.Prefix.make ()
+
+    let description = "Module.Components"
+  end
+
+  type trigger = Reference.t [@@deriving sexp, compare]
+
+  let convert_trigger = Fn.id
+
+  let key_to_trigger = Fn.id
+
+  module TriggerSet = Reference.Set
+
+  let lazy_incremental = false
+
+  let show_key = Reference.show
+
+  let overlay_owns_key source_code_overlay =
+    SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_overlay
+
+
+  let equal_value = Option.equal Module.Components.equal
+
+  (* NOTE: the `trigger_to_dependency` and `produce_value` logic are actually a misleading hack
+     here. We allowed SourceCodeApi to skip dependency tracking (so that some implementations like
+     the buck-calls-pyre one can just ban it), so as a result we rely on AstEnvironment modeling all
+     our dependencies for us. *)
+  let produce_value source_code_environment key ~dependency =
+    let queries : IncomingDataComputation.Queries.t =
+      let source_code_api =
+        SourceCodeEnvironment.ReadOnly.source_code_read_only source_code_environment
+        |>
+        match dependency with
+        | None -> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
+        | Some dependency -> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
+      in
+      let is_qualifier_tracked = SourceCodeApi.is_qualifier_tracked source_code_api in
+      let source_of_qualifier = SourceCodeApi.source_of_qualifier source_code_api in
+      { IncomingDataComputation.Queries.is_qualifier_tracked; source_of_qualifier }
+    in
+    IncomingDataComputation.module_components queries key
+
+
+  let trigger_to_dependency qualifier = SharedMemoryKeys.WildcardImport qualifier
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.WildcardImport qualifier -> Some qualifier
+    | _ -> None
+end)
+
+include ModuleComponentsTable
+
 module ReadOnly = struct
-  type t = {
-    source_code_environment: SourceCodeEnvironment.ReadOnly.t;
-    get_queries: dependency:DependencyKey.registered option -> OutgoingDataComputation.Queries.t;
-    class_names_of_qualifiers__untracked: Reference.t list -> Type.Primitive.t list;
-    unannotated_global_names_of_qualifiers__untracked: Reference.t list -> Reference.t list;
-  }
+  include ModuleComponentsTable.ReadOnly
 
-  let get_queries ?dependency { get_queries; _ } = get_queries ~dependency
+  let get_module_components ?dependency read_only qualifier =
+    let cannonical_qualifier =
+      match Reference.as_list qualifier with
+      | ["future"; "builtins"]
+      | ["builtins"] ->
+          Reference.empty
+      | _not_builtins -> qualifier
+    in
+    get ?dependency read_only cannonical_qualifier
 
-  let source_code_read_only { source_code_environment; _ } =
-    SourceCodeEnvironment.ReadOnly.source_code_read_only source_code_environment
+
+  let get_queries ?dependency read_only =
+    {
+      OutgoingDataComputation.Queries.get_module_components =
+        get_module_components ?dependency read_only;
+    }
+
+
+  let source_code_read_only read_only =
+    ModuleComponentsTable.ReadOnly.upstream_environment read_only
+    |> SourceCodeEnvironment.ReadOnly.source_code_read_only
 
 
   let get_untracked_source_code_api environment =
@@ -325,52 +419,53 @@ module ReadOnly = struct
     source_code_read_only environment |> SourceCodeIncrementalApi.ReadOnly.controls
 
 
-  let get_module_metadata { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_module_metadata
+  let get_module_metadata read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.get_module_metadata
 
 
-  let module_exists { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.module_exists
+  let module_exists read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.module_exists
 
 
-  let get_class_summary { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_class_summary
+  let get_class_summary read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.get_class_summary
 
 
-  let class_exists { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.class_exists
+  let class_exists read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.class_exists
 
 
   (* This will return an empty list if the qualifier isn't part of the project we are type
      checking. *)
-  let get_define_names_for_qualifier_in_project { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_define_names_for_qualifier_in_project
+  let get_define_names_for_qualifier_in_project read_only ?dependency =
+    get_queries ?dependency read_only
+    |> OutgoingDataComputation.get_define_names_for_qualifier_in_project
 
 
   (* This will return None if called on a function definition that is not part of the project we are
      type checking (i.e. defined in dependencies). *)
-  let get_function_definition_in_project { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_function_definition_in_project
+  let get_function_definition_in_project read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.get_function_definition_in_project
 
 
-  let get_unannotated_global { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_unannotated_global
+  let get_unannotated_global read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.get_unannotated_global
 
 
-  let is_protocol { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.is_protocol
+  let is_protocol read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.is_protocol
 
 
-  let resolve_exports { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.resolve_exports
+  let resolve_exports read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.resolve_exports
 
 
-  let first_matching_class_decorator { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.first_matching_class_decorator
+  let first_matching_class_decorator read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.first_matching_class_decorator
 
 
-  let exists_matching_class_decorator { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.exists_matching_class_decorator
+  let exists_matching_class_decorator read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.exists_matching_class_decorator
 
 
   (* These functions are not dependency tracked and should only be used:
@@ -381,877 +476,52 @@ module ReadOnly = struct
    * powering IDEs.
    *)
   module GlobalApis = struct
-    let all_classes { class_names_of_qualifiers__untracked; _ } ~global_module_paths_api =
+    let all_classes read_only ~global_module_paths_api =
+      let class_names_for_qualifier qualifier =
+        get_module_components read_only qualifier
+        >>| (fun { Module.Components.class_summaries; _ } ->
+              Identifier.Map.Tree.keys class_summaries)
+        |> Option.value ~default:[]
+      in
       GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
-      |> class_names_of_qualifiers__untracked
+      |> List.concat_map ~f:class_names_for_qualifier
 
 
-    let all_unannotated_globals
-        { unannotated_global_names_of_qualifiers__untracked; _ }
-        ~global_module_paths_api
-      =
+    let all_unannotated_globals read_only ~global_module_paths_api =
+      let unannotated_global_names_for_qualifier qualifier =
+        get_module_components read_only qualifier
+        >>| (fun { Module.Components.unannotated_globals; _ } ->
+              Identifier.Map.Tree.keys unannotated_globals)
+        |> Option.value ~default:[]
+      in
+      let qualified_unannotated_global_names qualifier =
+        let local_name_to_fully_qualified_reference name =
+          Reference.create name |> Reference.combine qualifier
+        in
+        unannotated_global_names_for_qualifier qualifier
+        |> List.map ~f:local_name_to_fully_qualified_reference
+      in
       GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
-      |> unannotated_global_names_of_qualifiers__untracked
+      |> List.concat_map ~f:qualified_unannotated_global_names
   end
 end
 
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: DependencyKey.RegisteredSet.t;
-    upstream: SourceCodeEnvironment.UpdateResult.t;
-  }
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
-    triggered_dependencies :: SourceCodeEnvironment.UpdateResult.all_triggered_dependencies upstream
+let controls read_write =
+  source_code_base read_write
+  |> SourceCodeIncrementalApi.Base.read_only
+  |> SourceCodeIncrementalApi.ReadOnly.controls
 
 
-  let invalidated_modules { upstream; _ } =
-    SourceCodeEnvironment.UpdateResult.invalidated_modules upstream
-
-
-  let source_code_update_result { upstream; _ } =
-    SourceCodeEnvironment.UpdateResult.source_code_update_result upstream
+module AssumeGlobalModuleListing = struct
+  let global_module_paths_api read_write =
+    source_code_base read_write
+    |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
 end
 
-module FromReadOnlyUpstream = struct
-  (* The key tracking is necessary because there is no way to use the normal symbol-level lookup
-     tables, which don't have an API to get all keys, to directly ask for all the names (or classes,
-     or defines) in a given module.
-
-     As a result, we need internal tracking. The KeyTracker API is entirely internal to
-     UnannotatedGlobalEnvironment.
-
-     Importantly, *reads are not dependency-tracked*; it is not safe to call these functions as part
-     of the core analysis.
-
-     Type checking does rely on listing the define names, but it is correct because it does *not*
-     rely on this inside of the core dependency-tracked logic. Instead, on both cold-start and
-     rechecks, we re-request all-defines-in-all-type-checked-qualifiers (which does not rely on
-     dependency tracking). If we were to assume that incremental update alone is sufficient after
-     cold start, we would never type check new functions!
-
-     These functions are helpful in many settings where dependency tracking is not important,
-     including Pysa analysis, certain IDE queries, and state dumps for debugging. *)
-  module KeyTracker = struct
-    module ClassKeyValue = struct
-      type t = Identifier.t list [@@deriving compare]
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = "Class keys"
-    end
-
-    module UnannotatedGlobalKeyValue = struct
-      type t = Reference.t list [@@deriving compare]
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = "Class keys"
-    end
-
-    module ClassKeys =
-      Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
-    module UnannotatedGlobalKeys =
-      Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
-
-    type t = {
-      class_keys: ClassKeys.t;
-      unannotated_global_keys: UnannotatedGlobalKeys.t;
-    }
-
-    let create () =
-      {
-        class_keys = ClassKeys.create ();
-        unannotated_global_keys = UnannotatedGlobalKeys.create ();
-      }
-
-
-    let add_class_keys { class_keys; _ } = ClassKeys.add class_keys
-
-    let add_unannotated_global_keys { unannotated_global_keys; _ } =
-      UnannotatedGlobalKeys.add unannotated_global_keys
-
-
-    let get_class_keys { class_keys; _ } qualifiers =
-      ClassKeys.KeySet.of_list qualifiers
-      |> ClassKeys.get_batch class_keys
-      |> ClassKeys.KeyMap.values
-      |> List.filter_map ~f:Fn.id
-      |> List.concat
-
-
-    let get_unannotated_global_keys { unannotated_global_keys; _ } qualifiers =
-      UnannotatedGlobalKeys.KeySet.of_list qualifiers
-      |> UnannotatedGlobalKeys.get_batch unannotated_global_keys
-      |> UnannotatedGlobalKeys.KeyMap.values
-      |> List.filter_map ~f:Fn.id
-      |> List.concat
-
-
-    module PreviousKeys = struct
-      type t = {
-        previous_classes_list: Type.Primitive.t list;
-        previous_classes: Type.Primitive.Set.t;
-        previous_unannotated_globals_list: Reference.t list;
-        previous_unannotated_globals: Reference.Set.t;
-      }
-    end
-
-    let get_previous_keys_and_clear
-        ({ class_keys; unannotated_global_keys } as key_tracker)
-        invalidated_modules
-      =
-      let previous_classes_list = get_class_keys key_tracker invalidated_modules in
-      let previous_unannotated_globals_list =
-        get_unannotated_global_keys key_tracker invalidated_modules
-      in
-      let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
-      let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
-      ClassKeys.KeySet.of_list invalidated_modules |> ClassKeys.remove_batch class_keys;
-      UnannotatedGlobalKeys.KeySet.of_list invalidated_modules
-      |> UnannotatedGlobalKeys.remove_batch unannotated_global_keys;
-      PreviousKeys.
-        {
-          previous_classes_list;
-          previous_classes;
-          previous_unannotated_globals_list;
-          previous_unannotated_globals;
-        }
-  end
-
-  module ModuleValue = struct
-    type t = Module.Metadata.t
-
-    let prefix = Hack_parallel.Std.Prefix.make ()
-
-    let description = "Module"
-
-    let equal = Module.Metadata.equal
-  end
-
-  module ModuleTable = struct
-    include
-      DependencyTrackedMemory.DependencyTrackedTableWithCache
-        (SharedMemoryKeys.ReferenceKey)
-        (DependencyKey)
-        (ModuleValue)
-
-    let is_qualifier = true
-
-    let key_to_reference = Fn.id
-  end
-
-  module DefineNamesValue = struct
-    type t = Reference.t list [@@deriving equal]
-
-    let prefix = Hack_parallel.Std.Prefix.make ()
-
-    let description = "DefineListing"
-  end
-
-  module DefineNames = struct
-    include
-      DependencyTrackedMemory.DependencyTrackedTableWithCache
-        (SharedMemoryKeys.ReferenceKey)
-        (DependencyKey)
-        (DefineNamesValue)
-
-    let is_qualifier = true
-
-    let key_to_reference = Fn.id
-
-    let get_define_names_for_qualifier_in_project define_names qualifiers =
-      get_batch define_names (KeySet.of_list qualifiers)
-      |> KeyMap.values
-      |> List.filter_opt
-      |> List.concat
-  end
-
-  module ClassSummaryValue = struct
-    type t = ClassSummary.t Node.t
-
-    let prefix = Hack_parallel.Std.Prefix.make ()
-
-    let description = "ClassSummary"
-
-    let equal = Memory.equal_from_compare (Node.compare ClassSummary.compare)
-  end
-
-  module ClassSummaryTable = struct
-    include
-      DependencyTrackedMemory.DependencyTrackedTableWithCache
-        (SharedMemoryKeys.StringKey)
-        (DependencyKey)
-        (ClassSummaryValue)
-
-    let is_qualifier = false
-
-    let key_to_reference name = Reference.create name
-  end
-
-  module FunctionDefinitionValue = struct
-    type t = FunctionDefinition.t
-
-    let description = "FunctionDefinition"
-
-    let prefix = Hack_parallel.Std.Prefix.make ()
-
-    let equal definition0 definition1 =
-      Int.equal 0 (FunctionDefinition.compare definition0 definition1)
-  end
-
-  module FunctionDefinitionTable = struct
-    include
-      DependencyTrackedMemory.DependencyTrackedTableWithCache
-        (SharedMemoryKeys.ReferenceKey)
-        (DependencyKey)
-        (FunctionDefinitionValue)
-
-    let is_qualifier = false
-
-    let key_to_reference = Fn.id
-  end
-
-  module UnannotatedGlobalValue = struct
-    type t = Module.UnannotatedGlobal.t
-
-    let prefix = Hack_parallel.Std.Prefix.make ()
-
-    let description = "UnannotatedGlobal"
-
-    let equal = Memory.equal_from_compare Module.UnannotatedGlobal.compare
-  end
-
-  module UnannotatedGlobalTable = struct
-    include
-      DependencyTrackedMemory.DependencyTrackedTableNoCache
-        (SharedMemoryKeys.ReferenceKey)
-        (DependencyKey)
-        (UnannotatedGlobalValue)
-
-    let is_qualifier = false
-
-    let key_to_reference = Fn.id
-  end
-
-  module ReadWrite = struct
-    type t = {
-      key_tracker: KeyTracker.t;
-      module_table: ModuleTable.t;
-      define_names: DefineNames.t;
-      class_summary_table: ClassSummaryTable.t;
-      function_definition_table: FunctionDefinitionTable.t;
-      unannotated_global_table: UnannotatedGlobalTable.t;
-      source_code_environment: SourceCodeEnvironment.ReadOnly.t;
-    }
-
-    let create source_code_environment =
-      {
-        key_tracker = KeyTracker.create ();
-        module_table = ModuleTable.create ();
-        define_names = DefineNames.create ();
-        class_summary_table = ClassSummaryTable.create ();
-        function_definition_table = FunctionDefinitionTable.create ();
-        unannotated_global_table = UnannotatedGlobalTable.create ();
-        source_code_environment;
-      }
-
-
-    let controls { source_code_environment; _ } =
-      SourceCodeEnvironment.ReadOnly.controls source_code_environment
-  end
-
-  include ReadWrite
-
-  let set_module_data
-      ~environment:
-        {
-          key_tracker;
-          define_names;
-          module_table;
-          class_summary_table;
-          unannotated_global_table;
-          function_definition_table;
-          _;
-        }
-      ~qualifier
-      Module.Components.
-        { module_metadata; class_summaries; unannotated_globals; function_definitions }
-    =
-    let set_module () = ModuleTable.add module_table qualifier module_metadata in
-    let set_class_summaries () =
-      let register ~key:class_name ~data:class_summary_node class_names =
-        ClassSummaryTable.write_around class_summary_table class_name class_summary_node;
-        Set.add class_names class_name
-      in
-      class_summaries
-      |> Identifier.Map.Tree.fold ~init:Type.Primitive.Set.empty ~f:register
-      |> Set.to_list
-      |> KeyTracker.add_class_keys key_tracker qualifier
-    in
-    let set_function_definitions () =
-      let register ~key:name ~data:function_definition function_names =
-        FunctionDefinitionTable.write_around function_definition_table name function_definition;
-        Set.add function_names name
-      in
-      function_definitions
-      |> Reference.Map.Tree.fold ~init:Reference.Set.empty ~f:register
-      |> Set.to_list
-      |> List.sort ~compare:Reference.compare
-      |> DefineNames.add define_names qualifier
-    in
-    let set_unannotated_globals () =
-      let register ~key:name ~data:unannotated_global global_names =
-        let name = Reference.create name |> Reference.combine qualifier in
-        UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
-        Set.add global_names name
-      in
-      unannotated_globals
-      |> Identifier.Map.Tree.fold ~init:Reference.Set.empty ~f:register
-      |> Set.to_list
-      |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
-    in
-    set_class_summaries ();
-    set_function_definitions ();
-    set_unannotated_globals ();
-    (* We must set this last, because lazy-loading uses Module.mem to determine whether the source
-       has already been processed. So setting it earlier can lead to data races *)
-    set_module ()
-
-
-  let add_to_transaction
-      {
-        module_table;
-        class_summary_table;
-        function_definition_table;
-        unannotated_global_table;
-        define_names;
-        _;
-      }
-      transaction
-      ~previous_classes_list
-      ~previous_unannotated_globals_list
-      ~previous_defines_list
-      ~invalidated_modules
-    =
-    let module_keys = ModuleTable.KeySet.of_list invalidated_modules in
-    let class_keys = ClassSummaryTable.KeySet.of_list previous_classes_list in
-    let defines_keys = FunctionDefinitionTable.KeySet.of_list previous_defines_list in
-    let unannotated_globals_keys =
-      UnannotatedGlobalTable.KeySet.of_list previous_unannotated_globals_list
-    in
-    transaction
-    |> ModuleTable.add_to_transaction module_table ~keys:module_keys
-    |> DefineNames.add_to_transaction define_names ~keys:module_keys
-    |> ClassSummaryTable.add_to_transaction class_summary_table ~keys:class_keys
-    |> FunctionDefinitionTable.add_to_transaction function_definition_table ~keys:defines_keys
-    |> UnannotatedGlobalTable.add_to_transaction
-         unannotated_global_table
-         ~keys:unannotated_globals_keys
-
-
-  let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
-    let function_and_class_dependents =
-      DependencyKey.RegisteredSet.union
-        (ClassSummaryTable.KeySet.of_list class_additions |> ClassSummaryTable.get_all_dependents)
-        (FunctionDefinitionTable.KeySet.of_list define_additions
-        |> FunctionDefinitionTable.get_all_dependents)
-    in
-    DependencyKey.RegisteredSet.union
-      function_and_class_dependents
-      (UnannotatedGlobalTable.KeySet.of_list unannotated_global_additions
-      |> UnannotatedGlobalTable.get_all_dependents)
-
-
-  module LazyLoader = struct
-    type t = {
-      environment: ReadWrite.t;
-      queries: IncomingDataComputation.Queries.t;
-    }
-
-    let try_load_module { environment; queries } qualifier =
-      if not (ModuleTable.mem environment.module_table qualifier) then
-        IncomingDataComputation.module_components queries qualifier
-        >>| set_module_data ~environment ~qualifier
-        |> ignore
-
-
-    (* Try to load a module, with dependency tracking of our attempt and caching of successful
-       reads. *)
-    let try_load_module_with_cache ?dependency ({ environment; _ } as loader) qualifier =
-      if not (ModuleTable.mem environment.module_table ?dependency qualifier) then
-        (* Note: a dependency should be registered above even if no module exists, so we no longer
-           need dependency tracking. *)
-        try_load_module loader qualifier
-
-
-    (* Pyre currently handles imports by transforming the source code so that
-     * all names are fully qualified. This means that it is never possible, in
-     * general, to look at a name and load the module where it lives, because
-     * when we see a name like `foo.bar.baz` it could be:
-     * - a module `baz` in a package `foo.bar`
-     * - a name `bar` in a module `foo.bar`
-     * - a nested name `bar.baz` in a module `foo`; this could happen via
-     *   nested classes or via re-exports.
-     *
-     * As a result, we always have to attempt to load all of the "possible"
-     * modules where this name might live - `foo`, `foo.bar`, and `foo.bar.baz`.
-     * We load them in left-to-right order so that in the event of a collision (which
-     * does happen, and unlike the Python runtime Pyre is not capable of resolving these)
-     * the name bound in the closer-to-root module always wins in initial check. Incremental
-     * behavior in the presence of fully-qualified-name collisions is undefined.
-     *)
-    let load_all_possible_modules_for_symbol ?dependency loader ~is_qualifier reference =
-      let load_module_if_tracked = try_load_module_with_cache ?dependency loader in
-      let ancestors_descending = Reference.possible_qualifiers_after_delocalize reference in
-      List.iter ancestors_descending ~f:load_module_if_tracked;
-      if is_qualifier then load_module_if_tracked reference;
-      ()
-  end
-
-  module ReadOnlyTable = struct
-    module type S = sig
-      type key
-
-      type value
-
-      type table
-
-      type t
-
-      val create : loader:LazyLoader.t -> table -> t
-
-      val mem : t -> ?dependency:DependencyKey.registered -> key -> bool
-
-      val get : t -> ?dependency:DependencyKey.registered -> key -> value option
-    end
-
-    module type In = sig
-      type key
-
-      type value
-
-      type t
-
-      val is_qualifier : bool
-
-      val key_to_reference : key -> Reference.t
-
-      val mem : t -> ?dependency:DependencyKey.registered -> key -> bool
-
-      val get : t -> ?dependency:DependencyKey.registered -> key -> value option
-    end
-
-    module Make (In : In) :
-      S with type key := In.key and type value := In.value and type table := In.t = struct
-      type t = {
-        loader: LazyLoader.t;
-        table: In.t;
-      }
-
-      let create ~loader table = { loader; table }
-
-      let is_qualifier = In.is_qualifier
-
-      (* See the comment on load_all_possible_modules_for_symbol for a description of why this works
-         as it does *)
-      let mem { loader; table } ?dependency key =
-        (* First handle the case where it's already in the hash map *)
-        match In.mem table ?dependency key with
-        | true -> true
-        | false ->
-            (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-            LazyLoader.load_all_possible_modules_for_symbol
-              ?dependency
-              loader
-              ~is_qualifier
-              (In.key_to_reference key);
-            (* We try fetching again *)
-            In.mem table ?dependency key
-
-
-      (* See the comment on load_all_possible_modules_for_symbol for a description of why this works
-         as it does *)
-      let get { loader; table } ?dependency key =
-        (* The first get finds precomputed values *)
-        match In.get table ?dependency key with
-        | Some _ as hit -> hit
-        | None ->
-            (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-            LazyLoader.load_all_possible_modules_for_symbol
-              ?dependency
-              loader
-              ~is_qualifier
-              (In.key_to_reference key);
-            (* We try fetching again *)
-            In.get table ?dependency key
-    end
-  end
-
-  let incoming_queries { source_code_environment; _ } =
-    let is_qualifier_tracked =
-      SourceCodeEnvironment.ReadOnly.source_code_read_only source_code_environment
-      |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
-      |> SourceCodeApi.is_qualifier_tracked
-    in
-    let source_of_qualifier qualifier =
-      let dependency =
-        WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register
-      in
-      let source_code_api =
-        SourceCodeEnvironment.ReadOnly.source_code_read_only source_code_environment
-        |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
-      in
-      SourceCodeApi.source_of_qualifier source_code_api qualifier
-    in
-    IncomingDataComputation.Queries.{ is_qualifier_tracked; source_of_qualifier }
-
-
-  let cold_start environment =
-    (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-    let qualifier = Reference.empty in
-    IncomingDataComputation.module_components (incoming_queries environment) qualifier
-    >>| set_module_data ~environment ~qualifier
-    |> ignore
-
-
-  let outgoing_queries
-      ~dependency
-      ({
-         module_table;
-         define_names;
-         class_summary_table;
-         function_definition_table;
-         unannotated_global_table;
-         _;
-       } as environment)
-    =
-    let loader = LazyLoader.{ environment; queries = incoming_queries environment } in
-    (* Mask the raw DependencyTrackedTables with lazy read-only views of each one *)
-    let module ModuleTable = ReadOnlyTable.Make (ModuleTable) in
-    let module DefineNames = ReadOnlyTable.Make (DefineNames) in
-    let module ClassSummaryTable = ReadOnlyTable.Make (ClassSummaryTable) in
-    let module FunctionDefinitionTable = ReadOnlyTable.Make (FunctionDefinitionTable) in
-    let module UnannotatedGlobalTable = ReadOnlyTable.Make (UnannotatedGlobalTable) in
-    let module_table = ModuleTable.create ~loader module_table in
-    let define_names = DefineNames.create ~loader define_names in
-    let class_summary_table = ClassSummaryTable.create ~loader class_summary_table in
-    let function_definition_table =
-      FunctionDefinitionTable.create ~loader function_definition_table
-    in
-    let unannotated_global_table = UnannotatedGlobalTable.create ~loader unannotated_global_table in
-    (* Define the basic getters and existence checks *)
-    let get_module_metadata qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      match ModuleTable.get module_table ?dependency qualifier with
-      | Some _ as result -> result
-      | None -> None
-    in
-    let module_exists qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      ModuleTable.mem module_table ?dependency qualifier
-    in
-    let get_class_summary = ClassSummaryTable.get class_summary_table ?dependency in
-    let class_exists = ClassSummaryTable.mem class_summary_table ?dependency in
-    let get_function_definition_in_project =
-      FunctionDefinitionTable.get function_definition_table ?dependency
-    in
-    let get_unannotated_global = UnannotatedGlobalTable.get unannotated_global_table ?dependency in
-    let get_define_names_for_qualifier_in_project qualifier =
-      DefineNames.get define_names ?dependency qualifier |> Option.value ~default:[]
-    in
-    OutgoingDataComputation.Queries.
-      {
-        get_module_metadata;
-        module_exists;
-        get_class_summary;
-        class_exists;
-        get_function_definition_in_project;
-        get_unannotated_global;
-        get_define_names_for_qualifier_in_project;
-      }
-
-
-  let read_only ({ source_code_environment; key_tracker; _ } as environment) =
-    (* Define the bulk key reads - these tell us what's been loaded thus far *)
-    let class_names_of_qualifiers__untracked = KeyTracker.get_class_keys key_tracker in
-    let unannotated_global_names_of_qualifiers__untracked =
-      KeyTracker.get_unannotated_global_keys key_tracker
-    in
-    {
-      ReadOnly.source_code_environment;
-      get_queries = outgoing_queries environment;
-      class_names_of_qualifiers__untracked;
-      unannotated_global_names_of_qualifiers__untracked;
-    }
-
-
-  let update ({ key_tracker; define_names; _ } as environment) ~scheduler upstream =
-    let invalidated_modules = SourceCodeEnvironment.UpdateResult.invalidated_modules upstream in
-    let map sources =
-      let loader = LazyLoader.{ environment; queries = incoming_queries environment } in
-      let register qualifier = LazyLoader.try_load_module loader qualifier in
-      List.iter sources ~f:register
-    in
-    let update () =
-      SharedMemoryKeys.DependencyKey.Registry.collected_iter
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:5
-             ())
-        ~f:map
-        ~inputs:invalidated_modules
-    in
-    let KeyTracker.PreviousKeys.
-          {
-            previous_classes_list;
-            previous_classes;
-            previous_unannotated_globals_list;
-            previous_unannotated_globals;
-          }
-      =
-      KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
-    in
-    let previous_defines_list =
-      DefineNames.get_define_names_for_qualifier_in_project define_names invalidated_modules
-    in
-    let triggered_dependencies =
-      PyreProfiling.track_duration_and_shared_memory_with_dynamic_tags
-        "TableUpdate(Unannotated globals)"
-        ~f:(fun _ ->
-          let (), mutation_triggers =
-            DependencyKey.Transaction.empty ~scheduler
-            |> add_to_transaction
-                 environment
-                 ~previous_classes_list
-                 ~previous_unannotated_globals_list
-                 ~previous_defines_list
-                 ~invalidated_modules
-            |> DependencyKey.Transaction.execute ~update
-          in
-          let current_classes =
-            KeyTracker.get_class_keys key_tracker invalidated_modules |> Type.Primitive.Set.of_list
-          in
-          let current_defines =
-            DefineNames.get_define_names_for_qualifier_in_project define_names invalidated_modules
-            |> Reference.Set.of_list
-          in
-          let current_unannotated_globals =
-            KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
-            |> Reference.Set.of_list
-          in
-          let class_additions = Set.diff current_classes previous_classes in
-          let define_additions =
-            Reference.Set.of_list previous_defines_list |> Set.diff current_defines
-          in
-          let unannotated_global_additions =
-            Set.diff current_unannotated_globals previous_unannotated_globals
-          in
-          let addition_triggers =
-            get_all_dependents
-              ~class_additions:(Set.to_list class_additions)
-              ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
-              ~define_additions:(Set.to_list define_additions)
-          in
-          let triggered_dependencies =
-            DependencyKey.RegisteredSet.union addition_triggers mutation_triggers
-          in
-          let tags () =
-            let triggered_dependencies_size =
-              SharedMemoryKeys.DependencyKey.RegisteredSet.cardinal triggered_dependencies
-              |> Format.sprintf "%d"
-            in
-            [
-              "phase_name", "Global discovery";
-              "number_of_triggered_dependencies", triggered_dependencies_size;
-            ]
-          in
-          { PyreProfiling.result = triggered_dependencies; tags })
-    in
-    { UpdateResult.triggered_dependencies; upstream }
+module AssumeAstEnvironment = struct
+  include ModuleComponentsTable.AssumeAstEnvironment
+
+  let ast_environment read_write =
+    ModuleComponentsTable.AssumeDownstreamNeverNeedsUpdates.upstream read_write
+    |> SourceCodeEnvironment.AssumeAstEnvironment.ast_environment
 end
-
-module Overlay = struct
-  type t = {
-    parent: ReadOnly.t;
-    source_code_environment: SourceCodeEnvironment.Overlay.t;
-    from_read_only_upstream: FromReadOnlyUpstream.t;
-  }
-
-  let source_code_overlay { source_code_environment; _ } =
-    SourceCodeEnvironment.Overlay.source_code_overlay source_code_environment
-
-
-  let owns_qualifier { source_code_environment; _ } =
-    SourceCodeEnvironment.Overlay.owns_qualifier source_code_environment
-
-
-  let owns_reference { source_code_environment; _ } =
-    SourceCodeEnvironment.Overlay.owns_reference source_code_environment
-
-
-  let owns_identifier { source_code_environment; _ } =
-    SourceCodeEnvironment.Overlay.owns_identifier source_code_environment
-
-
-  let consume_upstream_update { from_read_only_upstream; source_code_environment; _ } update_result =
-    let filtered_update_result =
-      SourceCodeEnvironment.Overlay.filter_update source_code_environment update_result
-    in
-    FromReadOnlyUpstream.update
-      from_read_only_upstream
-      ~scheduler:(Scheduler.create_sequential ())
-      filtered_update_result
-
-
-  let update_overlaid_code ({ source_code_environment; _ } as environment) ~code_updates =
-    SourceCodeEnvironment.Overlay.update_overlaid_code source_code_environment ~code_updates
-    |> consume_upstream_update environment
-
-
-  let propagate_parent_update
-      environment
-      { UpdateResult.triggered_dependencies = parent_triggered_dependencies; upstream }
-    =
-    let { UpdateResult.triggered_dependencies; _ } = consume_upstream_update environment upstream in
-    {
-      UpdateResult.triggered_dependencies =
-        SharedMemoryKeys.DependencyKey.RegisteredSet.union
-          parent_triggered_dependencies
-          triggered_dependencies;
-      upstream;
-    }
-
-
-  let outgoing_queries ?dependency ({ parent; from_read_only_upstream; _ } as environment) =
-    let this_queries =
-      FromReadOnlyUpstream.read_only from_read_only_upstream |> ReadOnly.get_queries ?dependency
-    in
-    let parent_queries = ReadOnly.get_queries ?dependency parent in
-    let if_owns ~owns ~f key =
-      if owns key then
-        f this_queries key
-      else
-        f parent_queries key
-    in
-    let owns_qualifier, owns_reference, owns_qualified_class_name =
-      owns_qualifier environment, owns_reference environment, owns_identifier environment
-    in
-    OutgoingDataComputation.Queries.
-      {
-        module_exists = if_owns ~owns:owns_qualifier ~f:OutgoingDataComputation.module_exists;
-        get_module_metadata =
-          if_owns ~owns:owns_qualifier ~f:OutgoingDataComputation.get_module_metadata;
-        get_define_names_for_qualifier_in_project =
-          if_owns
-            ~owns:owns_qualifier
-            ~f:OutgoingDataComputation.get_define_names_for_qualifier_in_project;
-        class_exists =
-          if_owns ~owns:owns_qualified_class_name ~f:OutgoingDataComputation.class_exists;
-        get_class_summary =
-          if_owns ~owns:owns_qualified_class_name ~f:OutgoingDataComputation.get_class_summary;
-        get_function_definition_in_project =
-          if_owns ~owns:owns_reference ~f:OutgoingDataComputation.get_function_definition_in_project;
-        get_unannotated_global =
-          if_owns ~owns:owns_reference ~f:OutgoingDataComputation.get_unannotated_global;
-      }
-
-
-  let read_only ({ parent; from_read_only_upstream; _ } as environment) =
-    let { FromReadOnlyUpstream.source_code_environment; _ } = from_read_only_upstream in
-    let get_queries ~dependency = outgoing_queries ?dependency environment in
-    { parent with source_code_environment; get_queries }
-end
-
-module Base = struct
-  type t = {
-    source_code_environment: SourceCodeEnvironment.t;
-    from_read_only_upstream: FromReadOnlyUpstream.t;
-  }
-
-  let create source_code_environment =
-    let from_read_only_upstream =
-      SourceCodeEnvironment.read_only source_code_environment |> FromReadOnlyUpstream.create
-    in
-    FromReadOnlyUpstream.cold_start from_read_only_upstream;
-    { source_code_environment; from_read_only_upstream }
-
-
-  let update_this_and_all_preceding_environments
-      { source_code_environment; from_read_only_upstream; _ }
-      ~scheduler
-      events
-    =
-    let update_result =
-      SourceCodeEnvironment.update_this_and_all_preceding_environments
-        ~scheduler
-        source_code_environment
-        events
-    in
-    FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
-
-
-  let read_only { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.read_only from_read_only_upstream
-
-
-  let overlay ({ source_code_environment; _ } as environment) =
-    let source_code_environment_overlay = SourceCodeEnvironment.overlay source_code_environment in
-    let from_read_only_upstream =
-      SourceCodeEnvironment.Overlay.read_only source_code_environment_overlay
-      |> FromReadOnlyUpstream.create
-    in
-    {
-      Overlay.parent = read_only environment;
-      source_code_environment = source_code_environment_overlay;
-      from_read_only_upstream;
-    }
-
-
-  let controls { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.controls from_read_only_upstream
-
-
-  let source_code_base { source_code_environment; _ } =
-    SourceCodeEnvironment.source_code_base source_code_environment
-
-
-  module AssumeGlobalModuleListing = struct
-    let global_module_paths_api { source_code_environment; _ } =
-      SourceCodeEnvironment.source_code_base source_code_environment
-      |> SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
-  end
-
-  module AssumeAstEnvironment = struct
-    let ast_environment { source_code_environment; _ } =
-      SourceCodeEnvironment.AssumeAstEnvironment.ast_environment source_code_environment
-
-
-    (* All SharedMemory tables are populated and stored in separate, imperative steps that must be
-       run before loading / after storing. These functions only handle serializing and deserializing
-       the non-SharedMemory data *)
-    let load controls = SourceCodeEnvironment.AssumeAstEnvironment.load controls |> create
-
-    let store { source_code_environment; _ } =
-      SourceCodeEnvironment.AssumeAstEnvironment.store source_code_environment
-  end
-end
-
-include Base

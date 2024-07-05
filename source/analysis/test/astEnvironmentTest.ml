@@ -242,10 +242,10 @@ let test_parse_sources context =
   in
   (* Load a raw source with a dependency and verify that it appears in `triggered_dependencies`
      after an update. *)
-  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "foo") in
+  let type_check_foo = SharedMemoryKeys.TypeCheckDefine (Reference.create "foo") in
   ReadOnlyHelpers.parse_result_of_qualifier_tracked
     (ReadWriteHelpers.read_only ast_environment)
-    ~dependency:(SharedMemoryKeys.DependencyKey.Registry.register dependency)
+    ~dependency:(SharedMemoryKeys.DependencyKey.Registry.register type_check_foo)
     (Reference.create "c")
   |> ignore;
   let triggered_dependencies =
@@ -267,7 +267,7 @@ let test_parse_sources context =
   assert_equal
     ~printer:[%show: SharedMemoryKeys.dependency list]
     ~cmp:[%compare.equal: SharedMemoryKeys.dependency list]
-    [dependency]
+    [SharedMemoryKeys.WildcardImport !&"c"; type_check_foo]
     triggered_dependencies;
   (* Add some new modules and verify the update *)
   assert_equal
@@ -1179,7 +1179,7 @@ let test_overlay context =
       def foo(x: float) -> float:
         return x
       |}
-    ~expected:[!&"depends_on_module"; !&"module"];
+    ~expected:[!&"module"];
   ()
 
 

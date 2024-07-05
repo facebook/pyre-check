@@ -71,7 +71,8 @@ let test_find_globals =
         ~context
         ["test.py", source]
         ~include_helper_builtins:false
-        ~include_typeshed_stubs:true
+          (* Without this, we'll pick up all the globals in the test typeshed. *)
+        ~include_typeshed_stubs:false
     in
     let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
     let is_uninteresting_global name =
