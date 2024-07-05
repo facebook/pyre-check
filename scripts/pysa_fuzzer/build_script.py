@@ -26,9 +26,6 @@ def generate_python_files():
             file.write(generated_code)
         print(f"Generated {filename}")
 
-def setup_virtual_environment():
-    run_command('python3 -m venv tutorial')
-
 def configure_and_analyze():
     os.makedirs('generated_files', exist_ok=True)
     with open('generated_files/.pyre_configuration', 'w') as config_file:
@@ -123,7 +120,6 @@ def main():
 
     if args.action == 'all':
         generate_python_files()
-        setup_virtual_environment()
         configure_and_analyze()
         find_undetected_files()
     elif args.action == 'clean':
