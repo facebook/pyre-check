@@ -28,7 +28,6 @@ def generate_python_files():
 
 def setup_virtual_environment():
     run_command('python3 -m venv tutorial')
-    run_command('. tutorial/bin/activate && pip3 install pyre-check')
 
 def configure_and_analyze():
     os.makedirs('generated_files', exist_ok=True)
@@ -67,7 +66,7 @@ def configure_and_analyze():
         }
         json.dump(taint_config, taint_config_file, indent=2)
 
-    run_command('. tutorial/bin/activate && cd generated_files && pyre analyze > analysis_output.tmp')
+    run_command('cd generated_files && pyre analyze > analysis_output.tmp')
 
 def find_undetected_files():
     # Load the analysis output from the file
