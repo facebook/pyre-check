@@ -260,7 +260,6 @@ class CodeGenerator:
             self.generate_if_else_elif,
             self.generate_nested_loops,
             self.generate_randomized_data_structures
-            #self.generate_try_except
         ]
 
         # Generate import statements first
