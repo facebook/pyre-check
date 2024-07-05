@@ -276,3 +276,7 @@ class CodeGenerator:
         full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
 
+
+
+#generator = CodeGenerator()
+#print(generator.generate_statements(20))
