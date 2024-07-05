@@ -2,6 +2,7 @@ import subprocess
 import os
 import json
 import argparse
+import time
 from fuzzer2 import CodeGenerator
 
 def run_command(command):
@@ -27,22 +28,21 @@ def generate_python_files():
         print(f"Generated {filename}")
 
 def configure_and_analyze():
-    os.makedirs('generated_files', exist_ok=True)
-    with open('generated_files/.pyre_configuration', 'w') as config_file:
+    with open('.pyre_configuration', 'w') as config_file:
         config = {
             "site_package_search_strategy": "pep561",
-            "source_directories": [ "." ],
+            "source_directories": [ "./generated_files" ],
             "taint_models_path": [ "." ],
-            "search_path": [ "../../../stubs/" ],
+            "search_path": [ "../../stubs/" ],
             "exclude": [ ".*/integration_test/.*" ]
         }
         json.dump(config, config_file, indent=2)
 
-    with open('generated_files/sources_sinks.pysa', 'w') as pysa_file:
+    with open('sources_sinks.pysa', 'w') as pysa_file:
         pysa_file.write('def input() -> TaintSource[CustomUserControlled]: ...\n')
         pysa_file.write('def print(*__args: TaintSink[CodeExecution], **__kwargs): ...\n')
 
-    with open('generated_files/taint.config', 'w') as taint_config_file:
+    with open('taint.config', 'w') as taint_config_file:
         taint_config = {
             "sources": [
                 { "name": "CustomUserControlled", "comment": "use to annotate user input" }
@@ -63,7 +63,8 @@ def configure_and_analyze():
         }
         json.dump(taint_config, taint_config_file, indent=2)
 
-    run_command('cd generated_files && pyre analyze > analysis_output.tmp')
+def run_pyre():
+    run_command('pyre analyze > analysis_output.tmp')
 
 def find_undetected_files():
     # Load the analysis output from the file
@@ -110,6 +111,11 @@ def clean_detected_files():
 
 def clean_up():
     run_command('rm -rf generated_files')
+    run_command('rm sources_sinks.pysa')
+    run_command('rm taint.config')
+    run_command('rm .pyre_configuration')
+    run_command('rm analysis_output.tmp')
+
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
@@ -120,7 +126,8 @@ def main():
     if args.action == 'all':
         generate_python_files()
         configure_and_analyze()
-        find_undetected_files()
+        run_pyre()
+        #find_undetected_files()
     elif args.action == 'clean':
         clean_up()
     elif args.action == 'clean_detected':
