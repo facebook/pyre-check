@@ -93,3 +93,31 @@ def find_undetected_files():
     undetected_count = len(undetected_files)
     undetected_percentage = (undetected_count / total_files) * 100
     print(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
+
+def clean_up():
+    # will work later
+    subprocess.run(['rm', 'sources_sinks.pysa'], check=True)
+    subprocess.run(['rm', 'taint.config'], check=True)
+    subprocess.run(['rm', '.pyre_configuration'], check=True)
+    subprocess.run(['rm', 'analysis_output.tmp'], check=True)
+    # subprocess run cannot handle rm -rf for directories
+
+def main():
+    parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
+    parser.add_argument('action', choices=['all', 'analyze', 'clean'], help="Action to perform")
+    parser.add_argument('--num_files', type=int, default=100, help="Number of files to generate")
+    parser.add_argument('--x', type=int, default=20, help="Number of functions to generate in each file")
+
+    args = parser.parse_args()
+
+    if args.action == 'all':
+        generate_python_files(args.num_files, args.x)
+        configure_and_analyze()
+        run_pyre()
+    elif args.action == "analyze":
+        find_undetected_files()
+    elif args.action == 'clean':
+        clean_up()
+
+if __name__ == "__main__":
+    main()
