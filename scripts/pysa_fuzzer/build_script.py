@@ -5,10 +5,8 @@ import argparse
 from fuzzer2 import CodeGenerator
 
 def run_command(command):
-    # Split the command into a list if it is a string for subprocess.run
-    if isinstance(command, str):
-        command = command.split()
-    subprocess.run(command, check=True)
+    process = subprocess.Popen(command, shell=True)
+    process.communicate()
 
 def generate_python_files():
     generator = CodeGenerator()
@@ -65,7 +63,7 @@ def configure_and_analyze():
         }
         json.dump(taint_config, taint_config_file, indent=2)
 
-    run_command('pyre analyze > analysis_output.tmp')
+    run_command('cd generated_files && pyre analyze > analysis_output.tmp')
 
 def find_undetected_files():
     # Load the analysis output from the file
@@ -111,7 +109,6 @@ def clean_detected_files():
             print(f"Removed {file}")
 
 def clean_up():
-    run_command('rm -rf tutorial')
     run_command('rm -rf generated_files')
 
 def main():
