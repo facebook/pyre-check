@@ -263,13 +263,16 @@ class CodeGenerator:
             #self.generate_try_except
         ]
 
-        # Generate source first
+        # Generate import statements first
+        import_statements = self.generate_import_statements()
+
+        # Generate source
         source_code = self.generate_source()
         
         # Select random functions, allowing for duplicates
-        selected_functions = random.choices(function_generators, k = number_statements - 2)  # -2 to account for source and sink
+        selected_functions = random.choices(function_generators, k=number_statements - 2)  # -2 to account for source and sink
         generated_code = "\n".join(func() for func in selected_functions)
         sink_code = self.generate_sink()
-        full_code = f"{source_code}\n{generated_code}\n{sink_code}"
+        full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
 
