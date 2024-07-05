@@ -209,13 +209,13 @@ let run_on_qualifier environment ~dependency qualifier =
         }) ->
       []
   | Some (Result.Ok source) ->
-      let unannotated_global_environment =
-        TypeEnvironment.ReadOnly.unannotated_global_environment environment
+      let function_definition_environment =
+        TypeEnvironment.ReadOnly.function_definition_environment environment
       in
       let errors_by_define =
-        UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
+        FunctionDefinitionEnvironment.ReadOnly.define_names_of_qualifier
           ?dependency
-          unannotated_global_environment
+          function_definition_environment
           qualifier
         |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors ?dependency environment)
       in

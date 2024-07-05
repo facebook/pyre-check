@@ -105,22 +105,6 @@ module OutgoingDataComputation = struct
 
   let class_exists queries class_name = get_class_summary queries class_name |> Option.is_some
 
-  let get_define_names_for_qualifier_in_project queries qualifier =
-    get_module_components queries qualifier
-    >>| (fun { Module.Components.function_definitions; _ } ->
-          Reference.Map.Tree.keys function_definitions)
-    |> Option.value ~default:[]
-
-
-  let get_function_definition_in_project queries function_name =
-    let load_function_definition_if_in_module qualifier =
-      get_module_components queries qualifier
-      >>= fun { Module.Components.function_definitions; _ } ->
-      Reference.Map.Tree.find function_definitions function_name
-    in
-    search_possible_containing_modules ~f:load_function_definition_if_in_module function_name
-
-
   let get_unannotated_global queries reference =
     Reference.prefix reference
     >>= get_module_components queries
@@ -433,19 +417,6 @@ module ReadOnly = struct
 
   let class_exists read_only ?dependency =
     get_queries ?dependency read_only |> OutgoingDataComputation.class_exists
-
-
-  (* This will return an empty list if the qualifier isn't part of the project we are type
-     checking. *)
-  let get_define_names_for_qualifier_in_project read_only ?dependency =
-    get_queries ?dependency read_only
-    |> OutgoingDataComputation.get_define_names_for_qualifier_in_project
-
-
-  (* This will return None if called on a function definition that is not part of the project we are
-     type checking (i.e. defined in dependencies). *)
-  let get_function_definition_in_project read_only ?dependency =
-    get_queries ?dependency read_only |> OutgoingDataComputation.get_function_definition_in_project
 
 
   let get_unannotated_global read_only ?dependency =

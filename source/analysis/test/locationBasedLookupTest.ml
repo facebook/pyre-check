@@ -1720,7 +1720,7 @@ let test_resolve_definition_for_symbol =
              FOO = 1
              # ^- cursor
          |}
-           None;
+           (Some "test:2:0-2:3");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition_with_location_string_and_external_sources
            ~external_sources:["test.pyi", {|
@@ -3955,7 +3955,7 @@ let test_hover_info_for_position context =
       library.Base.return_str()
       #             ^- cursor
   |}
-    { value = Some "def return_str() -> str: ..."; docstring = None };
+    { value = Some "def return_str() -> str: ..."; docstring = Some "Test" };
   (* TODO(T139776124) support module docstrings *)
   assert_hover_info_for_position
     {|

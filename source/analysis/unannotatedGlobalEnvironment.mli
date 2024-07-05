@@ -40,22 +40,6 @@ module ReadOnly : sig
 
   val module_exists : t -> ?dependency:DependencyKey.registered -> Reference.t -> bool
 
-  (* This will return an empty list if the qualifier isn't part of the project we are type
-     checking. *)
-  val get_define_names_for_qualifier_in_project
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    Reference.t list
-
-  (* This will return None if called on a function definition that is not part of the project we are
-     type checking (i.e. defined in dependencies). *)
-  val get_function_definition_in_project
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    FunctionDefinition.t option
-
   val get_unannotated_global
     :  t ->
     ?dependency:DependencyKey.registered ->

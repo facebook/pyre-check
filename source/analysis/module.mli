@@ -88,7 +88,6 @@ module Components : sig
     module_metadata: Metadata.t;
     class_summaries: ClassSummary.t Ast.Node.t Ast.Identifier.Map.Tree.t;
     unannotated_globals: UnannotatedGlobal.t Ast.Identifier.Map.Tree.t;
-    function_definitions: FunctionDefinition.t Ast.Reference.Map.Tree.t;
   }
   [@@deriving equal, sexp]
 

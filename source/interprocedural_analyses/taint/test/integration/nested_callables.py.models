@@ -486,6 +486,8 @@
   "kind": "model",
   "data": {
     "callable": "_cookies",
+    "filename": "builtins.pyi",
+    "callable_line": 621,
     "sources": [
       {
         "port": "result",
@@ -501,6 +503,8 @@
   "kind": "model",
   "data": {
     "callable": "_rce",
+    "filename": "builtins.pyi",
+    "callable_line": 622,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -519,6 +523,8 @@
   "kind": "model",
   "data": {
     "callable": "_sql",
+    "filename": "builtins.pyi",
+    "callable_line": 623,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -532,6 +538,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 614,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -555,6 +563,8 @@
   "kind": "model",
   "data": {
     "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 615,
     "sources": [
       {
         "port": "result",
@@ -578,6 +588,8 @@
   "kind": "model",
   "data": {
     "callable": "_tito",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
     "tito": [
       {
         "port": "formal(**kwargs)",
@@ -605,6 +617,8 @@
   "kind": "model",
   "data": {
     "callable": "_user_controlled",
+    "filename": "builtins.pyi",
+    "callable_line": 620,
     "sources": [
       {
         "port": "result",
@@ -620,6 +634,8 @@
   "kind": "model",
   "data": {
     "callable": "copy",
+    "filename": "builtins.pyi",
+    "callable_line": 625,
     "tito": [
       {
         "port": "formal(obj, position=0)",
@@ -644,6 +660,8 @@
   "kind": "model",
   "data": {
     "callable": "eval",
+    "filename": "builtins.pyi",
+    "callable_line": 473,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -662,6 +680,8 @@
   "kind": "model",
   "data": {
     "callable": "getattr",
+    "filename": "builtins.pyi",
+    "callable_line": 475,
     "sinks": [
       {
         "port": "formal(name, position=1)",

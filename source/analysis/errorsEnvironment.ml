@@ -107,6 +107,7 @@ module AssumeDownstreamNeverNeedsUpdates = struct
     type_environment environment
     |> TypeEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> AnnotatedGlobalEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> FunctionDefinitionEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> AttributeResolution.AssumeDownstreamNeverNeedsUpdates.upstream
 
 
@@ -215,9 +216,14 @@ module Testing = struct
       type_environment environment |> TypeEnvironment.Testing.ReadOnly.upstream
 
 
-    let attribute_resolution environment =
+    let function_definition_environment environment =
       annotated_global_environment environment
       |> AnnotatedGlobalEnvironment.Testing.ReadOnly.upstream
+
+
+    let attribute_resolution environment =
+      function_definition_environment environment
+      |> FunctionDefinitionEnvironment.Testing.ReadOnly.upstream
 
 
     let class_metadata_environment environment =
@@ -252,9 +258,14 @@ module Testing = struct
       type_environment update_result |> TypeEnvironment.Testing.UpdateResult.upstream
 
 
-    let attribute_resolution update_result =
+    let function_definition_environment update_result =
       annotated_global_environment update_result
       |> AnnotatedGlobalEnvironment.Testing.UpdateResult.upstream
+
+
+    let attribute_resolution update_result =
+      function_definition_environment update_result
+      |> FunctionDefinitionEnvironment.Testing.UpdateResult.upstream
 
 
     let class_metadata_environment update_result =

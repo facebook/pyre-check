@@ -147,15 +147,15 @@ let populate_for_definitions ~scheduler ~scheduler_policies environment defines 
 let collect_definitions ~scheduler ~scheduler_policies environment qualifiers =
   let timer = Timer.start () in
   Log.info "Collecting all definitions...";
-  let unannotated_global_environment =
+  let function_definition_environment =
     global_environment environment
     |> AnnotatedGlobalEnvironment.read_only
-    |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
+    |> AnnotatedGlobalEnvironment.ReadOnly.function_definition_environment
   in
   let map qualifiers =
     List.concat_map qualifiers ~f:(fun qualifier ->
-        UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
-          unannotated_global_environment
+        FunctionDefinitionEnvironment.ReadOnly.define_names_of_qualifier
+          function_definition_environment
           qualifier)
   in
   let scheduler_policy =
@@ -205,6 +205,11 @@ module ReadOnly = struct
   let global_environment = CheckResultsTable.Testing.ReadOnly.upstream
 
   let global_resolution environment = global_environment environment |> GlobalResolution.create
+
+  let function_definition_environment environment =
+    global_environment environment
+    |> AnnotatedGlobalEnvironment.ReadOnly.function_definition_environment
+
 
   let unannotated_global_environment read_only =
     global_environment read_only
@@ -280,6 +285,7 @@ module AssumeAstEnvironment = struct
   let ast_environment environment =
     global_environment environment
     |> AnnotatedGlobalEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> FunctionDefinitionEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> AttributeResolution.AssumeDownstreamNeverNeedsUpdates.upstream
     |> ClassSuccessorMetadataEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> ClassHierarchyEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream

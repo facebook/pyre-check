@@ -29,7 +29,7 @@
 open Core
 open Ast
 open Pyre
-module PreviousEnvironment = AttributeResolution
+module PreviousEnvironment = FunctionDefinitionEnvironment
 
 module GlobalLocationValue = struct
   type t = Location.WithModule.t option
@@ -70,7 +70,7 @@ module IncomingDataComputation = struct
 end
 
 module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
-  module PreviousEnvironment = AttributeResolution
+  module PreviousEnvironment = PreviousEnvironment
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalLocationValue
 
@@ -86,9 +86,10 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let lazy_incremental = false
 
-  let produce_value attribute_resolution key ~dependency =
+  let produce_value function_definition_environment key ~dependency =
     let unannotated_global_environment =
-      attribute_resolution
+      function_definition_environment
+      |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
       |> AttributeResolution.ReadOnly.class_metadata_environment
       |> ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
     in
@@ -128,7 +129,12 @@ module ReadOnly = struct
 
   let location_of_global = get
 
-  let attribute_resolution read_only = upstream_environment read_only
+  let function_definition_environment read_only = upstream_environment read_only
+
+  let attribute_resolution read_only =
+    function_definition_environment read_only
+    |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
+
 
   let class_metadata_environment read_only =
     attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment

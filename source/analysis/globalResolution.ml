@@ -28,9 +28,14 @@ let create ?dependency annotated_global_environment = { annotated_global_environ
 
 let annotated_global_environment { annotated_global_environment; _ } = annotated_global_environment
 
-let attribute_resolution resolution =
+let function_definition_environment resolution =
   annotated_global_environment resolution
-  |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+  |> AnnotatedGlobalEnvironment.ReadOnly.function_definition_environment
+
+
+let attribute_resolution resolution =
+  function_definition_environment resolution
+  |> FunctionDefinitionEnvironment.ReadOnly.attribute_resolution
 
 
 let class_metadata_environment resolution =
@@ -101,17 +106,17 @@ let get_class_summary ({ dependency; _ } as resolution) =
 (* This will return an empty list if the qualifier isn't part of the project we are type
    checking. *)
 let get_define_names_for_qualifier_in_project ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
+  FunctionDefinitionEnvironment.ReadOnly.define_names_of_qualifier
     ?dependency
-    (unannotated_global_environment resolution)
+    (function_definition_environment resolution)
 
 
 (* This will return None if called on a function definition that is not part of the project we are
    type checking (i.e. defined in dependencies). *)
 let get_function_definition_in_project ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
+  FunctionDefinitionEnvironment.ReadOnly.function_definition
     ?dependency
-    (unannotated_global_environment resolution)
+    (function_definition_environment resolution)
 
 
 (* This will return None if called on a function definition that is not part of the project we are

@@ -14,6 +14,8 @@ module TypeEnvironmentReadOnly : sig
 
   val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
+  val function_definition_environment : t -> FunctionDefinitionEnvironment.ReadOnly.t
+
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
   val global_resolution : t -> GlobalResolution.t

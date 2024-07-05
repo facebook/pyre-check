@@ -17,6 +17,8 @@ module AnnotatedReadOnly : sig
     Reference.t ->
     Location.WithModule.t option
 
+  val function_definition_environment : t -> FunctionDefinitionEnvironment.ReadOnly.t
+
   val attribute_resolution : t -> AttributeResolution.ReadOnly.t
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
@@ -34,4 +36,4 @@ end
 include
   Environment.S
     with module ReadOnly = AnnotatedReadOnly
-     and module PreviousEnvironment = AttributeResolution
+     and module PreviousEnvironment = FunctionDefinitionEnvironment
