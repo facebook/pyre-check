@@ -834,7 +834,9 @@ module Error = struct
     | NoConfigurationFound ->
         Format.fprintf formatter "No `.config` was found in the taint directories"
     | UnexpectedJsonType { json; message; section } ->
-        let json = Format.asprintf ": `%a`" JsonAst.Json.pp json in
+        let json =
+          Format.asprintf ": `%s`" (json |> JsonAst.Json.to_yojson |> Yojson.Safe.to_string)
+        in
         let section =
           match section with
           | Some section -> Format.sprintf " for section `%s`" section
@@ -864,10 +866,9 @@ module Error = struct
         in
         Format.fprintf
           formatter
-          {|Combined source / String combined rules must have a section of the form %s, got %a|}
+          {|Combined source / String combined rules must have a section of the form %s, got %s|}
           (Yojson.Safe.to_string expected_json_form)
-          JsonAst.Json.pp
-          json
+          (json |> JsonAst.Json.to_yojson |> Yojson.Safe.to_string)
     | InvalidMultiSink { sink; registered } ->
         Format.fprintf
           formatter

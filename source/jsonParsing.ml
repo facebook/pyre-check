@@ -154,6 +154,7 @@ module JsonAst = struct
 
     and t = expression Node.t [@@deriving equal, compare]
 
+    (* Pretty-print each node with their location. Useful for debugging. *)
     module PrettyPrint = struct
       let rec pp_expression_t formatter { Node.value = expression; location } =
         Format.fprintf formatter "%a (loc: %a)" pp_expression expression Location.pp location
@@ -191,13 +192,23 @@ module JsonAst = struct
             Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
     end
 
-    let pp_expression = PrettyPrint.pp_expression
+    let pp_internal = PrettyPrint.pp_expression_t
 
-    let show_expression = Format.asprintf "%a" pp_expression
+    let show_internal = Format.asprintf "%a" pp_internal
 
-    let pp = PrettyPrint.pp_expression_t
+    let rec to_yojson { Node.value; _ } =
+      match value with
+      | `Null -> `Null
+      | `Bool value -> `Bool value
+      | `String value -> `String value
+      | `Float value -> `Float value
+      | `Int value -> `Int value
+      | `List elements -> elements |> List.map ~f:to_yojson |> fun elements -> `List elements
+      | `Assoc pairs ->
+          pairs
+          |> List.map ~f:(fun (name, value) -> name, to_yojson value)
+          |> fun pairs -> `Assoc pairs
 
-    let show = Format.asprintf "%a" pp
 
     exception
       TypeError of {

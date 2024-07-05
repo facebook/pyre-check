@@ -9,7 +9,7 @@ open Core
 open OUnit2
 
 let test_parser _ =
-  let string_of_ast ast = Format.asprintf "%a" JsonParsing.JsonAst.Json.pp ast in
+  let string_of_ast ast = Format.asprintf "%a" JsonParsing.JsonAst.Json.pp_internal ast in
   let json_string =
     {|
     {
@@ -136,7 +136,7 @@ let test_pretty_print _ =
       ~cmp:String.equal
       ~printer:Fn.id
       expected
-      (Format.asprintf "%a" JsonParsing.JsonAst.Json.pp actual)
+      (Format.asprintf "%a" JsonParsing.JsonAst.Json.pp_internal actual)
   in
   let line_1 =
     {
