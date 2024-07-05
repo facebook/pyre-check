@@ -8,6 +8,7 @@ def run_command(command):
     process = subprocess.Popen(command, shell=True)
     process.communicate()
 
+
 def generate_python_files():
     generator = CodeGenerator()
     num_files = 100  # Change this number to generate a different amount of files
@@ -27,8 +28,8 @@ def generate_python_files():
         print(f"Generated {filename}")
 
 def setup_virtual_environment():
-    run_command('python3 -m venv tutorial')
-    run_command('. tutorial/bin/activate && pip3 install pyre-check')
+    run_command(['python3', '-m', 'venv', 'tutorial'])
+    run_command(['tutorial/bin/pip', 'install', 'pyre-check'])
 
 def configure_and_analyze():
     os.makedirs('generated_files', exist_ok=True)
@@ -67,7 +68,7 @@ def configure_and_analyze():
         }
         json.dump(taint_config, taint_config_file, indent=2)
 
-    run_command('. tutorial/bin/activate && cd generated_files && pyre analyze > analysis_output.tmp')
+    run_command(['tutorial/bin/python', '-m', 'pyre', 'analyze', 'generated_files'])
 
 def find_undetected_files():
     # Load the analysis output from the file
@@ -113,8 +114,8 @@ def clean_detected_files():
             print(f"Removed {file}")
 
 def clean_up():
-    run_command('rm -rf tutorial')
-    run_command('rm -rf generated_files')
+    run_command(['rm', '-rf', 'tutorial'])
+    run_command(['rm', '-rf', 'generated_files'])
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
