@@ -67,4 +67,7 @@ def run_pyre():
     print("Please wait a minute or two for Pysa to Run!")
     run_command(['pyre', '-n', 'analyze'], output_file='analysis_output.tmp')
 
-
+def find_undetected_files():
+    # Load the analysis output from the file
+    with open('analysis_output.tmp', 'r') as file:
+        analysis_output = json.load(file)
