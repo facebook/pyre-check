@@ -239,42 +239,7 @@ class CodeGenerator:
         last_var = self.generate_new_variable()
         final_assignment = f"{last_var} = {prev_var}"
         return '\n'.join(function_definitions) + '\n' + final_assignment
-
-    # work in progress; not ready for review 
-    def generate_indirect_call_pattern(self) -> str:
-        source_func_name = self.generate_new_variable()
-        sink_func_name = self.generate_new_variable()
-        indirect_call_func_name = self.generate_new_variable()
-        data_var = self.generate_new_variable()
-
-        source_func = f"def {source_func_name}():\n    return input()"
-        sink_func = f"def {sink_func_name}(x):\n    print(x)"
-        indirect_call_func = f"def {indirect_call_func_name}(f, arg):\n    return f(arg)"
-        data_assignment = f"{data_var} = {source_func_name}()"
-        call = f"{indirect_call_func_name}({sink_func_name}, {data_var})"
-
-        return f"{source_func}\n\n{sink_func}\n\n{indirect_call_func}\n\n{data_assignment}\n\n{call}"
-
-    def generate_linked_list_pattern(self) -> str:
-        prev_var = self.get_last_variable()
-        curr_var_a = self.generate_new_variable()
-        curr_var_b = self.generate_new_variable()
-        curr_var_dummy = self.generate_new_variable()
-        curr_var_result = self.generate_new_variable()
-
-        linked_list_code = (
-            f"class Node:\n"
-            f"    def __init__(self, val=None):\n"
-            f"        self.val = val\n"
-            f"        self.next = None\n\n"
-            f"{curr_var_a} = Node({prev_var})\n"
-            f"{curr_var_b} = Node()\n"
-            f"{curr_var_dummy} = Node()\n"
-            f"{curr_var_dummy}.next = {curr_var_b}\n"
-            f"{curr_var_b}.next = {curr_var_a}\n"
-            f"{curr_var_result} = {curr_var_dummy}.next.next.val"
-        )
-        return linked_list_code
+    
 
     def generate_statements(self, number_statements: int) -> str:
         if number_statements < 2:
@@ -308,10 +273,4 @@ class CodeGenerator:
         sink_code = self.generate_sink()
         full_code = f"{source_code}\n{generated_code}\n{sink_code}"
         return full_code
-
-generator = CodeGenerator()
-
-print(generator.generate_source())
-print(generator.generate_linked_list_pattern())
-print(generator.generate_sink())
 
