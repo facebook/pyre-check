@@ -64,7 +64,7 @@ def configure_and_analyze():
         json.dump(taint_config, taint_config_file, indent=2)
 
 def run_pyre():
-    run_command('pyre analyze > analysis_output.tmp')
+    run_command('pyre -n analyze > analysis_output.tmp')
 
 def find_undetected_files():
     # Load the analysis output from the file
