@@ -196,12 +196,14 @@ class CodeGenerator:
 
     def generate_if_else_elif(self) -> str:
         prev_var = self.get_last_variable()
+        non_tainted_var1 = self.generate_new_variable()
+        non_tainted_var2 = self.generate_new_variable()
         curr_var = self.generate_new_variable()
 
         conditions = [
-            (f"if {prev_var} == '{random.randint(1, 10)}':", f"{curr_var} = {prev_var} + ' c1'"),
-            (f"elif {prev_var} == '{random.randint(11, 20)}':", f"{curr_var} = {prev_var} + ' c2'"),
-            (f"else:", f"{curr_var} = {prev_var} + ' c3'")
+            (f"if {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + 'c1'"),
+            (f"elif {prev_var} == '{random.randint(11, 20)}':", f"{curr_var} = {non_tainted_var1} + 'c2'"),
+            (f"else:", f"{curr_var} = {non_tainted_var2} + 'c3'")
         ]
         if_else_elif_statements = "\n".join([f"{condition}\n{textwrap.indent(action, '    ')}" for condition, action in conditions])
         return if_else_elif_statements
@@ -275,3 +277,16 @@ class CodeGenerator:
         full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
 
+generator = CodeGenerator()
+print(generator.generate_source())
+print(generator.generate_if_else_elif())
+print(generator.generate_sink())
+
+a = input()
+if a == a:
+    d = a + ' c1'
+elif a == '20':
+    d = b + ' c2'
+else:
+    d = c + ' c3'
+print(d)
