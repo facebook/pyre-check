@@ -69,7 +69,7 @@ def run_pyre():
 
 def find_undetected_files():
     # Load the analysis output from the file
-    with open('analysis_output.tmp', 'r') as file:
+    with open('../analysis_output.tmp', 'r') as file:
         analysis_output = json.load(file)
 
     # Extract the list of files where the flow has been detected
