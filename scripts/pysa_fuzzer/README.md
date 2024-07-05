@@ -9,3 +9,8 @@ Before you start, make sure you have the following:
 - Python installed on your system.
 - The `fuzzer2` module installed and properly set up.
 - Any other dependencies required by the script.
+
+## Usage
+
+The script accepts three main actions and two optional arguments. Here's a detailed explanation of each:
+
