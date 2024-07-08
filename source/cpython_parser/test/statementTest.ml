@@ -32,7 +32,18 @@ let assert_parsed ~context ~expected text _ounit_context =
         actual
 
 
-let assert_not_parsed = ExpressionTest.assert_not_parsed
+let assert_not_parsed ~context text _ounit_context =
+  match PyreCPythonParser.parse_expression ~context text with
+  | Result.Ok actual ->
+      let message =
+        Stdlib.Format.asprintf
+          "Unexpected parsing success: %a"
+          Base.Sexp.pp_hum
+          (Expression.sexp_of_t actual)
+      in
+      assert_failure message
+  | Result.Error _ -> ()
+
 
 let test_pass_break_continue =
   let do_test context =
