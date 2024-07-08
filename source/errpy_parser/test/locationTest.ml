@@ -3640,6 +3640,6 @@ let () =
          test_with_locations;
          test_walrus_locations;
          test_yield_locations;
-         (*TODO (T148669698): "type_comments" >:: test_type_comments;*)
+         "type_comments" >:: test_type_comments;
        ]
   |> Test.run
