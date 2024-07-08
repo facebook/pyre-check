@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install ocaml ocaml-dune
 
       - name: Setup OCaml
-        uses: avsm/setup-ocaml@8cc6339f55862749298d198ef84788b8d6acdacc # v2.2.10
+        uses: avsm/setup-ocaml@aab8e20cee16d3cf85e35e445c200efa10d06ba5 # v3.0.0
         with:
           ocaml-compiler: 4.14.0
 
