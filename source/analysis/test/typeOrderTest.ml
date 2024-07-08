@@ -1768,14 +1768,14 @@ let test_join _ =
   assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
 
   (* Annotated types. *)
-  assert_join "typing.Annotated[int]" "float" "typing.Annotated[float]";
-  assert_join "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[float]";
+  assert_join "typing.Annotated[int, 1]" "float" "typing.Annotated[float, 1]";
+  assert_join "typing.Annotated[int, 1]" "typing.Annotated[float, 1]" "typing.Annotated[float, 1]";
 
-  assert_join "typing_extensions.Annotated[int]" "float" "typing_extensions.Annotated[float]";
+  assert_join "typing_extensions.Annotated[int, 1]" "float" "typing_extensions.Annotated[float, 1]";
   assert_join
-    "typing_extensions.Annotated[int]"
-    "typing_extensions.Annotated[float]"
-    "typing_extensions.Annotated[float]";
+    "typing_extensions.Annotated[int, 1]"
+    "typing_extensions.Annotated[float, 1]"
+    "typing_extensions.Annotated[float, 1]";
 
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
@@ -2368,14 +2368,14 @@ let test_meet _ =
   assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
 
   (* Annotated types. *)
-  assert_meet "typing.Annotated[int]" "float" "typing.Annotated[int]";
-  assert_meet "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[int]";
+  assert_meet "typing.Annotated[int, 1]" "float" "typing.Annotated[int, 1]";
+  assert_meet "typing.Annotated[int, 1]" "typing.Annotated[float, 1]" "typing.Annotated[int, 1]";
 
-  assert_meet "typing_extensions.Annotated[int]" "float" "typing_extensions.Annotated[int]";
+  assert_meet "typing_extensions.Annotated[int, 1]" "float" "typing_extensions.Annotated[int, 1]";
   assert_meet
-    "typing_extensions.Annotated[int]"
-    "typing_extensions.Annotated[float]"
-    "typing_extensions.Annotated[int]";
+    "typing_extensions.Annotated[int, 1]"
+    "typing_extensions.Annotated[float, 1]"
+    "typing_extensions.Annotated[int, 1]";
 
   (* ReadOnly. *)
   assert_meet "pyre_extensions.ReadOnly[Child]" "Base" "Child";

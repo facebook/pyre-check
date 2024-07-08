@@ -505,24 +505,24 @@ let test_add_constraint context =
 
   (* Annotated types. *)
   assert_less_or_equal
-    ~left:"typing.Annotated[Base]"
+    ~left:"typing.Annotated[Base, 1]"
     ~right:"T_Unconstrained"
     ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
     ~left:"Base"
-    ~right:"typing.Annotated[T_Unconstrained]"
+    ~right:"typing.Annotated[T_Unconstrained, 1]"
     ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
 
   assert_less_or_equal
-    ~left:"typing_extensions.Annotated[Base]"
+    ~left:"typing_extensions.Annotated[Base, 1]"
     ~right:"T_Unconstrained"
     ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
     ~left:"Base"
-    ~right:"typing_extensions.Annotated[T_Unconstrained]"
+    ~right:"typing_extensions.Annotated[T_Unconstrained, 1]"
     ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
 

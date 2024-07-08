@@ -13,19 +13,48 @@ let test_annotated context =
     {|
       from builtins import expect_int
       import typing_extensions
-      def foo(annotated: typing_extensions.Annotated[int]) -> int:
+      def foo(annotated: typing_extensions.Annotated[int, True]) -> int:
         expect_int(annotated)
         reveal_type(annotated)
         return annotated
     |}
     ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
     context;
-
+  assert_type_errors
+    {|
+      import typing
+      def foo(annotated: typing.Annotated[int, True]) -> None:
+        pass
+    |}
+    []
+    context;
+  assert_type_errors
+    {|
+      import typing
+      def foo(annotated: typing.Annotated) -> None:
+        pass
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `typing.Annotated` expects at least 2 type \
+       parameters.";
+    ]
+    context;
+  assert_type_errors
+    {|
+      import typing
+      def foo(annotated: typing.Annotated[int]) -> None:
+        pass
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `typing.Annotated` expects at least 2 type \
+       parameters, received 1.";
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import expect_int
       import typing
-      def foo(annotated: typing.Annotated[int]) -> int:
+      def foo(annotated: typing.Annotated[int, True]) -> int:
         expect_int(annotated)
         reveal_type(annotated)
         return annotated
@@ -36,7 +65,7 @@ let test_annotated context =
     {|
       from builtins import expect_int
       from typing import Annotated
-      def foo(annotated: Annotated[Annotated[Annotated[int]]]) -> int:
+      def foo(annotated: Annotated[Annotated[Annotated[int, True], True], True]) -> int:
         expect_int(annotated)
         reveal_type(annotated)
         return annotated

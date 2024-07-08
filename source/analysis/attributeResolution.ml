@@ -2307,6 +2307,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | "typing_extensions.Final"
               | "typing.Optional" ->
                   [Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "T")]
+              | "typing.Annotated"
+              | "typing_extensions.Annotated" ->
+                  [
+                    Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "T1");
+                    Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "T2");
+                    Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "Ts");
+                  ]
               | "typing.Callable" ->
                   [
                     Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create "Ps");

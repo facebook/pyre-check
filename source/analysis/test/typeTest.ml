@@ -3855,7 +3855,7 @@ let test_is_truthy _ =
   assert_truthy ~expected:false "typing_extensions.Literal[b'']";
   assert_truthy ~expected:true "typing_extensions.Literal['hello']";
   assert_truthy ~expected:true "typing_extensions.Literal[b'hello']";
-  assert_truthy ~expected:true "typing.Annotated[typing_extensions.Literal[True]]";
+  assert_truthy ~expected:true "typing.Annotated[typing_extensions.Literal[True], 1]";
   assert_truthy ~expected:true "pyre_extensions.ReadOnly[typing_extensions.Literal[True]]";
   assert_truthy
     ~expected:true
@@ -3882,7 +3882,7 @@ let test_is_falsy _ =
   assert_falsy ~expected:true "typing_extensions.Literal[b'']";
   assert_falsy ~expected:false "typing_extensions.Literal['hello']";
   assert_falsy ~expected:false "typing_extensions.Literal[b'hello']";
-  assert_falsy ~expected:true "typing.Annotated[typing_extensions.Literal[False]]";
+  assert_falsy ~expected:true "typing.Annotated[typing_extensions.Literal[False], 1]";
   assert_falsy ~expected:true "pyre_extensions.ReadOnly[typing_extensions.Literal[False]]";
   assert_falsy
     ~expected:true

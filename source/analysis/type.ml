@@ -4563,7 +4563,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   | Parametric { name; parameters } -> (
       let replace_with_special_form ~name parameters =
         match name, Parameter.all_singles parameters with
-        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
+        (* Annotated doesn't have an internal representation in Pyre, but the spec requires at least
+           two params. We only unwrap it if there are >=2 type params; otherwise we leave it wrapped
+           and check it like a variadic generic that requires >=2 params. *)
+        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _ :: _) -> head
         | "typing.Optional", Some [head] -> Constructors.optional head
         | "typing.Union", Some parameters -> Constructors.union parameters
         (* We support a made-up, stubs-only `typing._PyreReadOnly_` class so that we can safely
