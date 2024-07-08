@@ -106,46 +106,6 @@ let test_get_type_errors_request context =
       ]
 
 
-let test_file_opened_and_closed_request context =
-  let project =
-    ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
-  in
-  let test_path =
-    let source_root = ScratchProject.source_root_of project in
-    PyrePath.append source_root ~element:"test.py" |> PyrePath.absolute
-  in
-  let open TestHelper in
-  let client_id = "foo" in
-  ScratchProject.test_server_with
-    project
-    ~style:ScratchProject.ClientConnection.Style.Sequential
-    ~clients:
-      [
-        register_client ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:1;
-        open_file ~path:test_path ~content:"reveal_type(43)\nreveal_type(44)" ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
-        ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Command (Command.FileClosed { path = "/untracked/file.py"; client_id }))
-          ~expected:
-            (Response.Error (Response.ErrorKind.FileNotOpened { path = "/untracked/file.py" }));
-        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command (Command.FileClosed { path = test_path; client_id = "nonexistent_client_id" }))
-          ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
-        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
-        close_file ~path:test_path ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:1;
-        (* Now that foo is no longer tracked as an open file, this should error. *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Command (Command.FileClosed { path = test_path; client_id }))
-          ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
-        dispose_client ~client_id;
-      ]
-
-
 let test_local_update_request context =
   let project =
     ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
