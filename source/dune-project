@@ -1,4 +1,4 @@
-(lang dune 2.8)
+(lang dune 3.4)
 
 (name pyre)
 
