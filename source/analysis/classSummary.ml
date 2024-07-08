@@ -948,6 +948,16 @@ let is_protocol { bases = { base_classes; _ }; _ } =
   List.exists ~f:is_protocol base_classes
 
 
+let is_special_form { bases = { base_classes; _ }; _ } =
+  let is_special_form { Node.value; _ } =
+    let open Expression in
+    match value with
+    | Expression.Name (Identifier "_SpecialForm") -> true
+    | _ -> false
+  in
+  List.exists ~f:is_special_form base_classes
+
+
 let has_decorator { decorators; _ } decorator =
   Expression.exists_in_list ~expression_list:decorators decorator
 

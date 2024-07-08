@@ -126,6 +126,14 @@ module OutgoingDataComputation = struct
     |> Option.value ~default:false
 
 
+  let is_special_form queries annotation =
+    primitive_name annotation
+    >>= get_class_summary queries
+    >>| Node.value
+    >>| ClassSummary.is_special_form
+    |> Option.value ~default:false
+
+
   let resolve_exports queries ?(from = Reference.empty) reference =
     let module ResolveExportItem = struct
       module T = struct
@@ -425,6 +433,10 @@ module ReadOnly = struct
 
   let is_protocol read_only ?dependency =
     get_queries ?dependency read_only |> OutgoingDataComputation.is_protocol
+
+
+  let is_special_form read_only ?dependency =
+    get_queries ?dependency read_only |> OutgoingDataComputation.is_special_form
 
 
   let resolve_exports read_only ?dependency =

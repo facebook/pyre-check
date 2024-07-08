@@ -35,6 +35,7 @@ type invalid_class_instantiation =
       abstract_methods: string list;
     }
   | ProtocolInstantiation of Reference.t
+  | NonInstantiableSpecialForm of string
 [@@deriving compare, sexp, show, hash]
 
 type module_reference =

@@ -62,6 +62,7 @@ type reason =
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | ProtocolInstantiation of Reference.t
+  | NonInstantiableSpecialForm of string
   | TooManyArguments of {
       expected: int;
       provided: int;

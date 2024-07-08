@@ -42,6 +42,13 @@ let test_annotated context =
   assert_type_errors
     {|
       import typing
+      typing.Annotated()
+    |}
+    ["Invalid class instantiation [45]: `typing.Annotated` cannot be instantiated."]
+    context;
+  assert_type_errors
+    {|
+      import typing
       def foo(annotated: typing.Annotated[int]) -> None:
         pass
     |}

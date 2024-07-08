@@ -160,6 +160,8 @@ let errors_from_not_found
             (Error.AbstractClassInstantiation { class_name; abstract_methods }) );
       ]
   | CallingFromParamSpec -> [None, Error.NotCallable (Type.Callable callable)]
+  | NonInstantiableSpecialForm class_name ->
+      [None, Error.InvalidClassInstantiation (Error.NonInstantiableSpecialForm class_name)]
   | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
       [
         ( Some location,
@@ -1309,6 +1311,14 @@ module State (Context : Context) = struct
                         {
                           closest_return_annotation = selected_return_annotation;
                           reason = Some (ProtocolInstantiation (Reference.create class_name));
+                        }
+                    else if
+                      GlobalResolution.is_special_form global_resolution (Primitive class_name)
+                    then
+                      NotFound
+                        {
+                          closest_return_annotation = selected_return_annotation;
+                          reason = Some (NonInstantiableSpecialForm class_name);
                         }
                     else
                       found_return_annotation)

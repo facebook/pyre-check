@@ -48,6 +48,8 @@ module ReadOnly : sig
 
   val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 
+  val is_special_form : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
+
   val resolve_exports
     :  t ->
     ?dependency:DependencyKey.registered ->

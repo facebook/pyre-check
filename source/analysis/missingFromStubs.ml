@@ -37,10 +37,15 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
 
 
 let single_unary_generic =
-  [Type.parametric "typing.Generic" [Single (Variable (Type.Variable.TypeVar.create "typing._T"))]]
+  [
+    Type.parametric "typing.Generic" [Single (Variable (Type.Variable.TypeVar.create "typing._T"))];
+    Type.Primitive "_SpecialForm";
+  ]
 
 
-let catch_all_generic = [Type.parametric "typing.Generic" [Single Any]]
+let catch_all_generic =
+  [Type.parametric "typing.Generic" [Single Any]; Type.Primitive "_SpecialForm"]
+
 
 let callable_body =
   [

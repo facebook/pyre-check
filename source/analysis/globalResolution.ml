@@ -91,6 +91,13 @@ let is_protocol ({ dependency; _ } as resolution) annotation =
     annotation
 
 
+let is_special_form ({ dependency; _ } as resolution) annotation =
+  UnannotatedGlobalEnvironment.ReadOnly.is_special_form
+    (unannotated_global_environment resolution)
+    ?dependency
+    annotation
+
+
 let first_matching_class_decorator ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
     (unannotated_global_environment resolution)

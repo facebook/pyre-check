@@ -69,6 +69,7 @@ type invalid_class_instantiation =
       abstract_methods: string list;
     }
   | ProtocolInstantiation of Reference.t
+  | NonInstantiableSpecialForm of string
 [@@deriving compare, sexp, show, hash]
 
 type module_reference =
@@ -2205,6 +2206,8 @@ let rec messages ~concise ~signature location kind =
       match kind with
       | ProtocolInstantiation class_name ->
           [Format.asprintf "Cannot instantiate protocol `%a`." pp_reference class_name]
+      | NonInstantiableSpecialForm class_name ->
+          [Format.asprintf "`%s` cannot be instantiated." class_name]
       | AbstractClassInstantiation { class_name; abstract_methods } ->
           let method_message =
             let to_string methods =
@@ -4086,6 +4089,7 @@ let dequalify
   in
   let dequalify_invalid_class_instantiation = function
     | ProtocolInstantiation reference -> ProtocolInstantiation (dequalify_reference reference)
+    | NonInstantiableSpecialForm name -> NonInstantiableSpecialForm (dequalify_identifier name)
     | AbstractClassInstantiation { class_name; abstract_methods } ->
         AbstractClassInstantiation { class_name = dequalify_reference class_name; abstract_methods }
   in

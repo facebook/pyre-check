@@ -23,6 +23,8 @@ val source_of_qualifier : t -> Reference.t -> Source.t option
 
 val is_protocol : t -> Type.t -> bool
 
+val is_special_form : t -> Type.t -> bool
+
 val first_matching_class_decorator
   :  t ->
   names:string list ->

@@ -1448,6 +1448,7 @@ module SignatureSelection = struct
         let importance = function
           | AbstractClassInstantiation _ -> 1
           | CallingFromParamSpec -> 1
+          | NonInstantiableSpecialForm _ -> 1
           | InvalidKeywordArgument _ -> 0
           | InvalidVariableArgument _ -> 0
           | Mismatches _ -> -1
