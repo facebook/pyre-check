@@ -1782,7 +1782,6 @@ let test_qualify_source _ =
         $local_qualifier?f$k = "k"
         $local_qualifier?f$d[$local_qualifier?f$k], $local_qualifier?f$y = "v", 42
     |};
-  (* TODO(T165661440) Fix nested qualification *)
   assert_qualify
     {|
       def foo(x: str):
@@ -1792,7 +1791,7 @@ let test_qualify_source _ =
     {|
       def qualifier.foo($parameter$x: str):
         def $local_qualifier?foo$bar():
-          $parameter$x = "x"
+          $local_qualifier?foo?bar$x = "x"
     |};
   ()
 

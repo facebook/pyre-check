@@ -442,7 +442,7 @@ module Qualify (Context : QualifyContext) = struct
     let scope, parameters =
       List.fold
         parameters
-        ~init:({ scope with locals = Reference.Set.empty }, [])
+        ~init:({ scope with locals = Reference.Set.empty; immutables = Reference.Set.empty }, [])
         ~f:rename_parameter
     in
     scope, List.rev parameters
