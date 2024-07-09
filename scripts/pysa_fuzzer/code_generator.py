@@ -196,17 +196,36 @@ class CodeGenerator:
 
     def generate_if_else_elif(self) -> str:
         prev_var = self.get_last_variable()
-        non_tainted_var1 = self.generate_new_variable()
-        non_tainted_var2 = self.generate_new_variable()
+        non_tainted_var = self.generate_new_variable()
         curr_var = self.generate_new_variable()
 
-        conditions = [
-            (f"if {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + 'c1'"),
-            (f"elif {prev_var} == '{random.randint(11, 20)}':", f"{curr_var} = {non_tainted_var1} + 'c2'"),
-            (f"else:", f"{curr_var} = {non_tainted_var2} + 'c3'")
-        ]
+        # Generate the non-tainted variable initialization
+        non_tainted_initialization = f'{non_tainted_var} = "temp"'
+
+        # Randomly decide which branch is the valid one
+        valid_branch = random.randint(1, 3)
+
+        if valid_branch == 1:
+            conditions = [
+                (f"if {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
+                (f"elif {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"else:", f"{curr_var} = {non_tainted_var}")
+            ]
+        elif valid_branch == 2:
+            conditions = [
+                (f"if {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"elif {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
+                (f"else:", f"{curr_var} = {non_tainted_var}")
+            ]
+        else:
+            conditions = [
+                (f"if {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"elif {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"else:", f"{curr_var} = {prev_var} + {non_tainted_var}")
+            ]
+
         if_else_elif_statements = "\n".join([f"{condition}\n{textwrap.indent(action, '    ')}" for condition, action in conditions])
-        return if_else_elif_statements
+        return f"{non_tainted_initialization}\n{if_else_elif_statements}"
 
     def generate_nested_loops(self) -> str:
         prev_var = self.get_last_variable()
@@ -276,4 +295,5 @@ class CodeGenerator:
         sink_code = self.generate_sink()
         full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
+
 
