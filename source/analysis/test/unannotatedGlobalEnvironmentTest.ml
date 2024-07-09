@@ -658,7 +658,7 @@ let assert_update
     let fold_trigger_set sofar triggered =
       let fold_one registered sofar =
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | WildcardImport _ -> sofar
+        | ComputeModuleComponents _ -> sofar
         | _ -> SharedMemoryKeys.DependencyKey.RegisteredSet.add registered sofar
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold fold_one triggered sofar

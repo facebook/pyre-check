@@ -200,10 +200,10 @@ module FromReadOnlyUpstream = struct
             ~scheduler)
     in
     let triggered_dependencies, invalidated_modules =
-      (* WildcardImport dependencies are tracked as invalidated modules as well. *)
+      (* ComputeModuleComponents dependencies are tracked as invalidated modules as well. *)
       let fold_key registered (triggered_dependencies, invalidated_modules) =
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.WildcardImport qualifier ->
+        | SharedMemoryKeys.ComputeModuleComponents qualifier ->
             ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
               RawSources.KeySet.add qualifier invalidated_modules )
         | _ ->
@@ -211,7 +211,7 @@ module FromReadOnlyUpstream = struct
               invalidated_modules )
       in
       let register_wildcard qualifier =
-        SharedMemoryKeys.WildcardImport qualifier
+        SharedMemoryKeys.ComputeModuleComponents qualifier
         |> SharedMemoryKeys.DependencyKey.Registry.register
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold

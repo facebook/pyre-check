@@ -364,10 +364,10 @@ module ModuleComponentsTable = Environment.EnvironmentTable.WithCache (struct
     IncomingDataComputation.module_components queries key
 
 
-  let trigger_to_dependency qualifier = SharedMemoryKeys.WildcardImport qualifier
+  let trigger_to_dependency qualifier = SharedMemoryKeys.ComputeModuleComponents qualifier
 
   let filter_upstream_dependency = function
-    | SharedMemoryKeys.WildcardImport qualifier -> Some qualifier
+    | SharedMemoryKeys.ComputeModuleComponents qualifier -> Some qualifier
     | _ -> None
 end)
 

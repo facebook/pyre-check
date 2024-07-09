@@ -64,7 +64,7 @@ type dependency =
   | AttributeTable of AttributeTableKey.t
   | ParseAnnotation of ParseAnnotationKey.t
   | Metaclass of Type.Primitive.t
-  | WildcardImport of Reference.t
+  | ComputeModuleComponents of Reference.t
   | FunctionDefinitions of Reference.t
 [@@deriving show, compare, sexp]
 

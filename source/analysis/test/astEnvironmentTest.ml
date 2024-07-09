@@ -267,7 +267,7 @@ let test_parse_sources context =
   assert_equal
     ~printer:[%show: SharedMemoryKeys.dependency list]
     ~cmp:[%compare.equal: SharedMemoryKeys.dependency list]
-    [SharedMemoryKeys.WildcardImport !&"c"; type_check_foo]
+    [SharedMemoryKeys.ComputeModuleComponents !&"c"; type_check_foo]
     triggered_dependencies;
   (* Add some new modules and verify the update *)
   assert_equal
@@ -789,7 +789,8 @@ module IncrementalTest = struct
         |> GlobalModulePathsApi.type_check_qualifiers
         |> List.iter ~f:(fun qualifier ->
                let dependency =
-                 SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
+                 SharedMemoryKeys.DependencyKey.Registry.register
+                   (ComputeModuleComponents qualifier)
                in
                ReadOnlyHelpers.source_of_qualifier_tracked read_only ~dependency qualifier |> ignore)
     in
@@ -1168,7 +1169,8 @@ let test_overlay context =
     ReadOnlyHelpers.source_of_qualifier_tracked
       read_only
       ~dependency:
-        (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport !&"depends_on_module"))
+        (SharedMemoryKeys.DependencyKey.Registry.register
+           (ComputeModuleComponents !&"depends_on_module"))
       !&"depends_on_module"
     |> Option.is_some
     |> assert_bool "Expected to be able to load processed source for b.py"
