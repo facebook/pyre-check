@@ -356,7 +356,7 @@ let make_assert_functions context =
     let parse_annotation = parse_annotation ~do_prep in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
     let left =
-      let mark_unary ({ Type.Variable.TypeVar.variable = name; _ } as variable) =
+      let mark_unary ({ Type.Variable.TypeVar.name; _ } as variable) =
         if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
           None
         else

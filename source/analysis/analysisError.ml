@@ -1210,7 +1210,7 @@ let simplify_mismatch ({ actual; expected; _ } as mismatch) =
         let updated =
           match annotation with
           | Type.Parametric { name; _ }
-          | Variable { variable = name; _ }
+          | Variable { name; _ }
           | Primitive name ->
               name :: sofar
           | _ -> sofar
@@ -2030,7 +2030,7 @@ let rec messages ~concise ~signature location kind =
           | ClassToplevel ->
               [
                 Format.asprintf format (Type.show (Type.Variable variable))
-                ^ Format.asprintf detail variable.variable;
+                ^ Format.asprintf detail variable.name;
               ]
           | Define -> [Format.asprintf format (Type.show (Type.Variable variable))]
           | Toplevel -> [Format.asprintf format (Type.show (Type.Variable variable))])
@@ -2777,7 +2777,7 @@ let rec messages ~concise ~signature location kind =
         | ProtocolBase -> "Duplicate type variable `%s` in Protocol[...]."
       in
       match variable with
-      | Type.Variable.TypeVarVariable { Type.Record.Variable.TypeVar.variable = name; _ } ->
+      | Type.Variable.TypeVarVariable { Type.Record.Variable.TypeVar.name; _ } ->
           [Format.asprintf format name]
       | Type.Variable.ParamSpecVariable variable ->
           let name = Type.Variable.ParamSpec.name variable in

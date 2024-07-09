@@ -465,8 +465,8 @@ module State (Context : Context) = struct
     let add_error errors mismatch =
       match annotation with
       (* Ignore errors from synthetic Self type when it is Generic without the proper bound *)
-      | Type.Variable variable
-        when Preprocessing.SelfType.is_synthetic_type_variable variable.variable ->
+      | Type.Variable variable when Preprocessing.SelfType.is_synthetic_type_variable variable.name
+        ->
           errors
       | _ -> emit_error ~errors ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in

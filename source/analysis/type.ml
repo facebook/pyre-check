@@ -68,7 +68,7 @@ module Record = struct
 
     module TypeVar = struct
       type 'annotation record = {
-        variable: Identifier.t;
+        name: Identifier.t;
         constraints: 'annotation constraints;
         variance: variance;
         state: state;
@@ -77,7 +77,7 @@ module Record = struct
       [@@deriving compare, eq, sexp, show, hash]
 
       let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
-        { variable = name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
+        { name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
     end
 
     (* TODO(T47346673): Handle variance on variadics. *)
@@ -1052,8 +1052,8 @@ module PrettyPrinting = struct
     module TypeVar = struct
       open Record.Variable.TypeVar
 
-      let pp_concise format { variable; constraints; variance; _ } ~pp_type =
-        let name =
+      let pp_concise format { name; constraints; variance; _ } ~pp_type =
+        let description =
           match constraints with
           | Bound _
           | Explicit _
@@ -1078,7 +1078,13 @@ module PrettyPrinting = struct
           | Contravariant -> "(contravariant)"
           | Invariant -> ""
         in
-        Format.fprintf format "%s[%s%s]%s" name (Identifier.sanitized variable) constraints variance
+        Format.fprintf
+          format
+          "%s[%s%s]%s"
+          description
+          (Identifier.sanitized name)
+          constraints
+          variance
     end
 
     module ParamSpec = struct
@@ -1359,7 +1365,7 @@ module PrettyPrinting = struct
     | Union [parameter; NoneType] ->
         Format.fprintf format "Optional[%a]" pp_concise parameter
     | Union parameters -> Format.fprintf format "Union[%a]" pp_comma_separated parameters
-    | Variable { variable; _ } -> Format.fprintf format "%s" (strip_qualification variable)
+    | Variable { name; _ } -> Format.fprintf format "%s" (strip_qualification name)
 
 
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
@@ -2567,8 +2573,8 @@ module Variable = struct
       | _ -> None
 
 
-    let dequalify ({ variable = name; _ } as variable) ~dequalify_map =
-      { variable with variable = dequalify_identifier dequalify_map name }
+    let dequalify ({ name; _ } as variable) ~dequalify_map =
+      { variable with name = dequalify_identifier dequalify_map name }
   end
 
   module ParamSpec = struct
@@ -3609,7 +3615,7 @@ module ToExpression = struct
     | Union [parameter; NoneType] ->
         subscript "typing.Optional" [expression parameter]
     | Union parameters -> subscript "typing.Union" (List.map ~f:expression parameters)
-    | Variable { variable; _ } -> create_name variable
+    | Variable { name; _ } -> create_name name
 
 
   and expression annotation =
@@ -4888,8 +4894,8 @@ let dequalify map annotation =
                   List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
               }
         | Primitive name -> Primitive (dequalify_identifier map name)
-        | Variable ({ variable = name; _ } as annotation) ->
-            Variable { annotation with variable = dequalify_identifier map name }
+        | Variable ({ name; _ } as annotation) ->
+            Variable { annotation with name = dequalify_identifier map name }
         | Callable ({ kind; _ } as callable) ->
             let kind =
               match kind with

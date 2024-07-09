@@ -31,7 +31,7 @@ module Record : sig
 
     module TypeVar : sig
       type 'annotation record = {
-        variable: Identifier.t;
+        name: Identifier.t;
         constraints: 'annotation constraints;
         variance: variance;
         state: state;

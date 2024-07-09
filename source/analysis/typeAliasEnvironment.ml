@@ -52,7 +52,7 @@ module IncomingDataComputation = struct
           if Type.Variable.TypeVar.contains_subvariable variable then
             Type.Any
           else
-            Type.Variable { variable with variable = Reference.show target }
+            Type.Variable { variable with name = Reference.show target }
       | annotation -> annotation
 
 

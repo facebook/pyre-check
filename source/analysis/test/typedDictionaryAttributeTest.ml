@@ -80,8 +80,8 @@ let assert_equivalent_typed_dictionary_attribute_types
     | type_ -> type_
   in
   let with_sanitized_type_variables =
-    Type.Variable.GlobalTransforms.TypeVar.replace_all (fun ({ variable; _ } as unary_variable) ->
-        Type.Variable { unary_variable with variable = Reference.create variable |> Reference.last }
+    Type.Variable.GlobalTransforms.TypeVar.replace_all (fun ({ name; _ } as unary_variable) ->
+        Type.Variable { unary_variable with name = Reference.create name |> Reference.last }
         |> Option.some)
   in
   let transform_attribute_annotation attribute =
