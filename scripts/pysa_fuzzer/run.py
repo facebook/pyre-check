@@ -104,7 +104,7 @@ def find_undetected_files():
 
     # Output the list of undetected files
     logging.info("Files where the flow has not been detected:")
-    for file in sorted(undetected_files, key=lambda x: int(x.split('_')[1].split('.')[0])):
+    for file in sorted(undetected_files, key=lambda x: int(x[len('test_'):-len('.py')])):
         logging.info(file)
 
     # Calculate and print the percentage of undetected files
