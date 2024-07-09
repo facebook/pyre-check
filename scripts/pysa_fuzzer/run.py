@@ -105,7 +105,17 @@ def find_undetected_files(num_files):
     undetected_percentage = (undetected_count / total_files) * 100
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
+def clean_up():
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp']
+    for file in files_to_remove:
+        try:
+            os.remove(file)
+        except FileNotFoundError:
+            logging.warning(f"{file} not found for cleanup.")
 
+    dirs_to_remove = ['generated_files', '__pycache__']
+    for dir in dirs_to_remove:
+        shutil.rmtree(dir, ignore_errors=True)
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
