@@ -135,26 +135,23 @@ def _run_command(
         return output
 
 
-def _switch_name(release: bool) -> str:
-    return f"{COMPILER_VERSION}+flambda" if release else COMPILER_VERSION
+def _switch_name() -> str:
+    return f"pyre-{COMPILER_VERSION}"
 
 
-def _compiler_specification(release: bool) -> str:
+def _compiler_specification() -> str:
     """
     Command-line argument to set the compiler version in `opam switch create ...`
 
     The format for how to specify this changed in 4.12.0, see
     https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
     """
-    if not release:
-        return COMPILER_VERSION
-    else:
-        return ",".join(
-            [
-                f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
-                "ocaml-options-only-flambda",
-            ]
-        )
+    return ",".join(
+        [
+            f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
+            "ocaml-option-flambda",
+        ]
+    )
 
 
 def _opam_command(opam_version: Tuple[int, ...]) -> List[str]:
@@ -184,12 +181,8 @@ def produce_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
             )
 
 
-def _opam_already_initialized(opam_root: Path) -> bool:
-    return opam_root.is_dir()
-
-
 def _get_opam_environment_variables(
-    opam_root: Path, opam_version: Tuple[int, ...], release: bool
+    opam_root: Path, opam_version: Tuple[int, ...]
 ) -> Dict[str, str]:
     LOG.info("Activating opam")
     opam_env_result = _run_command(
@@ -198,7 +191,7 @@ def _get_opam_environment_variables(
             "env",
             "--yes",
             "--switch",
-            _switch_name(release),
+            _switch_name(),
             "--root",
             opam_root.as_posix(),
             "--set-root",
@@ -235,12 +228,13 @@ def opam_update(
     )
 
 
-def initialize_opam_switch(
+def _initialize_opam_if_needed(
     opam_root: Path,
     opam_version: Tuple[int, ...],
-    release: bool,
     add_environment_variables: Optional[Mapping[str, str]] = None,
-) -> Mapping[str, str]:
+) -> None:
+    # `opam init` is a noop if opam is already initialized, so it's safe to run
+    # this unconditionally.
     _run_command(
         _opam_command(opam_version)
         + [
@@ -256,65 +250,50 @@ def initialize_opam_switch(
         add_environment_variables=add_environment_variables,
     )
 
-    opam_update(opam_root, opam_version, add_environment_variables)
 
-    _run_command(
-        _opam_command(opam_version)
-        + [
-            "switch",
-            "create",
-            _switch_name(release),
-            _compiler_specification(release),
-            "--yes",
-            "--root",
-            opam_root.as_posix(),
-        ],
-        add_environment_variables=add_environment_variables,
-    )
-    opam_environment_variables = _get_opam_environment_variables(
-        opam_root, opam_version, release
-    )
-
-    opam_install_command = _opam_command(opam_version) + ["install", "--yes"]
-
-    if sys.platform == "linux" and opam_version >= (2, 1):
-        # setting `--assume-depexts` means that opam will not require a "system"
-        # installed version of Rust (e.g. via `dnf`` or `yum`) but will instead
-        # accept a version referenced on the system `$PATH`
-        opam_install_command.append("--assume-depexts")
-
-    _run_command(
-        opam_install_command + DEPENDENCIES,
-        add_environment_variables={
-            **({} if add_environment_variables is None else add_environment_variables),
-            **opam_environment_variables,
-        },
-    )
-
-    return opam_environment_variables
-
-
-def set_opam_switch_and_install_dependencies(
+def _select_or_create_switch(
     opam_root: Path,
     opam_version: Tuple[int, ...],
-    release: bool,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+) -> None:
+    switch_name = _switch_name()
+    switch_root = opam_root / switch_name
+    if switch_root.is_dir():
+        _run_command(
+            _opam_command(opam_version)
+            + [
+                "switch",
+                "set",
+                _switch_name(),
+                "--root",
+                opam_root.as_posix(),
+            ]
+        )
+    else:
+        _run_command(
+            _opam_command(opam_version)
+            + [
+                "switch",
+                "create",
+                _switch_name(),
+                _compiler_specification(),
+                "--yes",
+                "--root",
+                opam_root.as_posix(),
+            ],
+            add_environment_variables=add_environment_variables,
+        )
+
+
+def _install_dependencies(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
     add_environment_variables: Optional[Mapping[str, str]] = None,
     rust_path: Optional[Path] = None,
 ) -> Mapping[str, str]:
-    _run_command(
-        _opam_command(opam_version)
-        + [
-            "switch",
-            "set",
-            _switch_name(release),
-            "--root",
-            opam_root.as_posix(),
-        ]
-    )
-
     environment_variables = {
         **({} if add_environment_variables is None else add_environment_variables),
-        **_get_opam_environment_variables(opam_root, opam_version, release),
+        **_get_opam_environment_variables(opam_root, opam_version),
     }
     if rust_path is not None:
         environment_variables["PATH"] = (
@@ -334,6 +313,19 @@ def set_opam_switch_and_install_dependencies(
     return environment_variables
 
 
+def initialize_opam_switch(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
+    release: bool = False,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+    rust_path: Optional[Path] = None,
+) -> None:
+    _initialize_opam_if_needed(opam_root, opam_version, add_environment_variables)
+    opam_update(opam_root, opam_version, add_environment_variables)
+    _select_or_create_switch(opam_root, opam_version, add_environment_variables)
+    _install_dependencies(opam_root, opam_version, add_environment_variables, rust_path)
+
+
 def full_setup(
     opam_root: Path,
     opam_version: Tuple[int, ...],
@@ -348,10 +340,9 @@ def full_setup(
 ) -> None:
     opam_environment_variables: Mapping[
         str, str
-    ] = set_opam_switch_and_install_dependencies(
+    ] = _install_dependencies(
         opam_root,
         opam_version,
-        release=release,
         add_environment_variables=add_environment_variables,
         rust_path=rust_path,
     )
@@ -431,12 +422,7 @@ def setup(
     if parsed.configure:
         produce_dune_file(pyre_directory, build_type)
     else:
-        if not _opam_already_initialized(opam_root):
-            initialize_opam_switch(
-                opam_root, opam_version, release, add_environment_variables
-            )
-        else:
-            opam_update(opam_root, opam_version, add_environment_variables)
+        initialize_opam_switch(opam_root, opam_version, release, add_environment_variables, parsed.rust_path)
         full_setup(
             opam_root,
             opam_version,
