@@ -128,7 +128,7 @@ def clean_up():
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
     parser.add_argument('action', choices=['all', 'analyze', 'clean'], help="Action to perform")
-    parser.add_argument('--num_files', type=int, default=100, help="Number of files to generate")
+    parser.add_argument('--num-files', type=int, default=100, help="Number of files to generate")
     parser.add_argument('--x', type=int, default=20, help="Number of functions to generate in each file")
 
     args = parser.parse_args()
