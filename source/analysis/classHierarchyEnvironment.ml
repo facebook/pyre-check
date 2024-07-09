@@ -43,15 +43,24 @@ module IncomingDataComputation = struct
       { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
       ~aliases
       ~is_from_empty_stub
+      ~variable_aliases
     =
     let metaclass_is_from_placeholder_stub =
       metaclass
-      >>| AnnotatedBases.base_is_from_placeholder_stub ~aliases ~is_from_empty_stub
+      >>| AnnotatedBases.base_is_from_placeholder_stub
+            ~variables:variable_aliases
+            ~aliases
+            ~is_from_empty_stub
       |> Option.value ~default:false
     in
+
     List.exists
       base_classes
-      ~f:(AnnotatedBases.base_is_from_placeholder_stub ~aliases ~is_from_empty_stub)
+      ~f:
+        (AnnotatedBases.base_is_from_placeholder_stub
+           ~variables:variable_aliases
+           ~aliases
+           ~is_from_empty_stub)
     || metaclass_is_from_placeholder_stub
 
 
@@ -105,6 +114,7 @@ module IncomingDataComputation = struct
           _;
         }
       name
+      ~variable_aliases
     =
     (* Split `base_expression` into `(name, params)` where `name` is the name of the class and
        `params` is its type parameters. E.g. `Foo[T]` ==> `("Foo", [TypeVar "T"])` *)
@@ -218,6 +228,7 @@ module IncomingDataComputation = struct
             class_summary
             ~aliases:get_type_alias
             ~is_from_empty_stub
+            ~variable_aliases
         in
         Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
 end
@@ -295,7 +306,14 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
               ?dependency;
         }
     in
-    IncomingDataComputation.get_parents queries key
+
+    let variable_aliases name =
+      match queries.get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
+      | Some (Type.Alias.VariableAlias variable) -> Some variable
+      | _ -> None
+    in
+
+    IncomingDataComputation.get_parents queries key ~variable_aliases
 
 
   let filter_upstream_dependency = function

@@ -1044,10 +1044,17 @@ let test_invalid_type_parameters context =
       expected_mismatches
     =
     let parse annotation =
+      let variable_aliases name =
+        match name with
+        | "Ts" ->
+            let type_variable = Type.Variable.TypeVarTuple.create "Ts" in
+            Some (Type.Record.Variable.TypeVarTupleVariable type_variable)
+        | _ -> None
+      in
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
          `check_invalid_type_parameters`. *)
-      |> Type.create ~aliases
+      |> Type.create ~variables:variable_aliases ~aliases
     in
     assert_invalid_type_parameters_direct
       ?source

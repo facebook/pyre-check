@@ -12,6 +12,8 @@ open Analysis
 open Pyre
 open Test
 
+let variable_aliases _ = None
+
 let test_simple_registration =
   let assert_registers source name expected context =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
@@ -88,7 +90,8 @@ let test_harder_registrations =
   in
   let parsed_assert_registers source name expected =
     let parser expression =
-      parse_single_expression expression |> Type.create ~aliases:Type.empty_aliases
+      parse_single_expression expression
+      |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
     in
     let expected_alias = expected >>| parser >>| fun alias -> Type.Alias.TypeAlias alias in
     assert_registers ~expected_alias source name
@@ -377,7 +380,7 @@ let test_updates context =
       let expectation =
         expectation
         >>| parse_single_expression
-        >>| Type.create ~aliases:Type.empty_aliases
+        >>| Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
         >>| fun alias -> Type.Alias.TypeAlias alias
       in
       TypeAliasEnvironment.ReadOnly.get_type_alias read_only ~dependency alias_name

@@ -43,11 +43,15 @@ module IncomingDataComputation = struct
     }
 
     let unchecked_resolve ~unparsed ~target map =
-      match
-        Type.create
-          ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> Map.find map name)
-          unparsed
-      with
+      let aliases ?replace_unbound_parameters_with_any:_ name = Map.find map name in
+
+      let variable_aliases name =
+        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+        | Some (Type.Alias.VariableAlias variable) -> Some variable
+        | _ -> None
+      in
+
+      match Type.create ~variables:variable_aliases ~aliases unparsed with
       | Type.Variable variable ->
           if Type.Variable.TypeVar.contains_subvariable variable then
             Type.Any
@@ -122,8 +126,12 @@ module IncomingDataComputation = struct
     let extract_alias = function
       | SimpleAssign { value = None; _ } -> None
       | SimpleAssign { explicit_annotation; value = Some value; _ } -> (
+          let variable_aliases _ = None in
           let target_annotation =
-            Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
+            Type.create
+              ~variables:variable_aliases
+              ~aliases:Type.empty_aliases
+              (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
           | ( (BinaryOperator _ | Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
@@ -147,8 +155,12 @@ module IncomingDataComputation = struct
               match Type.Variable.parse_declaration (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->
+                  let variable_aliases _ = None in
+
                   let value = Type.preprocess_alias_value value |> delocalize in
-                  let value_annotation = Type.create ~aliases:Type.empty_aliases value in
+                  let value_annotation =
+                    Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases value
+                  in
                   if
                     not
                       (Type.contains_unknown target_annotation
@@ -273,7 +285,14 @@ module OutgoingDataComputation = struct
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in
-      Type.create ~aliases expression
+
+      let variable_aliases name =
+        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+        | Some (Type.Alias.VariableAlias variable) -> Some variable
+        | _ -> None
+      in
+
+      Type.create ~variables:variable_aliases ~aliases expression
     in
     let annotation =
       let type_map = function
@@ -301,13 +320,17 @@ module OutgoingDataComputation = struct
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
       ()
+      ~variable_aliases
     =
     let variable_parameter_annotation, keywords_parameter_annotation =
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
+    let aliases ?replace_unbound_parameters_with_any:_ name = get_type_alias name in
+
     Type.Variable.ParamSpec.parse_instance_annotation
-      ~create_type:Type.create
-      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> get_type_alias name)
+      ~create_type:(Type.create ~variables:variable_aliases)
+      ~aliases
+      ~variables:variable_aliases
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
 end
@@ -415,8 +438,19 @@ module ReadOnly = struct
 
 
   let parse_as_parameter_specification_instance_annotation environment ?dependency =
+    let variable_aliases name =
+      match
+        (outgoing_queries ?dependency environment).get_type_alias
+          ?replace_unbound_parameters_with_any:(Some true)
+          name
+      with
+      | Some (Type.Alias.VariableAlias variable) -> Some variable
+      | _ -> None
+    in
+
     OutgoingDataComputation.parse_as_parameter_specification_instance_annotation
       (outgoing_queries ?dependency environment)
+      ~variable_aliases
 end
 
 module AliasReadOnly = ReadOnly

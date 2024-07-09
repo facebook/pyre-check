@@ -13,11 +13,15 @@ open Pyre
 open Statement
 open Test
 
+let variable_aliases _ = None
+
 let test_new_and_refine context =
   let assert_local ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
+      (expected
+      >>| parse_single_expression
+      >>| Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
       (Resolution.get_local ~reference:!&name resolution >>| TypeInfo.Unit.annotation)
   in
   let assert_local_with_attributes
@@ -29,7 +33,9 @@ let test_new_and_refine context =
     =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
+      (expected
+      >>| parse_single_expression
+      >>| Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
       (Resolution.get_local_with_attributes
          ~global_fallback
          ~name:!&name
@@ -121,7 +127,8 @@ let test_parse_annotation context =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression expected |> Type.create ~aliases:Type.empty_aliases)
+      (parse_single_expression expected
+      |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
       (GlobalResolution.parse_annotation ~validation resolution expression)
   in
   let resolution =

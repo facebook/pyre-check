@@ -1113,10 +1113,11 @@ let test_simplification_map _ =
 
 let test_simplify_mismatch _ =
   let create_mismatch actual expected =
+    let aliases ?replace_unbound_parameters_with_any:_ _ = None in
+    let variable_aliases _ = None in
+
     let create_type s =
-      Type.create
-        ~aliases:(fun ?replace_unbound_parameters_with_any:_ _ -> None)
-        (parse_single_expression ~preprocess:true s)
+      Type.create ~variables:variable_aliases ~aliases (parse_single_expression ~preprocess:true s)
       |> Type.dequalify Reference.Map.empty
     in
     {

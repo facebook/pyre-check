@@ -13,6 +13,8 @@ open Pyre
 open TypeCheck
 open Test
 
+let variable_aliases _ = None
+
 module DefaultContext = struct
   let qualifier = Reference.empty
 
@@ -480,7 +482,10 @@ let test_object_callables =
         );
       ]
       expression
-      (Type.create ~aliases:Type.empty_aliases (parse_single_expression annotation))
+      (Type.create
+         ~variables:variable_aliases
+         ~aliases:Type.empty_aliases
+         (parse_single_expression annotation))
   in
   test_list
     [
@@ -504,7 +509,10 @@ let test_callable_selection =
     assert_resolved
       ["test.py", source]
       expression
-      (Type.create ~aliases:Type.empty_aliases (parse_single_expression annotation))
+      (Type.create
+         ~variables:variable_aliases
+         ~aliases:Type.empty_aliases
+         (parse_single_expression annotation))
   in
   test_list
     [

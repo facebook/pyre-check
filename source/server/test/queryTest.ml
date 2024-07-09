@@ -223,12 +223,13 @@ module QueryTestTypes = struct
 
 
   let parse_annotation serialized =
+    let variable_aliases _ = None in
     serialized
     |> (fun literal ->
          Expression.Expression.Constant
            (Expression.Constant.String (Expression.StringLiteral.create literal)))
     |> Node.create_with_default_location
-    |> Type.create ~aliases:Type.empty_aliases
+    |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
 
 
   let create_location start_line start_column stop_line stop_column =

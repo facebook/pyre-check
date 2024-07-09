@@ -348,8 +348,9 @@ let location_of_global ({ dependency; _ } as resolution) =
 
 let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
-let base_is_from_placeholder_stub resolution =
+let base_is_from_placeholder_stub variable_aliases resolution =
   AnnotatedBases.base_is_from_placeholder_stub
+    ~variables:variable_aliases
     ~aliases:(get_type_alias resolution)
     ~is_from_empty_stub:(is_from_empty_stub resolution)
 

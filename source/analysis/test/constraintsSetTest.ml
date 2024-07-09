@@ -16,6 +16,12 @@ open Assumptions
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
+let variable_aliases aliases name =
+  match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+  | Some (Type.Alias.VariableAlias variable) -> Some variable
+  | _ -> None
+
+
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
     AnnotatedAttribute.create
@@ -197,7 +203,7 @@ let make_assert_functions context =
       else
         GlobalResolution.get_type_alias resolution a
     in
-    annotation |> Type.create ~aliases |> Type.expression
+    annotation |> Type.create ~variables:(variable_aliases aliases) ~aliases |> Type.expression
   in
   let parse_annotation annotation ~do_prep =
     annotation

@@ -10,8 +10,8 @@
 open Core
 open Ast
 
-let base_is_from_placeholder_stub base_expression ~aliases ~is_from_empty_stub =
-  let parsed = Expression.delocalize base_expression |> Type.create ~aliases in
+let base_is_from_placeholder_stub base_expression ~variables ~aliases ~is_from_empty_stub =
+  let parsed = Expression.delocalize base_expression |> Type.create ~variables ~aliases in
   match parsed with
   | Type.Primitive primitive
   | Parametric { name = primitive; _ } ->

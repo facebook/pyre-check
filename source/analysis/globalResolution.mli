@@ -193,7 +193,11 @@ val location_of_global : t -> Reference.t -> Location.WithModule.t option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
-val base_is_from_placeholder_stub : t -> Expression.t -> bool
+val base_is_from_placeholder_stub
+  :  (string -> Type.t Type.Variable.record option) ->
+  t ->
+  Expression.t ->
+  bool
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 

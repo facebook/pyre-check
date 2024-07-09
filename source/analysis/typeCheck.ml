@@ -5365,6 +5365,7 @@ module State (Context : Context) = struct
 
   and forward_assignment ~resolution ~location ~target ~annotation ~value =
     let global_resolution = Resolution.global_resolution resolution in
+
     let errors, is_final, unwrapped_annotation_type =
       match annotation with
       | None -> [], false, None
@@ -5400,6 +5401,7 @@ module State (Context : Context) = struct
           in
           annotation_errors, is_final, Option.map final_annotation ~f:unwrap_type_qualifiers
     in
+
     match Node.value target, value with
     | Expression.Name (Name.Identifier _), Some value
       when delocalize target
@@ -5903,6 +5905,15 @@ module State (Context : Context) = struct
 
   let initial ~resolution =
     let global_resolution = Resolution.global_resolution resolution in
+
+    let get_type_alias = GlobalResolution.get_type_alias global_resolution in
+
+    let variable_aliases name =
+      match get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
+      | Some (Type.Alias.VariableAlias variable) -> Some variable
+      | _ -> None
+    in
+
     let {
       Node.location;
       value =
@@ -6540,7 +6551,10 @@ module State (Context : Context) = struct
           | Parametric _
           | Tuple _ ->
               errors
-          | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base -> errors
+          | Any
+            when (GlobalResolution.base_is_from_placeholder_stub variable_aliases global_resolution)
+                   base ->
+              errors
           | annotation ->
               emit_error
                 ~errors

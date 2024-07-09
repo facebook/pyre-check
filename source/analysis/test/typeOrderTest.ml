@@ -16,6 +16,14 @@ open Assumptions
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
+let variable_aliases name =
+  match name with
+  | "Ts" ->
+      let type_variable = Type.Variable.TypeVarTuple.create "Ts" in
+      Some (Type.Record.Variable.TypeVarTupleVariable type_variable)
+  | _ -> None
+
+
 let environment ?source context =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     let sources = Option.value_map source ~f:(fun source -> ["test.py", source]) ~default:[] in
@@ -1714,7 +1722,8 @@ let test_join _ =
   let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
-      | _ as source -> parse_single_expression source |> Type.create ~aliases
+      | _ as source ->
+          parse_single_expression source |> Type.create ~variables:variable_aliases ~aliases
     in
     let attributes annotation ~assumptions:_ =
       let parse_annotation =
@@ -2350,7 +2359,8 @@ let test_meet _ =
   let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
-      | _ as source -> parse_single_expression source |> Type.create ~aliases
+      | _ as source ->
+          parse_single_expression source |> Type.create ~variables:variable_aliases ~aliases
     in
     assert_type_equal
       (parse_annotation expected)

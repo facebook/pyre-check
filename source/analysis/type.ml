@@ -2641,10 +2641,11 @@ module Variable = struct
         ~variable_parameter_annotation
         ~keywords_parameter_annotation
         ~aliases
+        ~variables
       =
-      let get_variable name =
-        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-        | Some (Alias.VariableAlias (ParamSpecVariable variable)) -> Some variable
+      let get_variable variables name =
+        match variables name with
+        | Some (ParamSpecVariable variable) -> Some variable
         | _ -> None
       in
       let open Record.Variable.ParamSpec.Components in
@@ -2672,7 +2673,7 @@ module Variable = struct
           with
           | Primitive positionals_base, Primitive keywords_base
             when Identifier.equal positionals_base keywords_base ->
-              get_variable positionals_base
+              get_variable variables positionals_base
           | _ -> None)
       | _ -> None
 
@@ -4811,13 +4812,8 @@ let resolve_aliases ~aliases annotation =
   snd (ResolveAliasesTransform.visit () annotation)
 
 
-let create ~aliases =
-  let variable_aliases name =
-    match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-    | Some (Alias.VariableAlias variable) -> Some variable
-    | _ -> None
-  in
-  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases
+let create ~variables ~aliases =
+  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases:variables
 
 
 let namespace_insensitive_compare left right =

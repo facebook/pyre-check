@@ -28,8 +28,13 @@ let make_overload ~parameters ~return =
 let test_compose_list _ =
   let assert_compose_list ?(aliases = fun _ -> None) ~signature_select given expected =
     let parse source =
+      let aliases ?replace_unbound_parameters_with_any:_ = aliases in
+
+      let variable_aliases _ = None in
+
       Type.create
-        ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
+        ~variables:variable_aliases
+        ~aliases
         (parse_single_expression ~preprocess:true source)
     in
     let merge_option_list = function

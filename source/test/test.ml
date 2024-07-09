@@ -200,7 +200,11 @@ let parse_single_call ?(preprocess = false) source =
 
 
 let parse_callable ?name ?(aliases = Type.empty_aliases) callable =
-  let callable = parse_single_expression callable |> Type.create ~aliases in
+  let variable_aliases _ = None in
+
+  let callable =
+    parse_single_expression callable |> Type.create ~variables:variable_aliases ~aliases
+  in
   match name, callable with
   | Some name, Type.Callable callable ->
       Type.Callable { callable with Type.Callable.kind = Named name }
