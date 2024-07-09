@@ -10,17 +10,6 @@ import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
-class ConfigManager:
-    def __init__(self):
-        self.num_files = 100
-        self.x = 20
-    
-    def set_config(self, num_files, x):
-        self.num_files = num_files
-        self.x = x
-
-config = ConfigManager()
-
 def run_command(command, output_file=None):
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
@@ -86,12 +75,17 @@ def run_pyre():
     run_command(['pyre', '-n', 'analyze'], output_file='analysis_output.tmp')
 
 def find_undetected_files():
-    # Use the number of files from the config manager
-    num_files = config.num_files
+    # Load the number of files from the temp file
+    try:
+        with open('num_files.tmp', 'r') as tmp_file:
+            num_files = int(tmp_file.read().strip())
+    except FileNotFoundError:
+        logging.error("Temporary file with number of files not found.")
+        return
 
     # Load the analysis output from the file
     try:
-        with open('analysis_output.tmp', 'r') as file:
+        with open('../analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
@@ -120,7 +114,7 @@ def find_undetected_files():
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'num_files.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
@@ -140,10 +134,12 @@ def main():
     args = parser.parse_args()
 
     if args.action == 'all':
-        config.set_config(args.num_files, args.x)
         generate_python_files(args.num_files, args.x)
         configure_and_analyze()
         run_pyre()
+        # Save the number of files to a temporary file
+        with open('num_files.tmp', 'w') as tmp_file:
+            tmp_file.write(str(args.num_files))
     elif args.action == "analyze":
         find_undetected_files()
     elif args.action == 'clean':
