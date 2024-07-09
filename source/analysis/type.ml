@@ -3135,8 +3135,6 @@ module Variable = struct
 
   type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
-  type variable_t = t
-
   module Set = Core.Set.Make (struct
     type t = T.t Record.Variable.record [@@deriving compare, sexp]
   end)

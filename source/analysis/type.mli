@@ -712,8 +712,6 @@ module Variable : sig
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
-  type variable_t = t
-
   module type VariableKind = sig
     type t [@@deriving compare, eq, sexp, show, hash]
 
