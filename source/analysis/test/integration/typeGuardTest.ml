@@ -31,6 +31,17 @@ let test_type_guard context =
     ];
   assert_type_errors
     {|
+      from typing import TypeGuard
+
+      def is_str() -> TypeGuard[str]:
+          return True
+    |}
+    [
+      "Invalid type guard [68]: User-defined type guard functions or methods must have at least \
+       one input parameter.";
+    ];
+  assert_type_errors
+    {|
       from typing import TypeVar, TypeGuard, Tuple
 
       _T = TypeVar("_T")
@@ -192,6 +203,60 @@ let test_methods context =
   let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
+      from typing import TypeGuard
+
+      class Foo:
+        def is_str(val: object) -> TypeGuard[str]:
+            return isinstance(val, str)
+    |}
+    [
+      "Invalid type guard [68]: User-defined type guard functions or methods must have at least \
+       one input parameter.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeGuard
+
+      class Foo:
+        @staticmethod
+        def is_str(val: object) -> TypeGuard[str]:
+            return isinstance(val, str)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeGuard
+
+      class Foo:
+        def is_str(self, val: object) -> TypeGuard[str]:
+            return isinstance(val, str)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeGuard
+
+      class Foo:
+        @classmethod
+        def is_str(cls, val: object) -> TypeGuard[str]:
+            return isinstance(val, str)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeGuard
+
+      class Foo:
+        @classmethod
+        def is_str(val: object) -> TypeGuard[str]:
+            return isinstance(val, str)
+    |}
+    [
+      "Invalid type guard [68]: User-defined type guard functions or methods must have at least \
+       one input parameter.";
+    ];
+  assert_type_errors
+    {|
       from typing import List, TypeGuard
 
       class Foo:
@@ -282,24 +347,24 @@ let test_callback context =
 
       _T = TypeVar("_T")
 
-      def returns_typeguard() -> TypeGuard[int]:
+      def returns_typeguard(val: int) -> TypeGuard[int]:
           ...
 
-      def returns_bool() -> bool:
+      def returns_bool(val: int) -> bool:
           ...
 
-      def simple_fn(callback: Callable[[], bool]) -> None:
-          ...
-
-      @overload
-      def overloaded_fn(callback: Callable[[], TypeGuard[_T]]) -> _T:
+      def simple_fn(callback: Callable[[int], bool]) -> None:
           ...
 
       @overload
-      def overloaded_fn(callback: Callable[[], bool]) -> None:
+      def overloaded_fn(callback: Callable[[int], TypeGuard[_T]]) -> _T:
           ...
 
-      def overloaded_fn(callback: Callable[[], Any]) -> Any:
+      @overload
+      def overloaded_fn(callback: Callable[[int], bool]) -> None:
+          ...
+
+      def overloaded_fn(callback: Callable[[int], Any]) -> Any:
           ...
 
       x1: None = simple_fn(returns_typeguard)

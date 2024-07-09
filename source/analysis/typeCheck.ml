@@ -6105,6 +6105,42 @@ module State (Context : Context) = struct
         else
           errors
       in
+      let add_typeguard_error { Node.location; _ } return_type errors =
+        (* TypeGuard functions require at least two parameters if implemented as an instance or
+           class method, since the first parameter is self or cls. Otherwise, TypeGuard functions
+           require at least one parameter. *)
+        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+          {
+            Type.Callable.CallableParamType.name;
+            annotation = Type.Any;
+            default = Option.is_some value;
+          }
+        in
+        let parameter_types =
+          List.map parameters ~f:create_parameter |> Type.Callable.CallableParamType.create
+        in
+        let positional_parameters =
+          List.filter
+            ~f:(fun param ->
+              match param with
+              | Type.Callable.CallableParamType.PositionalOnly _
+              | Named _
+              | Variable _ ->
+                  true
+              | _ -> false)
+            parameter_types
+        in
+        match return_type with
+        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ }
+          when Option.is_some parent
+               && (not (Define.is_static_method define))
+               && List.length positional_parameters < 2 ->
+            emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
+        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ }
+          when List.is_empty positional_parameters ->
+            emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
+        | _ -> errors
+      in
       let errors = add_missing_return_error return_annotation errors in
       match return_annotation with
       | None -> errors
@@ -6115,6 +6151,7 @@ module State (Context : Context) = struct
           List.append annotation_errors errors
           |> add_async_generator_error return_type
           |> add_variance_error return_type
+          |> add_typeguard_error return_annotation return_type
     in
     let add_capture_annotations ~outer_scope_type_variables resolution errors =
       let process_signature ({ Define.Signature.nesting_define; _ } as signature) =

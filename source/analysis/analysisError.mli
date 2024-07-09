@@ -412,6 +412,7 @@ and kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
+  | InvalidTypeGuard
   | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;

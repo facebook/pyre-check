@@ -758,6 +758,7 @@ and kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
+  | InvalidTypeGuard
   | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;
@@ -954,6 +955,7 @@ let code_of_kind = function
   | DuplicateParameter _ -> 65
   | InvalidExceptionHandler _ -> 66
   | InvalidExceptionGroupHandler _ -> 67
+  | InvalidTypeGuard -> 68
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -994,6 +996,7 @@ let name_of_kind = function
   | InvalidExceptionHandler _ -> "Invalid except clause"
   | InvalidExceptionGroupHandler _ -> "Invalid except* clause"
   | InvalidType _ -> "Invalid type"
+  | InvalidTypeGuard -> "Invalid type guard"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
@@ -1908,6 +1911,11 @@ let rec messages ~concise ~signature location kind =
           ]
       | InvalidLiteral reference ->
           [Format.asprintf "Expression `%a` is not a literal value." Reference.pp reference])
+  | InvalidTypeGuard ->
+      [
+        Format.asprintf
+          "User-defined type guard functions or methods must have at least one input parameter.";
+      ]
   | InvalidTypeParameters
       {
         name;
@@ -3222,6 +3230,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidAssignment _
   | InvalidClassInstantiation _
   | InvalidType _
+  | InvalidTypeGuard
   | IncompatibleOverload _
   | IncompleteType _
   | LeakToGlobal _
@@ -3335,6 +3344,7 @@ let join ~resolution left right =
             annotation = GlobalResolution.join resolution left right;
             attempted_action = left_attempted_action;
           }
+    | InvalidTypeGuard, InvalidTypeGuard -> InvalidTypeGuard
     | InvalidTypeParameters left, InvalidTypeParameters right
       when [%compare.equal: AttributeResolution.type_parameters_mismatch] left right ->
         InvalidTypeParameters left
@@ -3744,6 +3754,7 @@ let join ~resolution left right =
     | InvalidExceptionGroupHandler _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
+    | InvalidTypeGuard, _
     | InvalidTypeParameters _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
@@ -4232,6 +4243,7 @@ let dequalify
     | InvalidType (SingleExplicit explicit) -> InvalidType (SingleExplicit (dequalify explicit))
     | InvalidType (InvalidLiteral reference) ->
         InvalidType (InvalidLiteral (dequalify_reference reference))
+    | InvalidTypeGuard -> InvalidTypeGuard
     | InvalidTypeParameters invalid_type_parameters ->
         InvalidTypeParameters (dequalify_invalid_type_parameters invalid_type_parameters)
     | InvalidTypeVariable { annotation; origin } ->
