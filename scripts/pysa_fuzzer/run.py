@@ -2,7 +2,7 @@ import subprocess
 import os
 import json
 import argparse
-from fuzzer2 import CodeGenerator
+from code_generator import CodeGenerator
 from pathlib import Path
 import shutil
 import logging
