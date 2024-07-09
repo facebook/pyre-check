@@ -51,3 +51,41 @@ To clean up the configuration and temporary files created during the process:
 \`\`\`bash
 python run.py clean
 \`\`\`
+
+## Detailed Steps
+
+1. **Generate Files, Configure, and Run Analysis**
+
+   Run the following command to generate the specified number of files and statements, configure the analysis environment, and run the analysis:
+
+   \`\`\`bash
+   python run.py all --num-files 50 --num-statements 10
+   \`\`\`
+
+2. **Change Directory to Generated Files**
+
+   Navigate to the directory where the generated files are stored:
+
+   \`\`\`bash
+   cd generated_files
+   \`\`\`
+
+3. **Analyze the Generated Files**
+
+   Execute the following command to analyze the generated files:
+
+   \`\`\`bash
+   python3 ../run.py analyze
+   \`\`\`
+
+4. **Clean up**
+
+   Execute the following command to clean up:
+
+   \`\`\`bash
+   cd ..
+   python3 run.py clean
+   \`\`\`
+
+
+By following these steps, you can efficiently generate, configure, analyze, and clean up your Python files using the provided script.
