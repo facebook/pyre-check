@@ -2542,33 +2542,6 @@ module Variable = struct
       | _ -> None
 
 
-    let parse_declaration value target =
-      match value with
-      | {
-       Node.value =
-         Expression.Call
-           {
-             callee =
-               {
-                 Node.value =
-                   Name
-                     (Name.Attribute
-                       {
-                         base = { Node.value = Name (Name.Identifier "typing"); _ };
-                         attribute = "TypeVar";
-                         special = false;
-                       });
-                 _;
-               };
-             arguments =
-               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-           };
-       _;
-      } ->
-          Some (create (Reference.show target))
-      | _ -> None
-
-
     let dequalify ({ name; _ } as variable) ~dequalify_map =
       { variable with name = dequalify_identifier dequalify_map name }
   end
@@ -2661,58 +2634,6 @@ module Variable = struct
 
     let dequalify ({ name; _ } as variable) ~dequalify_map =
       { variable with name = dequalify_identifier dequalify_map name }
-
-
-    let parse_declaration value ~target =
-      match value with
-      | {
-          Node.value =
-            Expression.Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          {
-                            base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                            attribute = "ParameterSpecification";
-                            special = false;
-                          });
-                    _;
-                  };
-                arguments =
-                  [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-              };
-          _;
-        }
-      | {
-          Node.value =
-            Expression.Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          {
-                            base =
-                              {
-                                Node.value = Name (Name.Identifier ("typing" | "typing_extensions"));
-                                _;
-                              };
-                            attribute = "ParamSpec";
-                            special = false;
-                          });
-                    _;
-                  };
-                arguments =
-                  [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-              };
-          _;
-        } ->
-          Some (create (Reference.show target))
-      | _ -> None
 
 
     let parse_instance_annotation
@@ -2973,40 +2894,6 @@ module Variable = struct
 
     let dequalify ({ name; _ } as variable) ~dequalify_map =
       { variable with name = dequalify_identifier dequalify_map name }
-
-
-    let parse_declaration value ~target =
-      match value with
-      | {
-       Node.value =
-         Expression.Call
-           {
-             callee =
-               {
-                 Node.value =
-                   Name
-                     (Name.Attribute
-                       {
-                         base =
-                           {
-                             Node.value =
-                               ( Name (Name.Identifier "pyre_extensions")
-                               | Name (Name.Identifier "typing_extensions")
-                               | Name (Name.Identifier "typing") );
-                             _;
-                           };
-                         attribute = "TypeVarTuple";
-                         special = false;
-                       });
-                 _;
-               };
-             arguments =
-               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-           };
-       _;
-      } ->
-          Some (create (Reference.show target))
-      | _ -> None
   end
 
   module GlobalTransforms = struct
@@ -3148,15 +3035,106 @@ module Variable = struct
   [@@deriving compare, eq, sexp, show, hash]
 
   let parse_declaration expression ~target =
-    match ParamSpec.parse_declaration expression ~target with
-    | Some variable -> Some (ParamSpecVariable variable)
-    | None -> (
-        match TypeVarTuple.parse_declaration expression ~target with
-        | Some variable -> Some (TypeVarTupleVariable variable)
-        | None -> (
-            match TypeVar.parse_declaration expression target with
-            | Some variable -> Some (Record.Variable.TypeVarVariable variable)
-            | None -> None))
+    match expression with
+    | {
+     Node.value =
+       Expression.Call
+         {
+           callee =
+             {
+               Node.value =
+                 Name
+                   (Name.Attribute
+                     {
+                       base = { Node.value = Name (Name.Identifier "typing"); _ };
+                       attribute = "TypeVar";
+                       special = false;
+                     });
+               _;
+             };
+           arguments =
+             [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+         };
+     _;
+    } ->
+        Some (TypeVarVariable (TypeVar.create (Reference.show target)))
+    | {
+        Node.value =
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                          attribute = "ParameterSpecification";
+                          special = false;
+                        });
+                  _;
+                };
+              arguments =
+                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+            };
+        _;
+      }
+    | {
+        Node.value =
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            {
+                              Node.value = Name (Name.Identifier ("typing" | "typing_extensions"));
+                              _;
+                            };
+                          attribute = "ParamSpec";
+                          special = false;
+                        });
+                  _;
+                };
+              arguments =
+                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+            };
+        _;
+      } ->
+        Some (ParamSpecVariable (ParamSpec.create (Reference.show target)))
+    | {
+     Node.value =
+       Expression.Call
+         {
+           callee =
+             {
+               Node.value =
+                 Name
+                   (Name.Attribute
+                     {
+                       base =
+                         {
+                           Node.value =
+                             ( Name (Name.Identifier "pyre_extensions")
+                             | Name (Name.Identifier "typing_extensions")
+                             | Name (Name.Identifier "typing") );
+                           _;
+                         };
+                       attribute = "TypeVarTuple";
+                       special = false;
+                     });
+               _;
+             };
+           arguments =
+             [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+         };
+     _;
+    } ->
+        Some (TypeVarTupleVariable (TypeVarTuple.create (Reference.show target)))
+    | _ -> None
 
 
   let dequalify dequalify_map = function
