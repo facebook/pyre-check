@@ -19,7 +19,7 @@ def run_command(command, output_file=None):
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
-def generate_python_files(num_files, x):
+def generate_python_files(num_files, num_statements):
     generator = CodeGenerator()
     output_dir = Path('generated_files')
 
@@ -27,7 +27,7 @@ def generate_python_files(num_files, x):
     output_dir.mkdir(exist_ok=True)
 
     for i in range(1, num_files + 1):
-        generated_code = generator.generate_statements(x)
+        generated_code = generator.generate_statements(num_statements)
         generator.reset()
         filename = output_dir / f'test_{i}.py'
         with open(filename, 'w') as file:
@@ -77,7 +77,7 @@ def run_pyre():
 def find_undetected_files():
     # Load the number of files from the temp file
     try:
-        with open('../num_files.tmp', 'r') as tmp_file:
+        with open('num_files.tmp', 'r') as tmp_file:
             num_files = int(tmp_file.read().strip())
     except FileNotFoundError:
         logging.error("Temporary file with number of files not found.")
@@ -85,7 +85,7 @@ def find_undetected_files():
 
     # Load the analysis output from the file
     try:
-        with open('../analysis_output.tmp', 'r') as file:
+        with open('analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
@@ -129,12 +129,12 @@ def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
     parser.add_argument('action', choices=['all', 'analyze', 'clean'], help="Action to perform")
     parser.add_argument('--num-files', type=int, default=100, help="Number of files to generate")
-    parser.add_argument('--x', type=int, default=20, help="Number of functions to generate in each file")
+    parser.add_argument('--num-statements', type=int, default=20, help="Number of statements to generate in each file")
 
     args = parser.parse_args()
 
     if args.action == 'all':
-        generate_python_files(args.num_files, args.x)
+        generate_python_files(args.num_files, args.num_statements)
         configure_and_analyze()
         run_pyre()
         # Save the number of files to a temporary file
