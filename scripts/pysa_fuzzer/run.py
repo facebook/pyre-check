@@ -6,7 +6,6 @@ from code_generator import CodeGenerator
 from pathlib import Path
 import shutil
 import logging
-import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
