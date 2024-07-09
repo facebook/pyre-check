@@ -3,28 +3,36 @@ import os
 import json
 import argparse
 from fuzzer2 import CodeGenerator
+from pathlib import Path
+import shutil
+import logging
+import tempfile
+
+logging.basicConfig(level=logging.INFO)
 
 def run_command(command, output_file=None):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-    if output_file:
-        with open(output_file, 'w') as file:
-            file.write(result.stdout)
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        if output_file:
+            with open(output_file, 'w') as file:
+                file.write(result.stdout)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
 def generate_python_files(num_files, x):
     generator = CodeGenerator()
-    output_dir = 'generated_files'
+    output_dir = Path('generated_files')
 
     # Create the directory if it doesn't exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    output_dir.mkdir(exist_ok=True)
 
     for i in range(1, num_files + 1):
         generated_code = generator.generate_statements(x)
         generator.reset()
-        filename = os.path.join(output_dir, f'test_{i}.py')
+        filename = output_dir / f'test_{i}.py'
         with open(filename, 'w') as file:
             file.write(generated_code)
-        print(f"Generated {filename}")
+        logging.info(f"Generated {filename}")
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -63,43 +71,41 @@ def configure_and_analyze():
         json.dump(taint_config, taint_config_file, indent=2)
 
 def run_pyre():
-    print("Please wait a minute or two for Pysa to Run!")
+    logging.info("Please wait a minute or two for Pysa to Run!")
     run_command(['pyre', '-n', 'analyze'], output_file='analysis_output.tmp')
 
-def find_undetected_files():
+def find_undetected_files(num_files):
     # Load the analysis output from the file
-    with open('../analysis_output.tmp', 'r') as file:
-        analysis_output = json.load(file)
+    try:
+        with open('analysis_output.tmp', 'r') as file:
+            analysis_output = json.load(file)
+    except FileNotFoundError:
+        logging.error("Analysis output file not found.")
+        return
 
     # Extract the list of files where the flow has been detected
     detected_files = set()
     for entry in analysis_output:
         detected_files.add(os.path.basename(entry['path']))  # Normalize the path to get the filename only
 
-    # Generate the full list of files (from test_1.py to test_100.py)
-    all_files = {f"test_{i}.py" for i in range(1, 101)}
+    # Generate the full list of files (from test_1.py to test_{num_files}.py)
+    all_files = {f"test_{i}.py" for i in range(1, num_files + 1)}
 
     # Find the files where the flow has not been detected
     undetected_files = all_files - detected_files
 
     # Output the list of undetected files
-    print("Files where the flow has not been detected:")
+    logging.info("Files where the flow has not been detected:")
     for file in sorted(undetected_files, key=lambda x: int(x.split('_')[1].split('.')[0])):
-        print(file)
+        logging.info(file)
 
     # Calculate and print the percentage of undetected files
     total_files = len(all_files)
     undetected_count = len(undetected_files)
     undetected_percentage = (undetected_count / total_files) * 100
-    print(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
+    logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
-def clean_up():
-    subprocess.run(['rm', 'sources_sinks.pysa'], check=True)
-    subprocess.run(['rm', 'taint.config'], check=True)
-    subprocess.run(['rm', '.pyre_configuration'], check=True)
-    subprocess.run(['rm', 'analysis_output.tmp'], check=True)
-    # need a way to do rm -rf generated_files 
-    # need a way to do rm -rf __pychache__ 
+
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
@@ -114,7 +120,7 @@ def main():
         configure_and_analyze()
         run_pyre()
     elif args.action == "analyze":
-        find_undetected_files()
+        find_undetected_files(args.num_files)
     elif args.action == 'clean':
         clean_up()
 
