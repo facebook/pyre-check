@@ -80,11 +80,9 @@ module Record = struct
         { name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
     end
 
-    (* TODO(T47346673): Handle variance on variadics. *)
     module ParamSpec = struct
       type 'annotation record = {
         name: Identifier.t;
-        variance: variance;
         state: state;
         namespace: Namespace.t;
       }
@@ -98,15 +96,13 @@ module Record = struct
 
         type t = {
           component: component;
-          variance: variance;
           variable_name: Identifier.t;
           variable_namespace: Namespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
       end
 
-      let create ?(variance = Invariant) name =
-        { name; variance; state = Free { escaped = false }; namespace = 1 }
+      let create name = { name; state = Free { escaped = false }; namespace = 1 }
     end
 
     module TypeVarTuple = struct
@@ -2778,24 +2774,22 @@ module Variable = struct
         | ( ParamSpecComponent ({ component = PositionalArguments; _ } as positional_component),
             ParamSpecComponent ({ component = KeywordArguments; _ } as keyword_component) )
           when component_agnostic_equal positional_component keyword_component ->
-            let { variance; variable_name = name; variable_namespace = namespace; _ } =
+            let { variable_name = name; variable_namespace = namespace; _ } =
               positional_component
             in
-            Some { name; namespace; variance; state = InFunction }
+            Some { name; namespace; state = InFunction }
         | _ -> None
 
 
       let component { component; _ } = component
     end
 
-    let decompose { name = variable_name; variance; namespace = variable_namespace; _ } =
+    let decompose { name = variable_name; namespace = variable_namespace; _ } =
       {
         Components.positional_component =
-          ParamSpecComponent
-            { component = PositionalArguments; variable_name; variance; variable_namespace };
+          ParamSpecComponent { component = PositionalArguments; variable_name; variable_namespace };
         keyword_component =
-          ParamSpecComponent
-            { component = KeywordArguments; variable_name; variance; variable_namespace };
+          ParamSpecComponent { component = KeywordArguments; variable_name; variable_namespace };
       }
   end
 

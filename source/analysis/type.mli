@@ -773,7 +773,7 @@ module Variable : sig
 
     val name : t -> Identifier.t
 
-    val create : ?variance:Record.Variable.variance -> string -> t
+    val create : string -> t
 
     val parse_instance_annotation
       :  create_type:
