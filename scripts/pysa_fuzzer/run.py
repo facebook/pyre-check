@@ -2,7 +2,6 @@ import subprocess
 import os
 import json
 import argparse
-import time
 from fuzzer2 import CodeGenerator
 
 def run_command(command, output_file=None):
@@ -95,12 +94,12 @@ def find_undetected_files():
     print(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
 def clean_up():
-    # will work later
     subprocess.run(['rm', 'sources_sinks.pysa'], check=True)
     subprocess.run(['rm', 'taint.config'], check=True)
     subprocess.run(['rm', '.pyre_configuration'], check=True)
     subprocess.run(['rm', 'analysis_output.tmp'], check=True)
-    # subprocess run cannot handle rm -rf for directories
+    # need a way to do rm -rf generated_files 
+    # need a way to do rm -rf __pychache__ 
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
