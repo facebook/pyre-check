@@ -77,7 +77,7 @@ def run_pyre():
 def find_undetected_files():
     # Load the number of files from the temp file
     try:
-        with open('num_files.tmp', 'r') as tmp_file:
+        with open('../num_files.tmp', 'r') as tmp_file:
             num_files = int(tmp_file.read().strip())
     except FileNotFoundError:
         logging.error("Temporary file with number of files not found.")
@@ -85,7 +85,7 @@ def find_undetected_files():
 
     # Load the analysis output from the file
     try:
-        with open('analysis_output.tmp', 'r') as file:
+        with open('../analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")

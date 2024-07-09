@@ -1,14 +1,15 @@
+
 # Python Script Tutorial
 
-This tutorial will guide you on how to use the provided Python script to generate Python files, configure the analysis environment, run the analysis, and clean up the configuration and temporary files.
+This tutorial will guide you on how to use the provided Python script to generate complex python code with valid flow, configure the analysis environment, run the analysis, and clean up the configuration and temporary files.
 
 ## Prerequisites
 
 Before you start, make sure you have the following:
 
 - Python installed on your system.
-- The `fuzzer2` module installed and properly set up.
-- Any other dependencies required by the script.
+- The `code_generator` module installed and properly set up.
+- The `pyre-check` module installed and properly setup. 
 
 ## Usage
 
@@ -22,28 +23,31 @@ The script accepts three main actions and two optional arguments. Here's a detai
 
 ### Optional Arguments
 
-- **`--num_files`**: Specifies the number of files to generate (default is 100).
-- **`--x`**: Specifies the number of functions to generate in each file (default is 20).
+- **`--num-files`**: Specifies the number of files to generate (default is 100).
+- **`--num-statements`**: Specifies the number of statements to generate in each file (default is 20).
 
 ### Examples
 
 #### 1. Generate Files, Configure, and Run Analysis
 
-```bash
-python script_name.py all --num_files 50 --x 10
-```
-next we need to cd into the generated_files directory. 
+To generate 50 files with 10 statements each, configure the environment, and run the analysis:
 
+\`\`\`bash
+python run.py all --num-files 50 --num-statements 10
+\`\`\`
 
+#### 2. Analyze the Generated Files
 
-```bash
-cd generated_files
-```
+After generating the files and running the initial analysis, you can analyze the generated files to identify the ones where the flow has not been detected:
 
-next we can do 
+\`\`\`bash
+python run.py analyze
+\`\`\`
 
-```bash
-python3 ../build_script.py analyze
-```
+#### 3. Clean Up Configuration and Temporary Files
 
+To clean up the configuration and temporary files created during the process:
 
+\`\`\`bash
+python run.py clean
+\`\`\`
