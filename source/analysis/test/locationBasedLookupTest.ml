@@ -1333,8 +1333,8 @@ let test_resolve_definition_for_symbol =
       @@ assert_resolved_definition
            {|
              def foo(x: str) -> None:
+                   # ^     ^
                for x in [1]:
-                 # ^^
 
                  print(x)
                  #     ^- cursor
@@ -3685,6 +3685,8 @@ let test_resolve_type_for_symbol context =
           # ^- cursor
     |}
     (Some "str");
+  (* NOTE: This is wrong: `x` should be `int` but the `resolve_type` implementation is not control
+     flow sensitive. *)
   assert_resolved_type
     {|
         def foo(x: str) -> None:
@@ -3692,7 +3694,7 @@ let test_resolve_type_for_symbol context =
             print(x)
             #     ^- cursor
     |}
-    (Some "int");
+    (Some "str");
   assert_resolved_explicit_type
     {|
         class Foo:

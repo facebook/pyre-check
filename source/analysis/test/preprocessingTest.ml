@@ -1252,6 +1252,8 @@ let test_qualify_source _ =
           nonlocal nonlocal_constant
           global_constant = 3
           nonlocal_constant = 4
+          for global_constant, nonlocal_constant in []:
+            pass
    |}
     {|
       $local_qualifier$global_constant = 1
@@ -1262,6 +1264,8 @@ let test_qualify_source _ =
           nonlocal nonlocal_constant
           $local_qualifier$global_constant = 3
           $local_qualifier?foo$nonlocal_constant = 4
+          for ($local_qualifier$global_constant, $local_qualifier?foo$nonlocal_constant) in []:
+            pass
     |};
   assert_qualify
     {|
@@ -1768,6 +1772,17 @@ let test_qualify_source _ =
         def $local_qualifier?foo$bar():
           nonlocal x
           $parameter$x = "x"
+    |};
+  assert_qualify
+    {|
+      def foo(x):
+        for x in [1]:
+          x
+    |}
+    {|
+      def qualifier.foo($parameter$x):
+        for $parameter$x in [1]:
+          $parameter$x
     |};
   assert_qualify
     {|

@@ -984,8 +984,11 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_target ?(in_comprehension = false) ~scope target =
-    let rec renamed_scope ({ locals; _ } as scope) target =
-      let has_local name = (not in_comprehension) && Set.mem locals (Reference.create name) in
+    let rec renamed_scope ({ locals; immutables; _ } as scope) target =
+      let has_local name =
+        let reference = Reference.create name in
+        (not in_comprehension) && (Set.mem locals reference || Set.mem immutables reference)
+      in
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope

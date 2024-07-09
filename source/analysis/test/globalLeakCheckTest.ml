@@ -2188,8 +2188,10 @@ let test_global_statements context =
         with open("hello", "r") as my_global:
           print("hi")
     |}
-    (* TODO (T142189949): should pyre figure out the right type here? *)
-    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."]
+    [
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
+       `int`.";
+    ]
     context;
   assert_global_leak_errors
     {|
@@ -2212,8 +2214,10 @@ let test_global_statements context =
         with open("hello", "r") as my_global, open("world", "r") as f1:
           print("hi")
     |}
-    (* TODO (T142189949): should pyre figure out the right type here? *)
-    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."]
+    [
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
+       `int`.";
+    ]
     context;
   assert_global_leak_errors
     ~skip_type_check:true (* This is invalid, but we want to make sure unknown type stuff works. *)
