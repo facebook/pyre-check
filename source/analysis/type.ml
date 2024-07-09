@@ -1435,45 +1435,55 @@ module Callable = struct
     let dummy_star_parameter = { name = "*"; annotation = Bottom; default = false }
 
     let create parameters =
-      let parameter index (keyword_only, sofar) { name; annotation; default } =
+      let has_pep570_syntax =
+        List.find parameters ~f:(fun { name; _ } ->
+            String.equal (Identifier.sanitized name) "*"
+            || String.equal (Identifier.sanitized name) "/")
+        |> Option.is_some
+      in
+      let create_parameter (index, keyword_only, sofar) { name; annotation; default } =
         if String.equal (Identifier.sanitized name) "*" then
-          true, sofar
+          (* * makes all subsequent named parameters keyword-only *)
+          index, true, sofar
+        else if String.equal (Identifier.sanitized name) "/" then
+          (* / makes all previous named parameters positional-only *)
+          let add_positional_only index param =
+            match param with
+            | Named { annotation; default; _ } -> PositionalOnly { index; annotation; default }
+            | _ -> param
+          in
+          index, keyword_only, List.rev sofar |> List.mapi ~f:add_positional_only |> List.rev
         else
           let star, name = Identifier.split_star name in
           let keyword_only = keyword_only || Identifier.equal star "*" in
-          let new_parameter =
+          let index, new_parameter =
             match star with
-            | "**" -> Keywords annotation
-            | "*" -> Variable (Concrete annotation)
+            | "**" -> index + 1, Keywords annotation
+            | "*" -> index + 1, Variable (Concrete annotation)
             | _ ->
                 let sanitized = Identifier.sanitized name in
+                (* Parameters that start but do not end with __, occurring in functions that do not
+                   have PEP570's special parameter syntax * and /, are treated as positional-only
+                   unless they occur after a variadic parameter *)
                 if
-                  String.equal sanitized "__"
-                  || String.is_prefix sanitized ~prefix:"__"
-                     && not (String.is_suffix sanitized ~suffix:"__")
+                  (not keyword_only)
+                  && (not has_pep570_syntax)
+                  && (String.equal sanitized "__"
+                     || String.is_prefix sanitized ~prefix:"__"
+                        && not (String.is_suffix sanitized ~suffix:"__"))
                 then
-                  CallableParamType.PositionalOnly { index; annotation; default }
+                  index + 1, CallableParamType.PositionalOnly { index; annotation; default }
                 else
                   let named = { name; annotation; default } in
                   if keyword_only then
-                    KeywordOnly named
+                    index + 1, KeywordOnly named
                   else
-                    Named named
+                    index + 1, Named named
           in
-          keyword_only, new_parameter :: sofar
+          index, keyword_only, new_parameter :: sofar
       in
-      let add_positional_only index (positional_only, sofar) parameter =
-        match parameter with
-        | Named { name; _ } when String.equal (Identifier.sanitized name) "/" -> true, sofar
-        | Named { annotation; default; _ } when positional_only ->
-            let index = List.length parameters - 1 - index in
-            positional_only, PositionalOnly { index; annotation; default } :: sofar
-        | _ -> positional_only, parameter :: sofar
-      in
-      List.foldi parameters ~f:parameter ~init:(false, [])
-      |> snd
-      |> List.foldi ~f:add_positional_only ~init:(false, [])
-      |> snd
+      let _, _, parameters = List.fold parameters ~f:create_parameter ~init:(0, false, []) in
+      List.rev parameters
 
 
     let show_concise =

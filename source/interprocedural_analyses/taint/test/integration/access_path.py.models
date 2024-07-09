@@ -634,7 +634,7 @@
     "callable_line": 58,
     "sinks": [
       {
-        "port": "formal(__x, position=0)",
+        "port": "formal(__x, position=0, positional_only)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

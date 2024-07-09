@@ -744,7 +744,7 @@
     "callable_line": 421,
     "tito": [
       {
-        "port": "formal(__element, position=1)",
+        "port": "formal(__element, position=1, positional_only)",
         "taint": [
           {
             "kinds": [

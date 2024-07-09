@@ -2404,7 +2404,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -2417,7 +2417,7 @@
     "callable": "dict.get",
     "tito": [
       {
-        "port": "formal(__default, position=2)",
+        "port": "formal(__default, position=2, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -2441,7 +2441,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -4217,7 +4217,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -4254,7 +4254,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -4281,7 +4281,7 @@
         ]
       },
       {
-        "port": "formal(__m, position=1)[*]",
+        "port": "formal(__m, position=1, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -4295,7 +4295,7 @@
         ]
       },
       {
-        "port": "formal(__m, position=1).**keys",
+        "port": "formal(__m, position=1, positional_only).**keys",
         "taint": [
           {
             "kinds": [

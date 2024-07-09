@@ -127,7 +127,8 @@ def load(
     buffers: Iterable[Any] | None = (),
 ) -> Any: ...
 def loads(
-    __data: ReadableBuffer,
+    data: ReadableBuffer,
+    /,
     *,
     fix_imports: bool = True,
     encoding: str = "ASCII",

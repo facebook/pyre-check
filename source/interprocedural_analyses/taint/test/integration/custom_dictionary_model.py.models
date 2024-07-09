@@ -357,13 +357,13 @@
     "callable_line": 398,
     "sinks": [
       {
-        "port": "formal(__value, position=2)",
+        "port": "formal(__value, position=2, positional_only)",
         "taint": [
           { "kinds": [ { "kind": "SinkValue" } ], "declaration": null }
         ]
       },
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "taint": [
           { "kinds": [ { "kind": "SinkKey" } ], "declaration": null }
         ]
@@ -371,7 +371,7 @@
     ],
     "tito": [
       {
-        "port": "formal(__value, position=2)",
+        "port": "formal(__value, position=2, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -386,7 +386,7 @@
         ]
       },
       {
-        "port": "formal(__key, position=1)",
+        "port": "formal(__key, position=1, positional_only)",
         "taint": [
           {
             "kinds": [

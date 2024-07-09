@@ -1615,7 +1615,7 @@
     "callable": "filter.__init__",
     "tito": [
       {
-        "port": "formal(__iterable, position=2)[*]",
+        "port": "formal(__iterable, position=2, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -1629,7 +1629,7 @@
         ]
       },
       {
-        "port": "formal(__iterable, position=2).**keys",
+        "port": "formal(__iterable, position=2, positional_only).**keys",
         "taint": [
           {
             "kinds": [
@@ -1652,7 +1652,7 @@
     "callable": "list.__init__",
     "tito": [
       {
-        "port": "formal(__iterable, position=1)[*]",
+        "port": "formal(__iterable, position=1, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -1666,7 +1666,7 @@
         ]
       },
       {
-        "port": "formal(__iterable, position=1).**keys",
+        "port": "formal(__iterable, position=1, positional_only).**keys",
         "taint": [
           {
             "kinds": [

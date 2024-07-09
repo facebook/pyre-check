@@ -288,6 +288,9 @@ let model_compatible_errors ~callable_overload ~normalized_model_parameters =
     | PositionalParameter { name; positional_only = true; _ } ->
         if Core.Set.mem requirements.anonymous_parameters_positions position then
           errors, requirements
+        else if requirements.has_star_parameter then
+          (* If all positional only parameter quota is used, it might be covered by a `*args` *)
+          errors, requirements
         else
           ( IncompatibleModelError.UnexpectedPositionalOnlyParameter
               {
@@ -300,36 +303,20 @@ let model_compatible_errors ~callable_overload ~normalized_model_parameters =
     | PositionalParameter { name; positional_only = false; _ }
     | NamedParameter { name } ->
         let name = Identifier.sanitized name in
-        if String.is_prefix name ~prefix:"__" then (* It is an positional only parameter. *)
-          if Core.Set.mem requirements.anonymous_parameters_positions position then
-            errors, requirements
-          else if requirements.has_star_parameter then
-            (* If all positional only parameter quota is used, it might be covered by a `*args` *)
-            errors, requirements
-          else
-            ( IncompatibleModelError.UnexpectedPositionalOnlyParameter
-                {
-                  name;
-                  position;
-                  valid_positions = Core.Set.elements requirements.anonymous_parameters_positions;
-                }
-              :: errors,
-              requirements )
+        let { parameter_set; has_star_parameter; has_star_star_parameter; _ } = requirements in
+        (* Consume an required or optional named parameter. *)
+        if Core.Set.mem parameter_set name then
+          let parameter_set = Core.Set.remove parameter_set name in
+          errors, { requirements with parameter_set }
+        else if has_star_star_parameter then
+          (* If the name is not found in the set, it is covered by `**kwargs` *)
+          errors, requirements
+        else if has_star_parameter then (* positional parameters can be covered by `*args` *)
+          match model_parameter with
+          | PositionalParameter _ -> errors, requirements
+          | _ -> UnexpectedNamedParameter name :: errors, requirements
         else
-          let { parameter_set; has_star_parameter; has_star_star_parameter; _ } = requirements in
-          (* Consume an required or optional named parameter. *)
-          if Core.Set.mem parameter_set name then
-            let parameter_set = Core.Set.remove parameter_set name in
-            errors, { requirements with parameter_set }
-          else if has_star_star_parameter then
-            (* If the name is not found in the set, it is covered by `**kwargs` *)
-            errors, requirements
-          else if has_star_parameter then (* positional parameters can be covered by `*args` *)
-            match model_parameter with
-            | PositionalParameter _ -> errors, requirements
-            | _ -> UnexpectedNamedParameter name :: errors, requirements
-          else
-            IncompatibleModelError.UnexpectedNamedParameter name :: errors, requirements
+          IncompatibleModelError.UnexpectedNamedParameter name :: errors, requirements
     | StarParameter _ ->
         if requirements.has_star_parameter then
           errors, requirements

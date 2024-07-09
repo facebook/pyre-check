@@ -427,6 +427,7 @@ and kind =
       parent: Identifier.t;
       decorator: invalid_override_kind;
     }
+  | InvalidPositionalOnlyParameter
   | InvalidAssignment of invalid_assignment_kind
   | LeakToGlobal of GlobalLeaks.leak
   | MissingArgument of {

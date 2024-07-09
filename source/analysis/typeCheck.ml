@@ -5924,6 +5924,16 @@ module State (Context : Context) = struct
       =
       Context.define
     in
+    let parameter_types =
+      let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+        {
+          Type.Callable.CallableParamType.name;
+          annotation = Type.Any;
+          default = Option.is_some value;
+        }
+      in
+      List.map parameters ~f:create_parameter |> Type.Callable.CallableParamType.create
+    in
     let check_decorators resolution errors =
       let check_final_decorator errors =
         if Option.is_none parent && Define.is_final_method define then
@@ -6039,6 +6049,32 @@ module State (Context : Context) = struct
       List.fold duplicate_parameters ~init:errors ~f:(fun errors (name, location) ->
           emit_error ~errors ~location ~kind:(Error.DuplicateParameter name))
     in
+    let check_positional_only_parameters errors =
+      (* Positional-only parameters cannot appear after parameters which may be passed by name,
+         ignoring the self/cls parameter for methods. *)
+      let parameters_to_check =
+        if Option.is_some parent && not (Define.is_static_method define) then
+          List.drop parameter_types 1
+        else
+          parameter_types
+      in
+      let parameters_array = List.to_array parameters in
+      List.fold
+        parameters_to_check
+        ~init:(errors, true)
+        ~f:(fun (errors, positional_only_allowed) param ->
+          match param with
+          | Type.Callable.CallableParamType.PositionalOnly { index; _ }
+            when not positional_only_allowed ->
+              let location =
+                try parameters_array.(index).Node.location with
+                | Invalid_argument _ -> location
+              in
+              emit_error ~errors ~location ~kind:Error.InvalidPositionalOnlyParameter, false
+          | PositionalOnly _ -> errors, true
+          | _ -> errors, false)
+      |> fst
+    in
     let check_return_annotation resolution errors =
       let add_missing_return_error annotation errors =
         let return_type =
@@ -6109,16 +6145,6 @@ module State (Context : Context) = struct
         (* TypeGuard functions require at least two parameters if implemented as an instance or
            class method, since the first parameter is self or cls. Otherwise, TypeGuard functions
            require at least one parameter. *)
-        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
-          {
-            Type.Callable.CallableParamType.name;
-            annotation = Type.Any;
-            default = Option.is_some value;
-          }
-        in
-        let parameter_types =
-          List.map parameters ~f:create_parameter |> Type.Callable.CallableParamType.create
-        in
         let positional_parameters =
           List.filter
             ~f:(fun param ->
@@ -7212,6 +7238,7 @@ module State (Context : Context) = struct
         |> check_behavioral_subtyping resolution
         |> check_constructor_return
         |> check_duplicate_parameters
+        |> check_positional_only_parameters
       in
       resolution, errors
     in

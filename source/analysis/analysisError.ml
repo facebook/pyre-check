@@ -773,6 +773,7 @@ and kind =
       parent: Identifier.t;
       decorator: invalid_override_kind;
     }
+  | InvalidPositionalOnlyParameter
   | InvalidAssignment of invalid_assignment_kind
   | LeakToGlobal of GlobalLeaks.leak
   | MissingArgument of {
@@ -956,6 +957,7 @@ let code_of_kind = function
   | InvalidExceptionHandler _ -> 66
   | InvalidExceptionGroupHandler _ -> 67
   | InvalidTypeGuard -> 68
+  | InvalidPositionalOnlyParameter -> 69
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1002,6 +1004,7 @@ let name_of_kind = function
   | InvalidTypeVariance _ -> "Invalid type variance"
   | InvalidInheritance _ -> "Invalid inheritance"
   | InvalidOverride _ -> "Invalid override"
+  | InvalidPositionalOnlyParameter -> "Invalid positional-only parameter"
   | InvalidAssignment _ -> "Invalid assignment"
   | LeakToGlobal kind -> GlobalLeaks.name_of_kind kind
   | MissingArgument _ -> "Missing argument"
@@ -2179,6 +2182,11 @@ let rec messages ~concise ~signature location kind =
           ]
       | IllegalOverrideDecorator ->
           [Format.asprintf "%s`%a` %s." preamble pp_reference define_name message])
+  | InvalidPositionalOnlyParameter ->
+      [
+        Format.asprintf
+          "Positional-only parameters cannot appear after parameters that accept keyword arguments.";
+      ]
   | InvalidAssignment kind -> (
       match kind with
       | FinalAttribute name ->
@@ -3227,6 +3235,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidTypeVariance _
   | InvalidInheritance _
   | InvalidOverride _
+  | InvalidPositionalOnlyParameter
   | InvalidAssignment _
   | InvalidClassInstantiation _
   | InvalidType _
@@ -3348,6 +3357,8 @@ let join ~resolution left right =
     | InvalidTypeParameters left, InvalidTypeParameters right
       when [%compare.equal: AttributeResolution.type_parameters_mismatch] left right ->
         InvalidTypeParameters left
+    | InvalidPositionalOnlyParameter, InvalidPositionalOnlyParameter ->
+        InvalidPositionalOnlyParameter
     | LeakToGlobal left, LeakToGlobal right when [%compare.equal: GlobalLeaks.leak] left right ->
         LeakToGlobal left
     | ( MissingArgument { callee = left_callee; parameter = Named left_name },
@@ -3760,6 +3771,7 @@ let join ~resolution left right =
     | InvalidTypeVariance _, _
     | InvalidInheritance _, _
     | InvalidOverride _, _
+    | InvalidPositionalOnlyParameter, _
     | InvalidAssignment _, _
     | InvalidClassInstantiation _, _
     | LeakToGlobal _, _
@@ -4255,6 +4267,7 @@ let dequalify
     | InvalidInheritance name -> InvalidInheritance (dequalify_invalid_inheritance name)
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent = dequalify_identifier parent; decorator }
+    | InvalidPositionalOnlyParameter -> InvalidPositionalOnlyParameter
     | InvalidAssignment kind -> InvalidAssignment (dequalify_invalid_assignment kind)
     | InvalidClassInstantiation kind ->
         InvalidClassInstantiation (dequalify_invalid_class_instantiation kind)

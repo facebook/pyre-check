@@ -136,6 +136,12 @@ module NormalizedParameter = struct
 end
 
 let normalize_parameters parameters =
+  let has_pep570_syntax =
+    List.find parameters ~f:(fun { Node.value = { Parameter.name = qualified_name; _ }; _ } ->
+        Identifier.equal (Identifier.sanitized qualified_name) "/"
+        || Identifier.equal (Identifier.sanitized qualified_name) "*")
+    |> Option.is_some
+  in
   let normalize_parameters
       (position, seen_star, excluded, normalized)
       ({ Node.value = { Parameter.name = qualified_name; _ }; _ } as original)
@@ -182,19 +188,26 @@ let normalize_parameters parameters =
         :: normalized )
     else
       let unqualified_name = Root.chop_parameter_prefix qualified_name in
+      let positional_only =
+        (not seen_star)
+        && (not has_pep570_syntax)
+        && (String.equal unqualified_name "__"
+           || String.is_prefix unqualified_name ~prefix:"__"
+              && not (String.is_suffix unqualified_name ~suffix:"__"))
+      in
       ( position + 1,
         false,
         unqualified_name :: excluded,
         {
           NormalizedParameter.root =
-            Root.PositionalParameter { position; name = unqualified_name; positional_only = false };
+            Root.PositionalParameter { position; name = unqualified_name; positional_only };
           qualified_name;
           original;
         }
         :: normalized )
   in
-  List.fold parameters ~f:normalize_parameters ~init:(0, false, [], [])
-  |> fun (_, _, _, parameters) -> List.rev parameters
+  let _, _, _, parameters = List.fold parameters ~f:normalize_parameters ~init:(0, false, [], []) in
+  List.rev parameters
 
 
 module Path = struct
