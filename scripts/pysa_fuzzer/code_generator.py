@@ -227,7 +227,6 @@ class CodeGenerator:
         if_else_elif_statements = "\n".join([f"{condition}\n{textwrap.indent(action, '    ')}" for condition, action in conditions])
         return f"{non_tainted_initialization}\n{if_else_elif_statements}"
 
-
     def generate_nested_loops(self) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
