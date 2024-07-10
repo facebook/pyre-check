@@ -131,7 +131,7 @@ def clean_up():
 
 def main():
     parser = argparse.ArgumentParser(description="Build script with setup, analysis, and cleanup.")
-    parser.add_argument('action', choices=['all', 'analyze', 'clean'], help="Action to perform")
+    parser.add_argument('action', choices=['all', 'find-undetected', 'clean'], help="Action to perform")
     parser.add_argument('--num-files', type=int, default=100, help="Number of files to generate")
     parser.add_argument('--num-statements', type=int, default=20, help="Number of statements to generate in each file")
 
@@ -141,7 +141,7 @@ def main():
         generate_python_files(args.num_files, args.num_statements)
         configure_and_analyze()
         run_pyre()
-    elif args.action == "analyze":
+    elif args.action == "find-undetected":
         find_undetected_files()
     elif args.action == 'clean':
         clean_up()
