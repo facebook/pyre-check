@@ -2408,13 +2408,6 @@ module ReadOnly = struct
     |> Option.value ~default:(make_container element_type)
 end
 
-module Alias = struct
-  type t =
-    | TypeAlias of T.t
-    | VariableAlias of T.t Record.Variable.record
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 module Variable = struct
   open T
   include Record.Variable
@@ -4697,6 +4690,13 @@ let assume_any = function
   | Top -> Any
   | annotation -> annotation
 
+
+module Alias = struct
+  type t =
+    | TypeAlias of T.t
+    | VariableAlias of T.t Record.Variable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end
 
 let resolve_aliases ~aliases annotation =
   let visited = Containers.Hash_set.create () in

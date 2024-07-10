@@ -356,13 +356,6 @@ val collect_types : t -> predicate:(t -> bool) -> t list
 
 val apply_type_map : ?visit_children_before:bool -> t -> type_map:(t -> t option) -> t
 
-module Alias : sig
-  type t =
-    | TypeAlias of type_t
-    | VariableAlias of type_t Record.Variable.record
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 module Callable : sig
   include module type of struct
     include Record.Callable
@@ -441,19 +434,6 @@ module Callable : sig
 
   val name : t -> Reference.t option
 end
-
-val resolve_aliases
-  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> Alias.t option) ->
-  t ->
-  t
-
-val create
-  :  variables:(string -> t Record.Variable.record option) ->
-  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
-  Expression.t ->
-  t
-
-val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option
 
 module RecursiveType : sig
   include module type of struct
@@ -969,6 +949,26 @@ module ReadOnly : sig
 
   val lift_readonly_if_possible : make_container:(t -> t) -> t -> t
 end
+
+module Alias : sig
+  type t =
+    | TypeAlias of type_t
+    | VariableAlias of type_t Record.Variable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+val resolve_aliases
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> Alias.t option) ->
+  t ->
+  t
+
+val create
+  :  variables:(string -> t Record.Variable.record option) ->
+  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
+  Expression.t ->
+  t
+
+val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option
 
 val infer_transform : t -> t
 
