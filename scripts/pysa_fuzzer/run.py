@@ -24,13 +24,19 @@ def generate_python_files(num_files, num_statements):
 
     output_dir.mkdir(exist_ok=True)
 
+    filenames = []
     for i in range(1, num_files + 1):
         generator.reset()
         generated_code = generator.generate_statements(num_statements)
         filename = output_dir / f'test_{i}.py'
         with open(filename, 'w') as file:
             file.write(generated_code)
+        filenames.append(str(filename))
         logging.info(f"Generated {filename}")
+
+    # Save the filenames to a temporary file
+    with open('filenames.tmp', 'w') as tmp_file:
+        json.dump(filenames, tmp_file)
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -73,12 +79,12 @@ def run_pyre():
     run_command(['pyre', '-n', 'analyze'], output_file='analysis_output.tmp')
 
 def find_undetected_files():
-    # Load the number of files from the temp file
+    # Load the filenames from the temp file
     try:
-        with open('../num_files.tmp', 'r') as tmp_file:
-            num_files = int(tmp_file.read().strip())
+        with open('../filenames.tmp', 'r') as tmp_file:
+            filenames = json.load(tmp_file)
     except FileNotFoundError:
-        logging.error("Temporary file with number of files not found.")
+        logging.error("Temporary file with filenames not found.")
         return
 
     # Load the analysis output from the file
@@ -94,8 +100,8 @@ def find_undetected_files():
     for entry in analysis_output:
         detected_files.add(os.path.basename(entry['path']))  # Normalize the path to get the filename only
 
-    # Generate the full list of files (from test_1.py to test_{num_files}.py)
-    all_files = {f"test_{i}.py" for i in range(1, num_files + 1)}
+    # Normalize filenames to get the filename only
+    all_files = {os.path.basename(filename) for filename in filenames}
 
     # Find the files where the flow has not been detected
     undetected_files = all_files - detected_files
@@ -112,7 +118,7 @@ def find_undetected_files():
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'num_files.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
@@ -135,9 +141,6 @@ def main():
         generate_python_files(args.num_files, args.num_statements)
         configure_and_analyze()
         run_pyre()
-        # Save the number of files to a temporary file
-        with open('num_files.tmp', 'w') as tmp_file:
-            tmp_file.write(str(args.num_files))
     elif args.action == "analyze":
         find_undetected_files()
     elif args.action == 'clean':
