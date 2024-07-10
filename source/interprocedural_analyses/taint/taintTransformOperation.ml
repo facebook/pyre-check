@@ -270,6 +270,12 @@ module Make (Kind : KIND_ARG) = struct
             sanitizers
         in
         { transforms; named_transforms; global_sanitizers }
+    | TaintTransform.TriggeredPartialSink _ as transform ->
+        failwith
+          (Format.asprintf
+             "%a can only be added when creating triggered partial sinks"
+             TaintTransform.pp
+             transform)
 
 
   let add_backward_into_forward_transforms

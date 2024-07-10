@@ -9,6 +9,9 @@ type t =
   | Named of string
   (* Invariant: set is not empty. *)
   | Sanitize of SanitizeTransformSet.t
+  | TriggeredPartialSink of { triggering_source: string }
+    (* We represent triggered partial sinks as partial sinks with TriggeredPartialSink
+       transforms. *)
 [@@deriving compare, eq, hash, sexp]
 
 val pp : Format.formatter -> t -> unit

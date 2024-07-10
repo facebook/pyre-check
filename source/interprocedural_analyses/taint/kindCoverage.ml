@@ -58,9 +58,10 @@ module Transforms = struct
 
   let from_transform = function
     | TaintTransform.Named _ as transform -> Some transform
-    | TaintTransform.Sanitize _ ->
-        (* Sanitizers are not user-defined taint transforms, although they are internally treated as
-           taint transforms. *)
+    | TaintTransform.Sanitize _
+    | TaintTransform.TriggeredPartialSink _ ->
+        (* Sanitizers and triggered partial sinks are not user-defined taint transforms, although
+           they are internally treated as taint transforms. *)
         None
 
 

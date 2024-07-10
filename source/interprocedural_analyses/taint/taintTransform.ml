@@ -17,25 +17,36 @@ type t =
   | Named of string
   (* Invariant: set is not empty. *)
   | Sanitize of SanitizeTransformSet.t
+  | TriggeredPartialSink of { triggering_source: string }
+    (* We represent triggered partial sinks as partial sinks with TriggeredPartialSink
+       transforms. *)
 [@@deriving compare, eq, hash, sexp]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform
   | Sanitize transforms -> SanitizeTransformSet.pp formatter transforms
+  | TriggeredPartialSink { triggering_source } ->
+      Format.fprintf formatter "Triggered[%s]" triggering_source
 
 
 let show = Format.asprintf "%a" pp
 
 let is_named_transform = function
   | Named _ -> true
-  | Sanitize _ -> false
+  | Sanitize _
+  | TriggeredPartialSink _ ->
+      false
 
 
 let is_sanitize_transforms = function
-  | Named _ -> false
+  | Named _
+  | TriggeredPartialSink _ ->
+      false
   | Sanitize _ -> true
 
 
 let get_sanitize_transforms = function
-  | Named _ -> None
+  | Named _
+  | TriggeredPartialSink _ ->
+      None
   | Sanitize sanitize -> Some sanitize

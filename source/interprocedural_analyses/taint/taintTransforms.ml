@@ -46,7 +46,8 @@ let split_sanitizers transforms =
   let rec split sofar transforms =
     match transforms with
     | []
-    | TaintTransform.Named _ :: _ ->
+    | TaintTransform.Named _ :: _
+    | TaintTransform.TriggeredPartialSink _ :: _ ->
         sofar, transforms
     | TaintTransform.Sanitize sanitizers :: tail ->
         let sofar = SanitizeTransformSet.join sofar sanitizers in
