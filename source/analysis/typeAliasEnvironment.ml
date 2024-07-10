@@ -326,9 +326,7 @@ module OutgoingDataComputation = struct
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
     let aliases ?replace_unbound_parameters_with_any:_ name = get_type_alias name in
-
     Type.Variable.ParamSpec.parse_instance_annotation
-      ~create_type:(Type.create ~variables:variable_aliases)
       ~aliases
       ~variables:variable_aliases
       ~variable_parameter_annotation

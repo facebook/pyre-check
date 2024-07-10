@@ -2647,44 +2647,41 @@ module Variable = struct
 
 
     let parse_instance_annotation
-        ~create_type
         ~variable_parameter_annotation
         ~keywords_parameter_annotation
-        ~aliases
+        ~aliases:_
         ~variables
       =
-      let get_variable variables name =
+      let get_variable name =
         match variables name with
         | Some (ParamSpecVariable variable) -> Some variable
         | _ -> None
       in
+      let get_param_spec_base_identifier annotation component_name =
+        match annotation with
+        | {
+         Node.value =
+           Expression.Name
+             (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ });
+         _;
+        }
+          when Identifier.equal attribute component_name ->
+            name_to_reference base_name >>| Reference.show
+        | _ -> None
+      in
       let open Record.Variable.ParamSpec.Components in
       let open PrettyPrinting.Variable.ParamSpec.Components in
-      match variable_parameter_annotation, keywords_parameter_annotation with
-      | ( {
-            Node.value =
-              Expression.Name
-                (Attribute
-                  { base = variable_parameter_base; attribute = variable_parameter_attribute; _ });
-            _;
-          },
-          {
-            Node.value =
-              Expression.Name
-                (Attribute
-                  { base = keywords_parameter_base; attribute = keywords_parameter_attribute; _ });
-            _;
-          } )
-        when Identifier.equal variable_parameter_attribute (component_name PositionalArguments)
-             && Identifier.equal keywords_parameter_attribute (component_name KeywordArguments) -> (
-          match
-            ( create_type ~aliases variable_parameter_base,
-              create_type ~aliases keywords_parameter_base )
-          with
-          | Primitive positionals_base, Primitive keywords_base
-            when Identifier.equal positionals_base keywords_base ->
-              get_variable variables positionals_base
-          | _ -> None)
+      match
+        ( get_param_spec_base_identifier
+            variable_parameter_annotation
+            (component_name PositionalArguments),
+          get_param_spec_base_identifier
+            keywords_parameter_annotation
+            (component_name KeywordArguments) )
+      with
+      | Some positionals_base, Some keywords_base
+        when Identifier.equal positionals_base keywords_base ->
+          get_variable positionals_base
       | _ -> None
 
 
