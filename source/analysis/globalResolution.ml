@@ -175,8 +175,8 @@ let parse_annotation_without_validating_type_parameters ({ dependency; _ } as re
     (alias_environment resolution)
 
 
-let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
-  TypeAliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+let param_spec_from_vararg_annotations ({ dependency; _ } as resolution) =
+  TypeAliasEnvironment.ReadOnly.param_spec_from_vararg_annotations
     (alias_environment resolution)
     ?dependency
     ()
@@ -584,8 +584,7 @@ let annotation_parser resolution =
   {
     AnnotatedCallable.parse_annotation =
       parse_annotation ~validation:ValidatePrimitivesAndTypeParameters resolution;
-    parse_as_parameter_specification_instance_annotation =
-      parse_as_parameter_specification_instance_annotation resolution;
+    param_spec_from_vararg_annotations = param_spec_from_vararg_annotations resolution;
   }
 
 
@@ -598,8 +597,7 @@ let nonvalidating_annotation_parser resolution =
   {
     AnnotatedCallable.parse_annotation =
       parse_annotation ~validation:SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitives resolution;
-    parse_as_parameter_specification_instance_annotation =
-      parse_as_parameter_specification_instance_annotation resolution;
+    param_spec_from_vararg_annotations = param_spec_from_vararg_annotations resolution;
   }
 
 

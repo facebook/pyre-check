@@ -774,10 +774,10 @@ module Variable : sig
 
     val create : string -> t
 
-    val parse_instance_annotation
+    val of_component_annotations
       :  get_param_spec:(Primitive.t -> t option) ->
-      variable_parameter_annotation:Expression.t ->
-      keywords_parameter_annotation:Expression.t ->
+      args_annotation:Expression.t ->
+      kwargs_annotation:Expression.t ->
       t option
 
     module Components : sig

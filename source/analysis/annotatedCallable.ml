@@ -14,9 +14,9 @@ open Statement
 
 type annotation_parser = {
   parse_annotation: Expression.expression Node.t -> Type.t;
-  parse_as_parameter_specification_instance_annotation:
-    variable_parameter_annotation:Expression.t ->
-    keywords_parameter_annotation:Expression.t ->
+  param_spec_from_vararg_annotations:
+    args_annotation:Expression.t ->
+    kwargs_annotation:Expression.t ->
     Type.Variable.ParamSpec.t option;
 }
 
@@ -51,8 +51,7 @@ let return_annotation_without_applying_decorators
 
 
 let create_overload_without_applying_decorators
-    ~parser:
-      ({ parse_annotation; parse_as_parameter_specification_instance_annotation; _ } as parser)
+    ~parser:({ parse_annotation; param_spec_from_vararg_annotations; _ } as parser)
     ~variables
     ({ Define.Signature.parameters; parent; _ } as signature)
   =
@@ -88,15 +87,11 @@ let create_overload_without_applying_decorators
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match List.rev parameters with
-      | CallableParamType.Keywords (Some keywords_parameter_annotation)
-        :: CallableParamType.Variable (Concrete (Some variable_parameter_annotation))
+      | CallableParamType.Keywords (Some kwargs_annotation)
+        :: CallableParamType.Variable (Concrete (Some args_annotation))
         :: reversed_head -> (
           let default () = Defined (List.map parameters ~f:parse) in
-          match
-            parse_as_parameter_specification_instance_annotation
-              ~variable_parameter_annotation
-              ~keywords_parameter_annotation
-          with
+          match param_spec_from_vararg_annotations ~args_annotation ~kwargs_annotation with
           | Some variable -> (
               let parsed_head =
                 let extract_positional_only = function

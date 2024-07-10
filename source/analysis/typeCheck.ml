@@ -6527,10 +6527,10 @@ module State (Context : Context) = struct
           _ )
         when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
           match
-            GlobalResolution.parse_as_parameter_specification_instance_annotation
+            GlobalResolution.param_spec_from_vararg_annotations
               global_resolution
-              ~variable_parameter_annotation:first_annotation
-              ~keywords_parameter_annotation:second_annotation
+              ~args_annotation:first_annotation
+              ~kwargs_annotation:second_annotation
           with
           | Some variable ->
               let add_annotations_to_resolution

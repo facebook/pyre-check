@@ -30,11 +30,11 @@ module AliasReadOnly : sig
     Expression.t ->
     Type.t
 
-  val parse_as_parameter_specification_instance_annotation
+  val param_spec_from_vararg_annotations
     :  t ->
     ?dependency:DependencyKey.registered ->
-    variable_parameter_annotation:Expression.t ->
-    keywords_parameter_annotation:Expression.t ->
+    args_annotation:Expression.t ->
+    kwargs_annotation:Expression.t ->
     unit ->
     Type.Variable.ParamSpec.t option
 end

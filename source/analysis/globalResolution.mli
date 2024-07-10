@@ -68,10 +68,10 @@ val parse_annotation_without_validating_type_parameters
   Expression.t ->
   Type.t
 
-val parse_as_parameter_specification_instance_annotation
+val param_spec_from_vararg_annotations
   :  t ->
-  variable_parameter_annotation:Expression.t ->
-  keywords_parameter_annotation:Expression.t ->
+  args_annotation:Expression.t ->
+  kwargs_annotation:Expression.t ->
   Type.Variable.ParamSpec.t option
 
 val immediate_parents : t -> Type.Primitive.t -> string list

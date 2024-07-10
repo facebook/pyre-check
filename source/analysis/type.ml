@@ -2646,11 +2646,7 @@ module Variable = struct
       { variable with name = dequalify_identifier dequalify_map name }
 
 
-    let parse_instance_annotation
-        ~get_param_spec
-        ~variable_parameter_annotation
-        ~keywords_parameter_annotation
-      =
+    let of_component_annotations ~get_param_spec ~args_annotation ~kwargs_annotation =
       let get_param_spec_base_identifier annotation component_name =
         match annotation with
         | {
@@ -2666,12 +2662,8 @@ module Variable = struct
       let open Record.Variable.ParamSpec.Components in
       let open PrettyPrinting.Variable.ParamSpec.Components in
       match
-        ( get_param_spec_base_identifier
-            variable_parameter_annotation
-            (component_name PositionalArguments),
-          get_param_spec_base_identifier
-            keywords_parameter_annotation
-            (component_name KeywordArguments) )
+        ( get_param_spec_base_identifier args_annotation (component_name PositionalArguments),
+          get_param_spec_base_identifier kwargs_annotation (component_name KeywordArguments) )
       with
       | Some positionals_base, Some keywords_base
         when Identifier.equal positionals_base keywords_base ->

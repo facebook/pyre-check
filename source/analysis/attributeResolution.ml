@@ -62,9 +62,9 @@ module Queries = struct
       ?allow_untracked:bool ->
       Ast.Expression.t ->
       Type.t;
-    parse_as_parameter_specification_instance_annotation:
-      variable_parameter_annotation:Ast.Expression.t ->
-      keywords_parameter_annotation:Ast.Expression.t ->
+    param_spec_from_vararg_annotations:
+      args_annotation:Ast.Expression.t ->
+      kwargs_annotation:Ast.Expression.t ->
       unit ->
       Type.Variable.ParamSpec.t option;
     class_hierarchy: unit -> (module ClassHierarchy.Handler);
@@ -3978,11 +3978,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads =
-      let Queries.
-            { resolve_exports; parse_as_parameter_specification_instance_annotation; variables; _ }
-        =
-        queries
-      in
+      let Queries.{ resolve_exports; param_spec_from_vararg_annotations; variables; _ } = queries in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -4281,8 +4277,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         let parser =
           {
             AnnotatedCallable.parse_annotation = self#parse_annotation ~assumptions;
-            parse_as_parameter_specification_instance_annotation =
-              parse_as_parameter_specification_instance_annotation ();
+            param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
           }
         in
         AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
@@ -4746,10 +4741,9 @@ let create_queries ~class_metadata_environment ~dependency =
         alias_environment class_metadata_environment
         |> TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
              ?dependency;
-      parse_as_parameter_specification_instance_annotation =
+      param_spec_from_vararg_annotations =
         alias_environment class_metadata_environment
-        |> TypeAliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-             ?dependency;
+        |> TypeAliasEnvironment.ReadOnly.param_spec_from_vararg_annotations ?dependency;
       variables =
         class_hierarchy_environment class_metadata_environment
         |> ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables ?dependency;
