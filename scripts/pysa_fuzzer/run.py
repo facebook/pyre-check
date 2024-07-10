@@ -22,7 +22,6 @@ def generate_python_files(num_files, num_statements):
     generator = CodeGenerator()
     output_dir = Path('generated_files')
 
-    # Create the directory if it doesn't exist
     output_dir.mkdir(exist_ok=True)
 
     for i in range(1, num_files + 1):
