@@ -775,10 +775,9 @@ module Variable : sig
     val create : string -> t
 
     val parse_instance_annotation
-      :  variable_parameter_annotation:Expression.t ->
+      :  get_param_spec:(Primitive.t -> t option) ->
+      variable_parameter_annotation:Expression.t ->
       keywords_parameter_annotation:Expression.t ->
-      aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
-      variables:(string -> type_t Record.Variable.record option) ->
       t option
 
     module Components : sig

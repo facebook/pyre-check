@@ -2647,16 +2647,10 @@ module Variable = struct
 
 
     let parse_instance_annotation
+        ~get_param_spec
         ~variable_parameter_annotation
         ~keywords_parameter_annotation
-        ~aliases:_
-        ~variables
       =
-      let get_variable name =
-        match variables name with
-        | Some (ParamSpecVariable variable) -> Some variable
-        | _ -> None
-      in
       let get_param_spec_base_identifier annotation component_name =
         match annotation with
         | {
@@ -2681,7 +2675,7 @@ module Variable = struct
       with
       | Some positionals_base, Some keywords_base
         when Identifier.equal positionals_base keywords_base ->
-          get_variable positionals_base
+          get_param_spec positionals_base
       | _ -> None
 
 

@@ -320,15 +320,17 @@ module OutgoingDataComputation = struct
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
       ()
-      ~variable_aliases
     =
+    let get_param_spec name =
+      match get_type_alias ?replace_unbound_parameters_with_any:(Some false) name with
+      | Some (Type.Alias.VariableAlias (ParamSpecVariable variable)) -> Some variable
+      | _ -> None
+    in
     let variable_parameter_annotation, keywords_parameter_annotation =
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
-    let aliases ?replace_unbound_parameters_with_any:_ name = get_type_alias name in
     Type.Variable.ParamSpec.parse_instance_annotation
-      ~aliases
-      ~variables:variable_aliases
+      ~get_param_spec
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
 end
@@ -436,19 +438,8 @@ module ReadOnly = struct
 
 
   let parse_as_parameter_specification_instance_annotation environment ?dependency =
-    let variable_aliases name =
-      match
-        (outgoing_queries ?dependency environment).get_type_alias
-          ?replace_unbound_parameters_with_any:(Some true)
-          name
-      with
-      | Some (Type.Alias.VariableAlias variable) -> Some variable
-      | _ -> None
-    in
-
     OutgoingDataComputation.parse_as_parameter_specification_instance_annotation
       (outgoing_queries ?dependency environment)
-      ~variable_aliases
 end
 
 module AliasReadOnly = ReadOnly
