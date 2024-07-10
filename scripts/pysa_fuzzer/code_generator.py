@@ -200,7 +200,7 @@ class CodeGenerator:
         curr_var = self.generate_new_variable()
 
         # Generate the non-tainted variable initialization
-        non_tainted_initialization = f'{non_tainted_var} = "temp"'
+        non_tainted_initialization = f'{non_tainted_var} = "non_tainted"'
 
         # Randomly decide which branch is the valid one
         valid_branch = random.randint(1, 3)
@@ -295,5 +295,3 @@ class CodeGenerator:
         sink_code = self.generate_sink()
         full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
-
-
