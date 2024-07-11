@@ -33,6 +33,26 @@ let test_type_guard =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import TypeGuard, Callable
+              def typeguard_bool(x: object) -> TypeGuard[bool]:
+                  return True
+
+              def typeguard_int(x: object) -> TypeGuard[int]:
+                  return True
+
+              a: Callable[[object], TypeGuard[int]] = typeguard_bool
+              b: Callable[[object], TypeGuard[bool]] = typeguard_bool
+              c: Callable[[object], TypeGuard[int]] = typeguard_int
+              d: Callable[[object], TypeGuard[bool]] = typeguard_int
+            |}
+           [
+             "Incompatible variable type [9]: d is declared to have type \
+              `typing.Callable[[object], TypeGuard[bool]]` but is used as type \
+              `typing.Callable(typeguard_int)[[Named(x, object)], TypeGuard[int]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from typing import TypeGuard
 
               def is_str() -> TypeGuard[str]:

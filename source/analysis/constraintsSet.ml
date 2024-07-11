@@ -630,6 +630,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           List.concat_map rights ~f:(fun right ->
               solve_less_or_equal order ~constraints ~left ~right)
     | Type.ReadOnly _, _ -> impossible
+    | ( Type.Parametric
+          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; parameters = [Single left] },
+        Type.Parametric
+          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; parameters = [Single right] }
+      ) ->
+        solve_less_or_equal order ~constraints ~left ~right
     | ( Type.Parametric { name = "type"; parameters = [Single left] },
         Type.Parametric { name = "type"; parameters = [Single right] } ) ->
         solve_less_or_equal order ~constraints ~left ~right
