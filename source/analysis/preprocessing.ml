@@ -609,7 +609,7 @@ module Qualify (Context : QualifyContext) = struct
         target_scope, target, qualified_annotation, qualified_value
       in
       let qualify_define
-          ({ qualifier; _ } as original_scope)
+          ({ qualifier; _ } as scope)
           ({
              Define.signature =
                { name; parameters; decorators; return_annotation; parent; nesting_define; _ };
@@ -618,26 +618,23 @@ module Qualify (Context : QualifyContext) = struct
            } as define)
         =
         let return_annotation =
-          return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope:original_scope
+          return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
         in
-        let parent = parent >>| fun parent -> qualify_reference ~scope:original_scope parent in
+        let parent = parent >>| fun parent -> qualify_reference ~scope parent in
         let nesting_define =
-          nesting_define
-          >>| fun nesting_define -> qualify_reference ~scope:original_scope nesting_define
+          nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
         in
         let decorators =
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
-        let original_scope_with_alias, qualified_function_name =
-          qualify_function_name ~scope:original_scope name
-        in
-        let scope =
+        let scope, qualified_function_name = qualify_function_name ~scope name in
+        let inner_scope =
           let qualifier = qualify_if_needed ~qualifier name in
-          { original_scope_with_alias with qualifier; is_in_function = true; is_top_level = false }
+          { scope with qualifier; is_in_function = true; is_top_level = false }
         in
-        let scope, parameters = qualify_parameters ~scope parameters in
-        let _, body = qualify_statements ~scope body in
+        let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
+        let _, body = qualify_statements ~scope:inner_scope body in
         let signature =
           {
             define.signature with
@@ -649,7 +646,7 @@ module Qualify (Context : QualifyContext) = struct
             nesting_define;
           }
         in
-        original_scope_with_alias, { define with signature; body }
+        scope, { define with signature; body }
       in
       let qualify_class ({ Class.name; base_arguments; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
