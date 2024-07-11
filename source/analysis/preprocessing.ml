@@ -617,24 +617,25 @@ module Qualify (Context : QualifyContext) = struct
              _;
            } as define)
         =
-        let scope = { original_scope with is_top_level = false } in
         let return_annotation =
-          return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
+          return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope:original_scope
         in
-        let parent = parent >>| fun parent -> qualify_reference ~scope parent in
+        let parent = parent >>| fun parent -> qualify_reference ~scope:original_scope parent in
         let nesting_define =
-          nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
+          nesting_define
+          >>| fun nesting_define -> qualify_reference ~scope:original_scope nesting_define
         in
         let decorators =
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
-        let scope, _ = qualify_function_name ~scope name in
-        let scope, parameters = qualify_parameters ~scope parameters in
-        let qualifier = qualify_if_needed ~qualifier name in
-        let _, body =
-          qualify_statements ~scope:{ scope with qualifier; is_in_function = true } body
+        let scope, _ = qualify_function_name ~scope:original_scope name in
+        let scope =
+          let qualifier = qualify_if_needed ~qualifier name in
+          { scope with qualifier; is_in_function = true; is_top_level = false }
         in
+        let scope, parameters = qualify_parameters ~scope parameters in
+        let _, body = qualify_statements ~scope body in
         let original_scope_with_alias, name = qualify_function_name ~scope:original_scope name in
         let signature =
           {
