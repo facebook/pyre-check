@@ -311,6 +311,8 @@ val set : t -> t
 
 val string : t
 
+val any_literal_string : t
+
 val literal_string : string -> t
 
 val literal_bytes : string -> t

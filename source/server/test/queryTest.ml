@@ -1157,6 +1157,33 @@ let test_handle_types_query context =
                  |> QueryTestTypes.create_types_at_locations;
              };
            ]))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+      name = "Foo"
+      age = 42
+      f"{name} is {age} years old"
+    |}
+    ~query:"types(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.TypesByPath
+           [
+             {
+               Base.path = "test.py";
+               types =
+                 [
+                   2, 0, 2, 4, Type.string;
+                   2, 7, 2, 12, Type.literal_string "Foo";
+                   3, 0, 3, 3, Type.integer;
+                   3, 6, 3, 8, Type.literal_integer 42;
+                   4, 0, 4, 28, Type.any_literal_string;
+                   4, 3, 4, 7, Type.string;
+                   4, 13, 4, 16, Type.integer;
+                 ]
+                 |> QueryTestTypes.create_types_at_locations;
+             };
+           ]))
 
 
 let test_handle_references_used_by_file_query context =

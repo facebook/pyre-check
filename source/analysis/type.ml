@@ -419,6 +419,8 @@ module Constructors = struct
 
   let string = Primitive "str"
 
+  let any_literal_string = Literal (String AnyLiteral)
+
   let literal_string literal = Literal (String (LiteralValue literal))
 
   let literal_bytes literal = Literal (Bytes literal)
