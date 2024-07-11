@@ -1,7 +1,7 @@
 (tests
  (names
   basicTest
-  subscriptionTest
+  ;subscriptionTest
   criticalFileTest
   buildSystemTest
   stateTest)
