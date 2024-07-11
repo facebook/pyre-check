@@ -629,18 +629,19 @@ module Qualify (Context : QualifyContext) = struct
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
-        let scope, _ = qualify_function_name ~scope:original_scope name in
+        let original_scope_with_alias, qualified_function_name =
+          qualify_function_name ~scope:original_scope name
+        in
         let scope =
           let qualifier = qualify_if_needed ~qualifier name in
-          { scope with qualifier; is_in_function = true; is_top_level = false }
+          { original_scope_with_alias with qualifier; is_in_function = true; is_top_level = false }
         in
         let scope, parameters = qualify_parameters ~scope parameters in
         let _, body = qualify_statements ~scope body in
-        let original_scope_with_alias, name = qualify_function_name ~scope:original_scope name in
         let signature =
           {
             define.signature with
-            name;
+            name = qualified_function_name;
             parameters;
             decorators;
             return_annotation;
