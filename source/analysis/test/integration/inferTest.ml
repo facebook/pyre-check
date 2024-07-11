@@ -345,8 +345,7 @@ let test_check_missing_return context =
         return optional or int_to_bool(optional)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Union[bool, int]` "
-      ^ "but type `Any` is specified.";
+      "Missing return annotation [3]: Returning `int` but type `Any` is specified.";
       "Incompatible parameter type [6]: In call `int_to_bool`, for 1st positional argument, \
        expected `int` but got `Optional[int]`.";
     ]
@@ -358,10 +357,7 @@ let test_check_missing_return context =
       def foo(optional: typing.Optional[int]) -> typing.Any:
         return optional and int_to_bool(optional)
     |}
-    [
-      "Missing return annotation [3]: Returning `typing.Union[None, bool, int]` but type `Any` is \
-       specified.";
-    ]
+    ["Missing return annotation [3]: Returning `typing.Optional[int]` but type `Any` is specified."]
     context;
 
   (* Joining. *)

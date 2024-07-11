@@ -5679,8 +5679,8 @@ let test_return_type_from_annotation =
            Type.bool
            {
              ReturnType.is_boolean = true;
-             is_integer = false;
-             is_float = false;
+             is_integer = true;
+             is_float = true;
              is_enumeration = false;
            };
       labeled_test_case __FUNCTION__ __LINE__
@@ -5706,8 +5706,8 @@ let test_return_type_from_annotation =
            (Type.optional Type.bool)
            {
              ReturnType.is_boolean = true;
-             is_integer = false;
-             is_float = false;
+             is_integer = true;
+             is_float = true;
              is_enumeration = false;
            };
       labeled_test_case __FUNCTION__ __LINE__
@@ -5751,8 +5751,8 @@ let test_return_type_from_annotation =
            (Type.awaitable Type.bool)
            {
              ReturnType.is_boolean = true;
-             is_integer = false;
-             is_float = false;
+             is_integer = true;
+             is_float = true;
              is_enumeration = false;
            };
       labeled_test_case __FUNCTION__ __LINE__
@@ -5778,8 +5778,8 @@ let test_return_type_from_annotation =
            (Type.awaitable (Type.optional Type.bool))
            {
              ReturnType.is_boolean = true;
-             is_integer = false;
-             is_float = false;
+             is_integer = true;
+             is_float = true;
              is_enumeration = false;
            };
       labeled_test_case __FUNCTION__ __LINE__

@@ -1252,8 +1252,8 @@ let test_dictionary_constructor =
               reveal_type(new_dict)
             |}
            [
-             "Revealed type [-1]: Revealed type for `new_dict` is `Dict[typing.Union[bool, float, \
-              str], typing.Union[bool, int, str]]`.";
+             "Revealed type [-1]: Revealed type for `new_dict` is `Dict[typing.Union[float, str], \
+              typing.Union[int, str]]`.";
            ];
     ]
 

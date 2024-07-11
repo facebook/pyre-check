@@ -296,7 +296,7 @@ let test_resolve_literal context =
 
   (* Boolean Operator *)
   assert_resolve_literal "1 or 2" Type.integer;
-  assert_resolve_literal "True or 1" (Type.union [Type.bool; Type.integer]);
+  assert_resolve_literal "True or 1" Type.integer;
   assert_resolve_literal "True or i" Type.Any;
 
   (* List *)

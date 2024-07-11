@@ -325,7 +325,7 @@ let test_pattern =
              "Revealed type [-1]: Revealed type for `y` is `typing.Union[complex, str]`.";
              "Revealed type [-1]: Revealed type for `u` is `float`.";
              "Revealed type [-1]: Revealed type for `v` is `typing.Union[complex, str]`.";
-             "Revealed type [-1]: Revealed type for `w` is `typing.Union[bool, int, str]`.";
+             "Revealed type [-1]: Revealed type for `w` is `typing.Union[int, str]`.";
            ];
     ]
 

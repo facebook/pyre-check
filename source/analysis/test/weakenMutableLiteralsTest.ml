@@ -1002,10 +1002,7 @@ let test_weaken_mutable_literal_to_recursive_type context =
     "typing.List[typing.Union[typing.List[typing.Union[int, str]], int]]";
 
   assert_weaken_mutable_literals ~source:"{1, {2, {3, 4}}}" ~against:"test.TreeSet" "test.TreeSet";
-  assert_weaken_mutable_literals
-    ~source:"{1, True}"
-    ~against:"test.TreeSet"
-    "typing.Set[typing.Union[int, bool]]";
+  assert_weaken_mutable_literals ~source:"{1, True}" ~against:"test.TreeSet" "test.TreeSet";
 
   assert_weaken_mutable_literals ~source:"{}" ~against:"test.JSON" "test.JSON";
   assert_weaken_mutable_literals ~source:"[1]" ~against:"test.JSON" "test.JSON";
@@ -1017,10 +1014,7 @@ let test_weaken_mutable_literal_to_recursive_type context =
     ~source:{| {"a": 1, "b": [2, "hello"], "c": {"d": {}}} |}
     ~against:"test.JSON"
     "test.JSON";
-  assert_weaken_mutable_literals
-    ~source:{| {"a": {"b": True}} |}
-    ~against:"test.JSON"
-    "typing.Dict[str, typing.Dict[str, bool]]";
+  assert_weaken_mutable_literals ~source:{| {"a": {"b": True}} |} ~against:"test.JSON" "test.JSON";
   ()
 
 

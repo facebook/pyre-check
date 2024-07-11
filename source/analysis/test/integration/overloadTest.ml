@@ -63,10 +63,7 @@ let test_check_implementation context =
       def foo(x: object) -> float:
           return 1
     |}
-    [
-      "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
-       incompatible with the return type of the implementation (`float`).";
-    ];
+    [];
   assert_type_errors
     {|
          from typing import overload
@@ -287,8 +284,6 @@ let test_check_decorated_overloads context =
     |}
     [
       "Incompatible overload [43]: The return type of overloaded function `foo` (`str`) is \
-       incompatible with the return type of the implementation (`int`).";
-      "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
        incompatible with the return type of the implementation (`int`).";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
     ];

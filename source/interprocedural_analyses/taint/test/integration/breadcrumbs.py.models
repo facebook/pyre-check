@@ -107,7 +107,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "breadcrumbs.py",
@@ -142,7 +144,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "breadcrumbs.py",

@@ -80,7 +80,7 @@ module ReturnType = struct
 
   let any = none
 
-  let bool = { is_boolean = true; is_integer = false; is_float = false; is_enumeration = false }
+  let bool = { is_boolean = true; is_integer = true; is_float = true; is_enumeration = false }
 
   let integer = { is_boolean = false; is_integer = true; is_float = true; is_enumeration = false }
 

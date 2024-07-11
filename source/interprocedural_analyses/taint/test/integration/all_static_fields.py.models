@@ -277,7 +277,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "bool" }, { "always-type": "scalar" }
+                  { "always-type": "integer" },
+                  { "always-type": "bool" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }

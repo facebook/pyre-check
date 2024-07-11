@@ -312,6 +312,8 @@ let test_check_unbounded_variables =
                 generic(overloaded, [1], [7])
             |}
            [
+             "Incompatible overload [43]: The overloaded function `overloaded` on line 6 will \
+              never be matched. The signature `(x: int) -> str` is the same or broader.";
              "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [1], [\"1\"])` \
               is `Tuple[int, str]`.";
              "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [True], \
@@ -320,8 +322,6 @@ let test_check_unbounded_variables =
               [False])` is `Tuple[float, bool]`.";
              "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [\"1\"], [7])` \
               is `Tuple[str, int]`.";
-             "Incompatible parameter type [6]: In call `generic`, for 3rd positional argument, \
-              expected `List[Variable[T2]]` but got `List[int]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1081,11 +1081,9 @@ let test_unbound_variables =
                 return g
             |}
            [
-             "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-             ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-             "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-             ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-             "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
+             "Incompatible variable type [9]: g is declared to have type `G[bool]` but is used as \
+              type `G[Variable[T_Explicit <: [int, str]]]`.";
+             "Revealed type [-1]: Revealed type for `g` is `G[bool]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
@@ -1101,11 +1099,9 @@ let test_unbound_variables =
                 return g
             |}
            [
-             "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-             ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-             "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-             ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-             "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
+             "Incompatible variable type [9]: g is declared to have type `G[bool]` but is used as \
+              type `G[Variable[T_Explicit <: [int, str]]]`.";
+             "Revealed type [-1]: Revealed type for `g` is `G[bool]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1119,11 +1115,7 @@ let test_unbound_variables =
               def bar(g: G[bool, bool]) -> None:
                 reveal_type(g)
             |}
-           [
-             "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-             ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-             "Revealed type [-1]: Revealed type for `g` is `G[typing.Any, bool]`.";
-           ];
+           ["Revealed type [-1]: Revealed type for `g` is `G[bool, bool]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

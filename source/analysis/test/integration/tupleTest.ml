@@ -828,8 +828,8 @@ let test_unpacking =
         reveal_type(y)
     |}
            [
-             "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[Union[bool, \
-              int, str], ...]]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[Union[int, \
+              str], ...]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

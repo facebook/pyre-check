@@ -568,10 +568,7 @@ let test_check_generic_protocols context =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
-       `P[Variable[T2 <: [int, str]]]` but got `Alpha`.";
-    ];
+    [];
   assert_type_errors
     {|
       import typing

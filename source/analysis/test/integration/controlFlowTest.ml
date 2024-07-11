@@ -369,7 +369,7 @@ let test_check_unbound_variables =
             self.attribute = True
           return self.attribute
     |}
-           ["Incompatible return type [7]: Expected `int` but got `bool`."];
+           [];
     ]
 
 

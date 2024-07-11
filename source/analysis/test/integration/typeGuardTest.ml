@@ -530,7 +530,7 @@ let test_boolean_operators =
                 if int_or_str(val) and str_or_bool(val):
                   reveal_type(val)
             |}
-           ["Revealed type [-1]: Revealed type for `val` is `str`."];
+           ["Revealed type [-1]: Revealed type for `val` is `typing.Union[bool, str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

@@ -19,6 +19,7 @@
               {
                 "features": [
                   { "always-via": "special_source" },
+                  { "always-type": "integer" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" }
                 ],
@@ -30,7 +31,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -69,6 +72,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
+      { "always-type": "integer" },
       { "always-type": "bool" },
       { "always-type": "scalar" }
     ],
@@ -101,6 +105,7 @@
               {
                 "features": [
                   { "always-via": "special_source" },
+                  { "always-type": "integer" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" }
                 ],
@@ -112,7 +117,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -151,6 +158,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
+      { "always-type": "integer" },
       { "always-type": "bool" },
       { "always-type": "scalar" }
     ],
@@ -190,6 +198,7 @@
             ],
             "local_features": [
               { "always-via": "obscure:model" },
+              { "always-type": "integer" },
               { "always-type": "bool" },
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -229,6 +238,7 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
+      { "always-type": "integer" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
       { "always-via": "tito" }
@@ -270,6 +280,7 @@
             ],
             "local_features": [
               { "always-via": "obscure:model" },
+              { "always-type": "integer" },
               { "always-type": "bool" },
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -313,6 +324,7 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
+      { "always-type": "integer" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
       { "always-via": "tito" }
@@ -596,7 +608,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "features.py",
@@ -621,7 +635,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "features.py",
@@ -807,7 +823,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "features.py",
@@ -832,7 +850,9 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
             ],
             "origin": {
               "filename": "features.py",
