@@ -515,7 +515,9 @@ def _run_in_background(
         # removed on our side.
         stop.remove_socket_if_exists(socket_path)
 
-        raise commands.ClientException("Interrupted by user. No server is spawned.")
+        raise commands.ClientException(
+            "Interrupted by user. No server is spawned."
+        ) from None
 
 
 def run(

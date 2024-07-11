@@ -555,9 +555,7 @@ def _is_excluded(
     excludes: Sequence[str],
 ) -> bool:
     try:
-        return any(
-            [re.match(exclude_pattern, str(path)) for exclude_pattern in excludes]
-        )
+        return any(re.match(exclude_pattern, str(path)) for exclude_pattern in excludes)
     except re.error:
         LOG.warning("Could not parse `excludes`: %s", excludes)
         return False

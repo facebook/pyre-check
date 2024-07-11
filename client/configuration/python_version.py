@@ -38,7 +38,7 @@ class PythonVersion:
                 + f"'{input}'"
             )
         except ValueError as error:
-            raise exceptions.InvalidPythonVersion(str(error))
+            raise exceptions.InvalidPythonVersion(input) from error
 
     def to_string(self) -> str:
         return f"{self.major}.{self.minor}.{self.micro}"
