@@ -4581,7 +4581,7 @@ let expression_contains_any expression =
   |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
 
 
-let typeguard_annotation = function
+let type_inside_typeguard = function
   | Parametric
       {
         name = "typing.TypeGuard" | "typing_extensions.TypeGuard";

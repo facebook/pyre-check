@@ -564,7 +564,7 @@ val is_untyped : t -> bool
 
 val contains_variable : t -> bool
 
-val typeguard_annotation : t -> t option
+val type_inside_typeguard : t -> t option
 
 val parameters : t -> Parameter.t list option
 
