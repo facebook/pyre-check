@@ -1103,6 +1103,29 @@ let test_handle_types_query context =
                  |> QueryTestTypes.create_types_at_locations;
              };
            ]))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|[x for x in [1, 2, 3]]|}
+    ~query:"types(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.TypesByPath
+           [
+             {
+               Base.path = "test.py";
+               types =
+                 [
+                   1, 0, 1, 22, Type.list Type.integer;
+                   1, 1, 1, 2, Type.integer;
+                   1, 7, 1, 8, Type.integer;
+                   1, 12, 1, 21, Type.list Type.integer;
+                   1, 13, 1, 14, Type.literal_integer 1;
+                   1, 16, 1, 17, Type.literal_integer 2;
+                   1, 19, 1, 20, Type.literal_integer 3;
+                 ]
+                 |> QueryTestTypes.create_types_at_locations;
+             };
+           ]))
 
 
 let test_handle_references_used_by_file_query context =
