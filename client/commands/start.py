@@ -316,7 +316,7 @@ def create_server_arguments(
     )
 
     source_paths = backend_arguments.get_source_path_for_server(
-        configuration, start_arguments.flavor
+        configuration, start_arguments.flavor, watchman_root
     )
 
     logging_sections = start_arguments.logging_sections

@@ -303,6 +303,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 SimpleSourcePath([raw_element.to_element()]),
             )
@@ -323,11 +324,81 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 SimpleSourcePath([]),
             )
 
     def test_get_with_unwatched_dependency_source_path__exists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.ensure_files_exist(
+                root_path, ["src/indicator", "unwatched_root/CHECKSUMS"]
+            )
+            watched_root = root_path / "src"
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
+            unwatched_dependency = configuration.UnwatchedDependency(
+                change_indicator="indicator",
+                files=configuration.UnwatchedFiles(
+                    root=str(root_path / "unwatched_root"), checksum_path="CHECKSUMS"
+                ),
+            )
+            self.assertEqual(
+                get_source_path(
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            global_root=root_path / "project",
+                            relative_local_root="local",
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                            unwatched_dependency=unwatched_dependency,
+                        )
+                    ),
+                    artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=watched_root,
+                ),
+                WithUnwatchedDependencySourcePath(
+                    elements=[raw_element.to_element()],
+                    change_indicator_root=watched_root,
+                    unwatched_dependency=unwatched_dependency,
+                ),
+            )
+
+    def test_get_with_unwatched_dependency_source_path__nonexists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project"])
+            setup.ensure_files_exist(root_path, ["src/indicator"])
+            watched_root = root_path / "src"
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
+            unwatched_dependency = configuration.UnwatchedDependency(
+                change_indicator="indicator",
+                files=configuration.UnwatchedFiles(
+                    root=str(root_path / "unwatched_root"), checksum_path="CHECKSUMS"
+                ),
+            )
+            self.assertEqual(
+                get_source_path(
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            global_root=root_path / "project",
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                            unwatched_dependency=unwatched_dependency,
+                        )
+                    ),
+                    artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=watched_root,
+                ),
+                SimpleSourcePath(
+                    elements=[raw_element.to_element()],
+                ),
+            )
+
+    def test_get_with_unwatched_dependency_source_path__not_watched(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
@@ -354,38 +425,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
-                ),
-                WithUnwatchedDependencySourcePath(
-                    elements=[raw_element.to_element()],
-                    change_indicator_root=(root_path / "project" / "local"),
-                    unwatched_dependency=unwatched_dependency,
-                ),
-            )
-
-    def test_get_with_unwatched_dependency_source_path__nonexists(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            setup.ensure_directories_exists(root_path, [".pyre", "project"])
-            setup.ensure_files_exist(root_path, ["src/indicator"])
-            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
-            unwatched_dependency = configuration.UnwatchedDependency(
-                change_indicator="indicator",
-                files=configuration.UnwatchedFiles(
-                    root=str(root_path / "unwatched_root"), checksum_path="CHECKSUMS"
-                ),
-            )
-            self.assertEqual(
-                get_source_path(
-                    frontend_configuration.OpenSource(
-                        configuration.Configuration(
-                            global_root=root_path / "project",
-                            dot_pyre_directory=(root_path / ".pyre"),
-                            source_directories=[raw_element],
-                            unwatched_dependency=unwatched_dependency,
-                        )
-                    ),
-                    artifact_root_name="irrelevant",
-                    flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 SimpleSourcePath(
                     elements=[raw_element.to_element()],
@@ -417,6 +457,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "buck_root",
@@ -452,6 +493,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "repo_root",
@@ -494,6 +536,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root/local",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "project/local",
@@ -566,6 +609,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    watchman_root=None,
                 )
 
     def test_get_source_path__no_source_specified(self) -> None:
@@ -581,6 +625,7 @@ class ArgumentsTest(testslide.TestCase):
                 ),
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
+                watchman_root=None,
             )
 
     def test_get_source_path__confliciting_source_specified(self) -> None:
@@ -596,6 +641,7 @@ class ArgumentsTest(testslide.TestCase):
                 ),
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
+                watchman_root=None,
             )
 
     def test_get_checked_directory_for_simple_source_path(self) -> None:

@@ -308,6 +308,7 @@ def get_source_path(
     configuration: frontend_configuration.Base,
     artifact_root_name: str,
     flavor: identifiers.PyreFlavor,
+    watchman_root: Optional[Path],
 ) -> SourcePath:
     source_directories = configuration.is_source_directories_defined()
     targets = configuration.get_buck_targets()
@@ -321,9 +322,9 @@ def get_source_path(
             LOG.warning("Pyre did not find an existent source directory.")
 
         unwatched_dependency = configuration.get_existent_unwatched_dependency()
-        if unwatched_dependency is not None:
+        if unwatched_dependency is not None and watchman_root is not None:
             return WithUnwatchedDependencySourcePath(
-                change_indicator_root=_get_global_or_local_root(configuration),
+                change_indicator_root=watchman_root,
                 unwatched_dependency=unwatched_dependency,
                 elements=elements,
             )
@@ -374,6 +375,7 @@ def get_source_path(
 def get_source_path_for_server(
     configuration: frontend_configuration.Base,
     flavor: identifiers.PyreFlavor,
+    watchman_root: Optional[Path] = None,
 ) -> SourcePath:
     # We know that for each source root there could be at most one server alive.
     # Therefore artifact root name can be a fixed constant.
@@ -383,7 +385,7 @@ def get_source_path_for_server(
         # Prevent artifact roots of different local projects from clashing with
         # each other.
         artifact_root_name = str(Path(artifact_root_name) / relative_local_root)
-    return get_source_path(configuration, artifact_root_name, flavor)
+    return get_source_path(configuration, artifact_root_name, flavor, watchman_root)
 
 
 def get_source_path_for_check(
@@ -393,7 +395,10 @@ def get_source_path_for_check(
     # concurrent check commands overwriting each other's artifacts. Here we use process
     # ID to isolate the artifact root of each individual check command.
     return get_source_path(
-        configuration, str(os.getpid()), identifiers.PyreFlavor.CLASSIC
+        configuration,
+        str(os.getpid()),
+        identifiers.PyreFlavor.CLASSIC,
+        watchman_root=None,
     )
 
 
