@@ -129,11 +129,14 @@ let pyre_reset () =
 let save_table (filename : string) : unit =
   let oc = Out_channel.open_bin filename in
   (* This is obviously not versioned and hackish. *)
-  Marshal.to_channel oc hashtbl []
+  let bindings : (string * value) list = Ht.to_seq hashtbl |> Stdlib.List.of_seq in
+  Marshal.to_channel oc bindings []
 
 let load_table (filename :string) : unit =
   let ic = In_channel.open_bin filename in
-  let new_ht = (Marshal.from_channel ic : (string, value) Ht.t) in
+  (* This is obviously not versioned and hackish. *)
+  let bindings = (Marshal.from_channel ic : (string * value) list) in
+  let new_ht = Ht.of_seq (Stdlib.List.to_seq bindings) in
   Ht.swap hashtbl new_ht
 
 (*****************************************************************************)
