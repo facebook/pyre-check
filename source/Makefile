@@ -10,7 +10,7 @@ dev: configure
 
 .PHONY: test
 test: dev
-	PYRE_CODE_ROOT="$(CURDIR)/.." OUNIT_SHARDS="1" dune runtest -j auto --profile dev
+	PYRE_CODE_ROOT="$(CURDIR)/.." OUNIT_SHARDS="1" dune runtest -j 3 --profile dev
 
 .PHONY: stubs_integration_test
 stubs_integration_test: dev
