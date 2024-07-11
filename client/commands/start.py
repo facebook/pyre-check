@@ -307,6 +307,14 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
+    global_root = configuration.get_global_root()
+    relative_local_root = configuration.get_relative_local_root()
+    watchman_root = (
+        None
+        if start_arguments.no_watchman
+        else backend_arguments.find_watchman_root(global_root)
+    )
+
     source_paths = backend_arguments.get_source_path_for_server(
         configuration, start_arguments.flavor
     )
@@ -332,8 +340,6 @@ def create_server_arguments(
         else None
     )
 
-    global_root = configuration.get_global_root()
-    relative_local_root = configuration.get_relative_local_root()
     use_errpy_parser = configuration.get_use_errpy_parser()
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
@@ -368,11 +374,7 @@ def create_server_arguments(
         strict=configuration.is_strict(),
         show_error_traces=start_arguments.show_error_traces,
         additional_logging_sections=additional_logging_sections,
-        watchman_root=(
-            None
-            if start_arguments.no_watchman
-            else backend_arguments.find_watchman_root(global_root)
-        ),
+        watchman_root=watchman_root,
         taint_models_path=configuration.get_taint_models_path(),
         store_type_check_resolution=start_arguments.store_type_check_resolution,
         critical_files=get_critical_files(configuration, start_arguments.flavor),
