@@ -263,6 +263,7 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
           in
           annotate_expression key;
           annotate_expression value
+      | Generator { element; generators }
       | ListComprehension { element; generators; _ }
       | SetComprehension { element; generators; _ } ->
           let annotate resolution ({ Node.location; _ } as expression) =
