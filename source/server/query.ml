@@ -41,7 +41,7 @@ module Request = struct
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | HoverInfoForPosition of {
+    | TypeAtPosition of {
         path: PyrePath.t;
         position: Location.position;
       }
@@ -90,12 +90,6 @@ module Response = struct
     type types_at_path = {
       path: string;
       types: type_at_location list;
-    }
-    [@@deriving equal, to_yojson]
-
-    type hover_info = {
-      value: string option;
-      docstring: string option;
     }
     [@@deriving equal, to_yojson]
 
@@ -199,7 +193,7 @@ module Response = struct
       | FoundModules of Reference.t list
       | FoundPath of string
       | GlobalLeakErrors of global_leak_errors
-      | HoverInfoForPosition of hover_info
+      | TypeAtPosition of Type.t option
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
       | Success of string
@@ -297,7 +291,7 @@ module Response = struct
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
-      | HoverInfoForPosition hover_info -> hover_info_to_yojson hover_info
+      | TypeAtPosition maybe_type -> [%to_yojson: Type.t option] maybe_type
       | ReferenceTypesInPath referenceTypesInPath -> types_at_path_to_yojson referenceTypesInPath
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
@@ -450,8 +444,8 @@ let rec parse_request_exn query =
           List.map ~f:single_argument_to_reference arguments
           |> List.partition_result
           |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
-      | "hover_info_for_position", [path; line; column] ->
-          Request.HoverInfoForPosition
+      | "type_at_position", [path; line; column] ->
+          Request.TypeAtPosition
             {
               path = PyrePath.create_absolute (string path);
               position = { Location.line = integer line; column = integer column };
@@ -872,14 +866,11 @@ let rec process_request_exn
         List.map ~f:find_leak_errors_for_qualifier qualifiers
         |> List.partition_result
         |> construct_result
-    | HoverInfoForPosition { path; position } ->
+    | TypeAtPosition { path; position } ->
         qualifier_of_path path
         >>| (fun module_reference ->
-              LocationBasedLookup.hover_info_for_position
-                ~type_environment
-                ~module_reference
-                position)
-        >>| (fun { value; docstring } -> Single (Base.HoverInfoForPosition { value; docstring }))
+              LocationBasedLookup.type_at_position ~type_environment ~module_reference position)
+        >>| (fun maybe_type -> Single (Base.TypeAtPosition maybe_type))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | ModelQuery { path; query_name } -> (

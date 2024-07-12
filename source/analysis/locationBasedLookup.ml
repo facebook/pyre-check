@@ -1230,18 +1230,27 @@ let document_symbol_info ~source =
   []
 
 
-let hover_info_for_position ~type_environment ~module_reference position =
-  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
-  let type_ =
-    Result.ok symbol_data
-    >>= resolve_type_for_symbol ~type_environment
-    >>| fun type_ -> show_type_for_hover type_
-  in
-  let docstring = Result.ok symbol_data >>= find_docstring_for_symbol ~type_environment in
+let type_for_symbol_data ~type_environment ~module_reference ~symbol_data position =
+  let maybe_type = Result.ok symbol_data >>= resolve_type_for_symbol ~type_environment in
   Log.log
     ~section:`Server
-    "Hover info for symbol at position `%s:%s`: %s"
+    "Type of narrowest symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    (Option.value type_ ~default:"<EMPTY>");
-  { value = type_; docstring }
+    (Option.map maybe_type ~f:Type.show |> Option.value ~default:"<EMPTY>");
+  maybe_type
+
+
+let type_at_position ~type_environment ~module_reference position =
+  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
+  type_for_symbol_data ~type_environment ~module_reference ~symbol_data position
+
+
+let hover_info_for_position ~type_environment ~module_reference position =
+  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
+  let value =
+    type_for_symbol_data ~type_environment ~module_reference ~symbol_data position
+    >>| show_type_for_hover
+  in
+  let docstring = Result.ok symbol_data >>= find_docstring_for_symbol ~type_environment in
+  { value; docstring }
