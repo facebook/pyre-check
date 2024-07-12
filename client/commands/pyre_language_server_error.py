@@ -28,13 +28,6 @@ class PyreLanguageServerError(str, enum.Enum):
     MODULE_NOT_TRACKED = "MODULE_NOT_TRACKED"
     GENERIC_DAEMON_QUERY_FAILURE = "GENERIC_DAEMON_QUERY_FAILURE"
 
-    # TODO (T184656101): Remove check for error message using empty reasons after 4/12
-    ATTRIBUTE_DEFINITION_NOT_FOUND = "ATTRIBUTE_DEFINITION_NOT_FOUND"
-    IDENTIFIER_DEFINITION_NOT_FOUND = "IDENTIFIER_DEFINITION_NOT_FOUND"
-    SOURCE_PATH_NOT_FOUND = "SOURCE_PATH_NOT_FOUND"
-    SYMBOL_NOT_FOUND = "SYMBOL_NOT_FOUND"
-    UNSUPPORTED_EXPRESSION = "UNSUPPORTED_EXPRESSION"
-
 
 class PyreLanguageServerEmptyReason(str, enum.Enum):
     PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN = (
@@ -72,19 +65,6 @@ def get_language_server_error(
         return PyreLanguageServerError.FILE_NOT_OPENED
     elif "ModuleNotTracked" in error_message:
         return PyreLanguageServerError.MODULE_NOT_TRACKED
-    # TODO (T184656101): Remove check for error message using empty reasons after 4/12
-    elif "SourcePathNotFound" in error_message:
-        return PyreLanguageServerError.SOURCE_PATH_NOT_FOUND
-    elif "SymbolNotFound" in error_message:
-        return PyreLanguageServerError.SYMBOL_NOT_FOUND
-    elif "UnsupportedExpression" in error_message:
-        return PyreLanguageServerError.UNSUPPORTED_EXPRESSION
-    elif "AttributeDefinitionNotFound" in error_message:
-        return PyreLanguageServerError.ATTRIBUTE_DEFINITION_NOT_FOUND
-    elif "IdentifierDefinitionNotFound" in error_message:
-        return PyreLanguageServerError.IDENTIFIER_DEFINITION_NOT_FOUND
-    else:
-        return PyreLanguageServerError.GENERIC_DAEMON_QUERY_FAILURE
 
 
 def get_language_server_empty_reason(
