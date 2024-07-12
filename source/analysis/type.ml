@@ -3017,113 +3017,144 @@ module Variable = struct
 
   let pp_concise = PrettyPrinting.Variable.pp_concise ~pp_type:PrettyPrinting.pp
 
+  module Declaration = struct
+    type t =
+      | DTypeVar of {
+          name: Identifier.t;
+          constraints: Expression.t constraints;
+          variance: variance;
+        }
+      | DTypeVarTuple of { name: Identifier.t }
+      | DParamSpec of { name: Identifier.t }
+
+    let parse expression ~target =
+      match expression with
+      | {
+       Node.value =
+         Expression.Call
+           {
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       {
+                         base = { Node.value = Name (Name.Identifier "typing"); _ };
+                         attribute = "TypeVar";
+                         special = false;
+                       });
+                 _;
+               };
+             arguments =
+               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+           };
+       _;
+      } ->
+          Some
+            (DTypeVar
+               { name = Reference.show target; constraints = Unconstrained; variance = Invariant })
+      | {
+          Node.value =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Name
+                        (Name.Attribute
+                          {
+                            base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                            attribute = "ParameterSpecification";
+                            special = false;
+                          });
+                    _;
+                  };
+                arguments =
+                  [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+              };
+          _;
+        }
+      | {
+          Node.value =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Name
+                        (Name.Attribute
+                          {
+                            base =
+                              {
+                                Node.value = Name (Name.Identifier ("typing" | "typing_extensions"));
+                                _;
+                              };
+                            attribute = "ParamSpec";
+                            special = false;
+                          });
+                    _;
+                  };
+                arguments =
+                  [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+              };
+          _;
+        } ->
+          Some (DParamSpec { name = Reference.show target })
+      | {
+       Node.value =
+         Expression.Call
+           {
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       {
+                         base =
+                           {
+                             Node.value =
+                               ( Name (Name.Identifier "pyre_extensions")
+                               | Name (Name.Identifier "typing_extensions")
+                               | Name (Name.Identifier "typing") );
+                             _;
+                           };
+                         attribute = "TypeVarTuple";
+                         special = false;
+                       });
+                 _;
+               };
+             arguments =
+               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+           };
+       _;
+      } ->
+          Some (DTypeVarTuple { name = Reference.show target })
+      | _ -> None
+  end
+
   type variable_zip_result = {
     variable_pair: pair;
     received_parameter: Parameter.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+  let of_declaration declaration ~create_type =
+    match declaration with
+    | Declaration.DTypeVar { name; constraints; variance } ->
+        let constraints =
+          match constraints with
+          | Bound expression -> Bound (create_type expression)
+          | Explicit expressions -> Explicit (List.map ~f:create_type expressions)
+          | Unconstrained -> Unconstrained
+          | LiteralIntegers -> LiteralIntegers
+        in
+        TypeVarVariable (TypeVar.create ~constraints ~variance name)
+    | Declaration.DParamSpec { name } -> ParamSpecVariable (ParamSpec.create name)
+    | Declaration.DTypeVarTuple { name } -> TypeVarTupleVariable (TypeVarTuple.create name)
+
+
   let parse_declaration expression ~target =
-    match expression with
-    | {
-     Node.value =
-       Expression.Call
-         {
-           callee =
-             {
-               Node.value =
-                 Name
-                   (Name.Attribute
-                     {
-                       base = { Node.value = Name (Name.Identifier "typing"); _ };
-                       attribute = "TypeVar";
-                       special = false;
-                     });
-               _;
-             };
-           arguments =
-             [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-         };
-     _;
-    } ->
-        Some (TypeVarVariable (TypeVar.create (Reference.show target)))
-    | {
-        Node.value =
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                          attribute = "ParameterSpecification";
-                          special = false;
-                        });
-                  _;
-                };
-              arguments =
-                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-            };
-        _;
-      }
-    | {
-        Node.value =
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            {
-                              Node.value = Name (Name.Identifier ("typing" | "typing_extensions"));
-                              _;
-                            };
-                          attribute = "ParamSpec";
-                          special = false;
-                        });
-                  _;
-                };
-              arguments =
-                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-            };
-        _;
-      } ->
-        Some (ParamSpecVariable (ParamSpec.create (Reference.show target)))
-    | {
-     Node.value =
-       Expression.Call
-         {
-           callee =
-             {
-               Node.value =
-                 Name
-                   (Name.Attribute
-                     {
-                       base =
-                         {
-                           Node.value =
-                             ( Name (Name.Identifier "pyre_extensions")
-                             | Name (Name.Identifier "typing_extensions")
-                             | Name (Name.Identifier "typing") );
-                           _;
-                         };
-                       attribute = "TypeVarTuple";
-                       special = false;
-                     });
-               _;
-             };
-           arguments =
-             [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
-         };
-     _;
-    } ->
-        Some (TypeVarTupleVariable (TypeVarTuple.create (Reference.show target)))
-    | _ -> None
+    Declaration.parse expression ~target >>| of_declaration ~create_type:(fun _ -> Any)
 
 
   let dequalify dequalify_map = function
