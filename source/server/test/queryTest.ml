@@ -135,6 +135,13 @@ let test_parse_query context =
   assert_fails_to_parse "expression_level_coverage(a.py)";
   assert_fails_to_parse "expression_level_coverage('a.py', 1, 2)";
   assert_parses
+    "hover_info_for_position(path='/foo.py', line=42, column=10)"
+    (HoverInfoForPosition
+       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
+  assert_fails_to_parse "hover_info_for_position(path='/foo.py', line=42)";
+  assert_fails_to_parse "hover_info_for_position(path='/foo.py', column=10)";
+  assert_fails_to_parse "hover_info_for_position(path=99, line=42, column=10)";
+  assert_parses
     "global_leaks(path.to.my_function)"
     (GlobalLeaks { qualifiers = [!&"path.to.my_function"]; parse_errors = [] });
   assert_parses
@@ -2548,6 +2555,44 @@ let test_expression_level_coverage context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_hover context =
+  let sources =
+    ["foo.py", {|
+              def foo(x: int) -> int:
+                return x
+            |}]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let queries_and_expected_responses =
+    [
+      ( "hover_info_for_position(path='foo.py', line=2, column=0)",
+        {|
+      {
+      "response": { "value": null, "docstring": null}
+      }
+    |} );
+      ( "hover_info_for_position(path='foo.py', line=3, column=9)",
+        {|
+      {
+      "response": { "value": "int", "docstring": null}
+      }
+    |} );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let test_dump_call_graph context =
   let sources =
     [
@@ -2862,6 +2907,7 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
+         "hover" >:: OUnitLwt.lwt_wrapper test_hover;
          "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
          "global_leaks" >:: OUnitLwt.lwt_wrapper test_global_leaks;
          "process_request" >:: test_process_request;
