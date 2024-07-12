@@ -594,116 +594,150 @@ let default =
 
 let ( !! ) name = Type.Primitive name
 
-let test_less_or_equal context =
-  (* Primitive types. *)
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
-  assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
-  assert_true (less_or_equal order ~left:!!"0" ~right:!!"0");
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"0");
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"1");
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"2");
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"3");
-  assert_false (less_or_equal order ~left:!!"3" ~right:Type.Bottom);
-  assert_false (less_or_equal order ~left:!!"2" ~right:Type.Bottom);
-  assert_false (less_or_equal order ~left:!!"1" ~right:Type.Bottom);
-  assert_false (less_or_equal order ~left:!!"0" ~right:Type.Bottom);
-  assert_true (less_or_equal order ~left:!!"0" ~right:!!"3");
-  assert_true (less_or_equal order ~left:!!"1" ~right:!!"3");
-  assert_false (less_or_equal order ~left:!!"2" ~right:!!"3");
-  assert_true (less_or_equal default ~left:!!"list" ~right:!!"typing.Sized");
-  assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!!"typing.Sized");
+let test_less_or_equal_primitives =
+  let assert_false value _ = assert_false value in
+  let assert_true value _ = assert_true value in
+  test_list
+    [
+      (* Primitive types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:!!"0" ~right:!!"0");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"0");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"1");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"2");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Bottom ~right:!!"3");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:!!"3" ~right:Type.Bottom);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:!!"2" ~right:Type.Bottom);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:!!"1" ~right:Type.Bottom);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:!!"0" ~right:Type.Bottom);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:!!"0" ~right:!!"3");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:!!"1" ~right:!!"3");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:!!"2" ~right:!!"3");
+    ]
 
-  (* ReadOnly types. *)
-  assert_false
-    (less_or_equal
-       default
-       ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
-       ~right:(Type.Primitive "Base"));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Primitive "Child")
-       ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
-       ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
 
-  (* Parametric types. *)
-  assert_true
-    (less_or_equal default ~left:(Type.list Type.integer) ~right:(Type.iterator Type.integer));
-  assert_false
-    (less_or_equal default ~left:(Type.list Type.float) ~right:(Type.iterator Type.integer));
-  assert_true
-    (less_or_equal default ~left:(Type.iterator Type.integer) ~right:(Type.iterable Type.integer));
-  assert_true
-    (less_or_equal default ~left:(Type.iterator Type.integer) ~right:(Type.iterable Type.float));
-
-  (* Mixed primitive and parametric types. *)
-  assert_true (less_or_equal default ~left:Type.string ~right:(Type.iterable Type.string));
-
-  (* Mixed tuple and parametric types. *)
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.integer])
-       ~right:(Type.iterator Type.integer));
-  assert_false
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.float])
-       ~right:(Type.iterator Type.integer));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.float])
-       ~right:(Type.iterator Type.float));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
-       ~right:(Type.iterator Type.integer));
-  assert_false
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float))
-       ~right:(Type.iterator Type.integer));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Primitive "tuple")
-       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Concrete [Type.integer; Type.integer]))
-       ~right:(Type.parametric "tuple" ![Type.integer]));
-
-  (* Union types *)
-  assert_true (less_or_equal default ~left:Type.NoneType ~right:(Type.optional Type.integer));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.optional Type.string)
-       ~right:(Type.Union [Type.integer; Type.optional Type.string]));
-
-  (* Tuples. *)
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.integer])
-       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.integer])
-       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.tuple [Type.integer; Type.float])
-       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
+let test_less_or_equal =
+  let float_string_variable =
+    Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"
+  in
+  (* Behavioral subtyping of callables. *)
+  let parse_less_or_equal ?attributes ?is_protocol order ~left ~right =
+    let aliases = function
+      | "T_Unconstrained" -> Some (Type.variable "T_Unconstrained")
+      | "T_int_bool" ->
+          Some
+            (Type.variable
+               "T_int_bool"
+               ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
+      | _ -> None
+    in
+    let attributes annotation ~assumptions:_ =
+      let parse_annotation =
+        let aliases = function
+          | "_T" -> Some (Type.variable "_T")
+          | _ -> None
+        in
+        let aliases = create_type_alias_table aliases in
+        parse_callable ~aliases
+      in
+      match annotation with
+      | Type.Primitive "FloatToStrCallable" ->
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", "typing.Callable[[float], str]"])
+      | Type.Parametric
+          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
+          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", callable])
+      | annotation -> (
+          match attributes with
+          | Some attributes -> attributes annotation
+          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation))
+    in
+    let aliases = create_type_alias_table aliases in
+    less_or_equal
+      ~attributes
+      ?is_protocol
+      order
+      ~left:(parse_callable ~aliases left)
+      ~right:(parse_callable ~aliases right)
+  in
+  (* Callback protocols *)
+  let parse_annotation =
+    let aliases = function
+      | "_T" -> Some (Type.variable "_T")
+      | _ -> None
+    in
+    let aliases = create_type_alias_table aliases in
+    parse_callable ~aliases
+  in
+  let is_protocol annotation ~protocol_assumptions:_ =
+    match annotation with
+    | Type.Primitive "MatchesProtocol"
+    | Type.Primitive "DoesNotMatchProtocol"
+    | Type.Parametric { name = "B"; _ } ->
+        true
+    | _ -> false
+  in
+  let attributes annotation =
+    match annotation with
+    | Type.Primitive "MatchesProtocol" ->
+        Some
+          (parse_attributes
+             ~parse_annotation
+             ~class_name:"MatchesProtocol"
+             ["__call__", "typing.Callable[[int], str]"])
+    | Type.Primitive "DoesNotMatchProtocol" ->
+        Some
+          (parse_attributes
+             ~parse_annotation
+             ~class_name:"DoesNotMatchProtocol"
+             ["__call__", "typing.Callable[[str], int]"])
+    | Type.Parametric { name = "B"; _ } ->
+        Some
+          (parse_attributes
+             ~parse_annotation
+             ~class_name:"B"
+             ["__call__", "typing.Callable[[_T], str]"])
+    | Type.Callable _ ->
+        Some (make_attributes ~class_name:"typing.Callable" ["__call__", annotation])
+    | _ -> failwith "getting attributes for wrong class"
+  in
+  let assert_less_or_equal ?(source = "") ~left ~right expected_result context =
+    let resolution = resolution ~source context in
+    let parse_annotation annotation =
+      annotation
+      (* Preprocess literal TypedDict syntax. *)
+      |> parse_single_expression ~preprocess:true
+      |> GlobalResolution.parse_annotation resolution
+    in
+    let left, right = parse_annotation left, parse_annotation right in
+    assert_equal
+      ~printer:(Printf.sprintf "%B")
+      expected_result
+      (GlobalResolution.less_or_equal resolution ~left ~right)
+  in
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
@@ -775,560 +809,717 @@ let test_less_or_equal context =
     insert order "DoesNotMatchProtocol";
     handler order
   in
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.parametric "A" ![Type.integer; Type.string])
-       ~right:(Type.parametric "B" ![Type.tuple [Type.integer; Type.string]]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:(Type.parametric "A" ![Type.integer; Type.string])
-       ~right:(Type.tuple [Type.integer; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.parametric "A" ![Type.integer; Type.string])
-       ~right:
-         (Type.parametric "C" ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:(Type.parametric "A" ![Type.string; Type.integer])
-       ~right:
-         (Type.parametric "C" ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
-
-  (* Variables. *)
-  assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
-  assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
-  assert_true (less_or_equal order ~left:Type.Any ~right:(Type.variable "T"));
-  assert_false (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable "T")
-       ~right:(Type.union [Type.string; Type.variable "T"]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
-       ~right:(Type.union [Type.float; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
-       ~right:(Type.union [Type.float; Type.string; !!"A"]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
-       ~right:(Type.union [Type.float]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:
-         (Type.variable
-            ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
-            "T")
-       ~right:(Type.union [Type.float; Type.string; !!"A"]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.string
-       ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"));
-  let float_string_variable =
-    Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"
-  in
-  assert_true
-    (less_or_equal
-       order
-       ~left:float_string_variable
-       ~right:(Type.union [float_string_variable; !!"A"]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
-       ~right:(Type.union [Type.variable ~constraints:(Type.Variable.Bound !!"A") "T"; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
-       ~right:(Type.optional (Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Bound (Type.optional !!"A")) "T")
-       ~right:(Type.optional !!"A"));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
-       ~right:(Type.union [Type.float; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
-       ~right:
-         (Type.union
-            [Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
-       ~right:Type.Top);
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
-       ~right:(Type.union [Type.variable ~constraints:Type.Variable.Unconstrained "T"; Type.string]));
-  assert_true
-    (less_or_equal
-       order
-       ~left:
-         (Type.variable
-            ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
-            "T")
-       ~right:(Type.union [Type.float; Type.string]));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.float
-       ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"));
-  assert_false
-    (less_or_equal
-       order
-       ~left:(Type.union [Type.string; Type.integer])
-       ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.string; Type.integer]) "T"));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.string]) "T"));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.integer
-       ~right:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T"));
-  assert_true
-    (less_or_equal
-       order
-       ~left:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
-       ~right:Type.integer);
-
-  (* Behavioral subtyping of callables. *)
-  let less_or_equal ?attributes ?is_protocol order ~left ~right =
-    let aliases = function
-      | "T_Unconstrained" -> Some (Type.variable "T_Unconstrained")
-      | "T_int_bool" ->
-          Some
-            (Type.variable
-               "T_int_bool"
-               ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
-      | _ -> None
-    in
-    let attributes annotation ~assumptions:_ =
-      let parse_annotation =
-        let aliases = function
-          | "_T" -> Some (Type.variable "_T")
-          | _ -> None
-        in
-        let aliases = create_type_alias_table aliases in
-        parse_callable ~aliases
-      in
-      match annotation with
-      | Type.Primitive "FloatToStrCallable" ->
-          Some
-            (parse_attributes
-               ~parse_annotation
-               ~class_name:"MatchesProtocol"
-               ["__call__", "typing.Callable[[float], str]"])
-      | Type.Parametric
-          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
-          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
-          Some
-            (parse_attributes
-               ~parse_annotation
-               ~class_name:"MatchesProtocol"
-               ["__call__", callable])
-      | annotation -> (
-          match attributes with
-          | Some attributes -> attributes annotation
-          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation))
-    in
-    let aliases = create_type_alias_table aliases in
-    less_or_equal
-      ~attributes
-      ?is_protocol
-      order
-      ~left:(parse_callable ~aliases left)
-      ~right:(parse_callable ~aliases right)
-  in
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[int], int]");
-  assert_false
-    (less_or_equal order ~left:"typing.Callable[[str], int]" ~right:"typing.Callable[[int], int]");
-  assert_false
-    (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[str], int]");
-  assert_false
-    (less_or_equal order ~left:"typing.Callable[[int], str]" ~right:"typing.Callable[[int], int]");
-  assert_false
-    (less_or_equal order ~left:"typing.Callable[[int], float]" ~right:"typing.Callable[[int], int]");
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[int], float]");
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[[float], int]" ~right:"typing.Callable[[int], int]");
-  assert_false
-    (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[float], int]");
-
-  (* Named vs. anonymous callables. *)
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[int], int]"
-       ~right:"typing.Callable('foo')[[int], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[str], int]"
-       ~right:"typing.Callable('foo')[[int], int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable('foo')[[int], int]"
-       ~right:"typing.Callable[[int], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable('foo')[[str], int]"
-       ~right:"typing.Callable[[int], int]");
-
-  (* Named callables. *)
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable('foo')[[int], int]"
-       ~right:"typing.Callable('foo')[[int], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable('bar')[[str], int]"
-       ~right:"typing.Callable('foo')[[int], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable('foo')[[int], int]"
-       ~right:"typing.Callable('bar')[[int], int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable('foo')[[str], int]"
-       ~right:"typing.Callable('foo')[[int], int]");
-
-  (* Callables with keyword-only parameters. *)
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(foo, bool, default)], int]"
-       ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(foo, bool, default)], int]"
-       ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(foo, bool)], int]"
-       ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(foo, bool)], int]"
-       ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
-
-  (* Undefined callables. *)
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[..., int]" ~right:"typing.Callable[..., float]");
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[..., int]");
-  assert_true
-    (less_or_equal order ~left:"typing.Callable[..., int]" ~right:"typing.Callable[[int], float]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(object), Keywords(object)], int]"
-       ~right:"typing.Callable[..., int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int), Keywords(object)], int]"
-       ~right:"typing.Callable[..., int]");
-
-  (* Callable classes. *)
-  assert_true
-    (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[float], str]");
-
-  (* Subtyping is handled properly for callable classes. *)
-  assert_true (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[int], str]");
-  assert_false
-    (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[float], int]");
-
-  (* Parametric classes are also callables. *)
-  assert_true
-    (less_or_equal order ~left:"ParametricCallableToStr[int]" ~right:"typing.Callable[[int], str]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"ParametricCallableToStr[float]"
-       ~right:"typing.Callable[[int], str]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"ParametricCallableToStr[int]"
-       ~right:"typing.Callable[[float], str]");
-  assert_false
-    (less_or_equal order ~left:"ParametricCallableToStr[int]" ~right:"typing.Callable[[int], int]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int)], str]"
-       ~right:"typing.Callable[[int], str]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int)], str]"
-       ~right:"typing.Callable[[int, int], str]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(str)], str]"
-       ~right:"typing.Callable[[int], str]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int)], str]"
-       ~right:"typing.Callable[[Named(arg, int)], str]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int), Keywords(int)], int]"
-       ~right:"typing.Callable[[Keywords(int)], int]");
-
-  (* Callables with keyword arguments. *)
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Keywords(int)], str]"
-       ~right:"typing.Callable[[Named(arg, int)], str]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(int), Keywords(int)], str]"
-       ~right:"typing.Callable[[Named(arg, int)], str]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Variable(str), Keywords(int)], str]"
-       ~right:"typing.Callable[[Named(arg, int)], str]");
-
-  (* Generic callables *)
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
-       ~right:"typing.Callable[[Named(arg, int)], str]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
-       ~right:"typing.Callable[[Named(arg, int)], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~right:"typing.Callable[[Named(arg, int)], str]"
-       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
-       ~right:"typing.Callable[[Named(arg, int)], int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
-       ~right:"typing.Callable[[Named(arg, str)], str]");
-
-  (* Callables with overloads *)
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
-       ~right:"typing.Callable[[object], object][[[int], str]]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
-       ~right:"typing.Callable[[object], object][[[str], str]]");
-
-  (* Literals *)
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing_extensions.Literal['a']"
-       ~right:"typing_extensions.Literal['a']");
-  assert_true (less_or_equal order ~left:"typing_extensions.Literal['a']" ~right:"str");
-  assert_false (less_or_equal order ~left:"str" ~right:"typing_extensions.Literal['a']");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"typing_extensions.Literal['a']"
-       ~right:"typing_extensions.Literal['a', 'b']");
-
-  (* Callback protocols *)
-  let parse_annotation =
-    let aliases = function
-      | "_T" -> Some (Type.variable "_T")
-      | _ -> None
-    in
-    let aliases = create_type_alias_table aliases in
-    parse_callable ~aliases
-  in
-  let is_protocol annotation ~protocol_assumptions:_ =
-    match annotation with
-    | Type.Primitive "MatchesProtocol"
-    | Type.Primitive "DoesNotMatchProtocol"
-    | Type.Parametric { name = "B"; _ } ->
-        true
-    | _ -> false
-  in
-  let attributes annotation =
-    match annotation with
-    | Type.Primitive "MatchesProtocol" ->
-        Some
-          (parse_attributes
-             ~parse_annotation
-             ~class_name:"MatchesProtocol"
-             ["__call__", "typing.Callable[[int], str]"])
-    | Type.Primitive "DoesNotMatchProtocol" ->
-        Some
-          (parse_attributes
-             ~parse_annotation
-             ~class_name:"DoesNotMatchProtocol"
-             ["__call__", "typing.Callable[[str], int]"])
-    | Type.Parametric { name = "B"; _ } ->
-        Some
-          (parse_attributes
-             ~parse_annotation
-             ~class_name:"B"
-             ["__call__", "typing.Callable[[_T], str]"])
-    | Type.Callable _ ->
-        Some (make_attributes ~class_name:"typing.Callable" ["__call__", annotation])
-    | _ -> failwith "getting attributes for wrong class"
-  in
-  assert_true
-    (less_or_equal
-       order
-       ~is_protocol
-       ~attributes
-       ~left:"typing.Callable[[int], str]"
-       ~right:"MatchesProtocol");
-  assert_false
-    (less_or_equal
-       order
-       ~is_protocol
-       ~attributes
-       ~left:"typing.Callable[[int], str]"
-       ~right:"DoesNotMatchProtocol");
-  assert_true
-    (less_or_equal
-       order
-       ~is_protocol
-       ~attributes
-       ~left:"typing.Callable[[int], str]"
-       ~right:"B[int]");
-  assert_false
-    (less_or_equal
-       order
-       ~is_protocol
-       ~attributes
-       ~left:"typing.Callable[[int], str]"
-       ~right:"B[str]");
-  let assert_less_or_equal ?(source = "") ~left ~right expected_result =
-    let resolution = resolution ~source context in
-    let parse_annotation annotation =
-      annotation
-      (* Preprocess literal TypedDict syntax. *)
-      |> parse_single_expression ~preprocess:true
-      |> GlobalResolution.parse_annotation resolution
-    in
-    let left, right = parse_annotation left, parse_annotation right in
-    assert_equal
-      ~printer:(Printf.sprintf "%B")
-      expected_result
-      (GlobalResolution.less_or_equal resolution ~left ~right)
-  in
-  assert_less_or_equal
-    ~source:
-      {|
+  let assert_false value _ = assert_false value in
+  let assert_true value _ = assert_true value in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal default ~left:!!"list" ~right:!!"typing.Sized");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!!"typing.Sized");
+      (* ReadOnly types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              default
+              ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
+              ~right:(Type.Primitive "Base"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.Primitive "Child")
+              ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
+              ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
+      (* Parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.list Type.integer)
+              ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal default ~left:(Type.list Type.float) ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.iterator Type.integer)
+              ~right:(Type.iterable Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.iterator Type.integer)
+              ~right:(Type.iterable Type.float));
+      (* Mixed primitive and parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal default ~left:Type.string ~right:(Type.iterable Type.string));
+      (* Mixed tuple and parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.integer])
+              ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.float])
+              ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.float])
+              ~right:(Type.iterator Type.float));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
+              ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              default
+              ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float))
+              ~right:(Type.iterator Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.Primitive "tuple")
+              ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.Tuple (Concrete [Type.integer; Type.integer]))
+              ~right:(Type.parametric "tuple" ![Type.integer]));
+      (* Union types *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal default ~left:Type.NoneType ~right:(Type.optional Type.integer));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.optional Type.string)
+              ~right:(Type.Union [Type.integer; Type.optional Type.string]));
+      (* Tuples. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.integer])
+              ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.integer])
+              ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              default
+              ~left:(Type.tuple [Type.integer; Type.float])
+              ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.parametric "A" ![Type.integer; Type.string])
+              ~right:(Type.parametric "B" ![Type.tuple [Type.integer; Type.string]]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:(Type.parametric "A" ![Type.integer; Type.string])
+              ~right:(Type.tuple [Type.integer; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.parametric "A" ![Type.integer; Type.string])
+              ~right:
+                (Type.parametric
+                   "C"
+                   ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:(Type.parametric "A" ![Type.string; Type.integer])
+              ~right:
+                (Type.parametric
+                   "C"
+                   ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
+      (* Variables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (less_or_equal order ~left:Type.Any ~right:(Type.variable "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable "T")
+              ~right:(Type.union [Type.string; Type.variable "T"]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.integer
+              ~right:
+                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+              ~right:(Type.union [Type.float; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+              ~right:(Type.union [Type.float; Type.string; !!"A"]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+              ~right:(Type.union [Type.float]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable
+                   ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                   "T")
+              ~right:(Type.union [Type.float; Type.string; !!"A"]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.string
+              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:float_string_variable
+              ~right:(Type.union [float_string_variable; !!"A"]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
+              ~right:
+                (Type.union
+                   [Type.variable ~constraints:(Type.Variable.Bound !!"A") "T"; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
+              ~right:(Type.optional (Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:(Type.Variable.Bound (Type.optional !!"A")) "T")
+              ~right:(Type.optional !!"A"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
+              ~right:(Type.union [Type.float; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
+              ~right:
+                (Type.union
+                   [Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
+              ~right:Type.Top);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
+              ~right:
+                (Type.union
+                   [Type.variable ~constraints:Type.Variable.Unconstrained "T"; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable
+                   ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                   "T")
+              ~right:(Type.union [Type.float; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.integer
+              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.float
+              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:(Type.union [Type.string; Type.integer])
+              ~right:
+                (Type.variable
+                   ~constraints:(Type.Variable.Explicit [Type.string; Type.integer])
+                   "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.integer
+              ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.string]) "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              order
+              ~left:Type.integer
+              ~right:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
+              ~right:Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[str], int]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable[[str], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], str]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], float]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable[[int], float]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[float], int]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable[[float], int]");
+      (* Named vs. anonymous callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable('foo')[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[str], int]"
+              ~right:"typing.Callable('foo')[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('foo')[[int], int]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('foo')[[str], int]"
+              ~right:"typing.Callable[[int], int]");
+      (* Named callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('foo')[[int], int]"
+              ~right:"typing.Callable('foo')[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('bar')[[str], int]"
+              ~right:"typing.Callable('foo')[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('foo')[[int], int]"
+              ~right:"typing.Callable('bar')[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable('foo')[[str], int]"
+              ~right:"typing.Callable('foo')[[int], int]");
+      (* Callables with keyword-only parameters. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(foo, bool, default)], int]"
+              ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(foo, bool, default)], int]"
+              ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(foo, bool)], int]"
+              ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(foo, bool)], int]"
+              ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
+      (* Undefined callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[..., int]"
+              ~right:"typing.Callable[..., float]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[int], int]"
+              ~right:"typing.Callable[..., int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[..., int]"
+              ~right:"typing.Callable[[int], float]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(object), Keywords(object)], int]"
+              ~right:"typing.Callable[..., int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int), Keywords(object)], int]"
+              ~right:"typing.Callable[..., int]");
+      (* Callable classes. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"FloatToStrCallable"
+              ~right:"typing.Callable[[float], str]");
+      (* Subtyping is handled properly for callable classes. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"FloatToStrCallable"
+              ~right:"typing.Callable[[int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"FloatToStrCallable"
+              ~right:"typing.Callable[[float], int]");
+      (* Parametric classes are also callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"ParametricCallableToStr[int]"
+              ~right:"typing.Callable[[int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"ParametricCallableToStr[float]"
+              ~right:"typing.Callable[[int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"ParametricCallableToStr[int]"
+              ~right:"typing.Callable[[float], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"ParametricCallableToStr[int]"
+              ~right:"typing.Callable[[int], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int)], str]"
+              ~right:"typing.Callable[[int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int)], str]"
+              ~right:"typing.Callable[[int, int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(str)], str]"
+              ~right:"typing.Callable[[int], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int)], str]"
+              ~right:"typing.Callable[[Named(arg, int)], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int), Keywords(int)], int]"
+              ~right:"typing.Callable[[Keywords(int)], int]");
+      (* Callables with keyword arguments. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Keywords(int)], str]"
+              ~right:"typing.Callable[[Named(arg, int)], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(int), Keywords(int)], str]"
+              ~right:"typing.Callable[[Named(arg, int)], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Variable(str), Keywords(int)], str]"
+              ~right:"typing.Callable[[Named(arg, int)], str]");
+      (* Generic callables *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
+              ~right:"typing.Callable[[Named(arg, int)], str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
+              ~right:"typing.Callable[[Named(arg, int)], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~right:"typing.Callable[[Named(arg, int)], str]"
+              ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
+              ~right:"typing.Callable[[Named(arg, int)], int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
+              ~right:"typing.Callable[[Named(arg, str)], str]");
+      (* Callables with overloads *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
+              ~right:"typing.Callable[[object], object][[[int], str]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
+              ~right:"typing.Callable[[object], object][[[str], str]]");
+      (* Literals *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing_extensions.Literal['a']"
+              ~right:"typing_extensions.Literal['a']");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true (parse_less_or_equal order ~left:"typing_extensions.Literal['a']" ~right:"str");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal order ~left:"str" ~right:"typing_extensions.Literal['a']");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~left:"typing_extensions.Literal['a']"
+              ~right:"typing_extensions.Literal['a', 'b']");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~is_protocol
+              ~attributes
+              ~left:"typing.Callable[[int], str]"
+              ~right:"MatchesProtocol");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~is_protocol
+              ~attributes
+              ~left:"typing.Callable[[int], str]"
+              ~right:"DoesNotMatchProtocol");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (parse_less_or_equal
+              order
+              ~is_protocol
+              ~attributes
+              ~left:"typing.Callable[[int], str]"
+              ~right:"B[int]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (parse_less_or_equal
+              order
+              ~is_protocol
+              ~attributes
+              ~left:"typing.Callable[[int], str]"
+              ~right:"B[str]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1")
       T2 = TypeVar("T2")
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"test.NonGenericChild"
-    ~right:"test.GenericBase[typing.Any, typing.Any]"
-    true;
-
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.NonGenericChild"
+           ~right:"test.GenericBase[typing.Any, typing.Any]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1")
       T2 = TypeVar("T2")
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"test.NonGenericChild"
-    ~right:"test.GenericBase[int, str]"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.NonGenericChild"
+           ~right:"test.GenericBase[int, str]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1", contravariant=True)
       T2 = TypeVar("T2", contravariant=True)
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"test.GenericBase[typing.Any, typing.Any]"
-    ~right:"test.GenericBase[int, str]"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.GenericBase[typing.Any, typing.Any]"
+           ~right:"test.GenericBase[int, str]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1", contravariant=True)
       T2 = TypeVar("T2", contravariant=True)
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"test.NonGenericChild"
-    ~right:"test.GenericBase[int, str]"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.NonGenericChild"
+           ~right:"test.GenericBase[int, str]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1")
       T2 = TypeVar("T2")
@@ -1336,14 +1527,14 @@ let test_less_or_equal context =
       class NonGenericChild(GenericBase): pass
       class Grandchild(NonGenericChild): pass
     |}
-    ~left:"test.Grandchild"
-    ~right:"test.GenericBase[typing.Any, typing.Any]"
-    true;
-
-  (* TypedDictionaries *)
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Grandchild"
+           ~right:"test.GenericBase[typing.Any, typing.Any]"
+           true;
+      (* TypedDictionaries *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         foo: str
@@ -1353,12 +1544,13 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict, total=False):
         foo: str
@@ -1368,12 +1560,13 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict, total=False):
         foo: str
@@ -1383,12 +1576,13 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         foo: str
@@ -1398,12 +1592,13 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         foo: str
@@ -1412,12 +1607,13 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         bar: int
@@ -1426,68 +1622,73 @@ let test_less_or_equal context =
         foo: str
         bar: int
     |}
-    ~left:"test.Alpha"
-    ~right:"test.Beta"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"test.Beta"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         bar: int
         foo: int
     |}
-    ~left:"test.Alpha"
-    ~right:"typing.Mapping[str, typing.Any]"
-    true;
-
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"typing.Mapping[str, typing.Any]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict, total=False):
         bar: int
         foo: int
     |}
-    ~left:"test.Alpha"
-    ~right:"typing.Mapping[str, typing.Any]"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"typing.Mapping[str, typing.Any]"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         bar: int
         foo: int
     |}
-    ~left:"test.Alpha"
-    ~right:"typing.Mapping[str, int]"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"typing.Mapping[str, int]"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         bar: int
         foo: int
     |}
-    ~left:"typing.Mapping[str, typing.Any]"
-    ~right:"test.Alpha"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"typing.Mapping[str, typing.Any]"
+           ~right:"test.Alpha"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Alpha(TypedDict):
         bar: int
         foo: int
     |}
-    ~left:"test.Alpha"
-    ~right:"dict[str, typing.Any]"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.Alpha"
+           ~right:"dict[str, typing.Any]"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Base(TypedDict):
         foo: str
@@ -1496,12 +1697,13 @@ let test_less_or_equal context =
       class BarRequired(Base):
         bar: int
     |}
-    ~left:"test.BarNotRequired"
-    ~right:"test.BarRequired"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.BarNotRequired"
+           ~right:"test.BarRequired"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Base(TypedDict):
         foo: str
@@ -1510,12 +1712,13 @@ let test_less_or_equal context =
       class BarRequired(Base):
         bar: int
     |}
-    ~left:"test.BarRequired"
-    ~right:"test.BarNotRequired"
-    false;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.BarRequired"
+           ~right:"test.BarNotRequired"
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Base(TypedDict):
         foo: str
@@ -1524,12 +1727,13 @@ let test_less_or_equal context =
       class BarNotPresent(TypedDict):
         foo: str
     |}
-    ~left:"test.BarNotRequired"
-    ~right:"test.BarNotPresent"
-    true;
-  assert_less_or_equal
-    ~source:
-      {|
+           ~left:"test.BarNotRequired"
+           ~right:"test.BarNotPresent"
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_less_or_equal
+           ~source:
+             {|
       from mypy_extensions import TypedDict
       class Base(TypedDict):
         foo: str
@@ -1538,160 +1742,134 @@ let test_less_or_equal context =
       class BarNotPresent(TypedDict):
         foo: str
     |}
-    ~left:"test.BarRequired"
-    ~right:"test.BarNotPresent"
-    true;
-  ()
+           ~left:"test.BarRequired"
+           ~right:"test.BarNotPresent"
+           true;
+    ]
 
 
-let test_less_or_equal_variance _ =
-  let assert_strict_less ~order ~right ~left =
+let test_less_or_equal_variance =
+  let assert_strict_less ~order ~right ~left _ =
     assert_equal
       ~printer:(fun pair -> Format.sprintf "%B, %B" (fst pair) (snd pair))
       (true, false)
       (less_or_equal order ~left ~right, less_or_equal order ~left:right ~right:left)
   in
-  (* Invariant. *)
-  assert_false
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" ![Type.integer])
-       ~right:(Type.parametric "LinkedList" ![Type.float]));
-  assert_false
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" ![Type.float])
-       ~right:(Type.parametric "LinkedList" ![Type.integer]));
-  assert_true
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" ![Type.integer])
-       ~right:(Type.parametric "LinkedList" ![Type.Any]));
-  assert_true
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" ![Type.Any])
-       ~right:(Type.parametric "LinkedList" ![Type.integer]));
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "LinkedList" ![Type.integer])
-    ~right:(Type.parametric "LinkedList" ![Type.Top]);
-
-  (* Covariant. *)
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Box" ![Type.integer])
-    ~right:(Type.parametric "Box" ![Type.float]);
-  assert_true
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "Box" ![Type.integer])
-       ~right:(Type.parametric "Box" ![Type.Any]));
-
-  (* Contravariant. *)
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Sink" ![Type.float])
-    ~right:(Type.parametric "Sink" ![Type.integer]);
-  assert_true
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "Sink" ![Type.Any])
-       ~right:(Type.parametric "Sink" ![Type.integer]));
-
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
-  let _obsolete_tests () =
+  let _obsolete_tests context =
     (* More complex rules. *)
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Derived" ![Type.integer])
-      ~right:(Type.parametric "Derived" ![Type.float]);
+      ~right:(Type.parametric "Derived" ![Type.float])
+      context;
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Derived" ![Type.integer])
-      ~right:(Type.parametric "Base" ![Type.integer]);
+      ~right:(Type.parametric "Base" ![Type.integer])
+      context;
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Derived" ![Type.float])
-      ~right:(Type.parametric "Base" ![Type.float]);
+      ~right:(Type.parametric "Base" ![Type.float])
+      context;
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Base" ![Type.float])
-      ~right:(Type.parametric "Base" ![Type.integer]);
+      ~right:(Type.parametric "Base" ![Type.integer])
+      context;
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Derived" ![Type.integer])
-      ~right:(Type.parametric "Base" ![Type.float]);
+      ~right:(Type.parametric "Base" ![Type.float])
+      context;
     assert_strict_less
       ~order:variance_order
       ~left:(Type.parametric "Derived" ![Type.float])
-      ~right:(Type.parametric "Base" ![Type.integer]);
+      ~right:(Type.parametric "Base" ![Type.integer])
+      context;
 
     (* Multiplane variance. *)
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "A" ![Type.integer; Type.float])
-      ~right:(Type.parametric "A" ![Type.float; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.float; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.integer])
-      ~right:(Type.parametric "B" ![Type.integer; Type.float]);
+      ~right:(Type.parametric "B" ![Type.integer; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.integer; Type.integer])
-      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.integer; Type.integer])
-      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.integer; Type.integer])
-      ~right:(Type.parametric "A" ![Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.float])
-      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.float])
-      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.float])
-      ~right:(Type.parametric "A" ![Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.integer])
-      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.integer])
-      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.integer])
-      ~right:(Type.parametric "A" ![Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "B" ![Type.float; Type.integer])
-      ~right:(Type.parametric "A" ![Type.float; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.float; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "C" ![])
-      ~right:(Type.parametric "A" ![Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:!!"C"
-      ~right:(Type.parametric "A" ![Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:(Type.parametric "D" ![])
-      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer])
+      context;
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:!!"D"
-      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer])
+      context;
     assert_false
       (less_or_equal
          parallel_planes_variance_order
@@ -1713,11 +1891,69 @@ let test_less_or_equal_variance _ =
          ~left:!!"D"
          ~right:(Type.parametric "A" ![Type.integer; Type.integer]))
   in
-  ()
+  let assert_false value _ = assert_false value in
+  let assert_true value _ = assert_true value in
+  test_list
+    [
+      (* Invariant. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "LinkedList" ![Type.integer])
+              ~right:(Type.parametric "LinkedList" ![Type.float]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_false
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "LinkedList" ![Type.float])
+              ~right:(Type.parametric "LinkedList" ![Type.integer]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "LinkedList" ![Type.integer])
+              ~right:(Type.parametric "LinkedList" ![Type.Any]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "LinkedList" ![Type.Any])
+              ~right:(Type.parametric "LinkedList" ![Type.integer]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_less
+           ~order:variance_order
+           ~left:(Type.parametric "LinkedList" ![Type.integer])
+           ~right:(Type.parametric "LinkedList" ![Type.Top]);
+      (* Covariant. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_less
+           ~order:variance_order
+           ~left:(Type.parametric "Box" ![Type.integer])
+           ~right:(Type.parametric "Box" ![Type.float]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "Box" ![Type.integer])
+              ~right:(Type.parametric "Box" ![Type.Any]));
+      (* Contravariant. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_less
+           ~order:variance_order
+           ~left:(Type.parametric "Sink" ![Type.float])
+           ~right:(Type.parametric "Sink" ![Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              variance_order
+              ~left:(Type.parametric "Sink" ![Type.Any])
+              ~right:(Type.parametric "Sink" ![Type.integer]));
+    ]
 
 
-let test_join _ =
-  let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
+let test_join =
+  let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected _ =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
       | _ as source ->
@@ -1757,102 +1993,117 @@ let test_join _ =
       (parse_annotation expected)
       (join ~attributes order (parse_annotation right) (parse_annotation left))
   in
-  (* Primitive types. *)
-  assert_join "list" "typing.Sized" "typing.Sized";
-  assert_join "typing.Sized" "list" "typing.Sized";
-  assert_join "typing.List[int]" "typing.Sized" "typing.Sized";
-  assert_join "int" "str" "typing.Union[int, str]";
-
-  (* Parametric types. *)
-  assert_join "typing.List[float]" "typing.List[float]" "typing.List[float]";
-  assert_join
-    "typing.List[float]"
-    "typing.List[int]"
-    "typing.Union[typing.List[float], typing.List[int]]";
-  assert_join "typing.List[int]" "typing.Iterator[int]" "typing.Iterator[int]";
-  assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
-  assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
-  assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
-
-  (* Annotated types. *)
-  assert_join "typing.Annotated[int, 1]" "float" "typing.Annotated[float, 1]";
-  assert_join "typing.Annotated[int, 1]" "typing.Annotated[float, 1]" "typing.Annotated[float, 1]";
-
-  assert_join "typing_extensions.Annotated[int, 1]" "float" "typing_extensions.Annotated[float, 1]";
-  assert_join
-    "typing_extensions.Annotated[int, 1]"
-    "typing_extensions.Annotated[float, 1]"
-    "typing_extensions.Annotated[float, 1]";
-
-  (* TODO(T41082573) throw here instead of unioning *)
-  assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
-
-  let type_var_tuple_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
-  assert_join
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-      match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-      | _ -> None)
-    "typing.Tuple[typing.Unpack[Ts]]"
-    "typing.Tuple[int, ...]"
-    "typing.Tuple[object, ...]";
-
-  assert_join
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-      match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-      | _ -> None)
-    "typing.Tuple[pyre_extensions.Unpack[Ts]]"
-    "typing.Tuple[int, ...]"
-    "typing.Tuple[object, ...]";
-
-  assert_join
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-      match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-      | _ -> None)
-    "typing.Tuple[typing_extensions.Unpack[Ts]]"
-    "typing.Tuple[int, ...]"
-    "typing.Tuple[object, ...]";
-
-  (* Optionals. *)
-  assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
-
-  (* Handles `[] or optional_list`. *)
-  assert_join "typing.List[int]" "typing.List[typing.Any]" "typing.List[typing.Any]";
-  assert_join "typing.List[typing.Any]" "typing.List[int]" "typing.List[typing.Any]";
-
-  (* Union types. *)
-  assert_join
-    "typing.Optional[bool]"
-    "typing.Union[int, typing.Optional[bool]]"
-    "typing.Union[int, typing.Optional[bool]]";
-  assert_join "typing.Union[int, str]" "typing.Union[int, bytes]" "typing.Union[int, str, bytes]";
-  assert_join "typing.Union[int, str]" "None" "typing.Union[int, str, None]";
-  assert_join
-    "typing.Dict[str, str]"
-    "typing.Dict[str, typing.List[str]]"
-    "typing.Union[typing.Dict[str, typing.List[str]], typing.Dict[str, str]]";
-  assert_join "typing.Union[typing.List[int], typing.Set[int]]" "typing.Sized" "typing.Sized";
-  assert_join "typing.Tuple[int, ...]" "typing.Iterable[int]" "typing.Iterable[int]";
-  assert_join "typing.Tuple[str, ...]" "typing.Iterator[str]" "typing.Iterator[str]";
-  assert_join
-    "typing.Tuple[int, ...]"
-    "typing.Iterable[str]"
-    "typing.Iterable[typing.Union[int, str]]";
-  assert_join
-    "typing.Optional[float]"
-    "typing.Union[float, int]"
-    "typing.Optional[typing.Union[float, int]]";
-  assert_join
-    "typing.List[typing.Any]"
-    "typing.Union[typing.List[int], typing.List[str]]"
-    "typing.List[typing.Any]";
-
-  assert_join
-    "typing.Tuple[int, int]"
-    "typing.Tuple[int, int, str]"
-    "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
+  let variance_aliases =
+    Identifier.Table.of_alist_exn
+      [
+        "_T", Type.variable "_T";
+        "_T_co", Type.variable "_T_co" ~variance:Covariant;
+        "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
+      ]
+    |> Hashtbl.find
+  in
+  (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
+  let _obsolete_variance_tests context =
+    let variance_aliases = create_type_alias_table variance_aliases in
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[int]"
+      "Base[int]"
+      "Base[int]"
+      context;
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[float]"
+      "Base[float]"
+      "Base[float]"
+      context;
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[int]"
+      "Base[float]"
+      "Base[float]"
+      context;
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[float]"
+      "Base[int]"
+      "Base[int]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, float]"
+      "A[int, float]"
+      "A[int, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, int]"
+      "A[int, float]"
+      "A[int, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, int]"
+      "A[int, float]"
+      "A[int, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, float]"
+      "A[int, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, float]"
+      "A[float, float]"
+      "A[float, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, int]"
+      "A[float, float]"
+      "A[float, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, int]"
+      "A[float, float]"
+      "A[float, float]"
+      context;
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[float, float]"
+      "A[float, float]"
+      context;
+    assert_join
+      ~order:parallel_planes_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, float]"
+      "A[float, float]"
+      context;
+    assert_join
+      ~order:parallel_planes_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, int]"
+      "A[float, int]"
+      context
+  in
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
@@ -1903,366 +2154,459 @@ let test_join _ =
       ~successor:"typing.Generic";
     handler order
   in
-  assert_join ~order:disconnected_order "A" "B" "typing.Union[A, B]";
-  assert_join "typing.Type[int]" "typing.Type[str]" "typing.Type[typing.Union[int, str]]";
-
-  (* Callables. *)
-  assert_join
-    "typing.Callable[..., int]"
-    "typing.Callable[..., str]"
-    "typing.Callable[..., typing.Union[int, str]]";
-  assert_join
-    "typing.Callable('derp')[..., int]"
-    "typing.Callable('derp')[..., int]"
-    "typing.Callable('derp')[..., int]";
-  assert_join
-    "typing.Callable('derp')[..., int]"
-    "typing.Callable('other')[..., int]"
-    "typing.Union[typing.Callable(derp)[..., int], typing.Callable(other)[..., int]]";
-
-  (* Do not join with overloads. *)
-  assert_join
-    "typing.Callable[..., int][[..., str]]"
-    "typing.Callable[..., int]"
-    "typing.Union[typing.Callable[..., int][[..., str]], typing.Callable[..., int]]";
-  assert_join
-    "typing.Callable[[Named(a, int), Named(b, str)], int]"
-    "typing.Callable[[Named(a, int), Named(b, str)], int]"
-    "typing.Callable[[Named(a, int), Named(b, str)], int]";
-  assert_join
-    "typing.Callable[[Named(a, int)], int]"
-    "typing.Callable[[int], int]"
-    "typing.Callable[[int], int]";
-
-  (* Behavioral subtyping is preserved. *)
-  assert_join
-    "typing.Callable[[int], int]"
-    "typing.Callable[[Named(a, int)], int]"
-    "typing.Callable[[int], int]";
-  assert_join
-    "typing.Callable[[Named(b, int)], int]"
-    "typing.Callable[[Named(a, int)], int]"
-    "typing.Union[typing.Callable[[Named(b, int)], int], typing.Callable[[Named(a, int)], int]]";
-  assert_join
-    "typing.Callable[..., typing.Any]"
-    "typing.Callable[[int], int]"
-    "typing.Callable[[int], typing.Any]";
-
-  (* Classes with __call__ are callables. *)
-  assert_join ~order "CallableClass" "typing.Callable[[int], str]" "typing.Callable[[int], str]";
-  assert_join ~order "typing.Callable[[int], str]" "CallableClass" "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[int], int]"
-    "CallableClass"
-    "typing.Callable[[int], typing.Union[int, str]]";
-  assert_join
-    ~order
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], str]"
-    "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[int], str]"
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[int], int]"
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], typing.Union[int, str]]";
-  assert_join
-    ~order
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], str]"
-    "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[float], str]"
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[int], str]"
-    "ParametricCallableToStr[float]"
-    "typing.Callable[[int], str]";
-  assert_join
-    ~order
-    "typing.Callable[[int], int]"
-    "ParametricCallableToStr[int]"
-    "typing.Callable[[int], typing.Union[int, str]]";
-
-  (* We just preserve the `ReadOnly` wrapper if either type has it. *)
-  assert_join "pyre_extensions.ReadOnly[Child]" "Base" "pyre_extensions.ReadOnly[Base]";
-  assert_join
-    "pyre_extensions.ReadOnly[Child]"
-    "pyre_extensions.ReadOnly[Base]"
-    "pyre_extensions.ReadOnly[Base]";
-
-  (* Variables. *)
-  assert_type_equal
-    (join order Type.integer (Type.variable "T"))
-    (Type.union [Type.integer; Type.variable "T"]);
-  assert_type_equal
-    (join order Type.integer (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"))
-    (Type.union [Type.integer; Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"]);
-  assert_type_equal
-    (join
-       order
-       Type.string
-       (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
-    (Type.union
-       [
-         Type.string;
-         Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T";
-       ]);
-  assert_type_equal
-    (join order Type.string (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
-    (Type.union [Type.string; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
-  assert_type_equal
-    (join
-       order
-       (Type.literal_integer 7)
-       (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
-    (Type.union
-       [Type.literal_integer 7; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
-
-  (* Variance. *)
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.integer])
-       (Type.parametric "LinkedList" ![Type.Top]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Top])
-       (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Bottom])
-       (Type.parametric "LinkedList" ![Type.Top]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Top])
-       (Type.parametric "LinkedList" ![Type.Bottom]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Any])
-       (Type.parametric "LinkedList" ![Type.Top]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Top])
-       (Type.parametric "LinkedList" ![Type.Any]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Top])
-       (Type.parametric "LinkedList" ![Type.Top]))
-    (Type.parametric "LinkedList" ![Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "Map" ![Type.integer; Type.integer])
-       (Type.parametric "Map" ![Type.Top; Type.Top]))
-    (Type.parametric "Map" ![Type.Top; Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "Map" ![Type.integer; Type.integer])
-       (Type.parametric "Map" ![Type.Top; Type.integer]))
-    (Type.parametric "Map" ![Type.Top; Type.integer]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "Map" ![Type.integer; Type.integer])
-       (Type.parametric "Map" ![Type.Top; Type.string]))
-    (Type.union
-       [
-         Type.parametric "Map" ![Type.integer; Type.integer];
-         Type.parametric "Map" ![Type.Top; Type.string];
-       ]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.integer])
-       (Type.parametric "LinkedList" ![Type.Any]))
-    (Type.parametric "LinkedList" ![Type.Any]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Any])
-       (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.Any]);
-  (* Contravariant *)
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "Sink" ![Type.integer])
-       (Type.parametric "Sink" ![Type.string]))
-    (Type.Union [Type.parametric "Sink" ![Type.integer]; Type.parametric "Sink" ![Type.string]]);
-  let variance_aliases =
-    Identifier.Table.of_alist_exn
-      [
-        "_T", Type.variable "_T";
-        "_T_co", Type.variable "_T_co" ~variance:Covariant;
-        "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
-      ]
-    |> Hashtbl.find
-  in
-  (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
-  let _obsolete_variance_tests () =
-    let variance_aliases = create_type_alias_table variance_aliases in
-    assert_join
-      ~order:variance_order
-      ~aliases:variance_aliases
-      "Derived[int]"
-      "Base[int]"
-      "Base[int]";
-    assert_join
-      ~order:variance_order
-      ~aliases:variance_aliases
-      "Derived[float]"
-      "Base[float]"
-      "Base[float]";
-    assert_join
-      ~order:variance_order
-      ~aliases:variance_aliases
-      "Derived[int]"
-      "Base[float]"
-      "Base[float]";
-    assert_join
-      ~order:variance_order
-      ~aliases:variance_aliases
-      "Derived[float]"
-      "Base[int]"
-      "Base[int]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[int, float]"
-      "A[int, float]"
-      "A[int, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[int, int]"
-      "A[int, float]"
-      "A[int, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[float, int]"
-      "A[int, float]"
-      "A[int, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[float, float]"
-      "A[int, float]"
-      "A[int, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[int, float]"
-      "A[float, float]"
-      "A[float, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[int, int]"
-      "A[float, float]"
-      "A[float, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[float, int]"
-      "A[float, float]"
-      "A[float, float]";
-    assert_join
-      ~order:multiplane_variance_order
-      ~aliases:variance_aliases
-      "B[float, float]"
-      "A[float, float]"
-      "A[float, float]";
-    assert_join
-      ~order:parallel_planes_variance_order
-      ~aliases:variance_aliases
-      "B[float, float]"
-      "A[int, float]"
-      "A[float, float]";
-    assert_join
-      ~order:parallel_planes_variance_order
-      ~aliases:variance_aliases
-      "B[float, float]"
-      "A[int, int]"
-      "A[float, int]"
-  in
-  (* Literals *)
-  assert_type_equal
-    (join order (Type.literal_string "A") (Type.literal_string "A"))
-    (Type.literal_string "A");
-  assert_type_equal
-    (join order (Type.literal_string "A") (Type.literal_string "B"))
-    (Type.Literal (String AnyLiteral));
-  assert_type_equal (join order (Type.literal_string "A") Type.string) Type.string;
-  assert_type_equal
-    (join order (Type.literal_string "A") Type.integer)
-    (Type.union [Type.string; Type.integer]);
-  assert_type_equal
-    (join order (Type.Literal (String AnyLiteral)) (Type.Literal (String AnyLiteral)))
-    (Type.Literal (String AnyLiteral));
-  assert_type_equal
-    (join order (Type.Literal (String AnyLiteral)) (Type.literal_string "hello"))
-    (Type.Literal (String AnyLiteral));
-  assert_type_equal (join order (Type.Literal (String AnyLiteral)) Type.string) Type.string;
-  ()
+  let assert_type_equal left right _ = assert_type_equal left right in
+  let type_var_tuple_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
+  test_list
+    [
+      (* Primitive types. *)
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_join "list" "typing.Sized" "typing.Sized";
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_join "typing.Sized" "list" "typing.Sized";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[int]" "typing.Sized" "typing.Sized";
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_join "int" "str" "typing.Union[int, str]";
+      (* Parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[float]" "typing.List[float]" "typing.List[float]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.List[float]"
+           "typing.List[int]"
+           "typing.Union[typing.List[float], typing.List[int]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[int]" "typing.Iterator[int]" "typing.Iterator[int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.List[float]"
+           "float[int]"
+           "typing.Union[typing.List[float], float[int]]";
+      (* Annotated types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Annotated[int, 1]" "float" "typing.Annotated[float, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Annotated[int, 1]"
+           "typing.Annotated[float, 1]"
+           "typing.Annotated[float, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing_extensions.Annotated[int, 1]"
+           "float"
+           "typing_extensions.Annotated[float, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing_extensions.Annotated[int, 1]"
+           "typing_extensions.Annotated[float, 1]"
+           "typing_extensions.Annotated[float, 1]";
+      (* TODO(T41082573) throw here instead of unioning *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+             match name with
+             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
+             | _ -> None)
+           "typing.Tuple[typing.Unpack[Ts]]"
+           "typing.Tuple[int, ...]"
+           "typing.Tuple[object, ...]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+             match name with
+             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
+             | _ -> None)
+           "typing.Tuple[pyre_extensions.Unpack[Ts]]"
+           "typing.Tuple[int, ...]"
+           "typing.Tuple[object, ...]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+             match name with
+             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
+             | _ -> None)
+           "typing.Tuple[typing_extensions.Unpack[Ts]]"
+           "typing.Tuple[int, ...]"
+           "typing.Tuple[object, ...]";
+      (* Optionals. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
+      (* Handles `[] or optional_list`. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[int]" "typing.List[typing.Any]" "typing.List[typing.Any]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.List[typing.Any]" "typing.List[int]" "typing.List[typing.Any]";
+      (* Union types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Optional[bool]"
+           "typing.Union[int, typing.Optional[bool]]"
+           "typing.Union[int, typing.Optional[bool]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Union[int, str]"
+           "typing.Union[int, bytes]"
+           "typing.Union[int, str, bytes]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Union[int, str]" "None" "typing.Union[int, str, None]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Dict[str, str]"
+           "typing.Dict[str, typing.List[str]]"
+           "typing.Union[typing.Dict[str, typing.List[str]], typing.Dict[str, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Union[typing.List[int], typing.Set[int]]" "typing.Sized" "typing.Sized";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Tuple[int, ...]" "typing.Iterable[int]" "typing.Iterable[int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Tuple[str, ...]" "typing.Iterator[str]" "typing.Iterator[str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Tuple[int, ...]"
+           "typing.Iterable[str]"
+           "typing.Iterable[typing.Union[int, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Optional[float]"
+           "typing.Union[float, int]"
+           "typing.Optional[typing.Union[float, int]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.List[typing.Any]"
+           "typing.Union[typing.List[int], typing.List[str]]"
+           "typing.List[typing.Any]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Tuple[int, int]"
+           "typing.Tuple[int, int, str]"
+           "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join ~order:disconnected_order "A" "B" "typing.Union[A, B]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "typing.Type[int]" "typing.Type[str]" "typing.Type[typing.Union[int, str]]";
+      (* Callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[..., int]"
+           "typing.Callable[..., str]"
+           "typing.Callable[..., typing.Union[int, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable('derp')[..., int]"
+           "typing.Callable('derp')[..., int]"
+           "typing.Callable('derp')[..., int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable('derp')[..., int]"
+           "typing.Callable('other')[..., int]"
+           "typing.Union[typing.Callable(derp)[..., int], typing.Callable(other)[..., int]]";
+      (* Do not join with overloads. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[..., int][[..., str]]"
+           "typing.Callable[..., int]"
+           "typing.Union[typing.Callable[..., int][[..., str]], typing.Callable[..., int]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[[Named(a, int), Named(b, str)], int]"
+           "typing.Callable[[Named(a, int), Named(b, str)], int]"
+           "typing.Callable[[Named(a, int), Named(b, str)], int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[[Named(a, int)], int]"
+           "typing.Callable[[int], int]"
+           "typing.Callable[[int], int]";
+      (* Behavioral subtyping is preserved. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[[int], int]"
+           "typing.Callable[[Named(a, int)], int]"
+           "typing.Callable[[int], int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[[Named(b, int)], int]"
+           "typing.Callable[[Named(a, int)], int]"
+           "typing.Union[typing.Callable[[Named(b, int)], int], typing.Callable[[Named(a, int)], \
+            int]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "typing.Callable[..., typing.Any]"
+           "typing.Callable[[int], int]"
+           "typing.Callable[[int], typing.Any]";
+      (* Classes with __call__ are callables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "CallableClass"
+           "typing.Callable[[int], str]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], str]"
+           "CallableClass"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], int]"
+           "CallableClass"
+           "typing.Callable[[int], typing.Union[int, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], str]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], str]"
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], int]"
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], typing.Union[int, str]]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], str]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[float], str]"
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], str]"
+           "ParametricCallableToStr[float]"
+           "typing.Callable[[int], str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~order
+           "typing.Callable[[int], int]"
+           "ParametricCallableToStr[int]"
+           "typing.Callable[[int], typing.Union[int, str]]";
+      (* We just preserve the `ReadOnly` wrapper if either type has it. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join "pyre_extensions.ReadOnly[Child]" "Base" "pyre_extensions.ReadOnly[Base]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           "pyre_extensions.ReadOnly[Child]"
+           "pyre_extensions.ReadOnly[Base]"
+           "pyre_extensions.ReadOnly[Base]";
+      (* Variables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order Type.integer (Type.variable "T"))
+           (Type.union [Type.integer; Type.variable "T"]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              order
+              Type.integer
+              (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"))
+           (Type.union
+              [Type.integer; Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              order
+              Type.string
+              (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
+           (Type.union
+              [
+                Type.string;
+                Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T";
+              ]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order Type.string (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
+           (Type.union [Type.string; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              order
+              (Type.literal_integer 7)
+              (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
+           (Type.union
+              [Type.literal_integer 7; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
+      (* Variance. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.integer])
+              (Type.parametric "LinkedList" ![Type.Top]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Top])
+              (Type.parametric "LinkedList" ![Type.integer]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Bottom])
+              (Type.parametric "LinkedList" ![Type.Top]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Top])
+              (Type.parametric "LinkedList" ![Type.Bottom]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Any])
+              (Type.parametric "LinkedList" ![Type.Top]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Top])
+              (Type.parametric "LinkedList" ![Type.Any]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Top])
+              (Type.parametric "LinkedList" ![Type.Top]))
+           (Type.parametric "LinkedList" ![Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "Map" ![Type.integer; Type.integer])
+              (Type.parametric "Map" ![Type.Top; Type.Top]))
+           (Type.parametric "Map" ![Type.Top; Type.Top]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "Map" ![Type.integer; Type.integer])
+              (Type.parametric "Map" ![Type.Top; Type.integer]))
+           (Type.parametric "Map" ![Type.Top; Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "Map" ![Type.integer; Type.integer])
+              (Type.parametric "Map" ![Type.Top; Type.string]))
+           (Type.union
+              [
+                Type.parametric "Map" ![Type.integer; Type.integer];
+                Type.parametric "Map" ![Type.Top; Type.string];
+              ]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.integer])
+              (Type.parametric "LinkedList" ![Type.Any]))
+           (Type.parametric "LinkedList" ![Type.Any]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Any])
+              (Type.parametric "LinkedList" ![Type.integer]))
+           (Type.parametric "LinkedList" ![Type.Any]);
+      (* Contravariant *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join
+              variance_order
+              (Type.parametric "Sink" ![Type.integer])
+              (Type.parametric "Sink" ![Type.string]))
+           (Type.Union
+              [Type.parametric "Sink" ![Type.integer]; Type.parametric "Sink" ![Type.string]]);
+      (* Literals *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order (Type.literal_string "A") (Type.literal_string "A"))
+           (Type.literal_string "A");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order (Type.literal_string "A") (Type.literal_string "B"))
+           (Type.Literal (String AnyLiteral));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal (join order (Type.literal_string "A") Type.string) Type.string;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order (Type.literal_string "A") Type.integer)
+           (Type.union [Type.string; Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order (Type.Literal (String AnyLiteral)) (Type.Literal (String AnyLiteral)))
+           (Type.Literal (String AnyLiteral));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (join order (Type.Literal (String AnyLiteral)) (Type.literal_string "hello"))
+           (Type.Literal (String AnyLiteral));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal (join order (Type.Literal (String AnyLiteral)) Type.string) Type.string;
+    ]
 
 
 (* Test using the type order created by `GlobalResolution`. *)
-let test_join_with_full_type_order context =
+let test_join_with_full_type_order =
   let parse_annotation ~resolution annotation =
     annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
   in
-  let assert_join_direct ~source ~left ~right expected_annotation =
+  let assert_join_direct ~source ~left ~right expected_annotation context =
     let resolution = resolution ~source context in
     let left, right = parse_annotation ~resolution left, parse_annotation ~resolution right in
     assert_type_equal expected_annotation (GlobalResolution.join resolution left right)
   in
-  let assert_join ?(source = "") ~left ~right expected_result =
+  let assert_join ?(source = "") ~left ~right expected_result context =
     let resolution = resolution ~source context in
-    assert_join_direct ~source ~left ~right (parse_annotation ~resolution expected_result)
+    assert_join_direct ~source ~left ~right (parse_annotation ~resolution expected_result) context
   in
-  assert_join
-    ~source:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~source:
+             {|
       from typing import Generic, TypeVar
       T1 = TypeVar("T1", covariant=True)
       T2 = TypeVar("T2", covariant=True)
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"test.NonGenericChild"
-    ~right:"test.GenericBase[int, str]"
-    "test.GenericBase[int, str]";
-  ()
+           ~left:"test.NonGenericChild"
+           ~right:"test.GenericBase[int, str]"
+           "test.GenericBase[int, str]";
+    ]
 
 
-let test_join_recursive_types context =
+let test_join_recursive_types =
   let parse_annotation ~resolution annotation =
     annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
   in
-  let assert_join_direct ~source ~left ~right expected_annotation =
+  let assert_join_direct ~source ~left ~right make_expected_annotation context =
+    Type.RecursiveType.Namespace.reset ();
+    let fresh_name = Type.RecursiveType.Namespace.create_fresh_name () in
+    let expected_annotation = make_expected_annotation fresh_name in
     let resolution = resolution ~source context in
     let left, right = parse_annotation ~resolution left, parse_annotation ~resolution right in
     (* Note: It's not enough to naively check `Type.equal` or even check if they are
@@ -2287,9 +2631,14 @@ let test_join_recursive_types context =
       expected_annotation
       (GlobalResolution.join resolution right left)
   in
-  let assert_join ?(source = "") ~left ~right expected_result =
+  let assert_join ?(source = "") ~left ~right expected_result context =
     let resolution = resolution ~source context in
-    assert_join_direct ~source ~left ~right (parse_annotation ~resolution expected_result)
+    assert_join_direct
+      ~source
+      ~left
+      ~right
+      (fun _ -> parse_annotation ~resolution expected_result)
+      context
   in
   let recursive_alias_source =
     {|
@@ -2301,60 +2650,68 @@ let test_join_recursive_types context =
       TreeWithStrAndInt = Union[str, int, Tuple["TreeWithStrAndInt", "TreeWithStrAndInt"]]
     |}
   in
-  assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"test.Tree" "test.Tree";
-  assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"int" "test.Tree";
-  assert_join ~source:recursive_alias_source ~left:"int" ~right:"test.Tree" "test.Tree";
-  assert_join
-    ~source:recursive_alias_source
-    ~left:"test.Tree"
-    ~right:"str"
-    "typing.Union[test.Tree, str]";
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"test.Tree" "test.Tree";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"int" "test.Tree";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join ~source:recursive_alias_source ~left:"int" ~right:"test.Tree" "test.Tree";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~source:recursive_alias_source
+           ~left:"test.Tree"
+           ~right:"str"
+           "typing.Union[test.Tree, str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join_direct
+           ~source:recursive_alias_source
+           ~left:"test.Tree"
+           ~right:"test.Tree2"
+           (fun fresh_name ->
+             Type.RecursiveType.create
+               ~name:fresh_name
+               ~body:
+                 (Type.union
+                    [
+                      Type.integer; Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
+                    ]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join_direct
+           ~source:recursive_alias_source
+           ~left:"test.Tree"
+           ~right:"test.TreeWithStrAndInt"
+           (fun fresh_name ->
+             Type.RecursiveType.create
+               ~name:fresh_name
+               ~body:
+                 (Type.union
+                    [
+                      Type.integer;
+                      Type.string;
+                      Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
+                    ]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join_direct
+           ~source:recursive_alias_source
+           ~left:"test.Tree"
+           ~right:"test.TreeWithStr"
+           (fun fresh_name ->
+             Type.RecursiveType.create
+               ~name:fresh_name
+               ~body:
+                 (Type.union
+                    [
+                      Type.integer;
+                      Type.string;
+                      Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
+                    ]));
+    ]
 
-  Type.RecursiveType.Namespace.reset ();
-  let fresh_name = Type.RecursiveType.Namespace.create_fresh_name () in
-  Type.RecursiveType.Namespace.reset ();
-  assert_join_direct
-    ~source:recursive_alias_source
-    ~left:"test.Tree"
-    ~right:"test.Tree2"
-    (Type.RecursiveType.create
-       ~name:fresh_name
-       ~body:
-         (Type.union
-            [Type.integer; Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name]]));
-  Type.RecursiveType.Namespace.reset ();
-  assert_join_direct
-    ~source:recursive_alias_source
-    ~left:"test.Tree"
-    ~right:"test.TreeWithStrAndInt"
-    (Type.RecursiveType.create
-       ~name:fresh_name
-       ~body:
-         (Type.union
-            [
-              Type.integer;
-              Type.string;
-              Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
-            ]));
-  Type.RecursiveType.Namespace.reset ();
-  assert_join_direct
-    ~source:recursive_alias_source
-    ~left:"test.Tree"
-    ~right:"test.TreeWithStr"
-    (Type.RecursiveType.create
-       ~name:fresh_name
-       ~body:
-         (Type.union
-            [
-              Type.integer;
-              Type.string;
-              Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
-            ]));
-  ()
 
-
-let test_meet _ =
-  let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
+let test_meet =
+  let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected _ =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
       | _ as source ->
@@ -2368,123 +2725,68 @@ let test_meet _ =
       (parse_annotation expected)
       (meet order (parse_annotation right) (parse_annotation left))
   in
-  (* Special elements. *)
-  assert_meet "typing.List[float]" "typing.Any" "typing.List[float]";
-
-  (* Primitive types. *)
-  assert_meet "list" "typing.Sized" "list";
-  assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
-
-  (* Annotated types. *)
-  assert_meet "typing.Annotated[int, 1]" "float" "typing.Annotated[int, 1]";
-  assert_meet "typing.Annotated[int, 1]" "typing.Annotated[float, 1]" "typing.Annotated[int, 1]";
-
-  assert_meet "typing_extensions.Annotated[int, 1]" "float" "typing_extensions.Annotated[int, 1]";
-  assert_meet
-    "typing_extensions.Annotated[int, 1]"
-    "typing_extensions.Annotated[float, 1]"
-    "typing_extensions.Annotated[int, 1]";
-
-  (* ReadOnly. *)
-  assert_meet "pyre_extensions.ReadOnly[Child]" "Base" "Child";
-  assert_meet
-    "pyre_extensions.ReadOnly[Child]"
-    "pyre_extensions.ReadOnly[Base]"
-    "pyre_extensions.ReadOnly[Child]";
-
-  (* Unions. *)
-  assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
-  assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
-  assert_meet "typing.Union[int, str]" "float" "int";
-  assert_meet "typing.Union[int, str]" "typing.List[int]" "$bottom";
-  assert_meet "typing.Union[int, str]" "typing.Union[float, bool]" "int";
-  assert_meet "typing.Union[int, str]" "typing.Union[int, bool]" "int";
-
-  assert_meet "None" "typing.Optional[str]" "None";
-  assert_meet
-    "typing.Union[int, str]"
-    "typing.Union[int, typing.Optional[str]]"
-    "typing.Union[int, str]";
-  assert_meet
-    "typing.Union[int, typing.Optional[str]]"
-    "typing.Optional[str]"
-    "typing.Optional[str]";
-
-  (* Parametric types. *)
-  assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
-  assert_meet "typing.List[float]" "typing.Iterator[int]" "$bottom";
-  assert_meet "typing.List[float]" "float[int]" "$bottom";
-  assert_meet "typing.Dict[str, str]" "typing.Dict[str, typing.List[str]]" "$bottom";
-  assert_meet ~order:disconnected_order "A" "B" "$bottom";
-  assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[int, str]" "$bottom";
-  assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[str, int]" "$bottom";
-
-  (* Variables. *)
-  assert_type_equal (meet default Type.integer (Type.variable "T")) Type.Bottom;
-  assert_type_equal
-    (meet default Type.integer (Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"))
-    Type.Bottom;
-  assert_type_equal
-    (meet
-       default
-       Type.string
-       (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"))
-    Type.Bottom;
-
-  (* Variance. *)
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" ![Type.integer])
-       (Type.parametric "LinkedList" ![Type.Top]))
-    (Type.parametric "LinkedList" ![Type.integer]);
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Top])
-       (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.integer]);
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" ![Type.integer])
-       (Type.parametric "LinkedList" ![Type.Any]))
-    (Type.parametric "LinkedList" ![Type.integer]);
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" ![Type.Any])
-       (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.Any]);
-
+  let assert_type_equal left right _ = assert_type_equal left right in
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
-  let _obsolete_tests () =
-    assert_meet ~order:variance_order "Derived[int]" "Base[int]" "Derived[int]";
-    assert_meet ~order:variance_order "Derived[float]" "Base[float]" "Derived[float]";
-    assert_meet ~order:variance_order "Derived[int]" "Base[float]" "Derived[int]";
-    assert_meet ~order:variance_order "Derived[float]" "Base[int]" "Derived[float]";
-    assert_meet ~order:multiplane_variance_order "B[int, float]" "A[int, float]" "B[int, float]";
-    assert_meet ~order:multiplane_variance_order "B[int, int]" "A[int, float]" "B[int, int]";
-    assert_meet ~order:multiplane_variance_order "B[float, int]" "A[int, float]" "B[float, int]";
-    assert_meet ~order:multiplane_variance_order "B[float, float]" "A[int, float]" "B[float, float]";
-    assert_meet ~order:multiplane_variance_order "B[int, float]" "A[float, float]" "B[int, float]";
-    assert_meet ~order:multiplane_variance_order "B[int, int]" "A[float, float]" "B[int, int]";
-    assert_meet ~order:multiplane_variance_order "B[float, int]" "A[float, float]" "B[float, int]";
+  let _obsolete_tests () context =
+    assert_meet ~order:variance_order "Derived[int]" "Base[int]" "Derived[int]" context;
+    assert_meet ~order:variance_order "Derived[float]" "Base[float]" "Derived[float]" context;
+    assert_meet ~order:variance_order "Derived[int]" "Base[float]" "Derived[int]" context;
+    assert_meet ~order:variance_order "Derived[float]" "Base[int]" "Derived[float]" context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[int, float]"
+      "A[int, float]"
+      "B[int, float]"
+      context;
+    assert_meet ~order:multiplane_variance_order "B[int, int]" "A[int, float]" "B[int, int]" context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[float, int]"
+      "A[int, float]"
+      "B[float, int]"
+      context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[float, float]"
+      "A[int, float]"
+      "B[float, float]"
+      context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[int, float]"
+      "A[float, float]"
+      "B[int, float]"
+      context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[int, int]"
+      "A[float, float]"
+      "B[int, int]"
+      context;
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[float, int]"
+      "A[float, float]"
+      "B[float, int]"
+      context;
     assert_meet
       ~order:multiplane_variance_order
       "B[float, float]"
       "A[float, float]"
-      "B[float, float]";
+      "B[float, float]"
+      context;
     assert_meet
       ~order:parallel_planes_variance_order
       "B[float, float]"
       "A[int, float]"
-      "B[int, float]";
+      "B[int, float]"
+      context;
     assert_meet
       ~order:parallel_planes_variance_order
       "B[float, float]"
       "A[int, int]"
       "B[int, float]"
+      context
   in
   let make_potentially_inconsistent_order ~x_before_y =
     (* Corresponds to
@@ -2527,17 +2829,6 @@ let test_meet _ =
       ~parameters:[variable; variable2];
     handler order
   in
-  assert_meet
-    ~order:(make_potentially_inconsistent_order ~x_before_y:true)
-    "B[int, str]"
-    "A[str]"
-    "$bottom";
-  assert_meet
-    ~order:(make_potentially_inconsistent_order ~x_before_y:false)
-    "B[int, str]"
-    "A[str]"
-    "$bottom";
-
   let tree_annotation =
     Type.RecursiveType.create
       ~name:"Tree"
@@ -2560,18 +2851,157 @@ let test_meet _ =
       ~name:"NonTree"
       ~body:(Type.union [Type.bool; Type.tuple [Type.Primitive "NonTree"]])
   in
-  (* Recursive types. *)
-  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation);
-  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation2);
-  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation_with_string);
-  assert_type_equal Type.integer (meet default tree_annotation Type.integer);
-  assert_type_equal Type.Bottom (meet default tree_annotation Type.string);
-  assert_type_equal Type.Bottom (meet default tree_annotation non_tree);
-  ()
+  test_list
+    [
+      (* Special elements. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.List[float]" "typing.Any" "typing.List[float]";
+      (* Primitive types. *)
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_meet "list" "typing.Sized" "list";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
+      (* Annotated types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Annotated[int, 1]" "float" "typing.Annotated[int, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "typing.Annotated[int, 1]"
+           "typing.Annotated[float, 1]"
+           "typing.Annotated[int, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "typing_extensions.Annotated[int, 1]"
+           "float"
+           "typing_extensions.Annotated[int, 1]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "typing_extensions.Annotated[int, 1]"
+           "typing_extensions.Annotated[float, 1]"
+           "typing_extensions.Annotated[int, 1]";
+      (* ReadOnly. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "pyre_extensions.ReadOnly[Child]" "Base" "Child";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "pyre_extensions.ReadOnly[Child]"
+           "pyre_extensions.ReadOnly[Base]"
+           "pyre_extensions.ReadOnly[Child]";
+      (* Unions. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_meet "typing.Union[int, str]" "float" "int";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Union[int, str]" "typing.List[int]" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Union[int, str]" "typing.Union[float, bool]" "int";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Union[int, str]" "typing.Union[int, bool]" "int";
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_meet "None" "typing.Optional[str]" "None";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "typing.Union[int, str]"
+           "typing.Union[int, typing.Optional[str]]"
+           "typing.Union[int, str]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           "typing.Union[int, typing.Optional[str]]"
+           "typing.Optional[str]"
+           "typing.Optional[str]";
+      (* Parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.List[float]" "typing.Iterator[int]" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.List[float]" "float[int]" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "typing.Dict[str, str]" "typing.Dict[str, typing.List[str]]" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet ~order:disconnected_order "A" "B" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[int, str]" "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[str, int]" "$bottom";
+      (* Variables. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal (meet default Type.integer (Type.variable "T")) Type.Bottom;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              default
+              Type.integer
+              (Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"))
+           Type.Bottom;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              default
+              Type.string
+              (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"))
+           Type.Bottom;
+      (* Variance. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              variance_order
+              (Type.parametric "LinkedList" ![Type.integer])
+              (Type.parametric "LinkedList" ![Type.Top]))
+           (Type.parametric "LinkedList" ![Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Top])
+              (Type.parametric "LinkedList" ![Type.integer]))
+           (Type.parametric "LinkedList" ![Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              variance_order
+              (Type.parametric "LinkedList" ![Type.integer])
+              (Type.parametric "LinkedList" ![Type.Any]))
+           (Type.parametric "LinkedList" ![Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           (meet
+              variance_order
+              (Type.parametric "LinkedList" ![Type.Any])
+              (Type.parametric "LinkedList" ![Type.integer]))
+           (Type.parametric "LinkedList" ![Type.Any]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           ~order:(make_potentially_inconsistent_order ~x_before_y:true)
+           "B[int, str]"
+           "A[str]"
+           "$bottom";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           ~order:(make_potentially_inconsistent_order ~x_before_y:false)
+           "B[int, str]"
+           "A[str]"
+           "$bottom";
+      (* Recursive types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal tree_annotation (meet default tree_annotation tree_annotation);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal tree_annotation (meet default tree_annotation tree_annotation2);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal
+           tree_annotation
+           (meet default tree_annotation tree_annotation_with_string);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal Type.integer (meet default tree_annotation Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal Type.Bottom (meet default tree_annotation Type.string);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_equal Type.Bottom (meet default tree_annotation non_tree);
+    ]
 
 
-let test_meet_callable _ =
-  let assert_meet ?(order = default) left right expected =
+let test_meet_callable =
+  let assert_meet ?(order = default) left right expected _ =
     assert_type_equal expected (meet order left right);
     assert_type_equal expected (meet order right left)
   in
@@ -2587,7 +3017,6 @@ let test_meet_callable _ =
       ~annotation:Type.integer
       ()
   in
-  assert_meet named_int_to_int named_int_to_int named_int_to_int;
   let anonymous_str_to_int =
     Type.Callable.create
       ~parameters:
@@ -2632,33 +3061,6 @@ let test_meet_callable _ =
       ~annotation:Type.integer
       ()
   in
-  assert_meet anonymous_int_to_float anonymous_str_to_int anonymous_union_int_str_to_int;
-  assert_meet anonymous_positional_only_str_to_int anonymous_str_to_int anonymous_str_to_int;
-
-  let anonymous_undefined_to_object = Type.Callable.create ~annotation:Type.object_primitive () in
-  let anonymous_undefined_to_int = Type.Callable.create ~annotation:Type.integer () in
-  let anonymous_str_named_b_to_int =
-    Type.Callable.create
-      ~parameters:
-        (Defined
-           [
-             Type.Callable.CallableParamType.Named
-               { name = "b"; annotation = Type.string; default = false };
-           ])
-      ~annotation:Type.integer
-      ()
-  in
-  assert_meet anonymous_str_to_int anonymous_str_named_b_to_int anonymous_undefined_to_int;
-  assert_meet
-    anonymous_positional_only_str_to_int
-    anonymous_undefined_to_object
-    anonymous_undefined_to_int;
-  assert_meet anonymous_str_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
-  assert_meet named_int_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
-  assert_meet anonymous_undefined_to_object named_int_to_int anonymous_undefined_to_int;
-  assert_meet named_int_to_int anonymous_str_to_int anonymous_union_int_str_to_int;
-  assert_meet anonymous_str_to_int named_int_to_int anonymous_union_int_str_to_int;
-
   let overloaded_str_to_int =
     Type.Callable.create
       ~parameters:
@@ -2682,20 +3084,61 @@ let test_meet_callable _ =
         ]
       ()
   in
-  assert_meet overloaded_str_to_int overloaded_str_to_int overloaded_str_to_int;
-  assert_meet overloaded_str_to_int anonymous_str_to_int Type.Bottom;
-  ()
+  let anonymous_undefined_to_object = Type.Callable.create ~annotation:Type.object_primitive () in
+  let anonymous_undefined_to_int = Type.Callable.create ~annotation:Type.integer () in
+  let anonymous_str_named_b_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [
+             Type.Callable.CallableParamType.Named
+               { name = "b"; annotation = Type.string; default = false };
+           ])
+      ~annotation:Type.integer
+      ()
+  in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet named_int_to_int named_int_to_int named_int_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_int_to_float anonymous_str_to_int anonymous_union_int_str_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_positional_only_str_to_int anonymous_str_to_int anonymous_str_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_str_to_int anonymous_str_named_b_to_int anonymous_undefined_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           anonymous_positional_only_str_to_int
+           anonymous_undefined_to_object
+           anonymous_undefined_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_str_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet named_int_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_undefined_to_object named_int_to_int anonymous_undefined_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet named_int_to_int anonymous_str_to_int anonymous_union_int_str_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet anonymous_str_to_int named_int_to_int anonymous_union_int_str_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet overloaded_str_to_int overloaded_str_to_int overloaded_str_to_int;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet overloaded_str_to_int anonymous_str_to_int Type.Bottom;
+    ]
 
 
 let () =
   "order"
   >::: [
-         "join" >:: test_join;
-         "join_with_full_type_order" >:: test_join_with_full_type_order;
-         "join_recursive_types" >:: test_join_recursive_types;
-         "less_or_equal" >:: test_less_or_equal;
-         "less_or_equal_variance" >:: test_less_or_equal_variance;
-         "meet" >:: test_meet;
-         "meet_callable" >:: test_meet_callable;
+         test_join;
+         test_join_with_full_type_order;
+         test_join_recursive_types;
+         test_less_or_equal;
+         test_less_or_equal_primitives;
+         test_less_or_equal_variance;
+         test_meet;
+         test_meet_callable;
        ]
   |> Test.run
