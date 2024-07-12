@@ -1120,10 +1120,20 @@ module State (Context : Context) = struct
 
 
   and resolve_cast ~resolution ~cast_annotation value =
+    let global_resolution = Resolution.global_resolution resolution in
+
+    let get_type_alias = GlobalResolution.get_type_alias global_resolution in
+
+    let variables name =
+      match get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
+      | Some (Type.Alias.VariableAlias variable) -> Some variable
+      | _ -> None
+    in
+
     let errors, cast_annotation = parse_and_check_annotation ~resolution cast_annotation in
     let resolution, resolved, errors =
       let { Resolved.resolution; resolved; errors = value_errors; _ } =
-        forward_expression ~resolution value
+        forward_expression ~resolution value ~aliases:get_type_alias ~variables
       in
       resolution, resolved, List.append value_errors errors
     in
@@ -1493,9 +1503,9 @@ module State (Context : Context) = struct
     | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes
 
 
-  and forward_argument ~resolution ~errors argument =
+  and forward_argument ~resolution ~errors argument ~aliases ~variables =
     let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-    forward_expression ~resolution expression
+    forward_expression ~resolution expression ~aliases ~variables
     |> fun { resolution; errors = new_errors; resolved; _ } ->
     ( resolution,
       List.append new_errors errors,
@@ -1512,10 +1522,14 @@ module State (Context : Context) = struct
       ~dynamic
       ~callee
       ~arguments:(_ as argument_expressions)
+      ~aliases
+      ~variables
     =
     let resolution, errors, reversed_arguments =
       let resolve_argument (resolution, errors, reversed_arguments) raw_argument =
-        let resolution, errors, argument = forward_argument ~resolution ~errors raw_argument in
+        let resolution, errors, argument =
+          forward_argument ~resolution ~errors raw_argument ~aliases ~variables
+        in
         resolution, errors, argument :: reversed_arguments
       in
       List.fold argument_expressions ~f:resolve_argument ~init:(resolution, errors, [])
@@ -1786,14 +1800,14 @@ module State (Context : Context) = struct
 
 
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
-  and forward_expression ~resolution { Node.location; value } =
+  and forward_expression ~resolution { Node.location; value } ~aliases ~variables =
     let global_resolution = Resolution.global_resolution resolution in
     let forward_entry ~resolution ~errors ~entry:Dictionary.Entry.KeyValue.{ key; value } =
       let { Resolved.resolution; resolved = key_resolved; errors = key_errors; _ } =
-        forward_expression ~resolution key
+        forward_expression ~resolution key ~aliases ~variables
       in
       let { Resolved.resolution; resolved = value_resolved; errors = value_errors; _ } =
-        forward_expression ~resolution value
+        forward_expression ~resolution value ~aliases ~variables
       in
       ( Type.weaken_literals key_resolved,
         Type.weaken_literals value_resolved,
@@ -1804,13 +1818,15 @@ module State (Context : Context) = struct
         ~resolution
         ~errors
         ~generator:({ Comprehension.Generator.conditions; _ } as generator)
+        ~aliases
+        ~variables
       =
       (* Propagate the target type information. *)
       let resolution, errors =
         let iterator_resolution, iterator_errors =
           let post_resolution, errors =
             let { Assign.target; annotation; value } = Statement.generator_assignment generator in
-            forward_assignment ~resolution ~location ~target ~annotation ~value
+            forward_assignment ~resolution ~location ~target ~annotation ~value ~aliases ~variables
           in
           resolution_or_default post_resolution ~default:resolution, errors
         in
@@ -1830,21 +1846,23 @@ module State (Context : Context) = struct
       in
       List.fold conditions ~init:(resolution, errors) ~f:(fun (resolution, errors) condition ->
           let resolution, new_errors =
-            let post_resolution, errors = forward_assert ~resolution condition in
+            let post_resolution, errors =
+              forward_assert ~resolution condition ~aliases ~variables
+            in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           resolution, List.append new_errors errors)
     in
-    let forward_comprehension ~resolution ~errors ~element ~generators =
+    let forward_comprehension ~resolution ~errors ~element ~generators ~aliases ~variables =
       let resolved, errors =
         List.fold
           generators
           ~f:(fun (resolution, errors) generator ->
-            forward_generator ~resolution ~errors ~generator)
+            forward_generator ~resolution ~errors ~generator ~aliases ~variables)
           ~init:(resolution, errors)
         |> fun (resolution, errors) ->
         let { Resolved.resolved; errors = element_errors; _ } =
-          forward_expression ~resolution element
+          forward_expression ~resolution element ~aliases ~variables
         in
         resolved, List.append element_errors errors
       in
@@ -1862,7 +1880,7 @@ module State (Context : Context) = struct
         match Node.value expression with
         | Expression.Starred (Starred.Once expression) ->
             let { Resolved.resolution; resolved = new_resolved; errors = new_errors; _ } =
-              forward_expression ~resolution expression
+              forward_expression ~resolution expression ~aliases ~variables
             in
             let parameter =
               new_resolved
@@ -1878,7 +1896,7 @@ module State (Context : Context) = struct
             }
         | _ ->
             let { Resolved.resolution; resolved = new_resolved; errors = new_errors; _ } =
-              forward_expression ~resolution expression
+              forward_expression ~resolution expression ~aliases ~variables
             in
             {
               resolution;
@@ -1921,7 +1939,7 @@ module State (Context : Context) = struct
     match value with
     | Await expression -> (
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution expression
+          forward_expression ~resolution expression ~aliases ~variables
         in
         match resolved with
         | Type.Any ->
@@ -1955,7 +1973,11 @@ module State (Context : Context) = struct
             ))
     | BinaryOperator operator ->
         let resolved =
-          forward_expression ~resolution (BinaryOperator.override ~location operator)
+          forward_expression
+            ~resolution
+            (BinaryOperator.override ~location operator)
+            ~aliases
+            ~variables
         in
         { resolved with errors = resolved.errors }
     | BooleanOperator { BooleanOperator.left; operator; right } -> (
@@ -1966,14 +1988,16 @@ module State (Context : Context) = struct
           _;
         }
           =
-          forward_expression ~resolution left
+          forward_expression ~resolution left ~aliases ~variables
         in
         let left_assume =
           match operator with
           | BooleanOperator.And -> left
           | BooleanOperator.Or -> normalize (negate left)
         in
-        match refine_resolution_for_assert ~resolution:resolution_left left_assume with
+        match
+          refine_resolution_for_assert ~resolution:resolution_left left_assume ~aliases ~variables
+        with
         | Unreachable ->
             {
               Resolved.resolution = resolution_left;
@@ -1991,7 +2015,7 @@ module State (Context : Context) = struct
                 _;
               }
                 =
-                forward_expression ~resolution:refined_resolution right
+                forward_expression ~resolution:refined_resolution right ~aliases ~variables
               in
               let resolved =
                 match resolved_left with
@@ -2071,7 +2095,9 @@ module State (Context : Context) = struct
               base = Some (Super resolved);
             }
         | None ->
-            let { Resolved.resolved; _ } = forward_expression ~resolution callee in
+            let { Resolved.resolved; _ } =
+              forward_expression ~resolution callee ~aliases ~variables
+            in
             forward_call_with_arguments
               ~resolution
               ~location
@@ -2079,7 +2105,9 @@ module State (Context : Context) = struct
               ~target:None
               ~callee:(Callee.NonAttribute { expression = callee; resolved })
               ~dynamic:false
-              ~arguments)
+              ~arguments
+              ~aliases
+              ~variables)
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "type"); _ };
@@ -2140,7 +2168,7 @@ module State (Context : Context) = struct
           | _ -> false
         in
         let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
-          forward_expression ~resolution value
+          forward_expression ~resolution value ~aliases ~variables
         in
         let annotation =
           Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
@@ -2176,7 +2204,7 @@ module State (Context : Context) = struct
           arguments = [{ Call.Argument.value; _ }; { Call.Argument.value = expected_annotation; _ }];
         } ->
         let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
-          forward_expression ~resolution value
+          forward_expression ~resolution value ~aliases ~variables
         in
         let value_annotation =
           Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
@@ -2328,7 +2356,7 @@ module State (Context : Context) = struct
           arguments =
             [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
         } ->
-        let { Resolved.resolved; _ } = forward_expression ~resolution callee in
+        let { Resolved.resolved; _ } = forward_expression ~resolution callee ~aliases ~variables in
         let callables =
           match resolved with
           | Type.Callable callable -> [callable]
@@ -2348,14 +2376,16 @@ module State (Context : Context) = struct
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let resolution, errors =
-          let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
+          let { Resolved.resolution; errors; _ } =
+            forward_expression ~resolution expression ~aliases ~variables
+          in
           let resolution, errors, annotations =
             let rec collect_types (state, errors, collected) = function
               | { Node.value = Expression.Tuple annotations; _ } ->
                   List.fold annotations ~init:(state, errors, collected) ~f:collect_types
               | expression ->
                   let { Resolved.resolution; resolved; errors = expression_errors; _ } =
-                    forward_expression ~resolution expression
+                    forward_expression ~resolution expression ~aliases ~variables
                   in
                   let new_annotations =
                     match resolved with
@@ -2436,11 +2466,13 @@ module State (Context : Context) = struct
         } ->
         let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
-            let post_resolution, errors = forward_assert ~resolution expression in
+            let post_resolution, errors =
+              forward_assert ~resolution expression ~aliases ~variables
+            in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
-            forward_expression ~resolution callee
+            forward_expression ~resolution callee ~aliases ~variables
           in
           resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
@@ -2463,6 +2495,8 @@ module State (Context : Context) = struct
                  expression = callee;
                })
           ~arguments
+          ~aliases
+          ~variables
     | Call
         {
           callee =
@@ -2476,11 +2510,13 @@ module State (Context : Context) = struct
         } ->
         let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
-            let post_resolution, errors = forward_assert ~resolution (negate expression) in
+            let post_resolution, errors =
+              forward_assert ~resolution (negate expression) ~aliases ~variables
+            in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
-            forward_expression ~resolution callee
+            forward_expression ~resolution callee ~aliases ~variables
           in
           resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
@@ -2503,6 +2539,8 @@ module State (Context : Context) = struct
                  expression = callee;
                })
           ~arguments
+          ~aliases
+          ~variables
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "getattr"); _ };
@@ -2512,17 +2550,17 @@ module State (Context : Context) = struct
             :: (([] | [_]) as default_argument);
         } -> (
         let ({ Resolved.errors; resolution; _ } as base_resolved) =
-          forward_expression ~resolution base
+          forward_expression ~resolution base ~aliases ~variables
         in
         let resolution, errors, attribute_resolved =
-          forward_expression ~resolution attribute_expression
+          forward_expression ~resolution attribute_expression ~aliases ~variables
           |> fun { resolution; errors = attribute_errors; resolved = attribute_resolved; _ } ->
           resolution, List.append attribute_errors errors, attribute_resolved
         in
         let resolution, errors, has_default =
           match default_argument with
           | [{ Call.Argument.value = default_expression; _ }] ->
-              forward_expression ~resolution default_expression
+              forward_expression ~resolution default_expression ~aliases ~variables
               |> fun { resolution; errors = default_errors; _ } ->
               resolution, List.append default_errors errors, true
           | _ -> resolution, errors, false
@@ -2554,7 +2592,7 @@ module State (Context : Context) = struct
           _;
         }
           =
-          forward_expression ~resolution callee
+          forward_expression ~resolution callee ~aliases ~variables
         in
         let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
           let target_and_dynamic resolved_callee =
@@ -2600,6 +2638,8 @@ module State (Context : Context) = struct
                   ~dynamic
                   ~callee:(create_callee inner_resolved_callee)
                   ~arguments
+                  ~aliases
+                  ~variables
                 |> fun { resolution; resolved; errors = new_errors; _ } ->
                 resolution, List.append new_errors errors, resolved :: annotations
               in
@@ -2664,6 +2704,8 @@ module State (Context : Context) = struct
                 ~dynamic
                 ~callee:(create_callee resolved_callee)
                 ~arguments
+                ~aliases
+                ~variables
               |> detect_broadcast_errors
         in
         {
@@ -2714,7 +2756,7 @@ module State (Context : Context) = struct
             | Some resolved ->
                 let callee =
                   let { Resolved.resolved = resolved_base; _ } =
-                    forward_expression ~resolution right
+                    forward_expression ~resolution right ~aliases ~variables
                   in
                   Callee.Attribute
                     {
@@ -2738,6 +2780,8 @@ module State (Context : Context) = struct
                   ~dynamic:true
                   ~callee
                   ~arguments:[{ Call.Argument.name = None; value = left }]
+                  ~aliases
+                  ~variables
             | None -> (
                 match
                   resolve_method
@@ -2784,6 +2828,8 @@ module State (Context : Context) = struct
                         ~callee:(create_callee callable)
                         ~arguments:
                           (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
+                        ~aliases
+                        ~variables
                     in
                     forward_call_with_arguments
                       ~dynamic:true
@@ -2793,6 +2839,8 @@ module State (Context : Context) = struct
                       ~target:(Some instantiated)
                       ~callee:(create_callee iter_callable)
                       ~arguments:[]
+                      ~aliases
+                      ~variables
                     |> forward_method ~method_name:"__next__" ~arguments:[]
                     >>= forward_method ~method_name:"__eq__" ~arguments:[left]
                     |> Option.value
@@ -2854,7 +2902,7 @@ module State (Context : Context) = struct
                       }
                     in
                     let ({ Resolved.resolved; _ } as getitem_resolution) =
-                      forward_expression ~resolution getitem_attribute
+                      forward_expression ~resolution getitem_attribute ~aliases ~variables
                     in
                     let is_valid_getitem = function
                       | Type.Parametric
@@ -2888,11 +2936,14 @@ module State (Context : Context) = struct
                     in
                     match resolved with
                     | Type.Union elements when List.for_all ~f:is_valid_getitem elements ->
-                        forward_expression ~resolution call
-                    | _ when is_valid_getitem resolved -> forward_expression ~resolution call
+                        forward_expression ~resolution call ~aliases ~variables
+                    | _ when is_valid_getitem resolved ->
+                        forward_expression ~resolution call ~aliases ~variables
                     | _ ->
                         let errors =
-                          let { Resolved.resolved; _ } = forward_expression ~resolution right in
+                          let { Resolved.resolved; _ } =
+                            forward_expression ~resolution right ~aliases ~variables
+                          in
                           emit_error
                             ~errors
                             ~location
@@ -2912,7 +2963,9 @@ module State (Context : Context) = struct
           in
           resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
         in
-        let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
+        let { Resolved.resolution; resolved; errors; _ } =
+          forward_expression ~resolution right ~aliases ~variables
+        in
         let resolution, errors, resolved =
           (* We should really error here if class_data_for_attribute_lookup fails *)
           Type.class_data_for_attribute_lookup resolved
@@ -2925,13 +2978,13 @@ module State (Context : Context) = struct
         let operator = { operator with left } in
         match ComparisonOperator.override ~location operator with
         | Some expression ->
-            let resolved = forward_expression ~resolution expression in
+            let resolved = forward_expression ~resolution expression ~aliases ~variables in
             { resolved with errors = resolved.errors }
         | None ->
-            forward_expression ~resolution left
+            forward_expression ~resolution left ~aliases ~variables
             |> (fun { Resolved.resolution; errors = left_errors; _ } ->
                  let { Resolved.resolution; errors = right_errors; _ } =
-                   forward_expression ~resolution right
+                   forward_expression ~resolution right ~aliases ~variables
                  in
                  resolution, List.append left_errors right_errors)
             |> fun (resolution, errors) ->
@@ -2990,7 +3043,7 @@ module State (Context : Context) = struct
             | None -> resolved, resolution, errors
             | Some (key, value) -> (
                 let { Resolved.resolution; resolved = source; errors = new_errors; _ } =
-                  forward_expression ~resolution keyword
+                  forward_expression ~resolution keyword ~aliases ~variables
                 in
                 let errors = List.append new_errors errors in
                 match source with
@@ -3040,7 +3093,7 @@ module State (Context : Context) = struct
           List.fold
             generators
             ~f:(fun (resolution, errors) generator ->
-              forward_generator ~resolution ~errors ~generator)
+              forward_generator ~resolution ~errors ~generator ~aliases ~variables)
             ~init:(resolution, [])
           |> fun (resolution, errors) -> forward_entry ~resolution ~errors ~entry:element
         in
@@ -3119,12 +3172,14 @@ module State (Context : Context) = struct
                 resolution, has_non_literal, new_errors
               in
               let value_resolution, value_has_non_literal, value_errors =
-                forward_expression ~resolution value |> format_substring_resolved
+                forward_expression ~resolution value ~aliases ~variables
+                |> format_substring_resolved
               in
               match format_spec with
               | Some format_spec ->
                   let format_spec_resolution, format_spec_has_non_literal, format_spec_errors =
-                    forward_expression ~resolution format_spec |> format_substring_resolved
+                    forward_expression ~resolution format_spec ~aliases ~variables
+                    |> format_substring_resolved
                   in
                   ( format_spec_resolution,
                     format_spec_has_non_literal || value_has_non_literal,
@@ -3138,7 +3193,7 @@ module State (Context : Context) = struct
         { resolution; errors; resolved; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
+          forward_comprehension ~resolution ~errors:[] ~element ~generators ~aliases ~variables
         in
         let folder =
           let fold_await ~folder:_ ~state:_ _ = true in
@@ -3181,7 +3236,7 @@ module State (Context : Context) = struct
           List.fold ~f:add_parameter ~init:resolution parameters
         in
         let { Resolved.resolved; errors; _ } =
-          forward_expression ~resolution:resolution_with_parameters body
+          forward_expression ~resolution:resolution_with_parameters body ~aliases ~variables
         in
         (* Judgement call, many more people want to pass in `lambda: 0` to `defaultdict` than want
            to write a function that take in callables with literal return types. If you really want
@@ -3219,7 +3274,7 @@ module State (Context : Context) = struct
         }
     | ListComprehension { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
+          forward_comprehension ~resolution ~errors:[] ~element ~generators ~aliases ~variables
         in
         {
           resolution;
@@ -3275,7 +3330,7 @@ module State (Context : Context) = struct
             forward_reference ~resolution ~location ~errors:[] module_reference
         | _ ->
             let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
-              forward_expression ~resolution base
+              forward_expression ~resolution base ~aliases ~variables
             in
             let errors, resolved_base =
               if Type.Variable.contains_escaped_free_variable resolved_base then
@@ -3323,7 +3378,7 @@ module State (Context : Context) = struct
         }
     | SetComprehension { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
+          forward_comprehension ~resolution ~errors:[] ~element ~generators ~aliases ~variables
         in
         {
           resolution;
@@ -3337,10 +3392,11 @@ module State (Context : Context) = struct
           match starred with
           | Starred.Once expression
           | Starred.Twice expression ->
-              forward_expression ~resolution expression
+              forward_expression ~resolution expression ~aliases ~variables
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-    | Slice slice -> forward_expression ~resolution (Slice.lowered ~location slice)
+    | Slice slice ->
+        forward_expression ~resolution (Slice.lowered ~location slice) ~aliases ~variables
     | Subscript { Subscript.base; index } ->
         (* The python runtime will treat `base[index]` (when not inside an assignment target) as
            `base.__getitem__(index)`. *)
@@ -3356,24 +3412,32 @@ module State (Context : Context) = struct
               arguments = [{ Call.Argument.value = index; name = None }];
             }
         in
-        forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+        forward_expression
+          ~resolution
+          { Node.value = synthetic_getitem_call; location }
+          ~aliases
+          ~variables
     | Ternary { Ternary.target; test; alternative } ->
         let test_errors =
-          let { Resolved.errors; _ } = forward_expression ~resolution test in
+          let { Resolved.errors; _ } = forward_expression ~resolution test ~aliases ~variables in
           errors
         in
         let target_resolved, target_errors =
-          let post_resolution = refine_resolution_for_assert ~resolution test in
+          let post_resolution = refine_resolution_for_assert ~resolution test ~aliases ~variables in
           let resolution = resolution_or_default post_resolution ~default:resolution in
-          let { Resolved.resolved; errors; _ } = forward_expression ~resolution target in
+          let { Resolved.resolved; errors; _ } =
+            forward_expression ~resolution target ~aliases ~variables
+          in
           resolved, errors
         in
         let alternative_resolved, alternative_errors =
           let post_resolution =
-            refine_resolution_for_assert ~resolution (normalize (negate test))
+            refine_resolution_for_assert ~resolution (normalize (negate test)) ~aliases ~variables
           in
           let resolution = resolution_or_default post_resolution ~default:resolution in
-          let { Resolved.resolved; errors; _ } = forward_expression ~resolution alternative in
+          let { Resolved.resolved; errors; _ } =
+            forward_expression ~resolution alternative ~aliases ~variables
+          in
           resolved, errors
         in
         let resolved =
@@ -3400,7 +3464,7 @@ module State (Context : Context) = struct
               match expression with
               | { Node.value = Expression.Starred (Starred.Once expression); _ } ->
                   let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
-                    forward_expression ~resolution expression
+                    forward_expression ~resolution expression ~aliases ~variables
                   in
                   let new_errors, ordered_type =
                     match resolved_element with
@@ -3428,7 +3492,7 @@ module State (Context : Context) = struct
                   resolution, new_errors, ordered_type
               | _ ->
                   let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
-                    forward_expression ~resolution expression
+                    forward_expression ~resolution expression ~aliases ~variables
                   in
                   resolution, new_errors, Type.OrderedTypes.Concrete [resolved_element]
             in
@@ -3465,25 +3529,32 @@ module State (Context : Context) = struct
         { resolution; errors; resolved; resolved_annotation = None; base = None }
     | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
         match UnaryOperator.override operator with
-        | Some expression -> forward_expression ~resolution expression
+        | Some expression -> forward_expression ~resolution expression ~aliases ~variables
         | None ->
-            let resolved = forward_expression ~resolution operand in
+            let resolved = forward_expression ~resolution operand ~aliases ~variables in
             { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
     | WalrusOperator { value; target } ->
         let resolution, errors =
           let post_resolution, errors =
-            forward_assignment ~resolution ~location ~target ~value:(Some value) ~annotation:None
+            forward_assignment
+              ~resolution
+              ~location
+              ~target
+              ~value:(Some value)
+              ~annotation:None
+              ~aliases
+              ~variables
           in
           resolution_or_default post_resolution ~default:resolution, errors
         in
-        let resolved = forward_expression ~resolution value in
+        let resolved = forward_expression ~resolution value ~aliases ~variables in
         { resolved with errors = List.append errors resolved.errors }
     | Expression.Yield yielded ->
         let { Resolved.resolution; resolved = yield_type; errors; _ } =
           match yielded with
           | Some expression ->
               let { Resolved.resolution; resolved; errors; _ } =
-                forward_expression ~resolution expression
+                forward_expression ~resolution expression ~aliases ~variables
               in
               { resolution; errors; resolved; resolved_annotation = None; base = None }
           | None ->
@@ -3511,7 +3582,7 @@ module State (Context : Context) = struct
         { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
     | Expression.YieldFrom yielded_from ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution yielded_from
+          forward_expression ~resolution yielded_from ~aliases ~variables
         in
         let yield_type =
           resolved
@@ -3542,12 +3613,13 @@ module State (Context : Context) = struct
   (* Since the control flow graph has already preprocessed assert statements (see
      [this](https://www.internalfb.com/intern/graphviz/?paste=65053708) for an example), type
      refinment happens here based on these asserts. *)
-  and refine_resolution_for_assert ~resolution test =
+  and refine_resolution_for_assert ~resolution test ~aliases ~variables =
     let global_resolution = Resolution.global_resolution resolution in
     let annotation_less_or_equal =
       TypeInfo.Unit.less_or_equal
         ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
     in
+
     let parse_refinement_annotation annotation =
       let parse_meta annotation =
         match parse_and_check_annotation ~resolution annotation |> snd with
@@ -3861,7 +3933,9 @@ module State (Context : Context) = struct
           if Type.contains_unknown boundary || Type.is_any boundary then
             false
           else
-            let { Resolved.resolved; _ } = forward_expression ~resolution value in
+            let { Resolved.resolved; _ } =
+              forward_expression ~resolution value ~aliases ~variables
+            in
             (not (Type.is_unbound resolved))
             && (not (Type.contains_unknown resolved))
             && (not (Type.is_any resolved))
@@ -4005,7 +4079,9 @@ module State (Context : Context) = struct
           right;
         }
       when is_simple_name name -> (
-        let { Resolved.resolved = refined; _ } = forward_expression ~resolution right in
+        let { Resolved.resolved = refined; _ } =
+          forward_expression ~resolution right ~aliases ~variables
+        in
         let refined = TypeInfo.Unit.create_mutable refined in
         match existing_annotation name with
         | Some previous ->
@@ -4025,7 +4101,7 @@ module State (Context : Context) = struct
         }
       when is_simple_name name -> (
         let reference = name_to_reference_exn name in
-        let { Resolved.resolved; _ } = forward_expression ~resolution right in
+        let { Resolved.resolved; _ } = forward_expression ~resolution right ~aliases ~variables in
         match
           GlobalResolution.extract_type_parameters
             global_resolution
@@ -4067,7 +4143,7 @@ module State (Context : Context) = struct
           operator = ComparisonOperator.IsNot;
           right = { Node.value = Constant Constant.NoneLiteral; _ };
         } ->
-        refine_resolution_for_assert ~resolution left
+        refine_resolution_for_assert ~resolution left ~aliases ~variables
     | Name name when is_simple_name name -> (
         match existing_annotation name with
         | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable
@@ -4162,16 +4238,18 @@ module State (Context : Context) = struct
             Value resolution
         | None -> Value resolution)
     (* Compound assertions *)
-    | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
+    | WalrusOperator { target; _ } ->
+        refine_resolution_for_assert ~resolution target ~aliases ~variables
     | BooleanOperator { BooleanOperator.left; operator; right } -> (
         match operator with
         | BooleanOperator.And ->
-            let left_state = refine_resolution_for_assert ~resolution left in
+            let left_state = refine_resolution_for_assert ~resolution left ~aliases ~variables in
             let right_state =
               left_state
               |> function
               | Unreachable -> Unreachable
-              | Value resolution -> refine_resolution_for_assert ~resolution right
+              | Value resolution ->
+                  refine_resolution_for_assert ~resolution right ~aliases ~variables
             in
             let state =
               match left_state, right_state with
@@ -4183,7 +4261,7 @@ module State (Context : Context) = struct
             state
         | BooleanOperator.Or ->
             let update resolution expression =
-              refine_resolution_for_assert ~resolution expression
+              refine_resolution_for_assert ~resolution expression ~aliases ~variables
               |> function
               | Value post_resolution -> post_resolution
               | Unreachable -> resolution
@@ -4198,9 +4276,11 @@ module State (Context : Context) = struct
     | _ -> Value resolution
 
 
-  and forward_assert ?(origin = Assert.Origin.Assertion) ~resolution test =
-    let { Resolved.resolution; errors; _ } = forward_expression ~resolution test in
-    let resolution = refine_resolution_for_assert ~resolution test in
+  and forward_assert ?(origin = Assert.Origin.Assertion) ~resolution test ~aliases ~variables =
+    let { Resolved.resolution; errors; _ } =
+      forward_expression ~resolution test ~aliases ~variables
+    in
+    let resolution = refine_resolution_for_assert ~resolution test ~aliases ~variables in
     (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same [foo]
        as in the true-branch. This duplication of errors is normally ok because the errors get
        deduplicated in the error map and give one final error. However, it leads to two separate
@@ -4214,6 +4294,31 @@ module State (Context : Context) = struct
       | _ -> errors
     in
     resolution, errors
+
+
+  and forward_variable_alias_definition ~resolution ~location ~errors ~value =
+    let global_resolution = Resolution.global_resolution resolution in
+    let parsed =
+      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
+    in
+
+    let add_type_variable_errors errors =
+      match parsed with
+      | Variable variable when Type.Variable.TypeVar.contains_subvariable variable ->
+          emit_error
+            ~errors
+            ~location
+            ~kind:
+              (AnalysisError.InvalidType
+                 (AnalysisError.NestedTypeVariables (Type.Variable.TypeVarVariable variable)))
+      | Variable { constraints = Explicit [explicit]; _ } ->
+          emit_error
+            ~errors
+            ~location
+            ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
+      | _ -> errors
+    in
+    Value resolution, add_type_variable_errors errors
 
 
   and forward_type_alias_definition ~resolution ~location ~errors ~target ~value =
@@ -4323,6 +4428,8 @@ module State (Context : Context) = struct
       ~resolved_value
       ~is_final
       value
+      ~aliases
+      ~variables
     =
     let { Node.value = { Define.signature = { parent; _ }; _ } as define; _ } = Context.define in
     let global_resolution = Resolution.global_resolution resolution in
@@ -4658,7 +4765,12 @@ module State (Context : Context) = struct
                 in
                 let check_enumeration_literal errors =
                   unwrapped_annotation_type
-                  >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
+                  >>| emit_invalid_enumeration_literal_errors
+                        ~resolution
+                        ~location
+                        ~errors
+                        ~aliases
+                        ~variables
                   |> Option.value ~default:errors
                 in
                 let check_previously_annotated errors =
@@ -5158,7 +5270,7 @@ module State (Context : Context) = struct
               Node.location;
             }
           in
-          forward_expression ~resolution setitem_callee_expression
+          forward_expression ~resolution setitem_callee_expression ~aliases ~variables
         in
         (* TODO(T187163267): Try to deduplicate some of this code with the forward_expression logic
            for resolving a callee. *)
@@ -5185,6 +5297,8 @@ module State (Context : Context) = struct
               ~resolution:resolution_after_callee
               ~errors:callee_errors
               { Call.Argument.value = index; name = None }
+              ~aliases
+              ~variables
           in
           let value_argument =
             {
@@ -5237,6 +5351,8 @@ module State (Context : Context) = struct
                 ~resolved_value
                 ~is_final
                 None
+                ~aliases
+                ~variables
           | _ ->
               let guide_annotation_type = uniform_sequence_parameter guide_annotation_type in
               let resolved_value = uniform_sequence_parameter resolved_value in
@@ -5250,6 +5366,8 @@ module State (Context : Context) = struct
                 ~resolved_value
                 ~is_final
                 None
+                ~aliases
+                ~variables
         in
         List.fold elements ~init:(resolution, errors) ~f:propagate
     | List elements
@@ -5345,7 +5463,9 @@ module State (Context : Context) = struct
                  ~guide_annotation_type
                  ~resolved_value:guide_annotation_type
                  ~is_final
-                 None)
+                 None
+                 ~aliases
+                 ~variables)
     | _ ->
         (* This branch should only be hit when a LHS is subscripted; currently Pyre won't check that
            case if it's part of a multi-assignment, because we only handle the cases the parser
@@ -5363,9 +5483,7 @@ module State (Context : Context) = struct
           resolution, errors
 
 
-  and forward_assignment ~resolution ~location ~target ~annotation ~value =
-    let global_resolution = Resolution.global_resolution resolution in
-
+  and forward_assignment ~resolution ~location ~target ~annotation ~value ~aliases ~variables =
     let errors, is_final, unwrapped_annotation_type =
       match annotation with
       | None -> [], false, None
@@ -5404,10 +5522,12 @@ module State (Context : Context) = struct
 
     match Node.value target, value with
     | Expression.Name (Name.Identifier _), Some value
-      when delocalize target
-           |> Expression.show
-           |> GlobalResolution.get_type_alias global_resolution
-           |> Option.is_some ->
+      when delocalize target |> Expression.show |> variables |> Option.is_some ->
+        (* The statement has been recognized as a type alias definition instead of an actual value
+           assignment. *)
+        forward_variable_alias_definition ~resolution ~location ~errors ~value
+    | Expression.Name (Name.Identifier _), Some value
+      when delocalize target |> Expression.show |> aliases |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)
         forward_type_alias_definition ~resolution ~location ~errors ~target ~value
@@ -5417,7 +5537,7 @@ module State (Context : Context) = struct
           match value with
           | Some value ->
               let { Resolved.resolution; errors = new_errors; resolved; _ } =
-                forward_expression ~resolution value
+                forward_expression ~resolution value ~aliases ~variables
               in
               resolution, List.append new_errors errors, resolved
           | None -> resolution, errors, Type.Any
@@ -5439,12 +5559,23 @@ module State (Context : Context) = struct
             ~resolved_value
             ~is_final
             value
+            ~aliases
+            ~variables
         in
         Value resolution, errors
 
 
   and resolve_expression ~resolution expression =
-    forward_expression ~resolution expression
+    let global_resolution = Resolution.global_resolution resolution in
+
+    let get_type_alias = GlobalResolution.get_type_alias global_resolution in
+    let variables name =
+      match get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
+      | Some (Type.Alias.VariableAlias variable) -> Some variable
+      | _ -> None
+    in
+
+    forward_expression ~resolution expression ~aliases:get_type_alias ~variables
     |> fun { Resolved.resolved; resolved_annotation; _ } ->
     resolved_annotation |> Option.value ~default:(TypeInfo.Unit.create_mutable resolved)
 
@@ -5465,7 +5596,14 @@ module State (Context : Context) = struct
     from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
 
 
-  and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
+  and emit_invalid_enumeration_literal_errors
+      ~resolution
+      ~location
+      ~errors
+      ~aliases
+      ~variables
+      annotation
+    =
     let invalid_enumeration_literals =
       let is_invalid_enumeration_member = function
         | Type.Literal (Type.EnumerationMember { enumeration_type; member_name }) ->
@@ -5490,7 +5628,7 @@ module State (Context : Context) = struct
                         }))
               in
               let { Resolved.resolved = resolved_member_type; _ } =
-                forward_expression ~resolution literal_expression
+                forward_expression ~resolution literal_expression ~aliases ~variables
               in
               GlobalResolution.less_or_equal
                 global_resolution
@@ -5510,27 +5648,38 @@ module State (Context : Context) = struct
             (Error.InvalidType (InvalidTypeAnnotation { annotation; expected = "an Enum member" })))
 
 
-  let forward_statement ~resolution ~statement:{ Node.location; value } =
+  let forward_statement ~resolution ~statement:{ Node.location; value } ~aliases ~variables =
     let global_resolution = Resolution.global_resolution resolution in
     let validate_return = validate_return ~location in
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
-        forward_assignment ~resolution ~location ~target ~annotation ~value
+        forward_assignment ~resolution ~location ~target ~annotation ~value ~aliases ~variables
     | AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment) ->
         (* lower augmented assignment to regular assignment *)
         let call = AugmentedAssign.lower ~location augmented_assignment in
-        forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some call)
+        forward_assignment
+          ~resolution
+          ~location
+          ~target
+          ~annotation:None
+          ~value:(Some call)
+          ~aliases
+          ~variables
     | Assert { Assert.test; origin; message } ->
         let message_errors =
           Option.value
             ~default:[]
-            (message >>| forward_expression ~resolution >>| fun { Resolved.errors; _ } -> errors)
+            (message
+            >>| forward_expression ~resolution ~aliases ~variables
+            >>| fun { Resolved.errors; _ } -> errors)
         in
-        let resolution, errors = forward_assert ~resolution ~origin test in
+        let resolution, errors = forward_assert ~resolution ~origin test ~aliases ~variables in
         resolution, message_errors @ errors
     | Delete expressions ->
         let process_expression (resolution, errors_sofar) expression =
-          let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
+          let { Resolved.resolution; errors; _ } =
+            forward_expression ~resolution expression ~aliases ~variables
+          in
           let resolution =
             match Node.value expression with
             | Name (Identifier identifier) ->
@@ -5546,10 +5695,10 @@ module State (Context : Context) = struct
     | Expression
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
-        forward_assert ~resolution test
+        forward_assert ~resolution test ~aliases ~variables
     | Expression expression ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution expression
+          forward_expression ~resolution expression ~aliases ~variables
         in
         if Type.is_noreturn_or_never resolved then
           Unreachable, errors
@@ -5557,7 +5706,7 @@ module State (Context : Context) = struct
           Value resolution, errors
     | Raise { Raise.expression = Some expression; _ } ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution expression
+          forward_expression ~resolution expression ~aliases ~variables
         in
         let expected = Type.Primitive "BaseException" in
         let actual =
@@ -5589,7 +5738,7 @@ module State (Context : Context) = struct
                 resolved_annotation = None;
                 base = None;
               }
-            ~f:(fun expression -> forward_expression ~resolution expression)
+            ~f:(fun expression -> forward_expression ~resolution expression ~aliases ~variables)
         in
         let actual =
           if define_signature.generator && not define_signature.async then
@@ -5894,7 +6043,7 @@ module State (Context : Context) = struct
 
     let get_type_alias = GlobalResolution.get_type_alias global_resolution in
 
-    let variable_aliases name =
+    let variables name =
       match get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
       | Some (Type.Alias.VariableAlias variable) -> Some variable
       | _ -> None
@@ -6017,7 +6166,7 @@ module State (Context : Context) = struct
             | _ -> errors)
         | None ->
             let { Resolved.errors = decorator_errors; _ } =
-              forward_expression ~resolution decorator
+              forward_expression ~resolution decorator ~aliases:get_type_alias ~variables
             in
             List.append decorator_errors errors
       in
@@ -6417,7 +6566,7 @@ module State (Context : Context) = struct
                   match value with
                   | Some value ->
                       let { Resolved.resolved; errors = value_errors; _ } =
-                        forward_expression ~resolution value
+                        forward_expression ~resolution value ~aliases:get_type_alias ~variables
                       in
                       Some resolved, value_errors @ errors
                   | None -> None, errors
@@ -6453,6 +6602,8 @@ module State (Context : Context) = struct
                         ~resolution
                         ~location
                         ~errors
+                        ~aliases:get_type_alias
+                        ~variables
                         annotation
                     in
                     errors, TypeInfo.Unit.create_immutable annotation
@@ -6614,8 +6765,8 @@ module State (Context : Context) = struct
           | Tuple _ ->
               errors
           | Any
-            when (GlobalResolution.base_is_from_placeholder_stub variable_aliases global_resolution)
-                   base ->
+            when (GlobalResolution.base_is_from_placeholder_stub variables global_resolution) base
+            ->
               errors
           | annotation ->
               emit_error
@@ -6779,7 +6930,7 @@ module State (Context : Context) = struct
             |> Node.create ~location
           in
           let { Resolved.errors = init_subclass_errors; _ } =
-            forward_expression ~resolution implicit_call
+            forward_expression ~resolution implicit_call ~aliases:get_type_alias ~variables
           in
           init_subclass_errors @ errors
       | None -> errors
@@ -7258,7 +7409,18 @@ module State (Context : Context) = struct
     match state with
     | Unreachable -> state
     | Value resolution ->
-        let post_resolution, errors = forward_statement ~resolution ~statement in
+        let global_resolution = Resolution.global_resolution resolution in
+
+        let aliases = GlobalResolution.get_type_alias global_resolution in
+        let variables name =
+          match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+          | Some (Type.Alias.VariableAlias variable) -> Some variable
+          | _ -> None
+        in
+
+        let post_resolution, errors =
+          forward_statement ~resolution ~statement ~aliases ~variables
+        in
         let () =
           let (_ : unit option) = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
           match post_resolution with
@@ -7324,15 +7486,23 @@ let resolution
     ?(type_info_store = TypeInfo.Store.empty)
     (module Context : Context)
   =
+  let get_type_alias = GlobalResolution.get_type_alias global_resolution in
+
+  let variables name =
+    match get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
+    | Some (Type.Alias.VariableAlias variable) -> Some variable
+    | _ -> None
+  in
+
   let module State = State (Context) in
   let resolve_expression ~resolution expression =
-    State.forward_expression ~resolution expression
+    State.forward_expression ~resolution expression ~aliases:get_type_alias ~variables
     |> fun { State.Resolved.resolved; resolved_annotation; resolution = new_resolution; _ } ->
     ( new_resolution,
       resolved_annotation |> Option.value ~default:(TypeInfo.Unit.create_mutable resolved) )
   in
   let resolve_statement ~resolution statement =
-    State.forward_statement ~resolution ~statement
+    State.forward_statement ~resolution ~statement ~aliases:get_type_alias ~variables
     |> fun (resolution, errors) ->
     match resolution with
     | Unreachable -> Resolution.Unreachable
