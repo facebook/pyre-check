@@ -25,4 +25,4 @@ type t = {
 
 module CodeSet : Stdlib.Set.S with type elt = int
 
-val transform_splits : 'a list -> ('a list * 'a list) list
+val transform_splits : TaintTransform.t list -> (TaintTransform.t list * TaintTransform.t list) list

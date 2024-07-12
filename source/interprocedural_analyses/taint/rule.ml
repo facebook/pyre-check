@@ -45,6 +45,13 @@ let transform_splits transforms =
     let result = (prefix, suffix) :: result in
     match suffix with
     | [] -> result
-    | next :: suffix -> split ~result ~prefix:(next :: prefix) ~suffix
+    | next :: suffix -> (
+        match next with
+        | TaintTransform.Named _ -> split ~result ~prefix:(next :: prefix) ~suffix
+        | TaintTransform.Sanitize _ -> failwith "Sanitize transforms shouldn't appear in rules"
+        | TaintTransform.TriggeredPartialSink _ ->
+            (* We don't allow transform `TriggeredPartialSink` to be prepended to sources, because
+               this transform can be added only when creating triggered partial sinks. *)
+            result)
   in
   split ~result:[] ~prefix:[] ~suffix:transforms

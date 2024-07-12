@@ -180,14 +180,56 @@ let test_transform _ =
 
 
 let test_transform_splits _ =
-  assert_equal [[], []] (Rule.transform_splits []);
-  assert_equal [["T1"], []; [], ["T1"]] (Rule.transform_splits ["T1"]);
-  assert_equal
-    [["T2"; "T1"], []; ["T1"], ["T2"]; [], ["T1"; "T2"]]
-    (Rule.transform_splits ["T1"; "T2"]);
-  assert_equal
-    [["T3"; "T2"; "T1"], []; ["T2"; "T1"], ["T3"]; ["T1"], ["T2"; "T3"]; [], ["T1"; "T2"; "T3"]]
-    (Rule.transform_splits ["T1"; "T2"; "T3"]);
+  let named_transforms names = List.map names ~f:(fun name -> TaintTransform.Named name) in
+  let assert_equal_splits =
+    assert_equal ~printer:(fun list ->
+        list
+        |> List.map ~f:(fun (prefix, suffix) ->
+               Format.asprintf
+                 "(%s, %s)"
+                 (TaintTransforms.show_transforms prefix)
+                 (TaintTransforms.show_transforms suffix))
+        |> String.concat ~sep:"; ")
+  in
+  assert_equal_splits [[], []] (Rule.transform_splits []);
+  assert_equal_splits
+    [named_transforms ["T1"], []; [], named_transforms ["T1"]]
+    (Rule.transform_splits (named_transforms ["T1"]));
+  assert_equal_splits
+    [[], [TaintTransform.TriggeredPartialSink { triggering_source = "A" }]]
+    (Rule.transform_splits [TaintTransform.TriggeredPartialSink { triggering_source = "A" }]);
+  assert_equal_splits
+    [
+      ( [],
+        [TaintTransform.TriggeredPartialSink { triggering_source = "A" }; TaintTransform.Named "T1"]
+      );
+    ]
+    (Rule.transform_splits
+       [TaintTransform.TriggeredPartialSink { triggering_source = "A" }; TaintTransform.Named "T1"]);
+  assert_equal_splits
+    [
+      [TaintTransform.Named "T1"], [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
+      ( [],
+        [TaintTransform.Named "T1"; TaintTransform.TriggeredPartialSink { triggering_source = "A" }]
+      );
+    ]
+    (Rule.transform_splits
+       [TaintTransform.Named "T1"; TaintTransform.TriggeredPartialSink { triggering_source = "A" }]);
+  assert_equal_splits
+    [
+      named_transforms ["T2"; "T1"], [];
+      named_transforms ["T1"], named_transforms ["T2"];
+      [], named_transforms ["T1"; "T2"];
+    ]
+    (Rule.transform_splits (named_transforms ["T1"; "T2"]));
+  assert_equal_splits
+    [
+      named_transforms ["T3"; "T2"; "T1"], [];
+      named_transforms ["T2"; "T1"], named_transforms ["T3"];
+      named_transforms ["T1"], named_transforms ["T2"; "T3"];
+      [], named_transforms ["T1"; "T2"; "T3"];
+    ]
+    (Rule.transform_splits (named_transforms ["T1"; "T2"; "T3"]));
   ()
 
 
@@ -2269,33 +2311,12 @@ let test_matching_kinds _ =
               Sinks.PartialSink "PartialSink1[b]";
               Sinks.create_triggered_sink ~triggering_source:"A" "PartialSink1[b]";
             ] );
-        ( Sources.create_triggered_source ~triggering_source:"D" (Sources.NamedSource "A"),
-          Sinks.Set.of_list [Sinks.PartialSink "PartialSink3[a]"] );
-        ( Sources.create_triggered_source ~triggering_source:"B" (Sources.NamedSource "A"),
-          Sinks.Set.of_list [Sinks.PartialSink "PartialSink1[a]"] );
-        ( Sources.create_triggered_source ~triggering_source:"A" (Sources.NamedSource "B"),
-          Sinks.Set.of_list [Sinks.PartialSink "PartialSink1[b]"] );
       ]
     ~matching_sources:
       [
-        ( Sinks.PartialSink "PartialSink1[a]",
-          Sources.Set.of_list
-            [
-              Sources.NamedSource "A";
-              Sources.create_triggered_source ~triggering_source:"B" (Sources.NamedSource "A");
-            ] );
-        ( Sinks.PartialSink "PartialSink1[b]",
-          Sources.Set.of_list
-            [
-              Sources.NamedSource "B";
-              Sources.create_triggered_source ~triggering_source:"A" (Sources.NamedSource "B");
-            ] );
-        ( Sinks.PartialSink "PartialSink3[a]",
-          Sources.Set.of_list
-            [
-              Sources.NamedSource "A";
-              Sources.create_triggered_source ~triggering_source:"D" (Sources.NamedSource "A");
-            ] );
+        Sinks.PartialSink "PartialSink1[a]", Sources.Set.of_list [Sources.NamedSource "A"];
+        Sinks.PartialSink "PartialSink1[b]", Sources.Set.of_list [Sources.NamedSource "B"];
+        Sinks.PartialSink "PartialSink3[a]", Sources.Set.of_list [Sources.NamedSource "A"];
         ( Sinks.create_triggered_sink ~triggering_source:"D" "PartialSink3[a]",
           Sources.Set.of_list [Sources.NamedSource "A"] );
         ( Sinks.create_triggered_sink ~triggering_source:"B" "PartialSink1[a]",

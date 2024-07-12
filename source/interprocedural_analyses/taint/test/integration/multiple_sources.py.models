@@ -2452,62 +2452,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "multiple_sources.no_sink_with_sanitizer",
-    "filename": "multiple_sources.py",
-    "callable_line": 134,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.combines_tests_and_context",
-                    "port": "leaf:test"
-                  }
-                ],
-                "kind": "NotSource[TestA]:NotSource[TestB]@PartialSink[ExpectsEitherTestA]"
-              },
-              {
-                "extra_traces": [
-                  {
-                    "message": "Subtrace for source PermissiveContext",
-                    "origin": { "line": 136, "start": 34, "end": 54 },
-                    "leaf_kind": "PermissiveContext",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources.combines_tests_and_context",
-                    "port": "leaf:test"
-                  }
-                ],
-                "kind": "NotSource[TestA]:NotSource[TestB]@Triggered[PermissiveContext]:PartialSink[ExpectsEitherTestA]"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 135, "start": 31, "end": 56 },
-              { "line": 135, "start": 54, "end": 55 }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 136,
-              "start": 31,
-              "end": 32
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "multiple_sources.permissive_context",
     "filename": "multiple_sources.py",
     "callable_line": 25,

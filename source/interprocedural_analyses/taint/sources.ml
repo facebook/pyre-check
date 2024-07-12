@@ -51,13 +51,6 @@ let make_transform ~local ~global ~base =
   | _ -> Transform { local; global; base }
 
 
-let create_triggered_source ~triggering_source source =
-  make_transform
-    ~local:[]
-    ~global:[TaintTransform.TriggeredPartialSink { triggering_source }]
-    ~base:source
-
-
 let ignore_kind_at_call = function
   | Attach -> true
   | _ -> false
