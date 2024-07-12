@@ -1331,34 +1331,36 @@ let from_json_list source_json_list =
       ~combined_source_taint:
         { CombinedSourceRulesTaint.first_sources; first_sink; second_sources; second_sink }
     =
-    let create_triggered_sinks ~partial_sink =
+    let create_transforms =
       List.map ~f:(fun source ->
           source
           |> Sources.as_triggering_source
           |> Option.value_exn
                ~message:(Format.asprintf "Expect %a to be a triggering source" Sources.pp source)
-          |> fun triggering_source -> Sinks.TriggeredPartialSink { partial_sink; triggering_source })
+          |> fun triggering_source -> TaintTransform.TriggeredPartialSink { triggering_source })
     in
-    ( {
-        Rule.sources = second_sources;
-        sinks = create_triggered_sinks ~partial_sink:second_sink first_sources;
-        transforms = [];
-        name;
-        code;
-        message_format;
-        filters;
-        location = Some location;
-      },
-      {
-        Rule.sources = first_sources;
-        sinks = create_triggered_sinks ~partial_sink:first_sink second_sources;
-        transforms = [];
-        name;
-        code;
-        message_format;
-        filters;
-        location = Some location;
-      },
+    let create_rule_per_transform ~sources ~sinks ~transforms =
+      List.map transforms ~f:(fun transform ->
+          {
+            Rule.sources;
+            sinks;
+            transforms = [transform];
+            name;
+            code;
+            message_format;
+            filters;
+            location = Some location;
+          })
+    in
+    ( List.rev_append
+        (create_rule_per_transform
+           ~sources:second_sources
+           ~sinks:[Sinks.PartialSink second_sink]
+           ~transforms:(create_transforms first_sources))
+        (create_rule_per_transform
+           ~sources:first_sources
+           ~sinks:[Sinks.PartialSink first_sink]
+           ~transforms:(create_transforms second_sources)),
       PartialSinkConverter.add
         partial_sink_converter
         ~first_sources
@@ -1382,7 +1384,7 @@ let from_json_list source_json_list =
     >>= fun rule_common_attributues ->
     CombinedSourceRulesTaint.parse_combined_source_rule ~allowed_sources ~path json
     >>= fun combined_source_taint ->
-    let first_rule, second_rule, partial_sink_converter, registered_partial_sinks =
+    let rules, partial_sink_converter, registered_partial_sinks =
       create_combined_source_rules_and_update_partial_sinks
         ~partial_sink_converter
         ~registered_partial_sinks
@@ -1392,7 +1394,7 @@ let from_json_list source_json_list =
     Result.Ok
       {
         CombinedSourceRules.generated_combined_rules =
-          first_rule :: second_rule :: generated_combined_rules;
+          List.rev_append rules generated_combined_rules;
         partial_sink_converter;
         registered_partial_sinks;
         string_combine_partial_sinks;
@@ -1419,7 +1421,7 @@ let from_json_list source_json_list =
     >>= fun rule_common_attributues ->
     CombinedSourceRulesTaint.parse_string_combine_rule ~allowed_sources ~path json
     >>= fun ({ CombinedSourceRulesTaint.first_sink; second_sink; _ } as combined_source_taint) ->
-    let first_rule, second_rule, partial_sink_converter, registered_partial_sinks =
+    let rules, partial_sink_converter, registered_partial_sinks =
       create_combined_source_rules_and_update_partial_sinks
         ~partial_sink_converter
         ~registered_partial_sinks
@@ -1429,7 +1431,7 @@ let from_json_list source_json_list =
     Result.Ok
       {
         CombinedSourceRules.generated_combined_rules =
-          first_rule :: second_rule :: generated_combined_rules;
+          List.rev_append rules generated_combined_rules;
         partial_sink_converter;
         registered_partial_sinks;
         string_combine_partial_sinks =

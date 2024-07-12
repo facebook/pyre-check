@@ -2707,8 +2707,6 @@ let extract_tito_and_sink_models
         match sink with
         | Sinks.LocalReturn
         | Sinks.ParameterUpdate _
-        (* For now, we don't propagate partial sinks at all. *)
-        | Sinks.PartialSink _
         | Sinks.Attach ->
             accumulator
         | _ ->

@@ -57,16 +57,16 @@ def no_issue_with_wrong_label():
     demonstrate_triggered_input(vc)
 
 
-def wrapper(id, vc):
+def wrapper_node_get_send(id, vc):
     Node.get(id).send(vc)
 
 
-def no_issue_with_wrapper_call():
+def issue_with_wrapper_node_get_send():
     id = user_controlled_input()
     vc = permissive_context()
     # Since we do not propagate the untriggered partial sinks,
     # we miss the issue here
-    wrapper(id, vc)
+    wrapper_node_get_send(id, vc)
 
 
 def test_other_input():
@@ -179,16 +179,15 @@ def multiple_triggered_context(vc):
     Node.get(id2).send(vc)
 
 
-def false_negative_triggered_context(vc):
+def wrapper_node_get_send_triggered_context(vc):
     id = user_controlled_input()
-    # Since we do not propagate the untriggered partial sinks,
-    # we do not trigger a partial sink here
-    wrapper(id, vc)
+    # We should see a triggered partial sink here
+    wrapper_node_get_send(id, vc)
 
 
-def no_issue_with_wrapper_call_2():
+def issue_with_wrapper_node_get_send_triggered_context():
     vc = permissive_context()
-    false_negative_triggered_context(vc)
+    wrapper_node_get_send_triggered_context(vc)
 
 
 # Share both partial sink kinds in multiple rules

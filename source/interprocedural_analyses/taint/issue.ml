@@ -286,10 +286,18 @@ let generate_issues
     in
     let apply_transforms { Flow.source_taint; sink_taint } =
       let taint_by_source_transforms =
-        ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_named_transforms
+        ForwardTaint.partition
+          ForwardTaint.kind
+          By
+          source_taint
+          ~f:Sources.get_non_sanitize_transforms
       in
       let taint_by_sink_transforms =
-        BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:Sinks.get_named_transforms
+        BackwardTaint.partition
+          BackwardTaint.kind
+          By
+          sink_taint
+          ~f:Sinks.get_non_sanitize_transforms
       in
       let find_flow source_transforms sink_transforms =
         Map.Poly.find taint_by_source_transforms source_transforms
@@ -397,7 +405,7 @@ module TriggeredSinkForCall = struct
         Some
           (BackwardTaint.singleton
              call_info
-             (Sinks.TriggeredPartialSink { partial_sink; triggering_source = source })
+             (Sinks.create_triggered_sink ~triggering_source:source partial_sink)
              Frame.initial
           |> BackwardTaint.transform
                ExtraTraceFirstHop.Set.Self

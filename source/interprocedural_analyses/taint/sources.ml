@@ -51,6 +51,13 @@ let make_transform ~local ~global ~base =
   | _ -> Transform { local; global; base }
 
 
+let create_triggered_source ~triggering_source source =
+  make_transform
+    ~local:[]
+    ~global:[TaintTransform.TriggeredPartialSink { triggering_source }]
+    ~base:source
+
+
 let ignore_kind_at_call = function
   | Attach -> true
   | _ -> false
@@ -164,6 +171,12 @@ let extract_sanitize_transforms = function
 let get_named_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_named_transforms
+  | _ -> []
+
+
+let get_non_sanitize_transforms = function
+  | Transform { local; global; _ } ->
+      TaintTransforms.merge ~local ~global |> TaintTransforms.get_non_sanitize_transforms
   | _ -> []
 
 

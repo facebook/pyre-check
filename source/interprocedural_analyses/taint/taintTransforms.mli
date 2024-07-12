@@ -26,6 +26,8 @@ val of_named_transforms : TaintTransform.t list -> t
 
 val get_named_transforms : t -> TaintTransform.t list
 
+val get_non_sanitize_transforms : t -> TaintTransform.t list
+
 (* Split a list of transforms into sanitizers present at the beginning and the rest. *)
 val split_sanitizers : t -> SanitizeTransformSet.t * t
 

@@ -20,6 +20,8 @@ val show : t -> string
 
 val is_named_transform : t -> bool
 
+val is_non_sanitize_transform : t -> bool
+
 val is_sanitize_transforms : t -> bool
 
 val get_sanitize_transforms : t -> SanitizeTransformSet.t option

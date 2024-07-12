@@ -40,6 +40,8 @@ let of_named_transforms transforms = transforms
 
 let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
 
+let get_non_sanitize_transforms = List.filter ~f:TaintTransform.is_non_sanitize_transform
+
 (* Split a list of transforms into sanitizers present at the beginning and the rest. *)
 let split_sanitizers transforms =
   (* Note that there might be consecutive `TaintTransform.Sanitize` elements. *)

@@ -45,6 +45,7 @@ module MatchingSanitizeTransforms : sig
      * for instance if it contains a transform, or a (triggered) partial sink. *)
     sanitizable: bool;
   }
+  [@@deriving show]
 end
 
 val matching_source_sanitize_transforms

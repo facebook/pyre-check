@@ -73,8 +73,8 @@ let assert_rules_equal ~actual ~expected =
   assert_equal
     ~printer:(fun rules -> rules |> List.map ~f:Rule.show |> String.concat ~sep:"\n")
     ~cmp:(List.equal [%compare.equal: Rule.t])
-    expected
-    actual
+    (List.sort ~compare:Rule.compare expected)
+    (List.sort ~compare:Rule.compare actual)
 
 
 let without_locations sources_or_sinks =
@@ -452,8 +452,8 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "B"];
-          sinks = [Sinks.TriggeredPartialSink { partial_sink = "CB"; triggering_source = "A" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "CB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -471,8 +471,8 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks = [Sinks.TriggeredPartialSink { partial_sink = "CA"; triggering_source = "B" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "CA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "B" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -538,9 +538,8 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "CombinedSinkB"; triggering_source = "A" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "CombinedSinkB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -558,12 +557,27 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink { partial_sink = "CombinedSinkA"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink { partial_sink = "CombinedSinkA"; triggering_source = "C" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "CombinedSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "B" }];
+          code = 2001;
+          message_format = "some form";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 11; column = 20 };
+                    stop = { line = 11; column = 23 };
+                  };
+              };
+          name = "test combined rule";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.PartialSink "CombinedSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "C" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -632,9 +646,8 @@ let test_combined_source_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "D"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestSinkB"; triggering_source = "A" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestSinkB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2002;
           message_format = "other form";
           filters = None;
@@ -652,9 +665,8 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestSinkA"; triggering_source = "D" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "D" }];
           code = 2002;
           message_format = "other form";
           filters = None;
@@ -672,9 +684,8 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "B"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestSinkB"; triggering_source = "A" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestSinkB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -692,9 +703,8 @@ let test_combined_source_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestSinkA"; triggering_source = "B" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "B" }];
           code = 2001;
           message_format = "some form";
           filters = None;
@@ -935,14 +945,27 @@ let test_string_combine_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSinkA"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSinkA"; triggering_source = "C" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "B" }];
+          code = 2001;
+          message_format = "rule message";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 11; column = 20 };
+                    stop = { line = 11; column = 23 };
+                  };
+              };
+          name = "rule name";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSinkA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "C" }];
           code = 2001;
           message_format = "rule message";
           filters = None;
@@ -960,12 +983,8 @@ let test_string_combine_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSinkBC"; triggering_source = "A" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSinkBC"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2001;
           message_format = "rule message";
           filters = None;
@@ -1039,37 +1058,8 @@ let test_string_combine_rules _ =
       [
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink1"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink1"; triggering_source = "C" };
-            ];
-          transforms = [];
-          code = 2001;
-          message_format = "rule message 1";
-          filters = None;
-          location =
-            Some
-              {
-                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
-                location =
-                  {
-                    JsonParsing.JsonAst.Location.start = { line = 11; column = 21 };
-                    stop = { line = 11; column = 24 };
-                  };
-              };
-          name = "rule name 1";
-        };
-        {
-          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink2"; triggering_source = "A" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink1"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "B" }];
           code = 2001;
           message_format = "rule message 1";
           filters = None;
@@ -1087,14 +1077,65 @@ let test_string_combine_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "A"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink1"; triggering_source = "C" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink1"; triggering_source = "D" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink1"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "C" }];
+          code = 2001;
+          message_format = "rule message 1";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 11; column = 21 };
+                    stop = { line = 11; column = 24 };
+                  };
+              };
+          name = "rule name 1";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink2"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
+          code = 2001;
+          message_format = "rule message 1";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 11; column = 21 };
+                    stop = { line = 11; column = 24 };
+                  };
+              };
+          name = "rule name 1";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink1"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "C" }];
+          code = 2002;
+          message_format = "rule message 2";
+          filters = None;
+          location =
+            Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 26; column = 21 };
+                    stop = { line = 26; column = 24 };
+                  };
+              };
+          name = "rule name 2";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink1"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "D" }];
           code = 2002;
           message_format = "rule message 2";
           filters = None;
@@ -1112,12 +1153,8 @@ let test_string_combine_rules _ =
         };
         {
           Rule.sources = [Sources.NamedSource "C"; Sources.NamedSource "D"];
-          sinks =
-            [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "UserDefinedPartialSink2"; triggering_source = "A" };
-            ];
-          transforms = [];
+          sinks = [Sinks.PartialSink "UserDefinedPartialSink2"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "A" }];
           code = 2002;
           message_format = "rule message 2";
           filters = None;
@@ -2221,26 +2258,50 @@ let test_matching_kinds _ =
         ( Sources.NamedSource "A",
           Sinks.Set.of_list
             [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "PartialSink1[a]"; triggering_source = "B" };
-              Sinks.TriggeredPartialSink
-                { partial_sink = "PartialSink3[a]"; triggering_source = "D" };
+              Sinks.PartialSink "PartialSink1[a]";
+              Sinks.PartialSink "PartialSink3[a]";
+              Sinks.create_triggered_sink ~triggering_source:"B" "PartialSink1[a]";
+              Sinks.create_triggered_sink ~triggering_source:"D" "PartialSink3[a]";
             ] );
         ( Sources.NamedSource "B",
           Sinks.Set.of_list
             [
-              Sinks.TriggeredPartialSink
-                { partial_sink = "PartialSink1[b]"; triggering_source = "A" };
+              Sinks.PartialSink "PartialSink1[b]";
+              Sinks.create_triggered_sink ~triggering_source:"A" "PartialSink1[b]";
             ] );
+        ( Sources.create_triggered_source ~triggering_source:"D" (Sources.NamedSource "A"),
+          Sinks.Set.of_list [Sinks.PartialSink "PartialSink3[a]"] );
+        ( Sources.create_triggered_source ~triggering_source:"B" (Sources.NamedSource "A"),
+          Sinks.Set.of_list [Sinks.PartialSink "PartialSink1[a]"] );
+        ( Sources.create_triggered_source ~triggering_source:"A" (Sources.NamedSource "B"),
+          Sinks.Set.of_list [Sinks.PartialSink "PartialSink1[b]"] );
       ]
     ~matching_sources:
       [
-        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink1[a]"; triggering_source = "B" },
+        ( Sinks.PartialSink "PartialSink1[a]",
+          Sources.Set.of_list
+            [
+              Sources.NamedSource "A";
+              Sources.create_triggered_source ~triggering_source:"B" (Sources.NamedSource "A");
+            ] );
+        ( Sinks.PartialSink "PartialSink1[b]",
+          Sources.Set.of_list
+            [
+              Sources.NamedSource "B";
+              Sources.create_triggered_source ~triggering_source:"A" (Sources.NamedSource "B");
+            ] );
+        ( Sinks.PartialSink "PartialSink3[a]",
+          Sources.Set.of_list
+            [
+              Sources.NamedSource "A";
+              Sources.create_triggered_source ~triggering_source:"D" (Sources.NamedSource "A");
+            ] );
+        ( Sinks.create_triggered_sink ~triggering_source:"D" "PartialSink3[a]",
           Sources.Set.of_list [Sources.NamedSource "A"] );
-        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink1[b]"; triggering_source = "A" },
+        ( Sinks.create_triggered_sink ~triggering_source:"B" "PartialSink1[a]",
+          Sources.Set.of_list [Sources.NamedSource "A"] );
+        ( Sinks.create_triggered_sink ~triggering_source:"A" "PartialSink1[b]",
           Sources.Set.of_list [Sources.NamedSource "B"] );
-        ( Sinks.TriggeredPartialSink { partial_sink = "PartialSink3[a]"; triggering_source = "D" },
-          Sources.Set.of_list [Sources.NamedSource "A"] );
       ]
     ~possible_tito_transforms:[TaintTransforms.empty]
     ();

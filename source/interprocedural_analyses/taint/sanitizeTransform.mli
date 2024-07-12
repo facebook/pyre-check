@@ -16,6 +16,7 @@ end
 type t =
   | Source of Source.t
   | Sink of Sink.t
+[@@deriving show]
 
 module type S = sig
   type elt

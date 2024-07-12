@@ -53,6 +53,8 @@ val name : string
 
 val make_transform : local:TaintTransforms.t -> global:TaintTransforms.t -> base:t -> t
 
+val create_triggered_sink : triggering_source:string -> PartialSink.t -> t
+
 val ignore_kind_at_call : t -> bool
 
 val apply_call : t -> t
@@ -90,5 +92,7 @@ val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 val extract_partial_sink : t -> PartialSink.t option
 
 val get_named_transforms : t -> TaintTransform.t list
+
+val get_non_sanitize_transforms : t -> TaintTransform.t list
 
 val contains_sanitize_transforms : t -> SanitizeTransformSet.t -> bool

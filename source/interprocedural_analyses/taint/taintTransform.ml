@@ -38,6 +38,13 @@ let is_named_transform = function
       false
 
 
+let is_non_sanitize_transform = function
+  | Named _
+  | TriggeredPartialSink _ ->
+      true
+  | Sanitize _ -> false
+
+
 let is_sanitize_transforms = function
   | Named _
   | TriggeredPartialSink _ ->
