@@ -333,6 +333,17 @@ let is_consistent_with ({ global_resolution; _ } as resolution) =
 
 let global_resolution { global_resolution; _ } = global_resolution
 
+let get_type_alias resolution =
+  let global_resolution = global_resolution resolution in
+  GlobalResolution.get_type_alias global_resolution
+
+
+let variables resolution name =
+  match get_type_alias ?replace_unbound_parameters_with_any:(Some true) resolution name with
+  | Some (Type.Alias.VariableAlias variable) -> Some variable
+  | _ -> None
+
+
 let fallback_attribute
     ?(accessed_through_class = false)
     ?(instantiated = None)

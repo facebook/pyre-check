@@ -128,6 +128,8 @@ val is_consistent_with : t -> Type.t -> Type.t -> expression:Ast.Expression.t op
 
 val global_resolution : t -> GlobalResolution.t
 
+val variables : t -> string -> Type.Variable.Declaration.t option
+
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  ?accessed_through_class:bool ->
