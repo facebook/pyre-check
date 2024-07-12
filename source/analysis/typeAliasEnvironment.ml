@@ -118,7 +118,7 @@ module IncomingDataComputation = struct
   end
 
   type extracted =
-    | VariableAlias of Type.Variable.t
+    | VariableAlias of Type.Variable.Declaration.t
     | TypeAlias of UnresolvedAlias.t
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
@@ -152,7 +152,7 @@ module IncomingDataComputation = struct
                   _;
                 } )
           | (BinaryOperator _ | Subscript _ | Call _ | Name _), None -> (
-              match Type.Variable.parse_declaration (delocalize value) ~target:name with
+              match Type.Variable.Declaration.parse (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->
                   let variable_aliases _ = None in
@@ -321,9 +321,10 @@ module OutgoingDataComputation = struct
       ~kwargs_annotation
       ()
     =
-    let get_param_spec name =
-      match get_type_alias ?replace_unbound_parameters_with_any:(Some false) name with
-      | Some (Type.Alias.VariableAlias (ParamSpecVariable variable)) -> Some variable
+    let get_param_spec variable_name =
+      match get_type_alias variable_name with
+      | Some (Type.Alias.VariableAlias (Type.Variable.Declaration.DParamSpec { name })) ->
+          Some (Type.Variable.ParamSpec.create name)
       | _ -> None
     in
     Type.Variable.ParamSpec.of_component_annotations

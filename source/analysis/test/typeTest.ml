@@ -12,20 +12,22 @@ open Analysis
 open Pyre
 open Test
 
-let variable_aliases name =
-  let create_type_var name =
-    Some (Type.Record.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name))
-  in
-  let create_param_spec name =
-    Some (Type.Record.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
-  in
-  match name with
-  | "Ts" -> create_type_var "Ts"
-  | "Ts2" -> create_type_var "Ts2"
-  | ".Ts" -> create_type_var ".Ts"
-  | "TParams" -> create_param_spec "TParams"
-  | ".TParams" -> create_param_spec ".TParams"
-  | _ -> None
+let type_var_declaration_and_variable
+    ?(declaration_constraints = Type.Variable.Unconstrained)
+    ?(type_constraints = Type.Variable.Unconstrained)
+    ?(variance = Type.Variable.Invariant)
+    name
+  =
+  ( Type.Variable.Declaration.DTypeVar { name; constraints = declaration_constraints; variance },
+    Type.Variable.TypeVar.create name ~constraints:type_constraints ~variance )
+
+
+let type_var_tuple_declaration_and_variable name =
+  Type.Variable.Declaration.DTypeVarTuple { name }, Type.Variable.TypeVarTuple.create name
+
+
+let param_spec_declaration_and_variable name =
+  Type.Variable.Declaration.DParamSpec { name }, Type.Variable.ParamSpec.create name
 
 
 let empty_head variable = { Type.Callable.head = []; variable }
@@ -40,17 +42,20 @@ let make_callable_from_arguments annotations =
        annotations)
 
 
+let make_variables ~aliases name =
+  match aliases name with
+  | Some (Type.Alias.VariableAlias variable) -> Some variable
+  | _ -> None
+
+
 let assert_create ?(aliases = fun _ -> None) source annotation =
   let aliases ?replace_unbound_parameters_with_any:_ = aliases in
-
+  let variables = make_variables ~aliases in
   assert_equal
     ~printer:Type.show
     ~cmp:Type.equal
     annotation
-    (Type.create
-       ~variables:variable_aliases
-       ~aliases
-       (parse_single_expression ~preprocess:true source))
+    (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
 
 
 let test_create _ =
@@ -414,19 +419,17 @@ let test_create_alias _ =
 let test_create_type_operator _ =
   let assert_create ?(aliases = fun _ -> None) source annotation =
     let aliases ?replace_unbound_parameters_with_any:_ = aliases in
+    let variables = make_variables ~aliases in
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create
-         ~variables:variable_aliases
-         ~aliases
-         (parse_single_expression ~preprocess:true source))
+      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
   in
 
   (* Compose. *)
-  let variable = Type.Variable.TypeVar.create "T" in
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let _t_declaration, t_variable = type_var_declaration_and_variable "T" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   assert_create
     {|
       pyre_extensions.Compose[
@@ -454,7 +457,7 @@ let test_create_type_operator _ =
              ])));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     {|
       pyre_extensions.Compose[
@@ -469,7 +472,7 @@ let test_create_type_operator _ =
              (Type.OrderedTypes.Concatenation.create
                 ~prefix:[Type.integer]
                 ~suffix:[Type.string]
-                variadic))));
+                ts_variable))));
   assert_create
     "pyre_extensions.Compose[typing.Callable[[int], int], ...]"
     (Type.TypeOperation
@@ -481,7 +484,7 @@ let test_create_type_operator _ =
                    ~annotation:Type.integer
                    ())))));
   let aliases = function
-    | "T" -> Some (Type.Variable variable)
+    | "T" -> Some (Type.Variable t_variable)
     | _ -> None
   in
   let aliases = create_type_alias_table aliases in
@@ -492,7 +495,7 @@ let test_create_type_operator _ =
        (Type.TypeOperation.Compose
           (Concrete
              [
-               Type.Variable variable;
+               Type.Variable t_variable;
                Type.Parametric { name = "Foo"; parameters = [Type.Parameter.Single Type.integer] };
                Type.Callable.create
                  ~parameters:
@@ -564,7 +567,7 @@ let test_create_type_operator _ =
              ])));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     {|
       pyre_extensions.Compose[
@@ -588,47 +591,46 @@ let test_create_type_operator _ =
 let test_create_variadic_tuple _ =
   let assert_create ?(aliases = fun _ -> None) source annotation =
     let aliases ?replace_unbound_parameters_with_any:_ = aliases in
-
+    let variables = make_variables ~aliases in
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create
-         ~variables:variable_aliases
-         ~aliases
-         (parse_single_expression ~preprocess:true source))
+      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
   in
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
-  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
+  let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   (* Parametric types. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "Foo[typing.Unpack[Ts]]"
-    (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]);
+    (Type.parametric
+       "Foo"
+       [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable)]);
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "Foo[int, typing.Unpack[Ts], str]"
     (Type.parametric
        "Foo"
        [
          Single Type.integer;
-         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
          Single Type.string;
        ]);
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "Foo[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.parametric "Foo" [Single Type.integer; Single Type.string]);
   (* Nested unpacks get normalized. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "Foo[int, typing.Unpack[typing.Tuple[str, typing.Unpack[Ts]]]]"
     (Type.parametric
@@ -636,7 +638,7 @@ let test_create_variadic_tuple _ =
        [
          Single Type.integer;
          Single Type.string;
-         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
        ]);
   assert_create
     "Foo[typing.Unpack[typing.Tuple[int, ...]]]"
@@ -647,13 +649,13 @@ let test_create_variadic_tuple _ =
   (* Tuples. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts]]"
-    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
+    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create ts_variable)));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Tuple[int, typing.Unpack[Ts], str]"
     (Type.Tuple
@@ -661,23 +663,23 @@ let test_create_variadic_tuple _ =
           (Type.OrderedTypes.Concatenation.create
              ~prefix:[Type.integer]
              ~suffix:[Type.string]
-             variadic)));
+             ts_variable)));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts], typing.Unpack[Ts]]"
     Type.Top;
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.tuple [Type.integer; Type.string]);
   (* Nested concrete unpacks get normalized. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Tuple[bool, typing.Unpack[typing.Tuple[int, typing.Unpack[typing.Tuple[int, str]]]]]"
     (Type.tuple [Type.bool; Type.integer; Type.integer; Type.string]);
@@ -685,7 +687,7 @@ let test_create_variadic_tuple _ =
   (* Callables. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Callable[[int, typing.Unpack[Ts], str], int]"
     (Type.Callable.create
@@ -697,13 +699,13 @@ let test_create_variadic_tuple _ =
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.integer]
                       ~suffix:[Type.string]
-                      variadic));
+                      ts_variable));
             ])
        ~annotation:Type.integer
        ());
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (VariableAlias ts_declaration)
       | _ -> None)
     "typing.Callable[[int, typing.Unpack[typing.Tuple[bool, typing.Unpack[Ts], bool]], str], int]"
     (Type.Callable.create
@@ -715,14 +717,14 @@ let test_create_variadic_tuple _ =
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.integer; Type.bool]
                       ~suffix:[Type.bool; Type.string]
-                      variadic));
+                      ts_variable));
             ])
        ~annotation:Type.integer
        ());
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
+      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts2" -> Some (VariableAlias ts2_declaration)
       | _ -> None)
     "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Callable[[Variable(int, \
      typing.Unpack[Ts2], str)], int]]"
@@ -735,7 +737,7 @@ let test_create_variadic_tuple _ =
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.integer]
                       ~suffix:[Type.string]
-                      variadic));
+                      ts_variable));
             ])
        ~annotation:
          (Type.Callable.create
@@ -747,7 +749,7 @@ let test_create_variadic_tuple _ =
                         (Type.OrderedTypes.Concatenation.create
                            ~prefix:[Type.integer]
                            ~suffix:[Type.string]
-                           variadic2));
+                           ts2_variable));
                  ])
             ~annotation:Type.integer
             ())
@@ -868,16 +870,15 @@ let test_resolve_aliases _ =
     | _ -> None
   in
   assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
-  let parameter_variadic = Type.Variable.ParamSpec.create "TParams" in
+  let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let aliases = function
-    | "TParams" ->
-        Some (Type.Alias.VariableAlias (Type.Variable.ParamSpecVariable parameter_variadic))
+    | "TParams" -> Some (Type.Alias.VariableAlias tparams_declaration)
     | "FooParamSpec" ->
         Some
           (Type.Alias.TypeAlias
              (Type.parametric
                 "Bar"
-                [CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic)]))
+                [CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable)]))
     | _ -> None
   in
   assert_resolved
@@ -897,9 +898,9 @@ let test_resolve_aliases _ =
     ~aliases
     (Type.Primitive "FooParamSpec")
     (Type.parametric "Bar" [CallableParameters Undefined]);
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let aliases = function
-    | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+    | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
     | "FloatTensor" ->
         Some
           (Type.Alias.TypeAlias
@@ -907,7 +908,7 @@ let test_resolve_aliases _ =
                 "Tensor"
                 [
                   Single Type.float;
-                  Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+                  Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
                 ]))
     | _ -> None
   in
@@ -1738,9 +1739,10 @@ let test_dequalify _ =
 
 let test_from_overloads _ =
   let assert_create ?(aliases = Type.empty_aliases) sources expected =
+    let variables = make_variables ~aliases in
     let merged =
       let parse_callable source =
-        match Type.create ~variables:variable_aliases ~aliases (parse_single_expression source) with
+        match Type.create ~variables ~aliases (parse_single_expression source) with
         | Type.Callable callable -> callable
         | _ -> failwith ("Could not extract callable from " ^ source)
       in
@@ -1753,7 +1755,7 @@ let test_from_overloads _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (Type.create ~variables:variable_aliases ~aliases (parse_single_expression expected))
+      (Type.create ~variables ~aliases (parse_single_expression expected))
       merged
   in
   assert_create
@@ -1772,19 +1774,16 @@ let test_from_overloads _ =
 let test_with_return_annotation _ =
   let assert_with_return_annotation annotation callable expected =
     let aliases = Type.empty_aliases in
-
+    let variables = make_variables ~aliases in
     let callable =
-      match Type.create ~variables:variable_aliases ~aliases (parse_single_expression callable) with
+      match Type.create ~variables ~aliases (parse_single_expression callable) with
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
     in
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (Type.create
-         ~variables:variable_aliases
-         ~aliases:Type.empty_aliases
-         (parse_single_expression expected))
+      (Type.create ~variables ~aliases:Type.empty_aliases (parse_single_expression expected))
       (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
   assert_with_return_annotation
@@ -1800,9 +1799,9 @@ let test_with_return_annotation _ =
 let test_overload_parameters _ =
   let assert_parameters callable expected =
     let aliases = Type.empty_aliases in
-
+    let variables = make_variables ~aliases in
     let { Type.Callable.overloads; _ } =
-      Type.create ~variables:variable_aliases ~aliases (parse_single_expression callable)
+      Type.create ~variables ~aliases (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
@@ -1830,9 +1829,9 @@ let test_variables _ =
       Map.find aliases
     in
     let aliases = create_type_alias_table aliases in
-
+    let variables = make_variables ~aliases in
     let variables =
-      Type.create ~variables:variable_aliases ~aliases (parse_single_expression source)
+      Type.create ~variables ~aliases (parse_single_expression source)
       |> Type.Variable.all_free_variables
       |> List.filter_map ~f:(function
              | Type.Variable.TypeVarVariable variable -> Some variable
@@ -1893,17 +1892,17 @@ let test_visit _ =
   end)
   in
   let end_state, transformed =
-    CountTransform.visit 0 (create ~variables:variable_aliases "typing.List[int]")
+    CountTransform.visit 0 (create ~variables:(fun _ -> None) "typing.List[int]")
   in
   assert_types_equal transformed Type.integer;
   assert_equal ~printer:string_of_int 2 end_state;
   let end_state, transformed =
-    CountTransform.visit 0 (create ~variables:variable_aliases "Foo[Bar[Baz, Bop], Bang]")
+    CountTransform.visit 0 (create ~variables:(fun _ -> None) "Foo[Bar[Baz, Bop], Bang]")
   in
   assert_types_equal transformed Type.integer;
   assert_equal ~printer:string_of_int 5 end_state;
   let end_state, transformed =
-    CountTransform.visit 0 (create ~variables:variable_aliases "typing.Literal[test.MyEnum.ONE]")
+    CountTransform.visit 0 (create ~variables:(fun _ -> None) "typing.Literal[test.MyEnum.ONE]")
   in
   assert_types_equal transformed Type.integer;
   assert_equal ~printer:string_of_int 2 end_state;
@@ -1951,18 +1950,18 @@ let test_visit _ =
   end)
   in
   let end_state, transformed =
-    SubstitutionTransform.visit 1 (create ~variables:variable_aliases "typing.Callable[[int], int]")
+    SubstitutionTransform.visit 1 (create ~variables:(fun _ -> None) "typing.Callable[[int], int]")
   in
-  assert_types_equal transformed (create ~variables:variable_aliases "typing.Callable[[str], int]");
+  assert_types_equal transformed (create ~variables:(fun _ -> None) "typing.Callable[[str], int]");
   assert_equal ~printer:string_of_int 0 end_state;
   let end_state, transformed =
     SubstitutionTransform.visit
       1
-      (create ~variables:variable_aliases "typing.Callable[[typing.Optional[int], int], int]")
+      (create ~variables:(fun _ -> None) "typing.Callable[[typing.Optional[int], int], int]")
   in
   assert_types_equal
     transformed
-    (create ~variables:variable_aliases "typing.Callable[[typing.Optional[int], str], int]");
+    (create ~variables:(fun _ -> None) "typing.Callable[[typing.Optional[int], str], int]");
   assert_equal ~printer:string_of_int 0 end_state;
   let module ConcatenateTransform = Type.VisitWithTransform.Make (struct
     type state = string
@@ -1985,12 +1984,12 @@ let test_visit _ =
   let end_state, transformed =
     ConcatenateTransform.visit
       ""
-      (create ~variables:variable_aliases "Foo[Bar[Baz, Bop], Bro[Loop, typing.Optional[Land]]]")
+      (create ~variables:(fun _ -> None) "Foo[Bar[Baz, Bop], Bro[Loop, typing.Optional[Land]]]")
   in
   assert_types_equal
     transformed
     (create
-       ~variables:variable_aliases
+       ~variables:(fun _ -> None)
        "Foo[BarBazBop[Baz, Bop], BroLoopLand[Loop, typing.Optional[Land]]]");
   assert_equal "" end_state;
   let module TopDownConcatenateTransform = Type.VisitWithTransform.Make (struct
@@ -2014,11 +2013,11 @@ let test_visit _ =
   let end_state, transformed =
     TopDownConcatenateTransform.visit
       ""
-      (create ~variables:variable_aliases "Foo[Bar[Bro[typing.Optional[Land]]]]")
+      (create ~variables:(fun _ -> None) "Foo[Bar[Bro[typing.Optional[Land]]]]")
   in
   assert_types_equal
     transformed
-    (create ~variables:variable_aliases "Foo[Bar[Bro[typing.Optional[FooBarBroLand]]]]");
+    (create ~variables:(fun _ -> None) "Foo[Bar[Bro[typing.Optional[FooBarBroLand]]]]");
   assert_equal "" end_state;
   let module CollectAnnotations = Type.VisitWithTransform.Make (struct
     type state = Type.t list
@@ -2038,7 +2037,7 @@ let test_visit _ =
   let visited_annotations =
     CollectAnnotations.visit
       []
-      (create ~variables:variable_aliases "pyre_extensions.ReadOnly[typing.List[int]]")
+      (create ~variables:(fun _ -> None) "pyre_extensions.ReadOnly[typing.List[int]]")
     |> fst
   in
   assert_equal
@@ -2374,37 +2373,34 @@ let test_replace_all _ =
          CallableParameters
            (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
        ]);
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
-  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
+  let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_replaced ~replace annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (Type.Alias.VariableAlias ts2_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     assert_equal
       (Type.Variable.GlobalTransforms.TypeVarTuple.replace_all
          replace
-         (Type.create
-            ~variables:variable_aliases
-            ~aliases
-            (parse_single_expression ~preprocess:true annotation)))
-      (Type.create
-         ~variables:variable_aliases
-         ~aliases
-         (parse_single_expression ~preprocess:true expected))
+         (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true annotation)))
+      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true expected))
   in
   (* Variadic tuples. *)
   let replace_with_concrete given =
     Option.some_if
-      (Type.Variable.TypeVarTuple.equal given variadic)
+      (Type.Variable.TypeVarTuple.equal given ts_variable)
       (Type.OrderedTypes.Concrete [Type.bool; Type.bool])
   in
   let replace_with_concatenation _ =
     Some
       (Type.OrderedTypes.Concatenation
-         (Type.OrderedTypes.Concatenation.create ~prefix:[Type.bool] ~suffix:[Type.bool] variadic))
+         (Type.OrderedTypes.Concatenation.create
+            ~prefix:[Type.bool]
+            ~suffix:[Type.bool]
+            ts_variable))
   in
   assert_replaced
     ~replace:replace_with_concrete
@@ -2438,25 +2434,22 @@ let test_replace_all _ =
 
   let parse_string string =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (Type.Alias.VariableAlias ts2_declaration)
       | _ -> None
     in
-
-    Type.create
-      ~variables:variable_aliases
-      ~aliases
-      (parse_single_expression ~preprocess:true string)
+    let variables = make_variables ~aliases in
+    Type.create ~variables ~aliases (parse_single_expression ~preprocess:true string)
   in
   let replace_with_concrete = function
-    | variable when Type.Variable.TypeVarTuple.equal variable variadic ->
+    | variable when Type.Variable.TypeVarTuple.equal variable ts_variable ->
         Some
           (Type.OrderedTypes.Concrete
              [
                parse_string "typing.Callable[[int], str]";
                parse_string "typing.Callable[[str], bool]";
              ])
-    | variable when Type.Variable.TypeVarTuple.equal variable variadic2 ->
+    | variable when Type.Variable.TypeVarTuple.equal variable ts2_variable ->
         Some
           (Type.OrderedTypes.Concrete
              [
@@ -2466,13 +2459,13 @@ let test_replace_all _ =
     | _ -> None
   in
   let replace_with_concatenation = function
-    | variable when Type.Variable.TypeVarTuple.equal variable variadic ->
+    | variable when Type.Variable.TypeVarTuple.equal variable ts_variable ->
         Some
           (Type.OrderedTypes.Concatenation
              (Type.OrderedTypes.Concatenation.create_from_unbounded_element
                 (parse_string "typing.Callable[[int], int]")))
-    | variable when Type.Variable.TypeVarTuple.equal variable variadic2 ->
-        Some (Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create variadic))
+    | variable when Type.Variable.TypeVarTuple.equal variable ts2_variable ->
+        Some (Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create ts_variable))
     | _ -> None
   in
 
@@ -2574,38 +2567,35 @@ let test_collect_all _ =
     [Type.Variable.ParamSpec.create "TParams"];
 
   (* Variadic tuples. *)
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
-  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
+  let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_collected annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (Type.Alias.VariableAlias ts2_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     assert_equal
       ~printer:[%show: Type.Variable.TypeVarTuple.t list]
       expected
       (Type.Variable.GlobalTransforms.TypeVarTuple.collect_all
-         (Type.create
-            ~variables:variable_aliases
-            ~aliases
-            (parse_single_expression ~preprocess:true annotation)))
+         (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true annotation)))
   in
   assert_collected "typing.Tuple[int, str]" [];
-  assert_collected "typing.Tuple[int, typing.Unpack[Ts], str]" [variadic];
-  assert_collected "Foo[int, typing.Unpack[Ts], str]" [variadic];
+  assert_collected "typing.Tuple[int, typing.Unpack[Ts], str]" [ts_variable];
+  assert_collected "Foo[int, typing.Unpack[Ts], str]" [ts_variable];
   assert_collected
     "Foo[Bar[int, typing.Unpack[Ts], str], Baz[typing.Unpack[Ts2]]]"
-    [variadic; variadic2];
+    [ts_variable; ts2_variable];
   assert_collected
     "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Tuple[int, \
      typing.Unpack[Ts2], str]]"
-    [variadic2; variadic];
+    [ts2_variable; ts_variable];
   assert_collected
     "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Callable[[Variable(int, \
      typing.Unpack[Ts2], str)], bool]]"
-    [variadic2; variadic];
+    [ts2_variable; ts_variable];
 
   (* Compose. *)
   assert_collected
@@ -2615,7 +2605,7 @@ let test_collect_all _ =
         typing.Callable[[int], int]
       ]
     |}
-    [variadic];
+    [ts_variable];
   assert_collected
     {|
       pyre_extensions.Compose[
@@ -2626,7 +2616,7 @@ let test_collect_all _ =
         typing.Callable[[int], int]
       ]
     |}
-    [variadic];
+    [ts_variable];
   ()
 
 
@@ -2634,30 +2624,30 @@ let test_parse_type_variable_declarations _ =
   let assert_parses_declaration expression expected =
     assert_equal
       (Some expected)
-      (Type.Variable.parse_declaration
+      (Type.Variable.Declaration.parse
          (parse_single_expression expression)
          ~target:(Reference.create "target"))
   in
   let assert_declaration_does_not_parse expression =
     assert_equal
       None
-      (Type.Variable.parse_declaration
+      (Type.Variable.Declaration.parse
          (parse_single_expression expression)
          ~target:(Reference.create "target"))
   in
   assert_parses_declaration
     "pyre_extensions.ParameterSpecification('Tparams')"
-    (Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create "target"));
+    (Type.Variable.Declaration.DParamSpec { name = "target" });
   assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
   assert_parses_declaration
     "typing.TypeVarTuple('Ts')"
-    (Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "target"));
+    (Type.Variable.Declaration.DTypeVarTuple { name = "target" });
   assert_parses_declaration
     "typing_extensions.TypeVarTuple('Ts')"
-    (Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "target"));
+    (Type.Variable.Declaration.DTypeVarTuple { name = "target" });
   assert_parses_declaration
     "pyre_extensions.TypeVarTuple('Ts')"
-    (Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "target"));
+    (Type.Variable.Declaration.DTypeVarTuple { name = "target" });
   assert_declaration_does_not_parse "typing.TypeVarTuple('Ts', covariant=True)";
   ()
 
@@ -2681,16 +2671,16 @@ let test_starred_annotation_expression _ =
 
 
 let test_concatenation_from_unpack_expression _ =
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_concatenation expression concatenation =
     let parse_annotation expression =
       let aliases ?replace_unbound_parameters_with_any:_ = function
-        | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
         | _ -> None
       in
-
+      let variables = make_variables ~aliases in
       Type.create
-        ~variables:variable_aliases
+        ~variables
         ~aliases
         (parse_single_expression ~preprocess:true (Expression.show expression))
     in
@@ -2704,30 +2694,30 @@ let test_concatenation_from_unpack_expression _ =
   in
   assert_concatenation
     "typing.Unpack[Ts]"
-    (Some (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic));
+    (Some (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] ts_variable));
   assert_concatenation
     "typing.Unpack[typing.Tuple[int, typing.Unpack[Ts], str]]"
     (Some
        (Type.OrderedTypes.Concatenation.create
           ~prefix:[Type.integer]
           ~suffix:[Type.string]
-          variadic));
+          ts_variable));
   assert_concatenation "int" None;
   ()
 
 
 let test_split_ordered_types _ =
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     let left =
       match
         Type.create
-          ~variables:variable_aliases
+          ~variables
           ~aliases
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ left))
       with
@@ -2737,7 +2727,7 @@ let test_split_ordered_types _ =
     let right =
       match
         Type.create
-          ~variables:variable_aliases
+          ~variables
           ~aliases
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ right))
       with
@@ -2780,7 +2770,8 @@ let test_split_ordered_types _ =
          prefix_pairs = [Type.integer, Type.integer];
          middle_pair =
            ( Concrete [Type.string; Type.bool],
-             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] ts_variable) );
          suffix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
        });
   (* Not enough elements. *)
@@ -2797,7 +2788,8 @@ let test_split_ordered_types _ =
          prefix_pairs = [Type.integer, Type.integer];
          middle_pair =
            ( Concrete [],
-             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] ts_variable) );
          suffix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
        });
 
@@ -2809,8 +2801,9 @@ let test_split_ordered_types _ =
        {
          prefix_pairs = [Type.integer, Type.integer];
          middle_pair =
-           ( Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic),
-             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+           ( Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] ts_variable),
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] ts_variable) );
          suffix_pairs = [Type.bool, Type.integer];
        });
   assert_split
@@ -2821,9 +2814,10 @@ let test_split_ordered_types _ =
          prefix_pairs = [Type.integer, Type.integer];
          middle_pair =
            ( Concatenation
-               (Type.OrderedTypes.Concatenation.create ~prefix:[Type.string] ~suffix:[] variadic),
+               (Type.OrderedTypes.Concatenation.create ~prefix:[Type.string] ~suffix:[] ts_variable),
              Concatenation
-               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] variadic) );
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] ts_variable)
+           );
          suffix_pairs = [Type.bool, Type.integer];
        });
   (* There are no matching elements of known length in either the prefix_pairs or the
@@ -2836,9 +2830,12 @@ let test_split_ordered_types _ =
          prefix_pairs = [];
          middle_pair =
            ( Concatenation
-               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] variadic),
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] ts_variable),
              Concatenation
-               (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[] variadic) );
+               (Type.OrderedTypes.Concatenation.create
+                  ~prefix:[Type.integer]
+                  ~suffix:[]
+                  ts_variable) );
          suffix_pairs = [];
        });
   assert_split
@@ -2877,7 +2874,7 @@ let test_split_ordered_types _ =
          middle_pair =
            ( Concatenation
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
-             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+             Concatenation (Type.OrderedTypes.Concatenation.create ts_variable) );
          suffix_pairs = [Type.integer, Type.integer];
        });
   assert_split
@@ -2891,7 +2888,7 @@ let test_split_ordered_types _ =
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element
                   ~prefix:[Type.integer]
                   Type.string),
-             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+             Concatenation (Type.OrderedTypes.Concatenation.create ts_variable) );
          suffix_pairs = [Type.integer, Type.integer];
        });
   assert_split
@@ -2903,7 +2900,7 @@ let test_split_ordered_types _ =
          middle_pair =
            ( Concatenation
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
-             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+             Concatenation (Type.OrderedTypes.Concatenation.create ts_variable) );
          suffix_pairs = [Type.string, Type.string];
        });
   assert_split
@@ -2915,7 +2912,7 @@ let test_split_ordered_types _ =
          middle_pair =
            ( Concatenation
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
-             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+             Concatenation (Type.OrderedTypes.Concatenation.create ts_variable) );
          suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
        });
   assert_split
@@ -2929,7 +2926,7 @@ let test_split_ordered_types _ =
                (Type.OrderedTypes.Concatenation.create_from_unbounded_element
                   ~prefix:[Type.string]
                   Type.string),
-             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+             Concatenation (Type.OrderedTypes.Concatenation.create ts_variable) );
          suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
        });
   assert_split
@@ -2973,16 +2970,17 @@ let test_split_ordered_types _ =
 
 
 let test_coalesce_ordered_types _ =
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_coalesce ordered_types expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
       | _ -> None
     in
+    let variables = make_variables ~aliases in
     let parse_ordered_type type_ =
       match
         Type.create
-          ~variables:variable_aliases
+          ~variables
           ~aliases
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ type_))
       with
@@ -3025,14 +3023,14 @@ let test_coalesce_ordered_types _ =
 let test_drop_prefix_ordered_type _ =
   let open Type.OrderedTypes in
   let assert_drop_prefix ~length actual expected_tuple =
-    let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+    let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     let extract_ordered_type string =
-      match parse_single_expression string |> Type.create ~variables:variable_aliases ~aliases with
+      match parse_single_expression string |> Type.create ~variables ~aliases with
       | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple"
     in
@@ -3072,22 +3070,21 @@ let test_drop_prefix_ordered_type _ =
 
 let test_index_ordered_type _ =
   let assert_index ~python_index tuple expected =
-    let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+    let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     let extract_ordered_type string =
-      match parse_single_expression string |> Type.create ~variables:variable_aliases ~aliases with
+      match parse_single_expression string |> Type.create ~variables ~aliases with
       | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple"
     in
-
     assert_equal
       ~cmp:[%equal: Type.t option]
       ~printer:[%show: Type.t option]
-      (expected >>| parse_single_expression >>| Type.create ~variables:variable_aliases ~aliases)
+      (expected >>| parse_single_expression >>| Type.create ~variables ~aliases)
       (extract_ordered_type tuple |> Type.OrderedTypes.index ~python_index)
   in
   assert_index ~python_index:0 "typing.Tuple[int, str]" (Some "int");
@@ -3128,38 +3125,31 @@ let test_index_ordered_type _ =
 
 
 let test_zip_variables_with_parameters _ =
-  let unary = Type.Variable.TypeVar.create "T" in
-  let unary2 = Type.Variable.TypeVar.create "T2" in
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
-  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
-  let parameter_variadic = Type.Variable.ParamSpec.create "TParams" in
+  let t_declaration, t_variable = type_var_declaration_and_variable "T" in
+  let t2_declaration, t2_variable = type_var_declaration_and_variable "T2" in
+  let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
+  let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
+  let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~instantiation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (Type.Alias.TypeAlias (Type.Variable unary))
-      | "T2" -> Some (Type.Alias.TypeAlias (Type.Variable unary2))
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
-      | "TParams" ->
-          Some (Type.Alias.VariableAlias (Type.Variable.ParamSpecVariable parameter_variadic))
+      | "T" -> Some (Type.Alias.VariableAlias t_declaration)
+      | "T2" -> Some (Type.Alias.VariableAlias t2_declaration)
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (Type.Alias.VariableAlias ts2_declaration)
+      | "TParams" -> Some (Type.Alias.VariableAlias tparams_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     let parameters =
       match
-        Type.create
-          ~variables:variable_aliases
-          ~aliases
-          (parse_single_expression ~preprocess:true instantiation)
+        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true instantiation)
       with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let variables =
       match
-        Type.create
-          ~variables:variable_aliases
-          ~aliases
-          (parse_single_expression ~preprocess:true generic_class)
+        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
           let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
@@ -3178,11 +3168,11 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
-           variable_pair = Type.Variable.TypeVarPair (unary2, Type.string);
+           variable_pair = Type.Variable.TypeVarPair (t2_variable, Type.string);
            received_parameter = Single Type.string;
          };
        ]);
@@ -3195,15 +3185,15 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
-               (parameter_variadic, Type.Callable.FromParamSpec (empty_head parameter_variadic));
+               (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
            received_parameter =
-             CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic);
+             CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
        ]);
   (* Not enough parameters. *)
@@ -3215,12 +3205,12 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.Any);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.Any);
            received_parameter =
-             CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic);
+             CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
-           variable_pair = Type.Variable.ParamSpecPair (parameter_variadic, Undefined);
+           variable_pair = Type.Variable.ParamSpecPair (tparams_variable, Undefined);
            received_parameter = Single Type.integer;
          };
        ]);
@@ -3233,7 +3223,7 @@ let test_zip_variables_with_parameters _ =
          {
            variable_pair =
              Type.Variable.ParamSpecPair
-               ( parameter_variadic,
+               ( tparams_variable,
                  Defined
                    (Type.Callable.prepend_anonymous_parameters
                       ~head:[Type.integer; Type.string]
@@ -3252,13 +3242,13 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
-               ( parameter_variadic,
+               ( tparams_variable,
                  Defined
                    [
                      PositionalOnly { index = 0; annotation = Type.string; default = false };
@@ -3283,9 +3273,9 @@ let test_zip_variables_with_parameters _ =
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair
-               (variadic, Concatenation (Type.OrderedTypes.Concatenation.create variadic));
+               (ts_variable, Concatenation (Type.OrderedTypes.Concatenation.create ts_variable));
            received_parameter =
-             Single (Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
+             Single (Tuple (Concatenation (Type.OrderedTypes.Concatenation.create ts_variable)));
          };
        ]);
   assert_zipped
@@ -3294,11 +3284,11 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
-           variable_pair = Type.Variable.TypeVarTuplePair (variadic, Concrete []);
+           variable_pair = Type.Variable.TypeVarTuplePair (ts_variable, Concrete []);
            received_parameter = Single (Tuple (Concrete []));
          };
        ]);
@@ -3308,13 +3298,13 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair
-               (variadic, Concrete [Type.string; Type.integer; Type.bool]);
+               (ts_variable, Concrete [Type.string; Type.integer; Type.bool]);
            received_parameter = Single (Tuple (Concrete [Type.string; Type.integer; Type.bool]));
          };
        ]);
@@ -3324,18 +3314,18 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair
-               ( variadic,
+               ( ts_variable,
                  Concatenation
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.string]
                       ~suffix:[Type.bool]
-                      variadic2) );
+                      ts2_variable) );
            received_parameter =
              Single
                (Tuple
@@ -3343,10 +3333,10 @@ let test_zip_variables_with_parameters _ =
                      (Type.OrderedTypes.Concatenation.create
                         ~prefix:[Type.string]
                         ~suffix:[Type.bool]
-                        variadic2)));
+                        ts2_variable)));
          };
          {
-           variable_pair = Type.Variable.TypeVarPair (unary2, Type.string);
+           variable_pair = Type.Variable.TypeVarPair (t2_variable, Type.string);
            received_parameter = Single Type.string;
          };
        ]);
@@ -3357,19 +3347,19 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
-               (parameter_variadic, Type.Callable.FromParamSpec (empty_head parameter_variadic));
+               (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
            received_parameter =
-             CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic);
+             CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
            variable_pair =
-             Type.Variable.TypeVarTuplePair (variadic, Concrete [Type.string; Type.bool]);
+             Type.Variable.TypeVarTuplePair (ts_variable, Concrete [Type.string; Type.bool]);
            received_parameter = Single (Tuple (Concrete [Type.string; Type.bool]));
          };
        ]);
@@ -3379,25 +3369,25 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.integer);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
            received_parameter = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
-               (parameter_variadic, Type.Callable.FromParamSpec (empty_head parameter_variadic));
+               (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
            received_parameter =
-             CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic);
+             CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair
-               ( variadic,
+               ( ts_variable,
                  Concatenation
                    (Type.OrderedTypes.Concatenation.create
                       ~prefix:[Type.string]
                       ~suffix:[]
-                      variadic2) );
+                      ts2_variable) );
            received_parameter =
              Single
                (Tuple
@@ -3405,7 +3395,7 @@ let test_zip_variables_with_parameters _ =
                      (Type.OrderedTypes.Concatenation.create
                         ~prefix:[Type.string]
                         ~suffix:[]
-                        variadic2)));
+                        ts2_variable)));
          };
        ]);
 
@@ -3416,9 +3406,9 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarPair (unary, Type.Any);
+           variable_pair = Type.Variable.TypeVarPair (t_variable, Type.Any);
            received_parameter =
-             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
          };
        ]);
   assert_zipped
@@ -3427,9 +3417,9 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.ParamSpecPair (parameter_variadic, Undefined);
+           variable_pair = Type.Variable.ParamSpecPair (tparams_variable, Undefined);
            received_parameter =
-             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
          };
        ]);
   assert_zipped
@@ -3438,12 +3428,13 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TypeVarTuplePair (variadic, Type.Variable.TypeVarTuple.any);
+           variable_pair =
+             Type.Variable.TypeVarTuplePair (ts_variable, Type.Variable.TypeVarTuple.any);
            received_parameter =
              Single
                (Type.parametric
                   Type.Variable.TypeVarTuple.synthetic_class_name_for_error
-                  [CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic)]);
+                  [CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable)]);
          };
        ]);
   (* We forbid
@@ -3466,48 +3457,34 @@ let test_zip_variables_with_parameters _ =
 
 
 let test_zip_on_two_parameter_lists _ =
-  let unary = Type.Variable.TypeVar.create "T" in
-  let unary2 = Type.Variable.TypeVar.create "T2" in
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
-  let variadic2 = Type.Variable.TypeVarTuple.create "Ts2" in
-  let parameter_variadic = Type.Variable.ParamSpec.create "TParams" in
+  let t_declaration, t_variable = type_var_declaration_and_variable "T" in
+  let t2_declaration, _t2_variable = type_var_declaration_and_variable "T2" in
+  let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
+  let ts2_declaration, _ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
+  let tparams_declaration, _tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~left ~right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (Type.Alias.TypeAlias (Type.Variable unary))
-      | "T2" -> Some (Type.Alias.TypeAlias (Type.Variable unary2))
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
-      | "Ts2" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic2))
-      | "TParams" ->
-          Some (Type.Alias.VariableAlias (Type.Variable.ParamSpecVariable parameter_variadic))
+      | "T" -> Some (Type.Alias.VariableAlias t_declaration)
+      | "T2" -> Some (Type.Alias.VariableAlias t2_declaration)
+      | "Ts" -> Some (Type.Alias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (Type.Alias.VariableAlias ts2_declaration)
+      | "TParams" -> Some (Type.Alias.VariableAlias tparams_declaration)
       | _ -> None
     in
-
+    let variables = make_variables ~aliases in
     let left_parameters =
-      match
-        Type.create
-          ~variables:variable_aliases
-          ~aliases
-          (parse_single_expression ~preprocess:true left)
-      with
+      match Type.create ~variables ~aliases (parse_single_expression ~preprocess:true left) with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let right_parameters =
-      match
-        Type.create
-          ~variables:variable_aliases
-          ~aliases
-          (parse_single_expression ~preprocess:true right)
-      with
+      match Type.create ~variables ~aliases (parse_single_expression ~preprocess:true right) with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let variables =
       match
-        Type.create
-          ~variables:variable_aliases
-          ~aliases
-          (parse_single_expression ~preprocess:true generic_class)
+        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
           let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
@@ -3529,8 +3506,8 @@ let test_zip_on_two_parameter_lists _ =
     ~right:"Base[str]"
     (Some
        [
-         ( Type.Variable.TypeVarPair (unary, Type.integer),
-           Type.Variable.TypeVarPair (unary, Type.string) );
+         ( Type.Variable.TypeVarPair (t_variable, Type.integer),
+           Type.Variable.TypeVarPair (t_variable, Type.string) );
        ]);
   assert_zipped ~generic_class:"Generic[T]" ~left:"Child[int]" ~right:"Base[str, bool]" None;
   ()
@@ -3659,13 +3636,12 @@ let test_resolve_alias_before_handling_callable _ =
     let aliases ?replace_unbound_parameters_with_any:_ (annotation : string) =
       Some (Type.Alias.TypeAlias (resolve_aliases annotation))
     in
-
+    let variables = make_variables ~aliases in
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression bare
-      |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
-      (parse_single_expression aliased |> Type.create ~variables:variable_aliases ~aliases)
+      (parse_single_expression bare |> Type.create ~variables ~aliases:Type.empty_aliases)
+      (parse_single_expression aliased |> Type.create ~variables ~aliases)
   in
 
   assert_resolved_getitem_callee
@@ -3957,7 +3933,7 @@ let test_show _ =
 let test_is_truthy _ =
   let assert_truthy ~expected type_ =
     parse_single_expression type_
-    |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
     |> Type.is_truthy
     |> assert_bool_equals ~expected
   in
@@ -3984,7 +3960,7 @@ let test_is_truthy _ =
 let test_is_falsy _ =
   let assert_falsy ~expected type_ =
     parse_single_expression type_
-    |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
     |> Type.is_falsy
     |> assert_bool_equals ~expected
   in
@@ -4012,7 +3988,7 @@ let test_lift_readonly_if_possible _ =
   let assert_lifted ~make_container ~expected element_type =
     element_type
     |> parse_single_expression
-    |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
     |> Type.ReadOnly.lift_readonly_if_possible ~make_container
     |> assert_equal ~printer:Type.show ~cmp:Type.equal expected
   in

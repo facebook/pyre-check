@@ -813,6 +813,20 @@ module Variable : sig
       S with type t = tuple_variadic_t and type domain = type_t OrderedTypes.record
   end
 
+  module Declaration : sig
+    type t =
+      | DTypeVar of {
+          name: Identifier.t;
+          constraints: Expression.t constraints;
+          variance: variance;
+        }
+      | DTypeVarTuple of { name: Identifier.t }
+      | DParamSpec of { name: Identifier.t }
+    [@@deriving equal, compare, sexp, show, hash]
+
+    val parse : Expression.t -> target:Reference.t -> t option
+  end
+
   type variable_zip_result = {
     variable_pair: pair;
     received_parameter: Parameter.t;
@@ -821,9 +835,9 @@ module Variable : sig
 
   module Set : Core.Set.S with type Elt.t = t
 
-  val pp_concise : Format.formatter -> t -> unit
+  val of_declaration : Declaration.t -> create_type:(Expression.t -> type_t) -> t
 
-  val parse_declaration : Expression.t -> target:Reference.t -> t option
+  val pp_concise : Format.formatter -> t -> unit
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 
@@ -955,7 +969,7 @@ end
 module Alias : sig
   type t =
     | TypeAlias of type_t
-    | VariableAlias of type_t Record.Variable.record
+    | VariableAlias of Variable.Declaration.t
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -965,7 +979,7 @@ val resolve_aliases
   t
 
 val create
-  :  variables:(string -> t Record.Variable.record option) ->
+  :  variables:(string -> Variable.Declaration.t option) ->
   aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
   Expression.t ->
   t

@@ -1046,9 +1046,7 @@ let test_invalid_type_parameters context =
     let parse annotation =
       let variable_aliases name =
         match name with
-        | "Ts" ->
-            let type_variable = Type.Variable.TypeVarTuple.create "Ts" in
-            Some (Type.Record.Variable.TypeVarTupleVariable type_variable)
+        | "Ts" -> Some (Type.Variable.Declaration.DTypeVarTuple { name = "Ts" })
         | _ -> None
       in
       parse_single_expression ~preprocess:true annotation
@@ -1118,11 +1116,12 @@ let test_invalid_type_parameters context =
             { actual = 0; expected = 1; can_accept_more_parameters = true };
       };
     ];
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let variadic_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
+  let variadic_variable = Type.Variable.TypeVarTuple.create "Ts" in
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (VariableAlias variadic_declaration)
         | _ -> None)
     ~given_type:"typing.List[typing.Unpack[Ts]]"
     ~expected_transformed_type:"typing.List[typing.Any]"
@@ -1132,7 +1131,8 @@ let test_invalid_type_parameters context =
         kind =
           UnexpectedKind
             {
-              actual = Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+              actual =
+                Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
               expected = TypeVarVariable (Type.Variable.TypeVar.create "_T");
             };
       };
@@ -1150,7 +1150,7 @@ let test_invalid_type_parameters context =
     ~given_type:
       (Type.parametric
          "test.Foo"
-         [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)])
+         [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable)])
     ~expected_transformed_type:(Type.parametric "test.Foo" [CallableParameters Undefined])
     [
       {
@@ -1158,7 +1158,8 @@ let test_invalid_type_parameters context =
         kind =
           UnexpectedKind
             {
-              actual = Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+              actual =
+                Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
               expected = Type.Variable.ParamSpecVariable parameter_variadic;
             };
       };
@@ -1177,7 +1178,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (VariableAlias variadic_declaration)
         | _ -> None)
     ~source:
       {|
@@ -1192,7 +1193,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (VariableAlias variadic_declaration)
         | _ -> None)
     ~source:
       {|
@@ -1208,7 +1209,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (VariableAlias variadic_declaration)
         | _ -> None)
     ~source:
       {|
@@ -1261,7 +1262,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~aliases:
       (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+        | "Ts" -> Some (VariableAlias variadic_declaration)
         | _ -> None)
     ~source:
       {|

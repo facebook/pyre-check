@@ -293,13 +293,20 @@ let make_assert_functions context =
               in
               let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.get_type_alias global_resolution primitive with
-              | Some (Type.Alias.VariableAlias (ParamSpecVariable variable)) ->
-                  Type.Variable.ParamSpecPair (variable, parse_parameters value)
-              | Some (Type.Alias.VariableAlias (TypeVarTupleVariable variable)) -> (
-                  match Type.Tuple (parse_ordered_types value) |> postprocess with
-                  | Type.Tuple ordered_type ->
-                      Type.Variable.TypeVarTuplePair (variable, ordered_type)
-                  | _ -> failwith "expected a tuple")
+              | Some (Type.Alias.VariableAlias variable_declaration) -> (
+                  match
+                    Type.Variable.of_declaration
+                      ~create_type:(GlobalResolution.parse_annotation global_resolution)
+                      variable_declaration
+                  with
+                  | ParamSpecVariable variable ->
+                      Type.Variable.ParamSpecPair (variable, parse_parameters value)
+                  | TypeVarTupleVariable variable -> (
+                      match Type.Tuple (parse_ordered_types value) |> postprocess with
+                      | Type.Tuple ordered_type ->
+                          Type.Variable.TypeVarTuplePair (variable, ordered_type)
+                      | _ -> failwith "expected a tuple")
+                  | TypeVarVariable _ -> failwith "expected a param spec or type var tuple")
               | _ -> failwith "not available")
           | _ -> failwith "not a variable"
         in

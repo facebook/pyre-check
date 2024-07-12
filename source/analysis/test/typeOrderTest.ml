@@ -18,9 +18,7 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single
 
 let variable_aliases name =
   match name with
-  | "Ts" ->
-      let type_variable = Type.Variable.TypeVarTuple.create "Ts" in
-      Some (Type.Record.Variable.TypeVarTupleVariable type_variable)
+  | "Ts" -> Some (Type.Variable.Declaration.DTypeVarTuple { name = "Ts" })
   | _ -> None
 
 
@@ -1789,11 +1787,11 @@ let test_join _ =
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
 
-  let variadic = Type.Variable.TypeVarTuple.create "Ts" in
+  let type_var_tuple_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1802,7 +1800,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
       | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
@@ -1811,7 +1809,7 @@ let test_join _ =
   assert_join
     ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
       match name with
-      | "Ts" -> Some (Type.Alias.VariableAlias (Type.Variable.TypeVarTupleVariable variadic))
+      | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
       | _ -> None)
     "typing.Tuple[typing_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"

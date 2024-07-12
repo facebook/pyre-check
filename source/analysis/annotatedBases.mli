@@ -9,7 +9,7 @@ open Ast
 
 val base_is_from_placeholder_stub
   :  Expression.t ->
-  variables:(string -> Type.t Type.Variable.record option) ->
+  variables:(string -> Type.Variable.Declaration.t option) ->
   aliases:(?replace_unbound_parameters_with_any:bool -> string -> Type.Alias.t option) ->
   is_from_empty_stub:(Reference.t -> bool) ->
   bool

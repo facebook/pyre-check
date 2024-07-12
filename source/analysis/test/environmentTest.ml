@@ -389,8 +389,7 @@ let test_register_aliases context =
       |}]
     [
       ( "test.Tparams",
-        Type.Alias.VariableAlias
-          (Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create "test.Tparams")) );
+        Type.Alias.VariableAlias (Type.Variable.Declaration.DParamSpec { name = "test.Tparams" }) );
     ];
   ()
 
