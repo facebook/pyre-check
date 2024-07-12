@@ -40,6 +40,7 @@ module.exports = {
         fromExtensions: ['html'],
       },
     ],
+    require.resolve('docusaurus-lunr-search'),
   ],
   presets: [
     [
