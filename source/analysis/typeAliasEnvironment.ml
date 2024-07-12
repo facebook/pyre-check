@@ -52,11 +52,7 @@ module IncomingDataComputation = struct
       in
 
       match Type.create ~variables:variable_aliases ~aliases unparsed with
-      | Type.Variable variable ->
-          if Type.Variable.TypeVar.contains_subvariable variable then
-            Type.Any
-          else
-            Type.Variable { variable with name = Reference.show target }
+      | Type.Variable variable -> Type.Variable { variable with name = Reference.show target }
       | annotation -> annotation
 
 
