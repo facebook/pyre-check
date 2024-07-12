@@ -21,23 +21,24 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          sudo apt-get install ocaml ocaml-dune
-
-      - name: Setup OCaml
-        uses: avsm/setup-ocaml@8cc6339f55862749298d198ef84788b8d6acdacc # v2.2.10
-        with:
-          ocaml-compiler: 4.14.0
-
-      - name: Setup opam switch
-        run: |
-          opam switch create 4.14.0
-          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.14.0" >> $GITHUB_ENV
-          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.14.0/lib/stublibs:$HOME/.opam/4.14.0/lib/ocaml/stublibs:$HOME/.opam/4.14.0/lib/ocam" >> $GITHUB_ENV
-          echo "$HOME/.opam/4.14.0/bin" >> $GITHUB_PATH
-          echo "/home/opam/.opam/4.14.0/bin" >> $GITHUB_PATH
+          sudo apt-get install opam
 
       - name: Build Pyre (and Pysa)
         run: |
+          echo ""
+          echo "--------- initializing switch --------"
+          ./scripts/setup.sh --only-initialize-switch
+          echo "--------- done initializing switch --------"
+          echo ""
+
+          echo "sanity check, these should be equal: /home/runner/.opam/pyre-4.14.0/bin ${HOME}/.opam/pyre-4.14.0/bin"
+          echo "ls /home/runner/.opam/pyre-4.14.0/bin ..."
+          ls /home/runner/.opam/pyre-4.14.0/bin || echo "(no such dir)"
+
+          echo ""
+          echo "--------- building ---------"
+          echo ""
+
           ./scripts/setup.sh --local --no-tests
           make -C source
           echo "PYTHONPATH=$GITHUB_WORKSPACE/..:$PYTHONPATH" >> $GITHUB_ENV

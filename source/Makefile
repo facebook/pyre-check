@@ -6,6 +6,8 @@
 .PHONY: dev
 dev: configure
 	@../scripts/generate-version-number.sh development
+	echo "In makefile, env is... "
+	env
 	dune build @install -j auto --profile dev
 
 .PHONY: test

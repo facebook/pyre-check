@@ -114,6 +114,7 @@ def _run_command(
     else:
         environment_variables = None
     LOG.info(command)
+    LOG.info("... env vars for ^^ are: %r", environment_variables)
     try:
         output = subprocess.check_output(
             command,
@@ -407,6 +408,10 @@ def setup(
     parser.add_argument("--build-type", type=BuildType)
     parser.add_argument("--no-tests", action="store_true")
     parser.add_argument("--rust-path", type=Path)
+    # Skip the build. This is mainly useful for debugging remote environment setup in CI,
+    # because if anything goes wrong that breaks the build, it will abort CI which
+    # makes investigations difficult.
+    parser.add_argument("--only-initialize-switch", action="store_true")
 
     parsed = parser.parse_args()
 
@@ -423,16 +428,17 @@ def setup(
         produce_dune_file(pyre_directory, build_type)
     else:
         initialize_opam_switch(opam_root, opam_version, release, add_environment_variables, parsed.rust_path)
-        full_setup(
-            opam_root,
-            opam_version,
-            pyre_directory,
-            release=release,
-            run_tests=not parsed.no_tests,
-            build_type=build_type,
-            add_environment_variables=add_environment_variables,
-            rust_path=parsed.rust_path,
-        )
+        if not parsed.only_initialize_switch:
+            full_setup(
+                opam_root,
+                opam_version,
+                pyre_directory,
+                release=release,
+                run_tests=not parsed.no_tests,
+                build_type=build_type,
+                add_environment_variables=add_environment_variables,
+                rust_path=parsed.rust_path,
+            )
 
 
 if __name__ == "__main__":
