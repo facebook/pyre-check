@@ -19,13 +19,14 @@ module Argument = Call.Argument
 
 let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
-let test_superclasses context =
-  let resolution =
-    ScratchProject.setup
-      ~context
-      [
-        ( "test.py",
-          {|
+let test_superclasses =
+  let assert_successors target expected context =
+    let resolution =
+      ScratchProject.setup
+        ~context
+        [
+          ( "test.py",
+            {|
       class Foo: pass
       class Bar: pass
       class SubFoo(Foo): pass
@@ -33,11 +34,10 @@ let test_superclasses context =
       class SubRecurse(SubFooBar): pass
       class SubRedundant(SubFooBar, Foo): pass
     |}
-        );
-      ]
-    |> ScratchProject.build_global_resolution
-  in
-  let assert_successors target expected =
+          );
+        ]
+      |> ScratchProject.build_global_resolution
+    in
     let actual = GlobalResolution.successors resolution target in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
@@ -45,16 +45,22 @@ let test_superclasses context =
       expected
       actual
   in
-  assert_successors "test.Foo" ["object"];
-  assert_successors "test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
-  assert_successors "test.SubFoo" ["test.Foo"; "object"];
-  assert_successors "test.SubFooBar" ["test.Foo"; "test.Bar"; "object"];
-  assert_successors "test.SubRecurse" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_successors "test.Foo" ["object"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_successors "test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_successors "test.SubFoo" ["test.Foo"; "object"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_successors "test.SubFooBar" ["test.Foo"; "test.Bar"; "object"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_successors "test.SubRecurse" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
+    ]
 
 
-let test_first_matching_decorator context =
-  let assert_first_matching_decorator source name expected =
+let test_first_matching_decorator =
+  let assert_first_matching_decorator source name expected context =
     let resolution =
       ScratchProject.setup ~context ["__init__.py", source]
       |> ScratchProject.build_global_resolution
@@ -87,94 +93,106 @@ let test_first_matching_decorator context =
     in
     assert_logic expected
   in
-  assert_first_matching_decorator "class A: pass" "decorator" None;
-  assert_first_matching_decorator
-    {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator "class A: pass" "decorator" None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator
       class A:
         pass
     |}
-    "decorator"
-    (Some { name = + !&"decorator"; arguments = None });
-  assert_first_matching_decorator
-    {|
+           "decorator"
+           (Some { name = + !&"decorator"; arguments = None });
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator.a.b
       class A:
         pass
     |}
-    "decorator.a"
-    None;
-  assert_first_matching_decorator
-    {|
+           "decorator.a"
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator
       class A:
         pass
     |}
-    "decorator.a"
-    None;
-  assert_first_matching_decorator
-    {|
+           "decorator.a"
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator.a.b
       class A:
         pass
     |}
-    "decorator.a.b"
-    (Some { Decorator.name = + !&"decorator.a.b"; arguments = None });
-  assert_first_matching_decorator
-    {|
+           "decorator.a.b"
+           (Some { Decorator.name = + !&"decorator.a.b"; arguments = None });
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator(a=b, c=d)
       class A:
         pass
     |}
-    "decorator.a.b"
-    None;
-  assert_first_matching_decorator
-    {|
+           "decorator.a.b"
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @other.decorator
       @decorator(a=b, c=d)
       class A:
         pass
     |}
-    "decorator"
-    (Some
-       {
-         Decorator.name = + !&"decorator";
-         arguments =
-           Some
-             [
-               { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
-               { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
-             ];
-       });
-  assert_first_matching_decorator
-    {|
+           "decorator"
+           (Some
+              {
+                Decorator.name = + !&"decorator";
+                arguments =
+                  Some
+                    [
+                      { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
+                      { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
+                    ];
+              });
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           {|
       @decorator(a=b)
       @decorator(a=b, c=d)
       class A:
         pass
     |}
-    "decorator"
-    (Some
-       {
-         Decorator.name = + !&"decorator";
-         arguments =
-           Some [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
-       });
-  assert_first_matching_decorator
-    (* `enum` imports `ABCMeta` from `abc`. *)
-    {|
+           "decorator"
+           (Some
+              {
+                Decorator.name = + !&"decorator";
+                arguments =
+                  Some
+                    [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
+              });
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_first_matching_decorator
+           (* `enum` imports `ABCMeta` from `abc`. *)
+           {|
       import enum
       @enum.ABCMeta
       class A:
         pass
     |}
-    "abc.ABCMeta"
-    (Some { name = + !&"abc.ABCMeta"; arguments = None });
-  ()
+           "abc.ABCMeta"
+           (Some { name = + !&"abc.ABCMeta"; arguments = None });
+    ]
 
 
-let test_constructors context =
-  let assert_constructor source instantiated constructors =
+let test_constructors =
+  let assert_constructor source instantiated constructors context =
     let instantiated = "test." ^ instantiated in
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -205,168 +223,185 @@ let test_constructors context =
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
   in
-  (* Undefined constructors. *)
-  assert_constructor
-    "class Foo: pass"
-    "Foo"
-    (Some
-       "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], test.Foo]");
-  assert_constructor
-    "class Foo: ..."
-    "Foo"
-    (Some
-       "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], test.Foo]");
-
-  (* Statement.Defined constructors. *)
-  assert_constructor
-    {|
+  test_list
+    [
+      (* Undefined constructors. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           "class Foo: pass"
+           "Foo"
+           (Some
+              "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], \
+               test.Foo]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           "class Foo: ..."
+           "Foo"
+           (Some
+              "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], \
+               test.Foo]");
+      (* Statement.Defined constructors. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       class Foo:
         def __init__(self, a: int) -> None: pass
     |}
-    "Foo"
-    (Some
-       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
-        test.Foo], test.Foo]");
-  assert_constructor
-    {|
+           "Foo"
+           (Some
+              "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, \
+               int)], test.Foo], test.Foo]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       class Foo:
         def __init__(self, a: int) -> None: pass
         @typing.overload
         def __init__(self, b: str) -> None: pass
     |}
-    "Foo"
-    (Some
-       ("BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
-         test.Foo]"
-       ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]"));
-
-  (* Generic classes. *)
-  assert_constructor
-    {|
+           "Foo"
+           (Some
+              ("BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, \
+                int)], test.Foo]"
+              ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]"));
+      (* Generic classes. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         def __init__(self) -> None: pass
     |}
-    "Foo"
-    (Some
-       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, \
-        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')])], \
-        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]], \
-        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]");
-  assert_constructor
-    {|
+           "Foo"
+           (Some
+              "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, \
+               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')])], \
+               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]], \
+               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         def __init__(self, x:_K, y:_V) -> None: pass
     |}
-    "Foo[int, str]"
-    (Some
-       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo[int, str]), \
-        Named(x, int), Named(y, str)], test.Foo[int, str]], test.Foo[int, str]]");
-
-  (* Constructors, both __init__ and __new__, are inherited from parents. *)
-  assert_constructor
-    {|
+           "Foo[int, str]"
+           (Some
+              "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo[int, str]), \
+               Named(x, int), Named(y, str)], test.Foo[int, str]], test.Foo[int, str]]");
+      (* Constructors, both __init__ and __new__, are inherited from parents. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       class Parent:
         def __init__(self, x: int) -> None:
           pass
       class C(Parent):
         pass
     |}
-    "C"
-    (Some
-       "BoundMethod[typing.Callable('test.Parent.__init__')[[Named(self, test.Parent), Named(x, \
-        int)], test.C], test.C]");
-  assert_constructor
-    {|
+           "C"
+           (Some
+              "BoundMethod[typing.Callable('test.Parent.__init__')[[Named(self, test.Parent), \
+               Named(x, int)], test.C], test.C]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       class Parent:
         def __new__(self, x: str) -> None:
           pass
       class C(Parent):
         pass
     |}
-    "C"
-    (Some
-       "BoundMethod[typing.Callable(test.Parent.__new__)[[Named(self, typing.Type[test.Parent]), \
-        Named(x, str)], test.C], typing.Type[test.C]]");
-  assert_constructor
-    {|
+           "C"
+           (Some
+              "BoundMethod[typing.Callable(test.Parent.__new__)[[Named(self, \
+               typing.Type[test.Parent]), Named(x, str)], test.C], typing.Type[test.C]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       T = typing.TypeVar('T', bound=C)
       class C:
         def __init__(self, x: int) -> None: pass
     |}
-    "T"
-    (Some
-       "BoundMethod[typing.Callable('test.C.__init__')[[Named(self, test.C), Named(x, int)], \
-        test.T], test.T]");
-  assert_constructor
-    {|
+           "T"
+           (Some
+              "BoundMethod[typing.Callable('test.C.__init__')[[Named(self, test.C), Named(x, \
+               int)], test.T], test.T]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from dataclasses import dataclass
       @dataclass(frozen=True)
       class A:
           foo:int = 1
     |}
-    "A"
-    (Some
-       "BoundMethod[typing.Callable('test.A.__init__')[[Named(self, test.A), Named(foo, int, \
-        default)], test.A], test.A]");
-  assert_constructor
-    {|
+           "A"
+           (Some
+              "BoundMethod[typing.Callable('test.A.__init__')[[Named(self, test.A), Named(foo, \
+               int, default)], test.A], test.A]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import Generic, Optional, TypeVar
       T = TypeVar("T")
       class Base(Generic[T]):
         def __new__(self, x: T) -> Base[Optional[T]]: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
-        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[typing.Optional[test.T]]], \
-        typing.Type[test.Base]]");
-  (* With @final. *)
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base[test.T]]), Named(x, test.T)], \
+               test.Base[typing.Optional[test.T]]], typing.Type[test.Base]]");
+      (* With @final. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import final, Generic, Optional, TypeVar
       T = TypeVar("T")
       @final
       class Base(Generic[T]):
         def __new__(self, x: T) -> Base[Optional[T]]: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
-        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[typing.Optional[test.T]]], \
-        typing.Type[test.Base]]");
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base[test.T]]), Named(x, test.T)], \
+               test.Base[typing.Optional[test.T]]], typing.Type[test.Base]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import final, Generic, Optional, TypeVar
       T = TypeVar("T")
       @final
       class Base(Generic[T]):
         def __new__(self, x: T) -> Base[Optional[T]]: ...
     |}
-    "Base[int]"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base[int]]), \
-        Named(x, int)], test.Base[typing.Optional[int]]], typing.Type[test.Base[int]]]");
-  (* When `__new__` is inherited, don't use the return type from the parent method, since that would
-     be confusing. *)
-  assert_constructor
-    {|
+           "Base[int]"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base[int]]), Named(x, int)], test.Base[typing.Optional[int]]], \
+               typing.Type[test.Base[int]]]");
+      (* When `__new__` is inherited, don't use the return type from the parent method, since that
+         would be confusing. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import Generic, Optional, TypeVar
       T = TypeVar("T")
       class Base(Generic[T]):
         def __new__(self, x: T) -> Base[Optional[T]]: ...
       class Child(Base[T]): ...
     |}
-    "Child"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
-        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Child[test.T]], \
-        typing.Type[test.Child]]");
-  assert_constructor
-    {|
+           "Child"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Child[test.T]], \
+               typing.Type[test.Child]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import Generic, Optional, TypeVar
       T = TypeVar("T")
       S = TypeVar("S")
@@ -374,12 +409,14 @@ let test_constructors context =
         def __new__(self, x: T) -> Base[Optional[T]]: ...
       class Child(Base[T], Generic[T, S]): ...
     |}
-    "Child[int, test.S]"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base[int]]), \
-        Named(x, int)], test.Child[int, test.S]], typing.Type[test.Child[int, test.S]]]");
-  assert_constructor
-    {|
+           "Child[int, test.S]"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base[int]]), Named(x, int)], test.Child[int, test.S]], \
+               typing.Type[test.Child[int, test.S]]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import final, overload, Generic, List, Optional, TypeVar, Union
       T = TypeVar("T")
       @final
@@ -391,15 +428,17 @@ let test_constructors context =
 
         def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
-        typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
-        test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), Named(x, \
-        typing.List[test.T])], test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), \
-        Named(x, test.T)], test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
+               typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], \
+               test.T])], test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), \
+               Named(x, typing.List[test.T])], test.Base[test.T]][[Named(cls, \
+               typing.Type[test.Base[test.T]]), Named(x, test.T)], \
+               test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import overload, Generic, List, Optional, TypeVar, Union
       T = TypeVar("T")
       class Base(Generic[T]):
@@ -410,42 +449,46 @@ let test_constructors context =
 
         def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
-        typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
-        test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), Named(x, \
-        typing.List[test.T])], test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), \
-        Named(x, test.T)], test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
-  (* __new__ is marked as returning `Optional[Base]`. While this is technically allowed at runtime,
-     be conservative and replace the return type with the class type. *)
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
+               typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], \
+               test.T])], test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), \
+               Named(x, typing.List[test.T])], test.Base[test.T]][[Named(cls, \
+               typing.Type[test.Base[test.T]]), Named(x, test.T)], \
+               test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
+      (* __new__ is marked as returning `Optional[Base]`. While this is technically allowed at
+         runtime, be conservative and replace the return type with the class type. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import Optional
 
       class Base:
         def __new__(self, x: str) -> Optional[Base]:
           pass
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base]), \
-        Named(x, str)], test.Base], typing.Type[test.Base]]");
-  (* __init__ takes precedence over __new__ and ignores any return type for __new__. *)
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+               typing.Type[test.Base]), Named(x, str)], test.Base], typing.Type[test.Base]]");
+      (* __init__ takes precedence over __new__ and ignores any return type for __new__. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import Generic, Optional, TypeVar
       T = TypeVar("T")
       class Base(Generic[T]):
         def __new__(self, x: T) -> Base[Optional[T]]: ...
         def __init__(self, x: T) -> None: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), Named(x, \
-        test.T)], test.Base[test.T]], test.Base[test.T]]");
-  assert_constructor
-    {|
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), \
+               Named(x, test.T)], test.Base[test.T]], test.Base[test.T]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constructor
+           {|
       from typing import final, overload, Generic, List, Optional, TypeVar, Union
       T = TypeVar("T")
       @final
@@ -458,15 +501,16 @@ let test_constructors context =
         def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
         def __init__(self, x: Union[T, List[T]]) -> None: ...
     |}
-    "Base"
-    (Some
-       "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), Named(x, \
-        typing.Union[typing.List[test.T], test.T])], test.Base[test.T]], test.Base[test.T]]");
-  ()
+           "Base"
+           (Some
+              "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), \
+               Named(x, typing.Union[typing.List[test.T], test.T])], test.Base[test.T]], \
+               test.Base[test.T]]");
+    ]
 
 
-let test_is_protocol _ =
-  let assert_is_protocol base_arguments expected =
+let test_is_protocol =
+  let assert_is_protocol base_arguments expected _ =
     let is_protocol base_arguments =
       {
         StatementClass.name = !&"Derp";
@@ -481,17 +525,28 @@ let test_is_protocol _ =
     assert_equal expected (is_protocol base_arguments)
   in
   let parse = parse_single_expression in
-  assert_is_protocol [] false;
-  assert_is_protocol [{ Argument.name = None; value = parse "derp" }] false;
-  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol" }] true;
-  assert_is_protocol [{ Argument.name = None; value = parse "typing_extensions.Protocol" }] true;
-  assert_is_protocol [{ Argument.name = Some ~+"metaclass"; value = parse "abc.ABCMeta" }] false;
-  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol[T]" }] true;
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_is_protocol [] false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_is_protocol [{ Argument.name = None; value = parse "derp" }] false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol" }] true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_is_protocol
+           [{ Argument.name = None; value = parse "typing_extensions.Protocol" }]
+           true;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_is_protocol
+           [{ Argument.name = Some ~+"metaclass"; value = parse "abc.ABCMeta" }]
+           false;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol[T]" }] true;
+    ]
 
 
-let test_all_attributes context =
-  let setup source =
+let test_all_attributes =
+  let setup source context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -546,7 +601,7 @@ let test_all_attributes context =
       ~problem:None
   in
   (* Test `Class.attributes`. *)
-  let assert_attributes definition attributes =
+  let assert_attributes definition attributes context =
     let attribute_list_equal = List.equal Attribute.equal_instantiated in
     let print_attributes attributes =
       let print_attribute attribute =
@@ -564,12 +619,12 @@ let test_all_attributes context =
       ~cmp:attribute_list_equal
       ~printer:print_attributes
       ~pp_diff:(diff ~print)
-      (GlobalResolution.uninstantiated_attributes resolution definition
+      (GlobalResolution.uninstantiated_attributes (resolution context) definition
       |> (fun a -> Option.value_exn a)
       |> List.map
            ~f:
              (GlobalResolution.instantiate_attribute
-                resolution
+                (resolution context)
                 ~accessed_through_class:false
                 ~accessed_through_readonly:false))
       attributes
@@ -599,28 +654,30 @@ let test_all_attributes context =
       "BoundMethod"
       [Single (Callable uninstantiated_constructor); Single (Primitive "test.foo")]
   in
-
-  assert_attributes
-    "test.foo"
+  test_list
     [
-      create_simple_attribute
-        ~parent:"test.foo"
-        ~annotation:constructor
-        ~uninstantiated_annotation:(Some (Callable uninstantiated_constructor))
-        ~undecorated_signature:uninstantiated_constructor
-        ~initialized:OnClass
-        "__init__";
-      create_simple_attribute
-        ~parent:"test.foo"
-        ~class_variable:true
-        ~initialized:NotInitialized
-        "class_attribute";
-      create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "first";
-      create_simple_attribute ~parent:"test.foo" ~initialized:OnlyOnInstance "implicit";
-      create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "second";
-      create_simple_attribute ~parent:"test.foo" "third";
-    ];
-  ()
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           "test.foo"
+           [
+             create_simple_attribute
+               ~parent:"test.foo"
+               ~annotation:constructor
+               ~uninstantiated_annotation:(Some (Callable uninstantiated_constructor))
+               ~undecorated_signature:uninstantiated_constructor
+               ~initialized:OnClass
+               "__init__";
+             create_simple_attribute
+               ~parent:"test.foo"
+               ~class_variable:true
+               ~initialized:NotInitialized
+               "class_attribute";
+             create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "first";
+             create_simple_attribute ~parent:"test.foo" ~initialized:OnlyOnInstance "implicit";
+             create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "second";
+             create_simple_attribute ~parent:"test.foo" "third";
+           ];
+    ]
 
 
 let test_attribute_from_class_name =
@@ -957,8 +1014,8 @@ let test_attribute_from_class_name =
     ]
 
 
-let test_attribute_from_annotation context =
-  let assert_attribute ?(source = "") ~parent ~name expected =
+let test_attribute_from_annotation =
+  let assert_attribute ?(source = "") ~parent ~name expected context =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -978,43 +1035,50 @@ let test_attribute_from_annotation context =
     let printer = Option.value_map ~default:"None" ~f:Fn.id in
     assert_equal ~cmp:(Option.equal String.equal) ~printer expected actual
   in
-  assert_attribute
-    ~source:{|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attribute
+           ~source:
+             {|
       class X:
         def __init__(self, x: int) -> None:
           pass
     |}
-    ~parent:"typing.Type[test.X]"
-    ~name:"__call__"
-    (Some
-       "BoundMethod[typing.Callable(test.X.__init__)[[Named(self, test.X), Named(x, int)], \
-        test.X], test.X]");
-  assert_attribute
-    ~parent:"typing.Type[typing.Tuple[int, str, bool]]"
-    ~name:"__call__"
-    (Some
-       "BoundMethod[typing.Callable(tuple.__init__)[[Named(self, \
-        tuple[Variable[_T_co](covariant)]), Named(a, typing.List[Variable[_T_co](covariant)])], \
-        typing.Tuple[Variable[_T_co](covariant), ...]], typing.Tuple[Variable[_T_co](covariant), \
-        ...]]");
-  assert_attribute
-    ~source:{|
+           ~parent:"typing.Type[test.X]"
+           ~name:"__call__"
+           (Some
+              "BoundMethod[typing.Callable(test.X.__init__)[[Named(self, test.X), Named(x, int)], \
+               test.X], test.X]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attribute
+           ~parent:"typing.Type[typing.Tuple[int, str, bool]]"
+           ~name:"__call__"
+           (Some
+              "BoundMethod[typing.Callable(tuple.__init__)[[Named(self, \
+               tuple[Variable[_T_co](covariant)]), Named(a, \
+               typing.List[Variable[_T_co](covariant)])], typing.Tuple[Variable[_T_co](covariant), \
+               ...]], typing.Tuple[Variable[_T_co](covariant), ...]]");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attribute
+           ~source:{|
       class Foo:
         x: str
     |}
-    ~parent:"pyre_extensions.ReadOnly[test.Foo]"
-    ~name:"x"
-    (Some "pyre_extensions.ReadOnly[str]");
-  ()
+           ~parent:"pyre_extensions.ReadOnly[test.Foo]"
+           ~name:"x"
+           (Some "pyre_extensions.ReadOnly[str]");
+    ]
 
 
-let test_invalid_type_parameters context =
+let test_invalid_type_parameters =
   let open AttributeResolution in
   let assert_invalid_type_parameters_direct
       ?(source = "")
       ~given_type
       ~expected_transformed_type
       expected_mismatches
+      context
     =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -1060,233 +1124,255 @@ let test_invalid_type_parameters context =
       ~expected_transformed_type:(parse expected_transformed_type)
       expected_mismatches
   in
-  assert_invalid_type_parameters
-    ~given_type:"typing.List[str, int]"
-    ~expected_transformed_type:"typing.List[typing.Any]"
-    [
-      {
-        name = "list";
-        kind =
-          IncorrectNumberOfParameters
-            { actual = 2; expected = 1; can_accept_more_parameters = false };
-      };
-    ];
-  assert_invalid_type_parameters
-    ~given_type:"typing.List"
-    ~expected_transformed_type:"typing.List[typing.Any]"
-    [
-      {
-        name = "list";
-        kind =
-          IncorrectNumberOfParameters
-            { actual = 0; expected = 1; can_accept_more_parameters = false };
-      };
-    ];
-  assert_invalid_type_parameters
-    ~given_type:"typing.Callable[[int, str], bool]"
-    ~expected_transformed_type:"typing.Callable[[int, str], bool]"
-    [];
-  assert_invalid_type_parameters
-    ~given_type:"typing.Callable"
-    ~expected_transformed_type:"typing.Callable[..., typing.Any]"
-    [
-      {
-        name = "typing.Callable";
-        kind =
-          IncorrectNumberOfParameters
-            { actual = 0; expected = 2; can_accept_more_parameters = false };
-      };
-    ];
-  assert_invalid_type_parameters
-    ~given_type:"typing.Tuple[int, ...]"
-    ~expected_transformed_type:"typing.Tuple[int, ...]"
-    [];
-  assert_invalid_type_parameters
-    ~given_type:"typing.Tuple[int, str]"
-    ~expected_transformed_type:"typing.Tuple[int, str]"
-    [];
-  assert_invalid_type_parameters
-    ~given_type:"tuple"
-    ~expected_transformed_type:"typing.Tuple[typing.Any, ...]"
-    [
-      {
-        name = "tuple";
-        kind =
-          IncorrectNumberOfParameters
-            { actual = 0; expected = 1; can_accept_more_parameters = true };
-      };
-    ];
   let variadic_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
   let variadic_variable = Type.Variable.TypeVarTuple.create "Ts" in
-  assert_invalid_type_parameters
-    ~aliases:
-      (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias variadic_declaration)
-        | _ -> None)
-    ~given_type:"typing.List[typing.Unpack[Ts]]"
-    ~expected_transformed_type:"typing.List[typing.Any]"
-    [
-      {
-        name = "list";
-        kind =
-          UnexpectedKind
-            {
-              actual =
-                Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
-              expected = TypeVarVariable (Type.Variable.TypeVar.create "_T");
-            };
-      };
-    ];
   let parameter_variadic = Type.Variable.ParamSpec.create "test.TParams" in
-  assert_invalid_type_parameters_direct
-    ~source:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.List[str, int]"
+           ~expected_transformed_type:"typing.List[typing.Any]"
+           [
+             {
+               name = "list";
+               kind =
+                 IncorrectNumberOfParameters
+                   { actual = 2; expected = 1; can_accept_more_parameters = false };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.List"
+           ~expected_transformed_type:"typing.List[typing.Any]"
+           [
+             {
+               name = "list";
+               kind =
+                 IncorrectNumberOfParameters
+                   { actual = 0; expected = 1; can_accept_more_parameters = false };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.Callable[[int, str], bool]"
+           ~expected_transformed_type:"typing.Callable[[int, str], bool]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.Callable"
+           ~expected_transformed_type:"typing.Callable[..., typing.Any]"
+           [
+             {
+               name = "typing.Callable";
+               kind =
+                 IncorrectNumberOfParameters
+                   { actual = 0; expected = 2; can_accept_more_parameters = false };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.Tuple[int, ...]"
+           ~expected_transformed_type:"typing.Tuple[int, ...]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"typing.Tuple[int, str]"
+           ~expected_transformed_type:"typing.Tuple[int, str]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~given_type:"tuple"
+           ~expected_transformed_type:"typing.Tuple[typing.Any, ...]"
+           [
+             {
+               name = "tuple";
+               kind =
+                 IncorrectNumberOfParameters
+                   { actual = 0; expected = 1; can_accept_more_parameters = true };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~aliases:
+             (fun ?replace_unbound_parameters_with_any:_ -> function
+               | "Ts" -> Some (VariableAlias variadic_declaration)
+               | _ -> None)
+           ~given_type:"typing.List[typing.Unpack[Ts]]"
+           ~expected_transformed_type:"typing.List[typing.Any]"
+           [
+             {
+               name = "list";
+               kind =
+                 UnexpectedKind
+                   {
+                     actual =
+                       Unpacked
+                         (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
+                     expected = TypeVarVariable (Type.Variable.TypeVar.create "_T");
+                   };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters_direct
+           ~source:
+             {|
       from typing import Generic
       from pyre_extensions import ParameterSpecification
 
       TParams = ParameterSpecification("TParams")
       class Foo(Generic[TParams]): ...
     |}
-    ~given_type:
-      (Type.parametric
-         "test.Foo"
-         [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable)])
-    ~expected_transformed_type:(Type.parametric "test.Foo" [CallableParameters Undefined])
-    [
-      {
-        name = "test.Foo";
-        kind =
-          UnexpectedKind
-            {
-              actual =
-                Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
-              expected = Type.Variable.ParamSpecVariable parameter_variadic;
-            };
-      };
-    ];
-  assert_invalid_type_parameters
-    ~source:
-      {|
+           ~given_type:
+             (Type.parametric
+                "test.Foo"
+                [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable)])
+           ~expected_transformed_type:(Type.parametric "test.Foo" [CallableParameters Undefined])
+           [
+             {
+               name = "test.Foo";
+               kind =
+                 UnexpectedKind
+                   {
+                     actual =
+                       Unpacked
+                         (Type.OrderedTypes.Concatenation.create_unpackable variadic_variable);
+                     expected = Type.Variable.ParamSpecVariable parameter_variadic;
+                   };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~source:
+             {|
       from typing import Generic, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[int, str]"
-    ~expected_transformed_type:"test.Foo[int, str]"
-    [];
-  assert_invalid_type_parameters
-    ~aliases:
-      (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias variadic_declaration)
-        | _ -> None)
-    ~source:
-      {|
+           ~given_type:"test.Foo[int, str]"
+           ~expected_transformed_type:"test.Foo[int, str]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~aliases:
+             (fun ?replace_unbound_parameters_with_any:_ -> function
+               | "Ts" -> Some (VariableAlias variadic_declaration)
+               | _ -> None)
+           ~source:
+             {|
       from typing import Generic, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[typing.Unpack[Ts]]"
-    ~expected_transformed_type:"test.Foo[typing.Unpack[Ts]]"
-    [];
-  assert_invalid_type_parameters
-    ~aliases:
-      (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias variadic_declaration)
-        | _ -> None)
-    ~source:
-      {|
+           ~given_type:"test.Foo[typing.Unpack[Ts]]"
+           ~expected_transformed_type:"test.Foo[typing.Unpack[Ts]]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~aliases:
+             (fun ?replace_unbound_parameters_with_any:_ -> function
+               | "Ts" -> Some (VariableAlias variadic_declaration)
+               | _ -> None)
+           ~source:
+             {|
       from typing import Generic
       from typing_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[typing_extensions.Unpack[Ts]]"
-    ~expected_transformed_type:"test.Foo[typing_extensions.Unpack[Ts]]"
-    [];
-  assert_invalid_type_parameters
-    ~aliases:
-      (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias variadic_declaration)
-        | _ -> None)
-    ~source:
-      {|
+           ~given_type:"test.Foo[typing_extensions.Unpack[Ts]]"
+           ~expected_transformed_type:"test.Foo[typing_extensions.Unpack[Ts]]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~aliases:
+             (fun ?replace_unbound_parameters_with_any:_ -> function
+               | "Ts" -> Some (VariableAlias variadic_declaration)
+               | _ -> None)
+           ~source:
+             {|
       from typing import Generic
       from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
-    ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
-    [];
-  assert_invalid_type_parameters_direct
-    ~source:
-      {|
+           ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
+           ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters_direct
+           ~source:
+             {|
       from typing import Generic, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
-    ~given_type:
-      (Type.parametric
-         "test.Foo"
-         [
-           CallableParameters
-             (FromParamSpec { Type.Callable.head = []; variable = parameter_variadic });
-         ])
-    ~expected_transformed_type:
-      (Type.parametric
-         "test.Foo"
-         [Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.Any)])
-    [
-      {
-        name = "test.Foo";
-        kind =
-          UnexpectedKind
-            {
-              actual =
-                Single
-                  (Type.parametric
-                     Type.Variable.TypeVarTuple.synthetic_class_name_for_error
-                     [
-                       CallableParameters (Type.Variable.ParamSpec.self_reference parameter_variadic);
-                     ]);
-              expected =
-                Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "test.Ts");
-            };
-      };
-    ];
-  assert_invalid_type_parameters
-    ~aliases:
-      (fun ?replace_unbound_parameters_with_any:_ -> function
-        | "Ts" -> Some (VariableAlias variadic_declaration)
-        | _ -> None)
-    ~source:
-      {|
+           ~given_type:
+             (Type.parametric
+                "test.Foo"
+                [
+                  CallableParameters
+                    (FromParamSpec { Type.Callable.head = []; variable = parameter_variadic });
+                ])
+           ~expected_transformed_type:
+             (Type.parametric
+                "test.Foo"
+                [Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.Any)])
+           [
+             {
+               name = "test.Foo";
+               kind =
+                 UnexpectedKind
+                   {
+                     actual =
+                       Single
+                         (Type.parametric
+                            Type.Variable.TypeVarTuple.synthetic_class_name_for_error
+                            [
+                              CallableParameters
+                                (Type.Variable.ParamSpec.self_reference parameter_variadic);
+                            ]);
+                     expected =
+                       Type.Variable.TypeVarTupleVariable
+                         (Type.Variable.TypeVarTuple.create "test.Ts");
+                   };
+             };
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_type_parameters
+           ~aliases:
+             (fun ?replace_unbound_parameters_with_any:_ -> function
+               | "Ts" -> Some (VariableAlias variadic_declaration)
+               | _ -> None)
+           ~source:
+             {|
       from typing import Generic, TypeVar, Unpack, TypeVarTuple
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
       class Foo(Generic[T, Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[typing.Unpack[Ts]]"
-    ~expected_transformed_type:"test.Foo[typing.Any, typing.Unpack[typing.Tuple[typing.Any, ...]]]"
-    [
-      {
-        name = "test.Foo";
-        kind =
-          IncorrectNumberOfParameters
-            { actual = 1; expected = 1; can_accept_more_parameters = true };
-      };
-    ];
-  ()
+           ~given_type:"test.Foo[typing.Unpack[Ts]]"
+           ~expected_transformed_type:
+             "test.Foo[typing.Any, typing.Unpack[typing.Tuple[typing.Any, ...]]]"
+           [
+             {
+               name = "test.Foo";
+               kind =
+                 IncorrectNumberOfParameters
+                   { actual = 1; expected = 1; can_accept_more_parameters = true };
+             };
+           ];
+    ]
 
 
-let test_meet context =
-  let assert_meet ?(source = "") ~left ~right expected =
+let test_meet =
+  let assert_meet ?(source = "") ~left ~right expected context =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -1300,20 +1386,24 @@ let test_meet context =
     let actual = GlobalResolution.meet global_resolution (parse left) (parse right) in
     assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
   in
-  assert_meet
-    ~source:{|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_meet
+           ~source:
+             {|
       class C:
         def __init__(self, x: int) -> None:
           pass
     |}
-    ~left:"typing.Type[test.C]"
-    ~right:"typing.Callable[[int], test.C]"
-    Type.Bottom;
-  ()
+           ~left:"typing.Type[test.C]"
+           ~right:"typing.Callable[[int], test.C]"
+           Type.Bottom;
+    ]
 
 
-let test_join context =
-  let assert_join ?(source = "") ~left ~right expected =
+let test_join =
+  let assert_join ?(source = "") ~left ~right expected context =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -1327,9 +1417,12 @@ let test_join context =
     let actual = GlobalResolution.join global_resolution (parse left) (parse right) in
     assert_equal ~cmp:Type.equal ~printer:Type.show (parse expected) actual
   in
-  assert_join
-    ~source:
-      {|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~source:
+             {|
       class B:
         pass
       class X(B):
@@ -1337,23 +1430,25 @@ let test_join context =
       class Y(B):
         pass
     |}
-    ~left:"test.X"
-    ~right:"test.B"
-    "test.B";
-  assert_join
-    ~source:{|
+           ~left:"test.X"
+           ~right:"test.B"
+           "test.B";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join
+           ~source:
+             {|
       class C:
         def __init__(self, x: int) -> None:
           pass
     |}
-    ~left:"typing.Type[test.C]"
-    ~right:"typing.Callable[[int], test.C]"
-    "typing.Callable[[int], test.C]";
-  ()
+           ~left:"typing.Type[test.C]"
+           ~right:"typing.Callable[[int], test.C]"
+           "typing.Callable[[int], test.C]";
+    ]
 
 
-let test_typed_dictionary_attributes context =
-  let assert_attributes sources ~class_name ~expected_attributes =
+let test_typed_dictionary_attributes =
+  let assert_attributes sources ~class_name ~expected_attributes context =
     let project = ScratchProject.setup ~context sources in
     let resolution = ScratchProject.build_resolution project in
     let resolution = Resolution.global_resolution resolution in
@@ -1374,79 +1469,83 @@ let test_typed_dictionary_attributes context =
                 AnnotatedAttribute.name attribute, AnnotatedAttribute.parent attribute))
          attributes)
   in
-  assert_attributes
-    ["foo.py", "class Foo:\n  x: int\n"]
-    ~class_name:"foo.Foo"
-    ~expected_attributes:
-      (Some
-         [
-           "x", "foo.Foo";
-           "__class__", "object";
-           "__delattr__", "object";
-           "__dir__", "object";
-           "__doc__", "object";
-           "__eq__", "object";
-           "__format__", "object";
-           "__getattribute__", "object";
-           "__hash__", "object";
-           "__init__", "object";
-           "__init_subclass__", "object";
-           "__module__", "object";
-           "__ne__", "object";
-           "__new__", "object";
-           "__reduce__", "object";
-           "__repr__", "object";
-           "__setattr__", "object";
-           "__sizeof__", "object";
-           "__str__", "object";
-           "__call__", "type";
-           "__name__", "type";
-         ]);
-  assert_attributes
-    ["test.py", "class Movie(TypedDictionary):\n  name: str\n  year: int"]
-    ~class_name:"test.Movie"
-    ~expected_attributes:
-      (* The fields `name` and `year` are not present. *)
-      (Some
-         [
-           "__init__", "test.Movie";
-           "__getitem__", "test.Movie";
-           "__setitem__", "test.Movie";
-           "get", "test.Movie";
-           "setdefault", "test.Movie";
-           "update", "test.Movie";
-           "__iter__", "TypedDictionary";
-           "__len__", "TypedDictionary";
-           "copy", "TypedDictionary";
-           "__contains__", "typing.Mapping";
-           "items", "typing.Mapping";
-           "keys", "typing.Mapping";
-           "values", "typing.Mapping";
-           "__class__", "object";
-           "__delattr__", "object";
-           "__dir__", "object";
-           "__doc__", "object";
-           "__eq__", "object";
-           "__format__", "object";
-           "__getattribute__", "object";
-           "__hash__", "object";
-           "__init_subclass__", "object";
-           "__module__", "object";
-           "__ne__", "object";
-           "__new__", "object";
-           "__reduce__", "object";
-           "__repr__", "object";
-           "__setattr__", "object";
-           "__sizeof__", "object";
-           "__str__", "object";
-           "__call__", "type";
-           "__name__", "type";
-         ]);
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           ["foo.py", "class Foo:\n  x: int\n"]
+           ~class_name:"foo.Foo"
+           ~expected_attributes:
+             (Some
+                [
+                  "x", "foo.Foo";
+                  "__class__", "object";
+                  "__delattr__", "object";
+                  "__dir__", "object";
+                  "__doc__", "object";
+                  "__eq__", "object";
+                  "__format__", "object";
+                  "__getattribute__", "object";
+                  "__hash__", "object";
+                  "__init__", "object";
+                  "__init_subclass__", "object";
+                  "__module__", "object";
+                  "__ne__", "object";
+                  "__new__", "object";
+                  "__reduce__", "object";
+                  "__repr__", "object";
+                  "__setattr__", "object";
+                  "__sizeof__", "object";
+                  "__str__", "object";
+                  "__call__", "type";
+                  "__name__", "type";
+                ]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_attributes
+           ["test.py", "class Movie(TypedDictionary):\n  name: str\n  year: int"]
+           ~class_name:"test.Movie"
+           ~expected_attributes:
+             (* The fields `name` and `year` are not present. *)
+             (Some
+                [
+                  "__init__", "test.Movie";
+                  "__getitem__", "test.Movie";
+                  "__setitem__", "test.Movie";
+                  "get", "test.Movie";
+                  "setdefault", "test.Movie";
+                  "update", "test.Movie";
+                  "__iter__", "TypedDictionary";
+                  "__len__", "TypedDictionary";
+                  "copy", "TypedDictionary";
+                  "__contains__", "typing.Mapping";
+                  "items", "typing.Mapping";
+                  "keys", "typing.Mapping";
+                  "values", "typing.Mapping";
+                  "__class__", "object";
+                  "__delattr__", "object";
+                  "__dir__", "object";
+                  "__doc__", "object";
+                  "__eq__", "object";
+                  "__format__", "object";
+                  "__getattribute__", "object";
+                  "__hash__", "object";
+                  "__init_subclass__", "object";
+                  "__module__", "object";
+                  "__ne__", "object";
+                  "__new__", "object";
+                  "__reduce__", "object";
+                  "__repr__", "object";
+                  "__setattr__", "object";
+                  "__sizeof__", "object";
+                  "__str__", "object";
+                  "__call__", "type";
+                  "__name__", "type";
+                ]);
+    ]
 
 
-let test_constraints context =
-  let assert_constraints ~target ~instantiated ?parameters source expected =
+let test_constraints =
+  let assert_constraints ~target ~instantiated ?parameters source expected context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -1466,86 +1565,105 @@ let test_constraints context =
   let int_and_foo_string_union =
     Type.Union [Type.parametric "test.Foo" !![Type.string]; Type.integer]
   in
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![int_and_foo_string_union])
-    {|
+  let t_bound =
+    Type.Variable.TypeVar.create
+      ~constraints:(Type.Variable.Bound (Type.Primitive "test.Bound"))
+      "test.T_Bound"
+  in
+  let t_explicit =
+    Type.Variable.TypeVar.create
+      ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
+      "test.T_Explicit"
+  in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![int_and_foo_string_union])
+           {|
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_V]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._V", int_and_foo_string_union];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.Primitive "test.Foo")
-    {|
+           [Type.Variable.TypeVar.create "test._V", int_and_foo_string_union];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.Primitive "test.Foo")
+           {|
       class Foo:
         pass
     |}
-    [];
-
-  (* Consequence of the special case we need to remove *)
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.Bottom])
-    {|
+           [];
+      (* Consequence of the special case we need to remove *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.Bottom])
+           {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         pass
     |}
-    [];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [
-      Type.Variable.TypeVar.create "test._K", Type.integer;
-      Type.Variable.TypeVar.create "test._V", Type.float;
-    ];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
-    {|
+           [
+             Type.Variable.TypeVar.create "test._K", Type.integer;
+             Type.Variable.TypeVar.create "test._V", Type.float;
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [
-      Type.Variable.TypeVar.create "test._K", Type.integer;
-      Type.Variable.TypeVar.create "test._V", Type.float;
-    ];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.Primitive "test.Foo")
-    {|
+           [
+             Type.Variable.TypeVar.create "test._K", Type.integer;
+             Type.Variable.TypeVar.create "test._V", Type.float;
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.Primitive "test.Foo")
+           {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
         pass
       class Foo(Bar[int]):
         pass
     |}
-    [];
-  assert_constraints
-    ~target:"test.Bar"
-    ~instantiated:(Type.Primitive "test.Foo")
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Bar"
+           ~instantiated:(Type.Primitive "test.Foo")
+           {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
         pass
       class Foo(Bar[int]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  assert_constraints
-    ~target:"test.Bar"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Bar"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
+           {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Bar(typing.Generic[_V]):
@@ -1553,11 +1671,12 @@ let test_constraints context =
       class Foo(typing.Generic[_K], Bar[_K]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._V", Type.integer];
-  assert_constraints
-    ~target:"test.Bar"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
-    {|
+           [Type.Variable.TypeVar.create "test._V", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Bar"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1568,11 +1687,12 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  assert_constraints
-    ~target:"test.Baz"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Baz"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1583,45 +1703,50 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.float];
-  assert_constraints
-    ~target:"test.Iterator"
-    ~instantiated:(Type.parametric "test.Iterator" !![Type.integer])
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.float];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Iterator"
+           ~instantiated:(Type.parametric "test.Iterator" !![Type.integer])
+           {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  assert_constraints
-    ~target:"test.Iterator"
-    ~instantiated:(Type.parametric "test.Iterable" !![Type.integer])
-    {|
-      _T = typing.TypeVar('_T')
-      class Iterator(typing.Protocol[_T]):
-        pass
-      class Iterable(Iterator[_T]):
-        pass
-    |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  assert_constraints
-    ~target:"test.Iterator"
-    ~instantiated:
-      (Type.parametric "test.Iterable" !![Type.parametric "test.Iterable" !![Type.integer]])
-    ~parameters:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Iterator"
+           ~instantiated:(Type.parametric "test.Iterable" !![Type.integer])
+           {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
         pass
       class Iterable(Iterator[_T]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  assert_constraints
-    ~target:"test.Foo"
-    ~parameters:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
-    ~instantiated:(Type.parametric "test.Bar" !![Type.parametric "test.Bar" !![Type.integer]])
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Iterator"
+           ~instantiated:
+             (Type.parametric "test.Iterable" !![Type.parametric "test.Iterable" !![Type.integer]])
+           ~parameters:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
+           {|
+      _T = typing.TypeVar('_T')
+      class Iterator(typing.Protocol[_T]):
+        pass
+      class Iterable(Iterator[_T]):
+        pass
+    |}
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~parameters:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
+           ~instantiated:
+             (Type.parametric "test.Bar" !![Type.parametric "test.Bar" !![Type.integer]])
+           {|
       _V = typing.TypeVar('_V', covariant=True)
       class Foo(typing.Generic[_V]):
         pass
@@ -1629,27 +1754,24 @@ let test_constraints context =
       class Bar(Foo[_V2]):
         pass
     |}
-    [Type.Variable.TypeVar.create "test._T", Type.integer];
-  let t_bound =
-    Type.Variable.TypeVar.create
-      ~constraints:(Type.Variable.Bound (Type.Primitive "test.Bound"))
-      "test.T_Bound"
-  in
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.Bound"])
-    {|
+           [Type.Variable.TypeVar.create "test._T", Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.Bound"])
+           {|
       class Bound:
         pass
       T_Bound = typing.TypeVar('T_Bound', bound=Bound)
       class Foo(typing.Generic[T_Bound]):
         pass
     |}
-    [t_bound, Type.Primitive "test.Bound"];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.UnderBound"])
-    {|
+           [t_bound, Type.Primitive "test.Bound"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.UnderBound"])
+           {|
       class Bound:
         pass
       class UnderBound(Bound):
@@ -1658,11 +1780,12 @@ let test_constraints context =
       class Foo(typing.Generic[T_Bound]):
         pass
     |}
-    [t_bound, Type.Primitive "test.UnderBound"];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.OverBound"])
-    {|
+           [t_bound, Type.Primitive "test.UnderBound"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.OverBound"])
+           {|
       class Bound:
         pass
       class OverBound():
@@ -1671,34 +1794,32 @@ let test_constraints context =
       class Foo(typing.Generic[T_Bound]):
         pass
     |}
-    [];
-  let t_explicit =
-    Type.Variable.TypeVar.create
-      ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
-      "test.T_Explicit"
-  in
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
+           {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
         pass
     |}
-    [t_explicit, Type.integer];
-  assert_constraints
-    ~target:"test.Foo"
-    ~instantiated:(Type.parametric "test.Foo" !![Type.bool])
-    {|
+           [t_explicit, Type.integer];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_constraints
+           ~target:"test.Foo"
+           ~instantiated:(Type.parametric "test.Foo" !![Type.bool])
+           {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
         pass
     |}
-    []
+           [];
+    ]
 
 
-let test_metaclasses context =
-  let assert_metaclass ~source ~target metaclass =
+let test_metaclasses =
+  let assert_metaclass ~source ~target metaclass context =
     let target = "test." ^ target in
     let metaclass =
       if String.equal metaclass "type" then
@@ -1712,22 +1833,28 @@ let test_metaclasses context =
     let resolution = GlobalResolution.create global_environment in
     assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass resolution target)
   in
-  assert_metaclass ~source:{|
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass ~source:{|
        class C:
          pass
     |} ~target:"C" "type";
-  assert_metaclass
-    ~source:{|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class C(metaclass=Meta):
         pass
     |}
-    ~target:"C"
-    "Meta";
-  assert_metaclass
-    ~source:
-      {|
+           ~target:"C"
+           "Meta";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class C(metaclass=Meta):
@@ -1735,11 +1862,12 @@ let test_metaclasses context =
       class D(C):
         pass
     |}
-    ~target:"D"
-    "Meta";
-  assert_metaclass
-    ~source:
-      {|
+           ~target:"D"
+           "Meta";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class MoreMeta(Meta):
@@ -1751,11 +1879,12 @@ let test_metaclasses context =
       class D(C, Other):
         pass
     |}
-    ~target:"D"
-    "MoreMeta";
-  assert_metaclass
-    ~source:
-      {|
+           ~target:"D"
+           "MoreMeta";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class MoreMeta(Meta):
@@ -1767,13 +1896,13 @@ let test_metaclasses context =
       class D(Other, C):
         pass
     |}
-    ~target:"D"
-    "MoreMeta";
-
-  (* If we don't have a "most derived metaclass", pick an arbitrary one. *)
-  assert_metaclass
-    ~source:
-      {|
+           ~target:"D"
+           "MoreMeta";
+      (* If we don't have a "most derived metaclass", pick an arbitrary one. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class MoreMeta(Meta):
@@ -1787,11 +1916,12 @@ let test_metaclasses context =
       class D(Other, C):
         pass
     |}
-    ~target:"D"
-    "OtherMeta";
-  assert_metaclass
-    ~source:
-      {|
+           ~target:"D"
+           "OtherMeta";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_metaclass
+           ~source:
+             {|
       class Meta:
         pass
       class MoreMeta(Meta):
@@ -1805,11 +1935,12 @@ let test_metaclasses context =
       class D(C, Other):
         pass
     |}
-    ~target:"D"
-    "MoreMeta"
+           ~target:"D"
+           "MoreMeta";
+    ]
 
 
-let test_overrides context =
+let test_overrides =
   let create_simple_callable_attribute ?(initialized = Attribute.OnClass) ~signature ~parent name =
     let annotation = Type.Callable signature in
     AnnotatedAttribute.create
@@ -1835,7 +1966,7 @@ let test_overrides context =
       overloads;
     }
   in
-  let resolution =
+  let resolution context =
     ScratchProject.setup
       ~context
       [
@@ -1866,8 +1997,8 @@ let test_overrides context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let assert_overrides ~class_name ~method_name ~expected_override =
-    let overrides = GlobalResolution.overrides resolution ~name:method_name class_name in
+  let assert_overrides ~class_name ~method_name ~expected_override context =
+    let overrides = GlobalResolution.overrides (resolution context) ~name:method_name class_name in
     let print_attribute attribute =
       AnnotatedAttribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
     in
@@ -1884,48 +2015,52 @@ let test_overrides context =
           expected
     | None -> assert_is_none overrides
   in
-  assert_overrides ~class_name:"test.Baz" ~method_name:"baz" ~expected_override:None;
-  assert_overrides
-    ~class_name:"test.Baz"
-    ~method_name:"foo"
-    ~expected_override:
-      (create_simple_callable_attribute
-         ~initialized:OnClass
-         ~signature:
-           (create_callable
-              ~name:"test.Foo.foo"
-              ~parameters:[]
-              ~annotation:Type.integer
-              ~overloads:[])
-         ~parent:"test.Foo"
-         "foo"
-      |> Option.some);
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_overrides ~class_name:"test.Baz" ~method_name:"baz" ~expected_override:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_overrides
+           ~class_name:"test.Baz"
+           ~method_name:"foo"
+           ~expected_override:
+             (create_simple_callable_attribute
+                ~initialized:OnClass
+                ~signature:
+                  (create_callable
+                     ~name:"test.Foo.foo"
+                     ~parameters:[]
+                     ~annotation:Type.integer
+                     ~overloads:[])
+                ~parent:"test.Foo"
+                "foo"
+             |> Option.some);
+      (* Test overloads. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_overrides
+           ~class_name:"overloads.Bar"
+           ~method_name:"foo"
+           ~expected_override:
+             (create_simple_callable_attribute
+                ~initialized:OnClass
+                ~signature:
+                  (create_callable
+                     ~name:"overloads.Foo.foo"
+                     ~parameters:[]
+                     ~annotation:(Type.union [Type.integer; Type.string])
+                     ~overloads:
+                       [
+                         { parameters = Defined []; annotation = Type.integer };
+                         { parameters = Defined []; annotation = Type.string };
+                       ])
+                ~parent:"overloads.Foo"
+                "foo"
+             |> Option.some);
+    ]
 
-  (* Test overloads. *)
-  assert_overrides
-    ~class_name:"overloads.Bar"
-    ~method_name:"foo"
-    ~expected_override:
-      (create_simple_callable_attribute
-         ~initialized:OnClass
-         ~signature:
-           (create_callable
-              ~name:"overloads.Foo.foo"
-              ~parameters:[]
-              ~annotation:(Type.union [Type.integer; Type.string])
-              ~overloads:
-                [
-                  { parameters = Defined []; annotation = Type.integer };
-                  { parameters = Defined []; annotation = Type.string };
-                ])
-         ~parent:"overloads.Foo"
-         "foo"
-      |> Option.some);
-  ()
 
-
-let test_extract_type_parameter context =
-  let resolution =
+let test_extract_type_parameter =
+  let resolution context =
     ScratchProject.setup
       ~context
       [
@@ -1956,15 +2091,18 @@ let test_extract_type_parameter context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let parse_annotation annotation =
+  let parse_annotation annotation context =
     annotation
     (* Preprocess literal TypedDict syntax. *)
     |> parse_single_expression ~preprocess:true
-    |> GlobalResolution.parse_annotation resolution
+    |> GlobalResolution.parse_annotation (resolution context)
   in
-  let assert_extracted ~expected ~as_name annotation =
+  let assert_extracted ~expected ~as_name parse_annotation context =
     let actual =
-      GlobalResolution.extract_type_parameters resolution ~source:annotation ~target:as_name
+      GlobalResolution.extract_type_parameters
+        (resolution context)
+        ~source:(parse_annotation context)
+        ~target:as_name
     in
     assert_equal
       ~cmp:[%equal: Type.t list option]
@@ -1978,106 +2116,138 @@ let test_extract_type_parameter context =
     (* Change me in case the canonical name for list type changes *)
     "list"
   in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.Any) ~as_name:"test.Derp" ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.Top) ~as_name:"test.Derp" ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.Bottom) ~as_name:"test.Derp" ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.list Type.integer) ~as_name:"test.Derp" ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (parse_annotation "test.Derp") ~as_name:"test.Derp" ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.Foo[int]")
+           ~as_name:"test.Foo"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.Bar[str]")
+           ~as_name:"test.Foo"
+           ~expected:(Some [Type.string]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.Baz[int, str]")
+           ~as_name:"test.Foo"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.Baz[str, int]")
+           ~as_name:"test.Foo"
+           ~expected:(Some [Type.string]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.Baz[int, str]")
+           ~as_name:"test.Baz"
+           ~expected:(Some [Type.integer; Type.string]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.integer) ~as_name:list_name ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (parse_annotation "test.Foo[int]") ~as_name:list_name ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.List[int]")
+           ~as_name:list_name
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.ListOfInt")
+           ~as_name:list_name
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.ListOfInt")
+           ~as_name:"typing.Sequence"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.ListOfInt")
+           ~as_name:"typing.Iterable"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.MyIntProtocol")
+           ~as_name:"test.MyProtocol"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.MyStrProtocol")
+           ~as_name:"test.MyProtocol"
+           ~expected:(Some [Type.string]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.MyGenericProtocol[float]")
+           ~as_name:"test.MyProtocol"
+           ~expected:(Some [Type.float]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "test.NotMyProtocol")
+           ~as_name:"test.MyProtocol"
+           ~expected:None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Dict[int, str]")
+           ~as_name:"typing.Iterable"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Dict[int, str]")
+           ~as_name:"typing.Mapping"
+           ~expected:(Some [Type.integer; Type.string]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Mapping[int, str]")
+           ~as_name:"typing.Iterable"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Generator[int, str, float]")
+           ~as_name:"typing.Iterator"
+           ~expected:(Some [Type.integer]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Coroutine[typing.Any, typing.Any, typing.Any]")
+           ~as_name:"typing.Awaitable"
+           ~expected:(Some [Type.Any]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (parse_annotation "typing.Coroutine[int, str, float]")
+           ~as_name:"typing.Awaitable"
+           ~expected:(Some [Type.float]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (fun _ -> Type.list Type.Any)
+           ~as_name:list_name
+           ~expected:(Some [Type.Any]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted
+           (fun _ -> Type.list Type.object_primitive)
+           ~as_name:list_name
+           ~expected:(Some [Type.object_primitive]);
+      (* TODO (T63159626): Should be [Top] *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.list Type.Top) ~as_name:list_name ~expected:None;
+      (* TODO (T63159626): Should be [Bottom] *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_extracted (fun _ -> Type.list Type.Bottom) ~as_name:list_name ~expected:None;
+    ]
 
-  assert_extracted Type.Any ~as_name:"test.Derp" ~expected:None;
-  assert_extracted Type.Top ~as_name:"test.Derp" ~expected:None;
-  assert_extracted Type.Bottom ~as_name:"test.Derp" ~expected:None;
-  assert_extracted (Type.list Type.integer) ~as_name:"test.Derp" ~expected:None;
-  assert_extracted (parse_annotation "test.Derp") ~as_name:"test.Derp" ~expected:None;
 
-  assert_extracted
-    (parse_annotation "test.Foo[int]")
-    ~as_name:"test.Foo"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.Bar[str]")
-    ~as_name:"test.Foo"
-    ~expected:(Some [Type.string]);
-  assert_extracted
-    (parse_annotation "test.Baz[int, str]")
-    ~as_name:"test.Foo"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.Baz[str, int]")
-    ~as_name:"test.Foo"
-    ~expected:(Some [Type.string]);
-  assert_extracted
-    (parse_annotation "test.Baz[int, str]")
-    ~as_name:"test.Baz"
-    ~expected:(Some [Type.integer; Type.string]);
-
-  assert_extracted Type.integer ~as_name:list_name ~expected:None;
-  assert_extracted (parse_annotation "test.Foo[int]") ~as_name:list_name ~expected:None;
-  assert_extracted
-    (parse_annotation "typing.List[int]")
-    ~as_name:list_name
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.ListOfInt")
-    ~as_name:list_name
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.ListOfInt")
-    ~as_name:"typing.Sequence"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.ListOfInt")
-    ~as_name:"typing.Iterable"
-    ~expected:(Some [Type.integer]);
-
-  assert_extracted
-    (parse_annotation "test.MyIntProtocol")
-    ~as_name:"test.MyProtocol"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "test.MyStrProtocol")
-    ~as_name:"test.MyProtocol"
-    ~expected:(Some [Type.string]);
-  assert_extracted
-    (parse_annotation "test.MyGenericProtocol[float]")
-    ~as_name:"test.MyProtocol"
-    ~expected:(Some [Type.float]);
-  assert_extracted (parse_annotation "test.NotMyProtocol") ~as_name:"test.MyProtocol" ~expected:None;
-
-  assert_extracted
-    (parse_annotation "typing.Dict[int, str]")
-    ~as_name:"typing.Iterable"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "typing.Dict[int, str]")
-    ~as_name:"typing.Mapping"
-    ~expected:(Some [Type.integer; Type.string]);
-  assert_extracted
-    (parse_annotation "typing.Mapping[int, str]")
-    ~as_name:"typing.Iterable"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "typing.Generator[int, str, float]")
-    ~as_name:"typing.Iterator"
-    ~expected:(Some [Type.integer]);
-  assert_extracted
-    (parse_annotation "typing.Coroutine[typing.Any, typing.Any, typing.Any]")
-    ~as_name:"typing.Awaitable"
-    ~expected:(Some [Type.Any]);
-  assert_extracted
-    (parse_annotation "typing.Coroutine[int, str, float]")
-    ~as_name:"typing.Awaitable"
-    ~expected:(Some [Type.float]);
-
-  assert_extracted (Type.list Type.Any) ~as_name:list_name ~expected:(Some [Type.Any]);
-  assert_extracted
-    (Type.list Type.object_primitive)
-    ~as_name:list_name
-    ~expected:(Some [Type.object_primitive]);
-  (* TODO (T63159626): Should be [Top] *)
-  assert_extracted (Type.list Type.Top) ~as_name:list_name ~expected:None;
-  (* TODO (T63159626): Should be [Bottom] *)
-  assert_extracted (Type.list Type.Bottom) ~as_name:list_name ~expected:None;
-  ()
-
-
-let test_type_of_iteration_value context =
-  let global_resolution =
+let test_type_of_iteration_value =
+  let global_resolution context =
     ScratchProject.setup
       ~context
       [
@@ -2094,14 +2264,14 @@ let test_type_of_iteration_value context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let parse_annotation annotation =
+  let parse_annotation annotation context =
     annotation
     |> parse_single_expression ~preprocess:true
-    |> GlobalResolution.parse_annotation global_resolution
+    |> GlobalResolution.parse_annotation (global_resolution context)
   in
-  let assert_type_of_iteration_value ~annotation ~expected =
-    let type_ = parse_annotation annotation in
-    let actual = GlobalResolution.type_of_iteration_value global_resolution type_ in
+  let assert_type_of_iteration_value ~annotation ~expected context =
+    let type_ = parse_annotation annotation context in
+    let actual = GlobalResolution.type_of_iteration_value (global_resolution context) type_ in
     assert_equal
       ~cmp:[%equal: Type.t option]
       ~printer:(function
@@ -2110,110 +2280,131 @@ let test_type_of_iteration_value context =
       expected
       actual
   in
-  assert_type_of_iteration_value ~annotation:"typing.Iterable[int]" ~expected:(Some Type.integer);
-  assert_type_of_iteration_value ~annotation:"typing.Iterator[str]" ~expected:(Some Type.string);
-  assert_type_of_iteration_value
-    ~annotation:"typing.Generator[int, str, None]"
-    ~expected:(Some Type.integer);
-  assert_type_of_iteration_value ~annotation:"test.IntIterable" ~expected:(Some Type.integer);
-  assert_type_of_iteration_value
-    ~annotation:"test.GenericIterator[str]"
-    ~expected:(Some Type.string);
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_iteration_value
+           ~annotation:"typing.Iterable[int]"
+           ~expected:(Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_iteration_value
+           ~annotation:"typing.Iterator[str]"
+           ~expected:(Some Type.string);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_iteration_value
+           ~annotation:"typing.Generator[int, str, None]"
+           ~expected:(Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_iteration_value ~annotation:"test.IntIterable" ~expected:(Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_iteration_value
+           ~annotation:"test.GenericIterator[str]"
+           ~expected:(Some Type.string);
+    ]
 
 
-let test_type_of_generator_send_and_return context =
-  let global_resolution =
+let test_type_of_generator_send_and_return =
+  let global_resolution context =
     ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
   in
-  let parse_annotation annotation =
+  let parse_annotation annotation context =
     annotation
     |> parse_single_expression ~preprocess:true
-    |> GlobalResolution.parse_annotation global_resolution
+    |> GlobalResolution.parse_annotation (global_resolution context)
   in
-  let assert_type_of_generator_send_and_return ~annotation ~expected_send ~expected_return =
-    let type_ = parse_annotation annotation in
+  let assert_type_of_generator_send_and_return ~annotation ~expected_send ~expected_return context =
+    let type_ = parse_annotation annotation context in
     let actual_send, actual_return =
-      GlobalResolution.type_of_generator_send_and_return global_resolution type_
+      GlobalResolution.type_of_generator_send_and_return (global_resolution context) type_
     in
     assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_send actual_send;
     assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_return actual_return;
     ()
   in
-  assert_type_of_generator_send_and_return
-    ~annotation:"typing.Iterator[int]"
-    ~expected_send:Type.none
-    ~expected_return:Type.none;
-  assert_type_of_generator_send_and_return
-    ~annotation:"typing.Iterable[int]"
-    ~expected_send:Type.none
-    ~expected_return:Type.none;
-  assert_type_of_generator_send_and_return
-    ~annotation:"typing.AsyncGenerator[int, str]"
-    ~expected_send:Type.string
-    ~expected_return:Type.none;
-  assert_type_of_generator_send_and_return
-    ~annotation:"typing.Generator[int, None, str]"
-    ~expected_send:Type.none
-    ~expected_return:Type.string;
-  assert_type_of_generator_send_and_return
-    ~annotation:"typing.Generator[int, str, None]"
-    ~expected_send:Type.string
-    ~expected_return:Type.none;
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_generator_send_and_return
+           ~annotation:"typing.Iterator[int]"
+           ~expected_send:Type.none
+           ~expected_return:Type.none;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_generator_send_and_return
+           ~annotation:"typing.Iterable[int]"
+           ~expected_send:Type.none
+           ~expected_return:Type.none;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_generator_send_and_return
+           ~annotation:"typing.AsyncGenerator[int, str]"
+           ~expected_send:Type.string
+           ~expected_return:Type.none;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_generator_send_and_return
+           ~annotation:"typing.Generator[int, None, str]"
+           ~expected_send:Type.none
+           ~expected_return:Type.string;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_of_generator_send_and_return
+           ~annotation:"typing.Generator[int, str, None]"
+           ~expected_send:Type.string
+           ~expected_return:Type.none;
+    ]
 
 
-let test_refine context =
-  let global_resolution =
+let test_refine =
+  let global_resolution context =
     ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
   in
-  assert_equal
-    (GlobalResolution.refine
-       global_resolution
-       (TypeInfo.Unit.create_immutable Type.float)
-       Type.integer)
-    (TypeInfo.Unit.create_immutable ~original:(Some Type.float) Type.integer);
-  assert_equal
-    (GlobalResolution.refine
-       global_resolution
-       (TypeInfo.Unit.create_immutable Type.integer)
-       Type.float)
-    (TypeInfo.Unit.create_immutable Type.integer);
-  assert_equal
-    (GlobalResolution.refine
-       global_resolution
-       (TypeInfo.Unit.create_immutable Type.integer)
-       Type.Bottom)
-    (TypeInfo.Unit.create_immutable Type.integer);
-  assert_equal
-    (GlobalResolution.refine
-       global_resolution
-       (TypeInfo.Unit.create_immutable Type.integer)
-       Type.Top)
-    (TypeInfo.Unit.create_immutable ~original:(Some Type.integer) Type.Top);
-  ()
+  let assert_refine_equal annotation refined_type expected_typeinfo context =
+    assert_equal
+      (GlobalResolution.refine (global_resolution context) annotation refined_type)
+      expected_typeinfo
+  in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_refine_equal
+           (TypeInfo.Unit.create_immutable Type.float)
+           Type.integer
+           (TypeInfo.Unit.create_immutable ~original:(Some Type.float) Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_refine_equal
+           (TypeInfo.Unit.create_immutable Type.integer)
+           Type.float
+           (TypeInfo.Unit.create_immutable Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_refine_equal
+           (TypeInfo.Unit.create_immutable Type.integer)
+           Type.Bottom
+           (TypeInfo.Unit.create_immutable Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_refine_equal
+           (TypeInfo.Unit.create_immutable Type.integer)
+           Type.Top
+           (TypeInfo.Unit.create_immutable ~original:(Some Type.integer) Type.Top);
+    ]
 
 
 let () =
   Test.sanitized_module_name __MODULE__
   >::: [
-         "all_attributes" >:: test_all_attributes;
+         test_all_attributes;
          test_attribute_from_class_name;
-         "test_attribute_from_annotation" >:: test_attribute_from_annotation;
-         "typed_dictionary_attributes" >:: test_typed_dictionary_attributes;
-         "constraints" >:: test_constraints;
-         "constructors" >:: test_constructors;
-         "first_matching_decorator" >:: test_first_matching_decorator;
-         "is_protocol" >:: test_is_protocol;
-         "metaclasses" >:: test_metaclasses;
-         "superclasses" >:: test_superclasses;
-         "overrides" >:: test_overrides;
-         "extract_type_parameter" >:: test_extract_type_parameter;
-         "type_of_iteration_value" >:: test_type_of_iteration_value;
-         "type_of_generator_send_and_return" >:: test_type_of_generator_send_and_return;
-         "test_invalid_type_parameters" >:: test_invalid_type_parameters;
-         "test_meet" >:: test_meet;
-         "test_join" >:: test_join;
-         "refine" >:: test_refine;
+         test_attribute_from_annotation;
+         test_typed_dictionary_attributes;
+         test_constraints;
+         test_constructors;
+         test_first_matching_decorator;
+         test_is_protocol;
+         test_metaclasses;
+         test_superclasses;
+         test_overrides;
+         test_extract_type_parameter;
+         test_type_of_iteration_value;
+         test_type_of_generator_send_and_return;
+         test_invalid_type_parameters;
+         test_meet;
+         test_join;
+         test_refine;
        ]
   |> Test.run
