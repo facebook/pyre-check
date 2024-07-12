@@ -51,7 +51,7 @@ module type KIND_ARG = sig
 
   val matching_sanitize_transforms
     :  taint_configuration:TaintConfiguration.Heap.t ->
-    named_transforms:TaintTransform.t list ->
+    non_sanitize_transforms:TaintTransform.t list ->
     base:t ->
     SourceSinkFilter.MatchingSanitizeTransforms.t option
 end
@@ -74,7 +74,10 @@ module Make (Kind : KIND_ARG) = struct
           named_transforms
           (SourceSinkFilter.possible_tito_transforms source_sink_filter)
       else
-        Kind.matching_sanitize_transforms ~taint_configuration ~named_transforms ~base
+        Kind.matching_sanitize_transforms
+          ~taint_configuration
+          ~non_sanitize_transforms:named_transforms
+          ~base
         |> Option.is_some
     in
     if not should_keep then
@@ -137,7 +140,10 @@ module Make (Kind : KIND_ARG) = struct
         else
           let matching_kinds =
             if not (Kind.is_tito base) then
-              Kind.matching_sanitize_transforms ~taint_configuration ~named_transforms ~base
+              Kind.matching_sanitize_transforms
+                ~taint_configuration
+                ~non_sanitize_transforms:named_transforms
+                ~base
             else
               None
           in
@@ -465,10 +471,13 @@ module Source = Make (struct
 
   let matching_sanitize_transforms
       ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
-      ~named_transforms
+      ~non_sanitize_transforms
       ~base
     =
-    SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter ~named_transforms ~base
+    SourceSinkFilter.matching_sink_sanitize_transforms
+      source_sink_filter
+      ~non_sanitize_transforms
+      ~base
 end)
 
 module Sink = Make (struct
@@ -524,8 +533,11 @@ module Sink = Make (struct
 
   let matching_sanitize_transforms
       ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
-      ~named_transforms
+      ~non_sanitize_transforms
       ~base
     =
-    SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter ~named_transforms ~base
+    SourceSinkFilter.matching_source_sanitize_transforms
+      source_sink_filter
+      ~non_sanitize_transforms
+      ~base
 end)

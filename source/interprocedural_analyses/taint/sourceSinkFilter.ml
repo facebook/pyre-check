@@ -253,21 +253,25 @@ let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filter
 
 let matching_source_sanitize_transforms
     { matching_source_sanitize_transforms; _ }
-    ~named_transforms
+    ~non_sanitize_transforms
     ~base
   =
   let base = Sinks.discard_subkind base in
-  let sink = Sinks.make_transform ~local:TaintTransforms.empty ~global:named_transforms ~base in
+  let sink =
+    Sinks.make_transform ~local:TaintTransforms.empty ~global:non_sanitize_transforms ~base
+  in
   Sinks.Map.find_opt sink matching_source_sanitize_transforms
 
 
 let matching_sink_sanitize_transforms
     { matching_sink_sanitize_transforms; _ }
-    ~named_transforms
+    ~non_sanitize_transforms
     ~base
   =
   let base = Sources.discard_subkind base in
-  let source = Sources.make_transform ~local:TaintTransforms.empty ~global:named_transforms ~base in
+  let source =
+    Sources.make_transform ~local:TaintTransforms.empty ~global:non_sanitize_transforms ~base
+  in
   Sources.Map.find_opt source matching_sink_sanitize_transforms
 
 
@@ -276,11 +280,12 @@ let should_keep_source filter source =
   | Sources.Attach -> true
   | Sources.NamedSource _
   | Sources.ParametricSource _ ->
-      matching_sink_sanitize_transforms filter ~named_transforms:[] ~base:source |> Option.is_some
+      matching_sink_sanitize_transforms filter ~non_sanitize_transforms:[] ~base:source
+      |> Option.is_some
   | Sources.Transform { local; global; base } -> (
       let transforms = TaintTransforms.merge ~local ~global in
-      let named_transforms = TaintTransforms.get_named_transforms transforms in
-      match matching_sink_sanitize_transforms filter ~named_transforms ~base with
+      let non_sanitize_transforms = TaintTransforms.get_non_sanitize_transforms transforms in
+      match matching_sink_sanitize_transforms filter ~non_sanitize_transforms ~base with
       | None -> false
       | Some { sanitizable = false; _ } -> true
       | Some { transforms = matching_sinks; sanitizable = true } ->
@@ -300,20 +305,21 @@ let should_keep_sink ({ possible_tito_transforms; _ } as filter) sink =
   | Sinks.PartialSink _
   | Sinks.TriggeredPartialSink _
   | Sinks.ExtraTraceSink ->
-      matching_source_sanitize_transforms filter ~named_transforms:[] ~base:sink |> Option.is_some
+      matching_source_sanitize_transforms filter ~non_sanitize_transforms:[] ~base:sink
+      |> Option.is_some
   | Sinks.LocalReturn
   | Sinks.ParameterUpdate _ ->
       true
   | Sinks.Transform { local; global; base = LocalReturn }
   | Sinks.Transform { local; global; base = ParameterUpdate _ } ->
       let transforms =
-        TaintTransforms.merge ~local ~global |> TaintTransforms.get_named_transforms
+        TaintTransforms.merge ~local ~global |> TaintTransforms.get_non_sanitize_transforms
       in
       TaintTransforms.Set.mem transforms possible_tito_transforms
   | Sinks.Transform { local; global; base } -> (
       let transforms = TaintTransforms.merge ~local ~global in
-      let named_transforms = TaintTransforms.get_named_transforms transforms in
-      match matching_source_sanitize_transforms filter ~named_transforms ~base with
+      let non_sanitize_transforms = TaintTransforms.get_non_sanitize_transforms transforms in
+      match matching_source_sanitize_transforms filter ~non_sanitize_transforms ~base with
       | None -> false
       | Some { sanitizable = false; _ } -> true
       | Some { transforms = matching_sources; sanitizable = true } ->
