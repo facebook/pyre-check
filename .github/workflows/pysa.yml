@@ -21,25 +21,17 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          sudo apt-get install ocaml ocaml-dune
-
-      - name: Setup OCaml
-        uses: avsm/setup-ocaml@8cc6339f55862749298d198ef84788b8d6acdacc # v2.2.10
-        with:
-          ocaml-compiler: 4.14.0
-
-      - name: Setup opam switch
-        run: |
-          opam switch create 4.14.0
-          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.14.0" >> $GITHUB_ENV
-          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.14.0/lib/stublibs:$HOME/.opam/4.14.0/lib/ocaml/stublibs:$HOME/.opam/4.14.0/lib/ocam" >> $GITHUB_ENV
-          echo "$HOME/.opam/4.14.0/bin" >> $GITHUB_PATH
-          echo "/home/opam/.opam/4.14.0/bin" >> $GITHUB_PATH
+          sudo apt-get install opam
 
       - name: Build Pyre (and Pysa)
         run: |
+          # We aren't sure why, but `setup.py` is not adding the opam bin
+          # directory to the PATH successfully in github CI so we set it
+          # manually. TODO(T195374929) Maybe investigate this more?
+          export PATH="${HOME}/.opam/pyre-4.14.0/bin:${PATH}"
+
           ./scripts/setup.sh --local --no-tests
-          make -C source
+
           echo "PYTHONPATH=$GITHUB_WORKSPACE/..:$PYTHONPATH" >> $GITHUB_ENV
           echo "pythonLocation=$GITHUB_WORKSPACE:$pythonLocation" >> $GITHUB_ENV
           echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
