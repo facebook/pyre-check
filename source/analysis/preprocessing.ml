@@ -285,7 +285,7 @@ module Qualify (Context : QualifyContext) = struct
     locals: Reference.Set.t;
     is_top_level: bool;
     is_in_function: bool;
-    is_in_class: bool;
+    is_class_toplevel: bool;
   }
 
   let is_qualified = String.is_prefix ~prefix:"$"
@@ -375,7 +375,8 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_function_name
-      ~scope:({ aliases; locals; immutables; is_in_function; is_in_class; qualifier; _ } as scope)
+      ~scope:
+        ({ aliases; locals; immutables; is_in_function; is_class_toplevel; qualifier; _ } as scope)
       name
     =
     if is_in_function then
@@ -391,7 +392,7 @@ module Qualify (Context : QualifyContext) = struct
       | _ -> scope, qualify_reference ~scope name
     else
       let scope =
-        if is_in_class then
+        if is_class_toplevel then
           scope
         else
           {
@@ -461,7 +462,7 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_statement
-      ~scope:({ qualifier; aliases; is_top_level; is_in_class; _ } as scope)
+      ~scope:({ qualifier; aliases; is_top_level; is_class_toplevel; _ } as scope)
       ({ Node.value; _ } as statement)
     =
     let scope, value =
@@ -510,7 +511,7 @@ module Qualify (Context : QualifyContext) = struct
                 | List elements ->
                     let scope, elements = qualify_targets scope elements in
                     scope, List elements
-                | Name (Name.Identifier name) when is_in_class ->
+                | Name (Name.Identifier name) when is_class_toplevel ->
                     let sanitized = Identifier.sanitized name in
                     let qualified =
                       let qualifier =
@@ -565,7 +566,7 @@ module Qualify (Context : QualifyContext) = struct
                            (Name.Identifier name)) )
                 | Name name ->
                     let name =
-                      if is_in_class then
+                      if is_class_toplevel then
                         qualify_if_needed ~qualifier (name_to_reference_exn name)
                         |> create_name_from_reference ~location
                         |> fun name -> Expression.Name name
@@ -630,7 +631,13 @@ module Qualify (Context : QualifyContext) = struct
         let scope, qualified_function_name = qualify_function_name ~scope name in
         let inner_scope =
           let qualifier = qualify_if_needed ~qualifier name in
-          { scope with qualifier; is_in_function = true; is_in_class = false; is_top_level = false }
+          {
+            scope with
+            qualifier;
+            is_in_function = true;
+            is_class_toplevel = false;
+            is_top_level = false;
+          }
         in
         let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
         let _, body = qualify_statements ~scope:inner_scope body in
@@ -661,7 +668,7 @@ module Qualify (Context : QualifyContext) = struct
         let body =
           let qualifier = qualify_if_needed ~qualifier name in
           let original_scope =
-            { scope with qualifier; is_in_function = false; is_in_class = true }
+            { scope with qualifier; is_in_function = false; is_class_toplevel = true }
           in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
@@ -1276,7 +1283,7 @@ let qualify
       immutables = Reference.Set.empty;
       is_top_level = true;
       is_in_function = false;
-      is_in_class = false;
+      is_class_toplevel = false;
     }
   in
   { source with Source.statements = Qualify.qualify_statements ~scope statements |> snd }

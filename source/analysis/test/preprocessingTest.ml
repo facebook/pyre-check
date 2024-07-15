@@ -1830,7 +1830,7 @@ let test_qualify_ast _ =
       immutables = Reference.Set.empty;
       is_top_level = true;
       is_in_function = false;
-      is_in_class = false;
+      is_class_toplevel = false;
     }
   in
   let assert_qualify_statement statement expected =
