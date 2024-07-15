@@ -1,6 +1,4 @@
 from typing import List
-import random
-import textwrap
 import itertools
 import string
 
@@ -20,7 +18,7 @@ class CodeGenerator:
         names = [name for name in names if name not in reserved_keywords]
         return names
 
-    def generate_new_function_name(self) -> str:
+    def generate_new_function(self) -> str:
         function_name = f"f{self.current_function_number}"
         self.current_function_number += 1
         return function_name
@@ -42,12 +40,24 @@ class CodeGenerator:
         self.last_node = current_var
         return f"{current_var} = {temp}" 
 
+    def add_function(self) -> str:
+        current_function = self.generate_new_function()
+        temp = self.last_node
+        self.last_node = current_function + "()"
+        indent_space = ' ' * 4
+        return f"def {current_function}():\n{indent_space}return {temp}"
 
+    def generate(self, instructions: List[int]) -> str:
+        code_lines = []
+        for instruction in instructions:
+            if instruction == 1:
+                code_lines.append(self.add_function())
+            elif instruction == 2:
+                code_lines.append(self.add_variable())
+        code_lines.append(self.generate_sink())
+        return '\n'.join(code_lines)
 
+# Example usage
 generator = CodeGenerator()
-
-print(generator.add_variable())
-print(generator.add_variable())
-print(generator.add_variable())
-
-print(generator.generate_sink())
+instructions = [1, 2, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2]
+print(generator.generate(instructions))
