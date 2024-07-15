@@ -4157,7 +4157,7 @@ module State (Context : Context) = struct
         { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
       when is_simple_name name -> (
         let { TypeInfo.Unit.annotation = callee_type; _ } = resolve_expression ~resolution test in
-        match Type.type_inside_typeguard callee_type with
+        match Type.inner_type_if_is_typeguard callee_type with
         | Some guard_type ->
             let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
