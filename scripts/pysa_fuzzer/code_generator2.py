@@ -1,6 +1,7 @@
 from typing import List
 import itertools
 import string
+import random 
 
 class CodeGenerator:
     def __init__(self) -> None:
@@ -47,17 +48,95 @@ class CodeGenerator:
         indent_space = ' ' * 4
         return f"def {current_function}():\n{indent_space}return {temp}"
 
+    def add_condition_function(self) -> str: 
+        current_function = self.generate_new_function()
+        temp = self.last_node 
+        self.last_node = current_function + "()"
+        indent_space = ' ' * 4
+        x = random.randint(1, 100)
+        return f"def {current_function}():\n{indent_space}if {x} <= 33:\n{indent_space * 2}return {temp}\n{indent_space}elif 33 < {x} <= 66:\n{indent_space * 2} return {temp}\n{indent_space}else:\n{indent_space * 2}return {temp}"
+
     def generate(self, instructions: List[int]) -> str:
         code_lines = []
         for instruction in instructions:
             if instruction == 1:
-                code_lines.append(self.add_function())
-            elif instruction == 2:
                 code_lines.append(self.add_variable())
+            elif instruction == 2:
+                code_lines.append(self.add_function())
+            elif instruction == 3: 
+                code_lines.append(self.add_condition_function())
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
 # Example usage
 generator = CodeGenerator()
-instructions = [1, 2, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2]
+instructions = [1,2,2,1,3,2,3] 
 print(generator.generate(instructions))
+
+
+# [] 
+print(input())
+
+# [1]
+a = input()
+print(a)
+
+# [1,2]
+a = input()
+def f1():
+    return a
+print(f1())
+
+# [1,2,2]
+a = input()
+def f1():
+    return a
+def f2():
+    return f1()
+print(f2())
+
+# [1,2,2,1]
+a = input()
+def f1():
+    return a
+def f2():
+    return f1()
+b = f2()
+print(b)
+
+# [1,2,2,1,3]
+a = input()
+def f1():
+    return a
+def f2():
+    return f1()
+b = f2()
+def f3():
+    if 12 <= 33:
+        return b
+    elif 33 < 12 <= 66:
+         return b
+    else:
+        return b
+print(f3())
+
+# [1,2,2,1,3,2]
+a = input()
+def f1():
+    return a
+def f2():
+    return f1()
+b = f2()
+def f3():
+    if 4 <= 33:
+        return b
+    elif 33 < 4 <= 66:
+         return b
+    else:
+        return b
+def f4():
+    return f3()
+print(f4())
+
+
+# [1,2,2,1,3,2,3]
