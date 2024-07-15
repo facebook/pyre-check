@@ -631,7 +631,7 @@ module Qualify (Context : QualifyContext) = struct
         let scope, qualified_function_name = qualify_function_name ~scope name in
         let inner_scope =
           let qualifier = qualify_if_needed ~qualifier name in
-          { scope with qualifier; is_in_function = true; is_top_level = false }
+          { scope with qualifier; is_in_function = true; is_in_class = false; is_top_level = false }
         in
         let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
         let _, body = qualify_statements ~scope:inner_scope body in
