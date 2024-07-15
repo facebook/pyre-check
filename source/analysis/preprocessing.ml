@@ -452,7 +452,7 @@ module Qualify (Context : QualifyContext) = struct
     let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
       let qualify (scope, statements) statement =
-        let scope, statement = qualify_statement ~qualify_assign:false ~scope statement in
+        let scope, statement = qualify_statement ~scope statement in
         scope, statement :: statements
       in
       List.fold statements ~init:(scope, []) ~f:qualify
@@ -461,8 +461,7 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_statement
-      ~qualify_assign
-      ~scope:({ qualifier; aliases; is_top_level; _ } as scope)
+      ~scope:({ qualifier; aliases; is_top_level; is_in_class; _ } as scope)
       ({ Node.value; _ } as statement)
     =
     let scope, value =
@@ -511,7 +510,7 @@ module Qualify (Context : QualifyContext) = struct
                 | List elements ->
                     let scope, elements = qualify_targets scope elements in
                     scope, List elements
-                | Name (Name.Identifier name) when qualify_assign ->
+                | Name (Name.Identifier name) when is_in_class ->
                     let sanitized = Identifier.sanitized name in
                     let qualified =
                       let qualifier =
@@ -566,7 +565,7 @@ module Qualify (Context : QualifyContext) = struct
                            (Name.Identifier name)) )
                 | Name name ->
                     let name =
-                      if qualify_assign then
+                      if is_in_class then
                         qualify_if_needed ~qualifier (name_to_reference_exn name)
                         |> create_name_from_reference ~location
                         |> fun name -> Expression.Name name
@@ -707,7 +706,7 @@ module Qualify (Context : QualifyContext) = struct
                     }
                   in
                   scope, { Node.location; value = Statement.Define { define with signature } }
-              | _ -> qualify_statement statement ~qualify_assign:true ~scope
+              | _ -> qualify_statement statement ~scope
             in
             scope, statement :: statements
           in

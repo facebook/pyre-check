@@ -1834,7 +1834,7 @@ let test_qualify_ast _ =
     }
   in
   let assert_qualify_statement statement expected =
-    let qualify = Qualify.qualify_statement ~qualify_assign:false ~scope in
+    let qualify = Qualify.qualify_statement ~scope in
     let _, processed = qualify statement in
     assert_equal
       ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
