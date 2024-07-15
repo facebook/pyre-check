@@ -260,7 +260,24 @@ class CodeGenerator:
         final_assignment = f"{last_var} = {prev_var}"
         return '\n'.join(function_definitions) + '\n' + final_assignment
     
+    def generate_for_loop_with_if(self, depth: int = 1) -> str:
+        indent = '    '
+        prev_var = self.get_last_variable() 
+        curr_var = self.generate_new_variable()
+        loop_body = (
+            f"{indent}if _ != 1:\n"
+            f"{indent}    {curr_var} += {prev_var}\n"
+            f"{indent}else:\n"
+            f"{indent}    {curr_var} += '1'\n"
+        )
+        
+        if depth > 1:
+            nested_loop = self.generate_for_loop_with_if(depth - 1, indent_level + 1)
+            loop_body = f"{nested_loop}\n{loop_body}"
 
+        return f"{curr_var} = ''\nfor _ in range({random.randint(2, 5)}):\n{loop_body}"
+
+    
     def generate_statements(self, number_statements: int) -> str:
         if number_statements < 2:
             raise ValueError("number_statements should be at least 2 to include source and sink functions.")
@@ -295,3 +312,13 @@ class CodeGenerator:
         sink_code = self.generate_sink()
         full_code = f"{import_statements}\n{source_code}\n{generated_code}\n{sink_code}"
         return full_code
+
+
+
+generator = CodeGenerator()
+print(generator.generate_source())
+print(generator.generate_for_loop_with_if())
+print(generator.generate_for_loop_with_if())
+print(generator.generate_for_loop_with_if())
+print(generator.generate_sink())
+
