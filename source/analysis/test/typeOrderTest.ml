@@ -2155,6 +2155,9 @@ let test_join =
     handler order
   in
   let assert_type_equal left right _ = assert_type_equal left right in
+  let assert_join_type_equal order left right expected =
+    assert_type_equal (join order left right) expected
+  in
   let type_var_tuple_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
   test_list
     [
@@ -2407,160 +2410,158 @@ let test_join =
            "pyre_extensions.ReadOnly[Base]";
       (* Variables. *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order Type.integer (Type.variable "T"))
+      @@ assert_join_type_equal
+           order
+           Type.integer
+           (Type.variable "T")
            (Type.union [Type.integer; Type.variable "T"]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              order
-              Type.integer
-              (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"))
+      @@ assert_join_type_equal
+           order
+           Type.integer
+           (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T")
            (Type.union
               [Type.integer; Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              order
-              Type.string
-              (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
+      @@ assert_join_type_equal
+           order
+           Type.string
+           (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T")
            (Type.union
               [
                 Type.string;
                 Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T";
               ]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order Type.string (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
+      @@ assert_join_type_equal
+           order
+           Type.string
+           (Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
            (Type.union [Type.string; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              order
-              (Type.literal_integer 7)
-              (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
+      @@ assert_join_type_equal
+           order
+           (Type.literal_integer 7)
+           (Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
            (Type.union
               [Type.literal_integer 7; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
       (* Variance. *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.integer])
-              (Type.parametric "LinkedList" ![Type.Top]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.integer])
+           (Type.parametric "LinkedList" ![Type.Top])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Top])
-              (Type.parametric "LinkedList" ![Type.integer]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Top])
+           (Type.parametric "LinkedList" ![Type.integer])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Bottom])
-              (Type.parametric "LinkedList" ![Type.Top]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Bottom])
+           (Type.parametric "LinkedList" ![Type.Top])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Top])
-              (Type.parametric "LinkedList" ![Type.Bottom]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Top])
+           (Type.parametric "LinkedList" ![Type.Bottom])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Any])
-              (Type.parametric "LinkedList" ![Type.Top]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Any])
+           (Type.parametric "LinkedList" ![Type.Top])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Top])
-              (Type.parametric "LinkedList" ![Type.Any]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Top])
+           (Type.parametric "LinkedList" ![Type.Any])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Top])
-              (Type.parametric "LinkedList" ![Type.Top]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Top])
+           (Type.parametric "LinkedList" ![Type.Top])
            (Type.parametric "LinkedList" ![Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "Map" ![Type.integer; Type.integer])
-              (Type.parametric "Map" ![Type.Top; Type.Top]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "Map" ![Type.integer; Type.integer])
+           (Type.parametric "Map" ![Type.Top; Type.Top])
            (Type.parametric "Map" ![Type.Top; Type.Top]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "Map" ![Type.integer; Type.integer])
-              (Type.parametric "Map" ![Type.Top; Type.integer]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "Map" ![Type.integer; Type.integer])
+           (Type.parametric "Map" ![Type.Top; Type.integer])
            (Type.parametric "Map" ![Type.Top; Type.integer]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "Map" ![Type.integer; Type.integer])
-              (Type.parametric "Map" ![Type.Top; Type.string]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "Map" ![Type.integer; Type.integer])
+           (Type.parametric "Map" ![Type.Top; Type.string])
            (Type.union
               [
                 Type.parametric "Map" ![Type.integer; Type.integer];
                 Type.parametric "Map" ![Type.Top; Type.string];
               ]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.integer])
-              (Type.parametric "LinkedList" ![Type.Any]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.integer])
+           (Type.parametric "LinkedList" ![Type.Any])
            (Type.parametric "LinkedList" ![Type.Any]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "LinkedList" ![Type.Any])
-              (Type.parametric "LinkedList" ![Type.integer]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "LinkedList" ![Type.Any])
+           (Type.parametric "LinkedList" ![Type.integer])
            (Type.parametric "LinkedList" ![Type.Any]);
       (* Contravariant *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join
-              variance_order
-              (Type.parametric "Sink" ![Type.integer])
-              (Type.parametric "Sink" ![Type.string]))
+      @@ assert_join_type_equal
+           variance_order
+           (Type.parametric "Sink" ![Type.integer])
+           (Type.parametric "Sink" ![Type.string])
            (Type.Union
               [Type.parametric "Sink" ![Type.integer]; Type.parametric "Sink" ![Type.string]]);
       (* Literals *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order (Type.literal_string "A") (Type.literal_string "A"))
+      @@ assert_join_type_equal
+           order
+           (Type.literal_string "A")
+           (Type.literal_string "A")
            (Type.literal_string "A");
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order (Type.literal_string "A") (Type.literal_string "B"))
+      @@ assert_join_type_equal
+           order
+           (Type.literal_string "A")
+           (Type.literal_string "B")
            (Type.Literal (String AnyLiteral));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_equal (join order (Type.literal_string "A") Type.string) Type.string;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order (Type.literal_string "A") Type.integer)
+      @@ assert_join_type_equal
+           order
+           (Type.literal_string "A")
+           Type.integer
            (Type.union [Type.string; Type.integer]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order (Type.Literal (String AnyLiteral)) (Type.Literal (String AnyLiteral)))
+      @@ assert_join_type_equal
+           order
+           (Type.Literal (String AnyLiteral))
+           (Type.Literal (String AnyLiteral))
            (Type.Literal (String AnyLiteral));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_equal
-           (join order (Type.Literal (String AnyLiteral)) (Type.literal_string "hello"))
+      @@ assert_join_type_equal
+           order
+           (Type.Literal (String AnyLiteral))
+           (Type.literal_string "hello")
            (Type.Literal (String AnyLiteral));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_equal (join order (Type.Literal (String AnyLiteral)) Type.string) Type.string;

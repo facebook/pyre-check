@@ -2112,6 +2112,9 @@ let test_extract_type_parameter =
       expected
       actual
   in
+  let assert_extracted_type ~expected ~as_name type_ =
+    assert_extracted ~expected ~as_name (fun _ -> type_)
+  in
   let list_name =
     (* Change me in case the canonical name for list type changes *)
     "list"
@@ -2119,13 +2122,13 @@ let test_extract_type_parameter =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.Any) ~as_name:"test.Derp" ~expected:None;
+      @@ assert_extracted_type Type.Any ~as_name:"test.Derp" ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.Top) ~as_name:"test.Derp" ~expected:None;
+      @@ assert_extracted_type Type.Top ~as_name:"test.Derp" ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.Bottom) ~as_name:"test.Derp" ~expected:None;
+      @@ assert_extracted_type Type.Bottom ~as_name:"test.Derp" ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.list Type.integer) ~as_name:"test.Derp" ~expected:None;
+      @@ assert_extracted_type (Type.list Type.integer) ~as_name:"test.Derp" ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_extracted (parse_annotation "test.Derp") ~as_name:"test.Derp" ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
@@ -2154,7 +2157,7 @@ let test_extract_type_parameter =
            ~as_name:"test.Baz"
            ~expected:(Some [Type.integer; Type.string]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.integer) ~as_name:list_name ~expected:None;
+      @@ assert_extracted_type Type.integer ~as_name:list_name ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_extracted (parse_annotation "test.Foo[int]") ~as_name:list_name ~expected:None;
       labeled_test_case __FUNCTION__ __LINE__
@@ -2228,21 +2231,18 @@ let test_extract_type_parameter =
            ~as_name:"typing.Awaitable"
            ~expected:(Some [Type.float]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted
-           (fun _ -> Type.list Type.Any)
-           ~as_name:list_name
-           ~expected:(Some [Type.Any]);
+      @@ assert_extracted_type (Type.list Type.Any) ~as_name:list_name ~expected:(Some [Type.Any]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted
-           (fun _ -> Type.list Type.object_primitive)
+      @@ assert_extracted_type
+           (Type.list Type.object_primitive)
            ~as_name:list_name
            ~expected:(Some [Type.object_primitive]);
       (* TODO (T63159626): Should be [Top] *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.list Type.Top) ~as_name:list_name ~expected:None;
+      @@ assert_extracted_type (Type.list Type.Top) ~as_name:list_name ~expected:None;
       (* TODO (T63159626): Should be [Bottom] *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_extracted (fun _ -> Type.list Type.Bottom) ~as_name:list_name ~expected:None;
+      @@ assert_extracted_type (Type.list Type.Bottom) ~as_name:list_name ~expected:None;
     ]
 
 
