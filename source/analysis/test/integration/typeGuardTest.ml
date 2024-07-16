@@ -14,21 +14,21 @@ let test_type_is =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import Any, List, TypeIs
+              from typing import Any, Sequence, TypeIs
 
-              def is_str_list(val: List[Any]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[Any]) -> TypeIs[Sequence[str]]:
                   """Determines whether all objects in the list are strings"""
                   return all(isinstance(x, str) for x in val)
 
-              def foo(xs: List[int | str]) -> None:
+              def foo(xs: Sequence[int | str]) -> None:
                   if is_str_list(xs):
                       reveal_type(xs)
                   else:
                       reveal_type(xs)
             |}
            [
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[typing.Union[int, str]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -113,66 +113,66 @@ let test_type_is =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
               class Foo():
-                x: List[int | str] = [5, "hello"]
+                x: Sequence[int | str] = [5, "hello"]
 
               def bar() -> None:
                 obj = Foo()
                 if is_str_list(obj.x):
                   reveal_type(obj.x)
             |}
-           ["Revealed type [-1]: Revealed type for `obj.x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `obj.x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
-              x: List[int | str] = [5, "hello"]
+              x: Sequence[int | str] = [5, "hello"]
               if is_str_list(x):
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
               class Foo():
-                x: List[int | str] = [5, "hello"]
+                x: Sequence[int | str] = [5, "hello"]
 
               obj = Foo()
               if is_str_list(obj.x):
                 reveal_type(obj.x)
             |}
-           ["Revealed type [-1]: Revealed type for `obj.x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `obj.x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeIs, List
+              from typing import TypeIs, Sequence
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
-              def bar(xs: List[int | str]) -> None:
+              def bar(xs: Sequence[int | str]) -> None:
                   if is_str_list(val=xs):
                       reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[typing.Union[int, str]]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import List, TypeIs, TypedDict, Any, Dict
+              from typing import Sequence, TypeIs, TypedDict, Any, Dict
 
               class Person(TypedDict):
                   name: str
@@ -195,7 +195,7 @@ let test_type_is =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs, TypedDict, Any, Dict
+              from typing import Sequence, TypeIs, TypedDict, Any, Dict
 
               def all_values_int(d: Dict[str, Any]) -> TypeIs[Dict[str,int]]:
                   return all(isinstance(val, int) for val in d.values())
@@ -214,21 +214,21 @@ let test_type_guard =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import Any, List, TypeGuard
+              from typing import Any, Sequence, TypeGuard
 
-              def is_str_list(val: List[Any]) -> TypeGuard[List[str]]:
+              def is_str_list(val: Sequence[Any]) -> TypeGuard[Sequence[str]]:
                   """Determines whether all objects in the list are strings"""
                   return all(isinstance(x, str) for x in val)
 
-              def foo(xs: List[int | str]) -> None:
+              def foo(xs: Sequence[int | str]) -> None:
                   if is_str_list(xs):
                       reveal_type(xs)
                   else:
                       reveal_type(xs)
             |}
            [
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[typing.Union[int, str]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -306,66 +306,66 @@ let test_type_guard =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeGuard
+              from typing import Sequence, TypeGuard
 
-              def is_str_list(val: List[int | str]) -> TypeGuard[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeGuard[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
               class Foo():
-                x: List[int | str] = [5, "hello"]
+                x: Sequence[int | str] = [5, "hello"]
 
               def bar() -> None:
                 obj = Foo()
                 if is_str_list(obj.x):
                   reveal_type(obj.x)
             |}
-           ["Revealed type [-1]: Revealed type for `obj.x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `obj.x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeGuard
+              from typing import Sequence, TypeGuard
 
-              def is_str_list(val: List[int | str]) -> TypeGuard[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeGuard[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
-              x: List[int | str] = [5, "hello"]
+              x: Sequence[int | str] = [5, "hello"]
               if is_str_list(x):
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeGuard
+              from typing import Sequence, TypeGuard
 
-              def is_str_list(val: List[int | str]) -> TypeGuard[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeGuard[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
               class Foo():
-                x: List[int | str] = [5, "hello"]
+                x: Sequence[int | str] = [5, "hello"]
 
               obj = Foo()
               if is_str_list(obj.x):
                 reveal_type(obj.x)
             |}
-           ["Revealed type [-1]: Revealed type for `obj.x` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `obj.x` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeGuard, List
+              from typing import TypeGuard, Sequence
 
-              def is_str_list(val: List[int | str]) -> TypeGuard[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeGuard[Sequence[str]]:
                   return all(isinstance(x, str) for x in val)
 
-              def bar(xs: List[int | str]) -> None:
+              def bar(xs: Sequence[int | str]) -> None:
                   if is_str_list(val=xs):
                       reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[typing.Union[int, str]]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import List, TypeGuard, TypedDict, Any, Dict
+              from typing import Sequence, TypeGuard, TypedDict, Any, Dict
 
               class Person(TypedDict):
                   name: str
@@ -388,7 +388,7 @@ let test_type_guard =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeGuard, TypedDict, Any, Dict
+              from typing import Sequence, TypeGuard, TypedDict, Any, Dict
 
               def all_values_int(d: Dict[str, Any]) -> TypeGuard[Dict[str,int]]:
                   return all(isinstance(val, int) for val in d.values())
@@ -407,34 +407,34 @@ let test_multiple_arguments =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeIs, List
+              from typing import TypeIs, Sequence
 
-              def is_str_list(val: List[int | str], allow_empty: bool) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str], allow_empty: bool) -> TypeIs[Sequence[str]]:
                   if len(val) == 0:
                       return allow_empty
                   return all(isinstance(x, str) for x in val)
 
-              def foo(xs: List[int | str]) -> None:
+              def foo(xs: Sequence[int | str]) -> None:
                   if is_str_list(xs, True):
                       reveal_type(xs)
                   elif is_str_list(xs, False):
                       reveal_type(xs)
             |}
            [
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import TypeIs, List, TypeVar, Any, Type
+              from typing import TypeIs, Sequence, TypeVar, Any, Type
 
               _T = TypeVar("_T")
 
-              def is_list_of(val: List[Any], type: Type[_T]) -> TypeIs[List[_T]]:
+              def is_list_of(val: Sequence[Any], type: Type[_T]) -> TypeIs[Sequence[_T]]:
                   return all(isinstance(x, type) for x in val)
 
-              def foo(xs: List[int | str]) -> None:
+              def foo(xs: Sequence[int | str]) -> None:
                   if is_list_of(xs, int):
                       reveal_type(xs)
                   elif is_list_of(xs, str):
@@ -443,9 +443,9 @@ let test_multiple_arguments =
                       reveal_type(xs)
             |}
            [
-             "Revealed type [-1]: Revealed type for `xs` is `List[int]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[int]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[typing.Union[int, str]]`.";
            ];
     ]
 
@@ -515,78 +515,78 @@ let test_methods =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
               class Foo:
-                def is_str_list(self, val: List[int | str]) -> TypeIs[List[str]]:
+                def is_str_list(self, val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                     return all(isinstance(x, str) for x in val)
-                def bar(self, xs: List[int | str]) -> None:
+                def bar(self, xs: Sequence[int | str]) -> None:
                     if self.is_str_list(xs):
                         reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
               class Foo:
-                def is_str_list(self, val: List[int | str]) -> TypeIs[List[str]]:
+                def is_str_list(self, val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                     return all(isinstance(x, str) for x in val)
 
-              def bar(xs: List[int | str]) -> None:
+              def bar(xs: Sequence[int | str]) -> None:
                   if Foo().is_str_list(xs):
                       reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeIs, List
+              from typing import TypeIs, Sequence
 
               class Foo:
-                def is_str_list(self, val: List[int | str], allow_empty: bool) -> TypeIs[List[str]]:
+                def is_str_list(self, val: Sequence[int | str], allow_empty: bool) -> TypeIs[Sequence[str]]:
                     if len(val) == 0:
                         return allow_empty
                     return all(isinstance(x, str) for x in val)
-                def bar(self, xs: List[int | str]) -> None:
+                def bar(self, xs: Sequence[int | str]) -> None:
                     if self.is_str_list(xs, True):
                         reveal_type(xs)
                     elif self.is_str_list(xs, False):
                         reveal_type(xs)
             |}
            [
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
-             "Revealed type [-1]: Revealed type for `xs` is `List[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
+             "Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeIs, List
+              from typing import TypeIs, Sequence
 
               class Foo:
                 @classmethod
-                def is_str_list(cls, val: List[int | str]) -> TypeIs[List[str]]:
+                def is_str_list(cls, val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                     return all(isinstance(x, str) for x in val)
-              def bar(xs: List[int | str]) -> None:
+              def bar(xs: Sequence[int | str]) -> None:
                   if Foo.is_str_list(xs):
                       reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeIs, List
+              from typing import TypeIs, Sequence
 
               class Foo:
                 @staticmethod
-                def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+                def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                     return all(isinstance(x, str) for x in val)
-              def bar(xs: List[int | str]) -> None:
+              def bar(xs: Sequence[int | str]) -> None:
                   if Foo.is_str_list(xs):
                       reveal_type(xs)
             |}
-           ["Revealed type [-1]: Revealed type for `xs` is `List[str]`."];
+           ["Revealed type [-1]: Revealed type for `xs` is `Sequence[str]`."];
     ]
 
 
@@ -646,18 +646,18 @@ let test_return_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                 return all(isinstance(x, str) for x in val)
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List, TypeIs
+              from typing import Sequence, TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                 return 5
             |}
            ["Incompatible return type [7]: Expected `bool` but got `int`."];
@@ -696,14 +696,14 @@ let test_return_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import TypeIs, List, TypeVar, Any, Type
+              from typing import TypeIs, Sequence, TypeVar, Any, Type
 
               _T = TypeVar("_T")
 
-              def is_list_of(val: List[Any], type: Type[_T]) -> TypeIs[List[_T]]:
+              def is_list_of(val: Sequence[Any], type: Type[_T]) -> TypeIs[Sequence[_T]]:
                   return all(isinstance(x, type) for x in val)
 
-              def is_str_list(val: List[Any]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[Any]) -> TypeIs[Sequence[str]]:
                 return is_list_of(val, str)
             |}
            [];
@@ -914,10 +914,10 @@ let test_misc =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import List
+              from typing import Sequence
               from typing_extensions import TypeIs
 
-              def is_str_list(val: List[int | str]) -> TypeIs[List[str]]:
+              def is_str_list(val: Sequence[int | str]) -> TypeIs[Sequence[str]]:
                 return all(isinstance(x, str) for x in val)
             |}
            [];
