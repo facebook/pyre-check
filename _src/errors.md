@@ -1961,6 +1961,59 @@ def query_user(conn: Connection, user_id: str) -> User:
 
 LiteralStrings are created either from an explicit string literal like "foo" or from combining multiple string literals or LiteralStrings. This is a security focused typing feature for safely calling  powerful APIs. See [PEP 675](https://peps.python.org/pep-0675/#appendix-b-limitations) for more details.
 
+### 68: Invalid Type Guard
+
+User defined type-guards are functions that return `TypeIs[X]` or `TypeGuard[X]`; at runtime these return a `bool`, but the static type indicates to the type checker that they narrow the type of the first positional argument, for example:
+```python
+from typing import TypeIs, reveal_type
+
+def is_int_or_str(val: object) -> TypeIs[int | str]: ...
+
+def f(x: object):
+    if is_int_or_str(x):
+        reveal_type(x)  # int | str
+```
+The difference between `TypeGuard` and `TypeIs` is that `TypeGuard` only narrows in the positive case and is covariant in its type parameter, whereas `TypeIs` also narrows in the negative case and is invariant in its type parameter; for example:
+```python
+# (extending the previous example)
+
+def is_int_or_str_typeguard(val: object) -> TypeGuard[int | str]: ...
+
+def g(x: int | str | bytes):
+    if is_int_or_str(x):
+        reveal_type(x)  # int | str
+    else:
+        reveal_type(x)  # bytes
+
+    if is_int_or_str_typeguard(x):
+        reveal_type(x)  # int | str
+    else:
+        reveal_type(x)  # int | str | bytes (no narrowing here)
+```
+
+It is a type error if such a type guard function does not accept at least one positional argument; the type guard cannot actually be invoked correctly in this case. For example:
+```python
+from typing import TypeIs, TypeGuard
+
+# Error: the argument is keyword-only, this is not a valid type guard.
+def bad_type_guard(/, val: objec) -> TypeGuard[float]: ...
+
+class CustomTypeGuard:
+    # Error: this is a non-static method and `self` is bound, so it does not
+    #  accept a positional argument.
+    def guard(self) -> TypeIs[str]: ...
+```
+
+In addition, for `TypeIs` it is an error if the narrowed type (the type inside the `TypeIs`) is not assignable to the type of the first positional parameter.
+```python
+from typing import TypeIs
+
+# Error: `int` is not a subtype of `str`
+def inconsistent_type_is(x: str) -> TypeIs[int]: ...
+```
+
+You can read more about type guards and narrowing in the specification: https://typing.readthedocs.io/en/latest/spec/narrowing.html.
+
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
