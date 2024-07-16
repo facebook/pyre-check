@@ -450,6 +450,7 @@ let test_qualify_source _ =
   assert_qualify_statement "(b, b)" "(a, a)";
   assert_qualify_statement "-b" "-a";
   assert_qualify_statement "assert b" "assert a";
+  assert_qualify_statement "assert b, b" "assert a, a";
   assert_qualify_statement "del b" "del a";
   assert_qualify_statement
     "b = 1\nfor b in []: pass"

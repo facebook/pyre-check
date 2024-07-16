@@ -742,7 +742,8 @@ module Qualify (Context : QualifyContext) = struct
             Assert
               {
                 Assert.test = qualify_expression ~qualify_strings:DoNotQualify ~scope test;
-                message;
+                message =
+                  Option.map message ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope);
                 origin;
               } )
       | Class ({ name; _ } as definition) ->
