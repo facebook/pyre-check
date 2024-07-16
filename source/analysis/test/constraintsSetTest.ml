@@ -203,7 +203,15 @@ let make_assert_functions context =
       else
         GlobalResolution.get_type_alias resolution a
     in
-    annotation |> Type.create ~variables:(variable_aliases aliases) ~aliases |> Type.expression
+    let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+      match aliases name with
+      | Some (Type.Alias.TypeAlias t) -> Some t
+      | _ -> None
+    in
+
+    annotation
+    |> Type.create ~variables:(variable_aliases aliases) ~aliases:resolved_aliases
+    |> Type.expression
   in
   let parse_annotation annotation ~do_prep =
     annotation

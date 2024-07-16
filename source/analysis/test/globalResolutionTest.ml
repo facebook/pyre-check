@@ -1102,7 +1102,6 @@ let test_invalid_type_parameters =
   in
   let assert_invalid_type_parameters
       ?source
-      ?(aliases = Type.empty_aliases)
       ~given_type
       ~expected_transformed_type
       expected_mismatches
@@ -1116,7 +1115,7 @@ let test_invalid_type_parameters =
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
          `check_invalid_type_parameters`. *)
-      |> Type.create ~variables:variable_aliases ~aliases
+      |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
     in
     assert_invalid_type_parameters_direct
       ?source
@@ -1124,7 +1123,6 @@ let test_invalid_type_parameters =
       ~expected_transformed_type:(parse expected_transformed_type)
       expected_mismatches
   in
-  let variadic_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
   let variadic_variable = Type.Variable.TypeVarTuple.create "Ts" in
   let parameter_variadic = Type.Variable.ParamSpec.create "test.TParams" in
   test_list
@@ -1194,10 +1192,6 @@ let test_invalid_type_parameters =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_type_parameters
-           ~aliases:
-             (fun ?replace_unbound_parameters_with_any:_ -> function
-               | "Ts" -> Some (VariableAlias variadic_declaration)
-               | _ -> None)
            ~given_type:"typing.List[typing.Unpack[Ts]]"
            ~expected_transformed_type:"typing.List[typing.Any]"
            [
@@ -1255,10 +1249,6 @@ let test_invalid_type_parameters =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_type_parameters
-           ~aliases:
-             (fun ?replace_unbound_parameters_with_any:_ -> function
-               | "Ts" -> Some (VariableAlias variadic_declaration)
-               | _ -> None)
            ~source:
              {|
       from typing import Generic, TypeVarTuple, Unpack
@@ -1271,10 +1261,6 @@ let test_invalid_type_parameters =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_type_parameters
-           ~aliases:
-             (fun ?replace_unbound_parameters_with_any:_ -> function
-               | "Ts" -> Some (VariableAlias variadic_declaration)
-               | _ -> None)
            ~source:
              {|
       from typing import Generic
@@ -1288,10 +1274,6 @@ let test_invalid_type_parameters =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_type_parameters
-           ~aliases:
-             (fun ?replace_unbound_parameters_with_any:_ -> function
-               | "Ts" -> Some (VariableAlias variadic_declaration)
-               | _ -> None)
            ~source:
              {|
       from typing import Generic
@@ -1345,10 +1327,6 @@ let test_invalid_type_parameters =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_type_parameters
-           ~aliases:
-             (fun ?replace_unbound_parameters_with_any:_ -> function
-               | "Ts" -> Some (VariableAlias variadic_declaration)
-               | _ -> None)
            ~source:
              {|
       from typing import Generic, TypeVar, Unpack, TypeVarTuple

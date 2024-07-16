@@ -974,17 +974,19 @@ module Alias : sig
 end
 
 val resolve_aliases
-  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> Alias.t option) ->
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> t option) ->
   t ->
   t
 
 val create
   :  variables:(string -> Variable.Declaration.t option) ->
-  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option) ->
+  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option) ->
   Expression.t ->
   t
 
 val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option
+
+val resolved_empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option
 
 val infer_transform : t -> t
 

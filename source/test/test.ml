@@ -199,7 +199,7 @@ let parse_single_call ?(preprocess = false) source =
   | _ -> failwith "Could not parse single call"
 
 
-let parse_callable ?name ?(aliases = Type.empty_aliases) callable =
+let parse_callable ?name ?(aliases = Type.resolved_empty_aliases) callable =
   let variable_aliases _ = None in
 
   let callable =

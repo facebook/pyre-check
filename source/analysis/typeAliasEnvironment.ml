@@ -44,14 +44,18 @@ module IncomingDataComputation = struct
 
     let unchecked_resolve ~unparsed ~target map =
       let aliases ?replace_unbound_parameters_with_any:_ name = Map.find map name in
-
+      let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+        match aliases name with
+        | Some (Type.Alias.TypeAlias t) -> Some t
+        | _ -> None
+      in
       let variable_aliases name =
         match aliases ?replace_unbound_parameters_with_any:(Some true) name with
         | Some (Type.Alias.VariableAlias variable) -> Some variable
         | _ -> None
       in
 
-      match Type.create ~variables:variable_aliases ~aliases unparsed with
+      match Type.create ~variables:variable_aliases ~aliases:resolved_aliases unparsed with
       | Type.Variable variable -> Type.Variable { variable with name = Reference.show target }
       | annotation -> annotation
 
@@ -126,7 +130,7 @@ module IncomingDataComputation = struct
           let target_annotation =
             Type.create
               ~variables:variable_aliases
-              ~aliases:Type.empty_aliases
+              ~aliases:Type.resolved_empty_aliases
               (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
@@ -155,7 +159,10 @@ module IncomingDataComputation = struct
 
                   let value = Type.preprocess_alias_value value |> delocalize in
                   let value_annotation =
-                    Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases value
+                    Type.create
+                      ~variables:variable_aliases
+                      ~aliases:Type.resolved_empty_aliases
+                      value
                   in
                   if
                     not
@@ -281,14 +288,18 @@ module OutgoingDataComputation = struct
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in
-
+      let resolved_aliases ?replace_unbound_parameters_with_any name =
+        match aliases ?replace_unbound_parameters_with_any name with
+        | Some (Type.Alias.TypeAlias t) -> Some t
+        | _ -> None
+      in
       let variable_aliases name =
         match aliases ?replace_unbound_parameters_with_any:(Some true) name with
         | Some (Type.Alias.VariableAlias variable) -> Some variable
         | _ -> None
       in
 
-      Type.create ~variables:variable_aliases ~aliases expression
+      Type.create ~variables:variable_aliases ~aliases:resolved_aliases expression
     in
     let annotation =
       let type_map = function

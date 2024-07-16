@@ -653,7 +653,12 @@ let test_less_or_equal =
           | _ -> None
         in
         let aliases = create_type_alias_table aliases in
-        parse_callable ~aliases
+        let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+          match aliases name with
+          | Some (Type.Alias.TypeAlias t) -> Some t
+          | _ -> None
+        in
+        parse_callable ~aliases:resolved_aliases
       in
       match annotation with
       | Type.Primitive "FloatToStrCallable" ->
@@ -676,12 +681,17 @@ let test_less_or_equal =
           | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation))
     in
     let aliases = create_type_alias_table aliases in
+    let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+      match aliases name with
+      | Some (Type.Alias.TypeAlias t) -> Some t
+      | _ -> None
+    in
     less_or_equal
       ~attributes
       ?is_protocol
       order
-      ~left:(parse_callable ~aliases left)
-      ~right:(parse_callable ~aliases right)
+      ~left:(parse_callable ~aliases:resolved_aliases left)
+      ~right:(parse_callable ~aliases:resolved_aliases right)
   in
   (* Callback protocols *)
   let parse_annotation =
@@ -690,7 +700,12 @@ let test_less_or_equal =
       | _ -> None
     in
     let aliases = create_type_alias_table aliases in
-    parse_callable ~aliases
+    let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+      match aliases name with
+      | Some (Type.Alias.TypeAlias t) -> Some t
+      | _ -> None
+    in
+    parse_callable ~aliases:resolved_aliases
   in
   let is_protocol annotation ~protocol_assumptions:_ =
     match annotation with
@@ -1953,7 +1968,7 @@ let test_less_or_equal_variance =
 
 
 let test_join =
-  let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected _ =
+  let assert_join ?(order = default) ?(aliases = Type.resolved_empty_aliases) left right expected _ =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
       | _ as source ->
@@ -1966,7 +1981,12 @@ let test_join =
           | _ -> None
         in
         let aliases = create_type_alias_table aliases in
-        parse_callable ~aliases
+        let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+          match aliases name with
+          | Some (Type.Alias.TypeAlias t) -> Some t
+          | _ -> None
+        in
+        parse_callable ~aliases:resolved_aliases
       in
       match annotation with
       | Type.Primitive "CallableClass" ->
@@ -2005,6 +2025,11 @@ let test_join =
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_variance_tests context =
     let variance_aliases = create_type_alias_table variance_aliases in
+    let variance_aliases ?replace_unbound_parameters_with_any:_ name =
+      match variance_aliases name with
+      | Some (Type.Alias.TypeAlias t) -> Some t
+      | _ -> None
+    in
     assert_join
       ~order:variance_order
       ~aliases:variance_aliases
@@ -2158,7 +2183,6 @@ let test_join =
   let assert_join_type_equal order left right expected =
     assert_type_equal (join order left right) expected
   in
-  let type_var_tuple_declaration = Type.Variable.Declaration.DTypeVarTuple { name = "Ts" } in
   test_list
     [
       (* Primitive types. *)
@@ -2209,28 +2233,19 @@ let test_join =
       @@ assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join
-           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-             match name with
-             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-             | _ -> None)
+           ~aliases:Type.resolved_empty_aliases
            "typing.Tuple[typing.Unpack[Ts]]"
            "typing.Tuple[int, ...]"
            "typing.Tuple[object, ...]";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join
-           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-             match name with
-             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-             | _ -> None)
+           ~aliases:Type.resolved_empty_aliases
            "typing.Tuple[pyre_extensions.Unpack[Ts]]"
            "typing.Tuple[int, ...]"
            "typing.Tuple[object, ...]";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join
-           ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-             match name with
-             | "Ts" -> Some (Type.Alias.VariableAlias type_var_tuple_declaration)
-             | _ -> None)
+           ~aliases:Type.resolved_empty_aliases
            "typing.Tuple[typing_extensions.Unpack[Ts]]"
            "typing.Tuple[int, ...]"
            "typing.Tuple[object, ...]";
@@ -2712,7 +2727,7 @@ let test_join_recursive_types =
 
 
 let test_meet =
-  let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected _ =
+  let assert_meet ?(order = default) ?(aliases = Type.resolved_empty_aliases) left right expected _ =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
       | _ as source ->

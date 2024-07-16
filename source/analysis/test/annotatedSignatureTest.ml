@@ -187,7 +187,7 @@ let test_unresolved_select =
       let parse_return return =
         replace_specials return
         |> parse_single_expression
-        |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
+        |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
       in
       match expected with
       | `Found expected -> Found { selected_return_annotation = parse_return expected }

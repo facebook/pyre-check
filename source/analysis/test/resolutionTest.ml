@@ -21,7 +21,7 @@ let test_new_and_refine context =
       ~cmp:(Option.equal Type.equal)
       (expected
       >>| parse_single_expression
-      >>| Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
+      >>| Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases)
       (Resolution.get_local ~reference:!&name resolution >>| TypeInfo.Unit.annotation)
   in
   let assert_local_with_attributes
@@ -35,7 +35,7 @@ let test_new_and_refine context =
       ~cmp:(Option.equal Type.equal)
       (expected
       >>| parse_single_expression
-      >>| Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
+      >>| Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases)
       (Resolution.get_local_with_attributes
          ~global_fallback
          ~name:!&name
@@ -128,7 +128,7 @@ let test_parse_annotation context =
       ~cmp:Type.equal
       ~printer:Type.show
       (parse_single_expression expected
-      |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases)
+      |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases)
       (GlobalResolution.parse_annotation ~validation resolution expression)
   in
   let resolution =

@@ -2758,7 +2758,7 @@ let test_classify_coverage_data _ =
   let parse_type type_ =
     Type.create
       ~variables:variable_aliases
-      ~aliases:Type.empty_aliases
+      ~aliases:Type.resolved_empty_aliases
       (parse_single_expression type_)
   in
   let make_coverage_data_record ~expression type_ = { LocationBasedLookup.expression; type_ } in
@@ -3472,7 +3472,12 @@ let test_resolve_type_for_symbol context =
       expected
       (symbol_data |> Result.ok >>= LocationBasedLookup.resolve_type_for_symbol ~type_environment)
   in
-  let assert_resolved_type ?external_sources ?(aliases = Type.empty_aliases) source expected_type =
+  let assert_resolved_type
+      ?external_sources
+      ?(aliases = Type.resolved_empty_aliases)
+      source
+      expected_type
+    =
     let variable_aliases _ = None in
 
     let parse_type type_ =

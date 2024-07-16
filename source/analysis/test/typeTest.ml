@@ -22,6 +22,12 @@ let type_var_declaration_and_variable
     Type.Variable.TypeVar.create name ~constraints:type_constraints ~variance )
 
 
+let resolved_aliases aliases ?replace_unbound_parameters_with_any:_ name =
+  match aliases name with
+  | Some (Type.Alias.TypeAlias t) -> Some t
+  | _ -> None
+
+
 let type_var_tuple_declaration_and_variable name =
   Type.Variable.Declaration.DTypeVarTuple { name }, Type.Variable.TypeVarTuple.create name
 
@@ -55,7 +61,10 @@ let assert_create ?(aliases = fun _ -> None) source annotation =
     ~printer:Type.show
     ~cmp:Type.equal
     annotation
-    (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
+    (Type.create
+       ~variables
+       ~aliases:(resolved_aliases aliases)
+       (parse_single_expression ~preprocess:true source))
 
 
 let test_create _ =
@@ -424,7 +433,10 @@ let test_create_type_operator _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
+      (Type.create
+         ~variables
+         ~aliases:(resolved_aliases aliases)
+         (parse_single_expression ~preprocess:true source))
   in
 
   (* Compose. *)
@@ -596,7 +608,10 @@ let test_create_variadic_tuple _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true source))
+      (Type.create
+         ~variables
+         ~aliases:(resolved_aliases aliases)
+         (parse_single_expression ~preprocess:true source))
   in
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
@@ -792,8 +807,8 @@ let test_resolve_aliases _ =
       (Type.resolve_aliases ~aliases annotation)
   in
   let aliases = function
-    | "MyInt" -> Some (Type.Alias.TypeAlias Type.integer)
-    | "IntList" -> Some (Type.Alias.TypeAlias (Type.list Type.integer))
+    | "MyInt" -> Some Type.integer
+    | "IntList" -> Some (Type.list Type.integer)
     | _ -> None
   in
   assert_resolved ~aliases (Type.Primitive "NotAlias") (Type.Primitive "NotAlias");
@@ -806,9 +821,9 @@ let test_resolve_aliases _ =
   let variable_k = Type.Variable (Type.Variable.TypeVar.create "K") in
   let variable_v = Type.Variable (Type.Variable.TypeVar.create "V") in
   let aliases = function
-    | "IntList" -> Some (Type.Alias.TypeAlias (Type.list Type.integer))
-    | "foo.Optional" -> Some (Type.Alias.TypeAlias (Type.optional variable_t))
-    | "foo.Dict" -> Some (Type.Alias.TypeAlias (Type.dictionary ~key:variable_k ~value:variable_v))
+    | "IntList" -> Some (Type.list Type.integer)
+    | "foo.Optional" -> Some (Type.optional variable_t)
+    | "foo.Dict" -> Some (Type.dictionary ~key:variable_k ~value:variable_v)
     | _ -> None
   in
   assert_resolved
@@ -821,7 +836,7 @@ let test_resolve_aliases _ =
   let tree_body = Type.union [Type.integer; Type.list (Type.Primitive "Tree")] in
   let aliases ?replace_unbound_parameters_with_any:_ name =
     match name with
-    | "Tree" -> Some (Type.Alias.TypeAlias (Type.RecursiveType.create ~name:"Tree" ~body:tree_body))
+    | "Tree" -> Some (Type.RecursiveType.create ~name:"Tree" ~body:tree_body)
     | _ -> None
   in
   assert_resolved
@@ -843,7 +858,7 @@ let test_resolve_aliases _ =
     (Type.parametric "Tree" [Single Type.integer])
     (Type.RecursiveType.create ~name:"Tree" ~body:tree_body);
   let aliases = function
-    | "MyDict" -> Some (Type.Alias.TypeAlias (Type.dictionary ~key:variable_t ~value:variable_k))
+    | "MyDict" -> Some (Type.dictionary ~key:variable_t ~value:variable_k)
     | _ -> None
   in
   assert_resolved
@@ -853,10 +868,9 @@ let test_resolve_aliases _ =
   let aliases = function
     | "Mix" ->
         Some
-          (Type.Alias.TypeAlias
-             (Type.parametric
-                "Foo"
-                ![variable_t; Type.list variable_v; Type.union [variable_k; variable_v]]))
+          (Type.parametric
+             "Foo"
+             ![variable_t; Type.list variable_v; Type.union [variable_k; variable_v]])
     | _ -> None
   in
   assert_resolved
@@ -866,7 +880,7 @@ let test_resolve_aliases _ =
        "Foo"
        ![Type.integer; Type.list Type.string; Type.union [Type.bool; Type.string]]);
   let aliases = function
-    | "Foo" -> Some (Type.Alias.TypeAlias (Type.parametric "Bar" ![variable_t; variable_v]))
+    | "Foo" -> Some (Type.parametric "Bar" ![variable_t; variable_v])
     | _ -> None
   in
   assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
@@ -882,7 +896,7 @@ let test_resolve_aliases _ =
     | _ -> None
   in
   assert_resolved
-    ~aliases
+    ~aliases:(resolved_aliases aliases)
     (Type.parametric "FooParamSpec" ![Type.integer; Type.string])
     (Type.parametric
        "Bar"
@@ -895,7 +909,7 @@ let test_resolve_aliases _ =
               ]);
        ]);
   assert_resolved
-    ~aliases
+    ~aliases:(resolved_aliases aliases)
     (Type.Primitive "FooParamSpec")
     (Type.parametric "Bar" [CallableParameters Undefined]);
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
@@ -913,11 +927,11 @@ let test_resolve_aliases _ =
     | _ -> None
   in
   assert_resolved
-    ~aliases
+    ~aliases:(resolved_aliases aliases)
     (Type.parametric "FloatTensor" ![Type.integer; Type.string])
     (Type.parametric "Tensor" [Single Type.float; Single Type.integer; Single Type.string]);
   assert_resolved
-    ~aliases
+    ~aliases:(resolved_aliases aliases)
     (Type.Primitive "FloatTensor")
     (Type.parametric
        "Tensor"
@@ -1742,7 +1756,12 @@ let test_from_overloads _ =
     let variables = make_variables ~aliases in
     let merged =
       let parse_callable source =
-        match Type.create ~variables ~aliases (parse_single_expression source) with
+        match
+          Type.create
+            ~variables
+            ~aliases:(resolved_aliases aliases)
+            (parse_single_expression source)
+        with
         | Type.Callable callable -> callable
         | _ -> failwith ("Could not extract callable from " ^ source)
       in
@@ -1755,7 +1774,10 @@ let test_from_overloads _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (Type.create ~variables ~aliases (parse_single_expression expected))
+      (Type.create
+         ~variables
+         ~aliases:(resolved_aliases aliases)
+         (parse_single_expression expected))
       merged
   in
   assert_create
@@ -1776,14 +1798,22 @@ let test_with_return_annotation _ =
     let aliases = Type.empty_aliases in
     let variables = make_variables ~aliases in
     let callable =
-      match Type.create ~variables ~aliases (parse_single_expression callable) with
+      match
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression callable)
+      with
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
     in
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (Type.create ~variables ~aliases:Type.empty_aliases (parse_single_expression expected))
+      (Type.create
+         ~variables
+         ~aliases:Type.resolved_empty_aliases
+         (parse_single_expression expected))
       (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
   assert_with_return_annotation
@@ -1801,7 +1831,7 @@ let test_overload_parameters _ =
     let aliases = Type.empty_aliases in
     let variables = make_variables ~aliases in
     let { Type.Callable.overloads; _ } =
-      Type.create ~variables ~aliases (parse_single_expression callable)
+      Type.create ~variables ~aliases:(resolved_aliases aliases) (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
@@ -1831,7 +1861,7 @@ let test_variables _ =
     let aliases = create_type_alias_table aliases in
     let variables = make_variables ~aliases in
     let variables =
-      Type.create ~variables ~aliases (parse_single_expression source)
+      Type.create ~variables ~aliases:(resolved_aliases aliases) (parse_single_expression source)
       |> Type.Variable.all_free_variables
       |> List.filter_map ~f:(function
              | Type.Variable.TypeVarVariable variable -> Some variable
@@ -1874,7 +1904,9 @@ let test_lambda _ =
 
 
 let test_visit _ =
-  let create source = Type.create ~aliases:Type.empty_aliases (parse_single_expression source) in
+  let create source =
+    Type.create ~aliases:Type.resolved_empty_aliases (parse_single_expression source)
+  in
 
   let assert_types_equal annotation expected =
     assert_equal ~printer:Type.show ~cmp:Type.equal expected annotation
@@ -2385,8 +2417,14 @@ let test_replace_all _ =
     assert_equal
       (Type.Variable.GlobalTransforms.TypeVarTuple.replace_all
          replace
-         (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true annotation)))
-      (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true expected))
+         (Type.create
+            ~variables
+            ~aliases:(resolved_aliases aliases)
+            (parse_single_expression ~preprocess:true annotation)))
+      (Type.create
+         ~variables
+         ~aliases:(resolved_aliases aliases)
+         (parse_single_expression ~preprocess:true expected))
   in
   (* Variadic tuples. *)
   let replace_with_concrete given =
@@ -2439,7 +2477,10 @@ let test_replace_all _ =
       | _ -> None
     in
     let variables = make_variables ~aliases in
-    Type.create ~variables ~aliases (parse_single_expression ~preprocess:true string)
+    Type.create
+      ~variables
+      ~aliases:(resolved_aliases aliases)
+      (parse_single_expression ~preprocess:true string)
   in
   let replace_with_concrete = function
     | variable when Type.Variable.TypeVarTuple.equal variable ts_variable ->
@@ -2580,7 +2621,10 @@ let test_collect_all _ =
       ~printer:[%show: Type.Variable.TypeVarTuple.t list]
       expected
       (Type.Variable.GlobalTransforms.TypeVarTuple.collect_all
-         (Type.create ~variables ~aliases (parse_single_expression ~preprocess:true annotation)))
+         (Type.create
+            ~variables
+            ~aliases:(resolved_aliases aliases)
+            (parse_single_expression ~preprocess:true annotation)))
   in
   assert_collected "typing.Tuple[int, str]" [];
   assert_collected "typing.Tuple[int, typing.Unpack[Ts], str]" [ts_variable];
@@ -2681,7 +2725,7 @@ let test_concatenation_from_unpack_expression _ =
       let variables = make_variables ~aliases in
       Type.create
         ~variables
-        ~aliases
+        ~aliases:(resolved_aliases aliases)
         (parse_single_expression ~preprocess:true (Expression.show expression))
     in
     assert_equal
@@ -2718,7 +2762,7 @@ let test_split_ordered_types _ =
       match
         Type.create
           ~variables
-          ~aliases
+          ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ left))
       with
       | Type.Tuple ordered_type -> ordered_type
@@ -2728,7 +2772,7 @@ let test_split_ordered_types _ =
       match
         Type.create
           ~variables
-          ~aliases
+          ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ right))
       with
       | Type.Tuple ordered_type -> ordered_type
@@ -2981,7 +3025,7 @@ let test_coalesce_ordered_types _ =
       match
         Type.create
           ~variables
-          ~aliases
+          ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true ("typing.Tuple" ^ type_))
       with
       | Type.Tuple ordered_type -> ordered_type
@@ -3030,7 +3074,9 @@ let test_drop_prefix_ordered_type _ =
     in
     let variables = make_variables ~aliases in
     let extract_ordered_type string =
-      match parse_single_expression string |> Type.create ~variables ~aliases with
+      match
+        parse_single_expression string |> Type.create ~variables ~aliases:(resolved_aliases aliases)
+      with
       | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple"
     in
@@ -3077,14 +3123,18 @@ let test_index_ordered_type _ =
     in
     let variables = make_variables ~aliases in
     let extract_ordered_type string =
-      match parse_single_expression string |> Type.create ~variables ~aliases with
+      match
+        parse_single_expression string |> Type.create ~variables ~aliases:(resolved_aliases aliases)
+      with
       | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple"
     in
     assert_equal
       ~cmp:[%equal: Type.t option]
       ~printer:[%show: Type.t option]
-      (expected >>| parse_single_expression >>| Type.create ~variables ~aliases)
+      (expected
+      >>| parse_single_expression
+      >>| Type.create ~variables ~aliases:(resolved_aliases aliases))
       (extract_ordered_type tuple |> Type.OrderedTypes.index ~python_index)
   in
   assert_index ~python_index:0 "typing.Tuple[int, str]" (Some "int");
@@ -3142,14 +3192,20 @@ let test_zip_variables_with_parameters _ =
     let variables = make_variables ~aliases in
     let parameters =
       match
-        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true instantiation)
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression ~preprocess:true instantiation)
       with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let variables =
       match
-        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true generic_class)
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
           let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
@@ -3473,18 +3529,31 @@ let test_zip_on_two_parameter_lists _ =
     in
     let variables = make_variables ~aliases in
     let left_parameters =
-      match Type.create ~variables ~aliases (parse_single_expression ~preprocess:true left) with
+      match
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression ~preprocess:true left)
+      with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let right_parameters =
-      match Type.create ~variables ~aliases (parse_single_expression ~preprocess:true right) with
+      match
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression ~preprocess:true right)
+      with
       | Type.Parametric { parameters; _ } -> parameters
       | _ -> failwith "expected Parametric"
     in
     let variables =
       match
-        Type.create ~variables ~aliases (parse_single_expression ~preprocess:true generic_class)
+        Type.create
+          ~variables
+          ~aliases:(resolved_aliases aliases)
+          (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
           let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
@@ -3640,8 +3709,8 @@ let test_resolve_alias_before_handling_callable _ =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression bare |> Type.create ~variables ~aliases:Type.empty_aliases)
-      (parse_single_expression aliased |> Type.create ~variables ~aliases)
+      (parse_single_expression bare |> Type.create ~variables ~aliases:Type.resolved_empty_aliases)
+      (parse_single_expression aliased |> Type.create ~variables ~aliases:(resolved_aliases aliases))
   in
 
   assert_resolved_getitem_callee
@@ -3933,7 +4002,7 @@ let test_show _ =
 let test_is_truthy _ =
   let assert_truthy ~expected type_ =
     parse_single_expression type_
-    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.resolved_empty_aliases
     |> Type.is_truthy
     |> assert_bool_equals ~expected
   in
@@ -3960,7 +4029,7 @@ let test_is_truthy _ =
 let test_is_falsy _ =
   let assert_falsy ~expected type_ =
     parse_single_expression type_
-    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.resolved_empty_aliases
     |> Type.is_falsy
     |> assert_bool_equals ~expected
   in
@@ -3988,7 +4057,7 @@ let test_lift_readonly_if_possible _ =
   let assert_lifted ~make_container ~expected element_type =
     element_type
     |> parse_single_expression
-    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.empty_aliases
+    |> Type.create ~variables:(fun _ -> None) ~aliases:Type.resolved_empty_aliases
     |> Type.ReadOnly.lift_readonly_if_possible ~make_container
     |> assert_equal ~printer:Type.show ~cmp:Type.equal expected
   in

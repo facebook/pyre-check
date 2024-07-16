@@ -236,7 +236,7 @@ module QueryTestTypes = struct
          Expression.Expression.Constant
            (Expression.Constant.String (Expression.StringLiteral.create literal)))
     |> Node.create_with_default_location
-    |> Type.create ~variables:variable_aliases ~aliases:Type.empty_aliases
+    |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
 
 
   let create_location start_line start_column stop_line stop_column =

@@ -484,7 +484,7 @@ let test_object_callables =
       expression
       (Type.create
          ~variables:variable_aliases
-         ~aliases:Type.empty_aliases
+         ~aliases:Type.resolved_empty_aliases
          (parse_single_expression annotation))
   in
   test_list
@@ -511,7 +511,7 @@ let test_callable_selection =
       expression
       (Type.create
          ~variables:variable_aliases
-         ~aliases:Type.empty_aliases
+         ~aliases:Type.resolved_empty_aliases
          (parse_single_expression annotation))
   in
   test_list

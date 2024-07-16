@@ -223,10 +223,15 @@ module IncomingDataComputation = struct
           extract_supertype (Type.expression base)
           >>= fun (name, parameters) -> Some { ClassHierarchy.Target.target = name; parameters }
         in
+        let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
+          match get_type_alias name with
+          | Some (Type.Alias.TypeAlias t) -> Some t
+          | _ -> None
+        in
         let has_placeholder_stub_parent =
           compute_extends_placeholder_stub_class
             class_summary
-            ~aliases:get_type_alias
+            ~aliases:resolved_aliases
             ~is_from_empty_stub
             ~variable_aliases
         in

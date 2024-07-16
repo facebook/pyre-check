@@ -104,7 +104,6 @@ let test_compose_list _ =
     | "T" -> Some (Type.Variable variable)
     | _ -> None
   in
-  let aliases = create_type_alias_table aliases in
   assert_compose_list
     ~aliases
     ~signature_select:identity_select
@@ -115,7 +114,6 @@ let test_compose_list _ =
     | "R" -> Some (Type.Variable variable2)
     | _ -> None
   in
-  let aliases = create_type_alias_table aliases in
   assert_compose_list
     ~aliases
     ~signature_select:identity_select
