@@ -87,25 +87,25 @@ let from_rules ~kind_coverage_from_models ~partial_sink_converter rules =
             | Some covered_rule ->
                 CoveredRule.Set.add covered_rule covered_rules, uncovered_rule_codes
             | None -> covered_rules, IntSet.add code uncovered_rule_codes)
-        | [rule_1; rule_2] -> (
-            (* A multi-source rule is covered, only if both sub-rules are covered. *)
-            match
-              ( CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule_1,
-                CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule_2 )
-            with
-            | ( Some { CoveredRule.kind_coverage = kind_coverage_1; _ },
-                Some { CoveredRule.kind_coverage = kind_coverage_2; _ } ) ->
-                let covered_rule =
-                  {
-                    CoveredRule.rule_code = code;
-                    kind_coverage = KindCoverage.union kind_coverage_1 kind_coverage_2;
-                  }
-                in
-                CoveredRule.Set.add covered_rule covered_rules, uncovered_rule_codes
-            | _ -> covered_rules, IntSet.add code uncovered_rule_codes)
-        | _ ->
-            failwith
-              "Expect exactly one or two two rules per rule code when computing category coverage")
+        | rules ->
+            let is_covered =
+              List.map
+                rules
+                ~f:(CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter)
+            in
+            (* A multi-source rule is covered, only if all sub-rules are covered. *)
+            if List.for_all is_covered ~f:Option.is_some then
+              let kind_coverage =
+                is_covered
+                |> List.filter_map ~f:(function
+                       | Some { CoveredRule.kind_coverage; _ } -> Some kind_coverage
+                       | None -> None)
+                |> Algorithms.fold_balanced ~f:KindCoverage.union ~init:KindCoverage.empty
+              in
+              let covered_rule = { CoveredRule.rule_code = code; kind_coverage } in
+              CoveredRule.Set.add covered_rule covered_rules, uncovered_rule_codes
+            else
+              covered_rules, IntSet.add code uncovered_rule_codes)
       rule_map
       (CoveredRule.Set.empty, IntSet.empty)
   in

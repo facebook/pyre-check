@@ -57,11 +57,11 @@ module Transforms = struct
   module Set = Data_structures.SerializableSet.Make (TaintTransform)
 
   let from_transform = function
-    | TaintTransform.Named _ as transform -> Some transform
-    | TaintTransform.Sanitize _
-    | TaintTransform.TriggeredPartialSink _ ->
-        (* Sanitizers and triggered partial sinks are not user-defined taint transforms, although
-           they are internally treated as taint transforms. *)
+    | (TaintTransform.Named _ | TaintTransform.TriggeredPartialSink _) as transform ->
+        Some transform
+    | TaintTransform.Sanitize _ ->
+        (* Sanitizers are not used in rules, although they are internally treated as taint
+           transforms. *)
         None
 
 
@@ -109,7 +109,7 @@ let from_model
     Sources.Set.fold
       (fun source so_far ->
         source
-        |> Sources.get_named_transforms
+        |> Sources.get_non_sanitize_transforms
         |> Transforms.from_transforms
         |> Transforms.Set.union so_far)
       sources
@@ -119,7 +119,7 @@ let from_model
     Sinks.Set.fold
       (fun sink so_far ->
         sink
-        |> Sinks.get_named_transforms
+        |> Sinks.get_non_sanitize_transforms
         |> Transforms.from_transforms
         |> Transforms.Set.union so_far)
       sinks

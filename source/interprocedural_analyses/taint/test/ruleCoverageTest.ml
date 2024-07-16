@@ -134,17 +134,23 @@ let test_rule_coverage _ =
             Sources.NamedSource "SourceA";
             Sources.NamedSource "SourceC";
             Sources.NamedSource "SourceD";
+            Sources.NamedSource "SourceE";
           ];
       sinks =
         KindCoverage.Sinks.Set.of_list
           [
             Sinks.NamedSink "SinkA";
-            Sinks.TriggeredPartialSink
-              { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
-            Sinks.TriggeredPartialSink
-              { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
+            Sinks.PartialSink "SinkC[label_1]";
+            Sinks.PartialSink "SinkC[label_2]";
           ];
-      transforms = KindCoverage.Transforms.Set.of_list [TaintTransform.Named "TransformX"];
+      transforms =
+        KindCoverage.Transforms.Set.of_list
+          [
+            TaintTransform.Named "TransformX";
+            TaintTransform.TriggeredPartialSink { triggering_source = "SourceC" };
+            TaintTransform.TriggeredPartialSink { triggering_source = "SourceD" };
+            TaintTransform.TriggeredPartialSink { triggering_source = "SourceE" };
+          ];
     }
   in
   let covered_rule_1 =
@@ -199,7 +205,7 @@ let test_rule_coverage _ =
   in
   let partial_sink_converter =
     TaintConfiguration.PartialSinkConverter.add
-      ~first_sources:[Sources.NamedSource "SourceC"]
+      ~first_sources:[Sources.NamedSource "SourceC"; Sources.NamedSource "SourceE"]
       ~first_sink:"SinkC[label_1]"
       ~second_sources:[Sources.NamedSource "SourceD"]
       ~second_sink:"SinkC[label_2]"
@@ -208,12 +214,8 @@ let test_rule_coverage _ =
   let multi_source_rule_part_1 =
     {
       Rule.sources = [Sources.NamedSource "SourceC"];
-      sinks =
-        [
-          Sinks.TriggeredPartialSink
-            { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
-        ];
-      transforms = [];
+      sinks = [Sinks.PartialSink "SinkC[label_1]"];
+      transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "SourceD" }];
       code = 1003;
       name = "Rule 4";
       message_format = "";
@@ -223,13 +225,33 @@ let test_rule_coverage _ =
   in
   let multi_source_rule_part_2 =
     {
+      Rule.sources = [Sources.NamedSource "SourceE"];
+      sinks = [Sinks.PartialSink "SinkC[label_1]"];
+      transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "SourceD" }];
+      code = 1003;
+      name = "Rule 4";
+      message_format = "";
+      filters = None;
+      location = None;
+    }
+  in
+  let multi_source_rule_part_3 =
+    {
       Rule.sources = [Sources.NamedSource "SourceD"];
-      sinks =
-        [
-          Sinks.TriggeredPartialSink
-            { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
-        ];
-      transforms = [];
+      sinks = [Sinks.PartialSink "SinkC[label_2]"];
+      transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "SourceC" }];
+      code = 1003;
+      name = "Rule 4";
+      message_format = "";
+      filters = None;
+      location = None;
+    }
+  in
+  let multi_source_rule_part_4 =
+    {
+      Rule.sources = [Sources.NamedSource "SourceD"];
+      sinks = [Sinks.PartialSink "SinkC[label_2]"];
+      transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "SourceE" }];
       code = 1003;
       name = "Rule 4";
       message_format = "";
@@ -248,6 +270,8 @@ let test_rule_coverage _ =
         uncovered_rule_2;
         multi_source_rule_part_1;
         multi_source_rule_part_2;
+        multi_source_rule_part_3;
+        multi_source_rule_part_4;
       ]
   in
   let expected_category_coverage =
@@ -282,16 +306,21 @@ let test_rule_coverage _ =
                 {
                   KindCoverage.sources =
                     KindCoverage.Sources.Set.of_list
-                      [Sources.NamedSource "SourceC"; Sources.NamedSource "SourceD"];
+                      [
+                        Sources.NamedSource "SourceC";
+                        Sources.NamedSource "SourceD";
+                        Sources.NamedSource "SourceE";
+                      ];
                   sinks =
                     KindCoverage.Sinks.Set.of_list
+                      [Sinks.PartialSink "SinkC[label_1]"; Sinks.PartialSink "SinkC[label_2]"];
+                  transforms =
+                    KindCoverage.Transforms.Set.of_list
                       [
-                        Sinks.TriggeredPartialSink
-                          { partial_sink = "SinkC[label_1]"; triggering_source = "SourceD" };
-                        Sinks.TriggeredPartialSink
-                          { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" };
+                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceC" };
+                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceD" };
+                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceE" };
                       ];
-                  transforms = KindCoverage.Transforms.Set.empty;
                 };
             };
           ];
