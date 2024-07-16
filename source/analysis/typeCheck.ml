@@ -4168,8 +4168,10 @@ module State (Context : Context) = struct
     | Call
         { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
       when is_simple_name name -> (
-        let { TypeInfo.Unit.annotation = callee_type; _ } = resolve_expression ~resolution test in
-        match Type.inner_type_of_typeguard_or_typeis callee_type with
+        let { TypeInfo.Unit.annotation = callee_return_type; _ } =
+          resolve_expression ~resolution test
+        in
+        match Type.inner_type_of_typeguard_or_typeis callee_return_type with
         | Some guard_type ->
             let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
@@ -4182,10 +4184,10 @@ module State (Context : Context) = struct
             { Node.value = Call { arguments = { Call.Argument.name = None; value } :: _; _ }; _ } as
             operand;
         } -> (
-        let { TypeInfo.Unit.annotation = callee_type; _ } =
+        let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution operand
         in
-        match Type.inner_type_of_typeis callee_type with
+        match Type.inner_type_of_typeis callee_return_type with
         | Some guard_type -> handle_negative_exact_type_match guard_type value
         | None -> Value resolution)
     (* Compound assertions *)
