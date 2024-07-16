@@ -4171,11 +4171,12 @@ module State (Context : Context) = struct
         let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution test
         in
-        match Type.inner_type_of_typeguard_or_typeis callee_return_type with
-        | Some guard_type ->
+        match Type.narrowing_of_type_guard callee_return_type with
+        | Type.PositiveNarrowing guard_type
+        | Type.ExactNarrowing guard_type ->
             let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
-        | None -> Value resolution)
+        | Type.NoNarrowing -> Value resolution)
     (* Negative-case support for TypeIs *)
     | UnaryOperator
         {
@@ -4187,9 +4188,11 @@ module State (Context : Context) = struct
         let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution operand
         in
-        match Type.inner_type_of_typeis callee_return_type with
-        | Some guard_type -> handle_negative_exact_type_match guard_type value
-        | None -> Value resolution)
+        match Type.narrowing_of_type_guard callee_return_type with
+        | Type.ExactNarrowing guard_type -> handle_negative_exact_type_match guard_type value
+        | Type.PositiveNarrowing _
+        | Type.NoNarrowing ->
+            Value resolution)
     (* Compound assertions *)
     | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
     | BooleanOperator { BooleanOperator.left; operator; right } -> (
@@ -5978,10 +5981,13 @@ module State (Context : Context) = struct
       Context.define
     in
     let parameter_types =
-      let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+      let create_parameter { Node.value = { Parameter.name; value; annotation }; _ } =
         {
           Type.Callable.CallableParamType.name;
-          annotation = Type.Any;
+          annotation =
+            annotation
+            >>| GlobalResolution.parse_annotation global_resolution
+            |> Option.value ~default:Type.Any;
           default = Option.is_some value;
         }
       in
@@ -6195,40 +6201,39 @@ module State (Context : Context) = struct
           errors
       in
       let add_typeguard_error { Node.location; _ } return_type errors =
-        (* TypeGuard functions require at least two parameters if implemented as an instance or
-           class method, since the first parameter is self or cls. Otherwise, TypeGuard functions
-           require at least one parameter. *)
-        let positional_parameters =
-          List.filter
-            ~f:(fun param ->
-              match param with
-              | Type.Callable.CallableParamType.PositionalOnly _
-              | Named _
-              | Variable _ ->
-                  true
-              | _ -> false)
-            parameter_types
-        in
-        match return_type with
-        | Type.Parametric
-            {
-              name =
-                ( "typing.TypeGuard" | "typing_extensions.TypeGuard" | "typing.TypeIs"
-                | "typing_extensions.TypeIs" );
-              _;
-            } ->
-            (* TypeGuard must have at least one positional parameter (not counting `self`/ `cls` for
-               methods) *)
-            if
-              Int.equal (List.length positional_parameters) 0
-              || Int.equal (List.length positional_parameters) 1
-                 && Option.is_some parent
-                 && not (Define.is_static_method define)
-            then
-              emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
-            else
-              errors
-        | _ -> errors
+        match Type.narrowing_of_type_guard return_type with
+        | Type.NoNarrowing -> errors
+        | Type.PositiveNarrowing _
+        | Type.ExactNarrowing _ -> (
+            (* TypeGuard methods must take at lest one positional parameter, not counting `self` or
+               `cls`. That parameter is the guarded value. *)
+            let guarded_parameter =
+              let positional_parameters =
+                List.filter
+                  ~f:(fun param ->
+                    match param with
+                    | Type.Callable.CallableParamType.PositionalOnly _
+                    | Named _
+                    | Variable _ ->
+                        true
+                    | _ -> false)
+                  parameter_types
+              in
+              let is_non_static_method =
+                Option.is_some parent && not (Define.is_static_method define)
+              in
+              if is_non_static_method then
+                List.nth positional_parameters 1
+              else
+                List.nth positional_parameters 0
+            in
+            (* Type guards (TypeGuard and TypeIs) must have at least one positional parameter (not
+               counting `self`/ `cls` for methods) to make semantic sense, and it is a type error to
+               define a type guard whose narrowed type is not a (gradual) subtype of the original
+               type. *)
+            match guarded_parameter with
+            | None -> emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
+            | Some _ -> errors)
       in
       let errors = add_missing_return_error return_annotation errors in
       match return_annotation with
