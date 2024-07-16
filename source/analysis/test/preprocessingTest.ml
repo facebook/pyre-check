@@ -1015,8 +1015,8 @@ let test_qualify_source _ =
       def qualifier.foo():
         from abc import bar
         abc.bar()
-        def $local_qualifier?foo$bar(): pass
-        $local_qualifier?foo$bar()
+        def abc.bar(): pass
+        abc.bar()
     |};
   assert_qualify
     {|
