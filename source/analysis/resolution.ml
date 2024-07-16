@@ -340,7 +340,7 @@ let get_type_alias resolution =
 
 let variables resolution name =
   match get_type_alias ?replace_unbound_parameters_with_any:(Some true) resolution name with
-  | Some (Type.Alias.VariableAlias variable) -> Some variable
+  | Some (TypeAliasEnvironment.Alias.VariableAlias variable) -> Some variable
   | _ -> None
 
 

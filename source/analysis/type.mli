@@ -966,13 +966,6 @@ module ReadOnly : sig
   val lift_readonly_if_possible : make_container:(t -> t) -> t -> t
 end
 
-module Alias : sig
-  type t =
-    | TypeAlias of type_t
-    | VariableAlias of Variable.Declaration.t
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 val resolve_aliases
   :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> t option) ->
   t ->
@@ -983,8 +976,6 @@ val create
   aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option) ->
   Expression.t ->
   t
-
-val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> Alias.t option
 
 val resolved_empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option
 

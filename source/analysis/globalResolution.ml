@@ -351,7 +351,7 @@ let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hiera
 let base_is_from_placeholder_stub variable_aliases resolution =
   let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
     match (get_type_alias resolution) name with
-    | Some (Type.Alias.TypeAlias t) -> Some t
+    | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
     | _ -> None
   in
   AnnotatedBases.base_is_from_placeholder_stub

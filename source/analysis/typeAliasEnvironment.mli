@@ -8,6 +8,15 @@
 open Ast
 open SharedMemoryKeys
 
+module Alias : sig
+  type t =
+    | TypeAlias of Type.t
+    | VariableAlias of Type.Variable.Declaration.t
+  [@@deriving equal, compare, sexp, show, hash]
+end
+
+val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Alias.t option
+
 module AliasReadOnly : sig
   include Environment.ReadOnly
 
@@ -16,7 +25,7 @@ module AliasReadOnly : sig
     ?dependency:DependencyKey.registered ->
     ?replace_unbound_parameters_with_any:bool ->
     Type.Primitive.t ->
-    Type.Alias.t option
+    Alias.t option
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
@@ -25,7 +34,7 @@ module AliasReadOnly : sig
   val parse_annotation_without_validating_type_parameters
     :  t ->
     ?dependency:DependencyKey.registered ->
-    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
+    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Alias.t -> Alias.t) ->
     ?allow_untracked:bool ->
     Expression.t ->
     Type.t

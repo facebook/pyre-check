@@ -4069,8 +4069,6 @@ let create_literal = function
   | _ -> None
 
 
-let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
-
 let resolved_empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 let alternate_name_to_canonical_name_map =
@@ -4725,13 +4723,6 @@ let assume_any = function
   | Top -> Any
   | annotation -> annotation
 
-
-module Alias = struct
-  type t =
-    | TypeAlias of T.t
-    | VariableAlias of Variable.Declaration.t
-  [@@deriving equal, compare, sexp, show, hash]
-end
 
 let resolve_aliases ~aliases annotation =
   let visited = Containers.Hash_set.create () in

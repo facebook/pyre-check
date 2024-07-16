@@ -9,7 +9,7 @@
  * - upstream: EmptyStubEnvironment
  * - downstream: ClassHierarchyEnvironment
  * - key: type name (as an Identifier.t)
- * - value: a Type.Alias.t option: either a type alias or typevar alias
+ * - value: a Alias.t option: either a type alias or typevar alias
  *
  * This layer is responsible for resolving type and type variable aliases -
  * that is, statements of the form `Name = SomeType` where `SomeType` is an
@@ -25,6 +25,15 @@ open Ast
 open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
+
+module Alias = struct
+  type t =
+    | TypeAlias of Type.t
+    | VariableAlias of Type.Variable.Declaration.t
+  [@@deriving equal, compare, sexp, show, hash]
+end
+
+let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 module IncomingDataComputation = struct
   module Queries = struct
@@ -46,12 +55,12 @@ module IncomingDataComputation = struct
       let aliases ?replace_unbound_parameters_with_any:_ name = Map.find map name in
       let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
         match aliases name with
-        | Some (Type.Alias.TypeAlias t) -> Some t
+        | Some (Alias.TypeAlias t) -> Some t
         | _ -> None
       in
       let variable_aliases name =
         match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (Type.Alias.VariableAlias variable) -> Some variable
+        | Some (Alias.VariableAlias variable) -> Some variable
         | _ -> None
       in
 
@@ -61,7 +70,7 @@ module IncomingDataComputation = struct
 
 
     type check_result =
-      | Resolved of Type.Alias.t
+      | Resolved of Alias.t
       | HasDependents of {
           unparsed: Expression.t;
           dependencies: string list;
@@ -112,7 +121,7 @@ module IncomingDataComputation = struct
       in
       let _, annotation = TrackedTransform.visit () value_annotation in
       if Hash_set.is_empty dependencies then
-        Resolved (Type.Alias.TypeAlias annotation)
+        Resolved (Alias.TypeAlias annotation)
       else
         HasDependents { unparsed = value; dependencies = Hash_set.to_list dependencies }
   end
@@ -210,7 +219,7 @@ module IncomingDataComputation = struct
 
   let produce_alias queries global_name =
     let maybe_convert_to_recursive_alias alias_reference = function
-      | Type.Alias.TypeAlias annotation
+      | Alias.TypeAlias annotation
         when (not (Identifier.equal (Reference.show alias_reference) "typing_extensions"))
              && Type.RecursiveType.is_recursive_alias_reference
                   ~alias_name:(Reference.show alias_reference)
@@ -223,7 +232,7 @@ module IncomingDataComputation = struct
             |> Option.value ~default:true
           in
           let is_generic = Type.contains_variable annotation in
-          Type.Alias.TypeAlias (Type.RecursiveType.create ~name:alias_name ~body:annotation)
+          Alias.TypeAlias (Type.RecursiveType.create ~name:alias_name ~body:annotation)
           |> Option.some_if ((not is_directly_recursive) && not is_generic)
       | resolved_alias -> Some resolved_alias
     in
@@ -236,7 +245,7 @@ module IncomingDataComputation = struct
       else
         let visited = Set.add visited current in
         let resolve_after_resolving_dependencies = function
-          | VariableAlias variable -> Some (Type.Alias.VariableAlias variable)
+          | VariableAlias variable -> Some (Alias.VariableAlias variable)
           | TypeAlias unresolved -> (
               match UnresolvedAlias.checked_resolve queries unresolved with
               | Resolved alias -> Some alias
@@ -251,7 +260,7 @@ module IncomingDataComputation = struct
                   |> Option.all
                   >>| String.Map.of_alist_exn
                   >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
-                  >>| fun alias -> Type.Alias.TypeAlias alias)
+                  >>| fun alias -> Alias.TypeAlias alias)
         in
         extract_alias queries current
         >>= resolve_after_resolving_dependencies
@@ -266,7 +275,7 @@ module OutgoingDataComputation = struct
       class_exists: Type.Primitive.t -> bool;
       is_from_empty_stub: Ast.Reference.t -> bool;
       get_type_alias:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Alias.t option;
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Alias.t option;
     }
   end
 
@@ -290,12 +299,12 @@ module OutgoingDataComputation = struct
       in
       let resolved_aliases ?replace_unbound_parameters_with_any name =
         match aliases ?replace_unbound_parameters_with_any name with
-        | Some (Type.Alias.TypeAlias t) -> Some t
+        | Some (Alias.TypeAlias t) -> Some t
         | _ -> None
       in
       let variable_aliases name =
         match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (Type.Alias.VariableAlias variable) -> Some variable
+        | Some (Alias.VariableAlias variable) -> Some variable
         | _ -> None
       in
 
@@ -330,7 +339,7 @@ module OutgoingDataComputation = struct
     =
     let get_param_spec variable_name =
       match get_type_alias variable_name with
-      | Some (Type.Alias.VariableAlias (Type.Variable.Declaration.DParamSpec { name })) ->
+      | Some (Alias.VariableAlias (Type.Variable.Declaration.DParamSpec { name })) ->
           Some (Type.Variable.ParamSpec.create name)
       | _ -> None
     in
@@ -341,13 +350,13 @@ module OutgoingDataComputation = struct
 end
 
 module AliasValue = struct
-  type t = Type.Alias.t option
+  type t = Alias.t option
 
   let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Alias"
 
-  let equal = Memory.equal_from_compare (Option.compare Type.Alias.compare)
+  let equal = Memory.equal_from_compare (Option.compare Alias.compare)
 end
 
 module Aliases = Environment.EnvironmentTable.NoCache (struct
@@ -404,7 +413,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
     SourceCodeIncrementalApi.Overlay.owns_identifier source_code_overlay
 
 
-  let equal_value = Option.equal Type.Alias.equal
+  let equal_value = Option.equal Alias.equal
 end)
 
 include Aliases

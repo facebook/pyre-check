@@ -58,7 +58,10 @@ module Queries = struct
     exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
     class_exists: string -> bool;
     parse_annotation_without_validating_type_parameters:
-      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.Alias.t -> Type.Alias.t) ->
+      ?modify_aliases:
+        (?replace_unbound_parameters_with_any:bool ->
+        TypeAliasEnvironment.Alias.t ->
+        TypeAliasEnvironment.Alias.t) ->
       ?allow_untracked:bool ->
       Ast.Expression.t ->
       Type.t;
@@ -2468,13 +2471,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         expression =
       let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
-        | Type.Alias.TypeAlias alias ->
+        | TypeAliasEnvironment.Alias.TypeAlias alias ->
             self#check_invalid_type_parameters
               ?replace_unbound_parameters_with_any
               alias
               ~assumptions
             |> snd
-            |> fun alias -> Type.Alias.TypeAlias alias
+            |> fun alias -> TypeAliasEnvironment.Alias.TypeAlias alias
         | result -> result
       in
       let allow_untracked =

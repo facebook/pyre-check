@@ -378,7 +378,7 @@ let test_register_aliases context =
     let global_resolution = GlobalResolution.create environment in
     let assert_alias (alias, target) =
       match GlobalResolution.get_type_alias global_resolution alias with
-      | Some alias -> assert_equal ~printer:Type.Alias.show target alias
+      | Some alias -> assert_equal ~printer:TypeAliasEnvironment.Alias.show target alias
       | None -> failwith "Alias is missing"
     in
     List.iter aliases ~f:assert_alias
@@ -389,7 +389,8 @@ let test_register_aliases context =
       |}]
     [
       ( "test.Tparams",
-        Type.Alias.VariableAlias (Type.Variable.Declaration.DParamSpec { name = "test.Tparams" }) );
+        TypeAliasEnvironment.Alias.VariableAlias
+          (Type.Variable.Declaration.DParamSpec { name = "test.Tparams" }) );
     ];
   ()
 

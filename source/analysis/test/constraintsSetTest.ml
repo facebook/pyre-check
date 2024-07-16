@@ -18,7 +18,7 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single
 
 let variable_aliases aliases name =
   match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-  | Some (Type.Alias.VariableAlias variable) -> Some variable
+  | Some (TypeAliasEnvironment.Alias.VariableAlias variable) -> Some variable
   | _ -> None
 
 
@@ -199,13 +199,13 @@ let make_assert_functions context =
         |> Type.Primitive.Set.of_list
       in
       if Set.mem s a then
-        Some (Type.Alias.TypeAlias (Type.Primitive ("test." ^ a)))
+        Some (TypeAliasEnvironment.Alias.TypeAlias (Type.Primitive ("test." ^ a)))
       else
         GlobalResolution.get_type_alias resolution a
     in
     let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
       match aliases name with
-      | Some (Type.Alias.TypeAlias t) -> Some t
+      | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
       | _ -> None
     in
 
@@ -301,7 +301,7 @@ let make_assert_functions context =
               in
               let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.get_type_alias global_resolution primitive with
-              | Some (Type.Alias.VariableAlias variable_declaration) -> (
+              | Some (TypeAliasEnvironment.Alias.VariableAlias variable_declaration) -> (
                   match
                     Type.Variable.of_declaration
                       ~create_type:(GlobalResolution.parse_annotation global_resolution)
