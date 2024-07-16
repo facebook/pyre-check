@@ -281,7 +281,6 @@ module Qualify (Context : QualifyContext) = struct
   type scope = {
     qualifier: Reference.t;
     aliases: alias Reference.Map.t;
-    immutables: Reference.Set.t;
     locals: Reference.Set.t;
     is_top_level: bool;
     is_in_function: bool;
@@ -297,7 +296,7 @@ module Qualify (Context : QualifyContext) = struct
       Reference.combine qualifier name
 
 
-  let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
+  let prefix_identifier ~scope:({ aliases; locals; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
     let reference = Reference.create name in
@@ -308,7 +307,7 @@ module Qualify (Context : QualifyContext) = struct
             aliases
             ~key:reference
             ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
-        immutables = Set.add immutables reference;
+        locals = Set.add locals reference;
       },
       stars,
       renamed )
@@ -316,9 +315,7 @@ module Qualify (Context : QualifyContext) = struct
 
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name = { name = Reference.combine qualifier name; qualifier } in
-    let explore_scope
-        ({ qualifier; aliases; immutables; is_in_function; _ } as scope)
-        { Node.value; _ }
+    let explore_scope ({ qualifier; aliases; locals; is_in_function; _ } as scope) { Node.value; _ }
       =
       match value with
       | Statement.Assign
@@ -342,21 +339,19 @@ module Qualify (Context : QualifyContext) = struct
           let scope = explore_scope ~scope body in
           explore_scope ~scope orelse
       | Global identifiers ->
-          let immutables =
-            let register_global immutables identifier =
-              Set.add immutables (Reference.create identifier)
-            in
-            List.fold identifiers ~init:immutables ~f:register_global
+          let locals =
+            let register_global locals identifier = Set.add locals (Reference.create identifier) in
+            List.fold identifiers ~init:locals ~f:register_global
           in
-          { scope with immutables }
+          { scope with locals }
       | Nonlocal identifiers ->
-          let immutables =
-            let register_nonlocal immutables identifier =
-              Set.add immutables (Reference.create identifier)
+          let locals =
+            let register_nonlocal locals identifier =
+              Set.add locals (Reference.create identifier)
             in
-            List.fold identifiers ~init:immutables ~f:register_nonlocal
+            List.fold identifiers ~init:locals ~f:register_nonlocal
           in
-          { scope with immutables }
+          { scope with locals }
       | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let scope = explore_scope ~scope body in
           let scope =
@@ -375,16 +370,12 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_function_name
-      ~scope:
-        ({ aliases; locals; immutables; is_in_function; is_class_toplevel; qualifier; _ } as scope)
+      ~scope:({ aliases; locals; is_in_function; is_class_toplevel; qualifier; _ } as scope)
       name
     =
     if is_in_function then
       match Reference.as_list name with
-      | [simple_name]
-        when (not (is_qualified simple_name))
-             && (not (Set.mem immutables name))
-             && not (Set.mem locals name) ->
+      | [simple_name] when (not (is_qualified simple_name)) && not (Set.mem locals name) ->
           let alias = qualify_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with
@@ -446,7 +437,7 @@ module Qualify (Context : QualifyContext) = struct
     let scope, parameters =
       List.fold
         parameters
-        ~init:({ scope with locals = Reference.Set.empty; immutables = Reference.Set.empty }, [])
+        ~init:({ scope with locals = Reference.Set.empty }, [])
         ~f:rename_parameter
     in
     scope, List.rev parameters
@@ -491,10 +482,7 @@ module Qualify (Context : QualifyContext) = struct
           if is_special_form_assignment then
             scope, target
           else
-            let rec qualify_assignment_target
-                ~scope:({ aliases; immutables; locals; _ } as scope)
-                target
-              =
+            let rec qualify_assignment_target ~scope:({ aliases; locals; _ } as scope) target =
               let scope, value =
                 let qualify_targets scope elements =
                   let qualify_element (scope, reversed_elements) element =
@@ -542,11 +530,7 @@ module Qualify (Context : QualifyContext) = struct
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
                       let reference = Reference.create name in
-                      if
-                        (not (is_qualified name))
-                        && (not (Set.mem locals reference))
-                        && not (Set.mem immutables reference)
-                      then
+                      if (not (is_qualified name)) && not (Set.mem locals reference) then
                         let alias = qualify_local_identifier name ~qualifier |> Reference.create in
                         {
                           scope with
@@ -992,10 +976,10 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_target ?(in_comprehension = false) ~scope target =
-    let rec renamed_scope ({ locals; immutables; _ } as scope) target =
+    let rec renamed_scope ({ locals; _ } as scope) target =
       let has_local name =
         let reference = Reference.create name in
-        (not in_comprehension) && (Set.mem locals reference || Set.mem immutables reference)
+        (not in_comprehension) && Set.mem locals reference
       in
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
@@ -1283,7 +1267,6 @@ let qualify
       Qualify.qualifier;
       aliases = Reference.Map.empty;
       locals = Reference.Set.empty;
-      immutables = Reference.Set.empty;
       is_top_level = true;
       is_in_function = false;
       is_class_toplevel = false;

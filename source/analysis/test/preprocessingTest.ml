@@ -1827,7 +1827,6 @@ let test_qualify_ast _ =
           (Reference.create "a")
           { Qualify.name = Reference.create "b"; qualifier = Reference.empty };
       locals = Reference.Set.empty;
-      immutables = Reference.Set.empty;
       is_top_level = true;
       is_in_function = false;
       is_class_toplevel = false;

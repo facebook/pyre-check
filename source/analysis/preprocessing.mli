@@ -121,7 +121,6 @@ module Qualify (_ : QualifyContext) : sig
   type scope = {
     qualifier: Reference.t;
     aliases: alias Reference.Map.t;
-    immutables: Reference.Set.t;
     locals: Reference.Set.t;
     is_top_level: bool;
     is_in_function: bool;
