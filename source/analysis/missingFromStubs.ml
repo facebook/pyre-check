@@ -227,9 +227,11 @@ let missing_typing_classes =
     make_class "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
     make_class "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
     make_class "typing.TypeAlias";
-    make_class "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     make_class "typing.Required" ~bases:single_unary_generic;
     make_class "typing.NotRequired" ~bases:single_unary_generic;
+    (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
+    make_class "typing.TypeIs" ~bases:(Type.bool :: single_unary_generic);
+    make_class "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
   ]
 
 
@@ -240,7 +242,9 @@ let missing_typing_extensions_classes =
     make_class "typing_extensions.Annotated" ~bases:catch_all_generic;
     make_class "typing_extensions.TypeAlias";
     make_class "typing_extensions.Never";
-    make_class "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     make_class "typing_extensions.Required" ~bases:single_unary_generic;
     make_class "typing_extensions.NotRequired" ~bases:single_unary_generic;
+    (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
+    make_class "typing_extensions.TypeIs" ~bases:(Type.bool :: single_unary_generic);
+    make_class "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
   ]

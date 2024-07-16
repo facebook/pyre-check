@@ -840,7 +840,13 @@ module State (Context : Context) = struct
     in
     let annotation =
       match annotation with
-      | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ } ->
+      | Type.Parametric
+          {
+            name =
+              ( "typing.TypeGuard" | "typing_extensions.TypeGuard" | "typing.TypeIs"
+              | "typing_extensions.TypeIs" );
+            _;
+          } ->
           Type.bool
       | _ when signature.async && not signature.generator ->
           Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -3688,6 +3694,39 @@ module State (Context : Context) = struct
         ~base_type_info
         ~type_info:annotation
     in
+    (* A negative exact type match is something like `not isinstance(x, SomeType)` or `not
+       some_TypeIsFunction(x)`. *)
+    let handle_negative_exact_type_match type_not_matched value =
+      let boundary = type_not_matched in
+      let resolve_non_instance ~boundary name =
+        let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
+        match
+          Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
+        with
+        | Some { annotation = previous_annotation; _ } ->
+            let { not_consistent_with_boundary; _ } = partition previous_annotation ~boundary in
+            not_consistent_with_boundary
+            >>| TypeInfo.Unit.create_mutable
+            >>| refine_local ~name
+            |> Option.value ~default:resolution
+        | _ -> resolution
+      in
+      let is_consistent_with_boundary =
+        if Type.contains_unknown boundary || Type.is_any boundary then
+          false
+        else
+          let { Resolved.resolved; _ } = forward_expression ~resolution value in
+          (not (Type.is_unbound resolved))
+          && (not (Type.contains_unknown resolved))
+          && (not (Type.is_any resolved))
+          && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:boundary
+      in
+      match is_consistent_with_boundary, value with
+      | true, _ -> Unreachable
+      | _, { Node.value = Name name; _ } when is_simple_name name ->
+          Value (resolve_non_instance ~boundary name)
+      | _ -> Value resolution
+    in
     match Node.value test with
     (* Explicit asserting falsy values. *)
     | Expression.Constant Constant.(False | NoneLiteral)
@@ -3843,36 +3882,9 @@ module State (Context : Context) = struct
                   };
               _;
             };
-        } -> (
-        let resolve_non_instance ~boundary name =
-          let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
-          match
-            Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
-          with
-          | Some { annotation = previous_annotation; _ } ->
-              let { not_consistent_with_boundary; _ } = partition previous_annotation ~boundary in
-              not_consistent_with_boundary
-              >>| TypeInfo.Unit.create_mutable
-              >>| refine_local ~name
-              |> Option.value ~default:resolution
-          | _ -> resolution
-        in
-        let boundary = parse_refinement_annotation annotation_expression in
-        let is_consistent_with_boundary =
-          if Type.contains_unknown boundary || Type.is_any boundary then
-            false
-          else
-            let { Resolved.resolved; _ } = forward_expression ~resolution value in
-            (not (Type.is_unbound resolved))
-            && (not (Type.contains_unknown resolved))
-            && (not (Type.is_any resolved))
-            && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:boundary
-        in
-        match is_consistent_with_boundary, value with
-        | true, _ -> Unreachable
-        | _, { Node.value = Name name; _ } when is_simple_name name ->
-            Value (resolve_non_instance ~boundary name)
-        | _ -> Value resolution)
+        } ->
+        let type_not_matched = parse_refinement_annotation annotation_expression in
+        handle_negative_exact_type_match type_not_matched value
     (* Is callable *)
     | Call
         {
@@ -4152,15 +4164,29 @@ module State (Context : Context) = struct
           | _ -> resolution
         in
         Value resolution
-    (* TypeGuard support *)
+    (* Positive-case support for TypeGuard and TypeIs *)
     | Call
         { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
       when is_simple_name name -> (
         let { TypeInfo.Unit.annotation = callee_type; _ } = resolve_expression ~resolution test in
-        match Type.inner_type_if_is_typeguard callee_type with
+        match Type.inner_type_of_typeguard_or_typeis callee_type with
         | Some guard_type ->
             let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
+        | None -> Value resolution)
+    (* Negative-case support for TypeIs *)
+    | UnaryOperator
+        {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand =
+            { Node.value = Call { arguments = { Call.Argument.name = None; value } :: _; _ }; _ } as
+            operand;
+        } -> (
+        let { TypeInfo.Unit.annotation = callee_type; _ } =
+          resolve_expression ~resolution operand
+        in
+        match Type.inner_type_of_typeis callee_type with
+        | Some guard_type -> handle_negative_exact_type_match guard_type value
         | None -> Value resolution)
     (* Compound assertions *)
     | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
@@ -6182,14 +6208,24 @@ module State (Context : Context) = struct
             parameter_types
         in
         match return_type with
-        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ }
-          when Option.is_some parent
-               && (not (Define.is_static_method define))
-               && List.length positional_parameters < 2 ->
-            emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
-        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ }
-          when List.is_empty positional_parameters ->
-            emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
+        | Type.Parametric
+            {
+              name =
+                ( "typing.TypeGuard" | "typing_extensions.TypeGuard" | "typing.TypeIs"
+                | "typing_extensions.TypeIs" );
+              _;
+            } ->
+            (* TypeGuard must have at least one positional parameter (not counting `self`/ `cls` for
+               methods) *)
+            if
+              Int.equal (List.length positional_parameters) 0
+              || Int.equal (List.length positional_parameters) 1
+                 && Option.is_some parent
+                 && not (Define.is_static_method define)
+            then
+              emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
+            else
+              errors
         | _ -> errors
       in
       let errors = add_missing_return_error return_annotation errors in

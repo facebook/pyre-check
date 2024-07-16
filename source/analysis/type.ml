@@ -4612,12 +4612,21 @@ let expression_contains_any expression =
   |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
 
 
-let inner_type_if_is_typeguard = function
+let inner_type_of_typeguard_or_typeis = function
   | Parametric
       {
-        name = "typing.TypeGuard" | "typing_extensions.TypeGuard";
+        name =
+          ( "typing.TypeGuard" | "typing_extensions.TypeGuard" | "typing.TypeIs"
+          | "typing_extensions.TypeIs" );
         parameters = [Single guard_type];
       } ->
+      Some guard_type
+  | _ -> None
+
+
+let inner_type_of_typeis = function
+  | Parametric
+      { name = "typing.TypeIs" | "typing_extensions.TypeIs"; parameters = [Single guard_type] } ->
       Some guard_type
   | _ -> None
 
