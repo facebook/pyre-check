@@ -64,8 +64,6 @@ def wrapper_node_get_send(id, vc):
 def issue_with_wrapper_node_get_send():
     id = user_controlled_input()
     vc = permissive_context()
-    # Since we do not propagate the untriggered partial sinks,
-    # we miss the issue here
     wrapper_node_get_send(id, vc)
 
 

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.combine_c_d_and_c_e",
-    "callable_line": 246,
+    "callable_line": 244,
     "code": 4324,
-    "line": 248,
+    "line": 246,
     "start": 44,
     "end": 54,
     "filename": "multiple_sources.py",
@@ -28,7 +28,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 248,
+              "line": 246,
               "start": 44,
               "end": 54
             }
@@ -44,7 +44,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestC",
-                    "origin": { "line": 248, "start": 32, "end": 42 },
+                    "origin": { "line": 246, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
                   }
@@ -60,7 +60,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 248,
+              "line": 246,
               "start": 44,
               "end": 54
             }
@@ -82,9 +82,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.combine_c_d_and_c_e",
-    "callable_line": 246,
+    "callable_line": 244,
     "code": 4323,
-    "line": 247,
+    "line": 245,
     "start": 44,
     "end": 54,
     "filename": "multiple_sources.py",
@@ -107,7 +107,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 247,
+              "line": 245,
               "start": 44,
               "end": 54
             }
@@ -123,7 +123,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestC",
-                    "origin": { "line": 247, "start": 32, "end": 42 },
+                    "origin": { "line": 245, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
                   }
@@ -139,7 +139,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 247,
+              "line": 245,
               "start": 44,
               "end": 54
             }
@@ -237,9 +237,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_sanitizer",
-    "callable_line": 128,
+    "callable_line": 126,
     "code": 4322,
-    "line": 131,
+    "line": 129,
     "start": 34,
     "end": 54,
     "filename": "multiple_sources.py",
@@ -262,7 +262,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 131,
+              "line": 129,
               "start": 34,
               "end": 54
             }
@@ -278,7 +278,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestA",
-                    "origin": { "line": 129, "start": 8, "end": 18 },
+                    "origin": { "line": 127, "start": 8, "end": 18 },
                     "leaf_kind": "TestA",
                     "trace_kind": "source"
                   }
@@ -294,7 +294,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 131,
+              "line": 129,
               "start": 34,
               "end": 54
             }
@@ -316,9 +316,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_test_a_and_b",
-    "callable_line": 88,
+    "callable_line": 86,
     "code": 4322,
-    "line": 90,
+    "line": 88,
     "start": 43,
     "end": 63,
     "filename": "multiple_sources.py",
@@ -341,7 +341,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 90,
+              "line": 88,
               "start": 43,
               "end": 63
             }
@@ -357,7 +357,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestB",
-                    "origin": { "line": 90, "start": 31, "end": 41 },
+                    "origin": { "line": 88, "start": 31, "end": 41 },
                     "leaf_kind": "TestB",
                     "trace_kind": "source"
                   }
@@ -373,7 +373,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 90,
+              "line": 88,
               "start": 43,
               "end": 63
             }
@@ -395,9 +395,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_test_a_and_b",
-    "callable_line": 88,
+    "callable_line": 86,
     "code": 4322,
-    "line": 89,
+    "line": 87,
     "start": 43,
     "end": 63,
     "filename": "multiple_sources.py",
@@ -420,7 +420,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 89,
+              "line": 87,
               "start": 43,
               "end": 63
             }
@@ -436,7 +436,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestA",
-                    "origin": { "line": 89, "start": 31, "end": 41 },
+                    "origin": { "line": 87, "start": 31, "end": 41 },
                     "leaf_kind": "TestA",
                     "trace_kind": "source"
                   }
@@ -452,7 +452,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 89,
+              "line": 87,
               "start": 43,
               "end": 63
             }
@@ -474,9 +474,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d",
-    "callable_line": 220,
+    "callable_line": 218,
     "code": 4323,
-    "line": 222,
+    "line": 220,
     "start": 35,
     "end": 45,
     "filename": "multiple_sources.py",
@@ -499,7 +499,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 222,
+              "line": 220,
               "start": 35,
               "end": 45
             }
@@ -525,7 +525,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 222,
+                "line": 220,
                 "start": 35,
                 "end": 45
               },
@@ -552,9 +552,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
-    "callable_line": 211,
+    "callable_line": 209,
     "code": 4324,
-    "line": 213,
+    "line": 211,
     "start": 41,
     "end": 51,
     "filename": "multiple_sources.py",
@@ -577,7 +577,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 213,
+              "line": 211,
               "start": 41,
               "end": 51
             }
@@ -603,7 +603,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 213,
+                "line": 211,
                 "start": 41,
                 "end": 51
               },
@@ -630,9 +630,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
-    "callable_line": 211,
+    "callable_line": 209,
     "code": 4323,
-    "line": 213,
+    "line": 211,
     "start": 41,
     "end": 51,
     "filename": "multiple_sources.py",
@@ -655,7 +655,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 213,
+              "line": 211,
               "start": 41,
               "end": 51
             }
@@ -681,7 +681,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 213,
+                "line": 211,
                 "start": 41,
                 "end": 51
               },
@@ -708,9 +708,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
-    "callable_line": 232,
+    "callable_line": 230,
     "code": 4324,
-    "line": 234,
+    "line": 232,
     "start": 40,
     "end": 50,
     "filename": "multiple_sources.py",
@@ -733,7 +733,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 234,
+              "line": 232,
               "start": 40,
               "end": 50
             }
@@ -759,7 +759,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 234,
+                "line": 232,
                 "start": 40,
                 "end": 50
               },
@@ -786,9 +786,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
-    "callable_line": 232,
+    "callable_line": 230,
     "code": 4323,
-    "line": 234,
+    "line": 232,
     "start": 40,
     "end": 50,
     "filename": "multiple_sources.py",
@@ -811,7 +811,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 234,
+              "line": 232,
               "start": 40,
               "end": 50
             }
@@ -837,7 +837,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 234,
+                "line": 232,
                 "start": 40,
                 "end": 50
               },
@@ -939,9 +939,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_context_more_hops",
-    "callable_line": 149,
+    "callable_line": 147,
     "code": 4321,
-    "line": 151,
+    "line": 149,
     "start": 44,
     "end": 46,
     "filename": "multiple_sources.py",
@@ -964,7 +964,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 150,
+              "line": 148,
               "start": 9,
               "end": 29
             }
@@ -987,7 +987,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 151,
+                "line": 149,
                 "start": 44,
                 "end": 46
               },
@@ -1014,9 +1014,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_d_and_e",
-    "callable_line": 241,
+    "callable_line": 239,
     "code": 4324,
-    "line": 243,
+    "line": 241,
     "start": 34,
     "end": 44,
     "filename": "multiple_sources.py",
@@ -1039,7 +1039,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 243,
+              "line": 241,
               "start": 34,
               "end": 44
             }
@@ -1065,7 +1065,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 243,
+                "line": 241,
                 "start": 34,
                 "end": 44
               },
@@ -1092,9 +1092,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_d_and_e",
-    "callable_line": 241,
+    "callable_line": 239,
     "code": 4323,
-    "line": 242,
+    "line": 240,
     "start": 34,
     "end": 44,
     "filename": "multiple_sources.py",
@@ -1117,7 +1117,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 242,
+              "line": 240,
               "start": 34,
               "end": 44
             }
@@ -1143,7 +1143,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 242,
+                "line": 240,
                 "start": 34,
                 "end": 44
               },
@@ -1259,7 +1259,7 @@
     "callable": "multiple_sources.issue_with_wrapper_node_get_send",
     "callable_line": 64,
     "code": 4321,
-    "line": 69,
+    "line": 67,
     "start": 30,
     "end": 32,
     "filename": "multiple_sources.py",
@@ -1314,7 +1314,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 69,
+              "line": 67,
               "start": 30,
               "end": 32
             }
@@ -1336,9 +1336,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_wrapper_node_get_send_triggered_context",
-    "callable_line": 188,
+    "callable_line": 186,
     "code": 4321,
-    "line": 190,
+    "line": 188,
     "start": 44,
     "end": 46,
     "filename": "multiple_sources.py",
@@ -1361,7 +1361,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 189,
+              "line": 187,
               "start": 9,
               "end": 29
             }
@@ -1387,7 +1387,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 190,
+                "line": 188,
                 "start": 44,
                 "end": 46
               },
@@ -1414,9 +1414,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.muliple_main_issues_1",
-    "callable_line": 164,
+    "callable_line": 162,
     "code": 4321,
-    "line": 166,
+    "line": 164,
     "start": 47,
     "end": 67,
     "filename": "multiple_sources.py",
@@ -1439,7 +1439,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 166,
+              "line": 164,
               "start": 47,
               "end": 67
             }
@@ -1455,7 +1455,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
-                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "origin": { "line": 164, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -1471,7 +1471,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 166,
+              "line": 164,
               "start": 47,
               "end": 67
             }
@@ -1493,9 +1493,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.muliple_main_issues_1",
-    "callable_line": 164,
+    "callable_line": 162,
     "code": 4321,
-    "line": 166,
+    "line": 164,
     "start": 47,
     "end": 67,
     "filename": "multiple_sources.py",
@@ -1518,7 +1518,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 166,
+              "line": 164,
               "start": 47,
               "end": 67
             }
@@ -1534,7 +1534,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
-                    "origin": { "line": 166, "start": 22, "end": 45 },
+                    "origin": { "line": 164, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -1550,7 +1550,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 166,
+              "line": 164,
               "start": 47,
               "end": 67
             }
@@ -1572,9 +1572,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.muliple_main_issues_2",
-    "callable_line": 169,
+    "callable_line": 167,
     "code": 4321,
-    "line": 172,
+    "line": 170,
     "start": 31,
     "end": 33,
     "filename": "multiple_sources.py",
@@ -1597,7 +1597,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 171,
+              "line": 169,
               "start": 9,
               "end": 29
             }
@@ -1620,7 +1620,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 172,
+                "line": 170,
                 "start": 31,
                 "end": 33
               },
@@ -1648,7 +1648,7 @@
   "data": {
     "callable": "multiple_sources.A.multi_sink",
     "filename": "multiple_sources.py",
-    "callable_line": 155,
+    "callable_line": 153,
     "sinks": [
       {
         "port": "formal(permissive_context, position=2)",
@@ -1676,7 +1676,7 @@
   "data": {
     "callable": "multiple_sources.B.multi_sink",
     "filename": "multiple_sources.py",
-    "callable_line": 160,
+    "callable_line": 158,
     "sinks": [
       {
         "port": "formal(permissive_context, position=2)",
@@ -1784,7 +1784,7 @@
   "data": {
     "callable": "multiple_sources.a_sink",
     "filename": "multiple_sources.py",
-    "callable_line": 93,
+    "callable_line": 91,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1800,7 +1800,7 @@
   "data": {
     "callable": "multiple_sources.a_source",
     "filename": "multiple_sources.py",
-    "callable_line": 80,
+    "callable_line": 78,
     "sources": [
       {
         "port": "result",
@@ -1816,7 +1816,7 @@
   "data": {
     "callable": "multiple_sources.b_source",
     "filename": "multiple_sources.py",
-    "callable_line": 84,
+    "callable_line": 82,
     "sources": [
       {
         "port": "result",
@@ -1832,7 +1832,7 @@
   "data": {
     "callable": "multiple_sources.c_source",
     "filename": "multiple_sources.py",
-    "callable_line": 194,
+    "callable_line": 192,
     "sources": [
       {
         "port": "result",
@@ -1849,7 +1849,7 @@
   "data": {
     "callable": "multiple_sources.combines_tests_and_context",
     "filename": "multiple_sources.py",
-    "callable_line": 76,
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(vc, position=1)",
@@ -1877,7 +1877,7 @@
   "data": {
     "callable": "multiple_sources.d_source",
     "filename": "multiple_sources.py",
-    "callable_line": 197,
+    "callable_line": 195,
     "sources": [
       {
         "port": "result",
@@ -1894,7 +1894,7 @@
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_c_from_d",
     "filename": "multiple_sources.py",
-    "callable_line": 216,
+    "callable_line": 214,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1914,7 +1914,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestD",
-                    "origin": { "line": 217, "start": 35, "end": 45 },
+                    "origin": { "line": 215, "start": 35, "end": 45 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
                   }
@@ -1930,7 +1930,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 217,
+              "line": 215,
               "start": 32,
               "end": 33
             }
@@ -1945,7 +1945,7 @@
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
     "filename": "multiple_sources.py",
-    "callable_line": 206,
+    "callable_line": 204,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1965,7 +1965,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestD",
-                    "origin": { "line": 207, "start": 35, "end": 45 },
+                    "origin": { "line": 205, "start": 35, "end": 45 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
                   }
@@ -1981,7 +1981,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 207,
+              "line": 205,
               "start": 32,
               "end": 33
             }
@@ -2001,7 +2001,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestE",
-                    "origin": { "line": 208, "start": 35, "end": 45 },
+                    "origin": { "line": 206, "start": 35, "end": 45 },
                     "leaf_kind": "TestE",
                     "trace_kind": "source"
                   }
@@ -2017,7 +2017,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 208,
+              "line": 206,
               "start": 32,
               "end": 33
             }
@@ -2032,7 +2032,7 @@
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
     "filename": "multiple_sources.py",
-    "callable_line": 225,
+    "callable_line": 223,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2052,7 +2052,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestD",
-                    "origin": { "line": 227, "start": 39, "end": 49 },
+                    "origin": { "line": 225, "start": 39, "end": 49 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
                   }
@@ -2068,7 +2068,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 227,
+              "line": 225,
               "start": 36,
               "end": 37
             }
@@ -2088,7 +2088,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestE",
-                    "origin": { "line": 229, "start": 39, "end": 49 },
+                    "origin": { "line": 227, "start": 39, "end": 49 },
                     "leaf_kind": "TestE",
                     "trace_kind": "source"
                   }
@@ -2104,7 +2104,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 229,
+              "line": 227,
               "start": 36,
               "end": 37
             }
@@ -2166,7 +2166,7 @@
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context_more_hops",
     "filename": "multiple_sources.py",
-    "callable_line": 143,
+    "callable_line": 141,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
@@ -2184,7 +2184,7 @@
                   {
                     "message": "Subtrace for source UserControlled",
                     "call": {
-                      "position": { "line": 145, "start": 9, "end": 40 },
+                      "position": { "line": 143, "start": 9, "end": 40 },
                       "resolves_to": [
                         "multiple_sources.user_controlled_input_wrapper"
                       ],
@@ -2202,7 +2202,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 146,
+              "line": 144,
               "start": 22,
               "end": 24
             },
@@ -2219,7 +2219,7 @@
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_d_and_e",
     "filename": "multiple_sources.py",
-    "callable_line": 237,
+    "callable_line": 235,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -2239,7 +2239,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source TestC",
-                    "origin": { "line": 238, "start": 32, "end": 42 },
+                    "origin": { "line": 236, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
                   }
@@ -2255,7 +2255,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 238,
+              "line": 236,
               "start": 44,
               "end": 45
             }
@@ -2329,7 +2329,7 @@
   "data": {
     "callable": "multiple_sources.e_source",
     "filename": "multiple_sources.py",
-    "callable_line": 200,
+    "callable_line": 198,
     "sources": [
       {
         "port": "result",
@@ -2346,7 +2346,7 @@
   "data": {
     "callable": "multiple_sources.multi_sink_share_both_sinks",
     "filename": "multiple_sources.py",
-    "callable_line": 203,
+    "callable_line": 201,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -2375,11 +2375,43 @@
   "data": {
     "callable": "multiple_sources.multiple_triggered_context",
     "filename": "multiple_sources.py",
-    "callable_line": 175,
+    "callable_line": 173,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
         "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "PartialSink[PermissiveContextSink]"
+              },
+              {
+                "extra_traces": [
+                  {
+                    "message": "Subtrace for source UserControlled",
+                    "origin": { "line": 174, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 175,
+              "start": 23,
+              "end": 25
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          },
           {
             "kinds": [
               {
@@ -2406,38 +2438,6 @@
             "origin": {
               "filename": "multiple_sources.py",
               "line": 177,
-              "start": 23,
-              "end": 25
-            },
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
-                ],
-                "kind": "PartialSink[PermissiveContextSink]"
-              },
-              {
-                "extra_traces": [
-                  {
-                    "message": "Subtrace for source UserControlled",
-                    "origin": { "line": 178, "start": 10, "end": 33 },
-                    "leaf_kind": "UserControlled",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
-                ],
-                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 179,
               "start": 23,
               "end": 25
             },
@@ -2473,7 +2473,7 @@
   "data": {
     "callable": "multiple_sources.sanitize_sink_a_tito",
     "filename": "multiple_sources.py",
-    "callable_line": 113,
+    "callable_line": 111,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2500,7 +2500,7 @@
   "data": {
     "callable": "multiple_sources.sanitize_source_a_tito",
     "filename": "multiple_sources.py",
-    "callable_line": 105,
+    "callable_line": 103,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2527,7 +2527,7 @@
   "data": {
     "callable": "multiple_sources.sanitize_source_b_tito",
     "filename": "multiple_sources.py",
-    "callable_line": 109,
+    "callable_line": 107,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2554,7 +2554,7 @@
   "data": {
     "callable": "multiple_sources.transform_t",
     "filename": "multiple_sources.py",
-    "callable_line": 101,
+    "callable_line": 99,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -2602,7 +2602,7 @@
   "data": {
     "callable": "multiple_sources.user_controlled_input_wrapper",
     "filename": "multiple_sources.py",
-    "callable_line": 139,
+    "callable_line": 137,
     "sources": [
       {
         "port": "result",
@@ -2621,7 +2621,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 140,
+              "line": 138,
               "start": 11,
               "end": 34
             }
@@ -2701,7 +2701,7 @@
   "data": {
     "callable": "multiple_sources.wrapper_node_get_send_triggered_context",
     "filename": "multiple_sources.py",
-    "callable_line": 182,
+    "callable_line": 180,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
@@ -2712,7 +2712,7 @@
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
-                    "origin": { "line": 183, "start": 9, "end": 32 },
+                    "origin": { "line": 181, "start": 9, "end": 32 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -2728,7 +2728,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 185,
+              "line": 183,
               "start": 30,
               "end": 32
             }
@@ -2740,7 +2740,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 185,
+                "line": 183,
                 "start": 30,
                 "end": 32
               },
