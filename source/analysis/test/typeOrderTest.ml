@@ -655,7 +655,7 @@ let test_less_or_equal =
         let aliases = create_type_alias_table aliases in
         let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
           match aliases name with
-          | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+          | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
           | _ -> None
         in
         parse_callable ~aliases:resolved_aliases
@@ -683,7 +683,7 @@ let test_less_or_equal =
     let aliases = create_type_alias_table aliases in
     let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
       match aliases name with
-      | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+      | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
       | _ -> None
     in
     less_or_equal
@@ -702,7 +702,7 @@ let test_less_or_equal =
     let aliases = create_type_alias_table aliases in
     let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
       match aliases name with
-      | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+      | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
       | _ -> None
     in
     parse_callable ~aliases:resolved_aliases
@@ -1983,7 +1983,7 @@ let test_join =
         let aliases = create_type_alias_table aliases in
         let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
           match aliases name with
-          | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+          | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
           | _ -> None
         in
         parse_callable ~aliases:resolved_aliases
@@ -2027,7 +2027,7 @@ let test_join =
     let variance_aliases = create_type_alias_table variance_aliases in
     let variance_aliases ?replace_unbound_parameters_with_any:_ name =
       match variance_aliases name with
-      | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+      | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
       | _ -> None
     in
     assert_join

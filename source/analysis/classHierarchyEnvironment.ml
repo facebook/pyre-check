@@ -32,12 +32,12 @@ module IncomingDataComputation = struct
       get_type_alias:
         ?replace_unbound_parameters_with_any:bool ->
         Type.Primitive.t ->
-        TypeAliasEnvironment.Alias.t option;
+        TypeAliasEnvironment.RawAlias.t option;
       parse_annotation_without_validating_type_parameters:
         ?modify_aliases:
           (?replace_unbound_parameters_with_any:bool ->
-          TypeAliasEnvironment.Alias.t ->
-          TypeAliasEnvironment.Alias.t) ->
+          TypeAliasEnvironment.RawAlias.t ->
+          TypeAliasEnvironment.RawAlias.t) ->
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;
@@ -230,7 +230,7 @@ module IncomingDataComputation = struct
         in
         let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
           match get_type_alias name with
-          | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+          | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
           | _ -> None
         in
         let has_placeholder_stub_parent =
@@ -319,7 +319,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
     let variable_aliases name =
       match queries.get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
-      | Some (TypeAliasEnvironment.Alias.VariableAlias variable) -> Some variable
+      | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) -> Some variable
       | _ -> None
     in
 

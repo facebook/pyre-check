@@ -24,7 +24,7 @@ let type_var_declaration_and_variable
 
 let resolved_aliases aliases ?replace_unbound_parameters_with_any:_ name =
   match aliases name with
-  | Some (TypeAliasEnvironment.Alias.TypeAlias t) -> Some t
+  | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
   | _ -> None
 
 
@@ -50,7 +50,7 @@ let make_callable_from_arguments annotations =
 
 let make_variables ~aliases name =
   match aliases name with
-  | Some (TypeAliasEnvironment.Alias.VariableAlias variable) -> Some variable
+  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) -> Some variable
   | _ -> None
 
 
@@ -330,7 +330,7 @@ let test_create_alias _ =
               () );
         ]
       |> (fun table -> Hashtbl.find table primitive)
-      >>| fun alias -> TypeAliasEnvironment.Alias.TypeAlias alias
+      >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
     in
     assert_create ~aliases source resolved
   in
@@ -886,10 +886,10 @@ let test_resolve_aliases _ =
   assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
   let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let aliases = function
-    | "TParams" -> Some (TypeAliasEnvironment.Alias.VariableAlias tparams_declaration)
+    | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
     | "FooParamSpec" ->
         Some
-          (TypeAliasEnvironment.Alias.TypeAlias
+          (TypeAliasEnvironment.RawAlias.TypeAlias
              (Type.parametric
                 "Bar"
                 [CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable)]))
@@ -914,10 +914,10 @@ let test_resolve_aliases _ =
     (Type.parametric "Bar" [CallableParameters Undefined]);
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let aliases = function
-    | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+    | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
     | "FloatTensor" ->
         Some
-          (TypeAliasEnvironment.Alias.TypeAlias
+          (TypeAliasEnvironment.RawAlias.TypeAlias
              (Type.parametric
                 "Tensor"
                 [
@@ -2409,8 +2409,8 @@ let test_replace_all _ =
   let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_replaced ~replace annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2472,8 +2472,8 @@ let test_replace_all _ =
 
   let parse_string string =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2612,8 +2612,8 @@ let test_collect_all _ =
   let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_collected annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2719,7 +2719,7 @@ let test_concatenation_from_unpack_expression _ =
   let assert_concatenation expression concatenation =
     let parse_annotation expression =
       let aliases ?replace_unbound_parameters_with_any:_ = function
-        | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+        | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
         | _ -> None
       in
       let variables = make_variables ~aliases in
@@ -2754,7 +2754,7 @@ let test_split_ordered_types _ =
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3017,7 +3017,7 @@ let test_coalesce_ordered_types _ =
   let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_coalesce ordered_types expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3069,7 +3069,7 @@ let test_drop_prefix_ordered_type _ =
   let assert_drop_prefix ~length actual expected_tuple =
     let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3118,7 +3118,7 @@ let test_index_ordered_type _ =
   let assert_index ~python_index tuple expected =
     let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3182,11 +3182,11 @@ let test_zip_variables_with_parameters _ =
   let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~instantiation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (TypeAliasEnvironment.Alias.VariableAlias t_declaration)
-      | "T2" -> Some (TypeAliasEnvironment.Alias.VariableAlias t2_declaration)
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts2_declaration)
-      | "TParams" -> Some (TypeAliasEnvironment.Alias.VariableAlias tparams_declaration)
+      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t_declaration)
+      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
+      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3520,11 +3520,11 @@ let test_zip_on_two_parameter_lists _ =
   let tparams_declaration, _tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~left ~right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (TypeAliasEnvironment.Alias.VariableAlias t_declaration)
-      | "T2" -> Some (TypeAliasEnvironment.Alias.VariableAlias t2_declaration)
-      | "Ts" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.Alias.VariableAlias ts2_declaration)
-      | "TParams" -> Some (TypeAliasEnvironment.Alias.VariableAlias tparams_declaration)
+      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t_declaration)
+      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
+      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3703,7 +3703,7 @@ let test_parameter_create _ =
 let test_resolve_alias_before_handling_callable _ =
   let assert_resolved_getitem_callee ~resolve_aliases aliased bare =
     let aliases ?replace_unbound_parameters_with_any:_ (annotation : string) =
-      Some (TypeAliasEnvironment.Alias.TypeAlias (resolve_aliases annotation))
+      Some (TypeAliasEnvironment.RawAlias.TypeAlias (resolve_aliases annotation))
     in
     let variables = make_variables ~aliases in
     assert_equal

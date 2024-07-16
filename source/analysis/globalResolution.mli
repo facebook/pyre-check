@@ -59,14 +59,14 @@ val get_type_alias
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
   Type.Primitive.t ->
-  TypeAliasEnvironment.Alias.t option
+  TypeAliasEnvironment.RawAlias.t option
 
 val parse_annotation_without_validating_type_parameters
   :  t ->
   ?modify_aliases:
     (?replace_unbound_parameters_with_any:bool ->
-    TypeAliasEnvironment.Alias.t ->
-    TypeAliasEnvironment.Alias.t) ->
+    TypeAliasEnvironment.RawAlias.t ->
+    TypeAliasEnvironment.RawAlias.t) ->
   ?allow_untracked:bool ->
   Expression.t ->
   Type.t

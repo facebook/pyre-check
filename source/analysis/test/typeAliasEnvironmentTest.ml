@@ -22,9 +22,9 @@ let test_simple_registration =
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
     let expected =
-      expected >>| fun expected -> TypeAliasEnvironment.Alias.TypeAlias (Type.Primitive expected)
+      expected >>| fun expected -> TypeAliasEnvironment.RawAlias.TypeAlias (Type.Primitive expected)
     in
-    let printer v = v >>| TypeAliasEnvironment.Alias.show |> Option.value ~default:"none" in
+    let printer v = v >>| TypeAliasEnvironment.RawAlias.show |> Option.value ~default:"none" in
     assert_equal ~printer expected (TypeAliasEnvironment.ReadOnly.get_type_alias read_only name)
   in
   test_list
@@ -84,7 +84,7 @@ let test_harder_registrations =
     in
     let printer alias =
       alias
-      >>| TypeAliasEnvironment.Alias.sexp_of_t
+      >>| TypeAliasEnvironment.RawAlias.sexp_of_t
       >>| Sexp.to_string_hum
       |> Option.value ~default:"none"
     in
@@ -99,12 +99,12 @@ let test_harder_registrations =
       |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
     in
     let expected_alias =
-      expected >>| parser >>| fun alias -> TypeAliasEnvironment.Alias.TypeAlias alias
+      expected >>| parser >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
     in
     assert_registers ~expected_alias source name
   in
   let unparsed_assert_registers source name expected =
-    let expected_alias = expected >>| fun alias -> TypeAliasEnvironment.Alias.TypeAlias alias in
+    let expected_alias = expected >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias in
     assert_registers ~expected_alias source name
   in
   test_list
@@ -169,7 +169,7 @@ let test_harder_registrations =
              Y: typing_extensions.TypeAlias = "X"
            |}
            "test.Y"
-           ~expected_alias:(Some (TypeAliasEnvironment.Alias.TypeAlias Type.integer));
+           ~expected_alias:(Some (TypeAliasEnvironment.RawAlias.TypeAlias Type.integer));
       (* Recursive alias. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
@@ -181,7 +181,7 @@ let test_harder_registrations =
            "test.Tree"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.RecursiveType.create
                       ~name:"test.Tree"
                       ~body:
@@ -238,7 +238,7 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.list
                       (Type.RecursiveType.create
                          ~name:"test.X"
@@ -257,7 +257,7 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.union
                       [
                         Type.integer;
@@ -287,7 +287,7 @@ let test_harder_registrations =
            "test.Z"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.list
                       (Type.union
                          [
@@ -320,7 +320,7 @@ let test_harder_registrations =
            "test.FloatTensor"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.parametric
                       "test.Tensor"
                       [
@@ -346,7 +346,7 @@ let test_harder_registrations =
            "test.F"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.Alias.TypeAlias
+                (TypeAliasEnvironment.RawAlias.TypeAlias
                    (Type.Callable.create ~annotation:Type.integer ())));
       (* Allow the union syntax in type aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -385,7 +385,7 @@ let test_updates context =
     let execute_action (alias_name, dependency, expectation) =
       let printer v =
         v
-        >>| TypeAliasEnvironment.Alias.sexp_of_t
+        >>| TypeAliasEnvironment.RawAlias.sexp_of_t
         >>| Sexp.to_string_hum
         |> Option.value ~default:"none"
       in
@@ -393,7 +393,7 @@ let test_updates context =
         expectation
         >>| parse_single_expression
         >>| Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
-        >>| fun alias -> TypeAliasEnvironment.Alias.TypeAlias alias
+        >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
       in
       TypeAliasEnvironment.ReadOnly.get_type_alias read_only ~dependency alias_name
       |> assert_equal ~printer expectation
