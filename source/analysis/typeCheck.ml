@@ -6201,39 +6201,66 @@ module State (Context : Context) = struct
           errors
       in
       let add_typeguard_error { Node.location; _ } return_type errors =
+        (* Type guards (TypeGuard and TypeIs) must have at least one positional parameter (not
+           counting `self`/ `cls` for methods) to make semantic sense.
+
+           In addition, for TypeIs it is an error if the narrowed type is not a (gradual) subtype of
+           the original type; this is not enforced for TypeGuard. *)
+        let validate_type_guard ~errors ~validate_consistency =
+          let guarded_parameter =
+            let positional_parameters =
+              List.filter
+                ~f:(fun param ->
+                  match param with
+                  | Type.Callable.CallableParamType.PositionalOnly _
+                  | Named _
+                  | Variable _ ->
+                      true
+                  | _ -> false)
+                parameter_types
+            in
+            let is_non_static_method =
+              Option.is_some parent && not (Define.is_static_method define)
+            in
+            if is_non_static_method then
+              List.nth positional_parameters 1
+            else
+              List.nth positional_parameters 0
+          in
+          match guarded_parameter with
+          | None ->
+              emit_error
+                ~errors
+                ~location
+                ~kind:(Error.InvalidTypeGuard Error.LacksPositionalParameter)
+          | Some guarded_parameter -> validate_consistency ~errors guarded_parameter
+        in
         match Type.narrowing_of_type_guard return_type with
         | Type.NoNarrowing -> errors
-        | Type.PositiveNarrowing _
-        | Type.ExactNarrowing _ -> (
-            (* TypeGuard methods must take at lest one positional parameter, not counting `self` or
-               `cls`. That parameter is the guarded value. *)
-            let guarded_parameter =
-              let positional_parameters =
-                List.filter
-                  ~f:(fun param ->
-                    match param with
-                    | Type.Callable.CallableParamType.PositionalOnly _
-                    | Named _
-                    | Variable _ ->
-                        true
-                    | _ -> false)
-                  parameter_types
-              in
-              let is_non_static_method =
-                Option.is_some parent && not (Define.is_static_method define)
-              in
-              if is_non_static_method then
-                List.nth positional_parameters 1
-              else
-                List.nth positional_parameters 0
+        | Type.ExactNarrowing narrowed_type ->
+            let validate_consistency ~errors guarded_parameter =
+              match Type.Callable.CallableParamType.annotation guarded_parameter with
+              | Some guarded_type ->
+                  if
+                    GlobalResolution.less_or_equal
+                      global_resolution
+                      ~left:narrowed_type
+                      ~right:guarded_type
+                  then
+                    errors
+                  else
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.InvalidTypeGuard
+                           (Error.UnsoundNarrowing { guarded_type; narrowed_type }))
+              | None -> errors
             in
-            (* Type guards (TypeGuard and TypeIs) must have at least one positional parameter (not
-               counting `self`/ `cls` for methods) to make semantic sense, and it is a type error to
-               define a type guard whose narrowed type is not a (gradual) subtype of the original
-               type. *)
-            match guarded_parameter with
-            | None -> emit_error ~errors ~location ~kind:Error.InvalidTypeGuard
-            | Some _ -> errors)
+            validate_type_guard ~errors ~validate_consistency
+        | Type.PositiveNarrowing _ ->
+            let validate_consistency ~errors _ = errors in
+            validate_type_guard ~errors ~validate_consistency
       in
       let errors = add_missing_return_error return_annotation errors in
       match return_annotation with

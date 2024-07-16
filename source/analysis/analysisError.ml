@@ -301,6 +301,13 @@ and illegal_annotation_target_kind =
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
   | UnpackingNonIterable of { annotation: Type.t }
+
+and invalid_type_guard_kind =
+  | LacksPositionalParameter
+  | UnsoundNarrowing of {
+      guarded_type: Type.t;
+      narrowed_type: Type.t;
+    }
 [@@deriving compare, sexp, show, hash]
 
 let join_mismatch ~resolution left right =
@@ -758,7 +765,7 @@ and kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
-  | InvalidTypeGuard
+  | InvalidTypeGuard of invalid_type_guard_kind
   | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;
@@ -956,7 +963,7 @@ let code_of_kind = function
   | DuplicateParameter _ -> 65
   | InvalidExceptionHandler _ -> 66
   | InvalidExceptionGroupHandler _ -> 67
-  | InvalidTypeGuard -> 68
+  | InvalidTypeGuard _ -> 68
   | InvalidPositionalOnlyParameter -> 69
   | ParserFailure _ -> 404
   (* Additional errors. *)
@@ -998,7 +1005,7 @@ let name_of_kind = function
   | InvalidExceptionHandler _ -> "Invalid except clause"
   | InvalidExceptionGroupHandler _ -> "Invalid except* clause"
   | InvalidType _ -> "Invalid type"
-  | InvalidTypeGuard -> "Invalid type guard"
+  | InvalidTypeGuard _ -> "Invalid type guard"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
@@ -1914,10 +1921,20 @@ let rec messages ~concise ~signature location kind =
           ]
       | InvalidLiteral reference ->
           [Format.asprintf "Expression `%a` is not a literal value." Reference.pp reference])
-  | InvalidTypeGuard ->
+  | InvalidTypeGuard LacksPositionalParameter ->
       [
         Format.asprintf
           "User-defined type guard functions or methods must have at least one input parameter.";
+      ]
+  | InvalidTypeGuard (UnsoundNarrowing { guarded_type; narrowed_type }) ->
+      [
+        Format.asprintf
+          "The narrowed type %a of this type guard is not a subtype of the first positional \
+           parameter type %a."
+          Type.pp
+          narrowed_type
+          Type.pp
+          guarded_type;
       ]
   | InvalidTypeParameters
       {
@@ -3239,7 +3256,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidAssignment _
   | InvalidClassInstantiation _
   | InvalidType _
-  | InvalidTypeGuard
+  | InvalidTypeGuard _
   | IncompatibleOverload _
   | IncompleteType _
   | LeakToGlobal _
@@ -3353,7 +3370,9 @@ let join ~resolution left right =
             annotation = GlobalResolution.join resolution left right;
             attempted_action = left_attempted_action;
           }
-    | InvalidTypeGuard, InvalidTypeGuard -> InvalidTypeGuard
+    | InvalidTypeGuard left, InvalidTypeGuard right
+      when [%compare.equal: invalid_type_guard_kind] left right ->
+        InvalidTypeGuard left
     | InvalidTypeParameters left, InvalidTypeParameters right
       when [%compare.equal: AttributeResolution.type_parameters_mismatch] left right ->
         InvalidTypeParameters left
@@ -3765,7 +3784,7 @@ let join ~resolution left right =
     | InvalidExceptionGroupHandler _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
-    | InvalidTypeGuard, _
+    | InvalidTypeGuard _, _
     | InvalidTypeParameters _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
@@ -4255,7 +4274,14 @@ let dequalify
     | InvalidType (SingleExplicit explicit) -> InvalidType (SingleExplicit (dequalify explicit))
     | InvalidType (InvalidLiteral reference) ->
         InvalidType (InvalidLiteral (dequalify_reference reference))
-    | InvalidTypeGuard -> InvalidTypeGuard
+    | InvalidTypeGuard LacksPositionalParameter -> InvalidTypeGuard LacksPositionalParameter
+    | InvalidTypeGuard (UnsoundNarrowing { guarded_type; narrowed_type }) ->
+        InvalidTypeGuard
+          (UnsoundNarrowing
+             {
+               guarded_type = Type.dequalify dequalify_map guarded_type;
+               narrowed_type = Type.dequalify dequalify_map narrowed_type;
+             })
     | InvalidTypeParameters invalid_type_parameters ->
         InvalidTypeParameters (dequalify_invalid_type_parameters invalid_type_parameters)
     | InvalidTypeVariable { annotation; origin } ->

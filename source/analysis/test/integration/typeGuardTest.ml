@@ -191,7 +191,12 @@ let test_type_is =
                   else:
                       print("Not a person!")
             |}
-           ["Revealed type [-1]: Revealed type for `val` is `Person`."];
+           [
+             (* This is a bug in TypedDict ordering, but the type guard validation is correct *)
+             "Invalid type guard [68]: The narrowed type Person of this type guard is not a \
+              subtype of the first positional parameter type Dict[typing.Any, typing.Any].";
+             "Revealed type [-1]: Revealed type for `val` is `Person`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -852,6 +857,49 @@ let test_boolean_operators =
     ]
 
 
+let test_consistency_checks =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import TypeIs
+
+              def custom_type_guard(val: list[int | str]) -> TypeIs[list[str]]:
+                return all(isinstance(x, str) for x in val)
+            |}
+           [
+             "Invalid type guard [68]: The narrowed type typing.List[str] of this type guard is \
+              not a subtype of the first positional parameter type typing.List[typing.Union[int, \
+              str]].";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import TypeGuard
+
+              def custom_type_guard(val: list[int | str]) -> TypeGuard[list[str]]:
+                return all(isinstance(x, str) for x in val)
+            |}
+           [ (* The consistency check is applied only to `TypeIs`, not `TypeGuard`. See
+                https://typing.readthedocs.io/en/latest/spec/narrowing.html. *) ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import TypeIs
+
+              class CustomTypeGuard:
+                  def guard(self, val: list[int | str]) -> TypeIs[list[str]]:
+                      return all(isinstance(x, str) for x in val)
+            |}
+           [
+             "Invalid type guard [68]: The narrowed type typing.List[str] of this type guard is \
+              not a subtype of the first positional parameter type typing.List[typing.Union[int, \
+              str]].";
+           ];
+    ]
+
+
 let test_misc =
   test_list
     [
@@ -935,6 +983,7 @@ let () =
          test_return_type;
          test_walrus_operator;
          test_boolean_operators;
+         test_consistency_checks;
          test_misc;
        ]
   |> Test.run

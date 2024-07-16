@@ -267,6 +267,13 @@ and illegal_annotation_target_kind =
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
   | UnpackingNonIterable of { annotation: Type.t }
+
+and invalid_type_guard_kind =
+  | LacksPositionalParameter
+  | UnsoundNarrowing of {
+      guarded_type: Type.t;
+      narrowed_type: Type.t;
+    }
 [@@deriving compare, sexp, show, hash]
 
 module GlobalLeaks : sig
@@ -412,7 +419,7 @@ and kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
-  | InvalidTypeGuard
+  | InvalidTypeGuard of invalid_type_guard_kind
   | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;
