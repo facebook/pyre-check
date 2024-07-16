@@ -8,10 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_extra_overriding_parameter context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_extra_overriding_parameter =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class Obj:
         def __format__(self, __format_spec: str) -> str:
           return 'hello'
@@ -20,16 +22,18 @@ let test_extra_overriding_parameter context =
         def __format__(self, format_spec: str) -> str:
           return 'hello ' + format_spec
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class Data:
         def __format__(self, format_spec: str) -> str:
           return 'hello ' + format_spec
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       import typing
       T = typing.TypeVar("T")
 
@@ -45,9 +49,10 @@ let test_extra_overriding_parameter context =
         def f(self, x: int, y: int, z: int) -> None:
           pass
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       import typing
       T = typing.TypeVar("T")
 
@@ -63,9 +68,10 @@ let test_extra_overriding_parameter context =
         def f(self, x: int) -> None:
           pass
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class C:
         def f(self) -> None:
           pass
@@ -75,12 +81,13 @@ let test_extra_overriding_parameter context =
         def f(self, x: int) -> None:
           pass
     |}
-    [
-      "Inconsistent override [14]: `test.D.f` overrides method defined in `C` inconsistently. \
-       Could not find parameter `x` in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.D.f` overrides method defined in `C` \
+              inconsistently. Could not find parameter `x` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       import abc
       class Abstract:
           @abc.abstractclassmethod
@@ -95,9 +102,10 @@ let test_extra_overriding_parameter context =
           def a_thing(cls) -> None:
               ...
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       import abc
       class Abstract:
           @abc.abstractclassmethod
@@ -109,9 +117,10 @@ let test_extra_overriding_parameter context =
           def a_thing(self, param: int) -> None:
               ...
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self) -> int:
               return 5
@@ -121,12 +130,13 @@ let test_extra_overriding_parameter context =
           def test(self, n: int) -> int:
               return n
     |}
-    [
-      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter `n` in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.B.test` overrides method defined in `A` \
+              inconsistently. Could not find parameter `n` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self, n: int, /) -> int:
               return 5
@@ -136,12 +146,14 @@ let test_extra_overriding_parameter context =
           def test(self, n: int, m: float, /) -> int:
               return n
     |}
-    [
-      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter of type `float` at index 2 in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.B.test` overrides method defined in `A` \
+              inconsistently. Could not find parameter of type `float` at index 2 in overridden \
+              signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self, __n: int) -> int:
               return 5
@@ -151,12 +163,14 @@ let test_extra_overriding_parameter context =
           def test(self, __n: int, __m: float) -> int:
               return 5
     |}
-    [
-      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter of type `float` at index 2 in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.B.test` overrides method defined in `A` \
+              inconsistently. Could not find parameter of type `float` at index 2 in overridden \
+              signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self, n: int, /) -> int:
               return 5
@@ -166,9 +180,10 @@ let test_extra_overriding_parameter context =
           def test(self, m: int, /) -> int:
               return m
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self) -> int:
               return 5
@@ -178,12 +193,13 @@ let test_extra_overriding_parameter context =
           def test(self, *, n: int) -> int:
               return n
     |}
-    [
-      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter `n` in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.B.test` overrides method defined in `A` \
+              inconsistently. Could not find parameter `n` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self) -> int:
               return 5
@@ -193,12 +209,13 @@ let test_extra_overriding_parameter context =
           def test(self, n: int) -> int:
               return n
     |}
-    [
-      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter `n` in overridden signature.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Inconsistent override [14]: `test.B.test` overrides method defined in `A` \
+              inconsistently. Could not find parameter `n` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       from typing import Dict, Any
       class A:
           def test(self) -> int:
@@ -209,9 +226,10 @@ let test_extra_overriding_parameter context =
           def test(self, **kwargs: Dict[str, Any]) -> int:
               return 5
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       from typing import List, Any
       class A:
           def test(self) -> int:
@@ -222,9 +240,10 @@ let test_extra_overriding_parameter context =
           def test(self, *args: List[Any]) -> int:
               return 5
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class A:
           def test(self) -> int:
               return 5
@@ -234,9 +253,8 @@ let test_extra_overriding_parameter context =
           def test(self, n: int = 5) -> int:
               return n
     |}
-    [];
-  ()
+           [];
+    ]
 
 
-let () =
-  "override" >::: ["extra_overriding_parameter" >:: test_extra_overriding_parameter] |> Test.run
+let () = "override" >::: [test_extra_overriding_parameter] |> Test.run
