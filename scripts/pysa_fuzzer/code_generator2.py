@@ -67,19 +67,9 @@ class CodeGenerator:
 # Example usage
 generator = CodeGenerator()
 generator.add_function()
-
 generator.add_variable()  # Variable assignments are now within the last function added
 generator.add_function()
-generator.add_function()
 generator.add_variable()  # Variable assignments are now within the last function added
-
-generator.add_function()
-generator.add_variable()  # Variable assignments are now within the last function added
-
-generator.add_function()
-generator.add_function()
-generator.add_variable()  # Variable assignments are now within the last function added
-
 generator.add_function()
 
 print(generator.generate())
@@ -91,7 +81,8 @@ def f3():
     a = f1()
     return a
 def f5():
-    return f3()
+    b = f3()
+    return b
 def f2(x):
     return print(x)
 def f4(x):
