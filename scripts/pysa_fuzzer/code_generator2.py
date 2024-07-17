@@ -75,6 +75,7 @@ generator.add_function()
 print(generator.generate())
 
 
+# example generation 
 def f1():
     return input()
 def f3():
@@ -90,3 +91,5 @@ def f4(x):
 def f6(x):
     return f4(x)
 f6(f5())
+
+
