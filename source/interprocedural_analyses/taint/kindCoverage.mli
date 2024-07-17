@@ -26,7 +26,7 @@ module Sinks : sig
   module Set : Stdlib.Set.S with type elt = t
 end
 
-module Transforms : sig
+module NonSanitizeTransforms : sig
   val from_transform : TaintTransform.t -> TaintTransform.t option
 
   module Set : Data_structures.SerializableSet.S with type elt = TaintTransform.t
@@ -35,7 +35,8 @@ end
 type t = {
   sources: Sources.Set.t;
   sinks: Sinks.Set.t;
-  transforms: Transforms.Set.t;
+  non_sanitize_transforms: NonSanitizeTransforms.Set.t;
+      (* The kind coverage cares about transforms that appear in rules and models. *)
 }
 [@@deriving eq, show, compare, sexp, hash]
 

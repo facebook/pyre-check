@@ -53,7 +53,7 @@ module Sinks = struct
       ~init:Sinks.Set.empty
 end
 
-module Transforms = struct
+module NonSanitizeTransforms = struct
   module Set = Data_structures.SerializableSet.Make (TaintTransform)
 
   let from_transform = function
@@ -71,12 +71,17 @@ end
 type t = {
   sources: Sources.Set.t;
   sinks: Sinks.Set.t;
-  transforms: Transforms.Set.t;
+  non_sanitize_transforms: NonSanitizeTransforms.Set.t;
+      (* The kind coverage cares about transforms that appear in rules and models. *)
 }
 [@@deriving eq, show, compare, sexp, hash]
 
 let empty =
-  { sources = Sources.Set.empty; sinks = Sinks.Set.empty; transforms = Transforms.Set.empty }
+  {
+    sources = Sources.Set.empty;
+    sinks = Sinks.Set.empty;
+    non_sanitize_transforms = NonSanitizeTransforms.Set.empty;
+  }
 
 
 let from_model
@@ -105,30 +110,31 @@ let from_model
     Sources.Set.union (collect_sources generations) (collect_sources parameter_sources)
   in
   let sinks = Sinks.Set.union (collect_sinks taint_in_taint_out) (collect_sinks sink_taint) in
-  let source_transforms =
+  let source_non_sanitize_transforms =
     Sources.Set.fold
       (fun source so_far ->
         source
         |> Sources.get_non_sanitize_transforms
-        |> Transforms.from_transforms
-        |> Transforms.Set.union so_far)
+        |> NonSanitizeTransforms.from_transforms
+        |> NonSanitizeTransforms.Set.union so_far)
       sources
-      Transforms.Set.empty
+      NonSanitizeTransforms.Set.empty
   in
-  let sink_transforms =
+  let sink_non_sanitize_transforms =
     Sinks.Set.fold
       (fun sink so_far ->
         sink
         |> Sinks.get_non_sanitize_transforms
-        |> Transforms.from_transforms
-        |> Transforms.Set.union so_far)
+        |> NonSanitizeTransforms.from_transforms
+        |> NonSanitizeTransforms.Set.union so_far)
       sinks
-      Transforms.Set.empty
+      NonSanitizeTransforms.Set.empty
   in
   {
     sources = sources |> Sources.Set.filter_map Sources.from_source;
     sinks = sinks |> Sinks.Set.elements |> Sinks.from_sinks ~partial_sink_converter;
-    transforms = Transforms.Set.union source_transforms sink_transforms;
+    non_sanitize_transforms =
+      NonSanitizeTransforms.Set.union source_non_sanitize_transforms sink_non_sanitize_transforms;
   }
 
 
@@ -136,35 +142,53 @@ let from_rule ~partial_sink_converter { Rule.sources; sinks; transforms; _ } =
   {
     sources = sources |> Sources.Set.of_list |> Sources.Set.filter_map Sources.from_source;
     sinks = Sinks.from_sinks ~partial_sink_converter sinks;
-    transforms =
+    non_sanitize_transforms =
       (* Not consider transforms from sources or sinks, since those should not have transforms. *)
-      Transforms.Set.of_list transforms;
+      NonSanitizeTransforms.Set.of_list transforms;
   }
 
 
 let intersect
-    { sources = sources_left; sinks = sinks_left; transforms = transforms_left }
-    { sources = sources_right; sinks = sinks_right; transforms = transforms_right }
+    {
+      sources = sources_left;
+      sinks = sinks_left;
+      non_sanitize_transforms = non_sanitize_transforms_left;
+    }
+    {
+      sources = sources_right;
+      sinks = sinks_right;
+      non_sanitize_transforms = non_sanitize_transforms_right;
+    }
   =
   {
     sources = Sources.Set.inter sources_left sources_right;
     sinks = Sinks.Set.inter sinks_left sinks_right;
-    transforms = Transforms.Set.inter transforms_left transforms_right;
+    non_sanitize_transforms =
+      NonSanitizeTransforms.Set.inter non_sanitize_transforms_left non_sanitize_transforms_right;
   }
 
 
 let union
-    { sources = sources_left; sinks = sinks_left; transforms = transforms_left }
-    { sources = sources_right; sinks = sinks_right; transforms = transforms_right }
+    {
+      sources = sources_left;
+      sinks = sinks_left;
+      non_sanitize_transforms = non_sanitize_transforms_left;
+    }
+    {
+      sources = sources_right;
+      sinks = sinks_right;
+      non_sanitize_transforms = non_sanitize_transforms_right;
+    }
   =
   {
     sources = Sources.Set.union sources_left sources_right;
     sinks = Sinks.Set.union sinks_left sinks_right;
-    transforms = Transforms.Set.union transforms_left transforms_right;
+    non_sanitize_transforms =
+      NonSanitizeTransforms.Set.union non_sanitize_transforms_left non_sanitize_transforms_right;
   }
 
 
-let to_json { sources; sinks; transforms } =
+let to_json { sources; sinks; non_sanitize_transforms } =
   let sources_json =
     `List
       (sources |> Sources.Set.elements |> List.map ~f:(fun source -> `String (Sources.show source)))
@@ -172,13 +196,13 @@ let to_json { sources; sinks; transforms } =
   let sinks_json =
     `List (sinks |> Sinks.Set.elements |> List.map ~f:(fun sink -> `String (Sinks.show sink)))
   in
-  if Transforms.Set.is_empty transforms then
+  if NonSanitizeTransforms.Set.is_empty non_sanitize_transforms then
     `Assoc ["sources", sources_json; "sinks", sinks_json]
   else
     let transforms_json =
       `List
-        (transforms
-        |> Transforms.Set.elements
+        (non_sanitize_transforms
+        |> NonSanitizeTransforms.Set.elements
         |> List.map ~f:(fun transform -> `String (TaintTransform.show transform)))
     in
     `Assoc ["sources", sources_json; "sinks", sinks_json; "transforms", transforms_json]
