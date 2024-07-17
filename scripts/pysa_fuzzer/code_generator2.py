@@ -181,4 +181,14 @@ def f19(x):
         else:
             return f19(x)
     return f20(x)
-f19(f17())
+#f19(f17())
+
+
+
+def function(x):
+    if x % 2 == 0: 
+        return print(x)
+    else: 
+        return input() 
+
+function(function(1))
