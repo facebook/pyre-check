@@ -462,9 +462,41 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attributes.NoListInference.sink",
+    "filename": "attributes.py",
+    "callable_line": 125,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[buffer]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "attributes.py",
+              "line": 126,
+              "start": 19,
+              "end": 30
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attributes.PartiallyZonedDict.copy",
     "filename": "attributes.py",
-    "callable_line": 130,
+    "callable_line": 147,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -483,7 +515,7 @@
   "data": {
     "callable": "attributes.RegularForm.__init__",
     "filename": "attributes.py",
-    "callable_line": 143,
+    "callable_line": 160,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -545,7 +577,7 @@
   "data": {
     "callable": "attributes.ZonedForm.__init__",
     "filename": "attributes.py",
-    "callable_line": 135,
+    "callable_line": 152,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -569,7 +601,7 @@
   "data": {
     "callable": "attributes.ZonedForm.data",
     "filename": "attributes.py",
-    "callable_line": 139,
+    "callable_line": 156,
     "tito": [
       {
         "port": "formal(self, position=0)[_data]",
@@ -1205,7 +1237,7 @@
   "data": {
     "callable": "attributes.tito_copy_dict",
     "filename": "attributes.py",
-    "callable_line": 118,
+    "callable_line": 135,
     "tito": [
       {
         "port": "formal(d, position=0)[copy]",
@@ -1225,7 +1257,7 @@
   "data": {
     "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
     "filename": "attributes.py",
-    "callable_line": 146,
+    "callable_line": 163,
     "tito": [
       {
         "port": "formal(d, position=0)[_data][copy]",
@@ -1242,7 +1274,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 148, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 165, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]

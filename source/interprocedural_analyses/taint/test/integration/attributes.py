@@ -114,6 +114,23 @@ def test_issue_with_update_to_self_attribute(d: D):
     d.buffer.append(_test_source())
 
 
+class NoListInference:
+    def __init__(self):
+        # TODO(T78211867): pyre does not infer List[Any], leading to a False Negative.
+        self.buffer = []
+
+    def append(self, row):
+        self.buffer.append(row)
+
+    def sink(self):
+        _test_sink(self.buffer)
+
+
+def test_no_list_inference():
+    o = NoListInference()
+    o.append(_test_source())
+    o.sink()
+
 
 def tito_copy_dict(d: Any):
     return d.copy()
