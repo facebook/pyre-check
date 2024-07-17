@@ -10,3 +10,5 @@ class_methods.D.abstract_method (override) -> [class_methods.D.abstract_method (
 class_methods.D.class_abstractmethod (override) -> [class_methods.D.class_abstractmethod (method)]
 class_methods.D.my_abstract_property (override) -> [class_methods.D.my_abstract_property (method)]
 class_methods.D.my_abstract_property@setter (override) -> [class_methods.D.my_abstract_property@setter (method)]
+class_methods.ObscureClassMethodTito.__init__ (override) -> [class_methods.ObscureClassMethodTito.__init__ (method)]
+object.__init__ (override) -> [class_methods.ObscureClassMethodTito.__init__ (override) object.__init__ (method)]

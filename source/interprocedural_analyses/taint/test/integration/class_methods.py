@@ -111,3 +111,17 @@ def issue_with_abstract_property():
     d = D()
     d.my_abstract_property = _test_source()
     _test_sink(d.my_abstract_property)  # Expect an issue
+
+
+class ObscureClassMethodTito:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    @classmethod
+    def method(cls): ...
+
+
+def test_obscure_class_method_tito():
+    o = ObscureClassMethodTito(_test_source())
+    # TODO(T113911314): False positive
+    _test_sink(o.method())
