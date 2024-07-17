@@ -35,7 +35,6 @@ class CodeGenerator:
         current_function_source = self.generate_new_function()
         temp_source = self.last_source
         self.last_source = current_function_source + "()"
-
         current_function_sink = self.generate_new_function()
         temp_sink = self.last_sink
         self.last_sink = current_function_sink
@@ -51,10 +50,9 @@ class CodeGenerator:
 # Example usage
 generator = CodeGenerator()
 generator.add_function()
-
-
 print(generator.generate())
 
+# example generation
 import random
 
 def f1():
