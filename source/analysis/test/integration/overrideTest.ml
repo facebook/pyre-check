@@ -14,6 +14,38 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        def f(self, x: int) -> None:
+          pass
+    |}
+           [
+             "Inconsistent override [14]: `test.D.f` overrides method defined in `C` \
+              inconsistently. Could not find parameter `x` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+      from typing import override
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        @override
+        def f(self, x: int) -> None:
+          pass
+    |}
+           [
+             "Inconsistent override [14]: `test.D.f` overrides method defined in `C` \
+              inconsistently. Could not find parameter `x` in overridden signature.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
       class Obj:
         def __format__(self, __format_spec: str) -> str:
           return 'hello'

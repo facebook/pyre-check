@@ -7137,7 +7137,9 @@ module State (Context : Context) = struct
                             [
                               Reference.create "staticmethod";
                               Reference.create "classmethod";
-                              Reference.create "override";
+                              Reference.create "typing.override";
+                              Reference.create "typing_extensions.override";
+                              Reference.create "pyre_extensions.override";
                             ]
                           in
                           let is_equal_to_decorator_ref name ref =
@@ -7176,7 +7178,6 @@ module State (Context : Context) = struct
                                     } ->
                                     not (List.for_all ~f:is_non_modifying_decorator decorators))
                           in
-
                           if
                             is_args_kwargs_or_has_default
                             || are_overriding_function_possibly_changed
