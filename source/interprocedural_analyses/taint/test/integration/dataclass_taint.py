@@ -95,7 +95,7 @@ class DataClassWithClassAttributeTaintedDirectly:
 def test_class_attr_model_tainted_directly() -> None:
     # not an issue
     DataClassWithClassAttributeTaintedDirectly(bad=1, benign=_test_source())
-    # TODO(T106922147): should be an issue but not raised
+    # should be an issue, properly raised.
     DataClassWithClassAttributeTaintedDirectly(bad=_test_source(), benign="1")
     # not an issue
     data_object_no_issue = DataClassWithClassAttributeTaintedDirectly(bad=1, benign="1")
