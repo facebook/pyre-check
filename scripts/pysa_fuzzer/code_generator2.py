@@ -72,6 +72,7 @@ generator.add_function()
 generator.add_variable()
 generator.add_function()
 
+
 print(generator.generate())
 
 # example generation
@@ -93,6 +94,13 @@ def f3():
         return d
     else:
         return f3()
+def f5():
+    random_number = random.randint(1,3)
+    e = f3()
+    if random_number == 1:
+        return e
+    else:
+        return f5()
 def f2(x):
     random_number = random.randint(1,3)
     if random_number == 1:
@@ -105,5 +113,11 @@ def f4(x):
         return f2(x)
     else:
         return f4(x)
-f4(f3())
+def f6(x):
+    random_number = random.randint(1,3)
+    if random_number == 1:
+        return f4(x)
+    else:
+        return f6(x)
+f6(f5())
 
