@@ -49,6 +49,14 @@ class CodeGenerator:
         self.source_statements.append(f"def {current_function_source}():\n{indent_space}random_number = random.randint(1,3)\n{indent_space}{new_var} = {temp_source}\n{indent_space}if random_number == 1:\n{indent_space*2}return {new_var}\n{indent_space}else:\n{indent_space*2}return {current_function_source}()")
         self.sink_statements.append(f"def {current_function_sink}(x):\n{indent_space}random_number = random.randint(1,3)\n{indent_space}if random_number == 1:\n{indent_space*2}return {temp_sink}(x)\n{indent_space}else:\n{indent_space*2}return {current_function_sink}(x)")
 
+    def add_variable(self) -> None:
+        indent_space = ' ' * 4
+        new_var = self.generate_new_variable()
+        temp_source = self.last_source
+        self.last_source = new_var 
+
+        self.source_statements.append(f"{new_var} = {temp_source}")
+
 
 
     def generate(self) -> str:
@@ -61,6 +69,9 @@ class CodeGenerator:
 # Example usage
 generator = CodeGenerator()
 generator.add_function()
+generator.add_variable()
+generator.add_function()
+
 print(generator.generate())
 
 # example generation
@@ -74,10 +85,25 @@ def f1():
         return b
     else:
         return f1()
+c = f1()
+def f3():
+    random_number = random.randint(1,3)
+    d = c
+    if random_number == 1:
+        return d
+    else:
+        return f3()
 def f2(x):
     random_number = random.randint(1,3)
     if random_number == 1:
         return print(x)
     else:
         return f2(x)
-f2(f1())
+def f4(x):
+    random_number = random.randint(1,3)
+    if random_number == 1:
+        return f2(x)
+    else:
+        return f4(x)
+f4(f3())
+
