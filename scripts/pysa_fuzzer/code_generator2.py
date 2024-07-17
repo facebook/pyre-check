@@ -40,8 +40,8 @@ class CodeGenerator:
         temp_sink = self.last_sink
         self.last_sink = current_function_sink
 
-        self.source_statements.append(f"def {current_function_source}():\n{indent_space}random_number = random.randint(1,5)\n{indent_space}if random_number == 1:\n{indent_space*2}return {temp_source}\n{indent_space}else:\n{indent_space*2}return {current_function_source}()")
-        self.sink_statements.append(f"def {current_function_sink}(x):\n{indent_space}return {temp_sink}(x)")
+        self.source_statements.append(f"def {current_function_source}():\n{indent_space}random_number = random.randint(1,3)\n{indent_space}if random_number == 1:\n{indent_space*2}return {temp_source}\n{indent_space}else:\n{indent_space*2}return {current_function_source}()")
+        self.sink_statements.append(f"def {current_function_sink}(x):\n{indent_space}random_number = random.randint(1,3)\n{indent_space}if random_number == 1:\n{indent_space*2}return {temp_sink}(x)\n{indent_space}else:\n{indent_space*2}return {current_function_sink}(x)")
 
     def generate(self) -> str:
         code_lines = self.source_statements + self.sink_statements
@@ -51,34 +51,24 @@ class CodeGenerator:
 # Example usage
 generator = CodeGenerator()
 generator.add_function()
-generator.add_function()
-generator.add_function()
+
 
 print(generator.generate())
 
 import random
+
 def f1():
     random_number = random.randint(1,5)
     if random_number == 1:
         return input()
     else:
         return f1()
-def f3():
-    random_number = random.randint(1,5)
-    if random_number == 1:
-        return f1()
-    else:
-        return f3()
-def f5():
-    random_number = random.randint(1,5)
-    if random_number == 1:
-        return f3()
-    else:
-        return f5()
 def f2(x):
-    return print(x)
-def f4(x):
-    return f2(x)
-def f6(x):
-    return f4(x)
-f6(f5())
+    random_number = random.randint(1,5)
+    if random_number == 1:
+        return print(x)
+    else:
+        return f2(x)
+f2(f1())
+
+
