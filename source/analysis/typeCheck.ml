@@ -7585,7 +7585,16 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                   ->
                  let parent = Type.Primitive (ClassSummary.name definition |> Reference.show) in
                  let expected = annotation in
+                 let is_enum =
+                   GlobalResolution.less_or_equal
+                     global_resolution
+                     ~left:parent
+                     ~right:Type.enumeration
+                 in
                  if Type.is_top expected then
+                   None
+                 else if is_enum && String.equal name "_value_" then
+                   (* _value_ is automatically initialized for enums *)
                    None
                  else
                    let error_kind =
@@ -7593,12 +7602,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                        Error.Protocol (Reference.create original_class_name)
                      else if is_abstract then
                        Error.Abstract (Reference.create original_class_name)
-                     else if
-                       GlobalResolution.less_or_equal
-                         global_resolution
-                         ~left:parent
-                         ~right:Type.enumeration
-                     then
+                     else if is_enum then
                        Error.Enumeration
                      else
                        Error.Class
