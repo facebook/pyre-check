@@ -564,12 +564,12 @@ val is_untyped : t -> bool
 
 val contains_variable : t -> bool
 
-type type_guard_narrowing_info =
-  | NoNarrowing
-  | PositiveNarrowing of t
-  | ExactNarrowing of t
+type type_guard_kind =
+  | NoGuard
+  | TypeIs of t
+  | TypeGuard of t
 
-val narrowing_of_type_guard : t -> type_guard_narrowing_info
+val type_guard_kind_if_any : t -> type_guard_kind
 
 val parameters : t -> Parameter.t list option
 

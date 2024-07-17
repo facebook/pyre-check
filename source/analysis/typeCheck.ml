@@ -839,18 +839,13 @@ module State (Context : Context) = struct
       AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
     in
     let annotation =
-      match annotation with
-      | Type.Parametric
-          {
-            name =
-              ( "typing.TypeGuard" | "typing_extensions.TypeGuard" | "typing.TypeIs"
-              | "typing_extensions.TypeIs" );
-            _;
-          } ->
+      match Type.type_guard_kind_if_any annotation with
+      | Type.TypeGuard _
+      | Type.TypeIs _ ->
           Type.bool
-      | _ when signature.async && not signature.generator ->
+      | Type.NoGuard when signature.async && not signature.generator ->
           Type.coroutine_value annotation |> Option.value ~default:Type.Top
-      | _ -> annotation
+      | Type.NoGuard -> annotation
     in
     Type.Variable.mark_all_variables_as_bound annotation
 
@@ -4171,12 +4166,12 @@ module State (Context : Context) = struct
         let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution test
         in
-        match Type.narrowing_of_type_guard callee_return_type with
-        | Type.PositiveNarrowing guard_type
-        | Type.ExactNarrowing guard_type ->
+        match Type.type_guard_kind_if_any callee_return_type with
+        | Type.TypeGuard guard_type
+        | Type.TypeIs guard_type ->
             let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
             Value resolution
-        | Type.NoNarrowing -> Value resolution)
+        | Type.NoGuard -> Value resolution)
     (* Negative-case support for TypeIs *)
     | UnaryOperator
         {
@@ -4188,10 +4183,10 @@ module State (Context : Context) = struct
         let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution operand
         in
-        match Type.narrowing_of_type_guard callee_return_type with
-        | Type.ExactNarrowing guard_type -> handle_negative_exact_type_match guard_type value
-        | Type.PositiveNarrowing _
-        | Type.NoNarrowing ->
+        match Type.type_guard_kind_if_any callee_return_type with
+        | Type.TypeIs guard_type -> handle_negative_exact_type_match guard_type value
+        | Type.TypeGuard _
+        | Type.NoGuard ->
             Value resolution)
     (* Compound assertions *)
     | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
@@ -6235,9 +6230,9 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidTypeGuard Error.LacksPositionalParameter)
           | Some guarded_parameter -> validate_consistency ~errors guarded_parameter
         in
-        match Type.narrowing_of_type_guard return_type with
-        | Type.NoNarrowing -> errors
-        | Type.ExactNarrowing narrowed_type ->
+        match Type.type_guard_kind_if_any return_type with
+        | Type.NoGuard -> errors
+        | Type.TypeIs narrowed_type ->
             let validate_consistency ~errors guarded_parameter =
               match Type.Callable.CallableParamType.annotation guarded_parameter with
               | Some guarded_type ->
@@ -6258,7 +6253,7 @@ module State (Context : Context) = struct
               | None -> errors
             in
             validate_type_guard ~errors ~validate_consistency
-        | Type.PositiveNarrowing _ ->
+        | Type.TypeGuard _ ->
             let validate_consistency ~errors _ = errors in
             validate_type_guard ~errors ~validate_consistency
       in
