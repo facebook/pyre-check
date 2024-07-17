@@ -153,7 +153,7 @@ let flush () =
   | None -> ()
   | Some logger ->
       let flush_category ~key ~data =
-        let command = Format.sprintf "%s %s" logger key in
+        let command = Format.sprintf "%s %s 2>/dev/null" logger key in
         let out_channel = CamlUnix.open_process_out command in
         List.iter ~f:(Printf.fprintf out_channel "%s\n") data;
         Out_channel.flush out_channel;
