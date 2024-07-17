@@ -1,14 +1,16 @@
 from typing import List
 import itertools
 import string
-import random 
 
 class CodeGenerator:
     def __init__(self) -> None:
         self.variables = self.generate_variable_names()
         self.current_var = 0
         self.current_function_number = 1
-        self.last_node = "input()"
+        self.source_statements = []
+        self.last_source = "input()"
+        self.sink_statements = []
+        self.last_sink = "print"
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)
@@ -24,119 +26,47 @@ class CodeGenerator:
         self.current_function_number += 1
         return function_name
 
-    def generate_new_variable(self) -> str:
-        index = self.current_var
-        self.current_var += 1
-        return self.variables[index]
-
-    def get_last_variable(self) -> str:
-        return self.variables[self.current_var - 1]
-
-    def generate_sink(self) -> str: 
-        return f"print({self.last_node})"
-         
-    def add_variable(self) -> str:
-        current_var = self.generate_new_variable()
-        temp = self.last_node 
-        self.last_node = current_var
-        return f"{current_var} = {temp}" 
-
-    def add_function(self) -> str:
-        current_function = self.generate_new_function()
-        temp = self.last_node
-        self.last_node = current_function + "()"
+    def add_function(self) -> None:
         indent_space = ' ' * 4
-        return f"def {current_function}():\n{indent_space}return {temp}"
 
-    def add_condition_function(self) -> str: 
-        current_function = self.generate_new_function()
-        temp = self.last_node 
-        self.last_node = current_function + "()"
-        indent_space = ' ' * 4
-        x = random.randint(1, 100)
-        return f"def {current_function}():\n{indent_space}if {x} <= 33:\n{indent_space * 2}return {temp}\n{indent_space}elif 33 < {x} <= 66:\n{indent_space * 2} return {temp}\n{indent_space}else:\n{indent_space * 2}return {temp}"
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = current_function_source + "()"
 
-    def generate(self, instructions: List[int]) -> str:
-        code_lines = []
-        for instruction in instructions:
-            if instruction == 1:
-                code_lines.append(self.add_variable())
-            elif instruction == 2:
-                code_lines.append(self.add_function())
-            elif instruction == 3: 
-                code_lines.append(self.add_condition_function())
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+
+        self.source_statements.append(f"def {current_function_source}():\n{indent_space}return {temp_source}")
+        self.sink_statements.append(f"def {current_function_sink}(x):\n{indent_space}return {temp_sink}(x)")
+
+    def generate_sink(self) -> str:
+        return f"{self.last_sink}({self.last_source})"
+
+    def generate(self) -> str:
+        code_lines = self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
 # Example usage
 generator = CodeGenerator()
-instructions = [1,2,2,1,3,2,3] 
-print(generator.generate(instructions))
+generator.add_function()
+generator.add_function()
+generator.add_function()
+
+print(generator.generate())
 
 
-# [] 
-print(input())
-
-# [1]
-a = input()
-print(a)
-
-# [1,2]
-a = input()
 def f1():
-    return a
-print(f1())
-
-# [1,2,2]
-a = input()
-def f1():
-    return a
-def f2():
-    return f1()
-print(f2())
-
-# [1,2,2,1]
-a = input()
-def f1():
-    return a
-def f2():
-    return f1()
-b = f2()
-print(b)
-
-# [1,2,2,1,3]
-a = input()
-def f1():
-    return a
-def f2():
-    return f1()
-b = f2()
+    return input()
 def f3():
-    if 12 <= 33:
-        return b
-    elif 33 < 12 <= 66:
-         return b
-    else:
-        return b
-print(f3())
-
-# [1,2,2,1,3,2]
-a = input()
-def f1():
-    return a
-def f2():
     return f1()
-b = f2()
-def f3():
-    if 4 <= 33:
-        return b
-    elif 33 < 4 <= 66:
-         return b
-    else:
-        return b
-def f4():
+def f5():
     return f3()
-print(f4())
-
-
-# [1,2,2,1,3,2,3]
+def f2(x):
+    return print(x)
+def f4(x):
+    return f2(x)
+def f6(x):
+    return f4(x)
+f6(f5())
