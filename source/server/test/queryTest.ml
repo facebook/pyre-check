@@ -135,12 +135,22 @@ let test_parse_query context =
   assert_fails_to_parse "expression_level_coverage(a.py)";
   assert_fails_to_parse "expression_level_coverage('a.py', 1, 2)";
   assert_parses
-    "type_at_position(path='/foo.py', line=42, column=10)"
-    (TypeAtPosition
-       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
-  assert_fails_to_parse "type_at_position(path='/foo.py', line=42)";
-  assert_fails_to_parse "type_at_position(path='/foo.py', column=10)";
-  assert_fails_to_parse "type_at_position(path=99, line=42, column=10)";
+    "type_at_location(path='/foo.py', start_line=42, start_column=10, stop_line=43, stop_column=5)"
+    (TypeAtLocation
+       {
+         path = PyrePath.create_absolute "/foo.py";
+         location =
+           {
+             Location.start = Location.{ line = 42; column = 10 };
+             stop = Location.{ line = 43; column = 5 };
+           };
+       });
+  assert_fails_to_parse
+    "type_at_location(path='/foo.py', start_line=42, start_column=10, stop_line=43)";
+  assert_fails_to_parse
+    "type_at_location(path='/foo.py', start_line=42, start_column=10, stop_column=5)";
+  assert_fails_to_parse
+    "type_at_location(path=99, start_line=42, start_column=10, stop_line=43, stop_column=5)";
   assert_parses
     "global_leaks(path.to.my_function)"
     (GlobalLeaks { qualifiers = [!&"path.to.my_function"]; parse_errors = [] });
@@ -2555,7 +2565,7 @@ let test_expression_level_coverage context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
-let test_type_at_position context =
+let test_type_at_location context =
   let sources =
     ["foo.py", {|
               def foo(x: int) -> int:
@@ -2567,16 +2577,22 @@ let test_type_at_position context =
   in
   let queries_and_expected_responses =
     [
-      ( "type_at_position(path='foo.py', line=2, column=0)",
+      ( "type_at_location(path='foo.py', start_line=2, start_column=0, stop_line=2, stop_column=3)",
         {|
       {
       "response": null
       }
     |} );
-      ( "type_at_position(path='foo.py', line=3, column=9)",
+      ( "type_at_location(path='foo.py', start_line=3, start_column=9, stop_line=3, stop_column=10)",
         {|
       {
       "response": "int"
+      }
+    |} );
+      ( "type_at_location(path='foo.py', start_line=3, start_column=9, stop_line=3, stop_column=11)",
+        {|
+      {
+      "response": null
       }
     |} );
     ]
@@ -2907,7 +2923,7 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
-         "hover" >:: OUnitLwt.lwt_wrapper test_type_at_position;
+         "hover" >:: OUnitLwt.lwt_wrapper test_type_at_location;
          "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
          "global_leaks" >:: OUnitLwt.lwt_wrapper test_global_leaks;
          "process_request" >:: test_process_request;

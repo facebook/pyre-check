@@ -506,6 +506,14 @@ type symbol_and_cfg_data = {
 }
 [@@deriving compare, show, sexp]
 
+let location_of_symbol_data { symbol_with_definition; _ } =
+  let location_of_symbol = function
+    | Expression { Node.location; _ } -> location
+    | TypeAnnotation { Node.location; _ } -> location
+  in
+  location_of_symbol symbol_with_definition
+
+
 let symbol_with_definition { symbol_with_definition; _ } = symbol_with_definition
 
 let location_insensitive_compare_symbol_and_cfg_data
@@ -721,7 +729,7 @@ let narrowest_match symbol_data_list =
   List.min_elt ~compare:compare_by_length symbol_data_list
 
 
-let find_narrowest_spanning_symbol ~type_environment ~module_reference position =
+let find_spanning_symbols ~type_environment ~module_reference position =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       names_so_far
@@ -757,8 +765,14 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     GlobalResolution.get_define_names_for_qualifier_in_project global_resolution module_reference
     |> List.filter_map ~f:(GlobalResolution.get_define_body_in_project global_resolution)
   in
+  List.fold all_defines ~init:[] ~f:walk_define
+
+
+let find_narrowest_spanning_symbol ~type_environment ~module_reference position =
   let timer = Timer.start () in
-  let symbols_covering_position = List.fold all_defines ~init:[] ~f:walk_define in
+  let symbols_covering_position =
+    find_spanning_symbols ~type_environment ~module_reference position
+  in
   let symbol_data = narrowest_match symbols_covering_position in
   Log.log
     ~section:`Performance
@@ -766,6 +780,36 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
      All symbols spanning the position: %s\n"
     (Reference.show module_reference)
     ([%show: Location.position] position)
+    ([%show: symbol_with_definition option] (symbol_data >>| symbol_with_definition))
+    (Timer.stop_in_ms timer)
+    (List.map symbols_covering_position ~f:symbol_with_definition
+    |> [%show: symbol_with_definition list]);
+  match symbol_data with
+  | Some location -> Ok location
+  | None -> Error SymbolNotFound
+
+
+(* At the time of writing this code, I am not certain whether there exist cases where two
+   expressions can have identical locations; I *think* the answer is no, any nesting requires extra
+   characters.
+
+   But if I am wrong, this function will arbitrarily pick the first match it sees. *)
+let find_first_symbol_matching_location ~type_environment ~module_reference location =
+  let timer = Timer.start () in
+  let position = Location.start location in
+  let symbols_covering_position =
+    find_spanning_symbols ~type_environment ~module_reference position
+  in
+  let symbol_data =
+    List.find symbols_covering_position ~f:(fun symbol_data ->
+        Location.equal location (location_of_symbol_data symbol_data))
+  in
+  Log.log
+    ~section:`Performance
+    "locationBasedLookup: Symbol matching location `%s:%s`: Found `%s` in %d ms\n\
+     All symbols spanning the position: %s\n"
+    (Reference.show module_reference)
+    ([%show: Location.t] location)
     ([%show: symbol_with_definition option] (symbol_data >>| symbol_with_definition))
     (Timer.stop_in_ms timer)
     (List.map symbols_covering_position ~f:symbol_with_definition
@@ -1241,9 +1285,11 @@ let type_for_symbol_data ~type_environment ~module_reference ~symbol_data positi
   maybe_type
 
 
-let type_at_position ~type_environment ~module_reference position =
-  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
-  type_for_symbol_data ~type_environment ~module_reference ~symbol_data position
+let type_at_location ~type_environment ~module_reference location =
+  let symbol_data =
+    find_first_symbol_matching_location ~type_environment ~module_reference location
+  in
+  type_for_symbol_data ~type_environment ~module_reference ~symbol_data (Location.start location)
 
 
 let hover_info_for_position ~type_environment ~module_reference position =

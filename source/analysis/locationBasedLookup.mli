@@ -194,10 +194,10 @@ val coverage_gaps_in_module : coverage_data list -> coverage_gap list
 
 val get_expression_level_coverage : coverage_data_lookup -> coverage_for_path
 
-val type_at_position
+val type_at_location
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
-  Location.position ->
+  Location.t ->
   Type.t option
 
 val hover_info_for_position
