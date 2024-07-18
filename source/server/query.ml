@@ -183,7 +183,7 @@ module Response = struct
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
-      | CalleesWithLocation of callee_with_instantiated_locations list
+      | CalleesWithLocation of callee_with_instantiated_locations list option
       | Callgraph of callees list
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | ExpressionLevelCoverageResponse of coverage_response_at_path list
@@ -210,11 +210,15 @@ module Response = struct
       | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
       | Callees callees ->
           `Assoc ["callees", `List (List.map callees ~f:Callgraph.callee_to_yojson)]
-      | CalleesWithLocation callees ->
+      | CalleesWithLocation maybe_callees ->
           let callee_to_yojson { callee; locations } =
             Callgraph.callee_to_yojson ~locations callee
           in
-          `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
+          let callees_to_yojson = function
+            | Some callees -> `List (List.map callees ~f:callee_to_yojson)
+            | None -> `Null
+          in
+          `Assoc ["callees", callees_to_yojson maybe_callees]
       | Callgraph callees ->
           let callee_to_yojson { callee; locations } =
             Callgraph.callee_to_yojson ~locations callee
@@ -698,9 +702,8 @@ let rec process_request_exn
         in
         let callees =
           TypeEnvironment.ReadOnly.get_callees type_environment caller
-          |> Option.value ~default:[]
-          |> List.map ~f:(fun { Callgraph.callee; locations } ->
-                 { Base.callee; locations = List.map locations ~f:instantiate })
+          >>| List.map ~f:(fun { Callgraph.callee; locations } ->
+                  { Base.callee; locations = List.map locations ~f:instantiate })
         in
         Single (Base.CalleesWithLocation callees)
     | Defines module_or_class_names ->

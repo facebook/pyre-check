@@ -155,7 +155,7 @@ module Response : sig
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
-      | CalleesWithLocation of callee_with_instantiated_locations list
+      | CalleesWithLocation of callee_with_instantiated_locations list option
       | Callgraph of callees list
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | ExpressionLevelCoverageResponse of coverage_response_at_path list

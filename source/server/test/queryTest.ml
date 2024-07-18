@@ -2073,6 +2073,15 @@ let test_handle_query_pysa context =
         }
         |}
       );
+      ( "callees_with_location(wait.does_not_exist)",
+        {|
+        {
+            "response": {
+                "callees": null
+            }
+        }
+        |}
+      );
       ( "defines(test)",
         {|
         {
