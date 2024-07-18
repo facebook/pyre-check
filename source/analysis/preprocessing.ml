@@ -375,7 +375,7 @@ module Qualify (Context : QualifyContext) = struct
     =
     if is_in_function then
       match Reference.as_list name with
-      | [simple_name] when (not (is_qualified simple_name)) && not (Set.mem locals name) ->
+      | [simple_name] when not (is_qualified simple_name) ->
           let alias = qualify_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with

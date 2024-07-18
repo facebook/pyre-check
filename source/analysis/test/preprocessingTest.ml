@@ -1115,8 +1115,8 @@ let test_qualify_source =
       def qualifier.foo():
         from abc import bar
         abc.bar()
-        def abc.bar(): pass
-        abc.bar()
+        def $local_qualifier?foo$bar(): pass
+        $local_qualifier?foo$bar()
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1291,7 +1291,7 @@ let test_qualify_source =
            {|
       def qualifier.foo():
         def $local_qualifier?foo$nested($parameter$a):
-          def $parameter$a(): pass
+          def $local_qualifier?foo?nested$a(): pass
     |};
       (* SSA-gutted. *)
       labeled_test_case __FUNCTION__ __LINE__

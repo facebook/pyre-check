@@ -966,7 +966,34 @@
 {
   "kind": "model",
   "data": {
-    "callable": "nested_callables.g",
+    "callable": "nested_callables.nested_global_function",
+    "filename": "nested_callables.py",
+    "callable_line": 64,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 70, "start": 26, "end": 27 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.nested_global_function.g",
     "filename": "nested_callables.py",
     "callable_line": 67,
     "tito": [
@@ -1000,33 +1027,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 68, "start": 15, "end": 16 } ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "nested_callables.nested_global_function",
-    "filename": "nested_callables.py",
-    "callable_line": 64,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 70, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1203,19 +1203,59 @@
         "port": "formal(x, position=1)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 50, "start": 28, "end": 29 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.parameter_function.add",
+    "filename": "nested_callables.py",
+    "callable_line": 47,
+    "tito": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 48, "start": 23, "end": 24 } ],
             "tito": null
           }
         ]
       },
       {
-        "port": "formal(add, position=0)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 48, "start": 19, "end": 20 } ],
             "tito": null
           }
         ]
