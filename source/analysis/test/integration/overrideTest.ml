@@ -12,7 +12,7 @@ let test_extra_overriding_parameter =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_strict_type_errors
+      @@ assert_type_errors
            {|
       class C:
         def f(self) -> None:
@@ -25,6 +25,8 @@ let test_extra_overriding_parameter =
            [
              "Inconsistent override [14]: `test.D.f` overrides method defined in `C` \
               inconsistently. Could not find parameter `x` in overridden signature.";
+             "Invalid override [40]: `test.D.f` is not decorated with @override, but overrides a \
+              method with the same name in superclasses of `D`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
@@ -67,6 +69,7 @@ let test_extra_overriding_parameter =
       @@ assert_strict_type_errors
            {|
       import typing
+      from typing import override
       T = typing.TypeVar("T")
 
       def decorate(f: typing.Callable[['C', T], None]) -> typing.Callable[['C', T], None]:
@@ -78,6 +81,7 @@ let test_extra_overriding_parameter =
           pass
 
       class D(C):
+        @override
         def f(self, x: int, y: int, z: int) -> None:
           pass
     |}
@@ -85,8 +89,8 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
-      import typing
-      T = typing.TypeVar("T")
+      from typing import TypeVar, override
+      T = TypeVar("T")
 
       def decorate(f: T) -> T:
         ...
@@ -97,6 +101,7 @@ let test_extra_overriding_parameter =
 
       class D(C):
         @decorate
+        @override
         def f(self, x: int) -> None:
           pass
     |}
@@ -104,12 +109,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class C:
         def f(self) -> None:
           pass
 
       class D(C):
         @classmethod
+        @override
         def f(self, x: int) -> None:
           pass
     |}
@@ -120,6 +127,7 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       import abc
       class Abstract:
           @abc.abstractclassmethod
@@ -131,6 +139,7 @@ let test_extra_overriding_parameter =
 
       class Concrete(Intermediate):
           @classmethod
+          @override
           def a_thing(cls) -> None:
               ...
     |}
@@ -138,6 +147,7 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       import abc
       class Abstract:
           @abc.abstractclassmethod
@@ -146,6 +156,7 @@ let test_extra_overriding_parameter =
 
 
       class Concrete(Abstract):
+          @override
           def a_thing(self, param: int) -> None:
               ...
     |}
@@ -153,12 +164,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, n: int) -> int:
               return n
     |}
@@ -169,12 +182,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self, n: int, /) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, n: int, m: float, /) -> int:
               return n
     |}
@@ -186,12 +201,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self, __n: int) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, __n: int, __m: float) -> int:
               return 5
     |}
@@ -203,12 +220,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self, n: int, /) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, m: int, /) -> int:
               return m
     |}
@@ -216,12 +235,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, *, n: int) -> int:
               return n
     |}
@@ -232,12 +253,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, n: int) -> int:
               return n
     |}
@@ -248,13 +271,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
-      from typing import Dict, Any
+      from typing import Dict, Any, override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, **kwargs: Dict[str, Any]) -> int:
               return 5
     |}
@@ -262,13 +286,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
-      from typing import List, Any
+      from typing import List, Any, override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, *args: List[Any]) -> int:
               return 5
     |}
@@ -276,12 +301,14 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+      from typing import override
       class A:
           def test(self) -> int:
               return 5
 
 
       class B(A):
+          @override
           def test(self, n: int = 5) -> int:
               return n
     |}

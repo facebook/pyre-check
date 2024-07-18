@@ -217,6 +217,7 @@ and invalid_override_kind =
   | StaticOverride
   | NothingOverridden
   | IllegalOverrideDecorator
+  | MissingOverride
 
 and invalid_assignment_kind =
   | FinalAttribute of Reference.t
@@ -2181,11 +2182,16 @@ let rec messages ~concise ~signature location kind =
             ( "",
               "is illegally decorated with @override: @override may only be applied to methods, \
                but this element is not a method" )
+        | MissingOverride ->
+            ( "",
+              "is not decorated with @override, but overrides a method with the same name in \
+               superclasses of" )
       in
       match decorator with
       | Final
       | StaticSuper
       | StaticOverride
+      | MissingOverride
       | NothingOverridden ->
           [
             Format.asprintf
@@ -4053,6 +4059,7 @@ let suppress ~mode ~ignore_codes error =
       true
     else
       match kind with
+      | InvalidOverride { decorator = MissingOverride; _ } -> true
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true
@@ -4087,6 +4094,7 @@ let suppress ~mode ~ignore_codes error =
     | RevealedLocals _ -> false
     | RevealedType _ -> false
     | UnsafeCast _ -> false
+    | InvalidOverride { decorator = MissingOverride; _ } -> true
     | IncompatibleReturnType { is_unimplemented = true; _ } -> true
     | _ ->
         due_to_analysis_limitations error

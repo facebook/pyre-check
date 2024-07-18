@@ -711,6 +711,8 @@ let test_check_constructors =
       @@ assert_type_errors
            {|
               from abc import abstractmethod, ABCMeta
+              from typing import override
+
               class A(metaclass=ABCMeta):
                   @abstractmethod
                   def h(self) -> None:
@@ -719,6 +721,7 @@ let test_check_constructors =
                   def g(self) -> None:
                       pass
               class B(A):
+                  @override
                   def g(self) -> None:
                       pass
               class C(B):
@@ -785,10 +788,12 @@ let test_check_constructors =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Super:
                 def foo(self, i: int) -> None:
                   pass
               class Foo(Super):
+                @override
                 def foo(self, i: int) -> None:
                   super().foo('asdf')
             |}

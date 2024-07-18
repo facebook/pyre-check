@@ -603,6 +603,7 @@ let test_check_variable_bindings =
                 def foo(self, x: int) -> int:
                   return x
               class Bar(Foo):
+                @typing.override
                 def foo(self, x: _T) -> _T:
                   return x
             |}
@@ -610,12 +611,13 @@ let test_check_variable_bindings =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              import typing
-              _T = typing.TypeVar("T", bound=float)
+              from typing import TypeVar, override
+              _T = TypeVar("T", bound=float)
               class Foo:
                 def foo(self, x: int) -> int:
                   return x
               class Bar(Foo):
+                @override
                 def foo(self, x: _T) -> _T:
                   return x
             |}
@@ -629,12 +631,13 @@ let test_check_variable_bindings =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              import typing
-              _T = typing.TypeVar("T", bound=float)
+              from typing import TypeVar, override
+              _T = TypeVar("T", bound=float)
               class Foo:
                 def foo(self, x: _T) -> _T:
                   return x
               class Bar(Foo):
+                @override
                 def foo(self, x: int) -> int:
                   return x
             |}
@@ -1639,7 +1642,7 @@ let test_callable_parameter_variadics =
       @@ assert_type_errors
            {|
               from abc import ABCMeta
-              from typing import Protocol, Callable, TypeVar, ParamSpec
+              from typing import Protocol, Callable, TypeVar, ParamSpec, override
               TParams = ParamSpec("TParams")
               TReturn = TypeVar("TReturn")
               class HasForward(Protocol[TParams, TReturn]):
@@ -1655,10 +1658,12 @@ let test_callable_parameter_variadics =
                   return return_value
 
               class AModel(Model):
+                 @override
                  def forward(self, x: int, y: str) -> bool:
                    ...
 
               class BModel(Model):
+                 @override
                  def forward(self, x: bool, *args: int) -> str:
                    ...
 
@@ -3998,6 +4003,7 @@ let test_self_type =
       @@ assert_type_errors
            {|
               from typing_extensions import Self
+              from typing import override
 
               class Shape:
                 def __init__(self, scale: float = 0.0) -> None:
@@ -4008,11 +4014,13 @@ let test_self_type =
                   return self
 
               class Circle(Shape):
+                @override
                 def set_scale(self, scale: float) -> Self:
                   self.scale = scale + 1.0
                   return self
 
               class CircleArc(Circle):
+                @override
                 def set_scale(self, scale: float) -> Self:
                   self.scale = scale * 3.14
                   return self
@@ -4022,6 +4030,7 @@ let test_self_type =
       @@ assert_type_errors
            {|
               from typing_extensions import Self
+              from typing import override
 
               class Shape:
                 def __init__(self, scale: float = 0.0) -> None:
@@ -4033,11 +4042,13 @@ let test_self_type =
 
               class Circle(Shape):
                 @classmethod
+                @override
                 def with_scale(cls, scale: float) -> Self:
                   return cls(scale + 1.0)
 
               class CircleArc(Circle):
                 @classmethod
+                @override
                 def with_scale(cls, scale: float) -> Self:
                   return cls(scale * 3.14)
              |}
@@ -4153,6 +4164,7 @@ let test_self_type =
       @@ assert_type_errors
            {|
               from typing_extensions import Self
+              from typing import override
 
               class Merger:
                 def merge(self, other: Self) -> Self:
@@ -4164,10 +4176,12 @@ let test_self_type =
                 pass
 
               class BadOverriddenMerger(Merger):
+                @override
                 def merge(self, other: Self) -> Self:
                   return self
 
               class GoodOverriddenMerger(Merger):
+                @override
                 def merge(self, other: Merger) -> Self:
                   return self
 

@@ -1113,9 +1113,11 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self) -> int: ...
               class Bar(Foo):
+                @override
                 def foo(self) -> float: return 1.0
             |}
            [
@@ -1126,18 +1128,22 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self) -> float: ...
               class Bar(Foo):
+                @override
                 def foo(self) -> int: return 1
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self) -> int: ...
               class Bar(Foo):
+                @override
                 def foo(self) -> None: pass
             |}
            [
@@ -1153,6 +1159,7 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
               class Foo(typing.Generic[_T]):
                 def foo(self) -> _T: ...
               class Bar(Foo[float]):
+                @typing.override
                 def foo(self) -> str: return ""
             |}
            [
@@ -1168,6 +1175,7 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
               class Foo(typing.Generic[_T]):
                 def foo(self) -> _T: ...
               class Bar(Foo[float]):
+                @typing.override
                 def foo(self) -> int: return 1
             |}
            [];
@@ -1180,6 +1188,7 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
                 def foo(self) -> _T: ...
               class Passthrough(Foo[_T]): ...
               class Bar(Passthrough[float]):
+                @typing.override
                 def foo(self) -> str: return ""
             |}
            [
@@ -1196,6 +1205,7 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
                 def foo(self) -> _T: ...
               class Passthrough(Foo[_T]): ...
               class Bar(Passthrough[float]):
+                @typing.override
                 def foo(self) -> int: return 1
             |}
            [];
@@ -1203,17 +1213,18 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
       @@ assert_type_errors
            ~show_error_traces:true
            {|
-              import typing
+              from typing import Union, override
               class Foo():
                 def bar(self, x: int) -> int:
                   return 1
               class Bar(Foo):
-                def bar(self, x: int) -> typing.Union[str, int]:
+                @override
+                def bar(self, x: int) -> Union[str, int]:
                   return 1
             |}
            [
              "Inconsistent override [15]: `test.Bar.bar` overrides method defined in `Foo` "
-             ^ "inconsistently. Returned type `typing.Union[int, str]` is not a subtype "
+             ^ "inconsistently. Returned type `Union[int, str]` is not a subtype "
              ^ "of the overridden return `int`.";
            ];
       (* Decorators are applied. *)
@@ -1237,6 +1248,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+             from typing import override
+
              class Foo1:
                def foo_illegal_override(self, input: int) -> int:
                  return input
@@ -1252,9 +1265,11 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
 
 
              class Bar(Foo1, Foo2):
+               @override
                def foo_illegal_override(self, input: int) -> str:
                  return "Bar_A: " + str(input)
 
+               @override
                def foo_legal_override(self, input: int) -> int:
                  return 0
 
@@ -1267,11 +1282,13 @@ let test_check_behavioral_subtyping__strengthened_postcondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+             from typing import override
              class Foo:
                def same_method(self, input: int) -> int:
                  return input
 
              class Bar(Foo):
+               @override
                def same_method(self, input: int) -> str:
                  return str(input)
           |}
@@ -1288,11 +1305,13 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 @classmethod
                 def foo(cls, a: float) -> None: ...
               class Bar(Foo):
                 @classmethod
+                @override
                 def foo(cls, a: int) -> None: pass
               |}
            [
@@ -1303,9 +1322,11 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, a: float) -> None: ...
               class Bar(Foo):
+                @override
                 def foo(self, a: int) -> None: pass
             |}
            [
@@ -1316,9 +1337,11 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, a: int) -> None: ...
               class Bar(Foo):
+                @override
                 def foo(self) -> None: pass
             |}
            [
@@ -1329,18 +1352,22 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, a: int) -> None: ...
               class Bar(Foo):
+                @override
                 def foo(self, a) -> None: pass
             |}
            ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, ) -> None: ...
               class Bar(Foo):
+                @override
                 def foo(self, a) -> None: pass
             |}
            [
@@ -1351,18 +1378,22 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, a) -> None: ...
               class Bar(Foo):
+                @override
                 def foo(self, a: int) -> None: pass
             |}
            ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, a: int) -> None: pass
               class Bar(Foo):
+                @override
                 def foo(self, b: int) -> None: pass
             |}
            [
@@ -1377,18 +1408,19 @@ let test_check_behavioral_subtyping__weakened_precondition =
       @@ assert_type_errors
            ~show_error_traces:true
            {|
-              import typing
+              from typing import override, Union
               class Foo():
-                def bar(self, x: typing.Union[str, int]) -> None:
+                def bar(self, x: Union[str, int]) -> None:
                   pass
               class Bar(Foo):
+                @override
                 def bar(self, x: int) -> None:
                   pass
             |}
            [
              "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
              ^ "inconsistently. Parameter of type `int` is not a "
-             ^ "supertype of the overridden parameter `typing.Union[int, str]`.";
+             ^ "supertype of the overridden parameter `Union[int, str]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1399,6 +1431,7 @@ let test_check_behavioral_subtyping__weakened_precondition =
                 def bar(self, x: typing.Union[str, _T]) -> None:
                   pass
               class Bar(Foo[float]):
+                @typing.override
                 def bar(self, x: typing.Union[str, int]) -> None:
                   pass
             |}
@@ -1417,6 +1450,7 @@ let test_check_behavioral_subtyping__weakened_precondition =
                 def bar(self, x: typing.Union[str, _T]) -> None:
                   pass
               class Bar(Foo[int]):
+                @typing.override
                 def bar(self, x: typing.Union[str, float]) -> None:
                   pass
             |}
@@ -1431,6 +1465,7 @@ let test_check_behavioral_subtyping__weakened_precondition =
                   pass
               class Passthrough(Foo[_T]): ...
               class Bar(Passthrough[float]):
+                @typing.override
                 def bar(self, x: typing.Union[str, int]) -> None:
                   pass
             |}
@@ -1450,6 +1485,7 @@ let test_check_behavioral_subtyping__weakened_precondition =
                   pass
               class Passthrough(Foo[_T]): ...
               class Bar(Passthrough[int]):
+                @typing.override
                 def bar(self, x: typing.Union[str, float]) -> None:
                   pass
             |}
@@ -1458,9 +1494,11 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class C:
                 def f(self, *args: int) -> None: ...
               class D(C):
+                @override
                 def f(self, *args: int) -> None: ...
             |}
            [];
@@ -1468,18 +1506,22 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class C:
                 def f(self, **kwargs: str) -> None: ...
               class D(C):
+                @override
                 def f(self, **kwargs: str) -> None: ...
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo(self, input: int) -> int: ...
               class Bar(Foo):
+                @override
                 def foo(self, input) -> int: ...
             |}
            ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
@@ -1492,6 +1534,7 @@ let test_check_behavioral_subtyping__weakened_precondition =
                 def foo(self, x: T) -> str:
                   return ""
               class Bar(Foo[str]):
+                @typing.override
                 def foo(self, x: str) -> str:
                   return x
             |}
@@ -1510,9 +1553,11 @@ let test_check_behavioral_subtyping__weakened_precondition =
               class Foo(typing.Generic[T]):
                 def foo(self) -> T: ...
               class Bar(Foo[int]):
+                @typing.override
                 def foo(self) -> int:
                   return 1
               class BarTwo(Foo[None]):
+                @typing.override
                 def foo(self) -> None:
                   pass
             |}
@@ -1521,10 +1566,12 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo:
                   def bar(self, __x: int) -> str:
                       return ""
               class Bar(Foo):
+                  @override
                   def bar(self, __y: int) -> str:
                       return ""
             |}
@@ -1532,10 +1579,12 @@ let test_check_behavioral_subtyping__weakened_precondition =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo:
                   def bar(self, x: int, /) -> str:
                       return ""
               class Bar(Foo):
+                  @override
                   def bar(self, y: int, /) -> str:
                       return ""
             |}
@@ -1550,22 +1599,26 @@ let test_check_behavioral_subtyping__overloads =
       @@ assert_default_type_errors
            {|
               import typing
+              from typing import overload, override
 
               class Foo():
-                @typing.overload
+                @overload
                 def foo(self, input: int) -> int: ...
-                @typing.overload
+                @overload
                 def foo(self, input: str) -> str: ...
                 def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
                   return input
 
               class Bar(Foo):
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: int) -> int:
                   return input
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: str) -> str:
                   return input
+                @override
                 def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
                   return input
             |}
@@ -1574,19 +1627,22 @@ let test_check_behavioral_subtyping__overloads =
       @@ assert_default_type_errors
            {|
               import typing
+              from typing import overload, override
 
               class Foo():
-                @typing.overload
+                @overload
                 def foo(self, input: int) -> int: ...
-                @typing.overload
+                @overload
                 def foo(self, input: str) -> str: ...
                 def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
                   return input
 
               class Bar(Foo):
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: int) -> int:
                   return input
+                @override
                 def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
                   return input
             |}
@@ -1595,28 +1651,32 @@ let test_check_behavioral_subtyping__overloads =
       @@ assert_default_type_errors
            {|
               import typing
+              from typing import overload, override
 
               class A: pass
               class B: pass
               class C: pass
 
               class Foo():
-                @typing.overload
+                @overload
                 def foo(self, input: A) -> A: ...
-                @typing.overload
+                @overload
                 def foo(self, input: B) -> B: ...
-                @typing.overload
+                @overload
                 def foo(self, input: C) -> C: ...
                 def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
                   return input
 
               class Bar(Foo):
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: A) -> A:
                   return input
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: B) -> B:
                   return input
+                @override
                 def foo(self, input: typing.Union[A, B]) -> typing.Union[A, B]:
                   return input
             |}
@@ -1629,26 +1689,29 @@ let test_check_behavioral_subtyping__overloads =
       @@ assert_default_type_errors
            {|
               import typing
+              from typing import overload, override
 
               class A: pass
               class B: pass
               class C: pass
 
               class Foo():
-                @typing.overload
+                @overload
                 def foo(self, input: A) -> A: ...
-                @typing.overload
+                @overload
                 def foo(self, input: B) -> B: ...
-                @typing.overload
+                @overload
                 def foo(self, input: C) -> C: ...
                 def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
                   return input
 
               class Bar(Foo):
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: A) -> A:
                   return input
-                @typing.overload
+                @overload
+                @override
                 def foo(self, input: B) -> B:
                   return input
             |}
@@ -1700,9 +1763,11 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Foo():
                 def foo( **kwargs) -> int: ...
               class Bar(Foo):
+                @override
                 def foo( **kwargs) -> int: ...
             |}
            [];
@@ -1721,11 +1786,12 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              import typing
+              from typing import override, Any
               class Foo():
                 def f(self, a: float) -> None: ...
               class Bar(Foo):
-                def f(self, *args: typing.Any) -> None: pass
+                @override
+                def f(self, *args: Any) -> None: pass
             |}
            [
              "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` \
@@ -1735,11 +1801,12 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              import typing
+              from typing import override, Any
               class Foo():
                 def f(self, b: int) -> None: ...
               class Bar(Foo):
-                def f(self, **kwargs: typing.Any) -> None: pass
+                @override
+                def f(self, **kwargs: Any) -> None: pass
             |}
            [
              "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` \
@@ -1749,17 +1816,19 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              import typing
+              from typing import override, Any
               class Foo():
                 def f(self, c: str) -> None: ...
               class Bar(Foo):
-                def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
+                @override
+                def f(self, *args: Any, **kwargs: Any) -> None: pass
             |}
            [];
       (* Overrides with strengthened condition on self is okay *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
+              from typing import override
               class Shape:
                 def __init__(self: Shape, scale: float = 0.0) -> None:
                   self.scale = scale
@@ -1769,6 +1838,7 @@ let test_check_behavioral_subtyping__special_cases =
                   return self
 
               class Circle(Shape):
+                @override
                 def set_scale(self: Circle, scale: float) -> Circle:
                   self.scale = scale + 1.0
                   return self
@@ -1778,7 +1848,7 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import Type
+              from typing import Type, override
 
               class Shape:
                 def __init__(self, scale: float = 0.0) -> None:
@@ -1790,6 +1860,7 @@ let test_check_behavioral_subtyping__special_cases =
 
               class Circle(Shape):
                 @classmethod
+                @override
                 def with_scale(cls: Type[Circle], scale: float) -> Circle:
                   return cls(scale + 1.0)
              |}
@@ -1798,6 +1869,7 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
+              from typing import override
               class Shape:
                 def __init__(self, scale: float = 0.0) -> None:
                   self.scale = scale
@@ -1808,6 +1880,7 @@ let test_check_behavioral_subtyping__special_cases =
 
               class Circle(Shape):
                 @staticmethod
+                @override
                 def with_scale(scale: float) -> Circle:
                   return Circle(scale + 1.0)
              |}
@@ -1816,7 +1889,7 @@ let test_check_behavioral_subtyping__special_cases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing_extensions import Self
+              from typing import override
 
               class Shape:
                 def __init__(self, scale: float = 0.0) -> None:
@@ -1828,6 +1901,7 @@ let test_check_behavioral_subtyping__special_cases =
 
               class Circle(Shape):
                 @staticmethod
+                @override
                 def with_scale(scale: int) -> Circle:
                   return Circle(scale + 1.0)
              |}
@@ -1845,10 +1919,12 @@ let test_check_behavioral_subtyping__attribute_kinds =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+             from typing import override
              class Foo:
                foo: int = 3
 
              class Bar(Foo):
+               @override
                def foo(self, input: int) -> str:
                   ...
             |}
@@ -2894,11 +2970,12 @@ let test_check_override_decorator =
 
              @override
              class Bar(Foo):
+               @override
                def foo(self, input: int) -> str:
                  return "Bar: " + str(input)
             |}
-           [ (* TODO: See T123628048. This should return an error, but isn't at the moment.
-                Decorator logic needs to be checked. *) ];
+           [ (* TODO: See T123628048. This should return an error since only methods can be
+                decorated w/ override. *) ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2991,6 +3068,8 @@ let test_check_static =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
+
               class Foo:
                 @staticmethod
                 def foo(input: int) -> int:
@@ -2998,6 +3077,7 @@ let test_check_static =
 
               class Bar(Foo):
                 @staticmethod
+                @override
                 def foo(input: str) -> int:
                   return 1
             |}
@@ -3331,6 +3411,7 @@ let test_check_private_member_access =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import override
               class Base:
                 def __init__(self) -> None:
                   self.__private = True
@@ -3340,6 +3421,7 @@ let test_check_private_member_access =
               class Child(Base):
                 def __init__(self) -> None:
                   self.__child_private = False
+                @override
                 def method(self) -> bool:
                   return self._not_so_private
                 def method2(self) -> bool:
@@ -3511,6 +3593,7 @@ let test_check_private_member_access =
                 def method(self) -> T:
                   return self.__private
               class GenericChild(GenericBase[T]):
+                @typing.override
                 def method(self) -> T:
                   return self.__private
               def foo(x: GenericBase[T]) -> T:

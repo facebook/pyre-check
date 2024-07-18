@@ -5999,31 +5999,45 @@ module State (Context : Context) = struct
           errors
       in
       let check_override_decorator errors =
-        if StatementDefine.is_override_method define then
-          match define with
-          | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
-              let possibly_overridden_attribute =
-                GlobalResolution.overrides
-                  global_resolution
-                  (Reference.show parent)
-                  ~name:(StatementDefine.unqualified_name define)
-              in
-              match possibly_overridden_attribute with
-              | Some _ -> errors
-              | None ->
-                  emit_error
-                    ~errors
-                    ~location
-                    ~kind:
-                      (Error.InvalidOverride
-                         { parent = Reference.show parent; decorator = NothingOverridden }))
-          | { Ast.Statement.Define.signature = { parent = None; _ }; _ } ->
-              emit_error
-                ~errors
-                ~location
-                ~kind:(Error.InvalidOverride { parent = ""; decorator = IllegalOverrideDecorator })
-        else
-          errors
+        let is_override = Define.is_override_method define in
+        match define with
+        | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+            let possibly_overridden_attribute =
+              GlobalResolution.overrides
+                global_resolution
+                (Reference.show parent)
+                ~name:(Define.unqualified_name define)
+            in
+            match possibly_overridden_attribute, is_override with
+            | Some _, true
+            | None, false ->
+                errors
+            | Some _, false
+              when Define.is_toplevel define
+                   || Define.is_constructor define
+                   || Define.is_dunder_method define
+                   || Define.is_property_setter define ->
+                errors
+            | Some _, false ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidOverride
+                       { parent = Reference.show parent; decorator = MissingOverride })
+            | None, true ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidOverride
+                       { parent = Reference.show parent; decorator = NothingOverridden }))
+        | { Ast.Statement.Define.signature = { parent = None; _ }; _ } when is_override ->
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.InvalidOverride { parent = ""; decorator = IllegalOverrideDecorator })
+        | _ -> errors
       in
       let check_decorator errors decorator =
         let get_allowlisted decorator =
@@ -7737,7 +7751,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               ~include_generated_attributes:false
               class_name
             >>| List.filter_map ~f:(fun attribute ->
-                    (* `accessed_through_class` is true here because it is ture in
+                    (* `accessed_through_class` is true here because it is true in
                        GlobalResolution.overrides. This mostly works, but we might fail to uncover
                        some incompatible overrides that only appear in instance access.
                        TODO(T146994981) we should check for both attribute access patterns. *)

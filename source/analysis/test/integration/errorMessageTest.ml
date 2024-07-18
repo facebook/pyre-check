@@ -353,7 +353,9 @@ let test_concise =
              ]
            {|
       from export import Foo
+      from typing import override
       class Bar(Foo):
+        @override
         def foo(self, x: str) -> None:
           return
     |}
@@ -361,10 +363,12 @@ let test_concise =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+      from typing import override
       class Foo:
         def foo(self, x: int) -> int:
           return 1
       class Bar(Foo):
+        @override
         def foo(self, x: int) -> str:
           return "string"
     |}

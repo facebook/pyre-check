@@ -530,6 +530,7 @@ let test_check_user_decorators =
                   pass
 
               class D(C):
+                @typing.override
                 def f(self, y: int) -> None:
                   pass
               reveal_type(C.f)

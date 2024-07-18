@@ -217,9 +217,11 @@ let test_check_async =
             async def f(self) -> typing.AsyncIterator[str]:
                 yield "A"
         class B(A):
+            @typing.override
             async def f(self) -> typing.AsyncIterator[str]:
                 yield "B"
         class C(A):
+            @typing.override
             async def f(self) -> typing.AsyncIterator[int]:
                 yield 42
     |}
@@ -389,12 +391,13 @@ let test_async_iterator =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      from typing import AsyncIterator
+      from typing import AsyncIterator, override
 
       class Base:
         async def foo(self) -> AsyncIterator[int]: ...
 
       class Child(Base):
+        @override
         async def foo(self) -> AsyncIterator[int]:
           yield 42
 

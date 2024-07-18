@@ -14,12 +14,13 @@ let test_final_methods =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-                from typing import final
+                from typing import final, override
                 class Foo:
                   @final
                   def bar(self) -> None:
                     pass
                 class Bar(Foo):
+                  @override
                   def bar(self) -> None:
                     pass
               |}
@@ -27,12 +28,13 @@ let test_final_methods =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-             from typing import final
+             from typing import final, override
              class Foo:
                @final
                def bar(self) -> None:
                  pass
              class Bar(Foo):
+               @override
                def bar(self) -> None:
                  pass
            |}

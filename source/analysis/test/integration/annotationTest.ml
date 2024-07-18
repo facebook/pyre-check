@@ -146,12 +146,14 @@ let test_check_undefined_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
+              from typing import override
               class Bar:
                   async def undefined(self, x: Derp) -> Derp:
                       return x
               class Foo(Bar):
                   def error(self) -> int:
                       return None
+                  @override
                   async def undefined(self, x: Herp) -> Herp:
                       return x
             |}

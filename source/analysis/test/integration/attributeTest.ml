@@ -1149,10 +1149,12 @@ let test_check_attribute_initialization =
       @@ assert_type_errors
            {|
                 import abc
+                from typing import override
                 class Foo(abc.ABC):
                   x: int
                 class Bar(Foo):
                   @property
+                  @override
                   def x(self) -> int:
                     return 1
                   @x.setter
@@ -1164,10 +1166,12 @@ let test_check_attribute_initialization =
       @@ assert_type_errors
            {|
                 import abc
+                from typing import override
                 class Foo(abc.ABC):
                   x: int
                 class Bar(Foo):
                   @property
+                  @override
                   def x(self) -> int:
                     return 1
             |}
