@@ -823,7 +823,6 @@ and kind =
   | RevealedType of {
       expression: Expression.t;
       annotation: TypeInfo.Unit.t;
-      qualify: bool;
     }
   | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }
   | UnsafeCast of {
@@ -3460,11 +3459,8 @@ let join ~resolution left right =
           }
         in
         RevealedLocals (List.map2_exn ~f:revealed_local_join left right)
-    | ( RevealedType
-          { annotation = left_annotation; expression = left_expression; qualify = left_qualify },
-        RevealedType
-          { annotation = right_annotation; expression = right_expression; qualify = right_qualify }
-      )
+    | ( RevealedType { annotation = left_annotation; expression = left_expression },
+        RevealedType { annotation = right_annotation; expression = right_expression } )
       when [%compare.equal: Expression.t] left_expression right_expression ->
         RevealedType
           {
@@ -3474,7 +3470,6 @@ let join ~resolution left right =
                 ~type_join:(GlobalResolution.join resolution)
                 left_annotation
                 right_annotation;
-            qualify = left_qualify || right_qualify (* lol *);
           }
     | ( SuppressionCommentWithoutErrorCode { suppressed_error_codes = left_error_codes },
         SuppressionCommentWithoutErrorCode { suppressed_error_codes = right_error_codes } ) ->
@@ -4354,9 +4349,9 @@ let dequalify
           { name; annotation = dequalify_annotation annotation }
         in
         RevealedLocals (List.map revealed_locals ~f:dequalify_reveal_local)
-    | RevealedType { expression; annotation; qualify } ->
-        let annotation = if qualify then annotation else dequalify_annotation annotation in
-        RevealedType { expression; annotation; qualify }
+    | RevealedType { expression; annotation } ->
+        let annotation = dequalify_annotation annotation in
+        RevealedType { expression; annotation }
     | IncompatibleParameterType ({ mismatch; callee; _ } as parameter) ->
         IncompatibleParameterType
           {

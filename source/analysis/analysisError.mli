@@ -477,7 +477,6 @@ and kind =
   | RevealedType of {
       expression: Expression.t;
       annotation: TypeInfo.Unit.t;
-      qualify: bool;
     }
   | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }
   | UnsafeCast of {

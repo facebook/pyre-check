@@ -492,25 +492,6 @@ let test_concise =
     ]
 
 
-let test_reveal_type =
-  let assert_type_errors = assert_type_errors ~handle:"test.py" in
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-      class A: pass
-      a: A
-      reveal_type(a)
-      reveal_type(a, qualify=True)
-    |}
-           [
-             "Revealed type [-1]: Revealed type for `a` is `A`.";
-             "Revealed type [-1]: Revealed type for `a` is `test.A`.";
-           ];
-    ]
-
-
 let test_include_suppressed_errors =
   let assert_type_errors = assert_type_errors ~handle:"test.py" in
   test_list
@@ -552,5 +533,5 @@ let test_include_suppressed_errors =
 
 let () =
   "errorMessage"
-  >::: [test_show_error_traces; test_concise; test_reveal_type; test_include_suppressed_errors]
+  >::: [test_show_error_traces; test_concise; test_include_suppressed_errors]
   |> Test.run

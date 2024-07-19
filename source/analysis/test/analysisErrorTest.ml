@@ -58,8 +58,7 @@ let error
 
 
 let revealed_type expression annotation =
-  Error.RevealedType
-    { expression = parse_single_expression expression; annotation; qualify = false }
+  Error.RevealedType { expression = parse_single_expression expression; annotation }
 
 
 let missing_return annotation =

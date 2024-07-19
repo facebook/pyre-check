@@ -2126,21 +2126,9 @@ module State (Context : Context) = struct
                         _;
                       } );
             };
-          arguments = { Call.Argument.value; _ } :: remainder;
+          arguments = { Call.Argument.value; _ } :: _;
         } ->
         (* Special case reveal_type(). *)
-        let qualify =
-          match remainder with
-          | [
-           {
-             Call.Argument.name = Some { Node.value = name; _ };
-             value = { Node.value = Constant Constant.True; _ };
-           };
-          ]
-            when Identifier.equal name "$parameter$qualify" ->
-              true
-          | _ -> false
-        in
         let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
           forward_expression ~resolution value
         in
@@ -2148,10 +2136,7 @@ module State (Context : Context) = struct
           Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
         in
         let errors =
-          emit_error
-            ~errors
-            ~location
-            ~kind:(Error.RevealedType { expression = value; annotation; qualify })
+          emit_error ~errors ~location ~kind:(Error.RevealedType { expression = value; annotation })
         in
         {
           resolution;
