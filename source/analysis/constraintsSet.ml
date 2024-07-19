@@ -136,7 +136,16 @@ let resolve_callable_protocol
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
 
 module Make (OrderedConstraints : OrderedConstraintsType) = struct
-  (* TODO(T41127207): merge this with actual signature select *)
+  (* This function takes a possibly-overloaded function `callable` and asks it whether it can be
+     called as if it had a particular overload signature `called_as`. Multiple solutions are
+     possible if more than one overload matches; for each one we produce the returning return type
+     and constraint sets.
+
+     This is used as an inner loop when determining whether one possibly-overloaded callable is a
+     subtype of another, see where it is used for a comment explaining how it fits into the bigger
+     picture.
+
+     TODO(T41127207): merge this with actual signature select logic in AttributeResolution.ml *)
   let rec simulate_signature_select
       order
       ~callable:{ Type.Callable.implementation; overloads; _ }
@@ -813,6 +822,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            && List.equal (Callable.equal_overload Type.equal) left_overloads right_overloads ->
         impossible
     | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
+        (* This logic approximates the intersection nature of overloads. A possibly-overloaded
+           function `left` is less-or-equal to a possibly-overloaded function `right` if for *every*
+           overload signature in `right`, there exists some overload of `left` such that a function
+           with the left overload signature can be called as if it had the right overload signature.
+
+           The call to `simulated_signature_select` is handling the parameter type portion of the
+           logic for each particular overload signature of `right` (and all of the overloads of
+           `left`); we fold over them, verifying that the return types are compatible, and collect
+           constraints accumulated in the process. *)
         let fold_overload sofar (called_as : Type.t Callable.overload) =
           let call_as_overload constraints =
             simulate_signature_select order ~callable ~called_as ~constraints
