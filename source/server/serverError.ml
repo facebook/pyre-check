@@ -73,4 +73,4 @@ let kind_and_message_from_exception = function
       ( Kind.Pyre,
         "A Pyre server is already running for the current project. Use `pyre stop` to stop it \
          before starting another one." )
-  | _ -> Kind.Unknown, Exception.get_current_callstack_string 100
+  | unknown_exn -> Kind.Unknown, Exception.exn_to_string unknown_exn
