@@ -616,20 +616,12 @@ let test_add_constraint context =
   assert_less_or_equal
     ~left:"typing.Type[ClassWithOverloadedConstructor]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    ~expected_solutions:
-      [
-        ["T_Unconstrained", "ClassWithOverloadedConstructor[str]"];
-        ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
-      ]
+    ~expected_solutions:[["T_Unconstrained", "ClassWithOverloadedConstructor[str]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Type[ClassWithOverloadedConstructor]"
     ~right:"typing.Callable[[int], T_Unconstrained]"
-    ~expected_solutions:
-      [
-        ["T_Unconstrained", "ClassWithOverloadedConstructor[int]"];
-        ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
-      ]
+    ~expected_solutions:[["T_Unconstrained", "ClassWithOverloadedConstructor[int]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Optional[typing.Tuple[Base, Unrelated, typing.Callable[[Child, int], Base]]]"
@@ -854,12 +846,7 @@ let test_add_constraint context =
       ("typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
       ^ "[[[int], str][[str], int]]")
     ~right:"typing.Callable[[test.T3], test.T4]"
-    ~expected_solutions:
-      [
-        ["test.T3", "int"; "test.T4", "str"];
-        ["test.T3", "str"; "test.T4", "int"];
-        ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"];
-      ]
+    ~expected_solutions:[["test.T3", "int"; "test.T4", "str"]; ["test.T3", "str"; "test.T4", "int"]]
     ();
 
   (* Free Variable <-> Free Variable constraints *)

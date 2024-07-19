@@ -148,7 +148,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
      TODO(T41127207): merge this with actual signature select logic in AttributeResolution.ml *)
   let rec simulate_signature_select
       order
-      ~callable:{ Type.Callable.implementation; overloads; _ }
+      ~callable:({ Type.Callable.implementation; overloads; _ } as _callable)
       ~called_as
       ~constraints
     =
@@ -409,12 +409,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     let overloads =
       if List.is_empty overloads then
         [implementation]
-      else if Type.Callable.Overload.is_undefined implementation then
-        overloads
       else
-        (* TODO(T41195241) always ignore implementation when has overloads. Currently put
-           implementation as last resort *)
-        overloads @ [implementation]
+        overloads
     in
     List.concat_map overloads ~f:overload_to_instantiated_return_and_altered_constraints
 
@@ -831,6 +827,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            logic for each particular overload signature of `right` (and all of the overloads of
            `left`); we fold over them, verifying that the return types are compatible, and collect
            constraints accumulated in the process. *)
+        let called_as_options =
+          match overloads with
+          | [] -> [implementation]
+          | overloads -> overloads
+        in
         let fold_overload sofar (called_as : Type.t Callable.overload) =
           let call_as_overload constraints =
             simulate_signature_select order ~callable ~called_as ~constraints
@@ -839,7 +840,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           in
           List.concat_map sofar ~f:call_as_overload
         in
-        List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
+        List.fold called_as_options ~f:fold_overload ~init:[constraints]
     | left, Type.Callable _ ->
         resolve_callable_protocol ~order ~assumption:right left
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
