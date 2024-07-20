@@ -8,6 +8,12 @@
 module FunctionDefinitionReadOnly : sig
   include Environment.ReadOnly
 
+  val function_definitions_of_qualifier
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Ast.Reference.t ->
+    FunctionDefinition.t Ast.Reference.Map.Tree.t option
+
   val define_names_of_qualifier
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
