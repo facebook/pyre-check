@@ -1,6 +1,8 @@
-from typing import List
-import itertools
+import os
+import random
 import string
+import itertools
+from typing import List
 
 class CodeGenerator:
     def __init__(self) -> None:
@@ -21,7 +23,7 @@ class CodeGenerator:
         names = [name for name in names if name not in reserved_keywords]
         return names
 
-    def generate_new_variable(self) -> str: 
+    def generate_new_variable(self) -> str:
         variable_name = self.variables[self.current_var]
         self.current_var += 1
         return variable_name
@@ -36,16 +38,16 @@ class CodeGenerator:
 
     def add_function_1(self) -> None:
         indent_space = ' ' * 4
-        # source stuff  
+        # source stuff
         current_function_source = self.generate_new_function()
         temp_source = self.last_source
         self.last_source = current_function_source + "()"
         new_var = self.generate_new_variable()
-        # sink stuff 
+        # sink stuff
         current_function_sink = self.generate_new_function()
         temp_sink = self.last_sink
         self.last_sink = current_function_sink
-        # adding statements 
+        # adding statements
         self.source_statements.append(f"""
 def {current_function_source}():
 {indent_space}if random.randint(1, 3) == 1:
@@ -63,16 +65,16 @@ def {current_function_sink}(x):
 
     def add_function_2(self) -> None:
         indent_space = ' ' * 4
-        # source stuff  
+        # source stuff
         current_function_source = self.generate_new_function()
         temp_source = self.last_source
-        self.last_source = current_function_source +f"({temp_source})"
+        self.last_source = current_function_source + f"({temp_source})"
         new_var = self.generate_new_variable()
-        # sink stuff 
+        # sink stuff
         current_function_sink = self.generate_new_function()
         temp_sink = self.last_sink
         self.last_sink = current_function_sink
-        # adding statements 
+        # adding statements
         self.source_statements.append(f"""
 def {current_function_source}(x):
 {indent_space}if random.randint(1, 3) == 1:
@@ -88,20 +90,8 @@ def {current_function_sink}(x):
 {indent_space*2}return {current_function_sink}(x)
         """)
 
-
     def generate(self) -> str:
         code_lines = self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
-
-
-generator = CodeGenerator()
-
-generator.add_function_1()
-generator.add_function_2()
-generator.add_function_1()
-generator.add_function_2()
-generator.add_function_1()
-
-print(generator.generate())
 
