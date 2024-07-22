@@ -34,14 +34,74 @@ class CodeGenerator:
     def generate_sink(self) -> str:
         return f"{self.last_sink}({self.last_source})"
 
-    def add_function(self) -> None:
+    def add_function_1(self) -> None:
         indent_space = ' ' * 4
-        
+        # source stuff  
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = current_function_source + "()"
+        new_var = self.generate_new_variable()
+        # sink stuff 
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements 
+        self.source_statements.append(f"""
+def {current_function_source}():
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return {temp_source}
+{indent_space}else:
+{indent_space*2}return {current_function_source}()
+        """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return {temp_sink}(x)
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x)
+        """)
+
+    def add_function_2(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff  
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = current_function_source +f"({temp_source})"
+        new_var = self.generate_new_variable()
+        # sink stuff 
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements 
+        self.source_statements.append(f"""
+def {current_function_source}(x):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return x
+{indent_space}else:
+{indent_space*2}return {current_function_source}(x)
+        """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return {temp_sink}(x)
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x)
+        """)
+
+
     def generate(self) -> str:
         code_lines = self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
 
+generator = CodeGenerator()
 
-import random 
+generator.add_function_1()
+generator.add_function_2()
+generator.add_function_1()
+generator.add_function_2()
+generator.add_function_1()
+
+print(generator.generate())
+
