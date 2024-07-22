@@ -238,7 +238,9 @@ generator = CodeGenerator()
 
 
 
-generator.add_function_8()
+
+generator.add_function_1()
+generator.add_function_6()
 generator.add_function_8()
 generator.add_function_8()
 
@@ -251,21 +253,18 @@ print(generator.generate())
 
 
 import random 
-
-def f0(x):
-    hashmap = {char: ord(char) for char in x}
-    if (value := hashmap.get('a')) is not None:
-        return chr(value + 1) + x
+def f0():
+    if random.randint(1, 3) == 1:
+        return input()
     else:
-        return f0(x + 'a')
-    
+        return f0()
+        
 
 def f2(x):
-    hashmap = {char: ord(char) for char in x}
-    if (value := hashmap.get('a')) is not None:
-        return chr(value + 1) + x
+    if (y := random.randint(1, 3)) == 1:
+        return x + str(y)
     else:
-        return f2(x + 'a')
+        return f2(x)
     
 
 def f4(x):
@@ -276,20 +275,26 @@ def f4(x):
         return f4(x + 'a')
     
 
-def f1(x):
+def f6(x):
     hashmap = {char: ord(char) for char in x}
-    if (value := hashmap.get('z')) is not None:
-        return print(chr(value - 1) + x)
+    if (value := hashmap.get('a')) is not None:
+        return chr(value + 1) + x
     else:
-        return f1(x + 'z')
+        return f6(x + 'a')
     
 
-def f3(x):
-    hashmap = {char: ord(char) for char in x}
-    if (value := hashmap.get('z')) is not None:
-        return f1(chr(value - 1) + x)
+def f1(x):
+    if random.randint(1, 3) == 1:
+        return print(x)
     else:
-        return f3(x + 'z')
+        return f1(x)
+        
+
+def f3(x):
+    if (y := random.randint(1, 3)) == 1:
+        return f1(x + str(y))
+    else:
+        return f3(x)
     
 
 def f5(x):
@@ -299,4 +304,12 @@ def f5(x):
     else:
         return f5(x + 'z')
     
-f5(f4(f2(f0(input()))))
+
+def f7(x):
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('z')) is not None:
+        return f5(chr(value - 1) + x)
+    else:
+        return f7(x + 'z')
+    
+f7(f6(f4(f2(f0()))))
