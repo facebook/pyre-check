@@ -516,7 +516,7 @@ let assert_update
     ~original_sources
     ~new_sources
     ~middle_queries_with_expectations
-    ~expected_triggers
+    ~expected_triggers_except_uge_and_fde
     ?post_queries_with_expectations
     context
   =
@@ -651,14 +651,16 @@ let assert_update
     |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
     |> List.to_string ~f:SharedMemoryKeys.show_dependency
   in
-  let expected_trigger_set =
-    SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
+  let expected_trigger_set_except_uge_and_fde =
+    SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers_except_uge_and_fde
   in
-  let actual_downstream_trigger_set =
+  let actual_trigger_set_except_uge_and_fde =
     let fold_trigger_set sofar triggered =
       let fold_one registered sofar =
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | ComputeModuleComponents _ -> sofar
+        | ComputeModuleComponents _
+        | FunctionDefinitions _ ->
+            sofar
         | _ -> SharedMemoryKeys.DependencyKey.RegisteredSet.add registered sofar
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold fold_one triggered sofar
@@ -672,8 +674,8 @@ let assert_update
   assert_equal
     ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
     ~printer
-    expected_trigger_set
-    actual_downstream_trigger_set
+    expected_trigger_set_except_uge_and_fde
+    actual_trigger_set_except_uge_and_fde
 
 
 let type_check_dependency =
@@ -694,14 +696,14 @@ let test_get_explicit_module_metadata =
            ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
       (* Updated code *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -709,14 +711,14 @@ let test_get_explicit_module_metadata =
            ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[AssertUpdateSource.Local ("a.py", "a: int = 2")]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[AssertUpdateSource.External ("a.py", "a: int = 2")]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
       (* Deleted code *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -724,14 +726,14 @@ let test_get_explicit_module_metadata =
            ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)]
            ~new_sources:[]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)];
       (* Added code *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -739,14 +741,14 @@ let test_get_explicit_module_metadata =
            ~original_sources:[]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)]
            ~new_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:[]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)]
            ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Explicit)];
     ]
 
@@ -761,7 +763,7 @@ let test_get_implicit_module_metadata =
            ~original_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
            ~new_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 2")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Implicit)]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Implicit)];
       (* Deleted nested module -> deleted implicit *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -769,7 +771,7 @@ let test_get_implicit_module_metadata =
            ~original_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
            ~new_sources:[]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Implicit)]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)];
       (* Added nested module -> added implicit *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -777,7 +779,7 @@ let test_get_implicit_module_metadata =
            ~original_sources:[]
            ~new_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
            ~middle_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `None)]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`ModuleMetadata (!&"a", dependency, `Implicit)];
     ]
 
@@ -799,7 +801,7 @@ let test_get_class_summary =
           x: str
       |})]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -813,7 +815,7 @@ let test_get_class_summary =
           x: str
       |})]
            ~middle_queries_with_expectations:[`Get ("test.Missing", dependency, None)]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -834,7 +836,7 @@ let test_get_class_summary =
                  );
              ]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       (* Last class definition wins *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -864,7 +866,7 @@ let test_get_class_summary =
                  );
              ]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 2)]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -891,7 +893,7 @@ let test_get_class_summary =
                  );
              ]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -918,7 +920,7 @@ let test_get_class_summary =
                  );
              ]
            ~middle_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:[`Get ("test.Foo", dependency, Some 1)];
     ]
 
@@ -937,7 +939,7 @@ let test_class_exists_and_all_classes =
         class Foo:
           x: int
       |})]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -947,7 +949,7 @@ let test_class_exists_and_all_classes =
       |})]
            ~middle_queries_with_expectations:[`Mem ("test.Foo", dependency, true)]
            ~new_sources:[]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -961,7 +963,7 @@ let test_class_exists_and_all_classes =
           x: int
       |})]
            ~middle_queries_with_expectations:[`Mem ("test.Foo", dependency, true)]
-           ~expected_triggers:[];
+           ~expected_triggers_except_uge_and_fde:[];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
            ~original_sources:
@@ -975,7 +977,7 @@ let test_class_exists_and_all_classes =
           x: str
       |})]
            ~middle_queries_with_expectations:[`Mem ("test.Foo", dependency, true)]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       (* all_classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -997,7 +999,7 @@ let test_class_exists_and_all_classes =
         x: str
     |})]
            ~middle_queries_with_expectations:[`AllClasses ["test.Bar"; "test.Foo"]]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:[`AllClasses ["test.Foo"]];
     ]
 
@@ -1037,7 +1039,7 @@ let test_get_unannotated_global =
                           target_location = Location.WithModule.any;
                         }) );
              ]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1087,7 +1089,7 @@ let test_get_unannotated_global =
                         (Module.UnannotatedGlobal.ImportModule
                            { target = !&"target.member"; implicit_alias = false })) );
              ]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:
              [`Global (Reference.create "test.alias", dependency, None)];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1125,7 +1127,7 @@ let test_get_unannotated_global =
                  );
              ]
              (* Location insensitive *)
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1162,7 +1164,7 @@ let test_get_unannotated_global =
                            { from = !&"target"; target = "member"; implicit_alias = true })) );
              ]
            ~new_sources:[]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:
              [`Global (Reference.create "test.member", dependency, None)];
       (* Adding a source should trigger lookup dependencies *)
@@ -1175,7 +1177,7 @@ let test_get_unannotated_global =
       |})]
            ~middle_queries_with_expectations:
              [`Global (Reference.create "test.member", dependency, None)]
-           ~expected_triggers:[dependency]
+           ~expected_triggers_except_uge_and_fde:[dependency]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1195,7 +1197,7 @@ let test_get_unannotated_global =
     |})]
            ~middle_queries_with_expectations:[`Global (Reference.create "test.*", dependency, None)]
            ~new_sources:[]
-           ~expected_triggers:[dependency];
+           ~expected_triggers_except_uge_and_fde:[dependency];
       (let open Expression in
       let tuple_expression =
         node
@@ -1251,7 +1253,7 @@ let test_get_unannotated_global =
                         }) );
              ]
            ~new_sources:[]
-           ~expected_triggers:[dependency]);
+           ~expected_triggers_except_uge_and_fde:[dependency]);
       (* First global wins. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -1283,7 +1285,7 @@ let test_get_unannotated_global =
                           target_location = Location.WithModule.any;
                         }) );
              ]
-           ~expected_triggers:[];
+           ~expected_triggers_except_uge_and_fde:[];
       (* Only recurse into ifs *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -1329,7 +1331,7 @@ let test_get_unannotated_global =
                           target_location = Location.WithModule.any;
                         }) );
              ]
-           ~expected_triggers:[];
+           ~expected_triggers_except_uge_and_fde:[];
       (* get defines *)
       (let open Expression in
       let open Statement in
@@ -1399,7 +1401,7 @@ let test_get_unannotated_global =
                                   (Expression.Constant Constant.NoneLiteral)));
                         ]) );
              ]
-           ~expected_triggers:[]
+           ~expected_triggers_except_uge_and_fde:[]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1446,7 +1448,7 @@ let test_dependencies_and_new_values =
                `Get ("test.Foo", alias_dependency, Some 1);
                `Get ("test.Foo", type_check_dependency, Some 1);
              ]
-           ~expected_triggers:[alias_dependency; type_check_dependency];
+           ~expected_triggers_except_uge_and_fde:[alias_dependency; type_check_dependency];
       (* Addition should add values when previously they were missing *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_update
@@ -1457,7 +1459,7 @@ let test_dependencies_and_new_values =
     |})]
            ~middle_queries_with_expectations:
              [`Global (Reference.create "test.x", alias_dependency, None)]
-           ~expected_triggers:[alias_dependency]
+           ~expected_triggers_except_uge_and_fde:[alias_dependency]
            ~post_queries_with_expectations:
              [
                `Global
@@ -1490,7 +1492,7 @@ let test_dependencies_and_new_values =
       |})]
            ~middle_queries_with_expectations:
              [`GetRawSource (Reference.create "test", alias_dependency)]
-           ~expected_triggers:[alias_dependency];
+           ~expected_triggers_except_uge_and_fde:[alias_dependency];
     ]
 
 

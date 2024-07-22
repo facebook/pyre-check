@@ -267,7 +267,11 @@ let test_parse_sources context =
   assert_equal
     ~printer:[%show: SharedMemoryKeys.dependency list]
     ~cmp:[%compare.equal: SharedMemoryKeys.dependency list]
-    [SharedMemoryKeys.ComputeModuleComponents !&"c"; type_check_foo]
+    [
+      SharedMemoryKeys.ComputeModuleComponents !&"c";
+      SharedMemoryKeys.FunctionDefinitions !&"c";
+      type_check_foo;
+    ]
     triggered_dependencies;
   (* Add some new modules and verify the update *)
   assert_equal

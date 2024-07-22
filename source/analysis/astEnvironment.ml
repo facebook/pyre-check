@@ -204,17 +204,32 @@ module FromReadOnlyUpstream = struct
       let initial_invalidated_modules =
         RawSources.KeySet.of_list invalidated_modules_before_preprocessing
       in
+      (* In order to guarantee that we re-check all potentially-changed modules in incremental
+         update, we have to trigger dependencies manually for all invalidated raw sources.
+
+         TODO(T196249034) Investigate the bugs that appear if we remove this this. We used to filter
+         a lot of dependencies which made this obviously necessary, but it is no longer clear why we
+         need it today. *)
       let initial_triggered_dependencies =
         let register_module_components qualifier =
           SharedMemoryKeys.ComputeModuleComponents qualifier
           |> SharedMemoryKeys.DependencyKey.Registry.register
         in
+        let register_function_definitions qualifier =
+          SharedMemoryKeys.FunctionDefinitions qualifier
+          |> SharedMemoryKeys.DependencyKey.Registry.register
+        in
         List.map invalidated_modules_before_preprocessing ~f:register_module_components
+        @ List.map invalidated_modules_before_preprocessing ~f:register_function_definitions
         |> SharedMemoryKeys.DependencyKey.RegisteredSet.of_list
       in
       let fold_key registered (triggered_dependencies_sofar, invalidated_modules_sofar) =
+        (* For invalidated modules, count not only the modules whose raw source changed but also any
+           module where a processed source changed. This is necessary for `invalidated_modules` to
+           include downstream code with wildcard imports *)
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.ComputeModuleComponents qualifier ->
+        | SharedMemoryKeys.ComputeModuleComponents qualifier
+        | SharedMemoryKeys.FunctionDefinitions qualifier ->
             ( SharedMemoryKeys.DependencyKey.RegisteredSet.add
                 registered
                 triggered_dependencies_sofar,
