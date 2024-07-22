@@ -5,10 +5,10 @@ import string
 class CodeGenerator:
     def __init__(self) -> None:
         self.variables = self.generate_variable_names()
-        self.current_var = 1
-        self.current_function_number = 1
-        self.source_statements = ['a = input()']
-        self.last_source = "a"
+        self.current_var = 0
+        self.current_function_number = 0
+        self.source_statements = []
+        self.last_source = "input()"
         self.sink_statements = []
         self.last_sink = "print"
 
@@ -22,7 +22,7 @@ class CodeGenerator:
         return names
 
     def generate_new_variable(self) -> str: 
-        variable_name = f"{self.variables[self.current_var]}"
+        variable_name = self.variables[self.current_var]
         self.current_var += 1
         return variable_name
 
@@ -34,83 +34,14 @@ class CodeGenerator:
     def generate_sink(self) -> str:
         return f"{self.last_sink}({self.last_source})"
 
-    # wraps both the source and sink chains 
     def add_function(self) -> None:
         indent_space = ' ' * 4
-        # source stuff  
-        current_function_source = self.generate_new_function()
-        temp_source = self.last_source
-        self.last_source = current_function_source + "()"
-        new_var = self.generate_new_variable()
-        # sink stuff 
-        current_function_sink = self.generate_new_function()
-        temp_sink = self.last_sink
-        self.last_sink = current_function_sink
-        # adding statements 
-        self.source_statements.append(f"""
-def {current_function_source}():
-{indent_space}{new_var} = {temp_source}
-{indent_space}if random.randint(1, 3) == 1:
-{indent_space*2}return {new_var}
-{indent_space}else:
-{indent_space*2}return {current_function_source}()
-        """)
-        self.sink_statements.append(f"""
-def {current_function_sink}(x):
-{indent_space}if random.randint(1, 3) == 1:
-{indent_space*2}return {temp_sink}(x)
-{indent_space}else:
-{indent_space*2}return {current_function_sink}(x)
-        """)
-
-    # only adds a variable to the source chain 
-    def add_variable(self) -> None:
-        indent_space = ' ' * 4
-        new_var = self.generate_new_variable()
-        temp_source = self.last_source
-        self.last_source = new_var 
-        self.source_statements.append(f"{new_var} = {temp_source}")
-
-    def add_nested_function(self) -> None:
-        indent_space = ' ' * 4
-        # source stuff  
-        current_function_source = self.generate_new_function()
-        nested_function_source = self.generate_new_function()
-        temp_source = self.last_source
-        self.last_source = current_function_source + "()"
-        new_var = self.generate_new_variable()
-        # sink stuff 
-        current_function_sink = self.generate_new_function()
-        nested_function_sink = self.generate_new_function()
-        temp_sink = self.last_sink
-        self.last_sink = current_function_sink
-        # adding statements 
-        self.source_statements.append(f"""
-def {current_function_source}():
-{indent_space}def {nested_function_source}():
-{indent_space*2}{new_var} = {temp_source}
-{indent_space*2}if random.randint(1, 3) == 1:
-{indent_space*3}return {new_var}
-{indent_space*2}else:
-{indent_space*3}return {current_function_source}()
-{indent_space}return {nested_function_source}()
-        """)
-        self.sink_statements.append(f"""
-def {current_function_sink}(x):
-{indent_space}def {nested_function_sink}(x):
-{indent_space*2}if random.randint(1, 3) == 1:
-{indent_space*3}return {temp_sink}(x)
-{indent_space*2}else:
-{indent_space*3}return {current_function_sink}(x)
-{indent_space}return {nested_function_sink}(x)
-        """)
-
+        
     def generate(self) -> str:
         code_lines = self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
-# Example usage
-generator = CodeGenerator()
-generator.add_nested_function()
-print(generator.generate())
+
+
+import random 
