@@ -475,7 +475,7 @@ let create define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let preamble = For.preamble loop in
+        let preamble = For.synthetic_preamble loop in
         let body = create (preamble :: body) loop_jumps split in
         Node.connect_option body split;
         let orelse = create orelse jumps split in

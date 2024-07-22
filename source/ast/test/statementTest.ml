@@ -446,7 +446,7 @@ let test_for_loop_preamble _ =
       ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
       ~printer:[%show: Statement.t]
       expected_preamble
-      (For.preamble block)
+      (For.synthetic_preamble block)
   in
   assert_preamble ~block:{| for a in b: pass |} {| a = b.__iter__().__next__() |};
   assert_preamble ~block:{| for a, b in c: pass |} {| a, b = c.__iter__().__next__() |};
@@ -463,7 +463,7 @@ let test_for_loop_preamble _ =
       ~cmp:[%compare.equal: Statement.t]
       ~printer:(fun statement -> [%sexp_of: Statement.t] statement |> Sexp.to_string_hum)
       expected_preamble
-      (For.preamble block)
+      (For.synthetic_preamble block)
   in
   let ( ~@ ) = parse_location in
   assert_preamble_with_locations
@@ -483,20 +483,20 @@ let test_for_loop_preamble _ =
                       {
                         Call.callee =
                           {
-                            Node.location = ~@"1:9-1:10";
+                            Node.location = ~@"1:4-1:10";
                             value =
                               Expression.Name
                                 (Name.Attribute
                                    {
                                      Name.Attribute.base =
                                        {
-                                         Node.location = ~@"1:9-1:10";
+                                         Node.location = ~@"1:4-1:10";
                                          value =
                                            Expression.Call
                                              {
                                                Call.callee =
                                                  {
-                                                   Node.location = ~@"1:9-1:10";
+                                                   Node.location = ~@"1:4-1:10";
                                                    value =
                                                      Expression.Name
                                                        (Name.Attribute
@@ -521,7 +521,7 @@ let test_for_loop_preamble _ =
                           };
                         arguments = [];
                       };
-                  location = ~@"1:9-1:10";
+                  location = ~@"1:4-1:10";
                 };
           };
       location = ~@"1:4-1:10";
@@ -549,20 +549,20 @@ let test_for_loop_preamble _ =
                             {
                               Call.callee =
                                 {
-                                  Node.location = ~@"3:2-3:4";
+                                  Node.location = ~@"2:10-3:4";
                                   value =
                                     Expression.Name
                                       (Name.Attribute
                                          {
                                            Name.Attribute.base =
                                              {
-                                               Node.location = ~@"3:2-3:4";
+                                               Node.location = ~@"2:10-3:4";
                                                value =
                                                  Expression.Call
                                                    {
                                                      Call.callee =
                                                        {
-                                                         Node.location = ~@"3:2-3:4";
+                                                         Node.location = ~@"2:10-3:4";
                                                          value =
                                                            Expression.Name
                                                              (Name.Attribute
@@ -587,9 +587,9 @@ let test_for_loop_preamble _ =
                                 };
                               arguments = [];
                             };
-                        location = ~@"3:2-3:4";
+                        location = ~@"2:10-3:4";
                       };
-                  location = ~@"3:2-3:4";
+                  location = ~@"2:10-3:4";
                 };
           };
       location = ~@"2:10-3:4";

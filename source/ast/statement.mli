@@ -311,7 +311,7 @@ and For : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val preamble : t -> Statement.t
+  val synthetic_preamble : t -> Statement.t
 
   val location_insensitive_compare : t -> t -> int
 end

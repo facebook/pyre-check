@@ -816,10 +816,11 @@ let test_handle_types_query context =
                          overloads = [];
                        } );
                    3, 6, 3, 7, Type.integer;
-                   (* TODO(T124426942): We are mistakenly overwriting the type of the iterator
-                      variable (list[int]) with the type of `<variable>.__iter__().__next__()`
-                      (int), because they have the same location. *)
-                   3, 11, 3, 17, Type.integer;
+                   (* The extra data here is from Pyre arbitrarily picking one of the synthetic
+                      expressions generated when the CFG code calls
+                      `Statement.synthetic_preamble`. *)
+                   3, 6, 3, 17, Type.integer;
+                   3, 11, 3, 17, Type.list Type.integer;
                    3, 12, 3, 13, Type.literal_integer 1;
                    3, 15, 3, 16, Type.literal_integer 2;
                    4, 3, 4, 4, Type.literal_integer 1;
@@ -1487,10 +1488,10 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  3, 6, 3, 7, Type.integer;
-                 (* TODO(T124426942): We are mistakenly overwriting the type of the iterator
-                    variable (list[int]) with the type of `<variable>.__iter__().__next__()` (int),
-                    because they have the same location. *)
-                 3, 11, 3, 17, Type.integer;
+                 (* The extra data here is from Pyre arbitrarily picking one of the synthetic
+                    expressions generated when the CFG code calls `Statement.synthetic_preamble`. *)
+                 3, 6, 3, 17, Type.integer;
+                 3, 11, 3, 17, Type.list Type.integer;
                  3, 12, 3, 13, Type.literal_integer 1;
                  3, 15, 3, 16, Type.literal_integer 2;
                  4, 3, 4, 4, Type.literal_integer 1;

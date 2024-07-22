@@ -2342,7 +2342,7 @@ let test_call_graph_of_define =
            ~define_name:"test.f"
            ~expected:
              [
-               ( "10:11-10:25",
+               ( "10:6-10:25",
                  LocationCallees.Compound
                    (SerializableStringMap.of_alist_exn
                       [
@@ -2408,7 +2408,7 @@ let test_call_graph_of_define =
            ~define_name:"test.f"
            ~expected:
              [
-               ( "9:11-9:21",
+               ( "9:6-9:21",
                  LocationCallees.Compound
                    (SerializableStringMap.of_alist_exn
                       [
@@ -4552,7 +4552,7 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "3:17-3:18",
+               ( "3:12-3:18",
                  LocationCallees.Compound
                    (SerializableStringMap.of_alist_exn
                       [

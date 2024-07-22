@@ -2542,8 +2542,13 @@ let test_lookup_for_statements context =
       "2:9-2:18/typing.Type[typing.List[int]]";
       "2:23-2:27/typing.Type[None]";
       "3:8-3:9/int";
-      (* This is a bug: the location below is `l` which has type `list[int]`. *)
-      "3:13-3:14/int";
+      (* This is because the CFG creates synthetic expressions using the location of the entire
+         statement, and one of them arbitrarily winds up in the lookup map.
+
+         Since a caller trying to map expression locations in the original AST will never look up
+         this location, we can ignore the output. *)
+      "3:8-3:14/int";
+      "3:13-3:14/typing.List[int]";
     ]
 
 

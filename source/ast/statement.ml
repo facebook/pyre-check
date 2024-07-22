@@ -1019,7 +1019,7 @@ and For : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val preamble : t -> Statement.t
+  val synthetic_preamble : t -> Statement.t
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -1032,7 +1032,9 @@ end = struct
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  let preamble
+  (* Create an assignment statement mimicing the `iterator` to `target` flow. Used when Pyre creates
+     the CFG. *)
+  let synthetic_preamble
       {
         target = { Node.location = target_location; _ } as target;
         iterator = { Node.location = iterator_location; _ } as iterator;
@@ -1040,6 +1042,9 @@ end = struct
         _;
       }
     =
+    let location =
+      Location.{ start = Location.start target_location; stop = Location.stop iterator_location }
+    in
     let open Expression in
     let value =
       let value =
@@ -1048,20 +1053,20 @@ end = struct
             {
               Call.callee =
                 {
-                  Node.location = iterator_location;
+                  Node.location;
                   value =
                     Expression.Name
                       (Name.Attribute
                          {
                            Name.Attribute.base =
                              {
-                               Node.location = iterator_location;
+                               Node.location;
                                value =
                                  Expression.Call
                                    {
                                      Call.callee =
                                        {
-                                         Node.location = iterator_location;
+                                         Node.location;
                                          value =
                                            Expression.Name
                                              (Name.Attribute
@@ -1087,16 +1092,12 @@ end = struct
           create_call iterator "__iter__" "__next__"
       in
       if async then
-        {
-          Node.location = iterator_location;
-          Node.value = Expression.Await (Node.create value ~location:iterator_location);
-        }
+        { Node.location; Node.value = Expression.Await (Node.create value ~location) }
       else
-        { Node.location = iterator_location; value }
+        { Node.location; value }
     in
     {
-      Node.location =
-        { Location.start = Location.start target_location; stop = Location.stop iterator_location };
+      Node.location;
       Node.value = Statement.Assign { Assign.target; annotation = None; value = Some value };
     }
 
