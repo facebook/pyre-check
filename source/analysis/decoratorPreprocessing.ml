@@ -238,7 +238,7 @@ let requalify_identifier ~old_qualifier ~new_qualifier identifier =
       |> Reference.drop_prefix ~prefix:old_qualifier
       |> Reference.as_list
     with
-    | [name] -> Some (Preprocessing.qualify_local_identifier ~qualifier:new_qualifier name)
+    | [name] -> Some (Preprocessing.get_qualified_local_identifier ~qualifier:new_qualifier name)
     | _ -> None
   else
     None
@@ -761,7 +761,7 @@ let make_wrapper_define
     |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:wrapper_qualifier
     |> rename_local_variable
          ~from:higher_order_function_parameter_name
-         ~to_:(Preprocessing.qualify_local_identifier ~qualifier function_to_call)
+         ~to_:(Preprocessing.get_qualified_local_identifier ~qualifier function_to_call)
   in
   List.iter
     helper_defines

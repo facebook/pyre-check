@@ -739,7 +739,9 @@ let check_qualifier ~type_environment qualifier =
       Reference.prefix qualifier
       >>| (fun prefix ->
             let qualifier =
-              Preprocessing.qualify_local_identifier ~qualifier:prefix (Reference.last qualifier)
+              Preprocessing.get_qualified_local_identifier
+                ~qualifier:prefix
+                (Reference.last qualifier)
               |> Reference.create
             in
             GlobalResolution.get_define_body_in_project global_resolution qualifier

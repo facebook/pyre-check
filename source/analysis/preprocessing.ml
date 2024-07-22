@@ -256,7 +256,7 @@ let expand_strings_in_annotation_expression =
   transform_string_annotation_expression ~relative:"$path_placeholder_for_alias_string_annotations"
 
 
-let qualify_local_identifier ~qualifier name =
+let get_qualified_local_identifier ~qualifier name =
   let qualifier = Reference.show qualifier |> String.substr_replace_all ~pattern:"." ~with_:"?" in
   Format.asprintf "$local_%s$%s" qualifier name
 
@@ -376,7 +376,7 @@ module Qualify (Context : QualifyContext) = struct
     if is_in_function then
       match Reference.as_list name with
       | [simple_name] when not (is_qualified simple_name) ->
-          let alias = qualify_local_identifier simple_name ~qualifier |> Reference.create in
+          let alias = get_qualified_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with
               aliases = Map.set aliases ~key:name ~data:{ name = alias; qualifier };
@@ -531,7 +531,9 @@ module Qualify (Context : QualifyContext) = struct
                     let scope =
                       let reference = Reference.create name in
                       if (not (is_qualified name)) && not (Set.mem locals reference) then
-                        let alias = qualify_local_identifier name ~qualifier |> Reference.create in
+                        let alias =
+                          get_qualified_local_identifier name ~qualifier |> Reference.create
+                        in
                         {
                           scope with
                           aliases =
@@ -4430,7 +4432,7 @@ module SelfType = struct
         return_annotation )
       when signature_uses_self_type signature ->
         let mangled_self_type_variable_reference =
-          self_variable_name parent |> qualify_local_identifier ~qualifier |> Reference.create
+          self_variable_name parent |> get_qualified_local_identifier ~qualifier |> Reference.create
         in
         let self_or_class_parameter =
           let annotation =
@@ -4489,7 +4491,9 @@ module SelfType = struct
   let make_type_variable_definition ~qualifier class_reference =
     let location = Location.any in
     let self_variable_reference =
-      self_variable_name class_reference |> qualify_local_identifier ~qualifier |> Reference.create
+      self_variable_name class_reference
+      |> get_qualified_local_identifier ~qualifier
+      |> Reference.create
     in
     Statement.Assign
       {

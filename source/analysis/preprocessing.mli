@@ -15,7 +15,7 @@ val expand_string_annotations : Source.t -> Source.t
 
 val expand_strings_in_annotation_expression : Expression.t -> Expression.t
 
-val qualify_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
+val get_qualified_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
 
 val replace_union_shorthand_in_annotation_expression : Expression.t -> Expression.t
 
