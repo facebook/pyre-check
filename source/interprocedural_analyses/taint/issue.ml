@@ -406,7 +406,10 @@ module TriggeredSinkForCall = struct
         Some
           (BackwardTaint.singleton
              call_info
-             (Sinks.create_triggered_sink ~triggering_source:source partial_sink)
+             (Sinks.make_transform
+                ~base:(PartialSink partial_sink)
+                ~local:[TaintTransform.TriggeredPartialSink { triggering_source = source }]
+                ~global:[])
              frame
           |> BackwardTaint.transform
                ExtraTraceFirstHop.Set.Self

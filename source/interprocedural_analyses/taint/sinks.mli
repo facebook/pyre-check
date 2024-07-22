@@ -53,8 +53,6 @@ val name : string
 
 val make_transform : local:TaintTransforms.t -> global:TaintTransforms.t -> base:t -> t
 
-val create_triggered_sink : triggering_source:string -> PartialSink.t -> t
-
 val ignore_kind_at_call : t -> bool
 
 val apply_call : t -> t

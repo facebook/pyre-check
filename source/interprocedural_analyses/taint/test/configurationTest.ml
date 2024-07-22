@@ -2231,6 +2231,12 @@ let test_matching_kinds _ =
       ]
     ~possible_tito_transforms:[TaintTransforms.empty]
     ();
+  let create_triggered_sink ~triggering_source partial_sink =
+    Sinks.make_transform
+      ~base:(PartialSink partial_sink)
+      ~local:[]
+      ~global:[TaintTransform.TriggeredPartialSink { triggering_source }]
+  in
   assert_matching
     ~source_filter:["A"; "B"]
     ~configuration:
@@ -2302,14 +2308,14 @@ let test_matching_kinds _ =
             [
               Sinks.PartialSink "PartialSink1[a]";
               Sinks.PartialSink "PartialSink3[a]";
-              Sinks.create_triggered_sink ~triggering_source:"B" "PartialSink1[a]";
-              Sinks.create_triggered_sink ~triggering_source:"D" "PartialSink3[a]";
+              create_triggered_sink ~triggering_source:"B" "PartialSink1[a]";
+              create_triggered_sink ~triggering_source:"D" "PartialSink3[a]";
             ] );
         ( Sources.NamedSource "B",
           Sinks.Set.of_list
             [
               Sinks.PartialSink "PartialSink1[b]";
-              Sinks.create_triggered_sink ~triggering_source:"A" "PartialSink1[b]";
+              create_triggered_sink ~triggering_source:"A" "PartialSink1[b]";
             ] );
       ]
     ~matching_sources:
@@ -2317,11 +2323,11 @@ let test_matching_kinds _ =
         Sinks.PartialSink "PartialSink1[a]", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.PartialSink "PartialSink1[b]", Sources.Set.of_list [Sources.NamedSource "B"];
         Sinks.PartialSink "PartialSink3[a]", Sources.Set.of_list [Sources.NamedSource "A"];
-        ( Sinks.create_triggered_sink ~triggering_source:"D" "PartialSink3[a]",
+        ( create_triggered_sink ~triggering_source:"D" "PartialSink3[a]",
           Sources.Set.of_list [Sources.NamedSource "A"] );
-        ( Sinks.create_triggered_sink ~triggering_source:"B" "PartialSink1[a]",
+        ( create_triggered_sink ~triggering_source:"B" "PartialSink1[a]",
           Sources.Set.of_list [Sources.NamedSource "A"] );
-        ( Sinks.create_triggered_sink ~triggering_source:"A" "PartialSink1[b]",
+        ( create_triggered_sink ~triggering_source:"A" "PartialSink1[b]",
           Sources.Set.of_list [Sources.NamedSource "B"] );
       ]
     ~possible_tito_transforms:[TaintTransforms.empty]
