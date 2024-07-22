@@ -195,6 +195,34 @@ def {current_function_sink}(x):
 {indent_space*2}return {current_function_sink}(x + 'z')
     """)
 
+    def add_function_8(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = f"{current_function_source}({temp_source})"
+        # sink stuff
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements
+        self.source_statements.append(f"""
+def {current_function_source}(x):
+{indent_space}hashmap = {{char: ord(char) for char in x}}
+{indent_space}if (value := hashmap.get('a')) is not None:
+{indent_space*2}return chr(value + 1) + x
+{indent_space}else:
+{indent_space*2}return {current_function_source}(x + 'a')
+    """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}hashmap = {{char: ord(char) for char in x}}
+{indent_space}if (value := hashmap.get('z')) is not None:
+{indent_space*2}return {temp_sink}(chr(value - 1) + x)
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x + 'z')
+    """)
+
    
 
     
@@ -210,9 +238,10 @@ generator = CodeGenerator()
 
 
 
-generator.add_function_7()
-generator.add_function_7()
-generator.add_function_7()
+generator.add_function_8()
+generator.add_function_8()
+generator.add_function_8()
+
 
 
 
@@ -224,43 +253,49 @@ print(generator.generate())
 import random 
 
 def f0(x):
-    if (z := x.count('a')) > 2:
-        return x.replace('a', 'arep')
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('a')) is not None:
+        return chr(value + 1) + x
     else:
         return f0(x + 'a')
     
 
 def f2(x):
-    if (z := x.count('a')) > 2:
-        return x.replace('a', 'arep')
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('a')) is not None:
+        return chr(value + 1) + x
     else:
         return f2(x + 'a')
     
 
 def f4(x):
-    if (z := x.count('a')) > 2:
-        return x.replace('a', 'arep')
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('a')) is not None:
+        return chr(value + 1) + x
     else:
         return f4(x + 'a')
     
 
 def f1(x):
-    if (z := x.count('z')) > 1:
-        return print(x.replace('a', 'arep'))
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('z')) is not None:
+        return print(chr(value - 1) + x)
     else:
         return f1(x + 'z')
     
 
 def f3(x):
-    if (z := x.count('z')) > 1:
-        return f1(x.replace('a', 'arep'))
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('z')) is not None:
+        return f1(chr(value - 1) + x)
     else:
         return f3(x + 'z')
     
 
 def f5(x):
-    if (z := x.count('z')) > 1:
-        return f3(x.replace('a', 'arep'))
+    hashmap = {char: ord(char) for char in x}
+    if (value := hashmap.get('z')) is not None:
+        return f3(chr(value - 1) + x)
     else:
         return f5(x + 'z')
     
