@@ -201,25 +201,34 @@ module FromReadOnlyUpstream = struct
     in
     let triggered_dependencies, invalidated_modules =
       (* ComputeModuleComponents dependencies are tracked as invalidated modules as well. *)
-      let fold_key registered (triggered_dependencies, invalidated_modules) =
+      let initial_invalidated_modules =
+        RawSources.KeySet.of_list invalidated_modules_before_preprocessing
+      in
+      let initial_triggered_dependencies =
+        let register_module_components qualifier =
+          SharedMemoryKeys.ComputeModuleComponents qualifier
+          |> SharedMemoryKeys.DependencyKey.Registry.register
+        in
+        List.map invalidated_modules_before_preprocessing ~f:register_module_components
+        |> SharedMemoryKeys.DependencyKey.RegisteredSet.of_list
+      in
+      let fold_key registered (triggered_dependencies_sofar, invalidated_modules_sofar) =
         match SharedMemoryKeys.DependencyKey.get_key registered with
         | SharedMemoryKeys.ComputeModuleComponents qualifier ->
-            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
-              RawSources.KeySet.add qualifier invalidated_modules )
+            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add
+                registered
+                triggered_dependencies_sofar,
+              RawSources.KeySet.add qualifier invalidated_modules_sofar )
         | _ ->
-            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
-              invalidated_modules )
-      in
-      let register_wildcard qualifier =
-        SharedMemoryKeys.ComputeModuleComponents qualifier
-        |> SharedMemoryKeys.DependencyKey.Registry.register
+            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add
+                registered
+                triggered_dependencies_sofar,
+              invalidated_modules_sofar )
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold
         fold_key
         raw_source_dependencies
-        ( List.map invalidated_modules_before_preprocessing ~f:register_wildcard
-          |> SharedMemoryKeys.DependencyKey.RegisteredSet.of_list,
-          RawSources.KeySet.of_list invalidated_modules_before_preprocessing )
+        (initial_triggered_dependencies, initial_invalidated_modules)
     in
     SourceCodeIncrementalApi.UpdateResult.create
       ~triggered_dependencies
