@@ -266,24 +266,9 @@ generator = CodeGenerator()
 
 
 
-generator.add_function_1()
-generator.add_function_1()
+generator.add_function_9()
+generator.add_function_9()
 
 
 
 print(generator.generate())
-
-def f0():
-    if random.randint(1, 3) == 1:
-        return input()
-    else:
-        return f0()
-        
-
-def f1(x):
-    if random.randint(1, 3) == 1:
-        return print(x)
-    else:
-        return f1(x)
-        
-f1(f0())
