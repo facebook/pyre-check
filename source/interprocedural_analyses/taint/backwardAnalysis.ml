@@ -51,6 +51,8 @@ module type FUNCTION_CONTEXT = sig
 
   val taint_configuration : TaintConfiguration.Heap.t
 
+  val string_combine_partial_sink_tree : BackwardState.Tree.t
+
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
   val global_constants : Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t
@@ -590,15 +592,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
+      let add_triggered_sinks ({ SinkTreeWithHandle.sink_tree; _ } as sink_tree_with_handle) =
+        let sink_tree =
+          Issue.TriggeredSinkForBackward.add_triggered_sinks
+            ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
+            ~argument_location:argument.Node.location
+            ~argument_sink:sink_tree
+            FunctionContext.triggered_sinks
+        in
+        { sink_tree_with_handle with sink_tree }
+      in
       let sink_trees =
         CallModel.sink_trees_of_argument
           ~pyre_in_context
           ~transform_non_leaves
           ~model:taint_model
-          ~auxiliary_triggered_taint:
-            (Issue.TriggeredSinkForBackward.get
-               ~expression:argument
-               FunctionContext.triggered_sinks)
           ~location
           ~call_target
           ~arguments
@@ -606,6 +614,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~is_class_method
           ~is_static_method
           ~call_info_intervals
+        |> List.map ~f:add_triggered_sinks
       in
       let taint_in_taint_out =
         if apply_tito then
@@ -2078,9 +2087,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~breadcrumbs
       { CallModel.StringFormatCall.nested_expressions; string_literal; call_target; location }
     =
-    let location_with_module =
-      Location.with_module ~module_reference:FunctionContext.qualifier location
-    in
     let taint =
       BackwardState.Tree.transform_call_info (* Treat as a call site for tito taint. *)
         CallInfo.Tito
@@ -2088,6 +2094,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Map
         ~f:TraceLength.increase
         taint
+    in
+    (* This is the backward model of the callee -- each actual argument has this taint tree. *)
+    let string_combine_partial_sink_tree =
+      CallModel.StringFormatCall.apply_call
+        ~callee:call_target.CallGraph.CallTarget.target
+        ~pyre_in_context
+        ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+        FunctionContext.string_combine_partial_sink_tree
     in
     let taint =
       string_literal
@@ -2097,6 +2111,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~module_reference:FunctionContext.qualifier
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.join taint
+      |> BackwardState.Tree.join string_combine_partial_sink_tree
       |> BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
       |> BackwardTaint.add_local_breadcrumbs breadcrumbs
       |> BackwardState.Tree.create_leaf
@@ -2154,13 +2169,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let taint =
-        FunctionContext.triggered_sinks
-        |> Issue.TriggeredSinkForBackward.get ~expression
-        |> CallModel.StringFormatCall.apply_call
-             ~callee:call_target.CallGraph.CallTarget.target
-             ~pyre_in_context
-             ~location:location_with_module
-        |> BackwardState.Tree.join taint
+        Issue.TriggeredSinkForBackward.add_triggered_sinks
+          ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create location)
+          ~argument_location:expression_location
+          ~argument_sink:taint
+          FunctionContext.triggered_sinks
       in
       let new_taint, new_state =
         match
@@ -2771,6 +2784,7 @@ let extract_tito_and_sink_models
 let run
     ?(profiler = TaintProfiler.none)
     ~taint_configuration
+    ~string_combine_partial_sink_tree
     ~pyre_api
     ~class_interval_graph
     ~global_constants
@@ -2821,6 +2835,9 @@ let run
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
         class_interval_graph
         (Node.value definition)
+
+
+    let string_combine_partial_sink_tree = string_combine_partial_sink_tree
   end
   in
   let module State = State (FunctionContext) in

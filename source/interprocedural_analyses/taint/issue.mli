@@ -60,28 +60,30 @@ module TriggeredSinkForCall : sig
   val create : unit -> t
 
   val is_empty : t -> bool
-
-  (* Turn the given partial sink into a triggered sink taint at certain location, based on what has
-     triggered this partial sink. *)
-  val create_triggered_sink_taint
-    :  argument_location:Location.t ->
-    call_info:CallInfo.t ->
-    partial_sink:Sinks.PartialSink.t ->
-    t ->
-    BackwardTaint.t
 end
 
 (* A map from expressions to the triggered sinks that need to be propagated up in the backward
    analysis, because one of the partial sinks was fulfilled. This map is created during the forward
    analysis of a callable using `TriggeredSinkForCall` and is passed to the backward analysis. *)
 module TriggeredSinkForBackward : sig
+  module CallSite : sig
+    type t [@@deriving hash, sexp, compare]
+
+    val create : Location.t -> t
+  end
+
   type t
 
   val create : unit -> t
 
-  val add : expression:Ast.Expression.t -> taint_tree:BackwardState.Tree.t -> t -> unit
+  val add : call_site:CallSite.t -> triggered_sinks_for_call:TriggeredSinkForCall.t -> t -> unit
 
-  val get : expression:Ast.Expression.t -> t -> BackwardState.Tree.t
+  val add_triggered_sinks
+    :  call_site:CallSite.t ->
+    argument_location:Location.t ->
+    argument_sink:BackwardState.Tree.t ->
+    t ->
+    BackwardState.Tree.t
 end
 
 (* Accumulate flows and generate issues. *)
@@ -108,15 +110,12 @@ module Candidates : sig
    *)
   val check_triggered_flows
     :  t ->
-    pyre_in_context:PyrePysaApi.InContext.t ->
     taint_configuration:TaintConfiguration.Heap.t ->
     triggered_sinks_for_call:TriggeredSinkForCall.t ->
     location:Location.WithModule.t ->
     sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
-    callee:Target.t ->
-    port:AccessPath.Root.t ->
     unit
 
   val generate_issues

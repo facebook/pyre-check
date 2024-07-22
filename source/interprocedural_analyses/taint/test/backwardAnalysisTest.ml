@@ -44,10 +44,13 @@ let assert_taint ~context source expected =
         ~define:(Ast.Node.value define)
     in
     let cfg = Cfg.create define.value in
+    let taint_configuration = TaintConfiguration.Heap.default in
     let backward =
       BackwardAnalysis.run
         ?profiler:None
-        ~taint_configuration:TaintConfiguration.Heap.default
+        ~taint_configuration
+        ~string_combine_partial_sink_tree:
+          (Taint.CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
         ~pyre_api
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:

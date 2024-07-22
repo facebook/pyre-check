@@ -206,27 +206,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     GlobalModel.get_sinks global_model |> List.iter ~f:check
 
 
-  let check_triggered_flows
-      ~pyre_in_context
-      ~triggered_sinks_for_call
-      ~sink_handle
-      ~location
-      ~source_tree
-      ~sink_tree
-      ~callee
-      ~port
+  let check_triggered_flows ~triggered_sinks_for_call ~sink_handle ~location ~source_tree ~sink_tree
     =
     Issue.Candidates.check_triggered_flows
       candidates
-      ~pyre_in_context
       ~triggered_sinks_for_call
       ~sink_handle
       ~location
       ~source_tree
       ~sink_tree
       ~taint_configuration:FunctionContext.taint_configuration
-      ~callee
-      ~port
 
 
   let generate_issues () =
@@ -236,79 +225,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~define:FunctionContext.definition
 
 
-  let create_triggered_sinks_to_propagate ~argument_location ~triggered_sinks taint_tree =
-    let transform_into_triggered_sinks sink so_far =
-      match Sinks.extract_partial_sink sink with
-      | Some partial_sink ->
-          triggered_sinks
-          |> Issue.TriggeredSinkForCall.create_triggered_sink_taint
-               ~argument_location
-               ~call_info:CallInfo.declaration (* The triggered sink is "declared" here *)
-               ~partial_sink
-          |> BackwardTaint.join so_far
-      | None -> so_far
-    in
-    taint_tree
-    |> BackwardState.Tree.fold
-         BackwardTaint.kind
-         ~f:transform_into_triggered_sinks
-         ~init:BackwardTaint.bottom
-    |> BackwardState.Tree.create_leaf
-
-
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
      analysis. *)
-  let store_triggered_sinks_to_propagate_for_call
-      ~triggered_sinks
-      ~arguments_matches
-       (* Need this to know both the locations of the arguments and the sinks that would be
-          generated on them (that are caused by the call). *)
-      sink_taint
-    =
+  let store_triggered_sinks_to_propagate_for_call ~call_site ~triggered_sinks =
     if not (Issue.TriggeredSinkForCall.is_empty triggered_sinks) then
-      let create_triggered_sink ~sink_taint ~argument_location { AccessPath.root; _ } =
-        sink_taint
-        |> BackwardState.read ~transform_non_leaves:(fun _ tree -> tree) ~root ~path:[]
-        |> create_triggered_sinks_to_propagate ~argument_location ~triggered_sinks
-      in
-      let store_triggered_sinks
-          {
-            CallModel.ArgumentMatches.argument =
-              { Node.location = argument_location; _ } as argument;
-            sink_matches;
-            _;
-          }
-        =
-        let taint_tree =
-          sink_matches
-          |> List.map ~f:(create_triggered_sink ~sink_taint ~argument_location)
-          |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
-        in
-        Issue.TriggeredSinkForBackward.add
-          ~expression:argument
-          ~taint_tree
-          FunctionContext.triggered_sinks_to_propagate
-      in
-      List.iter arguments_matches ~f:store_triggered_sinks
-
-
-  let store_triggered_sinks_to_propagate_for_string_combine
-      ~triggered_sinks
-      ~sink_tree
-      nested_expressions
-    =
-    if not (Issue.TriggeredSinkForCall.is_empty triggered_sinks) then
-      let store_triggered_sink ({ Node.location; _ } as expression) =
-        Issue.TriggeredSinkForBackward.add
-          ~expression
-          ~taint_tree:
-            (create_triggered_sinks_to_propagate
-               ~argument_location:location
-               ~triggered_sinks
-               sink_tree)
-          FunctionContext.triggered_sinks_to_propagate
-      in
-      List.iter ~f:store_triggered_sink nested_expressions
+      Issue.TriggeredSinkForBackward.add
+        ~call_site
+        ~triggered_sinks_for_call:triggered_sinks
+        FunctionContext.triggered_sinks_to_propagate
 
 
   module StringFormatCall = struct
@@ -356,7 +280,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Check triggered flows into partial sinks that are introduced onto expressions that are used
        in the string operations. *)
     let check_triggered_flows
-        ~pyre_in_context
         ~triggered_sinks
         ~parameter_index
         ~call_target:{ CallGraph.CallTarget.target; index; _ }
@@ -367,14 +290,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
       let sink_handle = IssueHandle.Sink.StringFormat { callee = target; index; parameter_index } in
       check_triggered_flows
-        ~pyre_in_context
         ~triggered_sinks_for_call:triggered_sinks
         ~sink_handle
         ~location
         ~source_tree
         ~sink_tree:string_combine_partial_sink_tree
-        ~callee:target
-        ~port:AccessPath.Root.sink_port_in_string_combine_functions
   end
 
   let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
@@ -471,7 +391,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           { Call.Argument.name = None; value = callee } :: arguments, taint :: arguments_taint
       | CallModel.ImplicitArgument.Forward.None -> arguments, arguments_taint
     in
-    let ({ Model.forward; backward; _ } as taint_model) =
+    let ({ Model.forward; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
@@ -605,7 +525,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
-          ~auxiliary_triggered_taint:BackwardState.Tree.bottom
           ~location
           ~call_target
           ~arguments
@@ -657,19 +576,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
 
       let () =
-        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; port } ->
+        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; _ } ->
             (* Check for issues. *)
             check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
             (* Check for issues for combined source rules. *)
             check_triggered_flows
-              ~pyre_in_context
               ~triggered_sinks_for_call
               ~sink_handle:handle
               ~location
               ~source_tree:argument_taint
-              ~sink_tree
-              ~callee:call_target.CallGraph.CallTarget.target
-              ~port;
+              ~sink_tree;
             ())
       in
 
@@ -746,9 +662,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
       store_triggered_sinks_to_propagate_for_call
-        ~arguments_matches
+        ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
         ~triggered_sinks:triggered_sinks_for_call
-        backward.sink_taint
     in
 
     (* Update state *)
@@ -2390,6 +2305,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         location = call_location;
       }
     =
+    (* This is the backward model of the callee -- each actual argument has this taint tree. *)
     let string_combine_partial_sink_tree =
       CallModel.StringFormatCall.apply_call
         ~callee:call_target.CallGraph.CallTarget.target
@@ -2406,7 +2322,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let triggered_sinks = Issue.TriggeredSinkForCall.create () in
     StringFormatCall.check_triggered_flows
-      ~pyre_in_context
       ~triggered_sinks
       ~parameter_index:0
       ~call_target
@@ -2494,7 +2409,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ()) expression_taint
       in
       StringFormatCall.check_triggered_flows
-        ~pyre_in_context
         ~triggered_sinks
         ~parameter_index:(index + 1)
         ~call_target
@@ -2508,10 +2422,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardTaint.add_local_breadcrumbs breadcrumbs
       |>> ForwardTaint.join string_literal_taint
     in
-    store_triggered_sinks_to_propagate_for_string_combine
-      ~triggered_sinks
-      ~sink_tree:string_combine_partial_sink_tree
-      nested_expressions;
+    store_triggered_sinks_to_propagate_for_call
+      ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
+      ~triggered_sinks;
     (* Compute flows to literal string sinks if applicable. *)
     StringFormatCall.check_flow_implicit_string_literal_sinks
       ~pyre_in_context

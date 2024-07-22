@@ -12,6 +12,7 @@ module PyrePysaApi = Analysis.PyrePysaApi
 val run
   :  ?profiler:TaintProfiler.t ->
   taint_configuration:TaintConfiguration.Heap.t ->
+  string_combine_partial_sink_tree:Domains.BackwardState.Tree.t ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   global_constants:Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t ->

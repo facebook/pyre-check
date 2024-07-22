@@ -60,8 +60,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 64,
-              "start": 14,
-              "end": 29
+              "start": 4,
+              "end": 34
             }
           }
         ]
@@ -138,8 +138,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 62,
-              "start": 14,
-              "end": 29
+              "start": 4,
+              "end": 31
             }
           }
         ]
@@ -216,8 +216,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 50,
-              "start": 13,
-              "end": 28
+              "start": 4,
+              "end": 30
             }
           }
         ]
@@ -275,7 +275,9 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "via": "format-string" }, { "always-via": "tito" }
+                ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
@@ -299,7 +301,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
@@ -351,7 +353,9 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "via": "format-string" }, { "always-via": "tito" }
+                ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
@@ -375,7 +379,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
@@ -424,7 +428,9 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "via": "format-string" }, { "always-via": "tito" }
+                ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
@@ -448,7 +454,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_triggered_sql",
@@ -500,7 +506,9 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "via": "format-string" }, { "always-via": "tito" }
+                ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
                 ],
@@ -524,7 +532,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_triggered_user_controlled",
@@ -595,8 +603,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 56,
-              "start": 13,
-              "end": 28
+              "start": 4,
+              "end": 30
             }
           }
         ]
@@ -673,8 +681,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 55,
-              "start": 13,
-              "end": 28
+              "start": 4,
+              "end": 30
             }
           }
         ]
@@ -749,8 +757,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 39,
-              "start": 24,
-              "end": 39
+              "start": 4,
+              "end": 40
             }
           }
         ]
@@ -825,8 +833,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 32,
-              "start": 22,
-              "end": 37
+              "start": 4,
+              "end": 38
             }
           }
         ]
@@ -901,8 +909,8 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 31,
-              "start": 17,
-              "end": 32
+              "start": 4,
+              "end": 33
             }
           }
         ]
@@ -977,7 +985,7 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 37,
-              "start": 12,
+              "start": 4,
               "end": 27
             }
           }
@@ -1050,7 +1058,7 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 35,
-              "start": 22,
+              "start": 4,
               "end": 27
             }
           }
@@ -1126,7 +1134,7 @@
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 34,
-              "start": 12,
+              "start": 4,
               "end": 27
             }
           }
@@ -1156,6 +1164,14 @@
           {
             "kinds": [
               {
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
@@ -1170,7 +1186,9 @@
                 "kind": "Triggered[UserControlled]:PartialSink[StringMayBeSQLSink]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "format-string" }, { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 24, "start": 8, "end": 28 } ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
@@ -1197,6 +1215,18 @@
           {
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source StringMayBeSQL",
@@ -1211,7 +1241,9 @@
                 "kind": "Triggered[StringMayBeSQL]:PartialSink[UserControlledSink]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "format-string" }, { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 97, "start": 21, "end": 25 } ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
@@ -1228,6 +1260,18 @@
           {
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source StringMayBeSQL",
@@ -1242,7 +1286,9 @@
                 "kind": "Triggered[StringMayBeSQL]:PartialSink[UserControlledSink]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "format-string" }, { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 97, "start": 7, "end": 11 } ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
@@ -1269,6 +1315,18 @@
           {
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
@@ -1283,7 +1341,9 @@
                 "kind": "Triggered[UserControlled]:PartialSink[StringMayBeSQLSink]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "format-string" }, { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 88, "start": 24, "end": 27 } ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
@@ -1310,6 +1370,18 @@
           {
             "kinds": [
               {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source StringMayBeSQL",
@@ -1324,7 +1396,9 @@
                 "kind": "Triggered[StringMayBeSQL]:PartialSink[UserControlledSink]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "format-string" }, { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 78, "start": 14, "end": 17 } ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
@@ -1396,6 +1470,14 @@
           {
             "kinds": [
               {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
+              {
                 "extra_traces": [
                   {
                     "message": "Subtrace for source UserControlled",
@@ -1437,6 +1519,14 @@
         "taint": [
           {
             "kinds": [
+              {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "kind": "PartialSink[StringMayBeSQLSink]"
+              },
+              {
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "kind": "PartialSink[UserControlledSink]"
+              },
               {
                 "extra_traces": [
                   {

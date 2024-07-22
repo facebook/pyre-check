@@ -218,7 +218,9 @@
               "line": 32,
               "start": 22,
               "end": 24
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1304,19 +1306,21 @@
                   }
                 ],
                 "leaves": [
-                  {
-                    "name": "multiple_sources.wrapper_node_get_send",
-                    "port": "leaf:vc"
-                  }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
+                "length": 1,
                 "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 67,
-              "start": 30,
-              "end": 32
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 67,
+                "start": 30,
+                "end": 32
+              },
+              "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
+              "port": "formal(vc, position=1)"
             }
           }
         ]
@@ -1375,12 +1379,9 @@
             "kinds": [
               {
                 "leaves": [
-                  {
-                    "name": "multiple_sources.wrapper_node_get_send",
-                    "port": "leaf:vc"
-                  }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
-                "length": 1,
+                "length": 2,
                 "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
               }
             ],
@@ -1474,7 +1475,9 @@
               "line": 164,
               "start": 47,
               "end": 67
-            }
+            },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1553,7 +1556,9 @@
               "line": 164,
               "start": 47,
               "end": 67
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2708,6 +2713,7 @@
         "taint": [
           {
             "kinds": [
+              { "length": 1, "kind": "PartialSink[PermissiveContextSink]" },
               {
                 "extra_traces": [
                   {
@@ -2717,25 +2723,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources.wrapper_node_get_send",
-                    "port": "leaf:vc"
-                  }
-                ],
+                "length": 1,
                 "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
               }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 183,
-              "start": 30,
-              "end": 32
-            }
-          },
-          {
-            "kinds": [
-              { "length": 1, "kind": "PartialSink[PermissiveContextSink]" }
             ],
             "call": {
               "position": {

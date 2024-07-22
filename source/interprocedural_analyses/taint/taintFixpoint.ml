@@ -97,6 +97,7 @@ module Analysis = struct
 
   let analyze_define_with_sanitizers_and_modes
       ~taint_configuration
+      ~string_combine_partial_sink_tree
       ~pyre_api
       ~class_interval_graph
       ~global_constants
@@ -136,8 +137,7 @@ module Analysis = struct
           ForwardAnalysis.run
             ~profiler
             ~taint_configuration
-            ~string_combine_partial_sink_tree:
-              (CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
+            ~string_combine_partial_sink_tree
             ~pyre_api
             ~class_interval_graph
             ~global_constants
@@ -155,6 +155,7 @@ module Analysis = struct
           BackwardAnalysis.run
             ~profiler
             ~taint_configuration
+            ~string_combine_partial_sink_tree
             ~pyre_api
             ~class_interval_graph
             ~global_constants
@@ -222,12 +223,18 @@ module Analysis = struct
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in
+    let string_combine_partial_sink_tree =
+      taint_configuration
+      |> TaintConfiguration.SharedMemory.get
+      |> CallModel.StringFormatCall.declared_partial_sink_tree
+    in
     if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
       let () = Log.info "Skipping taint analysis of %a" Interprocedural.Target.pp_pretty callable in
       Result.empty, previous_model
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration
+        ~string_combine_partial_sink_tree
         ~pyre_api
         ~class_interval_graph
         ~global_constants

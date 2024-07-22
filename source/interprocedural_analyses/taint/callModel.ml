@@ -339,7 +339,6 @@ let sink_trees_of_argument
     ~pyre_in_context
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
-    ~auxiliary_triggered_taint
     ~location
     ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
     ~arguments
@@ -351,7 +350,6 @@ let sink_trees_of_argument
   let to_sink_tree_with_identifier { AccessPath.root; actual_path; formal_path } =
     let sink_tree =
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
-      |> BackwardState.Tree.join auxiliary_triggered_taint
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
            ~location
