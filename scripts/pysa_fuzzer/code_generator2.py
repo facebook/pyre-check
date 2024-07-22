@@ -90,8 +90,178 @@ def {current_function_sink}(x):
 {indent_space*2}return {current_function_sink}(x)
         """)
 
+    def add_function_3(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = f"{current_function_source}({temp_source}, 'temp')"
+        # sink stuff
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements
+        self.source_statements.append(f"""
+def {current_function_source}(x, y):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return x + y
+{indent_space}else:
+{indent_space*2}return {current_function_source}(x, y)
+    """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return {temp_sink}(x)
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x)
+    """)
+
+    def add_function_4(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = f"{current_function_source}({temp_source})"
+        # sink stuff
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements
+        self.source_statements.append(f"""
+def {current_function_source}(x):
+{indent_space}y = x * 2
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return y
+{indent_space}else:
+{indent_space*2}return {current_function_source}(y)
+    """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if random.randint(1, 3) == 1:
+{indent_space*2}return {temp_sink}(x)
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x)
+    """)
+
+    def add_function_6(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = f"{current_function_source}({temp_source})"
+        # sink stuff
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements
+        self.source_statements.append(f"""
+def {current_function_source}(x):
+{indent_space}if (y := random.randint(1, 3)) == 1:
+{indent_space*2}return x + str(y)
+{indent_space}else:
+{indent_space*2}return {current_function_source}(x)
+    """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if (y := random.randint(1, 3)) == 1:
+{indent_space*2}return {temp_sink}(x + str(y))
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x)
+    """)
+
+    def add_function_7(self) -> None:
+        indent_space = ' ' * 4
+        # source stuff
+        current_function_source = self.generate_new_function()
+        temp_source = self.last_source
+        self.last_source = f"{current_function_source}({temp_source})"
+        # sink stuff
+        current_function_sink = self.generate_new_function()
+        temp_sink = self.last_sink
+        self.last_sink = current_function_sink
+        # adding statements
+        self.source_statements.append(f"""
+def {current_function_source}(x):
+{indent_space}if (z := x.count('a')) > 2:
+{indent_space*2}return x.replace('a', 'arep')
+{indent_space}else:
+{indent_space*2}return {current_function_source}(x + 'a')
+    """)
+        self.sink_statements.append(f"""
+def {current_function_sink}(x):
+{indent_space}if (z := x.count('z')) > 1:
+{indent_space*2}return {temp_sink}(x.replace('a', 'arep'))
+{indent_space}else:
+{indent_space*2}return {current_function_sink}(x + 'z')
+    """)
+
+   
+
+    
+     
+
     def generate(self) -> str:
         code_lines = self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
+
+generator = CodeGenerator()
+
+
+
+generator.add_function_7()
+generator.add_function_7()
+generator.add_function_7()
+
+
+
+print(generator.generate())
+
+
+
+
+import random 
+
+def f0(x):
+    if (z := x.count('a')) > 2:
+        return x.replace('a', 'arep')
+    else:
+        return f0(x + 'a')
+    
+
+def f2(x):
+    if (z := x.count('a')) > 2:
+        return x.replace('a', 'arep')
+    else:
+        return f2(x + 'a')
+    
+
+def f4(x):
+    if (z := x.count('a')) > 2:
+        return x.replace('a', 'arep')
+    else:
+        return f4(x + 'a')
+    
+
+def f1(x):
+    if (z := x.count('z')) > 1:
+        return print(x.replace('a', 'arep'))
+    else:
+        return f1(x + 'z')
+    
+
+def f3(x):
+    if (z := x.count('z')) > 1:
+        return f1(x.replace('a', 'arep'))
+    else:
+        return f3(x + 'z')
+    
+
+def f5(x):
+    if (z := x.count('z')) > 1:
+        return f3(x.replace('a', 'arep'))
+    else:
+        return f5(x + 'z')
+    
+f5(f4(f2(f0(input()))))
