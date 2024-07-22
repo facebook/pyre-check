@@ -49,17 +49,15 @@ class CodeGenerator:
         # adding statements 
         self.source_statements.append(f"""
 def {current_function_source}():
-{indent_space}random_number = random.randint(1, 3)
 {indent_space}{new_var} = {temp_source}
-{indent_space}if random_number == 1:
+{indent_space}if random.randint(1, 3) == 1:
 {indent_space*2}return {new_var}
 {indent_space}else:
 {indent_space*2}return {current_function_source}()
         """)
         self.sink_statements.append(f"""
 def {current_function_sink}(x):
-{indent_space}random_number = random.randint(1, 3)
-{indent_space}if random_number == 1:
+{indent_space}if random.randint(1, 3) == 1:
 {indent_space*2}return {temp_sink}(x)
 {indent_space}else:
 {indent_space*2}return {current_function_sink}(x)
@@ -90,9 +88,8 @@ def {current_function_sink}(x):
         self.source_statements.append(f"""
 def {current_function_source}():
 {indent_space}def {nested_function_source}():
-{indent_space*2}random_number = random.randint(1, 3)
 {indent_space*2}{new_var} = {temp_source}
-{indent_space*2}if random_number == 1:
+{indent_space*2}if random.randint(1, 3) == 1:
 {indent_space*3}return {new_var}
 {indent_space*2}else:
 {indent_space*3}return {current_function_source}()
@@ -101,8 +98,7 @@ def {current_function_source}():
         self.sink_statements.append(f"""
 def {current_function_sink}(x):
 {indent_space}def {nested_function_sink}(x):
-{indent_space*2}random_number = random.randint(1, 3)
-{indent_space*2}if random_number == 1:
+{indent_space*2}if random.randint(1, 3) == 1:
 {indent_space*3}return {temp_sink}(x)
 {indent_space*2}else:
 {indent_space*3}return {current_function_sink}(x)
@@ -118,28 +114,3 @@ def {current_function_sink}(x):
 generator = CodeGenerator()
 generator.add_nested_function()
 print(generator.generate())
-
-import random
-a = input()
-
-def f1():
-    def f2():
-        random_number = random.randint(1, 3)
-        b = a
-        if random_number == 1:
-            return b
-        else:
-            return f1()
-    return f2()
-        
-
-def f3(x):
-    def f4(x):
-        random_number = random.randint(1, 3)
-        if random_number == 1:
-            return print(x)
-        else:
-            return f3(x)
-    return f4(x)
-        
-f3(f1())
