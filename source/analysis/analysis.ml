@@ -32,6 +32,7 @@ module ErrorsEnvironment = ErrorsEnvironment
 module AnalysisError = AnalysisError
 module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
+module FunctionDefinitionEnvironment = FunctionDefinitionEnvironment
 module GlobalModulePathsApi = GlobalModulePathsApi
 module GlobalResolution = GlobalResolution
 module GlobalLeakCheck = GlobalLeakCheck

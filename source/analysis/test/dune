@@ -20,6 +20,7 @@
   environmentTest
   errorsEnvironmentTest
   fixpointTest
+  functionDefinitionEnvironmentTest
   globalLeakCheckTest
   globalResolutionTest
   latticeOfMapsTest

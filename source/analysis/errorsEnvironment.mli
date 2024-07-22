@@ -55,6 +55,8 @@ module Testing : sig
 
     val type_environment : ReadOnly.t -> TypeEnvironment.ReadOnly.t
 
+    val function_definition_environment : ReadOnly.t -> FunctionDefinitionEnvironment.ReadOnly.t
+
     val annotated_global_environment : ReadOnly.t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
     val attribute_resolution : ReadOnly.t -> AttributeResolution.ReadOnly.t
@@ -74,6 +76,10 @@ module Testing : sig
     val errors_environment : UpdateResult.t -> UpdateResult.t
 
     val type_environment : UpdateResult.t -> TypeEnvironment.UpdateResult.t
+
+    val function_definition_environment
+      :  UpdateResult.t ->
+      FunctionDefinitionEnvironment.UpdateResult.t
 
     val annotated_global_environment : UpdateResult.t -> AnnotatedGlobalEnvironment.UpdateResult.t
 
