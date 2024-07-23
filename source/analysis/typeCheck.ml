@@ -4563,11 +4563,30 @@ module State (Context : Context) = struct
                       else
                         true
                     in
-                    GlobalResolution.less_or_equal
-                      global_resolution
-                      ~left:parent_annotation
-                      ~right:Type.enumeration
-                    && compatible
+                    (* TODO(yangdanny): align with enum logic in attributeResolution.ml *)
+                    let extends_enum =
+                      GlobalResolution.less_or_equal
+                        global_resolution
+                        ~left:parent_annotation
+                        ~right:Type.enumeration
+                    in
+                    let metaclass_extends_enummeta parent_annotation =
+                      let class_name =
+                        Type.class_name parent_annotation |> Reference.show_sanitized
+                      in
+                      match GlobalResolution.metaclass global_resolution class_name with
+                      | Some metaclass_type ->
+                          GlobalResolution.less_or_equal
+                            global_resolution
+                            ~left:metaclass_type
+                            ~right:(Primitive "enum.EnumMeta")
+                          || GlobalResolution.less_or_equal
+                               global_resolution
+                               ~left:metaclass_type
+                               ~right:(Primitive "enum.EnumType")
+                      | None -> false
+                    in
+                    (extends_enum || metaclass_extends_enummeta parent_annotation) && compatible
                   in
                   let is_incompatible =
                     let expression_is_ellipses =

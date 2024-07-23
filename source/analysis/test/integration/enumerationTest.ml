@@ -12,6 +12,46 @@ let test_enumeration_methods =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
+              from enum import Enum
+
+              class Color(Enum):
+                RED = 1
+                GREEN = 2
+                BLUE = 3
+
+              reveal_type(Color.RED)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `test.Color.RED` is \
+              `typing_extensions.Literal[Color.RED]` (final).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
+              from enum import EnumMeta
+
+              class CustomEnumType(EnumMeta):
+                pass
+
+              class CustomEnum(metaclass=CustomEnumType):
+                pass
+
+              class Color(CustomEnum):
+                RED = 1
+                GREEN = 2
+                BLUE = 3
+
+              reveal_type(Color.RED)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `test.Color.RED` is \
+              `typing_extensions.Literal[Color.RED]` (final).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               import enum

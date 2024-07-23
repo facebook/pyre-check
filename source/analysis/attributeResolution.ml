@@ -3551,9 +3551,25 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             (* Handle enumeration attributes. *)
             let annotation, visibility =
               let superclasses = successors parent_name |> String.Set.of_list in
+              (* TODO(yangdanny): align with enum logic in typeCheck.ml *)
+              let metaclass_extends_enummeta class_name =
+                match self#metaclass ~assumptions class_name with
+                | Some metaclass_type ->
+                    let metaclass_name =
+                      Type.class_name metaclass_type |> Reference.show_sanitized
+                    in
+                    let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
+                    not
+                      (Set.is_empty
+                         (Set.inter
+                            (String.Set.of_list ["enum.EnumMeta"; "enum.EnumType"])
+                            metaclass_superclasses))
+                | _ -> false
+              in
               if
                 (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
-                && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
+                && (metaclass_extends_enummeta parent_name
+                   || not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
                 && primitive
                 && defined
                 && not implicit
