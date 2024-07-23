@@ -601,7 +601,12 @@ val deduplicate : t list -> t list
 
 val filter : resolution:GlobalResolution.t -> t list -> t list
 
-val suppress : mode:Source.mode -> ignore_codes:int list -> t -> bool
+val suppress
+  :  mode:Source.mode ->
+  ignore_codes:int list ->
+  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
+  t ->
+  bool
 
 val dequalify : Reference.t Reference.Map.t -> resolution:GlobalResolution.t -> t -> t
 

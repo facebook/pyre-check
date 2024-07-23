@@ -698,11 +698,27 @@ let test_filter context =
 
 
 let test_suppress _ =
+  let type_check_controls =
+    {
+      EnvironmentControls.TypeCheckControls.include_type_errors = true;
+      include_local_annotations = true;
+      include_readonly_errors = true;
+      include_strict_override_errors = true;
+      include_unawaited_awaitable_errors = true;
+      debug = true;
+      include_suppressed_errors = true;
+      no_validation_on_class_lookup_failure = true;
+    }
+  in
   let assert_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) ?location kind =
-    assert_equal true (Error.suppress ~mode ~ignore_codes (error ~signature ?location kind))
+    assert_equal
+      true
+      (Error.suppress ~mode ~ignore_codes ~type_check_controls (error ~signature ?location kind))
   in
   let assert_not_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) kind =
-    assert_equal false (Error.suppress ~mode ~ignore_codes (error ~signature kind))
+    assert_equal
+      false
+      (Error.suppress ~mode ~ignore_codes ~type_check_controls (error ~signature kind))
   in
   (* Test different modes. *)
   assert_not_suppressed Source.Debug (missing_return Type.Top);

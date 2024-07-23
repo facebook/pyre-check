@@ -4063,13 +4063,18 @@ let filter ~resolution errors =
   List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode ~ignore_codes error =
+let suppress
+    ~mode
+    ~ignore_codes
+    ~type_check_controls:{ EnvironmentControls.TypeCheckControls.include_strict_override_errors; _ }
+    error
+  =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
     else
       match kind with
-      | InvalidOverride { decorator = MissingOverride; _ } -> true
+      | InvalidOverride { decorator = MissingOverride; _ } -> not include_strict_override_errors
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true

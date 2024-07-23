@@ -117,10 +117,11 @@ let filter_errors
     ~mode
     ~global_resolution
     ~typecheck_flags:{ Source.TypecheckFlags.ignore_codes; _ }
+    ~type_check_controls
     errors_by_define
   =
   let filter errors =
-    let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
+    let keep_error error = not (Error.suppress ~mode ~ignore_codes ~type_check_controls error) in
     List.filter ~f:keep_error errors
   in
   List.map errors_by_define ~f:(fun errors -> filter errors |> List.sort ~compare:Error.compare)
@@ -151,10 +152,11 @@ let run_on_source
   in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let controls = TypeEnvironment.ReadOnly.controls environment in
+  let type_check_controls = EnvironmentControls.type_check_controls controls in
   let mode = Source.mode ~configuration:(EnvironmentControls.configuration controls) ~local_mode in
-  filter_errors ~mode ~global_resolution ~typecheck_flags errors_by_define
+  filter_errors ~mode ~global_resolution ~typecheck_flags ~type_check_controls errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
-  |> suppress_errors_based_on_comments ~controls:(EnvironmentControls.type_check_controls controls)
+  |> suppress_errors_based_on_comments ~controls:type_check_controls
   |> List.map
        ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   |> List.sort ~compare:Error.compare

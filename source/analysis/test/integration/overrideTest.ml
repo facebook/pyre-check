@@ -8,6 +8,69 @@
 open OUnit2
 open IntegrationTest
 
+let test_suppression =
+  test_list
+    [
+      (* suppressed in unsafe mode *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        def f(self) -> None:
+          pass
+    |}
+           [];
+      (* suppressed in strict mode until we codemod *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        def f(self) -> None:
+          pass
+    |}
+           [];
+      (* show error in strict mode if flag is set *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           ~enable_strict_override_check:true
+           {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        def f(self) -> None:
+          pass
+    |}
+           [
+             "Invalid override [40]: `test.D.f` is not decorated with @override, but overrides a \
+              method with the same name in superclasses of `D`.";
+           ];
+      (* do not show error in unsafe mode if flag is set *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           ~enable_strict_override_check:true
+           {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        def f(self) -> None:
+          pass
+    |}
+           [];
+    ]
+
+
 let test_extra_overriding_parameter =
   test_list
     [
@@ -316,4 +379,4 @@ let test_extra_overriding_parameter =
     ]
 
 
-let () = "override" >::: [test_extra_overriding_parameter] |> Test.run
+let () = "override" >::: [test_suppression; test_extra_overriding_parameter] |> Test.run
