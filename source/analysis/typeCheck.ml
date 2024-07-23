@@ -6701,12 +6701,14 @@ module State (Context : Context) = struct
                 (* Inheriting from type makes you a metaclass, and we don't want to
                  * suggest that instead you need to use typing.Type[Something] *)
                 old_errors
-            | Primitive base_name ->
+            | Parametric { name = base_name; _ }
+            | Primitive base_name
+              when is_current_class_typed_dictionary ->
                 if
-                  is_current_class_typed_dictionary
-                  && not
-                       (GlobalResolution.is_typed_dictionary global_resolution (Primitive base_name)
-                       || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name)
+                  not
+                    (GlobalResolution.is_typed_dictionary global_resolution (Primitive base_name)
+                    || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name
+                    || String.equal base_name "typing.Generic")
                 then
                   emit_error
                     ~errors
@@ -6719,6 +6721,7 @@ module State (Context : Context) = struct
                   errors
             | Top
             (* There's some other problem we already errored on *)
+            | Primitive _
             | Parametric _
             | Tuple _ ->
                 errors

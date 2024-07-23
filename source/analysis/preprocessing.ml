@@ -2166,7 +2166,54 @@ let expand_typed_dictionary_declarations
             Some value
         | _ -> None
       in
-      let typed_dictionary_class_declaration ~name ~fields ~total =
+      let base_is_typed_dictionary = function
+        | {
+            Call.Argument.name = None;
+            value =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Identifier
+                                  ("mypy_extensions" | "typing_extensions" | "typing"));
+                            _;
+                          };
+                        attribute = "TypedDict";
+                        _;
+                      });
+                _;
+              };
+          } ->
+            true
+        | _ -> false
+      in
+      let bases_include_typed_dictionary bases = List.exists bases ~f:base_is_typed_dictionary in
+      let extract_totality_from_base base =
+        let is_total ~total = String.equal (Identifier.sanitized total) "total" in
+        match base with
+        | {
+         Call.Argument.name = Some { value = total; _ };
+         value = { Node.value = Expression.Constant Constant.True; _ };
+        }
+          when is_total ~total ->
+            Some true
+        | {
+         Call.Argument.name = Some { value = total; _ };
+         value = { Node.value = Expression.Constant Constant.False; _ };
+        }
+          when is_total ~total ->
+            Some false
+        | _ -> None
+      in
+      let extract_totality arguments =
+        List.find_map arguments ~f:extract_totality_from_base |> Option.value ~default:true
+      in
+      let typed_dictionary_class_declaration ~name ~fields ~total ~bases =
         match name with
         | {
          Node.value =
@@ -2203,7 +2250,12 @@ let expand_typed_dictionary_declarations
               | [] -> [Node.create ~location Statement.Pass]
               | assignments -> assignments
             in
-
+            (* Filter out TypedDict and total from base class list arguments *)
+            let other_base_classes =
+              List.filter bases ~f:(fun base ->
+                  Option.is_none (extract_totality_from_base base)
+                  && not (base_is_typed_dictionary base))
+            in
             (* Note: Add a placeholder to indicate the totality of the class. Not using
                `total=False` because that gives an error saying `False` is not a valid literal type.
                Not using `total=Literal[False]` because that requires importing `Literal`. *)
@@ -2235,6 +2287,7 @@ let expand_typed_dictionary_declarations
                               (Expression.Name (create_name ~location "TypedDictionary"));
                         };
                       ]
+                     @ other_base_classes
                      @
                      if total then
                        []
@@ -2245,26 +2298,6 @@ let expand_typed_dictionary_declarations
                    top_level_unbound_names = [];
                  })
         | _ -> None
-      in
-      let extract_totality_from_base base =
-        let is_total ~total = String.equal (Identifier.sanitized total) "total" in
-        match base with
-        | {
-         Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.Constant Constant.True; _ };
-        }
-          when is_total ~total ->
-            Some true
-        | {
-         Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.Constant Constant.False; _ };
-        }
-          when is_total ~total ->
-            Some false
-        | _ -> None
-      in
-      let extract_totality arguments =
-        List.find_map arguments ~f:extract_totality_from_base |> Option.value ~default:true
       in
       match value with
       | Statement.Assign
@@ -2318,38 +2351,17 @@ let expand_typed_dictionary_declarations
                          | KeyValue { key; value } -> Some (key, value)
                          | Splat _ -> None))
                   ~total:(extract_totality argument_tail))
+                ~bases:[]
           |> Option.value ~default:value
       | Class
           {
             name = class_name;
-            base_arguments =
-              {
-                Call.Argument.name = None;
-                value =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          {
-                            base =
-                              {
-                                Node.value =
-                                  Name
-                                    (Name.Identifier
-                                      ("mypy_extensions" | "typing_extensions" | "typing"));
-                                _;
-                              };
-                            attribute = "TypedDict";
-                            _;
-                          });
-                    _;
-                  };
-              }
-              :: bases_tail;
+            base_arguments = bases;
             body;
             decorators = _;
             top_level_unbound_names = _;
-          } ->
+          }
+        when bases_include_typed_dictionary bases ->
           let fields =
             let extract = function
               | {
@@ -2371,7 +2383,8 @@ let expand_typed_dictionary_declarations
               typed_dictionary_class_declaration
                 ~name:(string_literal class_name)
                 ~fields
-                ~total:(extract_totality bases_tail)
+                ~total:(extract_totality bases)
+                ~bases
             in
             class_declaration
           in

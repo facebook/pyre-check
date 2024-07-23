@@ -1847,7 +1847,48 @@ let test_check_typed_dictionary_inheritance =
              "Invalid inheritance [39]: Field `foo` has type `int` in base class `Base1` and type \
               `str` in base class `Base2`.";
            ];
-      (* Superclass must be a TypedDict. *)
+      (* Superclass must be a TypedDict or Generic. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+                import mypy_extensions
+                from typing import Generic, TypeVar
+
+                T = TypeVar("T")
+                class MyTypedDict(mypy_extensions.TypedDict, Generic[T]):
+                  foo: int
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+                import mypy_extensions
+
+                class NonTypedDict:
+                  pass
+
+                class MyTypedDict(mypy_extensions.TypedDict, NonTypedDict):
+                  foo: int
+            |}
+           [
+             "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
+              dictionary. Expected a typed dictionary or typing.Generic.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+                import mypy_extensions
+
+                class NonTypedDict:
+                  pass
+
+                class MyTypedDict(NonTypedDict, mypy_extensions.TypedDict,):
+                  foo: int
+            |}
+           [
+             "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
+              dictionary. Expected a typed dictionary or typing.Generic.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
            {|
@@ -1869,9 +1910,9 @@ let test_check_typed_dictionary_inheritance =
              "Uninitialized attribute [13]: Attribute `not_a_field` is declared in class \
               `NonTypedDict` to have type `int` but is never initialized.";
              "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
-              dictionary. Expected a typed dictionary.";
+              dictionary. Expected a typed dictionary or typing.Generic.";
              "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
-              dictionary. Expected a typed dictionary.";
+              dictionary. Expected a typed dictionary or typing.Generic.";
              "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
               `typing.Callable(Child.__init__)[..., unknown][[[Named(self, Child), \
               KeywordOnly(baz, str), KeywordOnly(foo, int)], None][[Child, Child], None]]`.";

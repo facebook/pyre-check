@@ -4461,7 +4461,7 @@ let test_expand_typed_dictionaries =
         year: int
     |}
            {|
-      class Movie(TypedDictionary):
+      class Movie(TypedDictionary, garbage=7):
         name: str = ...
         year: int = ...
     |};
@@ -4473,7 +4473,19 @@ let test_expand_typed_dictionaries =
         year: int
     |}
            {|
-      class Movie(TypedDictionary):
+      class Movie(TypedDictionary, OtherClass):
+        name: str = ...
+        year: int = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
+      class Movie(OtherClass, mypy_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+           {|
+      class Movie(TypedDictionary, OtherClass):
         name: str = ...
         year: int = ...
     |};

@@ -2150,7 +2150,7 @@ let rec messages ~concise ~signature location kind =
               pp_type
               annotation
               (if is_parent_class_typed_dictionary then
-                 " for a typed dictionary. Expected a typed dictionary"
+                 " for a typed dictionary. Expected a typed dictionary or typing.Generic"
               else
                 "");
           ]
