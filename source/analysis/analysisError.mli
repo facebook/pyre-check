@@ -161,7 +161,7 @@ and override_kind =
   | Attribute
 
 and invalid_inheritance =
-  | ClassName of Identifier.t
+  | FinalClass of Identifier.t
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;

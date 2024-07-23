@@ -195,7 +195,7 @@ and override_kind =
   | Attribute
 
 and invalid_inheritance =
-  | ClassName of Identifier.t
+  | FinalClass of Identifier.t
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;
@@ -2101,7 +2101,7 @@ let rec messages ~concise ~signature location kind =
       [formatted; "See `https://pyre-check.org/docs/errors#35-invalid-type-variance` for details."]
   | InvalidInheritance invalid_inheritance -> (
       match invalid_inheritance with
-      | ClassName class_name ->
+      | FinalClass class_name ->
           [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
       | NonMethodFunction decorator_name ->
           [
@@ -4139,7 +4139,7 @@ let dequalify
         AbstractClassInstantiation { class_name = dequalify_reference class_name; abstract_methods }
   in
   let dequalify_invalid_inheritance = function
-    | ClassName name -> ClassName (dequalify_identifier name)
+    | FinalClass name -> FinalClass (dequalify_identifier name)
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }

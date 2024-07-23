@@ -7653,7 +7653,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               let error =
                 Error.create
                   ~location:(Location.with_module ~module_reference:Context.qualifier location)
-                  ~kind:(Error.InvalidInheritance (ClassName (Expression.show expression_value)))
+                  ~kind:(Error.InvalidInheritance (FinalClass (Expression.show expression_value)))
                   ~define:Context.define
               in
               error :: errors
