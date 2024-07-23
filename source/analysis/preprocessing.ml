@@ -298,18 +298,22 @@ module Qualify (Context : QualifyContext) = struct
 
   let prefix_identifier ~scope:({ aliases; locals; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
-    let renamed = Format.asprintf "$%s$%s" prefix name in
-    let reference = Reference.create name in
-    ( {
-        scope with
-        aliases =
-          Map.set
-            aliases
-            ~key:reference
-            ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
-        locals = Set.add locals reference;
-      },
-      stars ^ renamed )
+    if is_qualified name then
+      None
+    else
+      let renamed = Format.asprintf "$%s$%s" prefix name in
+      let reference = Reference.create name in
+      Some
+        ( {
+            scope with
+            aliases =
+              Map.set
+                aliases
+                ~key:reference
+                ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
+            locals = Set.add locals reference;
+          },
+          stars ^ renamed )
 
 
   let rec explore_scope ~scope statements =
@@ -417,21 +421,20 @@ module Qualify (Context : QualifyContext) = struct
         (scope, reversed_parameters)
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
       =
-      if not (is_qualified (snd (Identifier.split_star name))) then
-        let scope, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
-        ( scope,
-          {
-            parameter with
-            Node.value =
-              {
-                Parameter.name = renamed;
-                value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
-                annotation;
-              };
-          }
-          :: reversed_parameters )
-      else
-        scope, parameter :: reversed_parameters
+      match prefix_identifier ~scope ~prefix:"parameter" name with
+      | Some (scope, renamed) ->
+          ( scope,
+            {
+              parameter with
+              Node.value =
+                {
+                  Parameter.name = renamed;
+                  value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
+                  annotation;
+                };
+            }
+            :: reversed_parameters )
+      | None -> scope, parameter :: reversed_parameters
     in
     let scope, parameters =
       List.fold
@@ -850,10 +853,11 @@ module Qualify (Context : QualifyContext) = struct
             let qualify_handler { Try.Handler.kind; name; body } =
               let renamed_scope, name =
                 match name with
-                | Some { Node.value = name; location } when not (is_qualified name) ->
-                    let scope, renamed = prefix_identifier ~scope ~prefix:"target" name in
-                    scope, Some { Node.value = renamed; location }
-                | _ -> scope, name
+                | None -> scope, name
+                | Some { Node.value = target; location } -> (
+                    match prefix_identifier ~scope ~prefix:"target" target with
+                    | None -> scope, name
+                    | Some (scope, renamed) -> scope, Some { Node.value = renamed; location })
               in
               let kind = kind >>| qualify_expression ~qualify_strings:DoNotQualify ~scope in
               let scope, body = qualify_statements ~scope:renamed_scope body in
@@ -986,12 +990,13 @@ module Qualify (Context : QualifyContext) = struct
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Name (Name.Identifier name); _ } ->
-          if has_local name || is_qualified name then
+      | { Node.value = Name (Name.Identifier name); _ } -> (
+          if has_local name then
             scope
           else
-            let scope, _ = prefix_identifier ~scope ~prefix:"target" name in
-            scope
+            match prefix_identifier ~scope ~prefix:"target" name with
+            | Some (scope, _) -> scope
+            | None -> scope)
       | _ -> scope
     in
     let scope = renamed_scope scope target in
