@@ -242,6 +242,7 @@ and incompatible_overload_kind =
     }
   | DifferingDecorators
   | MisplacedOverloadDecorator
+  | NeedsAtLeastTwoOverloads
 
 and polymorphism_base_class =
   | GenericBase

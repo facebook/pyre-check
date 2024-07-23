@@ -48,7 +48,7 @@ let test_check_implementation context =
       def foo() -> None:
           pass
     |}
-    [];
+    ["Incompatible overload [43]: At least two overload signatures must be present."];
   assert_type_errors
     {|
       from typing import overload
@@ -139,6 +139,7 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
        arguments of overload defined on line `4`.";
+      "Incompatible overload [43]: At least two overload signatures must be present.";
     ];
 
   assert_type_errors
@@ -153,6 +154,7 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
        arguments of overload defined on line `4`.";
+      "Incompatible overload [43]: At least two overload signatures must be present.";
     ];
 
   assert_type_errors
@@ -166,7 +168,7 @@ let test_check_implementation context =
       def f( *args: int, **kwargs: int) -> int:
           return 1
     |}
-    [];
+    ["Incompatible overload [43]: At least two overload signatures must be present."];
 
   (* TODO(T65594835) Pyre should accept this, but does not recognize that if named-only arguments
      appear with default values in the implementation, any of the named arguments appearing in an
@@ -184,6 +186,7 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The implementation of `f` does not accept all possible \
        arguments of overload defined on line `5`.";
+      "Incompatible overload [43]: At least two overload signatures must be present.";
     ];
   (* TODO(T65594835) Pyre should accept this, but does not recognize that a `**kwargs: Any` in the
      implementation is compatible with any named-argument overload *)
@@ -200,6 +203,7 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The implementation of `f` does not accept all possible \
        arguments of overload defined on line `5`.";
+      "Incompatible overload [43]: At least two overload signatures must be present.";
     ];
   ()
 

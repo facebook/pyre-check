@@ -871,9 +871,14 @@ let test_check_function_overloads =
         @overload
         def derp(self, x: int) -> int:
           pass
-        def derp(self, x: Union[int, str]) -> Union[int, str]:
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+        def derp(self, x: Union[int, str, bool]) -> Union[int, str, bool]:
           if isinstance(x, int):
             return 0
+          elif isinstance(x, bool):
+            return True
           else:
             return ""
 
@@ -944,6 +949,7 @@ let test_check_function_overloads =
       import typing
       @typing.overload
       def derp(x: int) -> int: ...
+      @typing.overload
       def derp(x: str) -> str: ...
       def derp(x: object): ...
 
@@ -951,8 +957,9 @@ let test_check_function_overloads =
     |}
            [
              "Missing return annotation [3]: Return type is not specified.";
-             "Revealed type [-1]: Revealed type for `test.derp` is "
-             ^ "`typing.Callable(derp)[[Named(x, object)], typing.Any][[[Named(x, int)], int]]`.";
+             "Revealed type [-1]: Revealed type for `test.derp` is \
+              `typing.Callable(derp)[[Named(x, object)], typing.Any][[[Named(x, int)], \
+              int][[Named(x, str)], str]]`.";
            ];
     ]
 

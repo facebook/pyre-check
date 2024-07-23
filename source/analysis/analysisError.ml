@@ -276,6 +276,7 @@ and incompatible_overload_kind =
     }
   | DifferingDecorators
   | MisplacedOverloadDecorator
+  | NeedsAtLeastTwoOverloads
 
 and polymorphism_base_class =
   | GenericBase
@@ -1464,7 +1465,8 @@ let rec messages ~concise ~signature location kind =
       | DifferingDecorators ->
           ["This definition does not have the same decorators as the preceding overload(s)."]
       | MisplacedOverloadDecorator ->
-          ["The @overload decorator must be the topmost decorator if present."])
+          ["The @overload decorator must be the topmost decorator if present."]
+      | NeedsAtLeastTwoOverloads -> ["At least two overload signatures must be present."])
   | IncompatibleParameterType
       {
         keyword_argument_name;
@@ -4211,6 +4213,7 @@ let dequalify
     | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
     | DifferingDecorators -> DifferingDecorators
     | MisplacedOverloadDecorator -> MisplacedOverloadDecorator
+    | NeedsAtLeastTwoOverloads -> NeedsAtLeastTwoOverloads
   in
   let dequalify_invalid_type_parameters { AttributeResolution.name; kind } =
     let dequalify_generic_type_problems = function

@@ -1646,7 +1646,7 @@ let test_check_behavioral_subtyping__overloads =
                 def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
                   return input
             |}
-           [];
+           ["Incompatible overload [43]: At least two overload signatures must be present."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|

@@ -360,6 +360,7 @@ let test_decorators =
                 pass
             |}
            [
+             "Incompatible overload [43]: At least two overload signatures must be present.";
              "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
               implementation.";
            ];
@@ -372,6 +373,7 @@ let test_decorators =
                 pass
             |}
            [
+             "Incompatible overload [43]: At least two overload signatures must be present.";
              "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
               implementation.";
            ];

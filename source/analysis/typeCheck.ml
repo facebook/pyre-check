@@ -8052,6 +8052,19 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         else
           errors
       in
+      let check_at_least_two_overloads errors =
+        let { Type.Callable.overloads; _ } = undecorated_signature in
+        if Define.is_overloaded_function define && List.length overloads < 2 then
+          let error =
+            Error.create
+              ~location:(Location.with_module ~module_reference:Context.qualifier location)
+              ~define:Context.define
+              ~kind:(Error.IncompatibleOverload NeedsAtLeastTwoOverloads)
+          in
+          error :: errors
+        else
+          errors
+      in
       let check_invalid_decorator errors =
         match problem with
         | Some (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -8138,6 +8151,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       |> check_differing_decorators
       |> check_misplaced_overload_decorator
       |> check_invalid_decorator
+      |> check_at_least_two_overloads
     in
     match GlobalResolution.global global_resolution name with
     | Some { undecorated_signature = Some undecorated_signature; problem; _ } ->
