@@ -196,6 +196,7 @@ and override_kind =
 
 and invalid_inheritance =
   | FinalClass of Identifier.t
+  | GenericProtocol
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;
@@ -2103,6 +2104,11 @@ let rec messages ~concise ~signature location kind =
       match invalid_inheritance with
       | FinalClass class_name ->
           [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
+      | GenericProtocol ->
+          [
+            Format.asprintf
+              "Subscripted Protocol and Generic may not appear in the same base class list";
+          ]
       | NonMethodFunction decorator_name ->
           [
             Format.asprintf
@@ -4140,6 +4146,7 @@ let dequalify
   in
   let dequalify_invalid_inheritance = function
     | FinalClass name -> FinalClass (dequalify_identifier name)
+    | GenericProtocol -> GenericProtocol
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }

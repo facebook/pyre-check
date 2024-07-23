@@ -6692,46 +6692,66 @@ module State (Context : Context) = struct
         |> Option.value ~default:false
       in
       if Define.is_class_toplevel define then
-        let check_base old_errors base =
+        let check_base_class (old_errors, base_types) base =
           let annotation_errors, parsed = parse_and_check_annotation ~resolution base in
           let errors = List.append annotation_errors old_errors in
-          match parsed with
-          | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
-              (* Inheriting from type makes you a metaclass, and we don't want to
-               * suggest that instead you need to use typing.Type[Something] *)
-              old_errors
-          | Primitive base_name ->
-              if
-                is_current_class_typed_dictionary
-                && not
-                     (GlobalResolution.is_typed_dictionary global_resolution (Primitive base_name)
-                     || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name)
-              then
+          let errors =
+            match parsed with
+            | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
+                (* Inheriting from type makes you a metaclass, and we don't want to
+                 * suggest that instead you need to use typing.Type[Something] *)
+                old_errors
+            | Primitive base_name ->
+                if
+                  is_current_class_typed_dictionary
+                  && not
+                       (GlobalResolution.is_typed_dictionary global_resolution (Primitive base_name)
+                       || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name)
+                then
+                  emit_error
+                    ~errors
+                    ~location:(Node.location base)
+                    ~kind:
+                      (InvalidInheritance
+                         (UninheritableType
+                            { annotation = parsed; is_parent_class_typed_dictionary = true }))
+                else
+                  errors
+            | Top
+            (* There's some other problem we already errored on *)
+            | Parametric _
+            | Tuple _ ->
+                errors
+            | Any
+              when (GlobalResolution.base_is_from_placeholder_stub variables global_resolution) base
+              ->
+                errors
+            | annotation ->
                 emit_error
                   ~errors
                   ~location:(Node.location base)
                   ~kind:
                     (InvalidInheritance
-                       (UninheritableType
-                          { annotation = parsed; is_parent_class_typed_dictionary = true }))
-              else
-                errors
-          | Top
-          (* There's some other problem we already errored on *)
-          | Parametric _
-          | Tuple _ ->
-              errors
-          | Any
-            when (GlobalResolution.base_is_from_placeholder_stub variables global_resolution) base
-            ->
-              errors
-          | annotation ->
-              emit_error
-                ~errors
-                ~location:(Node.location base)
-                ~kind:
-                  (InvalidInheritance
-                     (UninheritableType { annotation; is_parent_class_typed_dictionary = false }))
+                       (UninheritableType { annotation; is_parent_class_typed_dictionary = false }))
+          in
+          errors, (parsed, Node.location base) :: base_types
+        in
+        let check_generic_protocols base_types_and_locations errors =
+          let has_subscripted_protocol =
+            List.find base_types_and_locations ~f:(fun (base, _) ->
+                match base with
+                | Type.Parametric { name = "typing.Protocol"; _ } -> true
+                | _ -> false)
+            |> Option.is_some
+          in
+          if has_subscripted_protocol then
+            List.fold ~init:errors base_types_and_locations ~f:(fun errors (base, location) ->
+                match base with
+                | Type.Parametric { name = "typing.Generic"; _ } ->
+                    emit_error ~errors ~location ~kind:(InvalidInheritance GenericProtocol)
+                | _ -> errors)
+          else
+            errors
         in
         let bases =
           Node.create define ~location
@@ -6741,7 +6761,10 @@ module State (Context : Context) = struct
           >>| ClassSummary.base_classes
           |> Option.value ~default:[]
         in
-        let errors = List.fold ~init:errors ~f:check_base bases in
+        let errors, base_types_and_locations =
+          List.fold ~init:(errors, []) ~f:check_base_class bases
+        in
+        let errors = check_generic_protocols base_types_and_locations errors in
         if is_current_class_typed_dictionary then
           let open Type.TypedDictionary in
           let superclass_pairs_with_same_field_name =
