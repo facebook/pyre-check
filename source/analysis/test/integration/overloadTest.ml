@@ -8,13 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_implementation context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  let assert_default_type_errors ?handle source errors =
-    assert_default_type_errors ?handle source errors context
-  in
-  assert_type_errors
-    {|
+let test_check_implementation =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo() -> None:
@@ -24,10 +23,14 @@ let test_check_implementation context =
       def foo() -> None:
           pass
     |}
-    ["Missing overload implementation [42]: Overloaded function `foo` must have an implementation."];
-  assert_default_type_errors
-    ~handle:"stub.pyi"
-    {|
+           [
+             "Missing overload implementation [42]: Overloaded function `foo` must have an \
+              implementation.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           ~handle:"stub.pyi"
+           {|
       from typing import overload
       @overload
       def foo() -> None:
@@ -37,9 +40,10 @@ let test_check_implementation context =
       def foo() -> None:
           pass
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo() -> None:
@@ -48,9 +52,10 @@ let test_check_implementation context =
       def foo() -> None:
           pass
     |}
-    ["Incompatible overload [43]: At least two overload signatures must be present."];
-  assert_type_errors
-    {|
+           ["Incompatible overload [43]: At least two overload signatures must be present."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo(x: int) -> bool:
@@ -63,9 +68,10 @@ let test_check_implementation context =
       def foo(x: object) -> float:
           return 1
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
          from typing import overload
 
          @overload
@@ -82,14 +88,15 @@ let test_check_implementation context =
 
          def foo(bar: object, x: object) -> object: pass
        |}
-    [
-      "Incompatible overload [43]: The overloaded function `foo` on line 9 will never be matched. \
-       The signature `(bar: object, x: object) -> int` is the same or broader.";
-      "Incompatible overload [43]: The overloaded function `foo` on line 13 will never be matched. \
-       The signature `(bar: object, x: object) -> int` is the same or broader.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The overloaded function `foo` on line 9 will never be \
+              matched. The signature `(bar: object, x: object) -> int` is the same or broader.";
+             "Incompatible overload [43]: The overloaded function `foo` on line 13 will never be \
+              matched. The signature `(bar: object, x: object) -> int` is the same or broader.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
          from typing import overload
 
          @overload
@@ -106,10 +113,10 @@ let test_check_implementation context =
 
          def foo(bar: object, x: object) -> object: pass
        |}
-    [];
-
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
          from typing import overload
 
          @overload
@@ -122,13 +129,13 @@ let test_check_implementation context =
 
          def foo(bar: object, x: object, y:object) -> object: pass
        |}
-    [
-      "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
-       arguments of overload defined on line `5`.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+              arguments of overload defined on line `5`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo(bar: object) -> None:
@@ -136,14 +143,14 @@ let test_check_implementation context =
       def foo(bar: int) -> None:
         pass
     |}
-    [
-      "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
-       arguments of overload defined on line `4`.";
-      "Incompatible overload [43]: At least two overload signatures must be present.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+              arguments of overload defined on line `4`.";
+             "Incompatible overload [43]: At least two overload signatures must be present.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo() -> None:
@@ -151,14 +158,14 @@ let test_check_implementation context =
       def foo(bar: int) -> None:
         pass
     |}
-    [
-      "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
-       arguments of overload defined on line `4`.";
-      "Incompatible overload [43]: At least two overload signatures must be present.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+              arguments of overload defined on line `4`.";
+             "Incompatible overload [43]: At least two overload signatures must be present.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
 
       @overload
@@ -168,13 +175,13 @@ let test_check_implementation context =
       def f( *args: int, **kwargs: int) -> int:
           return 1
     |}
-    ["Incompatible overload [43]: At least two overload signatures must be present."];
-
-  (* TODO(T65594835) Pyre should accept this, but does not recognize that if named-only arguments
-     appear with default values in the implementation, any of the named arguments appearing in an
-     overload is compatible. *)
-  assert_type_errors
-    {|
+           ["Incompatible overload [43]: At least two overload signatures must be present."];
+      (* TODO(T65594835) Pyre should accept this, but does not recognize that if named-only
+         arguments appear with default values in the implementation, any of the named arguments
+         appearing in an overload is compatible. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Optional
 
       @overload
@@ -183,15 +190,16 @@ let test_check_implementation context =
       def f(*, b: Optional[int] = None, a: Optional[int] = None) -> int:
           return 5
     |}
-    [
-      "Incompatible overload [43]: The implementation of `f` does not accept all possible \
-       arguments of overload defined on line `5`.";
-      "Incompatible overload [43]: At least two overload signatures must be present.";
-    ];
-  (* TODO(T65594835) Pyre should accept this, but does not recognize that a `**kwargs: Any` in the
-     implementation is compatible with any named-argument overload *)
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The implementation of `f` does not accept all possible \
+              arguments of overload defined on line `5`.";
+             "Incompatible overload [43]: At least two overload signatures must be present.";
+           ];
+      (* TODO(T65594835) Pyre should accept this, but does not recognize that a `**kwargs: Any` in
+         the implementation is compatible with any named-argument overload *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Any, overload
 
       @overload
@@ -200,18 +208,20 @@ let test_check_implementation context =
       def f(**kwargs: Any) -> int:
           return 5
     |}
+           [
+             "Incompatible overload [43]: The implementation of `f` does not accept all possible \
+              arguments of overload defined on line `5`.";
+             "Incompatible overload [43]: At least two overload signatures must be present.";
+           ];
+    ]
+
+
+let test_check_inferred_return_type =
+  test_list
     [
-      "Incompatible overload [43]: The implementation of `f` does not accept all possible \
-       arguments of overload defined on line `5`.";
-      "Incompatible overload [43]: At least two overload signatures must be present.";
-    ];
-  ()
-
-
-let test_check_inferred_return_type context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       from typing_extensions import Literal
 
@@ -228,9 +238,10 @@ let test_check_inferred_return_type context =
       x3: bool = g(make_int=False)
       x4: int = g(make_int=True)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       from typing_extensions import Literal
 
@@ -261,14 +272,16 @@ let test_check_inferred_return_type context =
       x15: bool = g(make_int=some_bool, make_int2=False)
       x16: bool = g(make_int=some_bool, make_int2=some_bool)
     |}
-    [];
-  ()
+           [];
+    ]
 
 
-let test_check_decorated_overloads context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_check_decorated_overloads =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Callable
       def decorator(x: object) -> Callable[[int], int]: ...
 
@@ -286,13 +299,14 @@ let test_check_decorated_overloads context =
 
       reveal_type(foo)
     |}
-    [
-      "Incompatible overload [43]: The return type of overloaded function `foo` (`str`) is \
-       incompatible with the return type of the implementation (`int`).";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The return type of overloaded function `foo` (`str`) is \
+              incompatible with the return type of the implementation (`int`).";
+             "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Callable
       def decoratorA(x: object) -> Callable[[int], int]: ...
       def decoratorB(x: object) -> Callable[[int], int]: ...
@@ -311,13 +325,14 @@ let test_check_decorated_overloads context =
 
       reveal_type(foo)
     |}
-    [
-      "Incompatible overload [43]: This definition does not have the same decorators as the \
-       preceding overload(s).";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: This definition does not have the same decorators as the \
+              preceding overload(s).";
+             "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Callable
       def decorator(x: object) -> Callable[[int], int]: ...
 
@@ -335,12 +350,14 @@ let test_check_decorated_overloads context =
 
       reveal_type(foo)
     |}
-    [
-      "Incompatible overload [43]: The @overload decorator must be the topmost decorator if present.";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible overload [43]: The @overload decorator must be the topmost decorator if \
+              present.";
+             "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Callable, TypeVar
 
       TReturn = TypeVar("TReturn")
@@ -364,12 +381,13 @@ let test_check_decorated_overloads context =
 
       reveal_type(foo)
     |}
-    [
-      (* We "select" the relevant overload *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], bool]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             (* We "select" the relevant overload *)
+             "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Callable, TypeVar
       from pyre_extensions import ParameterSpecification
 
@@ -395,19 +413,21 @@ let test_check_decorated_overloads context =
 
       reveal_type(foo)
     |}
+           [
+             (* But when you "crack the egg" of an overloaded callable, it's not sound to assume it
+                comes back together. When multiple overloads match, we select the first one *)
+             "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[Named(a, \
+              bool)], int]`.";
+           ];
+    ]
+
+
+let test_typing_extensions_overloads =
+  test_list
     [
-      (* But when you "crack the egg" of an overloaded callable, it's not sound to assume it comes
-         back together. When multiple overloads match, we select the first one *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[Named(a, bool)], \
-       int]`.";
-    ];
-  ()
-
-
-let test_typing_extensions_overloads context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing_extensions import overload
 
       @overload
@@ -421,19 +441,19 @@ let test_typing_extensions_overloads context =
       reveal_type(foo("hello"))
       reveal_type(foo(True))
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.foo(\"hello\")` is `str`.";
-      "Revealed type [-1]: Revealed type for `test.foo(True)` is `bool`.";
-    ];
-  ()
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(\"hello\")` is `str`.";
+             "Revealed type [-1]: Revealed type for `test.foo(True)` is `bool`.";
+           ];
+    ]
 
 
 let () =
   "overload"
   >::: [
-         "check_implementation" >:: test_check_implementation;
-         "check_inferred_return_type" >:: test_check_inferred_return_type;
-         "decorated_overloads" >:: test_check_decorated_overloads;
-         "typing_extensions_overloads" >:: test_typing_extensions_overloads;
+         test_check_implementation;
+         test_check_inferred_return_type;
+         test_check_decorated_overloads;
+         test_typing_extensions_overloads;
        ]
   |> Test.run
