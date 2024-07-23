@@ -741,7 +741,25 @@ let test_check_typed_dictionaries =
                 movie.pop("name")
             |}
            ["Undefined attribute [16]: `Movie` has no attribute `pop`."];
-      (* TODO(T41338881) the del operator is not currently supported *)
+      (* TODO(T41338881) required keys may not be deleted from typeddicts. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+              import mypy_extensions
+              MovieNonTotal = mypy_extensions.TypedDict('MovieNonTotal', {'name': str, 'year': 'int'}, total=False)
+              def f(movieNonTotal: MovieNonTotal) -> None:
+                del movieNonTotal["name"]
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+              import mypy_extensions
+              Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+              def f(movie: Movie) -> None:
+                del movie["name"]
+            |}
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
            {|

@@ -5589,6 +5589,7 @@ module State (Context : Context) = struct
         let resolution, errors = forward_assert ~resolution ~origin test in
         resolution, message_errors @ errors
     | Delete expressions ->
+        (* TODO(T41338881) required keys may not be deleted from typeddicts. *)
         let process_expression (resolution, errors_sofar) expression =
           let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
           let resolution =
