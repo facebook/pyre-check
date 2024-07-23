@@ -309,8 +309,7 @@ module Qualify (Context : QualifyContext) = struct
             ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
         locals = Set.add locals reference;
       },
-      stars,
-      renamed )
+      stars ^ renamed )
 
 
   let rec explore_scope ~scope statements =
@@ -419,13 +418,13 @@ module Qualify (Context : QualifyContext) = struct
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
       =
       if not (is_qualified (snd (Identifier.split_star name))) then
-        let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
+        let scope, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
         ( scope,
           {
             parameter with
             Node.value =
               {
-                Parameter.name = stars ^ renamed;
+                Parameter.name = renamed;
                 value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
                 annotation;
               };
@@ -852,7 +851,7 @@ module Qualify (Context : QualifyContext) = struct
               let renamed_scope, name =
                 match name with
                 | Some { Node.value = name; location } when not (is_qualified name) ->
-                    let scope, _, renamed = prefix_identifier ~scope ~prefix:"target" name in
+                    let scope, renamed = prefix_identifier ~scope ~prefix:"target" name in
                     scope, Some { Node.value = renamed; location }
                 | _ -> scope, name
               in
@@ -991,7 +990,7 @@ module Qualify (Context : QualifyContext) = struct
           if has_local name || is_qualified name then
             scope
           else
-            let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
+            let scope, _ = prefix_identifier ~scope ~prefix:"target" name in
             scope
       | _ -> scope
     in
