@@ -45,7 +45,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 60, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -123,7 +123,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 60, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -201,7 +201,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 50, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -588,7 +588,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 56, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -666,7 +666,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 55, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -744,7 +744,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 39, "start": 4, "end": 16 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -820,7 +820,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 28, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -896,7 +896,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 28, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -972,7 +972,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 28, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -1045,7 +1045,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 29, "start": 27, "end": 50 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1121,7 +1121,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 28, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -1174,7 +1174,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 23, "start": 31, "end": 54 },
                     "caller_interval": [ { "lower": 2, "upper": 3 } ],
                     "is_self_call": false,
@@ -1229,7 +1229,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 97, "start": 4, "end": 27 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -1274,7 +1274,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 97, "start": 4, "end": 27 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -1329,7 +1329,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 87, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1384,7 +1384,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source StringMayBeSQL",
+                    "message": "Triggering source StringMayBeSQL",
                     "origin": { "line": 77, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
@@ -1480,7 +1480,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 122, "start": 13, "end": 36 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1530,7 +1530,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 113, "start": 13, "end": 36 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"

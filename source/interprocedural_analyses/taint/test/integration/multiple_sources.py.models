@@ -43,7 +43,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestC",
+                    "message": "Triggering source TestC",
                     "origin": { "line": 246, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
@@ -122,7 +122,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestC",
+                    "message": "Triggering source TestC",
                     "origin": { "line": 245, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
@@ -201,7 +201,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 30, "start": 9, "end": 32 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -279,7 +279,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestA",
+                    "message": "Triggering source TestA",
                     "origin": { "line": 127, "start": 8, "end": 18 },
                     "leaf_kind": "TestA",
                     "trace_kind": "source"
@@ -358,7 +358,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestB",
+                    "message": "Triggering source TestB",
                     "origin": { "line": 88, "start": 31, "end": 41 },
                     "leaf_kind": "TestB",
                     "trace_kind": "source"
@@ -437,7 +437,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestA",
+                    "message": "Triggering source TestA",
                     "origin": { "line": 87, "start": 31, "end": 41 },
                     "leaf_kind": "TestA",
                     "trace_kind": "source"
@@ -1299,7 +1299,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 65, "start": 9, "end": 32 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1455,7 +1455,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 164, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1536,7 +1536,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 164, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -1918,7 +1918,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestD",
+                    "message": "Triggering source TestD",
                     "origin": { "line": 215, "start": 35, "end": 45 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
@@ -1969,7 +1969,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestD",
+                    "message": "Triggering source TestD",
                     "origin": { "line": 205, "start": 35, "end": 45 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
@@ -2005,7 +2005,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestE",
+                    "message": "Triggering source TestE",
                     "origin": { "line": 206, "start": 35, "end": 45 },
                     "leaf_kind": "TestE",
                     "trace_kind": "source"
@@ -2056,7 +2056,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestD",
+                    "message": "Triggering source TestD",
                     "origin": { "line": 225, "start": 39, "end": 49 },
                     "leaf_kind": "TestD",
                     "trace_kind": "source"
@@ -2092,7 +2092,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestE",
+                    "message": "Triggering source TestE",
                     "origin": { "line": 227, "start": 39, "end": 49 },
                     "leaf_kind": "TestE",
                     "trace_kind": "source"
@@ -2140,7 +2140,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 36, "start": 9, "end": 32 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -2187,7 +2187,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "call": {
                       "position": { "line": 143, "start": 9, "end": 40 },
                       "resolves_to": [
@@ -2243,7 +2243,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source TestC",
+                    "message": "Triggering source TestC",
                     "origin": { "line": 236, "start": 32, "end": 42 },
                     "leaf_kind": "TestC",
                     "trace_kind": "source"
@@ -2294,7 +2294,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source PermissiveContext",
+                    "message": "Triggering source PermissiveContext",
                     "origin": { "line": 41, "start": 9, "end": 29 },
                     "leaf_kind": "PermissiveContext",
                     "trace_kind": "source"
@@ -2396,7 +2396,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 174, "start": 10, "end": 33 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -2428,7 +2428,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 176, "start": 10, "end": 33 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
@@ -2717,7 +2717,7 @@
               {
                 "extra_traces": [
                   {
-                    "message": "Subtrace for source UserControlled",
+                    "message": "Triggering source UserControlled",
                     "origin": { "line": 181, "start": 9, "end": 32 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"

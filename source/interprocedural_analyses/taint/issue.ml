@@ -577,7 +577,7 @@ let compute_triggered_flows
         {
           ExtraTraceFirstHop.call_info = source_call_info;
           leaf_kind = Source source;
-          message = Some (Format.asprintf "Subtrace for source %s" (Sources.show source));
+          message = Some (Format.asprintf "Triggering source %s" (Sources.show source));
         }
       in
       let () =
