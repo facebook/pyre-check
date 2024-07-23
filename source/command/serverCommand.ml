@@ -130,6 +130,7 @@ module ServerConfiguration = struct
             number_of_workers;
             long_lived_workers;
             enable_readonly_analysis;
+            enable_strict_override_check;
             enable_unawaited_awaitable_analysis;
             include_suppressed_errors;
             shared_memory =
@@ -179,6 +180,7 @@ module ServerConfiguration = struct
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
       ~enable_readonly_analysis
+      ~enable_strict_override_check
       ~enable_unawaited_awaitable_analysis
       ~include_suppressed_errors
       ~use_errpy_parser

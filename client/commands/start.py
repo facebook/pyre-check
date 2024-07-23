@@ -351,6 +351,7 @@ def create_server_arguments(
             checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             debug=start_arguments.debug,
             enable_readonly_analysis=configuration.get_enable_readonly_analysis(),
+            enable_strict_override_check=configuration.get_enable_strict_override_check(),
             enable_unawaited_awaitable_analysis=(
                 configuration.get_enable_unawaited_awaitable_analysis()
             ),

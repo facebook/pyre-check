@@ -3163,6 +3163,7 @@ module ScratchProject = struct
       ?debug
       ?strict
       ?enable_readonly_analysis
+      ?enable_strict_override_check
       ?enable_unawaited_awaitable_analysis
       ?include_suppressed_errors
       sources
@@ -3208,6 +3209,7 @@ module ScratchProject = struct
           ?strict
           ?debug
           ?enable_readonly_analysis
+          ?enable_strict_override_check
           ?enable_unawaited_awaitable_analysis
           ?include_suppressed_errors
           ()
@@ -3446,6 +3448,7 @@ let assert_errors
     ?(include_line_numbers = false)
     ?python_version
     ?enable_readonly_analysis
+    ?enable_strict_override_check
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
     ~check
@@ -3477,6 +3480,7 @@ let assert_errors
             ~debug
             ?python_version
             ?enable_readonly_analysis
+            ?enable_strict_override_check
             ?enable_unawaited_awaitable_analysis
             ?include_suppressed_errors
             [handle, source]

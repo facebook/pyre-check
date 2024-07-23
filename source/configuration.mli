@@ -112,6 +112,8 @@ module Analysis : sig
 
   val default_enable_readonly_analysis : bool
 
+  val default_enable_strict_override_check : bool
+
   val default_enable_unawaited_awaitable_analysis : bool
 
   val default_include_suppressed_errors : bool
@@ -143,6 +145,7 @@ module Analysis : sig
     shared_memory: shared_memory;
     enable_type_comments: bool;
     enable_readonly_analysis: bool;
+    enable_strict_override_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
     use_errpy_parser: bool;
@@ -174,6 +177,7 @@ module Analysis : sig
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
     ?enable_readonly_analysis:bool ->
+    ?enable_strict_override_check:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
     ?include_suppressed_errors:bool ->
     ?use_errpy_parser:bool ->

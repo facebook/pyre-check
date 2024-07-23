@@ -39,6 +39,7 @@ module BaseConfiguration = struct
     profiling_output: string option;
     memory_profiling_output: string option;
     enable_readonly_analysis: bool;
+    enable_strict_override_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
     (* Parser controls *)
@@ -114,6 +115,12 @@ module BaseConfiguration = struct
              "enable_readonly_analysis"
              ~default:Configuration.Analysis.default_enable_readonly_analysis
       in
+      let enable_strict_override_check =
+        json
+        |> bool_member
+             "enable_strict_override_check"
+             ~default:Configuration.Analysis.default_enable_strict_override_check
+      in
       let enable_unawaited_awaitable_analysis =
         json
         |> bool_member
@@ -152,6 +159,7 @@ module BaseConfiguration = struct
           profiling_output;
           memory_profiling_output;
           enable_readonly_analysis;
+          enable_strict_override_check;
           enable_unawaited_awaitable_analysis;
           include_suppressed_errors;
           use_errpy_parser;

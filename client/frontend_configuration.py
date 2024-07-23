@@ -201,6 +201,10 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_enable_strict_override_check(self) -> Optional[bool]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def get_enable_unawaited_awaitable_analysis(self) -> Optional[bool]:
         raise NotImplementedError()
 
@@ -394,6 +398,9 @@ class OpenSource(Base):
 
     def get_enable_readonly_analysis(self) -> Optional[bool]:
         return self.configuration.enable_readonly_analysis
+
+    def get_enable_strict_override_check(self) -> Optional[bool]:
+        return self.configuration.enable_strict_override_check
 
     def get_enable_unawaited_awaitable_analysis(self) -> Optional[bool]:
         return self.configuration.enable_unawaited_awaitable_analysis

@@ -66,6 +66,7 @@ module TypeCheckControls = struct
     include_type_errors: bool;
     include_local_annotations: bool;
     include_readonly_errors: bool;
+    include_strict_override_errors: bool;
     include_unawaited_awaitable_errors: bool;
     debug: bool;
     include_suppressed_errors: bool;
@@ -81,6 +82,7 @@ let type_check_controls
           store_type_errors;
           store_type_check_resolution;
           enable_readonly_analysis;
+          enable_strict_override_check;
           enable_unawaited_awaitable_analysis;
           include_suppressed_errors;
           _;
@@ -95,6 +97,7 @@ let type_check_controls
       include_type_errors = store_type_errors;
       include_local_annotations = store_type_check_resolution;
       include_readonly_errors = enable_readonly_analysis;
+      include_strict_override_errors = enable_strict_override_check;
       include_unawaited_awaitable_errors = enable_unawaited_awaitable_analysis;
       include_suppressed_errors;
       no_validation_on_class_lookup_failure;
