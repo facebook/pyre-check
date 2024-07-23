@@ -1961,6 +1961,80 @@ def query_user(conn: Connection, user_id: str) -> User:
 
 LiteralStrings are created either from an explicit string literal like "foo" or from combining multiple string literals or LiteralStrings. This is a security focused typing feature for safely calling  powerful APIs. See [PEP 675](https://peps.python.org/pep-0675/#appendix-b-limitations) for more details.
 
+### 63: Suppression Comment Without Error Code
+
+When running Pyre in strict mode, suppression comments like `pyre-ignore` and `pyre-fixme` need to be associated with a specific error code or set of error codes.
+
+OK:
+
+```python
+def foo() -> int:
+    # pyre-ignore[7]
+    return ""
+```
+
+Not OK:
+
+```python
+def foo() -> int:
+    # pyre-ignore
+    return ""
+```
+
+For more details on how to write suppression comments, refer to the section on [Suppression](https://www.internalfb.com/intern/staticdocs/pyre/docs/errors/#suppressing-individual-errors) later in this doc.
+
+### 64: Inconsistent Method Resolution Order
+
+Python supports multiple inheritance via multiple base classes. In order to decide the order that methods from base classes are overridden, there needs to be a consistent order among the base classes of a particular class. When this order cannot be created, for example because there is a cycle, then Pyre raises this error.
+
+```python
+class A(B):  # Error
+    pass
+
+class B(A):  # Error
+    pass
+```
+
+For more details and examples for Python's Method Resolution Order (MRO), please refer to [the official guide](https://www.python.org/download/releases/2.3/mro/).
+
+### 65: Duplicate Parameter
+
+Functions may not have multiple named parameters that share the same name.
+
+```python
+def add(a: int, a: int) -> None:  # Error
+    pass
+```
+
+### 66: Invalid Exception Handler
+
+Exception types listed in an `except` clause must extend `BaseException`.
+
+```python
+try:
+    pass
+except (int, bool):  # Error
+    pass
+```
+
+### 67: Invalid Exception Group Handler
+
+Exception types listed in an `except*` clause (Python 3.12 exception group handler) must extend `BaseException` and may not extend `BaseExceptionGroup`.
+
+```python
+try:
+    pass
+except* ExceptionGroup as e:  # Error
+    pass
+```
+
+```python
+try:
+    pass
+except* int as e:  # Error
+    pass
+```
+
 ### 68: Invalid Type Guard
 
 User defined type-guards are functions that return `TypeIs[X]` or `TypeGuard[X]`; at runtime these return a `bool`, but the static type indicates to the type checker that they narrow the type of the first positional argument, for example:
@@ -2013,6 +2087,19 @@ def inconsistent_type_is(x: str) -> TypeIs[int]: ...
 ```
 
 You can read more about type guards and narrowing in the specification: https://typing.readthedocs.io/en/latest/spec/narrowing.html.
+
+### 69: Invalid Positional-Only Parameter
+
+Python has positional-only parameters which may not be passed by name. Positional-only parameters cannot appear after parameters that may be passed by name.
+
+Typically, all the parameters that proceed `/` in the parameter list are considered positional-only, but in functions without this syntax we treat parameters that are prefixed but not suffixed with `__` as positional-only for backwards-compatibility purposes. Refer to https://typing.readthedocs.io/en/latest/spec/historical.html#positional-only-parameters for more details.
+
+In the following example, `__y` is a positional-only that follows the regular parameter `x`, which is an error.
+
+```python
+def foo(x: int, __y: int) -> None:  # Error
+    pass
+```
 
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
