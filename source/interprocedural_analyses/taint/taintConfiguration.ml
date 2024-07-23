@@ -399,21 +399,6 @@ module PartialSinkConverter = struct
           |> PartialSink.Map.find_opt partial_sink
           >>= TriggeringSource.Map.find_opt triggering_source)
     |> Option.value ~default:PartialSink.Triggered.Set.empty
-
-
-  (* Convert the given partial sink into all possible triggered sinks -- any triggered sink that has
-     the same partial sink kind. *)
-  let to_triggered_sinks ~partial_sink converter =
-    converter
-    |> PartialSink.Map.data
-    |> List.map ~f:TriggeringSource.Map.data
-    |> List.concat
-    |> Algorithms.fold_balanced
-         ~f:PartialSink.Triggered.Set.union
-         ~init:PartialSink.Triggered.Set.empty
-    |> PartialSink.Triggered.Set.filter
-         (fun { Sinks.PartialSink.Triggered.partial_sink = triggered; _ } ->
-           Sinks.PartialSink.equal partial_sink triggered)
 end
 
 module StringOperationPartialSinks = struct

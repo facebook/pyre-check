@@ -22,31 +22,23 @@ end
 module Sinks = struct
   include Sinks
 
-  let rec from_sink ~partial_sink_converter = function
+  let rec from_sink sink =
+    match sink with
     | Sinks.Attach -> None
-    | Sinks.PartialSink partial_sink as sink ->
-        Some
-          (partial_sink_converter
-          |> TaintConfiguration.PartialSinkConverter.to_triggered_sinks ~partial_sink
-          (* Any triggered sink that has the same partial sink kind. *)
-          |> Sinks.PartialSink.Triggered.Set.elements
-          |> List.map ~f:(fun triggered -> Sinks.TriggeredPartialSink triggered)
-          |> Set.of_list
-          |> Set.add sink (* The partial sink itself is also covered. *))
-    | Sinks.TriggeredPartialSink _ as sink -> Some (Set.singleton sink)
+    | Sinks.PartialSink _ as sink -> Some (Set.singleton sink)
     | Sinks.LocalReturn -> None
     | Sinks.NamedSink _ as sink -> Some (Set.singleton sink)
     | Sinks.ParametricSink { sink_name; _ } -> Some (Set.singleton (Sinks.NamedSink sink_name))
     | Sinks.ParameterUpdate _ -> None
     | Sinks.AddFeatureToArgument -> None
-    | Sinks.Transform _ as sink -> from_sink ~partial_sink_converter (Sinks.discard_transforms sink)
+    | Sinks.Transform _ as sink -> from_sink (Sinks.discard_transforms sink)
     | Sinks.ExtraTraceSink -> None
 
 
-  let from_sinks ~partial_sink_converter sinks =
+  let from_sinks sinks =
     List.fold
       ~f:(fun so_far sink ->
-        match from_sink ~partial_sink_converter sink with
+        match from_sink sink with
         | Some sinks -> Sinks.Set.union so_far sinks
         | None -> so_far)
       sinks
@@ -85,7 +77,6 @@ let empty =
 
 
 let from_model
-    ~partial_sink_converter
     {
       Model.forward = { generations };
       Model.backward = { taint_in_taint_out; sink_taint };
@@ -132,16 +123,16 @@ let from_model
   in
   {
     sources = sources |> Sources.Set.filter_map Sources.from_source;
-    sinks = sinks |> Sinks.Set.elements |> Sinks.from_sinks ~partial_sink_converter;
+    sinks = sinks |> Sinks.Set.elements |> Sinks.from_sinks;
     non_sanitize_transforms =
       NonSanitizeTransforms.Set.union source_non_sanitize_transforms sink_non_sanitize_transforms;
   }
 
 
-let from_rule ~partial_sink_converter { Rule.sources; sinks; transforms; _ } =
+let from_rule { Rule.sources; sinks; transforms; _ } =
   {
     sources = sources |> Sources.Set.of_list |> Sources.Set.filter_map Sources.from_source;
-    sinks = Sinks.from_sinks ~partial_sink_converter sinks;
+    sinks = Sinks.from_sinks sinks;
     non_sanitize_transforms =
       (* Not consider transforms from sources or sinks, since those should not have transforms. *)
       NonSanitizeTransforms.Set.of_list transforms;

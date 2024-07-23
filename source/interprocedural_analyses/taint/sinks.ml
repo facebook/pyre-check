@@ -51,7 +51,6 @@ module T = struct
   type t =
     | Attach
     | PartialSink of PartialSink.t
-    | TriggeredPartialSink of PartialSink.Triggered.t
     | LocalReturn (* Special marker to describe function in-out behavior *)
     | NamedSink of string
     | ParametricSink of {
@@ -75,8 +74,6 @@ module T = struct
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
     | PartialSink partial_sink -> Format.fprintf formatter "PartialSink[%s]" partial_sink
-    | TriggeredPartialSink triggered ->
-        Format.fprintf formatter "TriggeredPartialSink[%a]" PartialSink.Triggered.pp triggered
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
@@ -208,6 +205,13 @@ let extract_sanitize_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms
   | _ -> SanitizeTransformSet.empty
+
+
+let create_triggered_sink ~triggering_source partial_sink =
+  make_transform
+    ~base:(PartialSink partial_sink)
+    ~local:[TaintTransform.TriggeredPartialSink { triggering_source }]
+    ~global:[]
 
 
 let rec extract_partial_sink = function

@@ -489,7 +489,6 @@ module Sink = Make (struct
     | Sinks.AddFeatureToArgument ->
         NonTransformable sink
     | Sinks.PartialSink _
-    | Sinks.TriggeredPartialSink _
     | Sinks.LocalReturn
     | Sinks.ExtraTraceSink
     | Sinks.NamedSink _
@@ -522,7 +521,6 @@ module Sink = Make (struct
     | Sinks.Attach
     | Sinks.AddFeatureToArgument
     | Sinks.PartialSink _
-    | Sinks.TriggeredPartialSink _
     | Sinks.LocalReturn
     | Sinks.ParameterUpdate _
     | Sinks.ExtraTraceSink ->

@@ -15,8 +15,9 @@ open Core
 module MatchingSanitizeTransforms = struct
   type t = {
     transforms: SanitizeTransformSet.t;
-    (* False if the set of matching sources or sinks cannot be sanitized,
-     * for instance if it contains a transform, or a (triggered) partial sink. *)
+    (* For a sink / source, if all of its potential matching sources / sinks are sanitized, can we
+       remove the sink / source? If yes then `sanitizable = true`. This is an optimization to stop
+       propagating taint early, and hence using `sanitizable = false` is always sound. *)
     sanitizable: bool;
   }
   [@@deriving show]
@@ -33,7 +34,14 @@ module MatchingSanitizeTransforms = struct
             SanitizeTransformSet.add_source (SanitizeTransform.Source.Named name) transforms;
           sanitizable;
         }
-    | Sources.Transform _ -> { transforms; sanitizable = false }
+    | Sources.Transform { global; local; _ }
+      when List.exists ~f:TaintTransform.is_named_transform global
+           || List.exists ~f:TaintTransform.is_named_transform local ->
+        (* Be sound. Since a rule could allow a sink to match some source after going through named
+           transforms, we don't remove the sink even if all of its matching sources are
+           sanitized. *)
+        { transforms; sanitizable = false }
+    | Sources.Transform _ -> { transforms; sanitizable }
     | Sources.Attach -> failwith "unexpected source in `matching_sources`"
 
 
@@ -44,10 +52,15 @@ module MatchingSanitizeTransforms = struct
           transforms = SanitizeTransformSet.add_sink (SanitizeTransform.Sink.Named name) transforms;
           sanitizable;
         }
-    | Sinks.Transform _
-    | Sinks.PartialSink _
-    | Sinks.TriggeredPartialSink _ ->
+    | Sinks.Transform { global; local; _ }
+      when List.exists ~f:TaintTransform.is_named_transform global
+           || List.exists ~f:TaintTransform.is_named_transform local ->
+        (* Be sound. Since a rule could allow a source to match some sink after going through named
+           transforms, we don't remove the source even if all of its matching sinks are
+           sanitized. *)
         { transforms; sanitizable = false }
+    | Sinks.PartialSink _ -> { transforms; sanitizable = false }
+    | Sinks.Transform _ -> { transforms; sanitizable }
     | Sinks.LocalReturn
     | Sinks.ParameterUpdate _
     | Sinks.Attach
@@ -203,21 +216,6 @@ let possible_tito_transforms_from_rules ~rules =
   |> TaintTransforms.Set.of_list
 
 
-let add_matching_partial_sinks ~rules matching_sources =
-  let add_partial_sink matching_sources = function
-    | Sinks.TriggeredPartialSink { partial_sink; _ } ->
-        Sinks.Map.add
-          (Sinks.PartialSink partial_sink)
-          MatchingSanitizeTransforms.unsanitizable
-          matching_sources
-    | _ -> matching_sources
-  in
-  let add_partial_sinks matching_sources { Rule.sinks; _ } =
-    List.fold sinks ~f:add_partial_sink ~init:matching_sources
-  in
-  List.fold rules ~f:add_partial_sinks ~init:matching_sources
-
-
 let add_extra_trace_sinks possible_tito_transforms matching_source_sanitize_transforms =
   let add_sink tito_transform so_far =
     let sink = Sinks.make_transform ~local:[] ~global:tito_transform ~base:Sinks.ExtraTraceSink in
@@ -233,8 +231,8 @@ let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filter
   let matching_sources, matching_sinks = matching_kinds_from_rules ~rules in
   let possible_tito_transforms = possible_tito_transforms_from_rules ~rules in
   let matching_source_sanitize_transforms =
-    Sinks.Map.map MatchingSanitizeTransforms.from_sources matching_sources
-    |> add_matching_partial_sinks ~rules
+    matching_sources
+    |> Sinks.Map.map MatchingSanitizeTransforms.from_sources
     (* To prevent the special sink `ExtraTraceSink` from being removed, it should have a record in
        the map. *)
     |> add_extra_trace_sinks possible_tito_transforms
@@ -303,7 +301,6 @@ let should_keep_sink ({ possible_tito_transforms; _ } as filter) sink =
   | Sinks.NamedSink _
   | Sinks.ParametricSink _
   | Sinks.PartialSink _
-  | Sinks.TriggeredPartialSink _
   | Sinks.ExtraTraceSink ->
       matching_source_sanitize_transforms filter ~non_sanitize_transforms:[] ~base:sink
       |> Option.is_some

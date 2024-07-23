@@ -19,14 +19,14 @@ module CoveredRule = struct
 
   include T
 
-  let is_covered ~kind_coverage_from_models ~partial_sink_converter ({ Rule.code; _ } as rule) =
+  let is_covered ~kind_coverage_from_models ({ Rule.code; _ } as rule) =
     let ({
            KindCoverage.sources = _;
            sinks = _;
            non_sanitize_transforms = non_sanitize_transforms_from_rule;
          } as from_rule)
       =
-      KindCoverage.from_rule ~partial_sink_converter rule
+      KindCoverage.from_rule rule
     in
     let ({
            KindCoverage.sources = intersected_sources;
@@ -70,7 +70,7 @@ let is_empty { covered_rules; uncovered_rule_codes } =
   CoveredRule.Set.is_empty covered_rules && IntSet.is_empty uncovered_rule_codes
 
 
-let from_rules ~kind_coverage_from_models ~partial_sink_converter rules =
+let from_rules ~kind_coverage_from_models rules =
   let module RuleMap = Stdlib.Map.Make (Int) in
   (* Group rules by code. *)
   let rule_map =
@@ -86,17 +86,13 @@ let from_rules ~kind_coverage_from_models ~partial_sink_converter rules =
       (fun code rules (covered_rules, uncovered_rule_codes) ->
         match rules with
         | [rule] -> (
-            match
-              CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter rule
-            with
+            match CoveredRule.is_covered ~kind_coverage_from_models rule with
             | Some covered_rule ->
                 CoveredRule.Set.add covered_rule covered_rules, uncovered_rule_codes
             | None -> covered_rules, IntSet.add code uncovered_rule_codes)
         | rules ->
             let is_covered =
-              List.map
-                rules
-                ~f:(CoveredRule.is_covered ~kind_coverage_from_models ~partial_sink_converter)
+              List.map rules ~f:(CoveredRule.is_covered ~kind_coverage_from_models)
             in
             (* A multi-source rule is covered, only if all sub-rules are covered. *)
             if List.for_all is_covered ~f:Option.is_some then

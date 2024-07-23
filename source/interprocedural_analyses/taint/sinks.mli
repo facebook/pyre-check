@@ -28,7 +28,6 @@ end
 type t =
   | Attach
   | PartialSink of PartialSink.t
-  | TriggeredPartialSink of PartialSink.Triggered.t
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | NamedSink of string
   | ParametricSink of {
@@ -86,6 +85,8 @@ val to_sanitized_sink_exn : t -> SanitizeTransform.Sink.t
 val from_sanitized_sink : SanitizeTransform.Sink.t -> t
 
 val extract_sanitize_transforms : t -> SanitizeTransformSet.t
+
+val create_triggered_sink : triggering_source:string -> PartialSink.t -> t
 
 val extract_partial_sink : t -> PartialSink.t option
 

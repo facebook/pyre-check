@@ -74,13 +74,6 @@ module PartialSinkConverter : sig
     t ->
     Sinks.PartialSink.Triggered.Set.t
 
-  (* Convert the given partial sink into all possible triggered sinks -- any triggered sink that has
-     the same partial sink kind. *)
-  val to_triggered_sinks
-    :  partial_sink:Sinks.PartialSink.t ->
-    t ->
-    Sinks.PartialSink.Triggered.Set.t
-
   (* For test purpose only. *)
   val add
     :  first_sources:Sources.t list ->

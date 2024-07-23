@@ -46,55 +46,40 @@ let test_from_source _ =
 
 
 let test_from_sink _ =
-  let partial_sink_converter =
-    TaintConfiguration.PartialSinkConverter.add
-      ~first_sources:[Sources.NamedSource "SourceB"]
-      ~first_sink:"SinkB[label_1]"
-      ~second_sources:[Sources.NamedSource "SourceC"]
-      ~second_sink:"SinkC[label_3]"
-      TaintConfiguration.PartialSinkConverter.empty
-  in
-  let assert_sinks ?(partial_sink_converter = partial_sink_converter) ~expected ~actual () =
-    let actual = KindCoverage.Sinks.from_sink ~partial_sink_converter actual in
+  let assert_sinks ~expected ~input () =
     assert_equal
       ~cmp:(Option.equal Sinks.Set.equal)
       ~printer:(Option.value_map ~default:"None" ~f:Sinks.Set.show)
       expected
-      actual
+      (KindCoverage.Sinks.from_sink input)
   in
   let sink = Sinks.NamedSink "SinkA" in
-  assert_sinks ~expected:(Some (Sinks.Set.singleton sink)) ~actual:sink ();
+  assert_sinks ~expected:(Some (Sinks.Set.singleton sink)) ~input:sink ();
   let sink = Sinks.Attach in
-  assert_sinks ~expected:None ~actual:sink ();
+  assert_sinks ~expected:None ~input:sink ();
   let sink = Sinks.PartialSink "SinkB[label_1]" in
   assert_sinks
-    ~expected:
-      (Some
-         ([
-            Sinks.PartialSink "SinkB[label_1]";
-            Sinks.TriggeredPartialSink
-              { partial_sink = "SinkB[label_1]"; triggering_source = "SourceC" };
-          ]
-         |> Sinks.Set.of_list))
-    ~actual:sink
+    ~expected:(Some (Sinks.Set.singleton (Sinks.PartialSink "SinkB[label_1]")))
+    ~input:sink
     ();
-  let sink =
-    Sinks.TriggeredPartialSink { partial_sink = "SinkC[label_2]"; triggering_source = "SourceC" }
-  in
-  assert_sinks ~expected:(Some (Sinks.Set.singleton sink)) ~actual:sink ();
+  let sink = Sinks.create_triggered_sink ~triggering_source:"SourceC" "SinkC[label_2]" in
+  assert_sinks
+    ~expected:(Some (Sinks.Set.singleton (Sinks.PartialSink "SinkC[label_2]")))
+    ~input:sink
+    ();
   let sink = Sinks.LocalReturn in
-  assert_sinks ~expected:None ~actual:sink ();
+  assert_sinks ~expected:None ~input:sink ();
   let sink = Sinks.ParametricSink { sink_name = "SinkD"; subkind = "kind_2" } in
-  assert_sinks ~expected:(Some (Sinks.Set.singleton (Sinks.NamedSink "SinkD"))) ~actual:sink ();
+  assert_sinks ~expected:(Some (Sinks.Set.singleton (Sinks.NamedSink "SinkD"))) ~input:sink ();
   let sink =
     Sinks.ParameterUpdate
       (AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false })
   in
-  assert_sinks ~expected:None ~actual:sink ();
+  assert_sinks ~expected:None ~input:sink ();
   let sink = Sinks.AddFeatureToArgument in
-  assert_sinks ~expected:None ~actual:sink ();
+  assert_sinks ~expected:None ~input:sink ();
   let sink = Sinks.ExtraTraceSink in
-  assert_sinks ~expected:None ~actual:sink ();
+  assert_sinks ~expected:None ~input:sink ();
   let sink =
     Sinks.Transform
       {
@@ -110,7 +95,7 @@ let test_from_sink _ =
         base = Sinks.NamedSink "SinkE";
       }
   in
-  assert_sinks ~expected:(Some (Sinks.Set.singleton (Sinks.NamedSink "SinkE"))) ~actual:sink ()
+  assert_sinks ~expected:(Some (Sinks.Set.singleton (Sinks.NamedSink "SinkE"))) ~input:sink ()
 
 
 let test_from_transform _ =
@@ -222,11 +207,7 @@ let test_from_model _ =
                     }) );
            ])
   in
-  let actual_used_taint =
-    KindCoverage.from_model
-      ~partial_sink_converter:TaintConfiguration.PartialSinkConverter.empty
-      model
-  in
+  let actual_used_taint = KindCoverage.from_model model in
   let expected_used_taint =
     {
       KindCoverage.sources =
@@ -266,12 +247,14 @@ let test_from_rule _ =
       sinks =
         [
           Sinks.NamedSink "SinkA";
-          Sinks.TriggeredPartialSink
-            { partial_sink = "SinkB[label_1]"; triggering_source = "SourceB" };
-          Sinks.TriggeredPartialSink
-            { partial_sink = "SinkB[label_2]"; triggering_source = "SourceC" };
+          Sinks.PartialSink "SinkB[label_1]";
+          Sinks.PartialSink "SinkB[label_2]";
         ];
-      transforms = [TaintTransform.Named "TransformZ"];
+      transforms =
+        [
+          TaintTransform.Named "TransformZ";
+          TaintTransform.TriggeredPartialSink { triggering_source = "SourceB" };
+        ];
       code = 1234;
       name = "Test Rule";
       message_format = "";
@@ -279,11 +262,7 @@ let test_from_rule _ =
       location = None;
     }
   in
-  let actual_used_taint =
-    KindCoverage.from_rule
-      ~partial_sink_converter:TaintConfiguration.PartialSinkConverter.empty
-      rule
-  in
+  let actual_used_taint = KindCoverage.from_rule rule in
   let expected_used_taint =
     {
       KindCoverage.sources = KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
@@ -291,13 +270,15 @@ let test_from_rule _ =
         KindCoverage.Sinks.Set.of_list
           [
             Sinks.NamedSink "SinkA";
-            Sinks.TriggeredPartialSink
-              { partial_sink = "SinkB[label_1]"; triggering_source = "SourceB" };
-            Sinks.TriggeredPartialSink
-              { partial_sink = "SinkB[label_2]"; triggering_source = "SourceC" };
+            Sinks.PartialSink "SinkB[label_1]";
+            Sinks.PartialSink "SinkB[label_2]";
           ];
       non_sanitize_transforms =
-        KindCoverage.NonSanitizeTransforms.Set.of_list [TaintTransform.Named "TransformZ"];
+        KindCoverage.NonSanitizeTransforms.Set.of_list
+          [
+            TaintTransform.Named "TransformZ";
+            TaintTransform.TriggeredPartialSink { triggering_source = "SourceB" };
+          ];
     }
   in
   assert_equal

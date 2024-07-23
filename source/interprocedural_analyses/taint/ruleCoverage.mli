@@ -12,11 +12,7 @@ module CoveredRule : sig
   }
   [@@deriving eq, show]
 
-  val is_covered
-    :  kind_coverage_from_models:KindCoverage.t ->
-    partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
-    Rule.t ->
-    t option
+  val is_covered : kind_coverage_from_models:KindCoverage.t -> Rule.t -> t option
 
   module Set : Data_structures.SerializableSet.S with type elt = t
 end
@@ -33,10 +29,6 @@ val empty : t
 
 val is_empty : t -> bool
 
-val from_rules
-  :  kind_coverage_from_models:KindCoverage.t ->
-  partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
-  Rule.t list ->
-  t
+val from_rules : kind_coverage_from_models:KindCoverage.t -> Rule.t list -> t
 
 val write_to_file : path:PyrePath.t -> t -> unit

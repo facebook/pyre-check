@@ -18,10 +18,7 @@ end
 module Sinks : sig
   type t = Sinks.t
 
-  val from_sink
-    :  partial_sink_converter:TaintConfiguration.PartialSinkConverter.t ->
-    t ->
-    Sinks.Set.t option
+  val from_sink : t -> Sinks.Set.t option
 
   module Set : Stdlib.Set.S with type elt = t
 end
@@ -42,9 +39,9 @@ type t = {
 
 val empty : t
 
-val from_model : partial_sink_converter:TaintConfiguration.PartialSinkConverter.t -> Model.t -> t
+val from_model : Model.t -> t
 
-val from_rule : partial_sink_converter:TaintConfiguration.PartialSinkConverter.t -> Rule.t -> t
+val from_rule : Rule.t -> t
 
 val intersect : t -> t -> t
 

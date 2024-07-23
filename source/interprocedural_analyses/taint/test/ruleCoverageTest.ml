@@ -21,12 +21,11 @@ let test_covered_rule _ =
   in
   let assert_covered_rule
       ?(kind_coverage_from_models = kind_coverage_from_models)
-      ?(partial_sink_converter = TaintConfiguration.PartialSinkConverter.empty)
       ~expected
       ~actual
       ()
     =
-    let actual = CoveredRule.is_covered ~partial_sink_converter ~kind_coverage_from_models actual in
+    let actual = CoveredRule.is_covered ~kind_coverage_from_models actual in
     assert_equal
       ~cmp:(Option.equal CoveredRule.equal)
       ~printer:(Option.value_map ~default:"None" ~f:CoveredRule.show)
@@ -204,13 +203,18 @@ let test_rule_coverage _ =
       location = None;
     }
   in
-  let partial_sink_converter =
-    TaintConfiguration.PartialSinkConverter.add
-      ~first_sources:[Sources.NamedSource "SourceC"; Sources.NamedSource "SourceE"]
-      ~first_sink:"SinkC[label_1]"
-      ~second_sources:[Sources.NamedSource "SourceD"]
-      ~second_sink:"SinkC[label_2]"
-      TaintConfiguration.PartialSinkConverter.empty
+  (* Not covered because triggering source `SourceF` is not used. *)
+  let uncovered_rule_3 =
+    {
+      Rule.sources = [Sources.NamedSource "SourceC"];
+      sinks = [Sinks.PartialSink "SinkC[label_1]"];
+      transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "SourceF" }];
+      code = 1005;
+      name = "Rule 6";
+      message_format = "";
+      filters = None;
+      location = None;
+    }
   in
   let multi_source_rule_part_1 =
     {
@@ -262,13 +266,13 @@ let test_rule_coverage _ =
   in
   let actual_category_coverage =
     RuleCoverage.from_rules
-      ~partial_sink_converter
       ~kind_coverage_from_models
       [
         covered_rule_1;
         covered_rule_2;
         uncovered_rule_1;
         uncovered_rule_2;
+        uncovered_rule_3;
         multi_source_rule_part_1;
         multi_source_rule_part_2;
         multi_source_rule_part_3;
@@ -326,7 +330,7 @@ let test_rule_coverage _ =
                 };
             };
           ];
-      uncovered_rule_codes = RuleCoverage.IntSet.of_list [1002; 1004];
+      uncovered_rule_codes = RuleCoverage.IntSet.of_list [1002; 1004; 1005];
     }
   in
   assert_equal

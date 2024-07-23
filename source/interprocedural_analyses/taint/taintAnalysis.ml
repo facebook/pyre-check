@@ -444,7 +444,6 @@ let compute_coverage
     ~all_callables
     ~rules
     ~fixpoint_state
-    ~partial_sink_converter
   =
   let step_logger =
     StepLogger.start
@@ -470,7 +469,7 @@ let compute_coverage
     callables
     |> List.filter_map ~f:(fun callable ->
            match TaintFixpoint.get_model fixpoint_state callable with
-           | Some model -> Some (KindCoverage.from_model ~partial_sink_converter model)
+           | Some model -> Some (KindCoverage.from_model model)
            | None -> None)
     |> Algorithms.fold_balanced ~f:KindCoverage.union ~init:KindCoverage.empty
   in
@@ -502,9 +501,7 @@ let compute_coverage
       ~start_message:"Computing rule coverage"
       ~end_message:"Finished computing rule coverage"
   in
-  let rule_coverage =
-    RuleCoverage.from_rules ~kind_coverage_from_models ~partial_sink_converter rules
-  in
+  let rule_coverage = RuleCoverage.from_rules ~kind_coverage_from_models rules in
   let () = StepLogger.finish step_logger in
   file_coverage, rule_coverage
 
@@ -849,7 +846,6 @@ let run_taint_analysis
         ~all_callables
         ~rules:taint_configuration.TaintConfiguration.Heap.rules
         ~fixpoint_state
-        ~partial_sink_converter:taint_configuration.TaintConfiguration.Heap.partial_sink_converter
   in
 
   let callables = Target.Set.of_list all_callables in

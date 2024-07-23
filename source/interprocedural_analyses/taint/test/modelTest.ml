@@ -3078,9 +3078,8 @@ let test_partial_sinks context =
       [
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestA"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3089,9 +3088,8 @@ let test_partial_sinks context =
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestB"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3122,9 +3120,8 @@ let test_partial_sinks context =
       [
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestA"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3133,9 +3130,8 @@ let test_partial_sinks context =
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestB"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3281,9 +3277,8 @@ let test_filter_by_rules context =
       [
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestA"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestA"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3292,9 +3287,8 @@ let test_filter_by_rules context =
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
-          sinks =
-            [Sinks.TriggeredPartialSink { partial_sink = "TestB"; triggering_source = "TestTest" }];
-          transforms = [];
+          sinks = [Sinks.PartialSink "TestB"];
+          transforms = [TaintTransform.TriggeredPartialSink { triggering_source = "TestTest" }];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
