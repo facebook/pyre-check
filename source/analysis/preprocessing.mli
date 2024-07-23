@@ -120,8 +120,8 @@ module Qualify (_ : QualifyContext) : sig
 
   type scope = {
     qualifier: Reference.t;
-    aliases: alias Reference.Map.t;
-    locals: Reference.Set.t;
+    aliases: alias Core.String.Map.t;
+    locals: Core.String.Set.t;
     is_top_level: bool;
     is_in_function: bool;
     is_class_toplevel: bool;

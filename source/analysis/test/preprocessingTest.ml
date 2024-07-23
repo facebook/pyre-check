@@ -1975,10 +1975,10 @@ let test_qualify_ast =
     {
       Qualify.qualifier = Reference.create "qualifier";
       aliases =
-        Reference.Map.singleton
-          (Reference.create "a")
+        String.Map.singleton
+          "a"
           { Qualify.name = Reference.create "b"; qualifier = Reference.empty };
-      locals = Reference.Set.empty;
+      locals = String.Set.empty;
       is_top_level = true;
       is_in_function = false;
       is_class_toplevel = false;

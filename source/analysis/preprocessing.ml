@@ -280,8 +280,8 @@ module Qualify (Context : QualifyContext) = struct
 
   type scope = {
     qualifier: Reference.t;
-    aliases: alias Reference.Map.t;
-    locals: Reference.Set.t;
+    aliases: alias String.Map.t;
+    locals: String.Set.t;
     is_top_level: bool;
     is_in_function: bool;
     is_class_toplevel: bool;
@@ -302,22 +302,23 @@ module Qualify (Context : QualifyContext) = struct
       None
     else
       let renamed = Format.asprintf "$%s$%s" prefix name in
-      let reference = Reference.create name in
       Some
         ( {
             scope with
             aliases =
               Map.set
                 aliases
-                ~key:reference
+                ~key:name
                 ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
-            locals = Set.add locals reference;
+            locals = Set.add locals name;
           },
           stars ^ renamed )
 
 
   let rec explore_scope ~scope statements =
-    let global_alias ~qualifier ~name = { name = Reference.combine qualifier name; qualifier } in
+    let global_alias ~qualifier ~name =
+      { name = Reference.combine qualifier (Reference.create name); qualifier }
+    in
     let explore_scope ({ qualifier; aliases; locals; is_in_function; _ } as scope) { Node.value; _ }
       =
       match value with
@@ -327,14 +328,27 @@ module Qualify (Context : QualifyContext) = struct
             annotation = Some { Node.value = Expression.Name (Name.Identifier "_SpecialForm"); _ };
             _;
           } ->
-          let name = Reference.create target_name in
-          { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
+          {
+            scope with
+            aliases =
+              Map.set aliases ~key:target_name ~data:(global_alias ~qualifier ~name:target_name);
+          }
       | Class { Class.name; _ } ->
-          { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
+          let class_name = Reference.show name in
+          {
+            scope with
+            aliases =
+              Map.set aliases ~key:class_name ~data:(global_alias ~qualifier ~name:class_name);
+          }
       | Define { Define.signature = { name; _ }; _ } when is_in_function ->
           qualify_function_name ~scope name |> fst
       | Define { Define.signature = { name; _ }; _ } when not is_in_function ->
-          { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
+          let define_name = Reference.show name in
+          {
+            scope with
+            aliases =
+              Map.set aliases ~key:define_name ~data:(global_alias ~qualifier ~name:define_name);
+          }
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
           explore_scope ~scope orelse
@@ -343,15 +357,13 @@ module Qualify (Context : QualifyContext) = struct
           explore_scope ~scope orelse
       | Global identifiers ->
           let locals =
-            let register_global locals identifier = Set.add locals (Reference.create identifier) in
+            let register_global locals identifier = Set.add locals identifier in
             List.fold identifiers ~init:locals ~f:register_global
           in
           { scope with locals }
       | Nonlocal identifiers ->
           let locals =
-            let register_nonlocal locals identifier =
-              Set.add locals (Reference.create identifier)
-            in
+            let register_nonlocal locals identifier = Set.add locals identifier in
             List.fold identifiers ~init:locals ~f:register_nonlocal
           in
           { scope with locals }
@@ -382,8 +394,8 @@ module Qualify (Context : QualifyContext) = struct
           let alias = get_qualified_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with
-              aliases = Map.set aliases ~key:name ~data:{ name = alias; qualifier };
-              locals = Set.add locals name;
+              aliases = Map.set aliases ~key:simple_name ~data:{ name = alias; qualifier };
+              locals = Set.add locals simple_name;
             },
             alias )
       | _ -> scope, qualify_reference ~scope name
@@ -392,10 +404,14 @@ module Qualify (Context : QualifyContext) = struct
         if is_class_toplevel then
           scope
         else
+          let function_name = Reference.show name in
           {
             scope with
             aliases =
-              Map.set aliases ~key:name ~data:{ name = Reference.combine qualifier name; qualifier };
+              Map.set
+                aliases
+                ~key:function_name
+                ~data:{ name = Reference.combine qualifier name; qualifier };
           }
       in
       scope, qualify_reference ~scope name
@@ -437,10 +453,7 @@ module Qualify (Context : QualifyContext) = struct
       | None -> scope, parameter :: reversed_parameters
     in
     let scope, parameters =
-      List.fold
-        parameters
-        ~init:({ scope with locals = Reference.Set.empty }, [])
-        ~f:rename_parameter
+      List.fold parameters ~init:({ scope with locals = String.Set.empty }, []) ~f:rename_parameter
     in
     scope, List.rev parameters
 
@@ -520,7 +533,7 @@ module Qualify (Context : QualifyContext) = struct
                           | Some alias -> alias
                           | None -> local_alias ~qualifier ~name:(name_to_reference_exn qualified)
                         in
-                        Map.update aliases (Reference.create name) ~f:update
+                        Map.update aliases name ~f:update
                       in
                       { scope with aliases }
                     in
@@ -531,19 +544,15 @@ module Qualify (Context : QualifyContext) = struct
                 | Name (Name.Identifier name) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
-                      let reference = Reference.create name in
-                      if (not (is_qualified name)) && not (Set.mem locals reference) then
+                      if (not (is_qualified name)) && not (Set.mem locals name) then
                         let alias =
                           get_qualified_local_identifier name ~qualifier |> Reference.create
                         in
                         {
                           scope with
                           aliases =
-                            Map.set
-                              aliases
-                              ~key:reference
-                              ~data:(local_alias ~qualifier ~name:alias);
-                          locals = Set.add locals reference;
+                            Map.set aliases ~key:name ~data:(local_alias ~qualifier ~name:alias);
+                          locals = Set.add locals name;
                         }
                       else
                         scope
@@ -752,12 +761,13 @@ module Qualify (Context : QualifyContext) = struct
               } )
       | Class ({ name; _ } as definition) ->
           let scope =
+            let class_name = Reference.show name in
             {
               scope with
               aliases =
                 Map.set
                   aliases
-                  ~key:name
+                  ~key:class_name
                   ~data:(local_alias ~qualifier ~name:(Reference.combine qualifier name));
             }
           in
@@ -803,13 +813,13 @@ module Qualify (Context : QualifyContext) = struct
                 (* Add `alias -> from.name`. *)
                 Map.set
                   aliases
-                  ~key:(Reference.create alias)
+                  ~key:alias
                   ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
             | None ->
                 (* Add `name -> from.name`. *)
                 Map.set
                   aliases
-                  ~key:name
+                  ~key:(Reference.show name)
                   ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
@@ -818,7 +828,7 @@ module Qualify (Context : QualifyContext) = struct
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:(Reference.create alias) ~data:(local_alias ~qualifier ~name)
+                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
@@ -983,10 +993,7 @@ module Qualify (Context : QualifyContext) = struct
 
   and qualify_target ?(in_comprehension = false) ~scope target =
     let rec renamed_scope ({ locals; _ } as scope) target =
-      let has_local name =
-        let reference = Reference.create name in
-        (not in_comprehension) && Set.mem locals reference
-      in
+      let has_local name = (not in_comprehension) && Set.mem locals name in
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
@@ -1007,14 +1014,14 @@ module Qualify (Context : QualifyContext) = struct
     match Reference.as_list reference with
     | [] -> Reference.empty
     | head :: tail -> (
-        match Map.find aliases (Reference.create head) with
+        match Map.find aliases head with
         | Some { name; _ } -> Reference.combine name (Reference.create_from_list tail)
         | _ -> reference)
 
 
   and qualify_name ~qualify_strings ~location ~scope:({ aliases; _ } as scope) = function
     | Name.Identifier identifier -> (
-        match Map.find aliases (Reference.create identifier) with
+        match Map.find aliases identifier with
         | Some { name; _ } -> create_name_from_reference ~location name
         | _ -> Name.Identifier identifier)
     | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
@@ -1272,8 +1279,8 @@ let qualify
   let scope =
     {
       Qualify.qualifier;
-      aliases = Reference.Map.empty;
-      locals = Reference.Set.empty;
+      aliases = String.Map.empty;
+      locals = String.Set.empty;
       is_top_level = true;
       is_in_function = false;
       is_class_toplevel = false;
