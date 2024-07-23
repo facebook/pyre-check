@@ -163,6 +163,7 @@ and override_kind =
 and invalid_inheritance =
   | FinalClass of Identifier.t
   | GenericProtocol
+  | ProtocolBaseClass
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;

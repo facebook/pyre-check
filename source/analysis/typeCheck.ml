@@ -6753,6 +6753,24 @@ module State (Context : Context) = struct
           else
             errors
         in
+        let check_protocol_bases base_types_and_locations errors =
+          let has_unsubscripted_protocol =
+            List.find base_types_and_locations ~f:(fun (base, _) ->
+                match base with
+                | Type.Primitive "typing.Protocol" -> true
+                | _ -> false)
+            |> Option.is_some
+          in
+          if has_unsubscripted_protocol then
+            List.fold ~init:errors base_types_and_locations ~f:(fun errors (base, location) ->
+                match base with
+                | Type.Primitive "typing.Protocol" -> errors
+                | Type.Parametric { name = "typing.Generic"; _ } -> errors
+                | _ when GlobalResolution.is_protocol global_resolution base -> errors
+                | _ -> emit_error ~errors ~location ~kind:(InvalidInheritance ProtocolBaseClass))
+          else
+            errors
+        in
         let bases =
           Node.create define ~location
           |> AnnotatedDefine.create
@@ -6764,7 +6782,10 @@ module State (Context : Context) = struct
         let errors, base_types_and_locations =
           List.fold ~init:(errors, []) ~f:check_base_class bases
         in
-        let errors = check_generic_protocols base_types_and_locations errors in
+        let errors =
+          check_generic_protocols base_types_and_locations errors
+          |> check_protocol_bases base_types_and_locations
+        in
         if is_current_class_typed_dictionary then
           let open Type.TypedDictionary in
           let superclass_pairs_with_same_field_name =

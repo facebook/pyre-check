@@ -197,6 +197,7 @@ and override_kind =
 and invalid_inheritance =
   | FinalClass of Identifier.t
   | GenericProtocol
+  | ProtocolBaseClass
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;
@@ -2104,6 +2105,12 @@ let rec messages ~concise ~signature location kind =
       [formatted; "See `https://pyre-check.org/docs/errors#35-invalid-type-variance` for details."]
   | InvalidInheritance invalid_inheritance -> (
       match invalid_inheritance with
+      | ProtocolBaseClass ->
+          [
+            Format.asprintf
+              "If Protocol is included as a base class, all other base classes must be protocols \
+               or Generic.";
+          ]
       | FinalClass class_name ->
           [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
       | GenericProtocol ->
@@ -4149,6 +4156,7 @@ let dequalify
   let dequalify_invalid_inheritance = function
     | FinalClass name -> FinalClass (dequalify_identifier name)
     | GenericProtocol -> GenericProtocol
+    | ProtocolBaseClass -> ProtocolBaseClass
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }
