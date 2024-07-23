@@ -4071,6 +4071,8 @@ let create_literal = function
 
 let resolved_empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
+let resolved_empty_variables _ = None
+
 let alternate_name_to_canonical_name_map =
   [
     "typing.ChainMap", "collections.ChainMap";
@@ -4111,12 +4113,10 @@ let parameters_from_unpacked_annotation annotation ~get_variable =
 
 let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
   let create_logic = create_logic ~resolve_aliases ~variable_aliases in
-  let get_variable identifier =
-    variable_aliases identifier >>| Variable.of_declaration ~create_type:create_logic
-  in
+  (* let get_variable identifier = variable_aliases identifier ~create_type:create_logic in *)
   let substitute_parameter_variadic = function
     | Primitive name -> (
-        match get_variable name with
+        match variable_aliases name with
         | Some (Record.Variable.ParamSpecVariable variable) ->
             Some { Record.Callable.variable; head = [] }
         | _ -> None)
@@ -4181,7 +4181,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                     List.map tail ~f:(fun annotation ->
                         create_logic (Node.create_with_default_location annotation))
                   in
-                  OrderedTypes.concatenation_from_annotations ~get_variable elements
+                  OrderedTypes.concatenation_from_annotations
+                    ~get_variable:variable_aliases
+                    elements
                   >>| (fun concatenation -> CallableParamType.Concatenation concatenation)
                   |> Option.value
                        ~default:
@@ -4373,7 +4375,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 ]
             | element -> (
                 let parsed = create_logic element in
-                match parameters_from_unpacked_annotation ~get_variable parsed with
+                match parameters_from_unpacked_annotation ~get_variable:variable_aliases parsed with
                 | Some parameters -> parameters
                 | None -> (
                     match substitute_parameter_variadic parsed with
@@ -4434,7 +4436,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             create_parametric ~base ~subscript_index)
   in
   let resolve_variables_then_aliases alias_name =
-    match get_variable alias_name with
+    match variable_aliases alias_name with
     | Some (Record.Variable.TypeVarVariable variable) -> Variable variable
     | _ -> Primitive alias_name |> resolve_aliases
   in
@@ -4588,7 +4590,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               |> Option.all
             in
             all_positional_only_parameters
-            >>= OrderedTypes.concatenation_from_annotations ~get_variable
+            >>= OrderedTypes.concatenation_from_annotations ~get_variable:variable_aliases
             >>| (fun concatenation ->
                   { overload with parameters = Defined [Variable (Concatenation concatenation)] })
             |> Option.value ~default:overload

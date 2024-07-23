@@ -977,12 +977,14 @@ val resolve_aliases
   t
 
 val create
-  :  variables:(string -> Variable.Declaration.t option) ->
+  :  variables:(string -> Variable.t option) ->
   aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option) ->
   Expression.t ->
   t
 
 val resolved_empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> t option
+
+val resolved_empty_variables : string -> Variable.t option
 
 val infer_transform : t -> t
 

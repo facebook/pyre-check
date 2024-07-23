@@ -5953,7 +5953,6 @@ module State (Context : Context) = struct
   let initial ~resolution =
     let global_resolution = Resolution.global_resolution resolution in
 
-    (* let aliases = GlobalResolution.get_type_alias global_resolution in *)
     let variables = Resolution.variables resolution in
 
     let {

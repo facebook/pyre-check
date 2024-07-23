@@ -18,7 +18,17 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single
 
 let variable_aliases aliases name =
   match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) -> Some variable
+  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) ->
+      let type_variables =
+        Type.Variable.of_declaration
+          ~create_type:
+            (Type.create
+               ~aliases:Type.resolved_empty_aliases
+               ~variables:Type.resolved_empty_variables)
+          variable
+      in
+
+      Some type_variables
   | _ -> None
 
 

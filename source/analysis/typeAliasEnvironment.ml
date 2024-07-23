@@ -51,20 +51,14 @@ module IncomingDataComputation = struct
       target: Reference.t;
     }
 
-    let unchecked_resolve ~unparsed ~target map =
-      let aliases ?replace_unbound_parameters_with_any:_ name = Map.find map name in
+    let unchecked_resolve ~unparsed ~target ~variables ~aliases =
       let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
         match aliases name with
         | Some (RawAlias.TypeAlias t) -> Some t
         | _ -> None
       in
-      let variable_aliases name =
-        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (RawAlias.VariableAlias variable) -> Some variable
-        | _ -> None
-      in
 
-      match Type.create ~variables:variable_aliases ~aliases:resolved_aliases unparsed with
+      match Type.create ~variables ~aliases:resolved_aliases unparsed with
       | Type.Variable variable -> Type.Variable { variable with name = Reference.show target }
       | annotation -> annotation
 
@@ -80,7 +74,10 @@ module IncomingDataComputation = struct
         Queries.{ class_exists; module_exists; is_from_empty_stub; _ }
         { value; target }
       =
-      let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
+      let aliases ?replace_unbound_parameters_with_any:_ _name = None in
+      let value_annotation =
+        unchecked_resolve ~unparsed:value ~target ~variables:Type.resolved_empty_variables ~aliases
+      in
       let dependencies = String.Hash_set.create () in
       let module TrackedTransform = Type.VisitWithTransform.Make (struct
         type state = unit
@@ -165,7 +162,6 @@ module IncomingDataComputation = struct
               | Some variable -> Some (VariableAlias variable)
               | _ ->
                   let variable_aliases _ = None in
-
                   let value = Type.preprocess_alias_value value |> delocalize in
                   let value_annotation =
                     Type.create
@@ -259,8 +255,33 @@ module IncomingDataComputation = struct
                   |> List.map ~f:solve_pair
                   |> Option.all
                   >>| String.Map.of_alist_exn
-                  >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
-                  >>| fun alias -> RawAlias.TypeAlias alias)
+                  >>| fun map ->
+                  let aliases ?replace_unbound_parameters_with_any:_ name = Map.find map name in
+
+                  let resolved_aliases ?replace_unbound_parameters_with_any name =
+                    match aliases ?replace_unbound_parameters_with_any name with
+                    | Some (RawAlias.TypeAlias t) -> Some t
+                    | _ -> None
+                  in
+
+                  let rec variable_aliases name =
+                    match aliases name with
+                    | Some (RawAlias.VariableAlias variable) ->
+                        let type_variables =
+                          Type.Variable.of_declaration
+                            ~create_type:
+                              (Type.create ~aliases:resolved_aliases ~variables:variable_aliases)
+                            variable
+                        in
+                        Some type_variables
+                    | _ -> None
+                  in
+                  UnresolvedAlias.unchecked_resolve
+                    ~target:current
+                    ~unparsed
+                    ~variables:variable_aliases
+                    ~aliases
+                  |> fun alias -> RawAlias.TypeAlias alias)
         in
         extract_alias queries current
         >>= resolve_after_resolving_dependencies
@@ -304,10 +325,16 @@ module OutgoingDataComputation = struct
       in
       let variable_aliases name =
         match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (RawAlias.VariableAlias variable) -> Some variable
+        | Some (RawAlias.VariableAlias variable) ->
+            let type_variables =
+              Type.Variable.of_declaration
+                ~create_type:
+                  (Type.create ~aliases:resolved_aliases ~variables:Type.resolved_empty_variables)
+                variable
+            in
+            Some type_variables
         | _ -> None
       in
-
       Type.create ~variables:variable_aliases ~aliases:resolved_aliases expression
     in
     let annotation =

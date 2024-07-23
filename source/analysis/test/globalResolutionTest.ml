@@ -1109,7 +1109,7 @@ let test_invalid_type_parameters =
     let parse annotation =
       let variable_aliases name =
         match name with
-        | "Ts" -> Some (Type.Variable.Declaration.DTypeVarTuple { name = "Ts" })
+        | "Ts" -> Some (Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name))
         | _ -> None
       in
       parse_single_expression ~preprocess:true annotation

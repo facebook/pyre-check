@@ -18,7 +18,7 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single
 
 let variable_aliases name =
   match name with
-  | "Ts" -> Some (Type.Variable.Declaration.DTypeVarTuple { name = "Ts" })
+  | "Ts" -> Some (Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name))
   | _ -> None
 
 
