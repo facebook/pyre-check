@@ -10,8 +10,7 @@ class Node:
     def __init__(self, id) -> None:
         self.id = id
 
-    def send(self, vc) -> None:
-        ...
+    def send(self, vc) -> None: ...
 
     @classmethod
     def get(cls, id) -> "Node":
@@ -55,16 +54,6 @@ def issue_with_triggered_context():
 def no_issue_with_wrong_label():
     vc = permissive_context()
     demonstrate_triggered_input(vc)
-
-
-def wrapper_node_get_send(id, vc):
-    Node.get(id).send(vc)
-
-
-def issue_with_wrapper_node_get_send():
-    id = user_controlled_input()
-    vc = permissive_context()
-    wrapper_node_get_send(id, vc)
 
 
 def test_other_input():
@@ -177,6 +166,16 @@ def multiple_triggered_context(vc):
     Node.get(id2).send(vc)
 
 
+def wrapper_node_get_send(id, vc):
+    Node.get(id).send(vc)
+
+
+def issue_with_wrapper_node_get_send():
+    id = user_controlled_input()
+    vc = permissive_context()
+    wrapper_node_get_send(id, vc)
+
+
 def wrapper_node_get_send_triggered_context(vc):
     id = user_controlled_input()
     # We should see a triggered partial sink here
@@ -186,6 +185,30 @@ def wrapper_node_get_send_triggered_context(vc):
 def issue_with_wrapper_node_get_send_triggered_context():
     vc = permissive_context()
     wrapper_node_get_send_triggered_context(vc)
+
+
+def wrapper_node_send(id, vc):
+    # TODO(T196830603): Expect no partial sink, because we need two partial sinks on different
+    # parameters to file an issue
+    id = 0
+    Node.get(id).send(vc)
+
+
+def wrapper_combined_node_get_send(combined):
+    # TODO(T196830603): Expect no partial sink, because we need two partial sinks on different
+    # parameters to file an issue
+    if 1 == 1:
+        id = combined
+    else:
+        vc = combined
+    Node.get(id).send(vc)
+
+
+def wrapper_mismatched_partial_sinks(id, vc):
+    # TODO(T196830603): Expect no partial sink, because the two partial sinks are from different
+    # call sites.
+    Node.get(id).send(0)
+    Node.get(0).send(vc)
 
 
 # Share both partial sink kinds in multiple rules
