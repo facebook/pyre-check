@@ -622,31 +622,6 @@ let test_check_attributes =
                 return bar.bar
             |}
            [];
-      (* Things that inherit from any have all attributes *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_strict_type_errors
-           {|
-              from typing import Any
-              from placeholder_stub import StubbedBase
-              class Else(StubbedBase):
-                  def __init__(self, actually_there: int) -> None:
-                     self.actually_there = actually_there
-                     super().__init__()
-              def main() -> None:
-                  instance = Else(1)
-                  a = instance.prop
-                  reveal_type(a)
-                  a = Else.class_prop
-                  reveal_type(a)
-                  a = instance.actually_there
-                  reveal_type(a)
-            |}
-           [
-             "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
-             "Undefined attribute [16]: `Else` has no attribute `class_prop`.";
-             "Revealed type [-1]: Revealed type for `a` is `unknown`.";
-             "Revealed type [-1]: Revealed type for `a` is `int`.";
-           ];
       (* We allow instance attributes to be accessed via class objects. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

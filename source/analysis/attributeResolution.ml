@@ -2762,7 +2762,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
-      let Queries.{ get_class_summary; get_class_metadata; class_hierarchy; _ } = queries in
+      let Queries.{ get_class_summary; get_class_metadata; _ } = queries in
 
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
@@ -2797,47 +2797,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
 
-        let add_placeholder_stub_inheritances () =
-          let add_if_missing ~attribute_name ~annotation =
-            if Option.is_none (UninstantiatedAttributeTable.lookup_name table attribute_name) then
-              let callable =
-                {
-                  Type.Callable.kind = Anonymous;
-                  implementation = { annotation; parameters = Undefined };
-                  overloads = [];
-                }
-              in
-              UninstantiatedAttributeTable.add
-                table
-                (AnnotatedAttribute.create_uninstantiated
-                   ~uninstantiated_annotation:
-                     {
-                       AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass;
-                       kind = Attribute (Callable callable);
-                     }
-                   ~abstract:false
-                   ~async_property:false
-                   ~class_variable:false
-                   ~defined:true
-                   ~initialized:OnClass
-                   ~name:attribute_name
-                   ~parent:class_name
-                   ~visibility:ReadWrite
-                   ~property:false
-                   ~undecorated_signature:(Some callable)
-                   ~problem:None)
-            else
-              ()
-          in
-          add_if_missing ~attribute_name:"__init__" ~annotation:Type.none;
-          add_if_missing ~attribute_name:"__getattr__" ~annotation:Type.Any
-        in
         add_actual ();
-        let extends_placeholder_stubs class_name =
-          ClassHierarchy.extends_placeholder_stub (class_hierarchy ()) class_name
-        in
-        if include_generated_attributes && extends_placeholder_stubs class_name then
-          add_placeholder_stub_inheritances ();
         let () =
           if include_generated_attributes then
             apply_dataclass_transforms_to_table

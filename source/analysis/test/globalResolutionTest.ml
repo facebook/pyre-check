@@ -700,7 +700,6 @@ let test_attribute_from_class_name =
       setup
         {|
           from dataclasses import dataclass
-          from placeholder_stub import StubParent
 
           class SimpleClass:
             some_attribute: str = "foo"
@@ -741,8 +740,6 @@ let test_attribute_from_class_name =
           class ExplicitProtChild(Prot):
             def other(self, x: int) -> str: ...
 
-          class ChildOfPlaceholderStub(StubParent):
-            pass
         |}
     in
     let actual_attribute =
@@ -957,17 +954,6 @@ let test_attribute_from_class_name =
                ~uninstantiated_annotation:"object"
                "__call__"
                "typing.Callable[[Named(x, str)], int]"));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_attribute
-           ~parent:"test.ChildOfPlaceholderStub"
-           ~instantiated:(Type.Primitive "test.ChildOfPlaceholderStub")
-           ~attribute_name:"__getattr__"
-           (create_expected_attribute
-              ~parent:"test.ChildOfPlaceholderStub"
-              ~visibility:ReadWrite
-              ~uninstantiated_annotation:"typing.Callable[..., typing.Any]"
-              "__getattr__"
-              "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.SimpleClass"
