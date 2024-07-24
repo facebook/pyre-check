@@ -5461,13 +5461,21 @@ module State (Context : Context) = struct
     in
 
     match Node.value target, value with
-    | Expression.Name (Name.Identifier _), Some value
-      when delocalize target |> Expression.show |> variables |> Option.is_some ->
+    | Expression.Name (Name.Identifier name), Some value
+      when Reference.create name
+           |> Reference.delocalize
+           |> Reference.show
+           |> variables
+           |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)
         forward_variable_alias_definition ~resolution ~location ~errors ~value
-    | Expression.Name (Name.Identifier _), Some value
-      when delocalize target |> Expression.show |> aliases |> Option.is_some ->
+    | Expression.Name (Name.Identifier name), Some value
+      when Reference.create name
+           |> Reference.delocalize
+           |> Reference.show
+           |> aliases
+           |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)
         forward_type_alias_definition ~resolution ~location ~errors ~target ~value
