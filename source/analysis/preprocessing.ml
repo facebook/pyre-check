@@ -296,6 +296,30 @@ module Qualify (Context : QualifyContext) = struct
       Reference.combine qualifier name
 
 
+  let qualify_local_identifier_ignore_preexisting
+      ~scope:({ aliases; locals; _ } as scope)
+      ~qualifier
+      name
+    =
+    if is_qualified name then
+      scope, name
+    else
+      let renamed = get_qualified_local_identifier name ~qualifier in
+      ( {
+          scope with
+          aliases = Map.set aliases ~key:name ~data:{ name = Reference.create renamed; qualifier };
+          locals = Set.add locals name;
+        },
+        renamed )
+
+
+  let qualify_local_identifier ~scope:({ locals; _ } as scope) ~qualifier name =
+    if Set.mem locals name then
+      scope, name
+    else
+      qualify_local_identifier_ignore_preexisting ~scope ~qualifier name
+
+
   let prefix_identifier ~scope:({ aliases; locals; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     if is_qualified name then
@@ -385,19 +409,16 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_function_name
-      ~scope:({ aliases; locals; is_in_function; is_class_toplevel; qualifier; _ } as scope)
+      ~scope:({ aliases; is_in_function; is_class_toplevel; qualifier; _ } as scope)
       name
     =
     if is_in_function then
       match Reference.as_list name with
-      | [simple_name] when not (is_qualified simple_name) ->
-          let alias = get_qualified_local_identifier simple_name ~qualifier |> Reference.create in
-          ( {
-              scope with
-              aliases = Map.set aliases ~key:simple_name ~data:{ name = alias; qualifier };
-              locals = Set.add locals simple_name;
-            },
-            alias )
+      | [simple_name] ->
+          let scope, alias =
+            qualify_local_identifier_ignore_preexisting ~scope ~qualifier simple_name
+          in
+          scope, Reference.create alias
       | _ -> scope, qualify_reference ~scope name
     else
       let scope =
@@ -497,7 +518,7 @@ module Qualify (Context : QualifyContext) = struct
           if is_special_form_assignment then
             scope, target
           else
-            let rec qualify_assignment_target ~scope:({ aliases; locals; _ } as scope) target =
+            let rec qualify_assignment_target ~scope:({ aliases; _ } as scope) target =
               let scope, value =
                 let qualify_targets scope elements =
                   let qualify_element (scope, reversed_elements) element =
@@ -544,18 +565,8 @@ module Qualify (Context : QualifyContext) = struct
                 | Name (Name.Identifier name) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
-                      if (not (is_qualified name)) && not (Set.mem locals name) then
-                        let alias =
-                          get_qualified_local_identifier name ~qualifier |> Reference.create
-                        in
-                        {
-                          scope with
-                          aliases =
-                            Map.set aliases ~key:name ~data:(local_alias ~qualifier ~name:alias);
-                          locals = Set.add locals name;
-                        }
-                      else
-                        scope
+                      let scope, _ = qualify_local_identifier ~scope ~qualifier name in
+                      scope
                     in
                     ( scope,
                       Expression.Name
