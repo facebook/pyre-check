@@ -346,18 +346,6 @@ let location_of_global ({ dependency; _ } as resolution) =
 
 let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
-let base_is_from_placeholder_stub variable_aliases resolution =
-  let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
-    match (get_type_alias resolution) name with
-    | Some t -> Some t
-    | _ -> None
-  in
-  AnnotatedBases.base_is_from_placeholder_stub
-    ~variables:variable_aliases
-    ~aliases:resolved_aliases
-    ~is_from_empty_stub:(is_from_empty_stub resolution)
-
-
 let parse_reference ?(allow_untracked = false) resolution reference =
   let validation =
     if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives

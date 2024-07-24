@@ -8,7 +8,6 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 module AnnotatedAttribute = AnnotatedAttribute
-module AnnotatedBases = AnnotatedBases
 module AnnotatedCall = AnnotatedCall
 module AnnotatedCallable = AnnotatedCallable
 module AnnotatedDefine = AnnotatedDefine

@@ -5949,9 +5949,6 @@ module State (Context : Context) = struct
 
   let initial ~resolution =
     let global_resolution = Resolution.global_resolution resolution in
-
-    let variables = Resolution.variables resolution in
-
     let {
       Node.location;
       value =
@@ -6721,10 +6718,6 @@ module State (Context : Context) = struct
             | Primitive _
             | Parametric _
             | Tuple _ ->
-                errors
-            | Any
-              when (GlobalResolution.base_is_from_placeholder_stub variables global_resolution) base
-              ->
                 errors
             | annotation ->
                 emit_error
