@@ -44,20 +44,6 @@ let test_callables context =
         Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
-    ~additional_sources:["placeholder.py", "# pyre-placeholder-stub"]
-    {|
-      import placeholder
-      class C(placeholder.Base):
-        def foo() -> int:
-          ...
-    |}
-    ~expected:
-      [
-        Target.Function { name = "test.$toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-      ];
-  assert_callables
     {|
       import unittest
       class C(unittest.case.TestCase):

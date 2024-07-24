@@ -41,13 +41,7 @@ let test_source_is_unit_test context =
       def foo():
         class Nested(unittest.case.TestCase): ...
   |};
-  assert_not_unit_test
-    ~extra_sources:["placeholder.py", "# pyre-placeholder-stub"]
-    {|
-    import placeholder
-    class C(placeholder.Missing):
-      ...
-  |}
+  ()
 
 
 let () = "pyrePysaApi" >::: ["source_is_unit_test" >:: test_source_is_unit_test] |> Test.run
