@@ -36,6 +36,21 @@ class CodeGenerator:
     def generate_sink(self) -> str:
         return f"{self.last_sink}({self.last_source})"
 
+    def function_1_source(self) -> None: 
+        indent_space = ' ' * 4 
+        # source stuff 
+        current_variable = self.generate_new_variable() 
+        temp_source = self.last_source
+        self.last_source = current_variable
+        self.source_statements.append(f"""
+def {current_function_source}():
+if random.randint(1, 3) == 1:
+return {temp_source}
+else:
+{indent_space}return {current_function_source}()
+        """)
+        
+
     def add_function_1(self) -> None:
         indent_space = ' ' * 4
         # source stuff
@@ -261,13 +276,20 @@ def {current_function_sink}(x):
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
-
 generator = CodeGenerator()
+"""
 
-
-
+generator.add_function_1()
+generator.add_function_2()
+generator.add_function_3()
+generator.add_function_4()
+generator.add_function_6()
+generator.add_function_7()
+generator.add_function_8()
 generator.add_function_9()
-generator.add_function_9()
+"""
+
+generator.function_1_source()
 
 
 
