@@ -14,7 +14,6 @@
  *   partitioned into its module component and the remainder (for example the
  *   fully-qualified name of a nested class can have many names after the
  *   module component)
- * - a name masked by a placeholder stub, which Pyre should treat as `Any`.
  *)
 
 open Core
@@ -32,10 +31,6 @@ type t =
       export: export;
       remaining: Ast.Identifier.t list;
     }
-  | PlaceholderStub of {
-      stub_module: Ast.Reference.t;
-      remaining: Ast.Identifier.t list;
-    }
 [@@deriving show, sexp, compare, hash]
 
 (* In type-checking code, we want to short-circuit recursion for Expression.Name resolution whenever
@@ -43,8 +38,6 @@ type t =
    attributes. This function facilitates making that decision. *)
 let as_module_toplevel_reference = function
   | Module qualifier -> Some qualifier
-  | PlaceholderStub { stub_module; remaining } ->
-      Some (Ast.Reference.combine stub_module (Ast.Reference.create_from_list remaining))
   | ModuleAttribute { from; name; remaining = []; _ } ->
       Some (Ast.Reference.create ~prefix:from name)
   | ModuleAttribute _ -> None

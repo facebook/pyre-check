@@ -2288,18 +2288,6 @@ let test_check_dataclasses =
       @@ assert_type_errors
            {|
            from dataclasses import dataclass
-           from placeholder_stub import X
-           @dataclass
-           class Foo(X):
-             x: int = 1
-           def boo() -> None:
-               b = Foo(1)
-         |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-           from dataclasses import dataclass
            @dataclass(frozen=True)
            class F:
              x = 1

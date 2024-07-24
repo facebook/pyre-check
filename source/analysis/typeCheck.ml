@@ -483,7 +483,6 @@ module State (Context : Context) = struct
           | _ -> (
               match GlobalResolution.resolve_exports resolution (Reference.create class_name) with
               | None -> true
-              | Some (ResolvedReference.PlaceholderStub _) -> false
               | Some (ResolvedReference.Module _) ->
                   (* `name` refers to a module, which is usually not valid type *)
                   true
@@ -902,8 +901,6 @@ module State (Context : Context) = struct
   let resolve_reference_aliases_with_fallback ~global_resolution reference =
     let reference_of_resolved_reference = function
       | ResolvedReference.Module qualifier -> qualifier
-      | ResolvedReference.PlaceholderStub { stub_module; remaining } ->
-          Ast.Reference.combine stub_module (Ast.Reference.create_from_list remaining)
       | ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
           Ast.Reference.combine from (Ast.Reference.create_from_list @@ (name :: remaining))
     in
@@ -985,8 +982,6 @@ module State (Context : Context) = struct
         let base, attribute_list =
           match GlobalResolution.resolve_exports global_resolution reference with
           | Some (ResolvedReference.Module _) -> reference, []
-          | Some (ResolvedReference.PlaceholderStub { stub_module; remaining }) ->
-              stub_module, remaining
           | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
               Reference.create ~prefix:from name, remaining
           | None -> Reference.create head, tail
@@ -5684,9 +5679,8 @@ module State (Context : Context) = struct
           match GlobalResolution.module_exists global_resolution name with
           | true -> None
           | false -> (
-              (* check for getattr-any and placeholder stubs *)
+              (* check for getattr-any *)
               match GlobalResolution.resolve_exports global_resolution name with
-              | Some (PlaceholderStub _) -> None
               | None
               | Some (Module _) ->
                   Some (Error.UndefinedModule { name; kind = None })

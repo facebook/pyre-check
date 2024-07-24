@@ -227,22 +227,11 @@ let test_resolve_exports context =
     in
     ResolvedReference.ModuleAttribute { from; name; export; remaining }
   in
-  let resolved_placeholder_stub ?(remaining = []) stub_module =
-    ResolvedReference.PlaceholderStub { stub_module; remaining }
-  in
 
   let open Module in
   assert_resolved [] ~reference:!&"derp" ~expected:None;
   assert_resolved ["derp.py", ""] ~reference:!&"derp" ~expected:(Some (resolved_module !&"derp"));
   assert_resolved ["derp.py", ""] ~reference:!&"derp.foo" ~expected:None;
-  assert_resolved
-    ["derp.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"derp" ~remaining:["foo"]));
-  assert_resolved
-    ["derp/foo.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"derp.foo"));
   assert_resolved
     ["derp/foo.py", ""]
     ~reference:!&"derp"
@@ -380,11 +369,6 @@ let test_resolve_exports context =
     ~reference:!&"a.d.e"
     ~expected:(Some (resolved_attribute !&"b" "d" ~remaining:["e"]));
 
-  (* Access into placeholder stub *)
-  assert_resolved
-    ["a.py", "from b import c"; "b.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"a.c.d"
-    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
   (* Cyclic imports *)
   assert_resolved ["a.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
   assert_resolved
@@ -417,11 +401,6 @@ let test_resolve_exports context =
     ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
     ~reference:!&"a.d"
     ~expected:None;
-  (* ... but we do pretend placeholder stubs exist. *)
-  assert_resolved
-    ["a.py", "from b.nonexistent import foo"; "b.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"a.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["nonexistent"; "foo"]));
   (* Package takes precedence over module of the same name. *)
   assert_resolved
     [

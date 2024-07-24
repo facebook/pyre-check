@@ -18,10 +18,6 @@ type t =
       export: export;
       remaining: Ast.Identifier.t list;
     }
-  | PlaceholderStub of {
-      stub_module: Ast.Reference.t;
-      remaining: Ast.Identifier.t list;
-    }
 [@@deriving show, sexp, compare, hash]
 
 val as_module_toplevel_reference : t -> Ast.Reference.t option

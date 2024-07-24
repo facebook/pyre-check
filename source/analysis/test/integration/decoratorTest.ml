@@ -467,17 +467,6 @@ let test_decorators =
              "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[str], int]`.";
              "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable[[bool], float]`.";
            ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from placeholder_stub import decorate
-
-              @decorate
-              def f(x: int) -> str:
-                return str(x)
-              reveal_type(f)
-            |}
-           ["Revealed type [-1]: Revealed type for `test.f` is `typing.Any`."];
     ]
 
 

@@ -4122,7 +4122,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   in
                   let resolver = function
                     | ResolvedReference.Module _ -> None
-                    | PlaceholderStub _ -> Some Type.Any
                     | ModuleAttribute { from; name; remaining; _ } ->
                         let rec resolve_remaining base ~remaining =
                           match remaining with

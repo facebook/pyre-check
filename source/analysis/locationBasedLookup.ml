@@ -870,8 +870,6 @@ let find_definition ~resolution ~module_reference ~define_name reference =
             (Reference.create_from_list remaining)
         in
         GlobalResolution.location_of_global global_resolution resolved_reference
-    | ResolvedReference.PlaceholderStub { stub_module; _ } ->
-        Location.with_module ~module_reference:stub_module Location.any |> Option.some
   in
   let definition_location =
     match local_definition with

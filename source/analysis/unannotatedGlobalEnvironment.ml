@@ -162,124 +162,85 @@ module OutgoingDataComputation = struct
                 ~current_module:(Reference.create ~prefix:current_module head)
                 ~names_to_resolve:tail
                 ()
-          | [] ->
-              (* If we found nothing and `names_to_resolve` is empty, then the attempt to track the
-                 alias has probably failed. But because the name we're currently looking up might be
-                 covered by a placeholder stub, we need to recurse back up the package hierarchy
-                 looking for one before we give up.
-
-                 Note: we also terminate in the block below (where we are recursively searching down
-                 rather than up) if we encounter a placeholder stub. But we need this fallback that
-                 searches upward because `current_module` might have started out pointed at a nested
-                 subpackage of a placeholder stub, in which case we won't have had the chance to
-                 catch it during the "downward" recursion that exhaused `names_to_resolve`.
-
-                 This could happen either because `from` was too specific in the original call, or
-                 because we jumped straight here when recursively resolving one of the alias cases
-                 in the block below. *)
-              let rec resolve_placeholder_stub sofar = function
-                | [] -> None
-                | name :: prefixes -> (
-                    let checked_module = List.rev prefixes |> Reference.create_from_list in
-                    let sofar = name :: sofar in
-                    match get_module_metadata queries checked_module with
-                    | Some module_metadata when Module.Metadata.empty_stub module_metadata ->
-                        Some
-                          (ResolvedReference.PlaceholderStub
-                             { stub_module = checked_module; remaining = sofar })
-                    | _ -> resolve_placeholder_stub sofar prefixes)
-              in
-              resolve_placeholder_stub
-                names_to_resolve
-                (Reference.as_list current_module |> List.rev))
+          | [] -> None)
       | Some module_metadata -> (
-          match Module.Metadata.empty_stub module_metadata with
-          | true ->
-              (* If we encounter a placeholder stub as we are searching packages shallow-to-deep,
-                 immediately return that this reference is coming from a Placeholder stub. Pyre will
-                 type the symbol as `Any`. *)
-              Some
-                (ResolvedReference.PlaceholderStub
-                   { stub_module = current_module; remaining = names_to_resolve })
-          | false -> (
-              match names_to_resolve with
-              | [] ->
-                  (* If the module we just loaded is the entire reference we were looking for, then
-                     the reference is a qualifier for this module *)
-                  Some (ResolvedReference.Module current_module)
-              | next_name :: rest_names -> (
-                  (* Otherwise, we will look up globals of this module. First, we need to check that
-                     we aren't stuck in a cycle *)
-                  let item = { ResolveExportItem.current_module; name = next_name } in
-                  match Hash_set.strict_add visited_set item with
-                  | Result.Error _ ->
-                      (* We hit a cycle, give up. *)
-                      None
-                  | Result.Ok _ -> (
-                      (* There is no cycle, so look up the name in this module's globals. *)
-                      match Module.Metadata.get_export module_metadata next_name with
-                      | None -> (
-                          (* We didn't find any explicit global symbol for this name. *)
-                          match Module.Metadata.get_export module_metadata "__getattr__" with
-                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
-                              (* If __getattr__ is defined, then all lookups resolve through it;
-                                 this is occasionally used for real code and is also a common
-                                 pattern in partially-typed stubs. *)
-                              Some
-                                (ResolvedReference.ModuleAttribute
-                                   {
-                                     from = current_module;
-                                     name = next_name;
-                                     export = ResolvedReference.FromModuleGetattr;
-                                     remaining = rest_names;
-                                   })
-                          | _ ->
-                              (* Otherwise, we have to give up resolving the name in this module.
-                                 But we can look for a more-deeply-nested module containing the name
-                                 (e.g. if the lookup of `foo.bar.baz` in `foo` failed, move on to
-                                 looking in `foo.bar` *)
-                              resolve_module_alias
-                                ~current_module:
-                                  (Reference.create next_name |> Reference.combine current_module)
-                                ~names_to_resolve:rest_names
-                                ())
-                      | Some (Module.Export.NameAlias { from; name }) ->
-                          if not (Reference.equal current_module from) then
-                            (* We are resolving an import-from statement like `from x import y` (or
-                               `from x import y as z; `name` and `next_name` can be different). In
-                               this case we don't know what the name means - it might be an
-                               attribute `y` defined in `x` or it might be a package `x.y`. But we
-                               can look for an an attribute `y` in `x` *first* because if we fail to
-                               find it we'll search the module `x.y` in the next recursive call. *)
-                            resolve_module_alias
-                              ~current_module:from
-                              ~names_to_resolve:(name :: rest_names)
-                              ()
-                          else
-                            (* Edge case: if we see `from . import y` or `from . import y as z`. In
-                               this case we can skip straight to searching for a module
-                               `<current_module>.y` (and we have to or we'll get stuck in an
-                               infinite loop). *)
-                            resolve_module_alias
-                              ~current_module:(Reference.create name |> Reference.combine from)
-                              ~names_to_resolve:rest_names
-                              ()
-                      | Some (Module.Export.Module name) ->
-                          (* The name is defined by a statement like `import name` or `import name
-                             as next_name`; in that case it definitely refers to a module so we can
-                             jump straight there in our next step. *)
-                          resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
-                      | Some (Module.Export.Name export) ->
-                          (* The name refers to a global (a global variable, function, class, etc)
-                             actually defined in this module. We are finished. *)
+          match names_to_resolve with
+          | [] ->
+              (* If the module we just loaded is the entire reference we were looking for, then the
+                 reference is a qualifier for this module *)
+              Some (ResolvedReference.Module current_module)
+          | next_name :: rest_names -> (
+              (* Otherwise, we will look up globals of this module. First, we need to check that we
+                 aren't stuck in a cycle *)
+              let item = { ResolveExportItem.current_module; name = next_name } in
+              match Hash_set.strict_add visited_set item with
+              | Result.Error _ ->
+                  (* We hit a cycle, give up. *)
+                  None
+              | Result.Ok _ -> (
+                  (* There is no cycle, so look up the name in this module's globals. *)
+                  match Module.Metadata.get_export module_metadata next_name with
+                  | None -> (
+                      (* We didn't find any explicit global symbol for this name. *)
+                      match Module.Metadata.get_export module_metadata "__getattr__" with
+                      | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
+                          (* If __getattr__ is defined, then all lookups resolve through it; this is
+                             occasionally used for real code and is also a common pattern in
+                             partially-typed stubs. *)
                           Some
                             (ResolvedReference.ModuleAttribute
                                {
                                  from = current_module;
                                  name = next_name;
-                                 export = ResolvedReference.Exported export;
+                                 export = ResolvedReference.FromModuleGetattr;
                                  remaining = rest_names;
-                               })))))
+                               })
+                      | _ ->
+                          (* Otherwise, we have to give up resolving the name in this module. But we
+                             can look for a more-deeply-nested module containing the name (e.g. if
+                             the lookup of `foo.bar.baz` in `foo` failed, move on to looking in
+                             `foo.bar` *)
+                          resolve_module_alias
+                            ~current_module:
+                              (Reference.create next_name |> Reference.combine current_module)
+                            ~names_to_resolve:rest_names
+                            ())
+                  | Some (Module.Export.NameAlias { from; name }) ->
+                      if not (Reference.equal current_module from) then
+                        (* We are resolving an import-from statement like `from x import y` (or
+                           `from x import y as z; `name` and `next_name` can be different). In this
+                           case we don't know what the name means - it might be an attribute `y`
+                           defined in `x` or it might be a package `x.y`. But we can look for an an
+                           attribute `y` in `x` *first* because if we fail to find it we'll search
+                           the module `x.y` in the next recursive call. *)
+                        resolve_module_alias
+                          ~current_module:from
+                          ~names_to_resolve:(name :: rest_names)
+                          ()
+                      else
+                        (* Edge case: if we see `from . import y` or `from . import y as z`. In this
+                           case we can skip straight to searching for a module `<current_module>.y`
+                           (and we have to or we'll get stuck in an infinite loop). *)
+                        resolve_module_alias
+                          ~current_module:(Reference.create name |> Reference.combine from)
+                          ~names_to_resolve:rest_names
+                          ()
+                  | Some (Module.Export.Module name) ->
+                      (* The name is defined by a statement like `import name` or `import name as
+                         next_name`; in that case it definitely refers to a module so we can jump
+                         straight there in our next step. *)
+                      resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
+                  | Some (Module.Export.Name export) ->
+                      (* The name refers to a global (a global variable, function, class, etc)
+                         actually defined in this module. We are finished. *)
+                      Some
+                        (ResolvedReference.ModuleAttribute
+                           {
+                             from = current_module;
+                             name = next_name;
+                             export = ResolvedReference.Exported export;
+                             remaining = rest_names;
+                           }))))
     in
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
