@@ -293,151 +293,6 @@ let test_updates context =
             } );
       ]
     ();
-  assert_updates
-    ~original_sources:
-      [
-        "test.py", {|
-      from placeholder import Base
-      class C(Base):
-        pass
-      |};
-        "placeholder.pyi", {|
-      # pyre-placeholder-stub
-      |};
-      ]
-    ~new_sources:
-      [
-        "test.py", {|
-      from placeholder import Base
-      class C(Base):
-        pass
-      |};
-        "placeholder.pyi", {|
-       class Base:
-        pass
-      |};
-      ]
-    ~middle_actions:
-      [
-        ( "test.C",
-          dependency,
-          Some
-            {
-              successors = Some ["object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-      ]
-    ~expected_triggers:[dependency]
-    ~post_actions:
-      [
-        ( "test.C",
-          dependency,
-          Some
-            {
-              successors = Some ["placeholder.Base"; "object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-      ]
-    ();
-  assert_updates
-    ~original_sources:
-      [
-        ( "test.py",
-          {|
-       from placeholder_stub import MadeUpClass
-       class A: pass
-       class B(A): pass
-       class C:
-         def __init__(self):
-           self.x = 3
-       class D(C):
-         def __init__(self):
-           self.y = 4
-         D.z = 5
-       class E(D, A): pass
-       class F(B, MadeUpClass, A): pass
-      |}
-        );
-        "placeholder_stub.pyi", {|
-      # pyre-placeholder-stub
-      |};
-      ]
-    ~new_sources:[]
-    ~middle_actions:
-      [
-        ( "test.C",
-          dependency,
-          Some
-            {
-              successors = Some ["object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-        ( "test.D",
-          dependency,
-          Some
-            {
-              successors = Some ["test.C"; "object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-        ( "test.B",
-          dependency,
-          Some
-            {
-              successors = Some ["test.A"; "object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-        ( "test.E",
-          dependency,
-          Some
-            {
-              successors = Some ["test.D"; "test.C"; "test.A"; "object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-        ( "test.F",
-          dependency,
-          Some
-            {
-              successors = Some ["test.B"; "test.A"; "object"];
-              is_test = false;
-              is_mock = false;
-              is_final = false;
-              is_protocol = false;
-              is_abstract = false;
-              is_typed_dictionary = false;
-            } );
-      ]
-    ~expected_triggers:[]
-    ();
 
   (* Addition should trigger previous failed reads *)
   assert_updates
@@ -469,16 +324,10 @@ let test_updates context =
 
 
 let test_has_transitive_successors context =
-  let assert_has_successor
-      ~source
-      ~expected
-      ~placeholder_subclass_extends_all
-      ~successor
-      predecessor
-    =
+  let assert_has_successor ~source ~expected ~successor predecessor =
     let project =
       ScratchProject.setup
-        ["test.py", source; "my_placeholder_stub.pyi", "# pyre-placeholder-stub"]
+        ["test.py", source]
         ~include_typeshed_stubs:true
         ~include_helper_builtins:false
         ~context
@@ -493,43 +342,19 @@ let test_has_transitive_successors context =
       expected
       (ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
          read_only
-         ~placeholder_subclass_extends_all
          ~successor
          predecessor)
   in
 
-  assert_has_successor
-    ~source:{|
+  assert_has_successor ~source:{|
     class A: pass
-  |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.A"
-    "test.A"
-    ~expected:true;
-  assert_has_successor
-    ~source:{|
-    class A: pass
-  |}
-    ~placeholder_subclass_extends_all:true
-    ~successor:"test.A"
-    "test.A"
-    ~expected:true;
+  |} ~successor:"test.A" "test.A" ~expected:true;
 
   assert_has_successor
     ~source:{|
     class A: pass
     class B: pass
   |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.A"
-    "test.B"
-    ~expected:false;
-  assert_has_successor
-    ~source:{|
-    class A: pass
-    class B: pass
-  |}
-    ~placeholder_subclass_extends_all:true
     ~successor:"test.A"
     "test.B"
     ~expected:false;
@@ -539,16 +364,6 @@ let test_has_transitive_successors context =
     class A: pass
     class B(A): pass
   |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.A"
-    "test.B"
-    ~expected:true;
-  assert_has_successor
-    ~source:{|
-    class A: pass
-    class B(A): pass
-  |}
-    ~placeholder_subclass_extends_all:true
     ~successor:"test.A"
     "test.B"
     ~expected:true;
@@ -559,17 +374,6 @@ let test_has_transitive_successors context =
     class B(A): pass
     class C(B): pass
   |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.A"
-    "test.C"
-    ~expected:true;
-  assert_has_successor
-    ~source:{|
-    class A: pass
-    class B(A): pass
-    class C(B): pass
-  |}
-    ~placeholder_subclass_extends_all:true
     ~successor:"test.A"
     "test.C"
     ~expected:true;
@@ -581,42 +385,10 @@ let test_has_transitive_successors context =
     class C: pass
     class D(C, B): pass
   |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.A"
-    "test.D"
-    ~expected:true;
-  assert_has_successor
-    ~source:{|
-    class A: pass
-    class B(A): pass
-    class C: pass
-    class D(C, B): pass
-  |}
-    ~placeholder_subclass_extends_all:true
     ~successor:"test.A"
     "test.D"
     ~expected:true;
 
-  assert_has_successor
-    ~source:{|
-    from my_placeholder_stub import A
-    class B: pass
-    class C(A): pass
-  |}
-    ~placeholder_subclass_extends_all:true
-    ~successor:"test.B"
-    "test.C"
-    ~expected:true;
-  assert_has_successor
-    ~source:{|
-    from my_placeholder_stub import A
-    class B: pass
-    class C(A): pass
-  |}
-    ~placeholder_subclass_extends_all:false
-    ~successor:"test.B"
-    "test.C"
-    ~expected:false;
   ()
 
 

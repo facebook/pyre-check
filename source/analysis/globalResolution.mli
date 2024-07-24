@@ -90,12 +90,7 @@ val type_parameters_as_variables
   Type.Primitive.t ->
   Type.Variable.t list option
 
-val has_transitive_successor
-  :  ?placeholder_subclass_extends_all:bool ->
-  t ->
-  successor:Type.Primitive.t ->
-  Type.Primitive.t ->
-  bool
+val has_transitive_successor : t -> successor:Type.Primitive.t -> Type.Primitive.t -> bool
 
 val successors : t -> Type.Primitive.t -> string list
 

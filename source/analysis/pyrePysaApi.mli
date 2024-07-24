@@ -117,12 +117,7 @@ module ReadOnly : sig
     instantiated:Type.t ->
     AnnotatedAttribute.instantiated option
 
-  val has_transitive_successor
-    :  t ->
-    ?placeholder_subclass_extends_all:bool ->
-    successor:string ->
-    string ->
-    bool
+  val has_transitive_successor : t -> successor:string -> string -> bool
 
   val exists_matching_class_decorator
     :  t ->

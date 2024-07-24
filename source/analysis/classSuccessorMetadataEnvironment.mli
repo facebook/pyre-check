@@ -42,7 +42,6 @@ module MetadataReadOnly : sig
   val has_transitive_successor
     :  t ->
     ?dependency:DependencyKey.registered ->
-    placeholder_subclass_extends_all:bool ->
     successor:Type.Primitive.t ->
     Type.Primitive.t ->
     bool

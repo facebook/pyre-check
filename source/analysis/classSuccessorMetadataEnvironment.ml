@@ -92,10 +92,7 @@ end
 
 module OutgoingDataComputation = struct
   module Queries = struct
-    type t = {
-      get_class_hierarchy: unit -> (module ClassHierarchy.Handler);
-      get_class_metadata: Type.Primitive.t -> class_metadata option;
-    }
+    type t = { get_class_metadata: Type.Primitive.t -> class_metadata option }
   end
 
   let successors { Queries.get_class_metadata; _ } class_name =
@@ -114,18 +111,8 @@ module OutgoingDataComputation = struct
     | _, _ -> None
 
 
-  let has_transitive_successor
-      (Queries.{ get_class_hierarchy; _ } as queries)
-      ~placeholder_subclass_extends_all
-      ~successor
-      predecessor
-    =
-    let class_hierarchy = get_class_hierarchy () in
-    let extends_placeholder_stub = ClassHierarchy.extends_placeholder_stub class_hierarchy in
-    let counts_as_extends_target current =
-      [%compare.equal: Type.Primitive.t] current successor
-      || (placeholder_subclass_extends_all && extends_placeholder_stub current)
-    in
+  let has_transitive_successor queries ~successor predecessor =
+    let counts_as_extends_target current = [%compare.equal: Type.Primitive.t] current successor in
     let successors_of_predecessor = successors queries predecessor in
     List.exists (predecessor :: successors_of_predecessor) ~f:counts_as_extends_target
 end
@@ -215,14 +202,9 @@ module ReadOnly = struct
 
 
   let from_pure_logic ?dependency read_only f =
-    let get_class_hierarchy () =
-      ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-        ?dependency
-        (class_hierarchy_environment read_only)
-    in
     f
       OutgoingDataComputation.Queries.
-        { get_class_metadata = get_class_metadata ?dependency read_only; get_class_hierarchy }
+        { get_class_metadata = get_class_metadata ?dependency read_only }
 
 
   let successors read_only ?dependency =

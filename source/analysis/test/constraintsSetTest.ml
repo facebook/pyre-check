@@ -62,11 +62,7 @@ let hierarchy global_environment =
       class_metadata_environment
     |> ClassHierarchyEnvironment.ReadOnly.class_hierarchy
   in
-  let has_transitive_successor =
-    GlobalResolution.has_transitive_successor
-      global_resolution
-      ~placeholder_subclass_extends_all:true
-  in
+  let has_transitive_successor = GlobalResolution.has_transitive_successor global_resolution in
   {
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;

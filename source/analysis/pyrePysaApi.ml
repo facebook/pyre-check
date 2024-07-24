@@ -277,9 +277,8 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.attribute_from_class_name
 
 
-  let has_transitive_successor api ?(placeholder_subclass_extends_all = true) =
-    global_resolution api
-    |> GlobalResolution.has_transitive_successor ~placeholder_subclass_extends_all
+  let has_transitive_successor api =
+    global_resolution api |> GlobalResolution.has_transitive_successor
 
 
   (* There isn't a great way of testing whether a file only contains tests in Python.
@@ -293,11 +292,7 @@ module ReadOnly = struct
     let is_unittest () =
       let is_unittest_class { Node.value = { Class.name; _ }; _ } =
         try
-          has_transitive_successor
-            ~placeholder_subclass_extends_all:false
-            api
-            ~successor:"unittest.case.TestCase"
-            (Reference.show name)
+          has_transitive_successor api ~successor:"unittest.case.TestCase" (Reference.show name)
         with
         | ClassHierarchy.Untracked _ -> false
       in

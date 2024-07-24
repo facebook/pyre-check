@@ -199,14 +199,8 @@ let type_parameters_as_variables ?default ({ dependency; _ } as resolution) =
     (class_hierarchy_environment resolution)
 
 
-let has_transitive_successor
-    ?(placeholder_subclass_extends_all = true)
-    resolution
-    ~successor
-    predecessor
-  =
+let has_transitive_successor resolution ~successor predecessor =
   ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
-    ~placeholder_subclass_extends_all
     (class_metadata_environment resolution)
     ~successor
     predecessor

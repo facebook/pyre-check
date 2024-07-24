@@ -75,11 +75,7 @@ module Queries = struct
     successors: Type.Primitive.t -> string list;
     get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
     is_typed_dictionary: Type.Primitive.t -> bool;
-    has_transitive_successor:
-      placeholder_subclass_extends_all:bool ->
-      successor:Type.Primitive.t ->
-      Type.Primitive.t ->
-      bool;
+    has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
     least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
   }
 
@@ -2271,8 +2267,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           {
             instantiate_successors_parameters =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-            has_transitive_successor =
-              has_transitive_successor ~placeholder_subclass_extends_all:true;
+            has_transitive_successor;
             variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
             least_upper_bound;
           };

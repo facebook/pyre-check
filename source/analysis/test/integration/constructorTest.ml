@@ -815,47 +815,6 @@ let test_check_constructors =
              "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional \
               argument, expected `int` but got `str`.";
            ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from placeholder_stub import MadeUpClass
-              class Foo(MadeUpClass):
-                def __init__(self, i: int) -> None:
-                  super().__init__('asdf')
-            |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from placeholder_stub import MadeUpClass
-              class Foo(MadeUpClass):
-                pass
-              def foo() -> None:
-                Foo(7)
-            |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from placeholder_stub import MadeUpClass
-              class Foo(MadeUpClass):
-                pass
-              def foo() -> int:
-                return Foo()
-            |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from placeholder_stub import MadeUpClass
-              class Foo(MadeUpClass):
-                pass
-              class Bar(Foo):
-                pass
-              def bar() -> int:
-                return Bar()
-            |}
-           [];
       (* Check that subclasses of numeric types are instantiatable *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
