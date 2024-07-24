@@ -176,7 +176,6 @@ let test_builtin_modules context =
     match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata read_only qualifier with
     | None -> assert_failure "Module does not exist"
     | Some metadata ->
-        assert_bool "empty stub not expected" (not (Module.Metadata.empty_stub metadata));
         assert_bool "implicit module not expected" (not (Module.Metadata.is_implicit metadata));
         assert_equal
           ~ctxt:context

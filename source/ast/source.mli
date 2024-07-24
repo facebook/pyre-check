@@ -18,7 +18,6 @@ type local_mode =
   | Strict
   | Unsafe
   | Declare
-  | PlaceholderStub
 [@@deriving compare, show, sexp, hash]
 
 module TypecheckFlags : sig
@@ -29,8 +28,6 @@ module TypecheckFlags : sig
     ignore_lines: Ignore.t list;
   }
   [@@deriving compare, show, hash, sexp]
-
-  val is_placeholder_stub : local_mode Node.t option -> bool
 
   val create_for_testing
     :  ?local_mode:local_mode Node.t ->

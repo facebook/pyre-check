@@ -21,7 +21,6 @@ type local_mode =
   | Strict
   | Unsafe
   | Declare
-  | PlaceholderStub
 [@@deriving compare, show, sexp, hash]
 
 module TypecheckFlags = struct
@@ -32,12 +31,6 @@ module TypecheckFlags = struct
     ignore_lines: Ignore.t list;
   }
   [@@deriving compare, show, hash, sexp]
-
-  let is_placeholder_stub local_mode =
-    match local_mode with
-    | Some { Node.value = PlaceholderStub; _ } -> true
-    | _ -> false
-
 
   let create_for_testing
       ?(local_mode = Node.create ~location:Location.any Unsafe)
@@ -69,7 +62,6 @@ module TypecheckFlags = struct
        errors. *)
     let is_declare = is_pyre_comment "pyre-ignore-all-errors" in
     let is_default_with_suppress line = Str.string_match default_with_suppress_regex line 0 in
-    let is_placeholder_stub = is_pyre_comment "pyre-placeholder-stub" in
     let collect index (local_mode, unused_local_modes, ignore_codes, ignore_lines) line =
       let current_line_mode =
         let location =
@@ -85,8 +77,6 @@ module TypecheckFlags = struct
           Some (Node.create ~location Unsafe)
         else if is_declare line then
           Some (Node.create ~location Declare)
-        else if is_placeholder_stub line then
-          Some (Node.create ~location PlaceholderStub)
         else
           None
       in
@@ -241,9 +231,7 @@ let mode ~configuration ~local_mode : mode =
   | _, { Configuration.Analysis.debug = true; _ } -> Debug
   | Some { Node.value = Strict; _ }, _ -> Strict
   | Some { Node.value = Unsafe; _ }, _ -> Unsafe
-  | Some { Node.value = Declare; _ }, _
-  | Some { Node.value = PlaceholderStub; _ }, _ ->
-      Declare
+  | Some { Node.value = Declare; _ }, _ -> Declare
   | None, { Configuration.Analysis.strict = true; _ } -> Strict
   | None, _ -> Unsafe
 

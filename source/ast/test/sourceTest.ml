@@ -57,7 +57,6 @@ let test_parse _ =
     in
     Node.create ~location mode
   in
-  assert_mode " # pyre-placeholder-stub" (Some (create_mode 1 1 24 Source.PlaceholderStub));
   assert_mode " # pyre-ignore-all-errors " (Some (create_mode 1 1 25 Source.Declare));
   assert_mode "# pyre-ignore-all-errors " (Some (create_mode 1 0 24 Source.Declare));
   assert_mode "  # pyre-ignore-all-errors" None;

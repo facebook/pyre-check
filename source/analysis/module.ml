@@ -190,31 +190,20 @@ end
 
 module Metadata = struct
   type t =
-    | Explicit of {
-        exports: ExportMap.t;
-        empty_stub: bool;
-      }
-    | Implicit of { empty_stub: bool }
+    | Explicit of { exports: ExportMap.t }
+    | Implicit
   [@@deriving sexp, equal, compare]
 
-  let empty_stub = function
-    | Implicit { empty_stub }
-    | Explicit { empty_stub; _ } ->
-        empty_stub
-
-
-  let pp format printed_module =
-    Format.fprintf format "MODULE[empty_stub = %b]" (empty_stub printed_module)
+  let pp format = function
+    | Explicit _ -> Format.fprintf format "EXPLICIT_MODULE"
+    | Implicit -> Format.fprintf format "IMPLICIT_MODULE"
 
 
   let show = Format.asprintf "%a" pp
 
-  let create_for_testing ~stub = Explicit { exports = ExportMap.empty; empty_stub = stub }
+  let create_for_testing () = Explicit { exports = ExportMap.empty }
 
-  let create
-      ({ Source.module_path; typecheck_flags = { Source.TypecheckFlags.local_mode; _ }; _ } as
-      source)
-    =
+  let create ({ Source.module_path; _ } as source) =
     let is_stub = ModulePath.is_stub module_path in
     let exports =
       let open UnannotatedGlobal in
@@ -304,17 +293,16 @@ module Metadata = struct
       in
       UnannotatedGlobal.raw_alist_of_source source |> List.fold ~init ~f:collect_export
     in
-    Explicit
-      { exports; empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode }
+    Explicit { exports }
 
 
-  let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
+  let create_implicit () = Implicit
 
   let get_export considered_module name =
     let exports =
       match considered_module with
       | Explicit { exports; _ } -> exports
-      | Implicit _ -> ExportMap.empty
+      | Implicit -> ExportMap.empty
     in
     ExportMap.lookup exports name
 
@@ -322,12 +310,12 @@ module Metadata = struct
   let get_all_exports considered_module =
     match considered_module with
     | Explicit { exports; _ } -> ExportMap.to_alist exports
-    | Implicit _ -> []
+    | Implicit -> []
 
 
   let is_implicit = function
     | Explicit _ -> false
-    | Implicit _ -> true
+    | Implicit -> true
 end
 
 module Components = struct

@@ -3092,7 +3092,6 @@ let rec messages ~concise ~signature location kind =
         | { Node.value = Source.Strict; _ } -> "pyre-strict"
         | { Node.value = Source.Unsafe; _ } -> "pyre-unsafe"
         | { Node.value = Source.Declare; _ } -> "pyre-ignore-all-errors"
-        | { Node.value = Source.PlaceholderStub; _ } -> "pyre-placeholder-stub"
       in
       [
         Format.asprintf

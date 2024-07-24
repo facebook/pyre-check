@@ -67,11 +67,9 @@ end
 module Metadata : sig
   type t [@@deriving sexp, show, equal, compare]
 
-  val empty_stub : t -> bool
-
   val create : Ast.Source.t -> t
 
-  val create_implicit : ?empty_stub:bool -> unit -> t
+  val create_implicit : unit -> t
 
   val get_export : t -> Ast.Identifier.t -> Export.t option
 
@@ -80,7 +78,7 @@ module Metadata : sig
   val is_implicit : t -> bool
 
   (* Exposed for testing only *)
-  val create_for_testing : stub:bool -> t
+  val create_for_testing : unit -> t
 end
 
 module Components : sig

@@ -156,11 +156,6 @@ let test_collected_imports context =
   ()
 
 
-let test_empty_stub _ =
-  assert_true (Module.Metadata.create_for_testing ~stub:true |> Module.Metadata.empty_stub);
-  assert_false (Module.Metadata.create_for_testing ~stub:false |> Module.Metadata.empty_stub)
-
-
 let test_exports context =
   let assert_exports ?(is_stub = false) ~expected source_text =
     let actual =
@@ -305,7 +300,6 @@ let () =
   >::: [
          "collected_names" >:: test_collected_names;
          "collected_imports" >:: test_collected_imports;
-         "empty_stub" >:: test_empty_stub;
          "exports" >:: test_exports;
        ]
   |> Test.run

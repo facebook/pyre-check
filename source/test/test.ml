@@ -3079,9 +3079,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             ...
       |}
     );
-    "placeholder_stub.pyi", {|
-        # pyre-placeholder-stub
-        |};
   ]
   @ sqlalchemy_stubs
   @ torch_stubs
