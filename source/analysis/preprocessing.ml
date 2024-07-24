@@ -793,7 +793,7 @@ module Qualify (Context : QualifyContext) = struct
       | Expression expression ->
           scope, Expression (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
-          let renamed_scope, target = qualify_target ~scope target in
+          let renamed_scope, target = qualify_target ~scope ~qualifier target in
           let body_scope, body = qualify_statements ~scope:renamed_scope body in
           let orelse_scope, orelse = qualify_statements ~scope:renamed_scope orelse in
           ( join_scopes body_scope orelse_scope,
@@ -900,7 +900,7 @@ module Qualify (Context : QualifyContext) = struct
                 let renamed_scope, alias =
                   match alias with
                   | Some alias ->
-                      let scope, alias = qualify_target ~scope alias in
+                      let scope, alias = qualify_target ~scope ~qualifier alias in
                       scope, Some alias
                   | _ -> scope, alias
                 in
@@ -1001,19 +1001,14 @@ module Qualify (Context : QualifyContext) = struct
     { Node.value; location }
 
 
-  and qualify_target ~scope target =
-    let rec renamed_scope ({ locals; _ } as scope) target =
-      let has_local name = Set.mem locals name in
+  and qualify_target ~scope ~qualifier target =
+    let rec renamed_scope scope target =
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Name (Name.Identifier name); _ } -> (
-          if has_local name then
-            scope
-          else
-            match prefix_identifier ~scope ~prefix:"target" name with
-            | Some (scope, _) -> scope
-            | None -> scope)
+      | { Node.value = Name (Name.Identifier name); _ } ->
+          let scope, _ = qualify_local_identifier ~scope ~qualifier name in
+          scope
       | _ -> scope
     in
     let scope = renamed_scope scope target in

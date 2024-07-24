@@ -729,7 +729,8 @@ let test_find_narrowest_spanning_symbol context =
        {
          symbol_with_definition =
            Expression
-             (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$f")));
+             (Node.create_with_default_location
+                (Expression.Name (Name.Identifier "$local_test?foo$f")));
          cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -745,7 +746,8 @@ let test_find_narrowest_spanning_symbol context =
        {
          symbol_with_definition =
            Expression
-             (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$x")));
+             (Node.create_with_default_location
+                (Expression.Name (Name.Identifier "$local_test?foo$x")));
          cfg_data = { define_name = !&"test.foo"; node_id = 6; statement_index = 1 };
          use_postcondition_info = false;
        });

@@ -544,7 +544,9 @@ let test_qualify_source =
             finally:\n\
             \ta";
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_qualify_statement "\nwith b as b: b" "\nwith a as $target$b: $target$b";
+      @@ assert_qualify_statement
+           "\nwith b as b: b"
+           "\nwith a as $local_qualifier$b: $local_qualifier$b";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_qualify_statement "yield b" "yield a";
@@ -1185,7 +1187,7 @@ let test_qualify_source =
       def b(): pass
     |}
            {|
-      for $target$b in []: pass
+      for $local_qualifier$b in []: pass
       def qualifier.b(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
