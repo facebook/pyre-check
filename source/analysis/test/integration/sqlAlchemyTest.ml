@@ -8,10 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_declarative_base context =
-  let assert_sql_alchemy_errors source errors = assert_type_errors source errors context in
-  assert_sql_alchemy_errors
-    {|
+let test_declarative_base =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from sqlalchemy.ext.declarative import declarative_base
       from sqlalchemy import Column, Integer
       from typing import Optional
@@ -27,13 +29,14 @@ let test_declarative_base context =
       reveal_type(user.age)
       reveal_type(user.income)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `user.id` is `int`.";
-      "Revealed type [-1]: Revealed type for `user.age` is `Optional[int]`.";
-      "Revealed type [-1]: Revealed type for `user.income` is `Optional[int]`.";
-    ];
-  assert_sql_alchemy_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `user.id` is `int`.";
+             "Revealed type [-1]: Revealed type for `user.age` is `Optional[int]`.";
+             "Revealed type [-1]: Revealed type for `user.income` is `Optional[int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from sqlalchemy.ext.declarative import declarative_base
       from sqlalchemy import Column, Integer
       from typing import Optional
@@ -51,11 +54,11 @@ let test_declarative_base context =
 
       user4: User = User(1, 2, 3)
     |}
-    [
-      "Too many arguments [19]: Call `User.__init__` expects 0 positional arguments, 3 were \
-       provided.";
-    ];
-  ()
+           [
+             "Too many arguments [19]: Call `User.__init__` expects 0 positional arguments, 3 were \
+              provided.";
+           ];
+    ]
 
 
-let () = "sqlAlchemy" >::: ["declarative_base" >:: test_declarative_base] |> Test.run
+let () = "sqlAlchemy" >::: [test_declarative_base] |> Test.run
