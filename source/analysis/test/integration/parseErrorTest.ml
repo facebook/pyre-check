@@ -30,13 +30,6 @@ let test_basic context =
     context;
   assert_default_type_errors
     {|
-      # pyre-placeholder-stub
-      def bad_syntax(
-    |}
-    []
-    context;
-  assert_default_type_errors
-    {|
       # pyre-ignore-all-errors[10]
       def bad_syntax(
     |}

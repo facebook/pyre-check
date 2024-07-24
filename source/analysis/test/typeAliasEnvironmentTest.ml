@@ -456,30 +456,6 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
     ();
-  assert_updates
-    ~original_sources:
-      [
-        "test.py", {|
-            from placeholder import Q
-            X = Q
-          |};
-        "placeholder.pyi", {|
-            # pyre-placeholder-stub
-          |};
-      ]
-    ~new_sources:
-      [
-        "test.py", {|
-            from placeholder import Q
-            X = Q
-          |};
-        "placeholder.pyi", {|
-          |};
-      ]
-    ~middle_actions:["test.X", dependency, Some "typing.Any"]
-    ~expected_triggers:[dependency]
-    ~post_actions:["test.X", dependency, None]
-    ();
 
   (* Addition should trigger previous failed reads *)
   assert_updates

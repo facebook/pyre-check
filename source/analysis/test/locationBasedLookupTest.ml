@@ -416,34 +416,6 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
-    ~source:
-      {|
-        import my_placeholder_stub
-        print(my_placeholder_stub)
-           #  ^- cursor
-    |}
-    (Some
-       {
-         symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub");
-         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-         use_postcondition_info = false;
-       });
-  assert_narrowest_expression
-    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
-    ~source:
-      {|
-        from my_placeholder_stub import x as y
-        print(y.Foo)
-              #  ^- cursor
-    |}
-    (Some
-       {
-         symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub.x.Foo");
-         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-         use_postcondition_info = false;
-       });
-  assert_narrowest_expression
     ~source:{|
         def foo(a: int, b: str) -> None: ...
         #               ^- cursor
@@ -1499,26 +1471,6 @@ let test_resolve_definition_for_symbol =
                    #  ^- cursor
          |}
            (Some "a:1:0-1:14");
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolved_definition_with_location_string_and_external_sources
-           ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
-           ~source:
-             {|
-             import my_placeholder_stub
-             print(my_placeholder_stub)
-                #  ^- cursor
-         |}
-           (Some "my_placeholder_stub:1:0-1:0");
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolved_definition_with_location_string_and_external_sources
-           ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
-           ~source:
-             {|
-             from my_placeholder_stub import x as y
-             print(y.Foo)
-                   #  ^- cursor
-         |}
-           (Some "my_placeholder_stub:1:0-1:0");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolved_definition
            {|

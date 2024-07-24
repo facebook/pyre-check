@@ -133,9 +133,7 @@ let test_parse_annotation context =
   in
   let resolution =
     let resolution =
-      ScratchProject.setup
-        ~context
-        ["empty.pyi", "class Empty: ... "; "empty/stub.pyi", "# pyre-placeholder-stub"]
+      ScratchProject.setup ~context ["empty.pyi", "class Empty: ... "]
       |> ScratchProject.build_resolution
     in
     Resolution.global_resolution resolution
@@ -150,16 +148,7 @@ let test_parse_annotation context =
     ~resolution
     ~expected:"qualifier.int"
     !"$local_qualifier$int";
-  assert_parse_annotation
-    ~validation:ValidatePrimitivesAndTypeParameters
-    ~resolution
-    ~expected:"typing.Any"
-    !"empty.stub.Annotation";
-  assert_parse_annotation
-    ~validation:ValidatePrimitivesAndTypeParameters
-    ~resolution
-    ~expected:"typing.Dict[str, typing.Any]"
-    (parse_single_expression "typing.Dict[str, empty.stub.Annotation]")
+  ()
 
 
 (** The purpose of this test is to test environments in which the value for the global variable

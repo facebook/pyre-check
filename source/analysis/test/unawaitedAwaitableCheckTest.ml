@@ -1366,38 +1366,6 @@ let test_pass_to_callee =
     ]
 
 
-let test_placeholder_stubs =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_awaitable_errors
-           {|
-              from placeholder_stub import StubbedBase
-
-              class Foo(StubbedBase): ...
-
-              def main() -> None:
-                  x = Foo()
-            |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ (* TODO(T79853064): To be consistent with our existing behavior, this should emit an error
-            about `x` not being awaited. However, because we treat any class extending a placeholder
-            class as a non-awaitable, we don't emit an error here. *)
-      assert_awaitable_errors
-        {|
-              from placeholder_stub import StubbedBase
-              from typing import Awaitable
-
-              class Foo(StubbedBase, Awaitable[str]): ...
-
-              def main() -> None:
-                  x = Foo()
-            |}
-        [];
-    ]
-
-
 let test_getattr =
   test_list
     [
@@ -1723,7 +1691,6 @@ let () =
          test_globals;
          test_if;
          test_pass_to_callee;
-         test_placeholder_stubs;
          test_getattr;
          test_attribute_assignment;
          test_ternary_expression;
