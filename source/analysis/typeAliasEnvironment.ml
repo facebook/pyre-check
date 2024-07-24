@@ -41,7 +41,6 @@ module IncomingDataComputation = struct
       class_exists: string -> bool;
       module_exists: Ast.Reference.t -> bool;
       get_unannotated_global: Ast.Reference.t -> Module.UnannotatedGlobal.t option;
-      is_from_empty_stub: Ast.Reference.t -> bool;
     }
   end
 
@@ -70,10 +69,7 @@ module IncomingDataComputation = struct
           dependencies: string list;
         }
 
-    let checked_resolve
-        Queries.{ class_exists; module_exists; is_from_empty_stub; _ }
-        { value; target }
-      =
+    let checked_resolve Queries.{ class_exists; module_exists; _ } { value; target } =
       let aliases ?replace_unbound_parameters_with_any:_ _name = None in
       let value_annotation =
         unchecked_resolve ~unparsed:value ~target ~variables:Type.resolved_empty_variables ~aliases
@@ -94,14 +90,7 @@ module IncomingDataComputation = struct
             match annotation with
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
-                let reference =
-                  match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Name name when is_simple_name name -> name_to_reference_exn name
-                  | _ -> Reference.create "typing.Any"
-                in
-                if is_from_empty_stub reference then
-                  (), Type.Any
-                else if
+                if
                   class_exists primitive
                   || module_exists (Reference.create primitive)
                   (* Don't consider "..." in `MyCallable[..., int]` to be a dependent alias. *)
@@ -294,7 +283,6 @@ module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
       class_exists: Type.Primitive.t -> bool;
-      is_from_empty_stub: Ast.Reference.t -> bool;
       get_type_alias:
         ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.t option;
       get_variable:
@@ -307,7 +295,7 @@ module OutgoingDataComputation = struct
 
 
   let parse_annotation_without_validating_type_parameters
-      (Queries.{ is_from_empty_stub; get_type_alias; get_variable; _ } as queries)
+      (Queries.{ get_type_alias; get_variable; _ } as queries)
       ?modify_aliases
       ?modify_variables
       ?(allow_untracked = false)
@@ -330,25 +318,10 @@ module OutgoingDataComputation = struct
       in
       Type.create ~variables ~aliases expression
     in
-    let annotation =
-      let type_map = function
-        | Type.Primitive name ->
-            let originates_is_from_empty_stub =
-              let reference = Reference.create name in
-              is_from_empty_stub reference
-            in
-            if originates_is_from_empty_stub then
-              Some Type.Any
-            else
-              None
-        | _ -> None
-      in
-      Type.apply_type_map parsed ~type_map
-    in
-    if type_contains_untracked_name queries annotation && not allow_untracked then
+    if type_contains_untracked_name queries parsed && not allow_untracked then
       Type.Top
     else
-      annotation
+      parsed
 
 
   let param_spec_from_vararg_annotations
@@ -412,8 +385,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
             UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
               unannotated_global_environment
               ?dependency;
-          is_from_empty_stub =
-            EmptyStubEnvironment.ReadOnly.is_from_empty_stub empty_stub_environment ?dependency;
         }
     in
     IncomingDataComputation.produce_alias queries key
@@ -474,10 +445,6 @@ module ReadOnly = struct
         class_exists =
           UnannotatedGlobalEnvironment.ReadOnly.class_exists
             (unannotated_global_environment environment)
-            ?dependency;
-        is_from_empty_stub =
-          EmptyStubEnvironment.ReadOnly.is_from_empty_stub
-            (empty_stub_environment environment)
             ?dependency;
         get_type_alias = get_type_alias environment ?dependency;
         get_variable = get_variable environment ?dependency;
