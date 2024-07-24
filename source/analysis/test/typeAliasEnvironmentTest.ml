@@ -21,10 +21,8 @@ let test_simple_registration =
       ScratchProject.errors_environment project
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
-    let expected =
-      expected >>| fun expected -> TypeAliasEnvironment.RawAlias.TypeAlias (Type.Primitive expected)
-    in
-    let printer v = v >>| TypeAliasEnvironment.RawAlias.show |> Option.value ~default:"none" in
+    let expected = expected >>| fun expected -> Type.Primitive expected in
+    let printer v = v >>| Type.show |> Option.value ~default:"none" in
     assert_equal ~printer expected (TypeAliasEnvironment.ReadOnly.get_type_alias read_only name)
   in
   test_list
@@ -83,10 +81,7 @@ let test_harder_registrations =
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
     let printer alias =
-      alias
-      >>| TypeAliasEnvironment.RawAlias.sexp_of_t
-      >>| Sexp.to_string_hum
-      |> Option.value ~default:"none"
+      alias >>| Type.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
     assert_equal
       ~printer
@@ -98,13 +93,11 @@ let test_harder_registrations =
       parse_single_expression expression
       |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
     in
-    let expected_alias =
-      expected >>| parser >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
-    in
+    let expected_alias = expected >>| parser >>| fun alias -> alias in
     assert_registers ~expected_alias source name
   in
   let unparsed_assert_registers source name expected =
-    let expected_alias = expected >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias in
+    let expected_alias = expected >>| fun alias -> alias in
     assert_registers ~expected_alias source name
   in
   test_list
@@ -169,7 +162,7 @@ let test_harder_registrations =
              Y: typing_extensions.TypeAlias = "X"
            |}
            "test.Y"
-           ~expected_alias:(Some (TypeAliasEnvironment.RawAlias.TypeAlias Type.integer));
+           ~expected_alias:(Some Type.integer);
       (* Recursive alias. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
@@ -181,15 +174,14 @@ let test_harder_registrations =
            "test.Tree"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
-                   (Type.RecursiveType.create
-                      ~name:"test.Tree"
-                      ~body:
-                        (Type.union
-                           [
-                             Type.integer;
-                             Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
-                           ]))));
+                (Type.RecursiveType.create
+                   ~name:"test.Tree"
+                   ~body:
+                     (Type.union
+                        [
+                          Type.integer;
+                          Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
+                        ])));
       (* Forbid directly-recursive aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
@@ -238,11 +230,10 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
-                   (Type.list
-                      (Type.RecursiveType.create
-                         ~name:"test.X"
-                         ~body:(Type.list (Type.Primitive "test.X"))))));
+                (Type.list
+                   (Type.RecursiveType.create
+                      ~name:"test.X"
+                      ~body:(Type.list (Type.Primitive "test.X")))));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
@@ -257,7 +248,34 @@ let test_harder_registrations =
            "test.Y"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
+                (Type.union
+                   [
+                     Type.integer;
+                     Type.RecursiveType.create
+                       ~name:"test.X"
+                       ~body:
+                         (Type.union
+                            [
+                              Type.list (Type.Primitive "test.X");
+                              Type.parametric "typing.Sequence" [Single (Type.Primitive "test.X")];
+                            ]);
+                   ]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_registers
+           {|
+              from typing import List, Sequence, Union
+
+              X = Union[
+                  Sequence["X"],
+                  List["X"]
+              ]
+              Y = Union[int, X]
+              Z = List[Y]
+            |}
+           "test.Z"
+           ~expected_alias:
+             (Some
+                (Type.list
                    (Type.union
                       [
                         Type.integer;
@@ -275,37 +293,6 @@ let test_harder_registrations =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
            {|
-              from typing import List, Sequence, Union
-
-              X = Union[
-                  Sequence["X"],
-                  List["X"]
-              ]
-              Y = Union[int, X]
-              Z = List[Y]
-            |}
-           "test.Z"
-           ~expected_alias:
-             (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
-                   (Type.list
-                      (Type.union
-                         [
-                           Type.integer;
-                           Type.RecursiveType.create
-                             ~name:"test.X"
-                             ~body:
-                               (Type.union
-                                  [
-                                    Type.list (Type.Primitive "test.X");
-                                    Type.parametric
-                                      "typing.Sequence"
-                                      [Single (Type.Primitive "test.X")];
-                                  ]);
-                         ]))));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_registers
-           {|
             from typing import Generic, TypeVar
             from pyre_extensions import TypeVarTuple, Unpack
             from typing_extensions import Literal as L
@@ -320,15 +307,14 @@ let test_harder_registrations =
            "test.FloatTensor"
            ~expected_alias:
              (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
-                   (Type.parametric
-                      "test.Tensor"
-                      [
-                        Single Type.float;
-                        Unpacked
-                          (Type.OrderedTypes.Concatenation.create_unpackable
-                             (Type.Variable.TypeVarTuple.create "test.Ts"));
-                      ])));
+                (Type.parametric
+                   "test.Tensor"
+                   [
+                     Single Type.float;
+                     Unpacked
+                       (Type.OrderedTypes.Concatenation.create_unpackable
+                          (Type.Variable.TypeVarTuple.create "test.Ts"));
+                   ]));
       (* An alias containing "..." should not mistake the "..." for some unknown alias. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_registers
@@ -344,10 +330,7 @@ let test_harder_registrations =
             F = Callable[..., int]
           |}
            "test.F"
-           ~expected_alias:
-             (Some
-                (TypeAliasEnvironment.RawAlias.TypeAlias
-                   (Type.Callable.create ~annotation:Type.integer ())));
+           ~expected_alias:(Some (Type.Callable.create ~annotation:Type.integer ()));
       (* Allow the union syntax in type aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ parsed_assert_registers
@@ -383,17 +366,12 @@ let test_updates context =
       |> ErrorsEnvironment.Testing.ReadOnly.alias_environment
     in
     let execute_action (alias_name, dependency, expectation) =
-      let printer v =
-        v
-        >>| TypeAliasEnvironment.RawAlias.sexp_of_t
-        >>| Sexp.to_string_hum
-        |> Option.value ~default:"none"
-      in
+      let printer v = v >>| Type.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"none" in
       let expectation =
         expectation
         >>| parse_single_expression
         >>| Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
-        >>| fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
+        >>| fun alias -> alias
       in
       TypeAliasEnvironment.ReadOnly.get_type_alias read_only ~dependency alias_name
       |> assert_equal ~printer expectation

@@ -58,10 +58,9 @@ module Queries = struct
     exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
     class_exists: string -> bool;
     parse_annotation_without_validating_type_parameters:
-      ?modify_aliases:
-        (?replace_unbound_parameters_with_any:bool ->
-        TypeAliasEnvironment.RawAlias.t ->
-        TypeAliasEnvironment.RawAlias.t) ->
+      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
+      ?modify_variables:
+        (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
       ?allow_untracked:bool ->
       Ast.Expression.t ->
       Type.t;
@@ -2471,13 +2470,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         expression =
       let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
-        | TypeAliasEnvironment.RawAlias.TypeAlias alias ->
+        | alias ->
             self#check_invalid_type_parameters
               ?replace_unbound_parameters_with_any
               alias
               ~assumptions
             |> snd
-            |> fun alias -> TypeAliasEnvironment.RawAlias.TypeAlias alias
+            |> fun alias -> alias
+      in
+      let modify_variables ?replace_unbound_parameters_with_any =
+        let _replace = replace_unbound_parameters_with_any in
+        function
         | result -> result
       in
       let allow_untracked =
@@ -2490,6 +2493,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let annotation =
         parse_annotation_without_validating_type_parameters
           ~modify_aliases
+          ~modify_variables
           ~allow_untracked
           expression
       in
@@ -3485,12 +3489,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           annotation
                       | normal, had_descriptors, _ -> Type.union (normal @ had_descriptors)
                     in
-
                     let elements_and_get_results =
                       List.map elements ~f:(fun element ->
                           element, get_descriptor_method element ~kind:`DunderGet)
                     in
-
                     let get_type = List.unzip elements_and_get_results |> snd |> collect in
                     let set_type =
                       if accessed_through_class then

@@ -28,7 +28,14 @@ module AliasReadOnly : sig
     ?dependency:DependencyKey.registered ->
     ?replace_unbound_parameters_with_any:bool ->
     Type.Primitive.t ->
-    RawAlias.t option
+    Type.t option
+
+  val get_variable
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    ?replace_unbound_parameters_with_any:bool ->
+    Type.Primitive.t ->
+    Type.Variable.t option
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
@@ -37,7 +44,9 @@ module AliasReadOnly : sig
   val parse_annotation_without_validating_type_parameters
     :  t ->
     ?dependency:DependencyKey.registered ->
-    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> RawAlias.t -> RawAlias.t) ->
+    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
+    ?modify_variables:
+      (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
     ?allow_untracked:bool ->
     Expression.t ->
     Type.t

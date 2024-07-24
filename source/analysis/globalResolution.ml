@@ -169,6 +169,10 @@ let get_type_alias ({ dependency; _ } as resolution) =
   TypeAliasEnvironment.ReadOnly.get_type_alias ?dependency (alias_environment resolution)
 
 
+let get_variable ({ dependency; _ } as resolution) =
+  TypeAliasEnvironment.ReadOnly.get_variable ?dependency (alias_environment resolution)
+
+
 let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
   TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
     ?dependency
@@ -351,7 +355,7 @@ let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hiera
 let base_is_from_placeholder_stub variable_aliases resolution =
   let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
     match (get_type_alias resolution) name with
-    | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
+    | Some t -> Some t
     | _ -> None
   in
   AnnotatedBases.base_is_from_placeholder_stub

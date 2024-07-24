@@ -377,8 +377,8 @@ let test_register_aliases context =
     let environment = register_all sources in
     let global_resolution = GlobalResolution.create environment in
     let assert_alias (alias, target) =
-      match GlobalResolution.get_type_alias global_resolution alias with
-      | Some alias -> assert_equal ~printer:TypeAliasEnvironment.RawAlias.show target alias
+      match GlobalResolution.get_variable global_resolution alias with
+      | Some alias -> assert_equal ~printer:Type.Variable.show target alias
       | None -> failwith "Alias is missing"
     in
     List.iter aliases ~f:assert_alias
@@ -387,11 +387,7 @@ let test_register_aliases context =
     ["test.py", {|
           Tparams = pyre_extensions.ParameterSpecification('Tparams')
       |}]
-    [
-      ( "test.Tparams",
-        TypeAliasEnvironment.RawAlias.VariableAlias
-          (Type.Variable.Declaration.DParamSpec { name = "test.Tparams" }) );
-    ];
+    ["test.Tparams", ParamSpecVariable (Type.Variable.ParamSpec.create "test.Tparams")];
   ()
 
 

@@ -16,22 +16,6 @@ open Assumptions
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
-let variable_aliases aliases name =
-  match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) ->
-      let type_variables =
-        Type.Variable.of_declaration
-          ~create_type:
-            (Type.create
-               ~aliases:Type.resolved_empty_aliases
-               ~variables:Type.resolved_empty_variables)
-          variable
-      in
-
-      Some type_variables
-  | _ -> None
-
-
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
     AnnotatedAttribute.create
@@ -170,58 +154,53 @@ let make_assert_functions context =
   let resolution = GlobalResolution.create environment in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
+    let s =
+      [
+        "Base";
+        "Child";
+        "Unrelated";
+        "T_Unconstrained";
+        "T_Bound_Base";
+        "T_Bound_Child";
+        "T_Bound_Union_Base_Unrelated";
+        "T_Bound_Union";
+        "T_Bound_ReadOnly";
+        "T_Bound_object";
+        "T_Base_Unrelated";
+        "T_Child_Unrelated";
+        "T_Base_Unrelated_int";
+        "V";
+        "P";
+        "P2";
+        "T";
+        "T1";
+        "T2";
+        "T3";
+        "T4";
+        "G_invariant";
+        "G_covariant";
+        "T_Baseovariant";
+        "ClassWithOverloadedConstructor";
+        "Constructable";
+        "UserDefinedVariadic";
+        "UserDefinedVariadicSimpleChild";
+        "UserDefinedVariadicMapChild";
+        "Ts";
+        "Ts2";
+        "Tensor";
+      ]
+      |> Type.Primitive.Set.of_list
+    in
     let aliases ?replace_unbound_parameters_with_any:_ a =
-      let s =
-        [
-          "Base";
-          "Child";
-          "Unrelated";
-          "T_Unconstrained";
-          "T_Bound_Base";
-          "T_Bound_Child";
-          "T_Bound_Union_Base_Unrelated";
-          "T_Bound_Union";
-          "T_Bound_ReadOnly";
-          "T_Bound_object";
-          "T_Base_Unrelated";
-          "T_Child_Unrelated";
-          "T_Base_Unrelated_int";
-          "V";
-          "P";
-          "P2";
-          "T";
-          "T1";
-          "T2";
-          "T3";
-          "T4";
-          "G_invariant";
-          "G_covariant";
-          "T_Baseovariant";
-          "ClassWithOverloadedConstructor";
-          "Constructable";
-          "UserDefinedVariadic";
-          "UserDefinedVariadicSimpleChild";
-          "UserDefinedVariadicMapChild";
-          "Ts";
-          "Ts2";
-          "Tensor";
-        ]
-        |> Type.Primitive.Set.of_list
-      in
       if Set.mem s a then
-        Some (TypeAliasEnvironment.RawAlias.TypeAlias (Type.Primitive ("test." ^ a)))
+        Some (Type.Primitive ("test." ^ a))
       else
         GlobalResolution.get_type_alias resolution a
     in
-    let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
-      match aliases name with
-      | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
-      | _ -> None
+    let variables ?replace_unbound_parameters_with_any:_ a =
+      GlobalResolution.get_variable resolution a
     in
-
-    annotation
-    |> Type.create ~variables:(variable_aliases aliases) ~aliases:resolved_aliases
-    |> Type.expression
+    annotation |> Type.create ~variables ~aliases |> Type.expression
   in
   let parse_annotation annotation ~do_prep =
     annotation
@@ -310,13 +289,9 @@ let make_assert_functions context =
                 | _ -> failwith "expected tuple"
               in
               let global_resolution = GlobalResolution.create environment in
-              match GlobalResolution.get_type_alias global_resolution primitive with
-              | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable_declaration) -> (
-                  match
-                    Type.Variable.of_declaration
-                      ~create_type:(GlobalResolution.parse_annotation global_resolution)
-                      variable_declaration
-                  with
+              match GlobalResolution.get_variable global_resolution primitive with
+              | Some variable_declaration -> (
+                  match variable_declaration with
                   | ParamSpecVariable variable ->
                       Type.Variable.ParamSpecPair (variable, parse_parameters value)
                   | TypeVarTupleVariable variable -> (

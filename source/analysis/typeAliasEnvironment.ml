@@ -296,7 +296,9 @@ module OutgoingDataComputation = struct
       class_exists: Type.Primitive.t -> bool;
       is_from_empty_stub: Ast.Reference.t -> bool;
       get_type_alias:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> RawAlias.t option;
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.t option;
+      get_variable:
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Variable.t option;
     }
   end
 
@@ -305,37 +307,28 @@ module OutgoingDataComputation = struct
 
 
   let parse_annotation_without_validating_type_parameters
-      (Queries.{ is_from_empty_stub; get_type_alias; _ } as queries)
+      (Queries.{ is_from_empty_stub; get_type_alias; get_variable; _ } as queries)
       ?modify_aliases
+      ?modify_variables
       ?(allow_untracked = false)
       expression
     =
     let modify_aliases =
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
+    let modify_variables =
+      Option.value modify_variables ~default:(fun ?replace_unbound_parameters_with_any:_ name ->
+          name)
+    in
     let parsed =
       let expression = Type.preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in
-      let resolved_aliases ?replace_unbound_parameters_with_any name =
-        match aliases ?replace_unbound_parameters_with_any name with
-        | Some (RawAlias.TypeAlias t) -> Some t
-        | _ -> None
+      let variables ?replace_unbound_parameters_with_any name =
+        get_variable name >>| modify_variables ?replace_unbound_parameters_with_any
       in
-      let variable_aliases name =
-        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (RawAlias.VariableAlias variable) ->
-            let type_variables =
-              Type.Variable.of_declaration
-                ~create_type:
-                  (Type.create ~aliases:resolved_aliases ~variables:Type.resolved_empty_variables)
-                variable
-            in
-            Some type_variables
-        | _ -> None
-      in
-      Type.create ~variables:variable_aliases ~aliases:resolved_aliases expression
+      Type.create ~variables ~aliases expression
     in
     let annotation =
       let type_map = function
@@ -359,15 +352,14 @@ module OutgoingDataComputation = struct
 
 
   let param_spec_from_vararg_annotations
-      Queries.{ get_type_alias; _ }
+      Queries.{ get_variable; _ }
       ~args_annotation
       ~kwargs_annotation
       ()
     =
     let get_param_spec variable_name =
-      match get_type_alias variable_name with
-      | Some (RawAlias.VariableAlias (Type.Variable.Declaration.DParamSpec { name })) ->
-          Some (Type.Variable.ParamSpec.create name)
+      match get_variable variable_name with
+      | Some (Type.Variable.ParamSpecVariable name) -> Some name
       | _ -> None
     in
     Type.Variable.ParamSpec.of_component_annotations
@@ -449,7 +441,25 @@ module ReadOnly = struct
   include Aliases.ReadOnly
 
   let get_type_alias environment ?dependency ?replace_unbound_parameters_with_any:_ name =
-    get environment ?dependency name
+    match get environment ?dependency name with
+    | Some (RawAlias.TypeAlias t) -> Some t
+    | _ -> None
+
+
+  let rec get_variable environment ?dependency ?replace_unbound_parameters_with_any:_ name =
+    let aliases ?replace_unbound_parameters_with_any name =
+      get_type_alias environment ?dependency name ?replace_unbound_parameters_with_any
+    in
+
+    match get environment ?dependency name with
+    | Some (RawAlias.VariableAlias t) ->
+        let type_variables =
+          Type.Variable.of_declaration
+            ~create_type:(Type.create ~aliases ~variables:(get_variable environment ?dependency))
+            t
+        in
+        Some type_variables
+    | _ -> None
 
 
   let empty_stub_environment = upstream_environment
@@ -470,6 +480,7 @@ module ReadOnly = struct
             (empty_stub_environment environment)
             ?dependency;
         get_type_alias = get_type_alias environment ?dependency;
+        get_variable = get_variable environment ?dependency;
       }
 
 

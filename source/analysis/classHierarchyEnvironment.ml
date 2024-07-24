@@ -30,14 +30,13 @@ module IncomingDataComputation = struct
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
       get_type_alias:
-        ?replace_unbound_parameters_with_any:bool ->
-        Type.Primitive.t ->
-        TypeAliasEnvironment.RawAlias.t option;
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.t option;
+      get_variable:
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Variable.t option;
       parse_annotation_without_validating_type_parameters:
-        ?modify_aliases:
-          (?replace_unbound_parameters_with_any:bool ->
-          TypeAliasEnvironment.RawAlias.t ->
-          TypeAliasEnvironment.RawAlias.t) ->
+        ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
+        ?modify_variables:
+          (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;
@@ -228,11 +227,7 @@ module IncomingDataComputation = struct
           extract_supertype (Type.expression base)
           >>= fun (name, parameters) -> Some { ClassHierarchy.Target.target = name; parameters }
         in
-        let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
-          match get_type_alias name with
-          | Some (TypeAliasEnvironment.RawAlias.TypeAlias t) -> Some t
-          | _ -> None
-        in
+        let resolved_aliases ?replace_unbound_parameters_with_any:_ name = get_type_alias name in
         let has_placeholder_stub_parent =
           compute_extends_placeholder_stub_class
             class_summary
@@ -310,6 +305,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
             EmptyStubEnvironment.ReadOnly.is_from_empty_stub empty_stub_environment ?dependency;
           get_type_alias =
             TypeAliasEnvironment.ReadOnly.get_type_alias alias_environment ?dependency;
+          get_variable = TypeAliasEnvironment.ReadOnly.get_variable alias_environment ?dependency;
           parse_annotation_without_validating_type_parameters =
             TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               alias_environment
@@ -318,18 +314,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     in
 
     let variable_aliases name =
-      match queries.get_type_alias ?replace_unbound_parameters_with_any:(Some true) name with
-      | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) ->
-          let type_variables =
-            Type.Variable.of_declaration
-              ~create_type:
-                (Type.create
-                   ~aliases:Type.resolved_empty_aliases
-                   ~variables:Type.resolved_empty_variables)
-              variable
-          in
-          Some type_variables
-      | _ -> None
+      queries.get_variable ?replace_unbound_parameters_with_any:(Some true) name
     in
 
     IncomingDataComputation.get_parents queries key ~variable_aliases

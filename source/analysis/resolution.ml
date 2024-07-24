@@ -333,23 +333,14 @@ let is_consistent_with ({ global_resolution; _ } as resolution) =
 
 let global_resolution { global_resolution; _ } = global_resolution
 
-let get_type_alias resolution =
+let get_variable resolution =
   let global_resolution = global_resolution resolution in
-  GlobalResolution.get_type_alias global_resolution
+  GlobalResolution.get_variable global_resolution
 
 
 let variables resolution name =
-  match get_type_alias ?replace_unbound_parameters_with_any:(Some true) resolution name with
-  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) ->
-      let type_variables =
-        Type.Variable.of_declaration
-          ~create_type:
-            (Type.create
-               ~aliases:Type.resolved_empty_aliases
-               ~variables:Type.resolved_empty_variables)
-          variable
-      in
-      Some type_variables
+  match get_variable ?replace_unbound_parameters_with_any:(Some true) resolution name with
+  | Some variable -> Some variable
   | _ -> None
 
 
