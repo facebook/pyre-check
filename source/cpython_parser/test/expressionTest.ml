@@ -360,6 +360,7 @@ let test_fstring =
                         format (Expression.Name (Name.Identifier "w"));
                         literal ".";
                         format (Expression.Name (Name.Identifier "p"));
+                        literal "";
                       ]);
                ];
         labeled_test_case __FUNCTION__ __LINE__

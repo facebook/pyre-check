@@ -778,7 +778,18 @@ let statement =
           |> Node.create ~location;
         ]
   in
-  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment ~context =
+  let function_def
+      ~location
+      ~name
+      ~args
+      ~body
+      ~decorator_list
+      ~returns
+      ~type_comment
+      ~type_params
+      ~context
+    =
+    ignore type_params (* TODO *);
     create_function_definition
       ~location
       ~async:false
@@ -790,8 +801,18 @@ let statement =
       ~type_comment
       ~context
   in
-  let async_function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment ~context
+  let async_function_def
+      ~location
+      ~name
+      ~args
+      ~body
+      ~decorator_list
+      ~returns
+      ~type_comment
+      ~type_params
+      ~context
     =
+    ignore type_params (* TODO *);
     create_function_definition
       ~location
       ~async:true
@@ -803,7 +824,8 @@ let statement =
       ~type_comment
       ~context
   in
-  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
+  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~type_params ~context =
+    ignore type_params (* TODO *);
     let base_arguments =
       List.append
         (List.map bases ~f:(fun arg -> convert_positional_argument arg, arg.Node.location))
@@ -864,6 +886,10 @@ let statement =
       create_assign ~location ~target ~annotation ~value:(Some value) ()
     in
     List.map targets ~f:create_assign_for_target
+  in
+  let type_alias ~location ~name ~type_params ~value ~context =
+    ignore type_params (* TODO *);
+    assign ~location ~targets:[name] ~value ~type_comment:None ~context
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
     [
@@ -1034,6 +1060,7 @@ let statement =
     ~return
     ~delete
     ~assign
+    ~type_alias
     ~aug_assign
     ~ann_assign
     ~for_
@@ -1066,6 +1093,23 @@ let function_type ~argtypes ~returns =
   { FunctionSignature.parameter_annotations = argtypes; return_annotation = returns }
 
 
+let type_param =
+  let raise_unimplemented location =
+    let {
+      Ast.Location.start = { Location.line; column };
+      stop = { Location.line = end_line; column = end_column };
+    }
+      =
+      location
+    in
+    raise (InternalError { Error.line; column; end_line; end_column; message = "Unimplemented" })
+  in
+  let type_var ~location ~name:_ ~bound:_ = raise_unimplemented location in
+  let param_spec ~location ~name:_ = raise_unimplemented location in
+  let type_var_tuple ~location ~name:_ = raise_unimplemented location in
+  { PyreAst.TaglessFinal.TypeParam.type_var; param_spec; type_var_tuple }
+
+
 let specification =
   PyreAst.TaglessFinal.make
     ~argument
@@ -1089,6 +1133,7 @@ let specification =
     ~position
     ~statement
     ~type_ignore
+    ~type_param
     ~unary_operator
     ~with_item
     ()

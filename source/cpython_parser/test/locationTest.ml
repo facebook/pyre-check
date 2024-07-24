@@ -2890,7 +2890,7 @@ let test_string_locations =
                          ~start:(1, 0)
                          ~stop:(1, 6)
                          (Expression.FormatString
-                            [Substring.Literal (node ~start:(1, 0) ~stop:(1, 6) "foo")])));
+                            [Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo")])));
                ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2906,7 +2906,7 @@ let test_string_locations =
                          ~stop:(1, 10)
                          (Expression.FormatString
                             [
-                              Substring.Literal (node ~start:(1, 0) ~stop:(1, 10) "foo ");
+                              Substring.Literal (node ~start:(1, 2) ~stop:(1, 6) "foo ");
                               Substring.Format
                                 {
                                   format_spec = None;
@@ -2931,7 +2931,7 @@ let test_string_locations =
                          ~start:(1, 0)
                          ~stop:(1, 13)
                          (Expression.FormatString
-                            [Substring.Literal (node ~start:(1, 0) ~stop:(1, 13) "foobar")])));
+                            [Substring.Literal (node ~start:(1, 2) ~stop:(1, 12) "foobar")])));
                ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -3020,7 +3020,7 @@ let test_string_locations =
                          ~stop:(3, 3)
                          (Expression.FormatString
                             [
-                              Substring.Literal (node ~start:(1, 0) ~stop:(3, 3) "\n");
+                              Substring.Literal (node ~start:(1, 4) ~stop:(2, 0) "\n");
                               Substring.Format
                                 {
                                   format_spec = None;
@@ -3031,7 +3031,7 @@ let test_string_locations =
                                       (Expression.Constant
                                          (Constant.String (StringLiteral.create "a")));
                                 };
-                              Substring.Literal (node ~start:(1, 0) ~stop:(3, 3) "b\n");
+                              Substring.Literal (node ~start:(2, 5) ~stop:(3, 0) "b\n");
                             ])));
                ];
       ]
