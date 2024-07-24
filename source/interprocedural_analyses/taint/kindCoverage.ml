@@ -45,12 +45,12 @@ module Sinks = struct
       ~init:Sinks.Set.empty
 end
 
-module NonSanitizeTransforms = struct
+module NamedTransforms = struct
   module Set = Data_structures.SerializableSet.Make (TaintTransform)
 
   let from_transform = function
-    | (TaintTransform.Named _ | TaintTransform.TriggeredPartialSink _) as transform ->
-        Some transform
+    | TaintTransform.Named _ as transform -> Some transform
+    | TaintTransform.TriggeredPartialSink _
     | TaintTransform.Sanitize _ ->
         (* Sanitizers are not used in rules, although they are internally treated as taint
            transforms. *)
@@ -63,8 +63,10 @@ end
 type t = {
   sources: Sources.Set.t;
   sinks: Sinks.Set.t;
-  non_sanitize_transforms: NonSanitizeTransforms.Set.t;
-      (* The kind coverage cares about transforms that appear in rules and models. *)
+  named_transforms: NamedTransforms.Set.t;
+      (* The kind coverage only cares about `Named` transforms. `Sanitize` transforms are used
+         internally for dropping taint. `TriggeredPartialSink` transforms are used to represent
+         partial sinks that have a flow, which is irrelevant with the kind coverage. *)
 }
 [@@deriving eq, show, compare, sexp, hash]
 
@@ -72,7 +74,7 @@ let empty =
   {
     sources = Sources.Set.empty;
     sinks = Sinks.Set.empty;
-    non_sanitize_transforms = NonSanitizeTransforms.Set.empty;
+    named_transforms = NamedTransforms.Set.empty;
   }
 
 
@@ -101,31 +103,30 @@ let from_model
     Sources.Set.union (collect_sources generations) (collect_sources parameter_sources)
   in
   let sinks = Sinks.Set.union (collect_sinks taint_in_taint_out) (collect_sinks sink_taint) in
-  let source_non_sanitize_transforms =
+  let source_named_transforms =
     Sources.Set.fold
       (fun source so_far ->
         source
-        |> Sources.get_non_sanitize_transforms
-        |> NonSanitizeTransforms.from_transforms
-        |> NonSanitizeTransforms.Set.union so_far)
+        |> Sources.get_named_transforms
+        |> NamedTransforms.from_transforms
+        |> NamedTransforms.Set.union so_far)
       sources
-      NonSanitizeTransforms.Set.empty
+      NamedTransforms.Set.empty
   in
-  let sink_non_sanitize_transforms =
+  let sink_named_transforms =
     Sinks.Set.fold
       (fun sink so_far ->
         sink
-        |> Sinks.get_non_sanitize_transforms
-        |> NonSanitizeTransforms.from_transforms
-        |> NonSanitizeTransforms.Set.union so_far)
+        |> Sinks.get_named_transforms
+        |> NamedTransforms.from_transforms
+        |> NamedTransforms.Set.union so_far)
       sinks
-      NonSanitizeTransforms.Set.empty
+      NamedTransforms.Set.empty
   in
   {
     sources = sources |> Sources.Set.filter_map Sources.from_source;
     sinks = sinks |> Sinks.Set.elements |> Sinks.from_sinks;
-    non_sanitize_transforms =
-      NonSanitizeTransforms.Set.union source_non_sanitize_transforms sink_non_sanitize_transforms;
+    named_transforms = NamedTransforms.Set.union source_named_transforms sink_named_transforms;
   }
 
 
@@ -133,53 +134,35 @@ let from_rule { Rule.sources; sinks; transforms; _ } =
   {
     sources = sources |> Sources.Set.of_list |> Sources.Set.filter_map Sources.from_source;
     sinks = Sinks.from_sinks sinks;
-    non_sanitize_transforms =
+    named_transforms =
       (* Not consider transforms from sources or sinks, since those should not have transforms. *)
-      NonSanitizeTransforms.Set.of_list transforms;
+      NamedTransforms.from_transforms transforms;
   }
 
 
 let intersect
-    {
-      sources = sources_left;
-      sinks = sinks_left;
-      non_sanitize_transforms = non_sanitize_transforms_left;
-    }
-    {
-      sources = sources_right;
-      sinks = sinks_right;
-      non_sanitize_transforms = non_sanitize_transforms_right;
-    }
+    { sources = sources_left; sinks = sinks_left; named_transforms = named_transforms_left }
+    { sources = sources_right; sinks = sinks_right; named_transforms = named_transforms_right }
   =
   {
     sources = Sources.Set.inter sources_left sources_right;
     sinks = Sinks.Set.inter sinks_left sinks_right;
-    non_sanitize_transforms =
-      NonSanitizeTransforms.Set.inter non_sanitize_transforms_left non_sanitize_transforms_right;
+    named_transforms = NamedTransforms.Set.inter named_transforms_left named_transforms_right;
   }
 
 
 let union
-    {
-      sources = sources_left;
-      sinks = sinks_left;
-      non_sanitize_transforms = non_sanitize_transforms_left;
-    }
-    {
-      sources = sources_right;
-      sinks = sinks_right;
-      non_sanitize_transforms = non_sanitize_transforms_right;
-    }
+    { sources = sources_left; sinks = sinks_left; named_transforms = named_transforms_left }
+    { sources = sources_right; sinks = sinks_right; named_transforms = named_transforms_right }
   =
   {
     sources = Sources.Set.union sources_left sources_right;
     sinks = Sinks.Set.union sinks_left sinks_right;
-    non_sanitize_transforms =
-      NonSanitizeTransforms.Set.union non_sanitize_transforms_left non_sanitize_transforms_right;
+    named_transforms = NamedTransforms.Set.union named_transforms_left named_transforms_right;
   }
 
 
-let to_json { sources; sinks; non_sanitize_transforms } =
+let to_json { sources; sinks; named_transforms } =
   let sources_json =
     `List
       (sources |> Sources.Set.elements |> List.map ~f:(fun source -> `String (Sources.show source)))
@@ -187,13 +170,13 @@ let to_json { sources; sinks; non_sanitize_transforms } =
   let sinks_json =
     `List (sinks |> Sinks.Set.elements |> List.map ~f:(fun sink -> `String (Sinks.show sink)))
   in
-  if NonSanitizeTransforms.Set.is_empty non_sanitize_transforms then
+  if NamedTransforms.Set.is_empty named_transforms then
     `Assoc ["sources", sources_json; "sinks", sinks_json]
   else
     let transforms_json =
       `List
-        (non_sanitize_transforms
-        |> NonSanitizeTransforms.Set.elements
+        (named_transforms
+        |> NamedTransforms.Set.elements
         |> List.map ~f:(fun transform -> `String (TaintTransform.show transform)))
     in
     `Assoc ["sources", sources_json; "sinks", sinks_json; "transforms", transforms_json]

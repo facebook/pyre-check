@@ -109,20 +109,16 @@ let test_from_transform _ =
   let transform = TaintTransform.Named "TransformX" in
   assert_transform
     ~expected:(Some (TaintTransform.Named "TransformX"))
-    ~actual:(KindCoverage.NonSanitizeTransforms.from_transform transform);
+    ~actual:(KindCoverage.NamedTransforms.from_transform transform);
   let transform = TaintTransform.TriggeredPartialSink { triggering_source = "SourceA" } in
-  assert_transform
-    ~expected:(Some (TaintTransform.TriggeredPartialSink { triggering_source = "SourceA" }))
-    ~actual:(KindCoverage.NonSanitizeTransforms.from_transform transform);
+  assert_transform ~expected:None ~actual:(KindCoverage.NamedTransforms.from_transform transform);
   let transform =
     TaintTransform.Sanitize
       (SanitizeTransformSet.add_sink
          (SanitizeTransform.Sink.Named "SanitizeSinkA")
          SanitizeTransformSet.bottom)
   in
-  assert_transform
-    ~expected:None
-    ~actual:(KindCoverage.NonSanitizeTransforms.from_transform transform)
+  assert_transform ~expected:None ~actual:(KindCoverage.NamedTransforms.from_transform transform)
 
 
 let test_from_model _ =
@@ -221,8 +217,8 @@ let test_from_model _ =
             Sinks.NamedSink "SinkC";
             Sinks.NamedSink "SinkD";
           ];
-      non_sanitize_transforms =
-        KindCoverage.NonSanitizeTransforms.Set.of_list
+      named_transforms =
+        KindCoverage.NamedTransforms.Set.of_list
           [
             TaintTransform.Named "TransformX1";
             TaintTransform.Named "TransformX2";
@@ -273,12 +269,8 @@ let test_from_rule _ =
             Sinks.PartialSink "SinkB[label_1]";
             Sinks.PartialSink "SinkB[label_2]";
           ];
-      non_sanitize_transforms =
-        KindCoverage.NonSanitizeTransforms.Set.of_list
-          [
-            TaintTransform.Named "TransformZ";
-            TaintTransform.TriggeredPartialSink { triggering_source = "SourceB" };
-          ];
+      named_transforms =
+        KindCoverage.NamedTransforms.Set.of_list [TaintTransform.Named "TransformZ"];
     }
   in
   assert_equal

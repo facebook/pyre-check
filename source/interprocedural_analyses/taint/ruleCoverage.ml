@@ -20,18 +20,15 @@ module CoveredRule = struct
   include T
 
   let is_covered ~kind_coverage_from_models ({ Rule.code; _ } as rule) =
-    let ({
-           KindCoverage.sources = _;
-           sinks = _;
-           non_sanitize_transforms = non_sanitize_transforms_from_rule;
-         } as from_rule)
+    let ({ KindCoverage.sources = _; sinks = _; named_transforms = named_transforms_from_rule } as
+        from_rule)
       =
       KindCoverage.from_rule rule
     in
     let ({
            KindCoverage.sources = intersected_sources;
            sinks = intersected_sinks;
-           non_sanitize_transforms = intersected_non_sanitize_transforms;
+           named_transforms = intersected_named_transforms;
          } as intersected)
       =
       KindCoverage.intersect from_rule kind_coverage_from_models
@@ -40,8 +37,8 @@ module CoveredRule = struct
     if
       Sources.Set.is_empty intersected_sources
       || Sinks.Set.is_empty intersected_sinks
-      || (not (NonSanitizeTransforms.Set.is_empty non_sanitize_transforms_from_rule))
-         && NonSanitizeTransforms.Set.is_empty intersected_non_sanitize_transforms
+      || (not (NamedTransforms.Set.is_empty named_transforms_from_rule))
+         && NamedTransforms.Set.is_empty intersected_named_transforms
     then
       None
     else

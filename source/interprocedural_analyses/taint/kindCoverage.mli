@@ -23,7 +23,7 @@ module Sinks : sig
   module Set : Stdlib.Set.S with type elt = t
 end
 
-module NonSanitizeTransforms : sig
+module NamedTransforms : sig
   val from_transform : TaintTransform.t -> TaintTransform.t option
 
   module Set : Data_structures.SerializableSet.S with type elt = TaintTransform.t
@@ -32,8 +32,10 @@ end
 type t = {
   sources: Sources.Set.t;
   sinks: Sinks.Set.t;
-  non_sanitize_transforms: NonSanitizeTransforms.Set.t;
-      (* The kind coverage cares about transforms that appear in rules and models. *)
+  named_transforms: NamedTransforms.Set.t;
+      (* The kind coverage only cares about `Named` transforms. `Sanitize` transforms are used
+         internally for dropping taint. `TriggeredPartialSink` transforms are used to represent
+         partial sinks that have a flow, which is irrelevant with the kind coverage. *)
 }
 [@@deriving eq, show, compare, sexp, hash]
 

@@ -15,8 +15,8 @@ let test_covered_rule _ =
     {
       KindCoverage.sources = KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
       sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
-      non_sanitize_transforms =
-        KindCoverage.NonSanitizeTransforms.Set.of_list [TaintTransform.Named "TransformX"];
+      named_transforms =
+        KindCoverage.NamedTransforms.Set.of_list [TaintTransform.Named "TransformX"];
     }
   in
   let assert_covered_rule
@@ -118,7 +118,7 @@ let test_covered_rule _ =
                KindCoverage.sources =
                  KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
                sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
-               non_sanitize_transforms = KindCoverage.NonSanitizeTransforms.Set.empty;
+               named_transforms = KindCoverage.NamedTransforms.Set.empty;
              };
          })
     ~actual:another_covered_rule
@@ -143,8 +143,8 @@ let test_rule_coverage _ =
             Sinks.PartialSink "SinkC[label_1]";
             Sinks.PartialSink "SinkC[label_2]";
           ];
-      non_sanitize_transforms =
-        KindCoverage.NonSanitizeTransforms.Set.of_list
+      named_transforms =
+        KindCoverage.NamedTransforms.Set.of_list
           [
             TaintTransform.Named "TransformX";
             TaintTransform.TriggeredPartialSink { triggering_source = "SourceC" };
@@ -203,8 +203,10 @@ let test_rule_coverage _ =
       location = None;
     }
   in
-  (* Not covered because triggering source `SourceF` is not used. *)
-  let uncovered_rule_3 =
+  (* Covered even if triggering source `SourceF` is not used, because the coverage only cares about
+     the coverage potential -- as long as the partial sinks are covered, then the rule is
+     covered. *)
+  let covered_multi_source_rule =
     {
       Rule.sources = [Sources.NamedSource "SourceC"];
       sinks = [Sinks.PartialSink "SinkC[label_1]"];
@@ -272,7 +274,7 @@ let test_rule_coverage _ =
         covered_rule_2;
         uncovered_rule_1;
         uncovered_rule_2;
-        uncovered_rule_3;
+        covered_multi_source_rule;
         multi_source_rule_part_1;
         multi_source_rule_part_2;
         multi_source_rule_part_3;
@@ -291,7 +293,7 @@ let test_rule_coverage _ =
                   KindCoverage.sources =
                     KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
                   sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
-                  non_sanitize_transforms = KindCoverage.NonSanitizeTransforms.Set.empty;
+                  named_transforms = KindCoverage.NamedTransforms.Set.empty;
                 };
             };
             {
@@ -301,9 +303,8 @@ let test_rule_coverage _ =
                   KindCoverage.sources =
                     KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
                   sinks = KindCoverage.Sinks.Set.of_list [Sinks.NamedSink "SinkA"];
-                  non_sanitize_transforms =
-                    KindCoverage.NonSanitizeTransforms.Set.of_list
-                      [TaintTransform.Named "TransformX"];
+                  named_transforms =
+                    KindCoverage.NamedTransforms.Set.of_list [TaintTransform.Named "TransformX"];
                 };
             };
             {
@@ -320,17 +321,21 @@ let test_rule_coverage _ =
                   sinks =
                     KindCoverage.Sinks.Set.of_list
                       [Sinks.PartialSink "SinkC[label_1]"; Sinks.PartialSink "SinkC[label_2]"];
-                  non_sanitize_transforms =
-                    KindCoverage.NonSanitizeTransforms.Set.of_list
-                      [
-                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceC" };
-                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceD" };
-                        TaintTransform.TriggeredPartialSink { triggering_source = "SourceE" };
-                      ];
+                  named_transforms = KindCoverage.NamedTransforms.Set.empty;
+                };
+            };
+            {
+              RuleCoverage.CoveredRule.rule_code = 1005;
+              kind_coverage =
+                {
+                  KindCoverage.sources =
+                    KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceC"];
+                  sinks = KindCoverage.Sinks.Set.of_list [Sinks.PartialSink "SinkC[label_1]"];
+                  named_transforms = KindCoverage.NamedTransforms.Set.empty;
                 };
             };
           ];
-      uncovered_rule_codes = RuleCoverage.IntSet.of_list [1002; 1004; 1005];
+      uncovered_rule_codes = RuleCoverage.IntSet.of_list [1002; 1004];
     }
   in
   assert_equal
