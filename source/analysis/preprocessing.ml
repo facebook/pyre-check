@@ -1001,9 +1001,9 @@ module Qualify (Context : QualifyContext) = struct
     { Node.value; location }
 
 
-  and qualify_target ?(in_comprehension = false) ~scope target =
+  and qualify_target ~scope target =
     let rec renamed_scope ({ locals; _ } as scope) target =
-      let has_local name = (not in_comprehension) && Set.mem locals name in
+      let has_local name = Set.mem locals name in
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
@@ -1014,6 +1014,21 @@ module Qualify (Context : QualifyContext) = struct
             match prefix_identifier ~scope ~prefix:"target" name with
             | Some (scope, _) -> scope
             | None -> scope)
+      | _ -> scope
+    in
+    let scope = renamed_scope scope target in
+    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
+
+
+  and qualify_comprehension_target ~scope target =
+    let rec renamed_scope scope target =
+      match target with
+      | { Node.value = Expression.Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Name (Name.Identifier name); _ } -> (
+          match prefix_identifier ~scope ~prefix:"target" name with
+          | Some (scope, _) -> scope
+          | None -> scope)
       | _ -> scope
     in
     let scope = renamed_scope scope target in
@@ -1059,7 +1074,7 @@ module Qualify (Context : QualifyContext) = struct
             (scope, reversed_generators)
             ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
           =
-          let renamed_scope, target = qualify_target ~in_comprehension:true ~scope target in
+          let renamed_scope, target = qualify_comprehension_target ~scope target in
           ( renamed_scope,
             {
               generator with
