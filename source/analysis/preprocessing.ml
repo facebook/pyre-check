@@ -875,10 +875,9 @@ module Qualify (Context : QualifyContext) = struct
               let renamed_scope, name =
                 match name with
                 | None -> scope, name
-                | Some { Node.value = target; location } -> (
-                    match prefix_identifier ~scope ~prefix:"target" target with
-                    | None -> scope, name
-                    | Some (scope, renamed) -> scope, Some { Node.value = renamed; location })
+                | Some { Node.value = target; location } ->
+                    let scope, renamed = qualify_local_identifier ~scope ~qualifier target in
+                    scope, Some { Node.value = renamed; location }
               in
               let kind = kind >>| qualify_expression ~qualify_strings:DoNotQualify ~scope in
               let scope, body = qualify_statements ~scope:renamed_scope body in

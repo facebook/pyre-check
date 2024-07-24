@@ -534,7 +534,15 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement
            "\ntry:\n\tb\nexcept b as b:\n\tb\nelse:\n\tb\nfinally:\n\tb"
-           "\ntry:\n\ta\nexcept a as $target$b:\n\t$target$b\nelse:\n\ta\nfinally:\n\ta";
+           "\n\
+            try:\n\
+            \ta\n\
+            except a as $local_qualifier$b:\n\
+            \t$local_qualifier$b\n\
+            else:\n\
+            \ta\n\
+            finally:\n\
+            \ta";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement "\nwith b as b: b" "\nwith a as $target$b: $target$b";
       labeled_test_case __FUNCTION__ __LINE__
