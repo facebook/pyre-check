@@ -3704,8 +3704,8 @@ let test_parameter_create _ =
     (Type.Callable.CallableParamType.create
        [{ Type.Callable.CallableParamType.name = "__"; annotation = Type.integer; default = false }])
     [
-      Type.Callable.CallableParamType.PositionalOnly
-        { index = 0; annotation = Type.integer; default = false };
+      Type.Callable.CallableParamType.Named
+        { name = "__"; annotation = Type.integer; default = false };
     ]
 
 

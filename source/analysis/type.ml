@@ -1470,9 +1470,8 @@ module Callable = struct
                 if
                   (not keyword_only)
                   && (not has_pep570_syntax)
-                  && (String.equal sanitized "__"
-                     || String.is_prefix sanitized ~prefix:"__"
-                        && not (String.is_suffix sanitized ~suffix:"__"))
+                  && String.is_prefix sanitized ~prefix:"__"
+                  && not (String.is_suffix sanitized ~suffix:"__")
                 then
                   index + 1, CallableParamType.PositionalOnly { index; annotation; default }
                 else

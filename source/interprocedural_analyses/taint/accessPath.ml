@@ -191,9 +191,8 @@ let normalize_parameters parameters =
       let positional_only =
         (not seen_star)
         && (not has_pep570_syntax)
-        && (String.equal unqualified_name "__"
-           || String.is_prefix unqualified_name ~prefix:"__"
-              && not (String.is_suffix unqualified_name ~suffix:"__"))
+        && String.is_prefix unqualified_name ~prefix:"__"
+        && not (String.is_suffix unqualified_name ~suffix:"__")
       in
       ( position + 1,
         false,
