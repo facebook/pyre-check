@@ -43,11 +43,10 @@ class CodeGenerator:
         temp_source = self.last_source
         self.last_source = current_variable
         self.source_statements.append(f"""
-def {current_function_source}():
 if random.randint(1, 3) == 1:
-return {temp_source}
+{indent_space}{current_variable} = {temp_source}
 else:
-{indent_space}return {current_function_source}()
+{indent_space}{current_variable} = {temp_source}
         """)
         
 
@@ -290,6 +289,9 @@ generator.add_function_9()
 """
 
 generator.function_1_source()
+generator.function_1_source()
+generator.function_1_source()
+
 
 
 
