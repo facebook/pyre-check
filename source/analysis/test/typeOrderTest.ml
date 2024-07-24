@@ -85,9 +85,7 @@ let hierarchy class_hierarchy_handler =
         in
         failwith message
     | Result.Ok mro_of_source ->
-        List.exists mro_of_source ~f:(fun current ->
-            Type.Primitive.equal successor current
-            || ClassHierarchy.extends_placeholder_stub class_hierarchy_handler current)
+        List.exists mro_of_source ~f:(fun current -> Type.Primitive.equal successor current)
   in
   let least_upper_bound left right =
     let get_successors = ClassHierarchy.parents_of class_hierarchy_handler in

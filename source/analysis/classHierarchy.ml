@@ -122,7 +122,6 @@ module Edges = struct
        listed explicitly as a parent. It needs to be stored separately because this class may not
        take part in MRO computation. *)
     generic_base: Target.t option;
-    has_placeholder_stub_parent: bool;
   }
   [@@deriving sexp, compare]
 end
@@ -143,12 +142,6 @@ let parents_and_generic_of_target (module Handler : Handler) target =
   match generic_base with
   | None -> Some parents
   | Some base -> Some (List.append parents [base])
-
-
-let extends_placeholder_stub_of_target (module Handler : Handler) target =
-  match Handler.edges target with
-  | None -> false
-  | Some { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent
 
 
 let is_instantiated (module Handler : Handler) annotation =
@@ -252,10 +245,6 @@ let immediate_parents (module Handler : Handler) class_name =
   |> parents_of (module Handler)
   >>| List.map ~f:Target.target
   |> Option.value ~default:[]
-
-
-let extends_placeholder_stub (module Handler : Handler) class_name =
-  class_name |> extends_placeholder_stub_of_target (module Handler)
 
 
 let parameters_to_variables parameters =

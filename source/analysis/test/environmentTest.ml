@@ -1145,7 +1145,6 @@ let test_remove_extra_edges_to_object context =
       ClassHierarchy.Edges.parents =
         [{ ClassHierarchy.Target.target = "test.One"; parameters = [] }];
       generic_base = None;
-      has_placeholder_stub_parent = false;
     };
   ()
 

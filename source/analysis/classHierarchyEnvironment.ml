@@ -28,11 +28,6 @@ module IncomingDataComputation = struct
     type t = {
       class_exists: string -> bool;
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
-      is_from_empty_stub: Ast.Reference.t -> bool;
-      get_type_alias:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.t option;
-      get_variable:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Variable.t option;
       parse_annotation_without_validating_type_parameters:
         ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
         ?modify_variables:
@@ -42,31 +37,6 @@ module IncomingDataComputation = struct
         Type.t;
     }
   end
-
-  let compute_extends_placeholder_stub_class
-      { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
-      ~aliases
-      ~is_from_empty_stub
-      ~variable_aliases
-    =
-    let metaclass_is_from_placeholder_stub =
-      metaclass
-      >>| AnnotatedBases.base_is_from_placeholder_stub
-            ~variables:variable_aliases
-            ~aliases
-            ~is_from_empty_stub
-      |> Option.value ~default:false
-    in
-
-    List.exists
-      base_classes
-      ~f:
-        (AnnotatedBases.base_is_from_placeholder_stub
-           ~variables:variable_aliases
-           ~aliases
-           ~is_from_empty_stub)
-    || metaclass_is_from_placeholder_stub
-
 
   let find_propagated_type_variables parsed_bases =
     (* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`.
@@ -109,16 +79,8 @@ module IncomingDataComputation = struct
 
   let get_parents
       Queries.
-        {
-          class_exists;
-          get_class_summary;
-          is_from_empty_stub;
-          get_type_alias;
-          parse_annotation_without_validating_type_parameters;
-          _;
-        }
+        { class_exists; get_class_summary; parse_annotation_without_validating_type_parameters; _ }
       name
-      ~variable_aliases
     =
     (* Split `base_expression` into `(name, params)` where `name` is the name of the class and
        `params` is its type parameters. E.g. `Foo[T]` ==> `("Foo", [TypeVar "T"])` *)
@@ -227,15 +189,7 @@ module IncomingDataComputation = struct
           extract_supertype (Type.expression base)
           >>= fun (name, parameters) -> Some { ClassHierarchy.Target.target = name; parameters }
         in
-        let resolved_aliases ?replace_unbound_parameters_with_any:_ name = get_type_alias name in
-        let has_placeholder_stub_parent =
-          compute_extends_placeholder_stub_class
-            class_summary
-            ~aliases:resolved_aliases
-            ~is_from_empty_stub
-            ~variable_aliases
-        in
-        Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
+        Some { ClassHierarchy.Edges.parents; generic_base }
 end
 
 module OutgoingDataComputation = struct
@@ -301,23 +255,13 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
             UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
               unannotated_global_environment
               ?dependency;
-          is_from_empty_stub =
-            EmptyStubEnvironment.ReadOnly.is_from_empty_stub empty_stub_environment ?dependency;
-          get_type_alias =
-            TypeAliasEnvironment.ReadOnly.get_type_alias alias_environment ?dependency;
-          get_variable = TypeAliasEnvironment.ReadOnly.get_variable alias_environment ?dependency;
           parse_annotation_without_validating_type_parameters =
             TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               alias_environment
               ?dependency;
         }
     in
-
-    let variable_aliases name =
-      queries.get_variable ?replace_unbound_parameters_with_any:(Some true) name
-    in
-
-    IncomingDataComputation.get_parents queries key ~variable_aliases
+    IncomingDataComputation.get_parents queries key
 
 
   let filter_upstream_dependency = function

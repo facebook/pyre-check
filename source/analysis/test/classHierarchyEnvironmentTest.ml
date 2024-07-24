@@ -13,7 +13,7 @@ open Pyre
 open Test
 
 let test_simple_registration context =
-  let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
+  let assert_registers sources name ~expected_edges =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let read_only =
       ScratchProject.errors_environment project
@@ -27,7 +27,6 @@ let test_simple_registration context =
               ~f:(fun name -> { ClassHierarchy.Target.target = name; parameters = [] })
               expected_edges;
           generic_base = None;
-          has_placeholder_stub_parent = expected_extends_placeholder_stub;
         }
     in
     assert_equal
@@ -36,14 +35,10 @@ let test_simple_registration context =
       expected_edges
       (ClassHierarchyEnvironment.ReadOnly.get_edges read_only name)
   in
-  assert_registers
-    ["test.py", {|
+  assert_registers ["test.py", {|
     class C:
       pass
-  |}]
-    "test.C"
-    ~expected_edges:["object"]
-    ~expected_extends_placeholder_stub:false;
+  |}] "test.C" ~expected_edges:["object"];
   assert_registers
     ["test.py", {|
     class D:
@@ -52,58 +47,7 @@ let test_simple_registration context =
       pass
   |}]
     "test.C"
-    ~expected_edges:["test.D"]
-    ~expected_extends_placeholder_stub:false;
-  assert_registers
-    [
-      "test.py", {|
-    from placeholder import MadeUpClass
-    class C(MadeUpClass):
-     pass
-  |};
-      "placeholder.pyi", {|
-      # pyre-placeholder-stub
-  |};
-    ]
-    "test.C"
-    ~expected_edges:["object"]
-    ~expected_extends_placeholder_stub:true;
-  assert_registers
-    [
-      ( "test.py",
-        {|
-    from placeholder import MadeUpClass
-    class D(MadeUpClass):
-     pass
-    class C(D):
-      pass
-  |}
-      );
-      "placeholder.pyi", {|
-      # pyre-placeholder-stub
-  |};
-    ]
-    "test.C"
-    ~expected_edges:["test.D"]
-    ~expected_extends_placeholder_stub:false;
-  assert_registers
-    [
-      ( "test.py",
-        {|
-    from placeholder import MadeUpClass
-    class D:
-     pass
-    class C(D, MadeUpClass):
-      pass
-  |}
-      );
-      "placeholder.pyi", {|
-      # pyre-placeholder-stub
-  |};
-    ]
-    "test.C"
-    ~expected_edges:["test.D"]
-    ~expected_extends_placeholder_stub:true;
+    ~expected_edges:["test.D"];
   ()
 
 
@@ -125,7 +69,6 @@ let test_parents_and_inferred_generic_base context =
         {
           ClassHierarchy.Edges.parents = List.map expected_parents ~f:create_target;
           generic_base = Option.map expected_inferred_generic_base ~f:create_target;
-          has_placeholder_stub_parent = false;
         }
     in
     assert_equal
@@ -383,7 +326,6 @@ let test_updates context =
                     List.map expectation ~f:(fun name ->
                         { ClassHierarchy.Target.target = name; parameters = [] });
                   generic_base = None;
-                  has_placeholder_stub_parent = false;
                 })
           in
           ClassHierarchyEnvironment.ReadOnly.get_edges read_only ~dependency class_name

@@ -3656,22 +3656,11 @@ module MockClassHierarchyHandler = struct
     let new_target = { ClassHierarchy.Target.target = successor; parameters } in
     let predecessor_edges =
       match Hashtbl.find edges predecessor with
-      | None ->
-          {
-            ClassHierarchy.Edges.parents = [new_target];
-            generic_base = None;
-            has_placeholder_stub_parent = false;
-          }
+      | None -> { ClassHierarchy.Edges.parents = [new_target]; generic_base = None }
       | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
           { edges with parents = new_target :: parents }
     in
     Hashtbl.set edges ~key:predecessor ~data:predecessor_edges
-
-
-  let set_extends_placeholder_stub order annotation =
-    Hashtbl.change order.edges annotation ~f:(function
-        | None -> None
-        | Some edges -> Some { edges with has_placeholder_stub_parent = true })
 
 
   let insert order annotation =
@@ -3679,10 +3668,5 @@ module MockClassHierarchyHandler = struct
     Hashtbl.set
       order.edges
       ~key:annotation
-      ~data:
-        {
-          ClassHierarchy.Edges.parents = [];
-          generic_base = None;
-          has_placeholder_stub_parent = false;
-        }
+      ~data:{ ClassHierarchy.Edges.parents = []; generic_base = None }
 end

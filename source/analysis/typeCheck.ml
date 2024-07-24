@@ -2045,13 +2045,9 @@ module State (Context : Context) = struct
                 forward_right (Some not_none_left)
             | _, _ -> forward_right (Some resolved_left)))
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
-        let superclass ~class_name { ClassSuccessorMetadataEnvironment.successors; _ } =
-          let extends_placeholder_stub_class =
-            let class_hierarchy = GlobalResolution.class_hierarchy global_resolution in
-            ClassHierarchy.extends_placeholder_stub class_hierarchy class_name
-          in
+        let superclass { ClassSuccessorMetadataEnvironment.successors; _ } =
           match successors with
-          | Some successors when not extends_placeholder_stub_class ->
+          | Some successors ->
               List.find successors ~f:(GlobalResolution.class_exists global_resolution)
           | _ -> None
         in
@@ -2059,8 +2055,7 @@ module State (Context : Context) = struct
           Resolution.parent resolution
           >>| Reference.show
           >>= fun class_name ->
-          GlobalResolution.get_class_metadata global_resolution class_name
-          >>= superclass ~class_name
+          GlobalResolution.get_class_metadata global_resolution class_name >>= superclass
         in
         match resolved_superclass with
         | Some superclass ->
