@@ -67,8 +67,6 @@ module Testing : sig
 
     val alias_environment : ReadOnly.t -> TypeAliasEnvironment.ReadOnly.t
 
-    val empty_stub_environment : ReadOnly.t -> EmptyStubEnvironment.ReadOnly.t
-
     val unannotated_global_environment : ReadOnly.t -> UnannotatedGlobalEnvironment.ReadOnly.t
   end
 
@@ -92,8 +90,6 @@ module Testing : sig
     val class_hierarchy_environment : UpdateResult.t -> ClassHierarchyEnvironment.UpdateResult.t
 
     val alias_environment : UpdateResult.t -> TypeAliasEnvironment.UpdateResult.t
-
-    val empty_stub_environment : UpdateResult.t -> EmptyStubEnvironment.UpdateResult.t
 
     val unannotated_global_environment
       :  UpdateResult.t ->

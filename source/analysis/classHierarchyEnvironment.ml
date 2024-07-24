@@ -239,11 +239,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let produce_value alias_environment key ~dependency =
     let queries =
-      let empty_stub_environment =
-        TypeAliasEnvironment.ReadOnly.empty_stub_environment alias_environment
-      in
       let unannotated_global_environment =
-        EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment
+        TypeAliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
       in
       IncomingDataComputation.Queries.
         {

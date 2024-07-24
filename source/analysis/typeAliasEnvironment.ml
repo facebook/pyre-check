@@ -24,7 +24,7 @@ open Core
 open Ast
 open Pyre
 open Expression
-module PreviousEnvironment = EmptyStubEnvironment
+module PreviousEnvironment = UnannotatedGlobalEnvironment
 
 module RawAlias = struct
   type t =
@@ -366,11 +366,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let lazy_incremental = false
 
-  let produce_value empty_stub_environment key ~dependency =
+  let produce_value unannotated_global_environment key ~dependency =
     let queries =
-      let unannotated_global_environment =
-        EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment
-      in
       IncomingDataComputation.Queries.
         {
           class_exists =
@@ -433,11 +430,7 @@ module ReadOnly = struct
     | _ -> None
 
 
-  let empty_stub_environment = upstream_environment
-
-  let unannotated_global_environment read_only =
-    empty_stub_environment read_only |> EmptyStubEnvironment.ReadOnly.unannotated_global_environment
-
+  let unannotated_global_environment = upstream_environment
 
   let outgoing_queries ?dependency environment =
     OutgoingDataComputation.Queries.

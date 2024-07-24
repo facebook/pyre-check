@@ -940,10 +940,7 @@ module State (Context : Context) = struct
         }
     | None ->
         let errors =
-          if
-            (not (GlobalResolution.module_exists global_resolution reference))
-            && not (GlobalResolution.is_from_empty_stub global_resolution reference)
-          then
+          if not (GlobalResolution.module_exists global_resolution reference) then
             match Reference.prefix reference with
             | Some qualifier when not (Reference.is_empty qualifier) ->
                 if GlobalResolution.module_exists global_resolution qualifier then

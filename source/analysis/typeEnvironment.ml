@@ -290,7 +290,6 @@ module AssumeAstEnvironment = struct
     |> ClassSuccessorMetadataEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> ClassHierarchyEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> TypeAliasEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
-    |> EmptyStubEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
 end
 

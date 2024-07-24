@@ -52,10 +52,6 @@ let alias_environment resolution =
   ClassHierarchyEnvironment.ReadOnly.alias_environment (class_hierarchy_environment resolution)
 
 
-let empty_stub_environment resolution =
-  alias_environment resolution |> TypeAliasEnvironment.ReadOnly.empty_stub_environment
-
-
 let unannotated_global_environment resolution =
   alias_environment resolution |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
 
@@ -155,13 +151,6 @@ let resolve_exports ({ dependency; _ } as resolution) ?from reference =
     ?dependency
     (unannotated_global_environment resolution)
     ?from
-    reference
-
-
-let is_from_empty_stub ({ dependency; _ } as resolution) reference =
-  EmptyStubEnvironment.ReadOnly.is_from_empty_stub
-    ?dependency
-    (empty_stub_environment resolution)
     reference
 
 

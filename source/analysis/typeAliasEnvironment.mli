@@ -39,8 +39,6 @@ module AliasReadOnly : sig
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
-  val empty_stub_environment : t -> EmptyStubEnvironment.ReadOnly.t
-
   val parse_annotation_without_validating_type_parameters
     :  t ->
     ?dependency:DependencyKey.registered ->
@@ -63,4 +61,4 @@ end
 include
   Environment.S
     with module ReadOnly = AliasReadOnly
-     and module PreviousEnvironment = EmptyStubEnvironment
+     and module PreviousEnvironment = UnannotatedGlobalEnvironment

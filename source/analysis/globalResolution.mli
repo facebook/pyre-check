@@ -53,8 +53,6 @@ val get_module_metadata : t -> Reference.t -> Module.Metadata.t option
 
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
-val is_from_empty_stub : t -> Reference.t -> bool
-
 val get_type_alias
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
