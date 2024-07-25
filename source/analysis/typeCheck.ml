@@ -4461,11 +4461,14 @@ module State (Context : Context) = struct
             match resolved_base with
             | `Identifier identifier ->
                 let reference = Reference.create identifier in
-
-                ( Some reference,
-                  None,
-                  from_reference ~location:Location.any reference |> resolve_expression ~resolution
-                )
+                let annotation =
+                  let { Resolved.resolved; resolved_annotation; _ } =
+                    forward_reference ~location ~resolution ~errors:[] reference
+                  in
+                  resolved_annotation
+                  |> Option.value ~default:(TypeInfo.Unit.create_mutable resolved)
+                in
+                Some reference, None, annotation
             | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
                 let name = attribute in
                 let parent, accessed_through_class, accessed_through_readonly =
