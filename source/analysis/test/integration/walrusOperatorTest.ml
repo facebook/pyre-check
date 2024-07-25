@@ -143,4 +143,61 @@ let test_check_walrus_operator =
     ]
 
 
-let () = "walrus" >::: [test_check_walrus_operator] |> Test.run
+let test_refine_walrus_operator =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: int | str = ...
+
+              if isinstance(y := x, int):
+                  reveal_type(y)
+              else:
+                  reveal_type(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import TypeIs
+
+              def typeguard_fn(val: int | str) -> TypeIs[int]:
+                return True
+
+              x: int | str = ...
+
+              if typeguard_fn(y := x):
+                  reveal_type(y)
+              else:
+                  reveal_type(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+
+              x: Callable[[int], int] | int | str = ...
+
+              if callable(y := x):
+                  reveal_type(y)
+              else:
+                  reveal_type(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[typing.Callable[[int], \
+              int], int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[typing.Callable[[int], \
+              int], int, str]`.";
+           ];
+    ]
+
+
+let () = "walrus" >::: [test_check_walrus_operator; test_refine_walrus_operator] |> Test.run
