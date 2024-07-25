@@ -192,9 +192,14 @@ let worker_loop handler infd outfd =
   with End_of_file -> ()
 
 let worker_main restore state handler infd outfd =
-  restore state;
-  worker_loop handler infd outfd;
-  exit 0
+  try
+    restore state;
+    worker_loop handler infd outfd;
+    exit 0
+  with exn ->
+    let backtrace = Printexc.get_raw_backtrace () in
+    Printexc.default_uncaught_exception_handler exn backtrace;
+    exit 1
 
 (**************************************************************************
  * Creates a pool of workers.
