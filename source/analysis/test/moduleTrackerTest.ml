@@ -131,9 +131,15 @@ let assert_module_path
     expected_path
     actual_path;
   Option.iter priority ~f:(fun expected_priority ->
-      assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
+      assert_equal
+        ~msg:"priorities are mismatched"
+        ~cmp:Int.equal
+        ~printer:Int.to_string
+        expected_priority
+        actual_priority);
   Option.iter should_type_check ~f:(fun expected_should_type_check ->
       assert_equal
+        ~msg:"should_type_check is mismatched"
         ~cmp:Bool.equal
         ~printer:Bool.to_string
         expected_should_type_check
