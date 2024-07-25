@@ -108,6 +108,11 @@ end
  *
  *****************************************************************************)
 
+let rec waitpid_no_eintr flags pid =
+  try Unix.waitpid flags pid
+  with Unix.Unix_error (Unix.EINTR, _, _) -> waitpid_no_eintr flags pid
+
+
 let worker_job_main ic oc =
   let start_user_time = ref 0.0 in
   let start_system_time = ref 0.0 in
@@ -163,7 +168,7 @@ let fork_handler ic oc =
     exit 0
   | pid ->
     (* Wait for the ephemeral worker termination... *)
-    match snd (Unix.waitpid [] pid) with
+    match snd (waitpid_no_eintr [] pid) with
     | Unix.WEXITED 0 -> ()
     | Unix.WEXITED 1 ->
         raise End_of_file
@@ -341,11 +346,7 @@ let kill w =
     w.killed <- true;
     close_in_noerr w.ic;
     close_out_noerr w.oc;
-    let rec waitpid () =
-      try ignore (Unix.waitpid [] w.pid)
-      with Unix.Unix_error (Unix.EINTR, _, _) -> waitpid ()
-    in
-    try Unix.kill w.pid Sys.sigkill; waitpid ()
+    try Unix.kill w.pid Sys.sigkill; ignore (waitpid_no_eintr [] w.pid)
     with Unix.Unix_error (Unix.ESRCH, _, _) -> ()
   end
 
