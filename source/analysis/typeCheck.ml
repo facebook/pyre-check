@@ -3517,6 +3517,14 @@ module State (Context : Context) = struct
      [this](https://www.internalfb.com/intern/graphviz/?paste=65053708) for an example), type
      refinment happens here based on these asserts. *)
   and refine_resolution_for_assert ~resolution test =
+    (* Both walrus operator expressions and some kinds of names (bare identifiers or attribute
+       chains) are "named" expressions that may be refinable *)
+    let rec maybe_simple_name_of expression =
+      match Node.value expression with
+      | Expression.Name name -> if is_simple_name name then Some name else None
+      | Expression.WalrusOperator { target; _ } -> maybe_simple_name_of target
+      | _ -> None
+    in
     let global_resolution = Resolution.global_resolution resolution in
     let annotation_less_or_equal =
       TypeInfo.Unit.less_or_equal
@@ -3663,7 +3671,7 @@ module State (Context : Context) = struct
     in
     (* A negative exact type match is something like `not isinstance(x, SomeType)` or `not
        some_TypeIsFunction(x)`. *)
-    let handle_negative_exact_type_match type_not_matched value =
+    let handle_negative_exact_type_match type_not_matched refinement_target =
       let boundary = type_not_matched in
       let resolve_non_instance ~boundary name =
         let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
@@ -3682,17 +3690,16 @@ module State (Context : Context) = struct
         if Type.contains_unknown boundary || Type.is_any boundary then
           false
         else
-          let { Resolved.resolved; _ } = forward_expression ~resolution value in
+          let { Resolved.resolved; _ } = forward_expression ~resolution refinement_target in
           (not (Type.is_unbound resolved))
           && (not (Type.contains_unknown resolved))
           && (not (Type.is_any resolved))
           && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:boundary
       in
-      match is_consistent_with_boundary, value with
+      match is_consistent_with_boundary, maybe_simple_name_of refinement_target with
       | true, _ -> Unreachable
-      | _, { Node.value = Name name; _ } when is_simple_name name ->
-          Value (resolve_non_instance ~boundary name)
-      | _ -> Value resolution
+      | false, Some name -> Value (resolve_non_instance ~boundary name)
+      | _, None -> Value resolution
     in
     match Node.value test with
     (* Explicit asserting falsy values. *)
@@ -3714,8 +3721,7 @@ module State (Context : Context) = struct
                 Call
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
-                    arguments =
-                      [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    arguments = [{ Call.Argument.name = None; value = refinement_target }];
                   };
               _;
             };
@@ -3730,8 +3736,7 @@ module State (Context : Context) = struct
                 Call
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
-                    arguments =
-                      [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    arguments = [{ Call.Argument.name = None; value = refinement_target }];
                   };
               _;
             };
@@ -3743,64 +3748,64 @@ module State (Context : Context) = struct
           callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
           arguments =
             [
-              { Call.Argument.name = None; value = { Node.value = Name name; _ } };
+              { Call.Argument.name = None; value = refinement_target };
               { Call.Argument.name = None; value = annotation_expression };
             ];
-        }
-      when is_simple_name name ->
-        let parsed_annotation = parse_refinement_annotation annotation_expression in
-        let resolution =
-          let refinement_unnecessary existing_annotation =
-            annotation_less_or_equal
-              ~left:existing_annotation
-              ~right:(TypeInfo.Unit.create_mutable parsed_annotation)
-            && (not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Bottom))
-            && not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any)
-          in
-          match existing_annotation name with
-          | Some _ when Type.is_any parsed_annotation -> Value resolution
-          | None -> Value resolution
-          | Some existing_annotation when refinement_unnecessary existing_annotation ->
-              Value resolution
-          (* Clarify Anys if possible *)
-          | Some existing_annotation
-            when Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any ->
-              Value (TypeInfo.Unit.create_mutable parsed_annotation |> refine_local ~name)
-          | Some existing_annotation ->
-              let existing_type = TypeInfo.Unit.annotation existing_annotation in
-              let { consistent_with_boundary; _ } =
-                partition existing_type ~boundary:parsed_annotation
-              in
-              if not (Type.is_unbound consistent_with_boundary) then
-                Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
-              else if
-                GlobalResolution.less_or_equal
-                  global_resolution
-                  ~left:parsed_annotation
-                  ~right:existing_type
-              then
-                (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound
-                   to refine `x` to `Child` because the runtime will not enter the branch unless `x`
-                   is an instance of `Child`. *)
-                let refined_type =
-                  if
-                    (not (Type.is_top existing_type))
-                    && GlobalResolution.less_or_equal
-                         global_resolution
-                         ~left:(Type.ReadOnly.create parsed_annotation)
-                         ~right:existing_type
-                  then
-                    (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
-                       `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
-                    Type.ReadOnly.create parsed_annotation
-                  else
-                    parsed_annotation
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let parsed_annotation = parse_refinement_annotation annotation_expression in
+            let refinement_unnecessary existing_annotation =
+              annotation_less_or_equal
+                ~left:existing_annotation
+                ~right:(TypeInfo.Unit.create_mutable parsed_annotation)
+              && (not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Bottom))
+              && not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any)
+            in
+            match existing_annotation name with
+            | Some _ when Type.is_any parsed_annotation -> Value resolution
+            | None -> Value resolution
+            | Some existing_annotation when refinement_unnecessary existing_annotation ->
+                Value resolution
+            (* Clarify Anys if possible *)
+            | Some existing_annotation
+              when Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any ->
+                Value (TypeInfo.Unit.create_mutable parsed_annotation |> refine_local ~name)
+            | Some existing_annotation ->
+                let existing_type = TypeInfo.Unit.annotation existing_annotation in
+                let { consistent_with_boundary; _ } =
+                  partition existing_type ~boundary:parsed_annotation
                 in
-                Value (TypeInfo.Unit.create_mutable refined_type |> refine_local ~name)
-              else
-                Unreachable
-        in
-        resolution
+                if not (Type.is_unbound consistent_with_boundary) then
+                  Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
+                else if
+                  GlobalResolution.less_or_equal
+                    global_resolution
+                    ~left:parsed_annotation
+                    ~right:existing_type
+                then
+                  (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound
+                     to refine `x` to `Child` because the runtime will not enter the branch unless
+                     `x` is an instance of `Child`. *)
+                  let refined_type =
+                    if
+                      (not (Type.is_top existing_type))
+                      && GlobalResolution.less_or_equal
+                           global_resolution
+                           ~left:(Type.ReadOnly.create parsed_annotation)
+                           ~right:existing_type
+                    then
+                      (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
+                         `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
+                      Type.ReadOnly.create parsed_annotation
+                    else
+                      parsed_annotation
+                  in
+                  Value (TypeInfo.Unit.create_mutable refined_type |> refine_local ~name)
+                else
+                  Unreachable)
+      end
     (* Type is *not* the same as `annotation_expression` *)
     | ComparisonOperator
         {
@@ -3856,26 +3861,33 @@ module State (Context : Context) = struct
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "callable"); _ };
-          arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-        }
-      when is_simple_name name -> (
-        match existing_annotation name with
-        | Some existing_annotation ->
-            let callable =
-              Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
-            in
-            let existing_type = TypeInfo.Unit.annotation existing_annotation in
-            let { consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
-            (* Check for supertypes of callable: e.g. object is only returned on
-               not_consistent_with_boundary in partition *)
-            if GlobalResolution.less_or_equal global_resolution ~left:callable ~right:existing_type
-            then
-              Value (TypeInfo.Unit.create_mutable callable |> refine_local ~name)
-            else if not (Type.is_unbound consistent_with_boundary) then
-              Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
-            else
-              Unreachable
-        | _ -> Value resolution)
+          arguments = [{ Call.Argument.name = None; value = refinement_target }];
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            match existing_annotation name with
+            | Some existing_annotation ->
+                let callable =
+                  Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+                in
+                let existing_type = TypeInfo.Unit.annotation existing_annotation in
+                let { consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
+                (* Check for supertypes of callable: e.g. object is only returned on
+                   not_consistent_with_boundary in partition *)
+                if
+                  GlobalResolution.less_or_equal
+                    global_resolution
+                    ~left:callable
+                    ~right:existing_type
+                then
+                  Value (TypeInfo.Unit.create_mutable callable |> refine_local ~name)
+                else if not (Type.is_unbound consistent_with_boundary) then
+                  Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
+                else
+                  Unreachable
+            | _ -> Value resolution)
+      end
     (* Is not callable *)
     | UnaryOperator
         {
@@ -3886,26 +3898,30 @@ module State (Context : Context) = struct
                 Call
                   {
                     callee = { Node.value = Name (Name.Identifier "callable"); _ };
-                    arguments =
-                      [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    arguments = [{ Call.Argument.name = None; value = refinement_target }];
                   };
               _;
             };
-        }
-      when is_simple_name name -> (
-        match existing_annotation name with
-        | Some existing_annotation -> (
-            let callable =
-              Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
-            in
-            let existing_type = TypeInfo.Unit.annotation existing_annotation in
-            let { not_consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
-            match not_consistent_with_boundary with
-            | Some type_ -> Value (TypeInfo.Unit.create_mutable type_ |> refine_local ~name)
-            | None when Type.is_any existing_type ->
-                Value (TypeInfo.Unit.create_mutable existing_type |> refine_local ~name)
-            | None -> Unreachable)
-        | _ -> Value resolution)
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            match existing_annotation name with
+            | Some existing_annotation -> (
+                let callable =
+                  Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+                in
+                let existing_type = TypeInfo.Unit.annotation existing_annotation in
+                let { not_consistent_with_boundary; _ } =
+                  partition existing_type ~boundary:callable
+                in
+                match not_consistent_with_boundary with
+                | Some type_ -> Value (TypeInfo.Unit.create_mutable type_ |> refine_local ~name)
+                | None when Type.is_any existing_type ->
+                    Value (TypeInfo.Unit.create_mutable existing_type |> refine_local ~name)
+                | None -> Unreachable)
+            | _ -> Value resolution)
+      end
     (* Is typeddict *)
     | Call
         {
@@ -3921,23 +3937,26 @@ module State (Context : Context) = struct
                     });
               _;
             };
-          arguments = [{ value = { Node.value = Name name; _ }; _ }];
-        }
-      when is_simple_name name -> (
-        match existing_annotation name with
-        | Some existing_annotation -> (
-            match TypeInfo.Unit.annotation existing_annotation with
-            | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
-                if
-                  Type.is_any typed_dictionary
-                  || GlobalResolution.is_typed_dictionary global_resolution typed_dictionary
-                then
-                  Value resolution
-                else
-                  Unreachable
-            | Type.Any -> Value resolution
-            | _ -> Unreachable)
-        | _ -> Value resolution)
+          arguments = [{ value = refinement_target; _ }];
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            match existing_annotation name with
+            | Some existing_annotation -> (
+                match TypeInfo.Unit.annotation existing_annotation with
+                | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                    if
+                      Type.is_any typed_dictionary
+                      || GlobalResolution.is_typed_dictionary global_resolution typed_dictionary
+                    then
+                      Value resolution
+                    else
+                      Unreachable
+                | Type.Any -> Value resolution
+                | _ -> Unreachable)
+            | _ -> Value resolution)
+      end
     (* Is not typeddict *)
     | UnaryOperator
         {
@@ -3960,86 +3979,94 @@ module State (Context : Context) = struct
                               });
                         _;
                       };
-                    arguments = [{ value = { Node.value = Name name; _ }; _ }];
+                    arguments = [{ value = refinement_target; _ }];
                   };
               _;
             };
           _;
-        }
-      when is_simple_name name -> (
-        match existing_annotation name with
-        | Some existing_annotation -> (
-            match TypeInfo.Unit.annotation existing_annotation with
-            | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
-                if GlobalResolution.is_typed_dictionary global_resolution typed_dictionary then
-                  Unreachable
-                else
-                  Value resolution
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            match existing_annotation name with
+            | Some existing_annotation -> (
+                match TypeInfo.Unit.annotation existing_annotation with
+                | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                    if GlobalResolution.is_typed_dictionary global_resolution typed_dictionary then
+                      Unreachable
+                    else
+                      Value resolution
+                | _ -> Value resolution)
             | _ -> Value resolution)
-        | _ -> Value resolution)
+      end
     (* `is` and `in` refinement *)
     | ComparisonOperator
-        {
-          ComparisonOperator.left = { Node.value = Name name; _ };
-          operator = ComparisonOperator.Is;
-          right;
-        }
-      when is_simple_name name -> (
-        let { Resolved.resolved = refined; _ } = forward_expression ~resolution right in
-        let refined = TypeInfo.Unit.create_mutable refined in
-        match existing_annotation name with
-        | Some previous ->
-            if annotation_less_or_equal ~left:refined ~right:previous then
-              Value (refine_local ~name refined)
-            else
-              (* Keeping previous state, since it is more refined. *)
-              (* TODO: once T38750424 is done, we should really return bottom if previous is not <=
-                 refined and refined is not <= previous, as this is an obvious contradiction. *)
-              Value resolution
-        | None -> Value resolution)
-    | ComparisonOperator
-        {
-          ComparisonOperator.left = { Node.value = Name name; _ };
-          operator = ComparisonOperator.In;
-          right;
-        }
-      when is_simple_name name -> (
-        let reference = name_to_reference_exn name in
-        let { Resolved.resolved; _ } = forward_expression ~resolution right in
-        match
-          GlobalResolution.extract_type_parameters
-            global_resolution
-            ~target:"typing.Iterable"
-            ~source:resolved
-        with
-        | Some [element_type] -> (
-            let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
-            let annotation =
-              Resolution.get_local_with_attributes
-                ~global_fallback:false
-                ~name:partitioned_name
-                ~attribute_path
-                resolution
-            in
-            match annotation with
+        { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.Is; right } ->
+    begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let { Resolved.resolved = refined; _ } = forward_expression ~resolution right in
+            let refined = TypeInfo.Unit.create_mutable refined in
+            match existing_annotation name with
             | Some previous ->
-                let refined =
-                  if TypeInfo.Unit.is_immutable previous then
-                    TypeInfo.Unit.create_immutable
-                      ~original:(Some (TypeInfo.Unit.original previous))
-                      element_type
-                  else
-                    TypeInfo.Unit.create_mutable element_type
-                in
                 if annotation_less_or_equal ~left:refined ~right:previous then
                   Value (refine_local ~name refined)
-                else (* Keeping previous state, since it is more refined. *)
+                else
+                  (* Keeping previous state, since it is more refined. *)
+                  (* TODO: once T38750424 is done, we should really return bottom if previous is not
+                     <= refined and refined is not <= previous, as this is an obvious
+                     contradiction. *)
                   Value resolution
-            | None when not (Resolution.is_global resolution ~reference) ->
-                let resolution = refine_local ~name (TypeInfo.Unit.create_mutable element_type) in
-                Value resolution
+            | None -> Value resolution)
+      end
+    | ComparisonOperator
+        { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.In; right } ->
+    begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let reference = name_to_reference_exn name in
+            let { Resolved.resolved; _ } = forward_expression ~resolution right in
+            match
+              GlobalResolution.extract_type_parameters
+                global_resolution
+                ~target:"typing.Iterable"
+                ~source:resolved
+            with
+            | Some [element_type] -> (
+                let { name = partitioned_name; attribute_path; _ } =
+                  partition_name ~resolution name
+                in
+                let annotation =
+                  Resolution.get_local_with_attributes
+                    ~global_fallback:false
+                    ~name:partitioned_name
+                    ~attribute_path
+                    resolution
+                in
+                match annotation with
+                | Some previous ->
+                    let refined =
+                      if TypeInfo.Unit.is_immutable previous then
+                        TypeInfo.Unit.create_immutable
+                          ~original:(Some (TypeInfo.Unit.original previous))
+                          element_type
+                      else
+                        TypeInfo.Unit.create_mutable element_type
+                    in
+                    if annotation_less_or_equal ~left:refined ~right:previous then
+                      Value (refine_local ~name refined)
+                    else (* Keeping previous state, since it is more refined. *)
+                      Value resolution
+                | None when not (Resolution.is_global resolution ~reference) ->
+                    let resolution =
+                      refine_local ~name (TypeInfo.Unit.create_mutable element_type)
+                    in
+                    Value resolution
+                | _ -> Value resolution)
             | _ -> Value resolution)
-        | _ -> Value resolution)
+      end
     (* Not-none checks (including ones that work over containers) *)
     | ComparisonOperator
         {
@@ -4070,80 +4097,96 @@ module State (Context : Context) = struct
         {
           ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
           operator = ComparisonOperator.NotIn;
-          right = { Node.value = Name name; _ };
-        }
-      when is_simple_name name -> (
-        let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
-        let annotation =
-          Resolution.get_local_with_attributes
-            ~global_fallback:false
-            ~name:partitioned_name
-            ~attribute_path
-            resolution
-        in
-        match annotation with
-        | Some annotation -> (
-            match TypeInfo.Unit.annotation annotation with
-            | Type.Parametric
-                {
-                  name = "list";
-                  parameters =
-                    [Single (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]))];
-                } ->
-                let resolution =
-                  refine_local
-                    ~name
-                    { annotation with TypeInfo.Unit.annotation = Type.list parameter }
-                in
-                Value resolution
+          right = refinement_target;
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
+            let annotation =
+              Resolution.get_local_with_attributes
+                ~global_fallback:false
+                ~name:partitioned_name
+                ~attribute_path
+                resolution
+            in
+            match annotation with
+            | Some annotation -> (
+                match TypeInfo.Unit.annotation annotation with
+                | Type.Parametric
+                    {
+                      name = "list";
+                      parameters =
+                        [
+                          Single
+                            (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]));
+                        ];
+                    } ->
+                    let resolution =
+                      refine_local
+                        ~name
+                        { annotation with TypeInfo.Unit.annotation = Type.list parameter }
+                    in
+                    Value resolution
+                | _ -> Value resolution)
             | _ -> Value resolution)
-        | _ -> Value resolution)
+      end
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "all"); _ };
-          arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-        }
-      when is_simple_name name ->
-        let resolution =
-          let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
-          match
-            Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
-          with
-          | Some
-              {
-                TypeInfo.Unit.annotation =
-                  Type.Parametric
-                    { name = parametric_name; parameters = [Single (Type.Union parameters)] } as
-                  annotation;
-                _;
-              }
-            when GlobalResolution.less_or_equal
-                   global_resolution
-                   ~left:annotation
-                   ~right:(Type.iterable (Type.Union parameters)) ->
-              let parameters =
-                List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+          arguments = [{ Call.Argument.name = None; value = refinement_target }];
+        } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name ->
+            let resolution =
+              let { name = partitioned_name; attribute_path; _ } =
+                partition_name ~resolution name
               in
-              refine_local
-                ~name
-                (TypeInfo.Unit.create_mutable
-                   (Type.parametric parametric_name [Single (Type.union parameters)]))
-          | _ -> resolution
-        in
-        Value resolution
-    (* Positive-case support for TypeGuard and TypeIs *)
-    | Call
-        { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
-      when is_simple_name name -> (
-        let { TypeInfo.Unit.annotation = callee_return_type; _ } =
-          resolve_expression ~resolution test
-        in
-        match Type.type_guard_kind_if_any callee_return_type with
-        | Type.TypeGuard guard_type
-        | Type.TypeIs guard_type ->
-            let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
+              match
+                Resolution.get_local_with_attributes
+                  resolution
+                  ~name:partitioned_name
+                  ~attribute_path
+              with
+              | Some
+                  {
+                    TypeInfo.Unit.annotation =
+                      Type.Parametric
+                        { name = parametric_name; parameters = [Single (Type.Union parameters)] } as
+                      annotation;
+                    _;
+                  }
+                when GlobalResolution.less_or_equal
+                       global_resolution
+                       ~left:annotation
+                       ~right:(Type.iterable (Type.Union parameters)) ->
+                  let parameters =
+                    List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+                  in
+                  refine_local
+                    ~name
+                    (TypeInfo.Unit.create_mutable
+                       (Type.parametric parametric_name [Single (Type.union parameters)]))
+              | _ -> resolution
+            in
             Value resolution
-        | Type.NoGuard -> Value resolution)
+      end
+    (* Positive-case support for TypeGuard and TypeIs *)
+    | Call { arguments = { Call.Argument.name = None; value = refinement_target } :: _; _ } -> begin
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let { TypeInfo.Unit.annotation = callee_return_type; _ } =
+              resolve_expression ~resolution test
+            in
+            match Type.type_guard_kind_if_any callee_return_type with
+            | Type.TypeGuard guard_type
+            | Type.TypeIs guard_type ->
+                let resolution = refine_local ~name (TypeInfo.Unit.create_mutable guard_type) in
+                Value resolution
+            | Type.NoGuard -> Value resolution)
+      end
     (* Negative-case support for TypeIs *)
     | UnaryOperator
         {

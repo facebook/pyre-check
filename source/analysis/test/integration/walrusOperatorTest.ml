@@ -157,8 +157,8 @@ let test_refine_walrus_operator =
                   reveal_type(y)
             |}
            [
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -176,8 +176,8 @@ let test_refine_walrus_operator =
                   reveal_type(y)
             |}
            [
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -192,10 +192,8 @@ let test_refine_walrus_operator =
                   reveal_type(y)
             |}
            [
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[typing.Callable[[int], \
-              int], int, str]`.";
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[typing.Callable[[int], \
-              int], int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int], int]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
            ];
     ]
 

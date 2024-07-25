@@ -526,8 +526,7 @@ let test_check_local_refinement =
              "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
              "Revealed type [-1]: Revealed type for `y` is `int`.";
              "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
-             (* TODO(T95581122): should be None *)
-             "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
+             "Revealed type [-1]: Revealed type for `y` is `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

@@ -715,26 +715,6 @@ let test_return_type =
     ]
 
 
-let test_walrus_operator =
-  test_list
-    [
-      (* TODO(T95581122): `bar` should be narrowed to `int`. *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              from typing import TypeIs
-
-              def typeguard_fn(val: int | str) -> TypeIs[int]:
-                return True
-
-              def foo(x: int | str) -> None:
-                if typeguard_fn(bar := x):
-                  reveal_type(bar)
-            |}
-           ["Revealed type [-1]: Revealed type for `bar` is `typing.Union[int, str]`."];
-    ]
-
-
 let test_boolean_operators =
   test_list
     [
@@ -981,7 +961,6 @@ let () =
          test_methods;
          test_callback;
          test_return_type;
-         test_walrus_operator;
          test_boolean_operators;
          test_consistency_checks;
          test_misc;
