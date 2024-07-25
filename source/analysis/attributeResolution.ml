@@ -2471,11 +2471,24 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               alias
               ~assumptions
             |> snd
-            |> fun alias -> alias
       in
-      let modify_variables ?replace_unbound_parameters_with_any =
-        let _replace = replace_unbound_parameters_with_any in
-        function
+      let modify_variables ?replace_unbound_parameters_with_any = function
+        | Type.Variable.TypeVarVariable variable ->
+            let visited_variable =
+              self#check_invalid_type_parameters
+                ?replace_unbound_parameters_with_any
+                (Variable variable)
+                ~assumptions
+              |> snd
+            in
+            begin
+              match visited_variable with
+              | Variable variable -> Type.Variable.TypeVarVariable variable
+              | _ ->
+                  failwith
+                    "Impossible: check_invalid_type_parameters received a variable variant as \
+                     input and output a different variant."
+            end
         | result -> result
       in
       let allow_untracked =

@@ -4258,31 +4258,6 @@ module State (Context : Context) = struct
     resolution, errors
 
 
-  and forward_variable_alias_definition ~resolution ~location ~errors ~value =
-    let global_resolution = Resolution.global_resolution resolution in
-    let parsed =
-      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
-    in
-
-    let add_type_variable_errors errors =
-      match parsed with
-      | Variable variable when Type.Variable.TypeVar.contains_subvariable variable ->
-          emit_error
-            ~errors
-            ~location
-            ~kind:
-              (AnalysisError.InvalidType
-                 (AnalysisError.NestedTypeVariables (Type.Variable.TypeVarVariable variable)))
-      | Variable { constraints = Explicit [explicit]; _ } ->
-          emit_error
-            ~errors
-            ~location
-            ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
-      | _ -> errors
-    in
-    Value resolution, add_type_variable_errors errors
-
-
   and forward_type_alias_definition ~resolution ~location ~errors ~target ~value =
     let global_resolution = Resolution.global_resolution resolution in
     let parsed =
@@ -5499,7 +5474,7 @@ module State (Context : Context) = struct
            |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)
-        forward_variable_alias_definition ~resolution ~location ~errors ~value
+        forward_type_alias_definition ~resolution ~location ~errors ~target ~value
     | Expression.Name (Name.Identifier name), Some value
       when Reference.create name
            |> Reference.delocalize
