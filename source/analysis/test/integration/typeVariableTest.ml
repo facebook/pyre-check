@@ -755,6 +755,21 @@ let test_check_variable_bindings =
                 pass
             |}
            ["Invalid type parameters [24]: Generic type `G` expects 1 type parameter."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import TypeVar, Union
+            T = TypeVar("T", bound= Union[int, str])
+            def f(x: T) -> T:
+                return x
+            reveal_type(f(3))
+            reveal_type(f("hello"))
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `test.f(3)` is `typing_extensions.Literal[3]`.";
+             "Revealed type [-1]: Revealed type for `test.f(\"hello\")` is \
+              `typing_extensions.Literal['hello']`.";
+           ];
       (* Test for a common misuse of variable bounds. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
