@@ -73,9 +73,30 @@ else:
         """)
         self.last_source = var_2
     
+    def source_mutation_4(self) -> None: 
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function() 
+        function_2 = self.generate_new_function()
+        self.source_statements.append(f"""
+if False: 
+{indent_space}def {function_1}(x): 
+{indent_space * 2}return x
+else: 
+{indent_space}def {function_2}(x): 
+{indent_space * 2}return x
+        """)
+        temp = self.last_source
+        self.last_source = f"{function_2}({temp})"
+
+
+ 
 
 generator = CodeGenerator()
+generator.source_mutation_4()
+generator.source_mutation_4()
+generator.source_mutation_4()
+generator.source_mutation_4()
 
 print(generator.generate())
 
-import random 
+
