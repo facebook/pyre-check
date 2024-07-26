@@ -87,16 +87,17 @@ else:
         """)
         temp = self.last_source
         self.last_source = f"{function_2}({temp})"
+    
+    def source_mutation_5(self) -> None: 
+        indent_space = ' ' * 4 
+        function_1 = self.generate_new_function() 
+        self.source_statements.append(f"""
+def {function_1}(x):
+{indent_space}return x
+hashmap = {{"choice_1": {function_1}}}
+        """)
+        temp = self.last_source
+        self.last_source = f'hashmap["choice_1"]({temp})'
 
 
  
-
-generator = CodeGenerator()
-generator.source_mutation_4()
-generator.source_mutation_4()
-generator.source_mutation_4()
-generator.source_mutation_4()
-
-print(generator.generate())
-
-
