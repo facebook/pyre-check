@@ -4,6 +4,9 @@ import string
 import itertools
 from typing import List
 
+import functools 
+import random 
+
 class CodeGenerator:
     def __init__(self) -> None:
         self.variables = self.generate_variable_names()
@@ -404,17 +407,123 @@ class {outer_class_name}:
         temp = self.last_source
         self.last_source = f"{instance_var}.{method_name}({temp})"
 
+    def source_mutation_23(self) -> None:
+        indent_space = ' ' * 4
+        function_name = self.generate_new_function()
+        partial_function_name = self.generate_new_function()
+        result_var = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+def {function_name}(x, y):
+{indent_space}return y
+
+{partial_function_name} = functools.partial({function_name}, y={self.last_source})
+{result_var} = {partial_function_name}(None)
+    """)
+
+        temp = self.last_source
+        self.last_source = result_var
 
 
-# Test the new mutation function
+
+    def source_mutation_24(self) -> None:
+        indent_space = ' ' * 4
+        iterator_class_name = f"IteratorClass{self.current_function_number}"
+        instance_var = self.generate_new_variable()
+        result_var = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+class {iterator_class_name}:
+{indent_space}def __init__(self, data):
+{indent_space * 2}self.data = data
+{indent_space * 2}self.index = 0
+
+{indent_space}def __iter__(self):
+{indent_space * 2}return self
+
+{indent_space}def __next__(self):
+{indent_space * 2}if self.index < len(self.data):
+{indent_space * 3}result = self.data[self.index]
+{indent_space * 3}self.index += 1
+{indent_space * 3}return result
+{indent_space * 2}else:
+{indent_space * 3}raise StopIteration
+
+{instance_var} = {iterator_class_name}({self.last_source})
+{result_var} = ''.join([char for char in {instance_var}])
+    """)
+
+        temp = self.last_source
+        self.last_source = result_var
+
+    # work in progress 
+    def source_mutation_25(self) -> None:
+        indent_space = ' ' * 4
+        metaclass_name = f"MetaClass{self.current_function_number}"
+        class_name = f"Class{self.current_function_number}"
+        property_name = self.generate_new_variable()
+        function_name = self.generate_new_function()
+        decorator_name = self.generate_new_function()
+        instance_var = self.generate_new_variable()
+        result_var = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+class {metaclass_name}(type):
+{indent_space}def __new__(cls, name, bases, dct):
+{indent_space * 2}dct['{property_name}'] = property(dct['get_{property_name}'])
+{indent_space * 2}return super().__new__(cls, name, bases, dct)
+
+def {decorator_name}(func):
+{indent_space}def wrapper(self, x):
+{indent_space * 2}return func(self, x)
+{indent_space}return wrapper
+
+class {class_name}(metaclass={metaclass_name}):
+{indent_space}def __init__(self, value):
+{indent_space * 2}self._value = value
+
+{indent_space}@{decorator_name}
+{indent_space}def get_{property_name}(self):
+{indent_space * 2}return self._value
+
+{indent_space}@{decorator_name}
+{indent_space}def {function_name}(self, x):
+{indent_space * 2}return x
+
+{instance_var} = {class_name}({self.last_source})
+{result_var} = {instance_var}.{function_name}({instance_var}.{property_name})
+    """)
+
+        temp = self.last_source
+        self.last_source = result_var
+
+
 generator = CodeGenerator()
+
+generator.source_mutation_1()
+generator.source_mutation_2()
+generator.source_mutation_3()
+generator.source_mutation_4()
+generator.source_mutation_5()
+generator.source_mutation_6()
+generator.source_mutation_7()
+generator.source_mutation_8()
+generator.source_mutation_9()
+generator.source_mutation_10()
+generator.source_mutation_11()
+generator.source_mutation_12()
+generator.source_mutation_13()
+generator.source_mutation_14()
+generator.source_mutation_15()
+generator.source_mutation_16()
+generator.source_mutation_17()
+generator.source_mutation_18()
+generator.source_mutation_19()
+generator.source_mutation_20()
+generator.source_mutation_21()
 generator.source_mutation_22()
-generator.source_mutation_22()
-generator.source_mutation_22()
-generator.source_mutation_22()
+generator.source_mutation_23()
+generator.source_mutation_24()
 
 print(generator.generate())
-
-
-
 
