@@ -214,5 +214,28 @@ def {outer_function_name}():
         temp = self.last_source
         self.last_source = f"{closure_var}({temp})"
 
+    def source_mutation_12(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        function_2 = self.generate_new_function()
+        dispatch_var = self.generate_new_variable()
+        key_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+def {function_1}(x):
+{indent_space}return x
 
+def {function_2}(x):
+{indent_space}return x
+
+{dispatch_var} = {{
+{indent_space}'key1': {function_1},
+{indent_space}'key2': {function_2}
+}}
+
+{key_var} = 'key1' if 1 == 1 else 'key2'
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{dispatch_var}[{key_var}]({temp})"
 
