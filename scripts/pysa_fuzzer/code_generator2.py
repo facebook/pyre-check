@@ -173,40 +173,46 @@ class {class_name}:
         self.last_source = f"''.join({list_var})"
 
 
-
-# Test the new mutation function
-generator = CodeGenerator()
-generator.source_mutation_9()
-generator.source_mutation_8()
-generator.source_mutation_7()
-generator.source_mutation_1()
-
-print(generator.generate())
-a = lambda x: x
-b = [a(char) for char in input()]
-    
-
-class Class0:
-    def f0(self, x):
-        return x
-
-c = Class0()
-    
-
-d = 'a' 
-e = 'b'  
-if d == 'a':
-    def f1(x):
-        return x
-else:
-    def f2(x):
-        return x
-if e == 'b':
-        def f3(y):
-            return y
-    
-
-def f4(x):
-    return x
+    def source_mutation_10(self) -> None:
+        indent_space = ' ' * 4
+        decorator_name = self.generate_new_function()
+        function_name = self.generate_new_function()
+        decorated_function_name = self.generate_new_function()
         
-print(f4(f3(f1(c.f0(''.join(b))))))
+        self.source_statements.append(f"""
+def {decorator_name}(func):
+{indent_space}def wrapper(x):
+{indent_space * 2}return func(x)
+{indent_space}return wrapper
+
+@{decorator_name}
+def {function_name}(x):
+{indent_space}return x
+
+{decorated_function_name} = {function_name}
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{decorated_function_name}({temp})"
+
+
+    def source_mutation_11(self) -> None:
+        indent_space = ' ' * 4
+        outer_function_name = self.generate_new_function()
+        inner_function_name = self.generate_new_function()
+        closure_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+def {outer_function_name}():
+{indent_space}def {inner_function_name}(x):
+{indent_space * 2}return x
+{indent_space}return {inner_function_name}
+
+{closure_var} = {outer_function_name}()
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{closure_var}({temp})"
+
+
+
