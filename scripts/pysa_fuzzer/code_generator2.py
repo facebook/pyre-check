@@ -269,43 +269,31 @@ class {class_name}:
         temp = self.last_source
         self.last_source = f"{class_name}.{method_name}({temp})"
 
+    def source_mutation_15(self) -> None:
+        indent_space = ' ' * 4
+        tuple_var = self.generate_new_variable()
+        unpack_var_1 = self.generate_new_variable()
+        unpack_var_2 = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+{tuple_var} = ({self.last_source},)
+{unpack_var_1}, = {tuple_var}
+{unpack_var_2} = {unpack_var_1}
+    """)
+
+        temp = self.last_source
+        self.last_source = unpack_var_2
 
 
-# Test the new mutation function
-generator = CodeGenerator()
-generator.source_mutation_14()
-generator.source_mutation_14()
-generator.source_mutation_14()
-generator.source_mutation_14()
+    def source_mutation_16(self) -> None:
+        indent_space = ' ' * 4
+        format_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+{format_var} = "{{}}".format({self.last_source})
+    """)
 
-print(generator.generate())
+        temp = self.last_source
+        self.last_source = format_var
 
 
-class Class0:
-    @staticmethod
-    def f0(x):
-        return x
-
-    
-
-class Class1:
-    @staticmethod
-    def f1(x):
-        return x
-
-    
-
-class Class2:
-    @staticmethod
-    def f2(x):
-        return x
-
-    
-
-class Class3:
-    @staticmethod
-    def f3(x):
-        return x
-
-    
-print(Class3.f3(Class2.f2(Class1.f1(Class0.f0(input())))))
