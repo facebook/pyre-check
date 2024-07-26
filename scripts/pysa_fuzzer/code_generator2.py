@@ -253,3 +253,59 @@ def {function_2}(x):
         self.last_source = f"''.join({slice_var})"
 
 
+    def source_mutation_14(self) -> None:
+        indent_space = ' ' * 4
+        class_name = f"Class{self.current_function_number}"
+        method_name = self.generate_new_function()
+        
+        self.source_statements.append(f"""
+class {class_name}:
+{indent_space}@staticmethod
+{indent_space}def {method_name}(x):
+{indent_space * 2}return x
+
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{class_name}.{method_name}({temp})"
+
+
+
+# Test the new mutation function
+generator = CodeGenerator()
+generator.source_mutation_14()
+generator.source_mutation_14()
+generator.source_mutation_14()
+generator.source_mutation_14()
+
+print(generator.generate())
+
+
+class Class0:
+    @staticmethod
+    def f0(x):
+        return x
+
+    
+
+class Class1:
+    @staticmethod
+    def f1(x):
+        return x
+
+    
+
+class Class2:
+    @staticmethod
+    def f2(x):
+        return x
+
+    
+
+class Class3:
+    @staticmethod
+    def f3(x):
+        return x
+
+    
+print(Class3.f3(Class2.f2(Class1.f1(Class0.f0(input())))))
