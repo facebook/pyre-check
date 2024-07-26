@@ -140,14 +140,73 @@ if {condition_var_2} == 'b':
 
         temp = self.last_source
         self.last_source = f"{function_3}({function_1}({temp}))"
- 
+    
+    def source_mutation_8(self) -> None:
+        indent_space = ' ' * 4
+        class_name = f"Class{self.current_function_number}"
+        method_name = self.generate_new_function()
+        variable_name = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+class {class_name}:
+{indent_space}def {method_name}(self, x):
+{indent_space * 2}return x
+
+{variable_name} = {class_name}()
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{variable_name}.{method_name}({temp})"
+
+
+    def source_mutation_9(self) -> None:
+        indent_space = ' ' * 4
+        lambda_name = self.generate_new_variable()
+        list_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+{lambda_name} = lambda x: x
+{list_var} = [{lambda_name}(char) for char in {self.last_source}]
+    """)
+
+        temp = self.last_source
+        self.last_source = f"''.join({list_var})"
+
+
+
+# Test the new mutation function
 generator = CodeGenerator()
+generator.source_mutation_9()
+generator.source_mutation_8()
 generator.source_mutation_7()
-generator.source_mutation_7()
-generator.source_mutation_7()
-
-
+generator.source_mutation_1()
 
 print(generator.generate())
+a = lambda x: x
+b = [a(char) for char in input()]
+    
 
+class Class0:
+    def f0(self, x):
+        return x
 
+c = Class0()
+    
+
+d = 'a' 
+e = 'b'  
+if d == 'a':
+    def f1(x):
+        return x
+else:
+    def f2(x):
+        return x
+if e == 'b':
+        def f3(y):
+            return y
+    
+
+def f4(x):
+    return x
+        
+print(f4(f3(f1(c.f0(''.join(b))))))
