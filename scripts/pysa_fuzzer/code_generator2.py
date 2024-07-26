@@ -297,3 +297,102 @@ class {class_name}:
         self.last_source = format_var
 
 
+    def source_mutation_17(self) -> None:
+        indent_space = ' ' * 4
+        generator_function_name = self.generate_new_function()
+        generator_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+def {generator_function_name}(x):
+{indent_space}yield x
+
+{generator_var} = next({generator_function_name}({self.last_source}))
+    """)
+
+        temp = self.last_source
+        self.last_source = generator_var
+
+    def source_mutation_18(self) -> None:
+        indent_space = ' ' * 4
+        map_var = self.generate_new_variable()
+        lambda_func = f"lambda x: x"
+        
+        self.source_statements.append(f"""
+{map_var} = list(map({lambda_func}, {self.last_source}))
+    """)
+
+        temp = self.last_source
+        self.last_source = f"''.join({map_var})"
+
+    def source_mutation_19(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        function_2 = self.generate_new_function()
+        composed_function = self.generate_new_function()
+        
+        self.source_statements.append(f"""
+def {function_1}(x):
+{indent_space}return x
+
+def {function_2}(x):
+{indent_space}return x
+
+def {composed_function}(x):
+{indent_space}return {function_1}({function_2}(x))
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{composed_function}({temp})"
+
+    def source_mutation_20(self) -> None:
+        indent_space = ' ' * 4
+        class_name = f"DynamicClass{self.current_function_number}"
+        method_name = self.generate_new_function()
+        instance_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+{class_name} = type('{class_name}', (object,), {{
+{indent_space}'{method_name}': lambda self, x: x
+}})
+
+{instance_var} = {class_name}()
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{instance_var}.{method_name}({temp})"
+
+    def source_mutation_21(self) -> None:
+        indent_space = ' ' * 4
+        decorator_name = self.generate_new_function()
+        function_name = self.generate_new_function()
+        decorated_function_name = self.generate_new_function()
+
+        self.source_statements.append(f"""
+def {decorator_name}(func):
+{indent_space}def wrapper(x):
+{indent_space * 2}result = func(x)
+{indent_space * 2}# Additional layer of complexity
+{indent_space * 2}return result
+{indent_space}return wrapper
+
+@{decorator_name}
+def {function_name}(x):
+{indent_space}return x
+
+{decorated_function_name} = {function_name}
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{decorated_function_name}({temp})"
+
+
+
+# Test the new mutation function
+generator = CodeGenerator()
+generator.source_mutation_21()
+generator.source_mutation_21()
+generator.source_mutation_21()
+generator.source_mutation_21()
+
+print(generator.generate())
+
