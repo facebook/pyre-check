@@ -99,5 +99,55 @@ hashmap = {{"choice_1": {function_1}}}
         temp = self.last_source
         self.last_source = f'hashmap["choice_1"]({temp})'
 
+    def source_mutation_6(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        function_2 = self.generate_new_function()
+        condition_var = self.generate_new_variable()
+        self.source_statements.append(f"""
+{condition_var} = random.choice([True, False]) and not True
+if {condition_var}:
+{indent_space}def {function_1}(x):
+{indent_space * 2}return x
+else:
+{indent_space}def {function_2}(x):
+{indent_space * 2}return x
+    """)
+        temp = self.last_source
+        self.last_source = f"{function_2}({temp})"
+    
+    def source_mutation_7(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        function_2 = self.generate_new_function()
+        function_3 = self.generate_new_function()
+        condition_var_1 = self.generate_new_variable()
+        condition_var_2 = self.generate_new_variable()
 
+        self.source_statements.append(f"""
+{condition_var_1} = 'a' 
+{condition_var_2} = 'b'  
+if {condition_var_1} == 'a':
+{indent_space}def {function_1}(x):
+{indent_space * 2}return x
+else:
+{indent_space}def {function_2}(x):
+{indent_space * 2}return x
+if {condition_var_2} == 'b':
+{indent_space * 2}def {function_3}(y):
+{indent_space * 3}return y
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{function_3}({function_1}({temp}))"
  
+generator = CodeGenerator()
+generator.source_mutation_7()
+generator.source_mutation_7()
+generator.source_mutation_7()
+
+
+
+print(generator.generate())
+
+
