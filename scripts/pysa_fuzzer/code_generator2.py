@@ -59,11 +59,23 @@ def {current_function}(x):
         """)
         self.last_source = current_var
 
+    def source_mutation_3(self) -> None: 
+        indent_space = ' ' * 4 
+        var_1 = self.generate_new_variable() 
+        var_2 = self.generate_new_variable() 
+
+        self.source_statements.append(f"""
+{var_1} = random.randint(1, 5)
+if {var_1} < 5 and {var_1} > 5:
+{indent_space}print("hello world")
+else: 
+{indent_space}{var_2} = {self.last_source}
+        """)
+        self.last_source = var_2
+    
+
 generator = CodeGenerator()
 
-generator.source_mutation_2()
-generator.source_mutation_2()
-generator.source_mutation_2()
+print(generator.generate())
 
-generator.source_mutation_2()
-
+import random 
