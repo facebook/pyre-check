@@ -239,3 +239,17 @@ def {function_2}(x):
         temp = self.last_source
         self.last_source = f"{dispatch_var}[{key_var}]({temp})"
 
+    def source_mutation_13(self) -> None:
+        indent_space = ' ' * 4
+        list_var = self.generate_new_variable()
+        slice_var = self.generate_new_variable()
+        
+        self.source_statements.append(f"""
+{list_var} = list({self.last_source})
+{slice_var} = {list_var}[::1]
+    """)
+
+        temp = self.last_source
+        self.last_source = f"''.join({slice_var})"
+
+
