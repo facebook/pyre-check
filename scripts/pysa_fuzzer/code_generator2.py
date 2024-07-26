@@ -385,14 +385,36 @@ def {function_name}(x):
         temp = self.last_source
         self.last_source = f"{decorated_function_name}({temp})"
 
+    def source_mutation_22(self) -> None:
+        indent_space = ' ' * 4
+        outer_class_name = f"OuterClass{self.current_function_number}"
+        inner_class_name = f"InnerClass{self.current_function_number}"
+        method_name = self.generate_new_function()
+        instance_var = self.generate_new_variable()
+
+        self.source_statements.append(f"""
+class {outer_class_name}:
+{indent_space}class {inner_class_name}:
+{indent_space * 2}def {method_name}(self, x):
+{indent_space * 3}return x
+
+{instance_var} = {outer_class_name}.{inner_class_name}()
+    """)
+
+        temp = self.last_source
+        self.last_source = f"{instance_var}.{method_name}({temp})"
+
 
 
 # Test the new mutation function
 generator = CodeGenerator()
-generator.source_mutation_21()
-generator.source_mutation_21()
-generator.source_mutation_21()
-generator.source_mutation_21()
+generator.source_mutation_22()
+generator.source_mutation_22()
+generator.source_mutation_22()
+generator.source_mutation_22()
 
 print(generator.generate())
+
+
+
 
