@@ -41,7 +41,7 @@ class CodeGenerator:
         code_lines.append(self.generate_sink())
         return '\n'.join(code_lines)
 
-    def source_function_1(self) -> None: 
+    def source_mutation_1(self) -> None: 
         indent_space = ' ' * 4
         current_function = self.generate_new_function()
         self.source_statements.append(f"""
@@ -51,8 +51,19 @@ def {current_function}(x):
         temp = self.last_source
         self.last_source = f"{current_function}({temp})" 
 
+    def source_mutation_2(self) -> None: 
+        indent_space = ' ' * 4 
+        current_var = self.generate_new_variable()
+        self.source_statements.append(f"""
+{current_var} = {self.last_source}
+        """)
+        self.last_source = current_var
+
 generator = CodeGenerator()
-generator.source_function_1()
-generator.source_function_1()
-generator.source_function_1()
-generator.source_function_1()
+
+generator.source_mutation_2()
+generator.source_mutation_2()
+generator.source_mutation_2()
+
+generator.source_mutation_2()
+
