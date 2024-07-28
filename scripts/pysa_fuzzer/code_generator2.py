@@ -463,25 +463,30 @@ def {function_1}(x):
 {indent_space}{self.last_sink}(x)
         """)
         self.last_sink = function_1
+    
+    def sink_mutation_2(self) -> None: 
+        indent_space = ' ' * 4 
+        function_1 = self.generate_new_function()
+        function_2 = self.generate_new_function()   
+        self.sink_statements.append(f"""
+if False:
+{indent_space}def {function_1}(x):
+{indent_space * 2}{self.last_sink}(x)
+else:
+{indent_space}def {function_2}(x):
+{indent_space * 2}{self.last_sink}(x)
+        """)    
+        self.last_sink = function_2
+
+
         
 
 generator = CodeGenerator()
-generator.sink_mutation_1()
-generator.sink_mutation_1()
-generator.sink_mutation_1()
+generator.sink_mutation_2()
+generator.sink_mutation_2()
+generator.sink_mutation_2()
+generator.sink_mutation_2()
+generator.sink_mutation_2()
+generator.sink_mutation_2()
 
-print(generator.generate())
-
-def f0(x):
-    print(x)
-        
-
-def f1(x):
-    f0(x)
-        
-
-def f2(x):
-    f1(x)
-        
-f2(input())
 
