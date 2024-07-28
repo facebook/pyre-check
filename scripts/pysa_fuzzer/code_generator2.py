@@ -505,31 +505,3 @@ generator.sink_mutation_3()
 print(generator.generate())
 
 
-
-def f0(x):
-    a = random.randint(1, 5)
-    if a < 5:
-        print(x)
-    else:
-        b = x
-        print(b)
-    
-
-def f1(x):
-    c = random.randint(1, 5)
-    if c < 5:
-        f0(x)
-    else:
-        d = x
-        f0(d)
-    
-
-def f2(x):
-    e = random.randint(1, 5)
-    if e < 5:
-        f1(x)
-    else:
-        f = x
-        f1(f)
-    
-f2(input())
