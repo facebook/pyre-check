@@ -571,33 +571,81 @@ def {function_1}(x):
 {indent_space}return x
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_9(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+        result_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = {self.last_sink}(x)
+{indent_space}return x
+    """)
+        self.last_sink = function_1
+
+    def sink_mutation_10(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        list_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{list_var} = [str({self.last_sink}(item)) for item in str(x)]
+{indent_space}result = ''.join({list_var})
+{indent_space}return result
+    """)
+        self.last_sink = function_1
+    
+    def sink_mutation_11(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = str({self.last_sink}(x))
+{indent_space}return f"{{len({temp_var})}}: {{x}}"
+    """)
+        self.last_sink = function_1
+    
+    def sink_mutation_12(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        set_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{set_var} = set(str({self.last_sink}(x)))
+{indent_space}return ''.join(sorted({set_var}))
+    """)
+        self.last_sink = function_1
+
+
+
 
 
 generator = CodeGenerator()
-generator.sink_mutation_8()
-generator.sink_mutation_8()
-generator.sink_mutation_8()
+generator.sink_mutation_11()
+generator.sink_mutation_11()
+generator.sink_mutation_11()
 
 
+print(generator.generate())
 
 def f0(x):
-    a = print(x)
-    with open('sink_output.txt', 'w') as file:
-        file.write(str(a))
-    return x
+    a = str(print(x))
+    return f"{len(a)}: {x}"
     
 
 def f1(x):
-    b = f0(x)
-    with open('sink_output.txt', 'w') as file:
-        file.write(str(b))
-    return x
+    b = str(f0(x))
+    return f"{len(b)}: {x}"
     
 
 def f2(x):
-    c = f1(x)
-    with open('sink_output.txt', 'w') as file:
-        file.write(str(c))
-    return x
+    c = str(f1(x))
+    return f"{len(c)}: {x}"
     
 f2(input())
