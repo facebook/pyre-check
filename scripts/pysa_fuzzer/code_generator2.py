@@ -478,15 +478,58 @@ else:
         """)    
         self.last_sink = function_2
 
+    def sink_mutation_3(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        var_1 = self.generate_new_variable()
+        var_2 = self.generate_new_variable()
 
-        
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{var_1} = random.randint(1, 5)
+{indent_space}if {var_1} < 5:
+{indent_space * 2}{self.last_sink}(x)
+{indent_space}else:
+{indent_space * 2}{var_2} = x
+{indent_space * 2}{self.last_sink}({var_2})
+    """)
+        self.last_sink = function_1
+
 
 generator = CodeGenerator()
-generator.sink_mutation_2()
-generator.sink_mutation_2()
-generator.sink_mutation_2()
-generator.sink_mutation_2()
-generator.sink_mutation_2()
-generator.sink_mutation_2()
+generator.sink_mutation_3()
+generator.sink_mutation_3()
+generator.sink_mutation_3()
 
 
+print(generator.generate())
+
+
+
+def f0(x):
+    a = random.randint(1, 5)
+    if a < 5:
+        print(x)
+    else:
+        b = x
+        print(b)
+    
+
+def f1(x):
+    c = random.randint(1, 5)
+    if c < 5:
+        f0(x)
+    else:
+        d = x
+        f0(d)
+    
+
+def f2(x):
+    e = random.randint(1, 5)
+    if e < 5:
+        f1(x)
+    else:
+        f = x
+        f1(f)
+    
+f2(input())
