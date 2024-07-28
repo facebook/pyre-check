@@ -512,15 +512,92 @@ def {function_1}(x):
 {indent_space}return x
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_5(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        class_name = f"Class{self.current_function_number}"
+        instance_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+class {class_name}:
+{indent_space}def __init__(self, sink_function):
+{indent_space * 2}self.sink_function = sink_function
+
+{indent_space}def {function_1}(self, x):
+{indent_space * 2}self.sink_function(x)
+
+{instance_var} = {class_name}({self.last_sink})
+    """)
+        self.last_sink = f"{instance_var}.{function_1}"
+    
+    def sink_mutation_6(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        list_var = self.generate_new_variable()
+        map_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{list_var} = list(str(x))
+{indent_space}{map_var} = map(lambda char: ({self.last_sink}(char), char)[1], {list_var})
+{indent_space}return ''.join({map_var})
+    """)
+        self.last_sink = function_1
 
 
+    def sink_mutation_7(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        tuple_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{tuple_var} = ({self.last_sink}(x), x)
+{indent_space}return {tuple_var}[1]
+    """)
+        self.last_sink = function_1
+
+    def sink_mutation_8(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = {self.last_sink}(x)
+{indent_space}with open('sink_output.txt', 'w') as file:
+{indent_space * 2}file.write(str({temp_var}))
+{indent_space}return x
+    """)
+        self.last_sink = function_1
 
 
 generator = CodeGenerator()
-generator.sink_mutation_4()
-generator.sink_mutation_4()
+generator.sink_mutation_8()
+generator.sink_mutation_8()
+generator.sink_mutation_8()
 
 
-print(generator.generate())
 
+def f0(x):
+    a = print(x)
+    with open('sink_output.txt', 'w') as file:
+        file.write(str(a))
+    return x
+    
 
+def f1(x):
+    b = f0(x)
+    with open('sink_output.txt', 'w') as file:
+        file.write(str(b))
+    return x
+    
+
+def f2(x):
+    c = f1(x)
+    with open('sink_output.txt', 'w') as file:
+        file.write(str(c))
+    return x
+    
+f2(input())
