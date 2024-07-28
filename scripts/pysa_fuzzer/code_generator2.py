@@ -657,14 +657,28 @@ def {function_1}(x):
 {indent_space}return {reversed_var}
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_16(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        split_var = self.generate_new_variable()
+        joined_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{split_var} = str({self.last_sink}(x)).split()
+{indent_space}{joined_var} = '_'.join({split_var})
+{indent_space}return {joined_var}
+    """)
+        self.last_sink = function_1
+
 
 
 generator = CodeGenerator()
-generator.sink_mutation_15()
-generator.sink_mutation_15()
-generator.sink_mutation_15()
+generator.sink_mutation_16()
+generator.sink_mutation_16()
+generator.sink_mutation_16()
 
 
 print(generator.generate())
-
 
