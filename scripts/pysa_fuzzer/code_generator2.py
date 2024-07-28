@@ -494,12 +494,31 @@ def {function_1}(x):
 {indent_space * 2}{self.last_sink}({var_2})
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_4(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        decorator_1 = self.generate_new_function()
+        
+        self.sink_statements.append(f"""
+def {decorator_1}(func):
+{indent_space}def wrapper(x):
+{indent_space * 2}{self.last_sink}(x)
+{indent_space * 2}return func(x)
+{indent_space}return wrapper
+
+@{decorator_1}
+def {function_1}(x):
+{indent_space}return x
+    """)
+        self.last_sink = function_1
+
+
 
 
 generator = CodeGenerator()
-generator.sink_mutation_3()
-generator.sink_mutation_3()
-generator.sink_mutation_3()
+generator.sink_mutation_4()
+generator.sink_mutation_4()
 
 
 print(generator.generate())
