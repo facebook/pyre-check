@@ -621,31 +621,30 @@ def {function_1}(x):
 {indent_space}return ''.join(sorted({set_var}))
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_13(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = [char.upper() if char.islower() else char.lower() for char in str({self.last_sink}(x))]
+{indent_space}return ''.join({temp_var})
+    """)
+        self.last_sink = function_1
+
 
 
 
 
 
 generator = CodeGenerator()
-generator.sink_mutation_11()
-generator.sink_mutation_11()
-generator.sink_mutation_11()
+generator.sink_mutation_13()
+generator.sink_mutation_13()
+generator.sink_mutation_13()
 
 
 print(generator.generate())
 
-def f0(x):
-    a = str(print(x))
-    return f"{len(a)}: {x}"
-    
 
-def f1(x):
-    b = str(f0(x))
-    return f"{len(b)}: {x}"
-    
-
-def f2(x):
-    c = str(f1(x))
-    return f"{len(c)}: {x}"
-    
-f2(input())
