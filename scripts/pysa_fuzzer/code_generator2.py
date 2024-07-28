@@ -454,3 +454,34 @@ class {iterator_class_name}:
 
         temp = self.last_source
         self.last_source = result_var
+
+    def sink_mutation_1(self) -> None: 
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{self.last_sink}(x)
+        """)
+        self.last_sink = function_1
+        
+
+generator = CodeGenerator()
+generator.sink_mutation_1()
+generator.sink_mutation_1()
+generator.sink_mutation_1()
+
+print(generator.generate())
+
+def f0(x):
+    print(x)
+        
+
+def f1(x):
+    f0(x)
+        
+
+def f2(x):
+    f1(x)
+        
+f2(input())
+
