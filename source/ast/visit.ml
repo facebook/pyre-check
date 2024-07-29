@@ -62,6 +62,12 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     Option.iter ~f:visit_expression annotation
 
 
+  let visit_type_param { Node.value; _ } ~visit_expression =
+    match value with
+    | TypeParam.TypeVar { TypeParam.bound; _ } -> Option.iter ~f:visit_expression bound
+    | _ -> ()
+
+
   let rec visit_expression ~state ?visitor_override expression =
     let visitor = Option.value visitor_override ~default:Visitor.node in
     let visit_expression = visit_expression ~state ?visitor_override in
@@ -183,23 +189,26 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | AugmentedAssign { AugmentedAssign.target; value; _ } ->
           visit_expression target;
           visit_expression value
-      | Class ({ Class.name; base_arguments; body; decorators; _ } as class_) ->
+      | Class ({ Class.name; base_arguments; body; decorators; type_params; _ } as class_) ->
           visit_node
             ~state
             ~visitor
             (Reference
                (Node.create ~location:(Class.name_location ~body_location:location class_) name));
+          List.iter type_params ~f:(visit_type_param ~visit_expression);
           List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter ~f:visit_expression decorators
       | Define ({ Define.signature; captures; body; unbound_names = _ } as define) ->
-          let iter_signature { Define.Signature.name; parameters; decorators; return_annotation; _ }
+          let iter_signature
+              { Define.Signature.name; parameters; decorators; return_annotation; type_params; _ }
             =
             visit_node
               ~state
               ~visitor
               (Reference
                  (Node.create ~location:(Define.name_location ~body_location:location define) name));
+            List.iter type_params ~f:(visit_type_param ~visit_expression);
             List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
             List.iter ~f:visit_expression decorators;
             Option.iter ~f:visit_expression return_annotation
@@ -277,6 +286,10 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
+      | TypeAlias { TypeAlias.name; type_params; value; _ } ->
+          visit_expression name;
+          List.iter type_params ~f:(visit_type_param ~visit_expression);
+          visit_expression value
       | Import _
       | Nonlocal _
       | Global _
@@ -352,6 +365,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Pass
         | Raise _
         | Return _
+        | TypeAlias _
         | Nonlocal _ ->
             ()
         | Class { Class.body; _ }

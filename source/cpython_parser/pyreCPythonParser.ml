@@ -889,9 +889,8 @@ let statement =
     in
     List.map targets ~f:create_assign_for_target
   in
-  let type_alias ~location ~name ~type_params ~value ~context =
-    ignore type_params (* TODO(yangdanny) support 695 syntax for type aliases *);
-    assign ~location ~targets:[name] ~value ~type_comment:None ~context
+  let type_alias ~location ~name ~type_params ~value ~context:_ =
+    [Statement.TypeAlias { TypeAlias.name; type_params; value } |> Ast.Node.create ~location]
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
     [

@@ -69,6 +69,15 @@ module Make (Transformer : Transformer) = struct
     let transform_argument { Call.Argument.name; value } ~transform_expression =
       { Call.Argument.name; value = transform_expression value }
     in
+    let transform_type_param ({ Node.value; _ } as node) ~transform_expression =
+      let new_value =
+        match value with
+        | TypeParam.TypeVar { TypeParam.name; bound = Some bound } ->
+            TypeParam.TypeVar { TypeParam.name; bound = Some (transform_expression bound) }
+        | _ -> value
+      in
+      { node with Node.value = new_value }
+    in
     let transform_parameter
         ({ Node.value = { Parameter.name; value; annotation }; _ } as node)
         ~transform_expression
@@ -281,7 +290,8 @@ module Make (Transformer : Transformer) = struct
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_expression;
                 top_level_unbound_names;
-                type_params;
+                type_params =
+                  transform_list type_params ~f:(transform_type_param ~transform_expression);
               }
         | Continue -> value
         | Define { Define.signature; captures; unbound_names; body } ->
@@ -308,7 +318,8 @@ module Make (Transformer : Transformer) = struct
                 parent;
                 nesting_define;
                 generator;
-                type_params;
+                type_params =
+                  transform_list type_params ~f:(transform_type_param ~transform_expression);
               }
             in
             let transform_capture { Define.Capture.name; kind } =
@@ -424,6 +435,14 @@ module Make (Transformer : Transformer) = struct
             let orelse = transform_list orelse ~f:transform_statement |> List.concat in
             let finally = transform_list finally ~f:transform_statement |> List.concat in
             Try { Try.body; handlers; orelse; finally; handles_exception_group }
+        | TypeAlias { TypeAlias.name; type_params; value } ->
+            TypeAlias
+              {
+                TypeAlias.name = transform_expression name;
+                type_params =
+                  transform_list type_params ~f:(transform_type_param ~transform_expression);
+                value = transform_expression value;
+              }
         | With { With.items; body; async } ->
             let transform_item (item, alias) =
               transform_expression item, alias >>| transform_expression
@@ -488,6 +507,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
         | Pass
         | Raise _
         | Return _
+        | TypeAlias _
         | Nonlocal _ ->
             value
         | Class ({ Class.body; _ } as value) ->

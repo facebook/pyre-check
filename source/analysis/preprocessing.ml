@@ -923,6 +923,7 @@ module Qualify (Context : QualifyContext) = struct
                 body;
                 orelse;
               } )
+      | TypeAlias _ (* TODO(yangdanny): handle TypeAlias? *)
       | Break
       | Continue
       | Import _
@@ -3317,6 +3318,7 @@ module AccessCollector = struct
     | Global _
     | Import _
     | Nonlocal _
+    | TypeAlias _ (* TODO(T196994965): handle TypeAlias *)
     | Pass ->
         collected
 

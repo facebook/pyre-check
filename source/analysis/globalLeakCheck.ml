@@ -659,6 +659,7 @@ module State (Context : Context) = struct
       | Global _
       | Import _
       | Nonlocal _
+      | TypeAlias _
       | Pass ->
           []
     in

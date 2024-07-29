@@ -31,6 +31,28 @@ let name_location
     }
 
 
+module TypeAlias = struct
+  type t = {
+    name: Expression.t;
+    type_params: Expression.TypeParam.t list;
+    value: Expression.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match Expression.location_insensitive_compare left.name right.name with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match
+          List.compare
+            Expression.TypeParam.location_insensitive_compare
+            left.type_params
+            right.type_params
+        with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_insensitive_compare left.value right.value)
+end
+
 module Assign = struct
   type t = {
     target: Expression.t;
@@ -1574,6 +1596,7 @@ and Statement : sig
     | Raise of Raise.t
     | Return of Return.t
     | Try of Try.t
+    | TypeAlias of TypeAlias.t
     | With of With.t
     | While of While.t
   [@@deriving equal, compare, sexp, hash, to_yojson]
@@ -1606,6 +1629,7 @@ end = struct
     | Raise of Raise.t
     | Return of Return.t
     | Try of Try.t
+    | TypeAlias of TypeAlias.t
     | With of With.t
     | While of While.t
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
@@ -1634,6 +1658,7 @@ end = struct
     | Raise left, Raise right -> Raise.location_insensitive_compare left right
     | Return left, Return right -> Return.location_insensitive_compare left right
     | Try left, Try right -> Try.location_insensitive_compare left right
+    | TypeAlias left, TypeAlias right -> TypeAlias.location_insensitive_compare left right
     | With left, With right -> With.location_insensitive_compare left right
     | While left, While right -> While.location_insensitive_compare left right
     | Assign _, _ -> -1
@@ -1655,6 +1680,7 @@ end = struct
     | Raise _, _ -> -1
     | Return _, _ -> -1
     | Try _, _ -> -1
+    | TypeAlias _, _ -> -1
     | With _, _ -> -1
     | While _, _ -> -1
 
@@ -2018,6 +2044,16 @@ module PrettyPrinter = struct
           orelse
           pp_finally_block
           finally
+    | TypeAlias { TypeAlias.name; type_params; value } ->
+        Format.fprintf
+          formatter
+          "type %a%a = %a"
+          Expression.pp
+          name
+          Expression.pp_type_param_list
+          type_params
+          Expression.pp
+          value
     | With { With.items; body; async } ->
         let pp_item formatter (expression, expression_option) =
           Format.fprintf
@@ -2168,6 +2204,8 @@ let is_generator statements =
         || List.exists handlers ~f:(fun { Try.Handler.body; _ } -> is_statements_generator body)
         || is_statements_generator orelse
         || is_statements_generator finally
+    | TypeAlias { TypeAlias.name; value; _ } ->
+        is_expression_generator name || is_expression_generator value
     | With { With.items; body; _ } ->
         List.exists items ~f:(fun (expression, _) -> is_expression_generator expression)
         || is_statements_generator body

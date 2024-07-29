@@ -210,6 +210,7 @@ let extract_reads_in_statement { Node.value; _ } =
     (* TODO(T107105911): Handle access for match statement. *)
     | Match _
     | Nonlocal _
+    | TypeAlias _
     | Pass
     | Try _ ->
         []

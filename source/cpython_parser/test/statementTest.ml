@@ -3030,6 +3030,43 @@ let test_match =
   PyreCPythonParser.with_context do_test
 
 
+let test_type_alias =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    test_list
+      [
+        labeled_test_case __FUNCTION__ __LINE__
+        @@ assert_parsed
+             "type A = B"
+             ~expected:
+               [+Statement.TypeAlias { TypeAlias.name = !"A"; type_params = []; value = !"B" }];
+        labeled_test_case __FUNCTION__ __LINE__
+        @@ assert_parsed
+             "type A[T, T2: str, *Ts, **P] = B"
+             ~expected:
+               [
+                 +Statement.TypeAlias
+                    {
+                      TypeAlias.name = !"A";
+                      type_params =
+                        [
+                          +TypeParam.TypeVar { name = "T"; bound = None };
+                          +TypeParam.TypeVar
+                             {
+                               name = "T2";
+                               bound = Some (+Expression.Name (Name.Identifier "str"));
+                             };
+                          +TypeParam.TypeVarTuple "Ts";
+                          +TypeParam.ParamSpec "P";
+                        ];
+                      value = !"B";
+                    };
+               ];
+      ]
+  in
+  PyreCPythonParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -3045,5 +3082,6 @@ let () =
          test_define;
          test_class;
          test_match;
+         test_type_alias;
        ]
   |> Test.run

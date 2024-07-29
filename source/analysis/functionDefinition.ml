@@ -91,6 +91,7 @@ let collect_typecheck_units { Source.statements; _ } =
     | Nonlocal _
     | Pass
     | Raise _
+    | TypeAlias _
     | Return _ ->
         sofar
   in

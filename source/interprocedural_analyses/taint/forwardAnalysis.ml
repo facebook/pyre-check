@@ -2912,6 +2912,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     | Return { expression = None; _ }
     | Try _
+    | TypeAlias _ (* TODO(T196994965): handle Type Alias *)
     | With _
     | While _ ->
         state

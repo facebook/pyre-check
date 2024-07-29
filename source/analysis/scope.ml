@@ -304,6 +304,7 @@ module Binding = struct
     | Delete _
     | Global _
     | Nonlocal _
+    | TypeAlias _ (* TODO(T196994965): handle TypeAlias *)
     | Pass ->
         sofar
 
@@ -372,7 +373,8 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Nonlocal _
   | Pass
   | Raise _
-  | Return _ ->
+  | Return _
+  | TypeAlias _ ->
       sofar
 
 
@@ -414,7 +416,8 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Import _
   | Pass
   | Raise _
-  | Return _ ->
+  | Return _
+  | TypeAlias _ ->
       sofar
 
 

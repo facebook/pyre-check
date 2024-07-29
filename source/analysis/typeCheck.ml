@@ -5596,6 +5596,24 @@ module State (Context : Context) = struct
         (* lower augmented assignment to regular assignment *)
         let call = AugmentedAssign.lower ~location augmented_assignment in
         forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some call)
+    (* TODO(T196994965): handle type alias *)
+    | TypeAlias { TypeAlias.name; type_params; value } ->
+        (* TODO: remove after PEP 695 is supported *)
+        let type_params_errors =
+          match type_params with
+          | { Node.location; _ } :: _ ->
+              emit_error
+                ~errors:[]
+                ~location
+                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
+          | _ -> []
+        in
+        forward_type_alias_definition
+          ~resolution
+          ~location
+          ~errors:type_params_errors
+          ~target:name
+          ~value
     | Assert { Assert.test; origin; message } ->
         let message_errors =
           Option.value
