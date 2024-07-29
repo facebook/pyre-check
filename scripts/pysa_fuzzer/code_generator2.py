@@ -700,15 +700,28 @@ def {function_1}(x):
     """)
         self.last_sink = function_1
 
+    def sink_mutation_19(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+        index_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = str({self.last_sink}(x))
+{indent_space}{index_var} = len({temp_var}) // 2
+{indent_space}return {temp_var}[:{index_var}] + '-' + {temp_var}[{index_var}:]
+    """)
+        self.last_sink = function_1
+
 
 
 
 
 generator = CodeGenerator()
-generator.sink_mutation_18()
-generator.sink_mutation_18()
-generator.sink_mutation_18()
+generator.sink_mutation_19()
+generator.sink_mutation_19()
+generator.sink_mutation_19()
 
 
 print(generator.generate())
-
