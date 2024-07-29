@@ -46,7 +46,6 @@
   typeTest
   typedDictionaryAttributeTest
   unannotatedGlobalEnvironmentTest
-  unawaitedAwaitableCheckTest
   uninitializedLocalCheckTest
   weakTopologicalOrderTest
   weakenMutableLiteralsTest)
