@@ -1,6 +1,5 @@
 click>=8.0
 dataclasses-json==0.5.7
-intervaltree
 libcst
 psutil
 pyre-extensions>=0.0.29
