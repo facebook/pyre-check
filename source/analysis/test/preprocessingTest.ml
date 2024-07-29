@@ -4833,6 +4833,56 @@ let test_transform_ast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
            {|
+      from typing import TypeVar, NamedTuple, Generic, Tuple, Final
+
+      State = TypeVar("State")
+
+      class LoopState(Generic[State], NamedTuple):
+        blah: int
+        state: State
+    |}
+           {|
+      from typing import TypeVar, NamedTuple, Generic, Tuple, Final
+
+      State = TypeVar("State")
+
+      class LoopState(Generic[State], NamedTuple):
+        def __new__(cls, blah: int, state: State) -> NamedTuple: ...
+        def __init__(self, blah: int, state: State) -> None:
+          self.blah = blah
+          self.state = state
+        _fields: Tuple[str, str] = ('blah', 'state')
+        blah: Final[int] = ...
+        state: Final[State] = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
+      from typing import TypeVar, NamedTuple, Generic, Tuple, Final
+
+      State = TypeVar("State")
+
+      class LoopState(NamedTuple, Generic[State]):
+        blah: int
+        state: State
+    |}
+           {|
+      from typing import TypeVar, NamedTuple, Generic, Tuple, Final
+
+      State = TypeVar("State")
+
+      class LoopState(NamedTuple, Generic[State]):
+        def __new__(cls, blah: int, state: State) -> NamedTuple: ...
+        def __init__(self, blah: int, state: State) -> None:
+          self.blah = blah
+          self.state = state
+        _fields: Tuple[str, str] = ('blah', 'state')
+        blah: Final[int] = ...
+        state: Final[State] = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
       class Foo(collections.namedtuple("PatchDocument", ("op", "path", "value", "ts", "lazy"))):
         pass
     |}

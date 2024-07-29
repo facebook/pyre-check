@@ -18,11 +18,17 @@ let global_resolution ~context =
   make_resolution
     ~context
     {|
+      T = typing.TypeVar("T")
+
       class FooNamedTuple(typing.NamedTuple):
         foo: str
         bar: int
         baz: typing.List[str]
         hello: typing.List[int]
+
+      class GenericNamedTuple(typing.NamedTuple, typing.Generic[T]):
+        foo: T
+        bar: int
 
       class NonTuple: ...
     |}
@@ -36,16 +42,22 @@ let test_field_annotations context =
     None;
   assert_equal
     (NamedTuple.field_annotations ~global_resolution (Type.Primitive "test.FooNamedTuple"))
-    (Some [Type.string; Type.integer; Type.list Type.string; Type.list Type.integer])
+    (Some [Type.string; Type.integer; Type.list Type.string; Type.list Type.integer]);
+  assert_equal
+    (NamedTuple.field_annotations ~global_resolution (Type.Primitive "test.GenericNamedTuple"))
+    (Some [Type.variable "test.T"; Type.integer])
 
 
 let test_is_named_tuple context =
   let global_resolution = global_resolution ~context in
   assert_false
     (NamedTuple.is_named_tuple ~global_resolution ~annotation:(Type.Primitive "test.NonTuple"));
-
   assert_true
-    (NamedTuple.is_named_tuple ~global_resolution ~annotation:(Type.Primitive "test.FooNamedTuple"))
+    (NamedTuple.is_named_tuple ~global_resolution ~annotation:(Type.Primitive "test.FooNamedTuple"));
+  assert_true
+    (NamedTuple.is_named_tuple
+       ~global_resolution
+       ~annotation:(Type.Primitive "test.GenericNamedTuple"))
 
 
 let () =

@@ -2731,12 +2731,13 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   {
                     Node.value =
                       Name
-                        (Name.Attribute
-                          {
-                            base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "NamedTuple";
-                            _;
-                          });
+                        ( Name.Identifier "typing.NamedTuple"
+                        | Name.Attribute
+                            {
+                              base = { Node.value = Name (Name.Identifier "typing"); _ };
+                              attribute = "NamedTuple";
+                              _;
+                            } );
                     _;
                   };
                 _;
