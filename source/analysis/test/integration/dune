@@ -61,7 +61,7 @@
   typeGuardTest
   typeVariableTest
   typedDictionaryTest
-  unawaitedAwaitableTypeCheckTest
+  unawaitedAwaitableCheckTest
   unionTest
   varianceTest
   walrusOperatorTest
