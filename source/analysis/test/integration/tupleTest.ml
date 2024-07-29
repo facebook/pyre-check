@@ -462,6 +462,39 @@ let test_check_tuple =
              "Revealed type [-1]: Revealed type for `a` is `Union[bool, int]`.";
              "Revealed type [-1]: Revealed type for `b` is `Union[List[int], str]`.";
            ];
+      (* T54851036 *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypeVar, NamedTuple, Generic
+
+      State = TypeVar("State")
+
+      class LoopState(Generic[State], NamedTuple):
+        blah: int
+        state: State
+    |}
+           [
+             "Inconsistent method resolution order [64]: Class `LoopState` does not have a \
+              consistent method resolution order";
+             "Undefined attribute [16]: `typing.Type` has no attribute `_fields`.";
+             "Undefined attribute [16]: `LoopState` has no attribute `blah`.";
+             "Undefined attribute [16]: `LoopState` has no attribute `state`.";
+             "Undefined attribute [16]: `typing.Type` has no attribute `blah`.";
+             "Undefined attribute [16]: `typing.Type` has no attribute `state`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypeVar, NamedTuple, Generic
+
+      State = TypeVar("State")
+
+      class LoopState(NamedTuple, Generic[State]):
+        blah: int
+        state: State
+    |}
+           [];
     ]
 
 
