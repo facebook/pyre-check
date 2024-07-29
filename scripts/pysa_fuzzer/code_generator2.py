@@ -671,13 +671,43 @@ def {function_1}(x):
 {indent_space}return {joined_var}
     """)
         self.last_sink = function_1
+    
+    def sink_mutation_17(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        zip_var = self.generate_new_variable()
+        temp_var_1 = self.generate_new_variable()
+        temp_var_2 = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var_1} = str({self.last_sink}(x))
+{indent_space}{temp_var_2} = str(x)
+{indent_space}{zip_var} = ''.join(a + b for a, b in zip({temp_var_1}, {temp_var_2}))
+{indent_space}return {zip_var}
+    """)
+        self.last_sink = function_1
+
+    def sink_mutation_18(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = str({self.last_sink}(x))
+{indent_space}return '-'.join({temp_var}[i:i+2] for i in range(0, len({temp_var}), 2))
+    """)
+        self.last_sink = function_1
+
+
 
 
 
 generator = CodeGenerator()
-generator.sink_mutation_16()
-generator.sink_mutation_16()
-generator.sink_mutation_16()
+generator.sink_mutation_18()
+generator.sink_mutation_18()
+generator.sink_mutation_18()
 
 
 print(generator.generate())
