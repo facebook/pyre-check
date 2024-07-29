@@ -970,6 +970,64 @@ module State (Context : Context) = struct
     base_type_info: TypeInfo.Unit.t option;
   }
 
+  let add_annotation_errors errors resolution location parsed =
+    add_invalid_type_parameters_errors ~resolution ~location ~errors parsed
+    |> fun (errors, _) ->
+    let errors =
+      List.append errors (get_untracked_annotation_errors ~resolution ~location parsed)
+    in
+    errors
+
+
+  (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
+  let add_type_variable_errors errors parsed location =
+    match parsed with
+    | Type.Variable variable when Type.Variable.TypeVar.contains_subvariable variable ->
+        emit_error
+          ~errors
+          ~location
+          ~kind:
+            (AnalysisError.InvalidType
+               (AnalysisError.NestedTypeVariables (Type.Variable.TypeVarVariable variable)))
+    | Variable { constraints = Explicit [explicit]; _ } ->
+        emit_error
+          ~errors
+          ~location
+          ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
+    | _ -> errors
+
+
+  let add_prohibited_any_errors errors target parsed value location =
+    let reference =
+      match target.Node.value with
+      | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
+      | _ -> failwith "not possible"
+    in
+    let annotation_kind =
+      match parsed with
+      | Type.Variable _ -> Error.TypeVariable
+      | _ -> Error.TypeAlias
+    in
+    if Type.expression_contains_any value && Type.contains_prohibited_any parsed then
+      emit_error
+        ~errors
+        ~location
+        ~kind:
+          (Error.ProhibitedAny
+             {
+               missing_annotation =
+                 {
+                   Error.name = reference;
+                   annotation = None;
+                   given_annotation = Some parsed;
+                   thrown_at_source = true;
+                 };
+               annotation_kind;
+             })
+    else
+      errors
+
+
   let partition_name ~resolution name =
     let global_resolution = Resolution.global_resolution resolution in
     let reference = Ast.Expression.name_to_reference_exn name in
@@ -4258,70 +4316,61 @@ module State (Context : Context) = struct
     resolution, errors
 
 
+  and forward_variable_alias_definition ~resolution ~location ~errors ~target ~value ~reference =
+    let global_resolution = Resolution.global_resolution resolution in
+
+    (* try to parse as a variable declaration and raise the appropriate errors for variables if we
+       are successful *)
+    let parse_as_declaration = Type.Variable.Declaration.parse value ~target:reference in
+
+    match parse_as_declaration with
+    | Some parsed ->
+        let create_type =
+          GlobalResolution.parse_annotation ~validation:NoValidation global_resolution
+        in
+        let parsed = Type.Variable.of_declaration parsed ~create_type in
+        let errors =
+          match parsed with
+          | Type.Variable.TypeVarVariable variable ->
+              let errors =
+                add_annotation_errors errors global_resolution location (Variable variable)
+              in
+              (* TODO T197102558: Understand if we should filter errors with fake locations here or
+                 not *)
+              let errors =
+                List.filter
+                  ~f:(fun error ->
+                    let start_pos = error.AnalysisError.location.start in
+                    let stop_pos = error.AnalysisError.location.stop in
+                    not
+                      (start_pos.line = -1
+                      && start_pos.column = -1
+                      && stop_pos.line = -1
+                      && stop_pos.column = -1))
+                  errors
+              in
+              let errors = add_type_variable_errors errors (Variable variable) location in
+              let errors =
+                add_prohibited_any_errors errors target (Variable variable) value location
+              in
+              errors
+          | _ -> errors
+        in
+        Value resolution, errors
+    | _ -> Value resolution, errors
+
+
   and forward_type_alias_definition ~resolution ~location ~errors ~target ~value =
     let global_resolution = Resolution.global_resolution resolution in
     let parsed =
       GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
     in
-    (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
-    let add_annotation_errors errors =
-      add_invalid_type_parameters_errors ~resolution:global_resolution ~location ~errors parsed
-      |> fun (errors, _) ->
-      let errors =
-        List.append
-          errors
-          (get_untracked_annotation_errors ~resolution:global_resolution ~location parsed)
-      in
-      errors
-    in
-    let add_type_variable_errors errors =
-      match parsed with
-      | Variable variable when Type.Variable.TypeVar.contains_subvariable variable ->
-          emit_error
-            ~errors
-            ~location
-            ~kind:
-              (AnalysisError.InvalidType
-                 (AnalysisError.NestedTypeVariables (Type.Variable.TypeVarVariable variable)))
-      | Variable { constraints = Explicit [explicit]; _ } ->
-          emit_error
-            ~errors
-            ~location
-            ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
-      | _ -> errors
-    in
-    let add_prohibited_any_errors errors =
-      let reference =
-        match target.Node.value with
-        | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
-        | _ -> failwith "not possible"
-      in
-      let annotation_kind =
-        match parsed with
-        | Variable _ -> Error.TypeVariable
-        | _ -> Error.TypeAlias
-      in
-      if Type.expression_contains_any value && Type.contains_prohibited_any parsed then
-        emit_error
-          ~errors
-          ~location
-          ~kind:
-            (Error.ProhibitedAny
-               {
-                 missing_annotation =
-                   {
-                     Error.name = reference;
-                     annotation = None;
-                     given_annotation = Some parsed;
-                     thrown_at_source = true;
-                   };
-                 annotation_kind;
-               })
-      else
-        errors
-    in
-    ( Value resolution,
-      add_annotation_errors errors |> add_type_variable_errors |> add_prohibited_any_errors )
+
+    let errors = add_annotation_errors errors global_resolution location parsed in
+    let errors = add_type_variable_errors errors parsed location in
+    let errors = add_prohibited_any_errors errors target parsed value location in
+
+    Value resolution, errors
 
 
   (* Step forward across an assignment, tracking type context in
@@ -5475,9 +5524,14 @@ module State (Context : Context) = struct
            |> Reference.show
            |> variables
            |> Option.is_some ->
-        (* The statement has been recognized as a type alias definition instead of an actual value
-           assignment. *)
-        forward_type_alias_definition ~resolution ~location ~errors ~target ~value
+        (* The statement has been recognized as a potential type var definition . *)
+        forward_variable_alias_definition
+          ~resolution
+          ~location
+          ~errors
+          ~target
+          ~value
+          ~reference:(Reference.create (Expression.show target))
     | Expression.Name (Name.Identifier name), Some value
       when Reference.create name
            |> Reference.delocalize
