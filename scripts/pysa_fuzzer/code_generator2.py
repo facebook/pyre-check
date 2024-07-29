@@ -714,14 +714,80 @@ def {function_1}(x):
     """)
         self.last_sink = function_1
 
+    def sink_mutation_20(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        encoded_var = self.generate_new_variable()
 
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{encoded_var} = str({self.last_sink}(x)).encode('utf-8').hex()
+{indent_space}return {encoded_var}
+    """)
+        self.last_sink = function_1
 
+    def sink_mutation_21(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = ''.join(reversed(str({self.last_sink}(x))))
+{indent_space}return ''.join(c if i % 2 == 0 else '*' for i, c in enumerate({temp_var}))
+    """)
+        self.last_sink = function_1
+    
+    def sink_mutation_22(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+        shuffled_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}import random
+{indent_space}{temp_var} = list(str({self.last_sink}(x)))
+{indent_space}random.shuffle({temp_var})
+{indent_space}{shuffled_var} = ''.join({temp_var})
+{indent_space}return {shuffled_var}
+    """)
+        self.last_sink = function_1
+    
+    def sink_mutation_23(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        split_var = self.generate_new_variable()
+        joined_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{split_var} = [str({self.last_sink}(x))[i:i+3] for i in range(0, len(str({self.last_sink}(x))), 3)]
+{indent_space}{joined_var} = '-'.join({split_var})
+{indent_space}return {joined_var}
+    """)
+        self.last_sink = function_1
+
+    def sink_mutation_24(self) -> None:
+        indent_space = ' ' * 4
+        function_1 = self.generate_new_function()
+        temp_var = self.generate_new_variable()
+        condition_var = self.generate_new_variable()
+
+        self.sink_statements.append(f"""
+def {function_1}(x):
+{indent_space}{temp_var} = str({self.last_sink}(x))
+{indent_space}{condition_var} = ''.join(c.upper() if i % 2 == 0 else c.lower() for i, c in enumerate({temp_var}))
+{indent_space}return {condition_var}
+    """)
+        self.last_sink = function_1
 
 
 generator = CodeGenerator()
-generator.sink_mutation_19()
-generator.sink_mutation_19()
-generator.sink_mutation_19()
+generator.sink_mutation_24()
+generator.sink_mutation_24()
+generator.sink_mutation_24()
 
 
 print(generator.generate())
+
