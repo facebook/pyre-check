@@ -726,6 +726,7 @@ let test_sanitize_statement _ =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];
@@ -789,6 +790,7 @@ let test_sanitize_statement _ =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];

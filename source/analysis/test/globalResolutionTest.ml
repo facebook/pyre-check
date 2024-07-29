@@ -518,6 +518,7 @@ let test_is_protocol =
         body = [];
         decorators = [];
         top_level_unbound_names = [];
+        type_params = [];
       }
       |> ClassSummary.create ~qualifier:Reference.empty
       |> ClassSummary.is_protocol

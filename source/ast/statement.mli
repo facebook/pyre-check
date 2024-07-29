@@ -112,6 +112,7 @@ and Class : sig
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
+    type_params: Expression.TypeParam.t list;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -151,6 +152,7 @@ and Define : sig
       parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
+      type_params: Expression.TypeParam.t list;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 

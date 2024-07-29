@@ -466,6 +466,7 @@ module ParserToAst = struct
               body = List.map ~f:convert_statement body;
               decorators = List.map ~f:convert_expression decorators;
               top_level_unbound_names = [];
+              type_params = [];
             }
       | Continue -> AstStatement.Statement.Continue
       | Define { Define.signature; body } ->
@@ -489,6 +490,7 @@ module ParserToAst = struct
               generator = Ast.Statement.is_generator body;
               parent;
               nesting_define = None;
+              type_params = [];
             }
           in
           AstStatement.Statement.Define

@@ -2050,6 +2050,7 @@ let test_qualify_ast =
                  Class.name = Reference.create "a";
                  base_arguments = [];
                  top_level_unbound_names = [];
+                 type_params = [];
                  body = [];
                  decorators = [];
                })
@@ -2058,6 +2059,7 @@ let test_qualify_ast =
                  Class.name = Reference.create "qualifier.a";
                  base_arguments = [];
                  top_level_unbound_names = [];
+                 type_params = [];
                  body = [];
                  decorators = [];
                });
@@ -2270,6 +2272,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2285,6 +2288,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -2322,6 +2326,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "Foo.Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2343,6 +2348,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -2396,6 +2402,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2411,6 +2418,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -2448,6 +2456,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "Foo.Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2469,6 +2478,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -2515,6 +2525,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2530,6 +2541,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -2567,6 +2579,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   Class.name = Reference.create "NotFoo.Foo";
                   base_arguments = [];
                   top_level_unbound_names = [];
+                  type_params = [];
                   body =
                     [
                       +Statement.Define
@@ -2588,6 +2601,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                generator = false;
                                parent = None;
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -3536,6 +3550,7 @@ let test_expand_implicit_returns =
                     generator = false;
                     parent = None;
                     nesting_define = None;
+                    type_params = [];
                   };
                 captures = [];
                 unbound_names = [];
@@ -3732,6 +3747,7 @@ let test_defines =
           generator = false;
           parent = None;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -3750,6 +3766,7 @@ let test_defines =
           generator = false;
           parent = None;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -3768,6 +3785,7 @@ let test_defines =
           generator = false;
           parent = Some (Reference.create parent);
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -3793,6 +3811,7 @@ let test_defines =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];
@@ -3811,6 +3830,7 @@ let test_defines =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];
@@ -3837,6 +3857,7 @@ let test_defines =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];
@@ -3855,6 +3876,7 @@ let test_defines =
                generator = false;
                parent = None;
                nesting_define = None;
+               type_params = [];
              };
            captures = [];
            unbound_names = [];
@@ -3887,6 +3909,7 @@ let test_defines =
            body;
            decorators = [];
            top_level_unbound_names = [];
+           type_params = [];
          }
        in
        labeled_test_case __FUNCTION__ __LINE__
@@ -3928,6 +3951,7 @@ let test_classes =
                         generator = false;
                         parent = Some !&"foo";
                         nesting_define = None;
+                        type_params = [];
                       };
                     captures = [];
                     unbound_names = [];
@@ -3936,6 +3960,7 @@ let test_classes =
              ];
            decorators = [];
            top_level_unbound_names = [];
+           type_params = [];
          }
        in
        labeled_test_case __FUNCTION__ __LINE__
@@ -3947,6 +3972,7 @@ let test_classes =
            body = [+Statement.Pass];
            decorators = [];
            top_level_unbound_names = [];
+           type_params = [];
          }
        in
        let class_define =
@@ -3956,6 +3982,7 @@ let test_classes =
            body = [+Statement.Class inner];
            decorators = [];
            top_level_unbound_names = [];
+           type_params = [];
          }
        in
        labeled_test_case __FUNCTION__ __LINE__
@@ -4943,6 +4970,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -4960,6 +4988,7 @@ let test_populate_nesting_define =
                                generator = false;
                                parent = None;
                                nesting_define = Some !&"foo";
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -4995,6 +5024,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5012,6 +5042,7 @@ let test_populate_nesting_define =
                                generator = false;
                                parent = None;
                                nesting_define = Some !&"foo";
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -5029,6 +5060,7 @@ let test_populate_nesting_define =
                                generator = false;
                                parent = None;
                                nesting_define = Some !&"foo";
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -5058,6 +5090,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5075,6 +5108,7 @@ let test_populate_nesting_define =
                                generator = false;
                                parent = None;
                                nesting_define = Some !&"foo";
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -5092,6 +5126,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"bar";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5126,6 +5161,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5148,6 +5184,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5168,6 +5205,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5202,6 +5240,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5224,6 +5263,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5244,6 +5284,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5275,6 +5316,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5298,6 +5340,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5335,6 +5378,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5356,6 +5400,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5382,6 +5427,7 @@ let test_populate_nesting_define =
                                               generator = false;
                                               parent = None;
                                               nesting_define = Some !&"foo";
+                                              type_params = [];
                                             };
                                           captures = [];
                                           unbound_names = [];
@@ -5404,6 +5450,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"foo";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5443,6 +5490,7 @@ let test_populate_nesting_define =
                                generator = false;
                                parent = Some !&"C";
                                nesting_define = None;
+                               type_params = [];
                              };
                            captures = [];
                            unbound_names = [];
@@ -5460,6 +5508,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = None;
                                         nesting_define = Some !&"bar";
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5469,6 +5518,7 @@ let test_populate_nesting_define =
                          };
                     ];
                   top_level_unbound_names = [];
+                  type_params = [];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -5493,6 +5543,7 @@ let test_populate_nesting_define =
                       generator = false;
                       parent = None;
                       nesting_define = None;
+                      type_params = [];
                     };
                   captures = [];
                   unbound_names = [];
@@ -5517,6 +5568,7 @@ let test_populate_nesting_define =
                                         generator = false;
                                         parent = Some !&"C";
                                         nesting_define = None;
+                                        type_params = [];
                                       };
                                     captures = [];
                                     unbound_names = [];
@@ -5534,6 +5586,7 @@ let test_populate_nesting_define =
                                                  generator = false;
                                                  parent = None;
                                                  nesting_define = Some !&"bar";
+                                                 type_params = [];
                                                };
                                              captures = [];
                                              unbound_names = [];
@@ -5543,6 +5596,7 @@ let test_populate_nesting_define =
                                   };
                              ];
                            top_level_unbound_names = [];
+                           type_params = [];
                          };
                     ];
                 };
@@ -5706,6 +5760,7 @@ let test_populate_captures =
                          generator = false;
                          parent = None;
                          nesting_define = None;
+                         type_params = [];
                        } );
                  ] );
              ];
@@ -6410,6 +6465,7 @@ let test_populate_captures =
                          generator = false;
                          parent = None;
                          nesting_define = None;
+                         type_params = [];
                        } );
                  ] );
                !&"baz", [];

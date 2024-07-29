@@ -5675,7 +5675,8 @@ module State (Context : Context) = struct
             return_type
         in
         Value resolution, validate_return expression ~resolution ~errors ~actual ~is_implicit
-    | Define { signature = { Define.Signature.name; nesting_define; _ } as signature; _ } ->
+    | Define
+        { signature = { Define.Signature.name; nesting_define; type_params; _ } as signature; _ } ->
         let resolution =
           match nesting_define with
           | Some _ ->
@@ -5687,7 +5688,17 @@ module State (Context : Context) = struct
               Resolution.new_local resolution ~reference:name ~type_info:annotation
           | None -> resolution
         in
-        Value resolution, []
+        (* TODO: remove after PEP 695 is supported *)
+        let type_params_errors =
+          match type_params with
+          | { Node.location; _ } :: _ ->
+              emit_error
+                ~errors:[]
+                ~location
+                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
+          | _ -> []
+        in
+        Value resolution, type_params_errors
     | Import { Import.from; imports } ->
         let get_export_kind = function
           | ResolvedReference.Exported export -> Some export
@@ -5737,7 +5748,7 @@ module State (Context : Context) = struct
         ( Value resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
-    | Class class_statement ->
+    | Class ({ Class.type_params; _ } as class_statement) ->
         let this_class_name = Reference.show class_statement.name in
         let dataclass_options_from_decorator class_name =
           match GlobalResolution.get_class_summary global_resolution class_name with
@@ -5754,7 +5765,6 @@ module State (Context : Context) = struct
             end
           | None -> None
         in
-
         let get_dataclass_options_from_metaclass class_name =
           let extract_options =
             DataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
@@ -5874,7 +5884,20 @@ module State (Context : Context) = struct
               |> Option.value ~default:errors
           | _ -> errors
         in
-        Value resolution, List.fold (Class.base_classes class_statement) ~f:check_base ~init:[]
+        let base_class_errors =
+          List.fold (Class.base_classes class_statement) ~f:check_base ~init:[]
+        in
+        (* TODO: remove after PEP 695 is supported *)
+        let type_params_errors =
+          match type_params with
+          | { Node.location; _ } :: _ ->
+              emit_error
+                ~errors:[]
+                ~location
+                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
+          | _ -> []
+        in
+        Value resolution, base_class_errors @ type_params_errors
     | Try { Try.handlers; handles_exception_group; _ } ->
         (* We only need to check the type annotations of the exception handlers here, since try
            statements are broken up into multiple nodes in the CFG the other parts are checked

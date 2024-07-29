@@ -69,6 +69,7 @@ let assert_fixpoint body expected =
           generator = false;
           parent = None;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];

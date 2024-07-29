@@ -270,7 +270,9 @@ module Make (Transformer : Transformer) = struct
                 value = transform_expression value;
               }
         | Break -> value
-        | Class { Class.name; base_arguments; body; decorators; top_level_unbound_names } ->
+        | Class
+            { Class.name; base_arguments; body; decorators; top_level_unbound_names; type_params }
+          ->
             Class
               {
                 Class.name;
@@ -279,6 +281,7 @@ module Make (Transformer : Transformer) = struct
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_expression;
                 top_level_unbound_names;
+                type_params;
               }
         | Continue -> value
         | Define { Define.signature; captures; unbound_names; body } ->
@@ -292,6 +295,7 @@ module Make (Transformer : Transformer) = struct
                   parent;
                   nesting_define;
                   generator;
+                  type_params;
                 }
               =
               {
@@ -304,6 +308,7 @@ module Make (Transformer : Transformer) = struct
                 parent;
                 nesting_define;
                 generator;
+                type_params;
               }
             in
             let transform_capture { Define.Capture.name; kind } =

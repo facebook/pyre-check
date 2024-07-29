@@ -938,6 +938,7 @@ let test_class_locations =
                       decorators =
                         [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
                       top_level_unbound_names = [];
+                      type_params = [];
                     });
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -969,6 +970,7 @@ let test_class_locations =
                                      generator = false;
                                      parent = Some !&"foo";
                                      nesting_define = None;
+                                     type_params = [];
                                    };
                                  captures = [];
                                  unbound_names = [];
@@ -977,6 +979,7 @@ let test_class_locations =
                         ];
                       decorators = [];
                       top_level_unbound_names = [];
+                      type_params = [];
                     });
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1022,6 +1025,7 @@ let test_class_locations =
                         ];
                       decorators = [];
                       top_level_unbound_names = [];
+                      type_params = [];
                     });
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1071,6 +1075,7 @@ let test_class_locations =
                                                 generator = false;
                                                 parent = Some !&"foo";
                                                 nesting_define = None;
+                                                type_params = [];
                                               };
                                             captures = [];
                                             unbound_names = [];
@@ -1082,6 +1087,7 @@ let test_class_locations =
                         ];
                       decorators = [];
                       top_level_unbound_names = [];
+                      type_params = [];
                     });
              ];
     ]
@@ -1111,6 +1117,7 @@ let test_define_locations =
                           generator = false;
                           parent = None;
                           nesting_define = None;
+                          type_params = [];
                         };
                       captures = [];
                       unbound_names = [];
@@ -1154,6 +1161,7 @@ let test_define_locations =
                           generator = false;
                           parent = None;
                           nesting_define = None;
+                          type_params = [];
                         };
                       captures = [];
                       unbound_names = [];
@@ -1174,6 +1182,7 @@ let test_define_locations =
                                      generator = false;
                                      parent = None;
                                      nesting_define = None;
+                                     type_params = [];
                                    };
                                  captures = [];
                                  unbound_names = [];
@@ -2900,9 +2909,9 @@ let test_stub_locations =
         ~start:(1, 0) ~stop:(1, 15) (Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = [ node ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "a"; value =
         None; annotation = None }; ]; decorators = []; return_annotation = None; async = false;
-        generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names =
-        []; body = [ node ~start:(1, 12) ~stop:(1, 15) (Statement.Expression (node ~start:(1, 12)
-        ~stop:(1, 15) (Expression.Constant Constant.Ellipsis))); ]; }); ];*)
+        generator = false; parent = None; nesting_define = None; type_params = []; }; captures = [];
+        unbound_names = []; body = [ node ~start:(1, 12) ~stop:(1, 15) (Statement.Expression (node
+        ~start:(1, 12) ~stop:(1, 15) (Expression.Constant Constant.Ellipsis))); ]; }); ];*)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "class foo(): ... # type: ignore"
@@ -2928,6 +2937,7 @@ let test_stub_locations =
                         ];
                       decorators = [];
                       top_level_unbound_names = [];
+                      type_params = [];
                     });
              ];
     ]
@@ -3581,16 +3591,16 @@ let test_type_comments _context =
     annotation = Some (node ~start:(1, 0) ~stop:(3, 2) (Expression.Name (Name.Identifier "int")));
     }; ]; decorators = []; return_annotation = Some (node ~start:(1, 0) ~stop:(3, 2)
     (Expression.Constant Constant.NoneLiteral)); async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(3, 2)
-    ~stop:(3, 6) Statement.Pass]; }); ];*)
+    nesting_define = None; type_params = []; }; captures = []; unbound_names = []; body = [node
+    ~start:(3, 2) ~stop:(3, 6) Statement.Pass]; }); ];*)
   (*TODO (T148669698):assert_parsed "async def foo(x):\n # type:\n (int) -> None\n pass" ~expected:
     [ node ~start:(1, 0) ~stop:(3, 6) (Statement.Define { Define.signature = { Define.Signature.name
     = !&"foo"; parameters = [ node ~start:(1, 14) ~stop:(1, 15) { Parameter.name = "x"; value =
     None; annotation = Some (node ~start:(1, 0) ~stop:(3, 2) (Expression.Name (Name.Identifier
     "int"))); }; ]; decorators = []; return_annotation = Some (node ~start:(1, 0) ~stop:(3, 2)
     (Expression.Constant Constant.NoneLiteral)); async = true; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(3, 2)
-    ~stop:(3, 6) Statement.Pass]; }); ];*)
+    nesting_define = None; type_params = []; }; captures = []; unbound_names = []; body = [node
+    ~start:(3, 2) ~stop:(3, 6) Statement.Pass]; }); ];*)
   (*TODO (T148669698):assert_parsed "def foo(x): # type: (int) -> List[derp]\n pass" ~expected: [
     node ~start:(1, 0) ~stop:(2, 6) (Statement.Define { Define.signature = { Define.Signature.name =
     !&"foo"; parameters = [ node ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "x"; value = None;
@@ -3601,8 +3611,8 @@ let test_type_comments _context =
     (Name.Identifier "List")); attribute = "__getitem__"; special = true; })); arguments = [ {
     Call.Argument.name = None; value = node ~start:(1, 0) ~stop:(2, 2) (Expression.Name
     (Name.Identifier "derp")); }; ]; })); async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(2, 2)
-    ~stop:(2, 6) Statement.Pass]; }); ];*)
+    nesting_define = None; type_params = []; }; captures = []; unbound_names = []; body = [node
+    ~start:(2, 2) ~stop:(2, 6) Statement.Pass]; }); ];*)
   ()
 
 

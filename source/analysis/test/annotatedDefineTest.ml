@@ -28,6 +28,7 @@ let test_parent_definition context =
           generator = false;
           parent = Some (Reference.create parent);
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];

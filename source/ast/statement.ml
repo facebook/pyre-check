@@ -272,6 +272,7 @@ and Class : sig
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
+    type_params: Expression.TypeParam.t list;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -303,6 +304,7 @@ end = struct
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
+    type_params: Expression.TypeParam.t list;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -330,11 +332,19 @@ end = struct
                     right.decorators
                 with
                 | x when not (Int.equal x 0) -> x
-                | _ ->
-                    List.compare
-                      Define.NameAccess.compare
-                      left.top_level_unbound_names
-                      right.top_level_unbound_names)))
+                | _ -> (
+                    match
+                      List.compare
+                        Define.NameAccess.compare
+                        left.top_level_unbound_names
+                        right.top_level_unbound_names
+                    with
+                    | 0 ->
+                        List.compare
+                          Expression.TypeParam.location_insensitive_compare
+                          left.type_params
+                          right.type_params
+                    | x -> x))))
 
 
   let toplevel_define { name; top_level_unbound_names; body; _ } =
@@ -443,6 +453,7 @@ and Define : sig
       parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
+      type_params: Expression.TypeParam.t list;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -610,6 +621,7 @@ end = struct
       parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
+      type_params: Expression.TypeParam.t list;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -649,10 +661,18 @@ end = struct
                           | _ -> (
                               match [%compare: Reference.t option] left.parent right.parent with
                               | x when not (Int.equal x 0) -> x
-                              | _ ->
-                                  [%compare: Reference.t option]
-                                    left.nesting_define
-                                    right.nesting_define))))))
+                              | _ -> (
+                                  match
+                                    [%compare: Reference.t option]
+                                      left.nesting_define
+                                      right.nesting_define
+                                  with
+                                  | x when not (Int.equal x 0) -> x
+                                  | _ ->
+                                      List.compare
+                                        Expression.TypeParam.location_insensitive_compare
+                                        left.type_params
+                                        right.type_params)))))))
 
 
     let create_toplevel ~qualifier =
@@ -665,6 +685,7 @@ end = struct
         generator = false;
         parent = None;
         nesting_define = None;
+        type_params = [];
       }
 
 
@@ -678,6 +699,7 @@ end = struct
         generator = false;
         parent = Some parent;
         nesting_define = None;
+        type_params = [];
       }
 
 
@@ -1812,14 +1834,16 @@ module PrettyPrinter = struct
       value
 
 
-  and pp_class formatter { Class.name; base_arguments; body; decorators; _ } =
+  and pp_class formatter { Class.name; base_arguments; body; decorators; type_params; _ } =
     Format.fprintf
       formatter
-      "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
+      "%a@[<v 2>class %a%a(%a):@;@[<v>%a@]@;@]"
       pp_decorators
       decorators
       Reference.pp
       name
+      Expression.pp_type_param_list
+      type_params
       Expression.pp_expression_argument_list
       base_arguments
       pp_statement_list
@@ -1830,7 +1854,16 @@ module PrettyPrinter = struct
       formatter
       {
         Define.signature =
-          { Define.Signature.name; parameters; decorators; return_annotation; async; parent; _ };
+          {
+            Define.Signature.name;
+            parameters;
+            decorators;
+            return_annotation;
+            async;
+            parent;
+            type_params;
+            _;
+          };
         body;
         captures = _;
         unbound_names = _;
@@ -1843,7 +1876,7 @@ module PrettyPrinter = struct
     in
     Format.fprintf
       formatter
-      "%a@[<v 2>%adef %a%s%a(%a)%s:@;%a@]@;"
+      "%a@[<v 2>%adef %a%s%a%a(%a)%s:@;%a@]@;"
       pp_decorators
       decorators
       pp_async
@@ -1853,6 +1886,8 @@ module PrettyPrinter = struct
       (if Option.is_some parent then "#" else "")
       Reference.pp
       name
+      Expression.pp_type_param_list
+      type_params
       Expression.pp_expression_parameter_list
       parameters
       return_annotation

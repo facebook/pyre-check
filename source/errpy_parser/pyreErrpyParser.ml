@@ -628,6 +628,7 @@ and translate_statements
           generator = is_generator body;
           parent = Option.map parent ~f:Ast.Reference.create;
           nesting_define = None;
+          type_params = [];
         }
       in
       [Statement.Define { Define.signature; captures = []; unbound_names = []; body }]
@@ -847,6 +848,7 @@ and translate_statements
                 body = translate_statements class_def.body ~context:{ parent = Some name };
                 decorators = List.map ~f:translate_expression class_def.decorator_list;
                 top_level_unbound_names = [];
+                type_params = [];
               };
           ]
       | Errpyast.Match match_statement ->

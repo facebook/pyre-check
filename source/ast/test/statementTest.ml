@@ -26,6 +26,7 @@ let test_is_method _ =
           generator = false;
           parent = parent >>| Reference.create;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -51,6 +52,7 @@ let test_is_classmethod _ =
           generator = false;
           parent = Some !&"bar";
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -78,6 +80,7 @@ let test_is_class_property _ =
           generator = false;
           parent = Some !&"bar";
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -103,6 +106,7 @@ let test_decorator _ =
           generator = false;
           parent = None;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -143,6 +147,7 @@ let test_is_constructor _ =
             generator = false;
             parent = parent >>| Reference.create;
             nesting_define = None;
+            type_params = [];
           };
         captures = [];
         unbound_names = [];

@@ -3095,6 +3095,7 @@ let mock_signature =
     generator = false;
     parent = None;
     nesting_define = None;
+    type_params = [];
   }
 
 

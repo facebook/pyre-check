@@ -57,6 +57,7 @@ let test_attributes =
         body = [];
         decorators = [];
         top_level_unbound_names = [];
+        type_params = [];
       }
     in
     assert_equal
@@ -210,6 +211,7 @@ let test_class_attributes =
                 generator = false;
                 parent = None;
                 nesting_define = None;
+                type_params = [];
               }
             in
             let signatures = List.init ~f:(fun _ -> define) number_of_defines in

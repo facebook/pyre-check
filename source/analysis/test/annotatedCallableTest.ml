@@ -37,6 +37,7 @@ let test_return_annotation context =
           generator;
           parent = None;
           nesting_define = None;
+          type_params = [];
         }
       in
       Callable.return_annotation_without_applying_decorators ~signature ~parser

@@ -47,6 +47,7 @@ let create_define ~decorators ~parameters ~return_annotation =
     generator = false;
     parent = None;
     nesting_define = None;
+    type_params = [];
   }
 
 

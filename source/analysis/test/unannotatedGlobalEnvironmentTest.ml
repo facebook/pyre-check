@@ -1330,6 +1330,7 @@ let test_get_unannotated_global =
               generator = false;
               parent = None;
               nesting_define = None;
+              type_params = [];
             };
           location =
             {

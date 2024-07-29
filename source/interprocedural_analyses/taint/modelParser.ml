@@ -84,6 +84,7 @@ let create_dummy_signature ~decorators name =
     generator = false;
     parent = None;
     nesting_define = None;
+    type_params = [];
   }
 
 

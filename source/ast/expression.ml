@@ -1021,6 +1021,51 @@ end = struct
     | _ -> Expression.location_insensitive_compare left.value right.value
 end
 
+and TypeParam : sig
+  type type_var = {
+    name: Identifier.t;
+    bound: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type type_param =
+    | TypeVar of type_var
+    | ParamSpec of Identifier.t
+    | TypeVarTuple of Identifier.t
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = type_param Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type type_var = {
+    name: Identifier.t;
+    bound: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type type_param =
+    | TypeVar of type_var
+    | ParamSpec of Identifier.t
+    | TypeVarTuple of Identifier.t
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = type_param Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match Node.value left, Node.value right with
+    | ( TypeVar { name = left_name; bound = left_bound },
+        TypeVar { name = right_name; bound = right_bound } ) -> begin
+        match [%compare: Identifier.t] left_name right_name with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Option.compare Expression.location_insensitive_compare left_bound right_bound
+      end
+    | ParamSpec left_name, ParamSpec right_name -> [%compare: Identifier.t] left_name right_name
+    | TypeVarTuple left_name, TypeVarTuple right_name ->
+        [%compare: Identifier.t] left_name right_name
+    | _ -> -1
+end
+
 and Expression : sig
   type expression =
     | Await of t
@@ -1058,6 +1103,8 @@ and Expression : sig
   val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> unit
 
   val pp_expression_parameter_list : Format.formatter -> Parameter.t list -> unit
+
+  val pp_type_param_list : Format.formatter -> TypeParam.t list -> unit
 end = struct
   type expression =
     | Await of t
@@ -1167,6 +1214,20 @@ end = struct
       | { Node.value = expression; _ } -> Format.fprintf formatter "%a" pp_expression expression
 
 
+    and pp_type_param_t formatter type_param_t =
+      match type_param_t with
+      | { Node.value = type_param; _ } -> Format.fprintf formatter "%a" pp_type_param type_param
+
+
+    and pp_type_param formatter type_param =
+      match type_param with
+      | TypeParam.TypeVar { TypeParam.name; bound = None } -> Format.fprintf formatter "%s" name
+      | TypeParam.TypeVar { TypeParam.name; bound = Some bound } ->
+          Format.fprintf formatter "%s: %a" name pp_expression_t bound
+      | TypeParam.TypeVarTuple name -> Format.fprintf formatter "*%s" name
+      | TypeParam.ParamSpec name -> Format.fprintf formatter "**%s" name
+
+
     and pp_argument formatter { Call.Argument.name; value } =
       match name with
       | Some name -> Format.fprintf formatter "%s = %a" (Node.value name) pp_expression_t value
@@ -1209,6 +1270,25 @@ end = struct
             expression
             pp_expression_list
             expression_list
+
+
+    and pp_type_param_list formatter type_param_list =
+      let rec pp_type_param_list_helper formatter type_param_list =
+        match type_param_list with
+        | [] -> ()
+        | [type_param] -> Format.fprintf formatter "%a" pp_type_param_t type_param
+        | type_param :: type_param_list ->
+            Format.fprintf
+              formatter
+              "%a, %a"
+              pp_type_param_t
+              type_param
+              pp_type_param_list_helper
+              type_param_list
+      in
+      match type_param_list with
+      | [] -> Format.fprintf formatter ""
+      | _ -> Format.fprintf formatter "[%a]" pp_type_param_list_helper type_param_list
 
 
     and pp_generator formatter { Comprehension.Generator.target; iterator; conditions; async } =
@@ -1431,6 +1511,10 @@ end = struct
 
   let pp_expression_argument_list formatter expression_argument_list =
     Format.fprintf formatter "%a" PrettyPrinter.pp_argument_list expression_argument_list
+
+
+  let pp_type_param_list formatter type_param_list =
+    Format.fprintf formatter "%a" PrettyPrinter.pp_type_param_list type_param_list
 
 
   let pp_expression_parameter_list formatter expression_parameter_list =

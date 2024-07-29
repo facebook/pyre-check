@@ -830,6 +830,7 @@ let test_class_locations _ =
              decorators =
                [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ];
   assert_source_locations
@@ -859,6 +860,7 @@ let test_class_locations _ =
                             generator = false;
                             parent = Some !&"foo";
                             nesting_define = None;
+                            type_params = [];
                           };
                         captures = [];
                         unbound_names = [];
@@ -867,6 +869,7 @@ let test_class_locations _ =
                ];
              decorators = [];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ];
   assert_source_locations
@@ -901,6 +904,7 @@ let test_class_locations _ =
                ];
              decorators = [];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ];
   assert_source_locations
@@ -945,6 +949,7 @@ let test_class_locations _ =
                                        generator = false;
                                        parent = Some !&"foo";
                                        nesting_define = None;
+                                       type_params = [];
                                      };
                                    captures = [];
                                    unbound_names = [];
@@ -956,6 +961,7 @@ let test_class_locations _ =
                ];
              decorators = [];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ]
 
@@ -979,6 +985,7 @@ let test_define_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -1016,6 +1023,7 @@ let test_define_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -1036,6 +1044,7 @@ let test_define_locations _ =
                             generator = false;
                             parent = None;
                             nesting_define = None;
+                            type_params = [];
                           };
                         captures = [];
                         unbound_names = [];
@@ -1110,6 +1119,7 @@ let test_define_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -1156,6 +1166,7 @@ let test_define_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -2721,6 +2732,7 @@ let test_stub_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -2773,6 +2785,7 @@ let test_stub_locations _ =
                  generator = false;
                  parent = None;
                  nesting_define = None;
+                 type_params = [];
                };
              captures = [];
              unbound_names = [];
@@ -2821,6 +2834,7 @@ let test_stub_locations _ =
                ];
              decorators = [];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ];
   assert_source_locations
@@ -2843,6 +2857,7 @@ let test_stub_locations _ =
                ];
              decorators = [];
              top_level_unbound_names = [];
+             type_params = [];
            });
     ]
 

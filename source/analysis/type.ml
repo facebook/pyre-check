@@ -3995,6 +3995,7 @@ module TypedDictionary = struct
               generator = false;
               parent = Some (Reference.create class_name);
               nesting_define = None;
+              type_params = [];
             };
           captures = [];
           unbound_names = [];

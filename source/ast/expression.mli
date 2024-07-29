@@ -346,6 +346,24 @@ and WalrusOperator : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+and TypeParam : sig
+  type type_var = {
+    name: Identifier.t;
+    bound: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type type_param =
+    | TypeVar of type_var
+    | ParamSpec of Identifier.t
+    | TypeVarTuple of Identifier.t
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = type_param Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 and Expression : sig
   type expression =
     | Await of t
@@ -637,6 +655,8 @@ val pp_expression_list : Format.formatter -> t list -> unit
 val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> unit
 
 val pp_expression_parameter_list : Format.formatter -> Parameter.t list -> unit
+
+val pp_type_param_list : Format.formatter -> TypeParam.t list -> unit
 
 val inverse_operator : string -> string option
 

@@ -578,6 +578,7 @@ let test_define_local_bindings _ =
               generator = false;
               parent = None;
               nesting_define = None;
+              type_params = [];
             }
           in
           Some (ExpectBinding.create (Binding.Kind.DefineName signature) (location (3, 2) (4, 8)))

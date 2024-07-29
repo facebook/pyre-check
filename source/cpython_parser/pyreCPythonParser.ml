@@ -729,6 +729,7 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment
+      ~type_params
       ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with StatementContext.parent = None } body in
@@ -771,6 +772,7 @@ let statement =
             generator = is_generator body;
             parent = Option.map parent ~f:Ast.Reference.create;
             nesting_define = None;
+            type_params;
           }
         in
         [
@@ -789,7 +791,6 @@ let statement =
       ~type_params
       ~context
     =
-    ignore type_params (* TODO *);
     create_function_definition
       ~location
       ~async:false
@@ -799,6 +800,7 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment
+      ~type_params
       ~context
   in
   let async_function_def
@@ -812,7 +814,6 @@ let statement =
       ~type_params
       ~context
     =
-    ignore type_params (* TODO *);
     create_function_definition
       ~location
       ~async:true
@@ -822,10 +823,10 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment
+      ~type_params
       ~context
   in
   let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~type_params ~context =
-    ignore type_params (* TODO *);
     let base_arguments =
       List.append
         (List.map bases ~f:(fun arg -> convert_positional_argument arg, arg.Node.location))
@@ -848,6 +849,7 @@ let statement =
           body = build_statements ~context:{ context with StatementContext.parent = Some name } body;
           decorators = decorator_list;
           top_level_unbound_names = [];
+          type_params;
         }
       |> Node.create ~location;
     ]
@@ -888,7 +890,7 @@ let statement =
     List.map targets ~f:create_assign_for_target
   in
   let type_alias ~location ~name ~type_params ~value ~context =
-    ignore type_params (* TODO *);
+    ignore type_params (* TODO(yangdanny) support 695 syntax for type aliases *);
     assign ~location ~targets:[name] ~value ~type_comment:None ~context
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
@@ -1094,20 +1096,13 @@ let function_type ~argtypes ~returns =
 
 
 let type_param =
-  let raise_unimplemented location =
-    let {
-      Ast.Location.start = { Location.line; column };
-      stop = { Location.line = end_line; column = end_column };
-    }
-      =
-      location
-    in
-    raise (InternalError { Error.line; column; end_line; end_column; message = "Unimplemented" })
+  let open Ast.Expression in
+  let type_var ~location ~name ~bound =
+    TypeParam.TypeVar { TypeParam.name; bound } |> Node.create ~location
   in
-  let type_var ~location ~name:_ ~bound:_ = raise_unimplemented location in
-  let param_spec ~location ~name:_ = raise_unimplemented location in
-  let type_var_tuple ~location ~name:_ = raise_unimplemented location in
-  { PyreAst.TaglessFinal.TypeParam.type_var; param_spec; type_var_tuple }
+  let param_spec ~location ~name = TypeParam.ParamSpec name |> Node.create ~location in
+  let type_var_tuple ~location ~name = TypeParam.TypeVarTuple name |> Node.create ~location in
+  PyreAst.TaglessFinal.TypeParam.make ~type_var ~param_spec ~type_var_tuple ()
 
 
 let specification =

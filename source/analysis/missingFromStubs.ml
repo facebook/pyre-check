@@ -32,6 +32,7 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
     body;
     decorators = [];
     top_level_unbound_names = [];
+    type_params = [];
   }
   |> Node.create_with_default_location
 
@@ -107,6 +108,7 @@ let make_dunder_get ~parent ~host ~host_type ~return =
           generator = false;
           parent = Some parent;
           nesting_define = None;
+          type_params = [];
         };
       captures = [];
       unbound_names = [];
@@ -173,6 +175,7 @@ let generic_meta_body =
             generator = false;
             parent = Some (Reference.create "typing.GenericMeta");
             nesting_define = None;
+            type_params = [];
           };
         captures = [];
         unbound_names = [];
