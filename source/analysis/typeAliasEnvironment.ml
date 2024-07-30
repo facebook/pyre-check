@@ -414,7 +414,7 @@ module ReadOnly = struct
     | _ -> None
 
 
-  let rec get_variable environment ?dependency ?replace_unbound_parameters_with_any:_ name =
+  let get_variable environment ?dependency ?replace_unbound_parameters_with_any:_ name =
     let aliases ?replace_unbound_parameters_with_any name =
       get_type_alias environment ?dependency name ?replace_unbound_parameters_with_any
     in
@@ -423,7 +423,7 @@ module ReadOnly = struct
     | Some (RawAlias.VariableAlias t) ->
         let type_variables =
           Type.Variable.of_declaration
-            ~create_type:(Type.create ~aliases ~variables:(get_variable environment ?dependency))
+            ~create_type:(Type.create ~aliases ~variables:Type.resolved_empty_variables)
             t
         in
         Some type_variables

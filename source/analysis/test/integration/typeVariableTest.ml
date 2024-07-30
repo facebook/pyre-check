@@ -43,6 +43,33 @@ let test_check_bounded_variables =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import TypeVar, Union, List
+              T = TypeVar(
+                  "T",
+                  bound=Union[
+                      str,
+                      int,
+                      List["T"],
+                  ],
+              )
+              def f1(x: T) -> T: ...
+            |}
+           [
+             "Invalid type [31]: Expression `Variable[T (bound to \
+              typing.Union[typing.List[Variable[test.T (bound to typing.Union[typing.List[test.T], \
+              int, str])]], int, str])]` is not a valid type. Type variables cannot contain other \
+              type variables in their constraints.";
+             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
+             "Invalid type variable [34]: The type variable `Variable[T (bound to \
+              typing.Union[typing.List[test.T], int, str])]` isn't present in the function's \
+              parameters.";
+             "Invalid type variable [34]: The type variable `Variable[T (bound to \
+              typing.Union[typing.List[test.T], int, str])]` isn't present in the function's \
+              parameters.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from typing import TypeVar, Callable
               TFun = TypeVar("TFun", bound=Callable[[int], None])
               def foo(x: TFun) -> None:
