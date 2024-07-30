@@ -53,7 +53,7 @@ val create
 val load_stored_configuration : unit -> Configuration.Analysis.t
 
 val load
-  :  configuration:Configuration.Analysis.t ->
+  :  environment_controls:Analysis.EnvironmentControls.t ->
   scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
   unit ->

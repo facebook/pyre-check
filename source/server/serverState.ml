@@ -87,10 +87,9 @@ end)
 
 let load_stored_configuration = StoredConfiguration.load
 
-let load ~configuration ~scheduler ~build_system () =
+let load ~environment_controls ~scheduler ~build_system () =
   let overlaid_environment =
-    EnvironmentControls.create configuration
-    |> Analysis.ErrorsEnvironment.AssumeAstEnvironment.load
+    Analysis.ErrorsEnvironment.AssumeAstEnvironment.load environment_controls
     |> OverlaidEnvironment.create
   in
   create ~scheduler ~build_system ~overlaid_environment ()
