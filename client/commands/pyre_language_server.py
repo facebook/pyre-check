@@ -76,6 +76,7 @@ CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 class PyreDaemonTypeErrors:
     type_errors: Dict[Path, List[error.Error]]
     error_message: Optional[str]
+    durations: Dict[str, float]
 
     def type_errors_to_json(self) -> Dict[str, object]:
         return {
@@ -540,11 +541,15 @@ class PyreLanguageServer(PyreLanguageServerApi):
     ) -> PyreDaemonTypeErrors:
         type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
+        overlay_update_duration = type_errors_timer.stop_in_millisecond()
+        type_errors_timer.reset()
         result = await self.querier.get_type_errors(
             open_documents,
         )
         error_message: Optional[str] = None
         type_errors: Dict[Path, List[error.Error]] = {}
+        type_check_duration = type_errors_timer.stop_in_millisecond()
+        type_errors_timer.reset()
         if isinstance(result, DaemonQueryFailure):
             error_message = result.error_message
         else:
@@ -557,7 +562,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 )
 
         return PyreDaemonTypeErrors(
-            type_errors=type_errors, error_message=error_message
+            type_errors=type_errors,
+            error_message=error_message,
+            durations={
+                "overlay_update": overlay_update_duration,
+                "daemon_type_check": type_check_duration,
+                "type_error_publisher": type_errors_timer.stop_in_millisecond(),
+            },
         )
 
     async def handle_overlay_type_errors(
@@ -584,9 +595,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "duration_ms": type_errors_timer.stop_in_millisecond(),
+                "duration_ms": sum(daemon_type_errors.durations.values()),
                 "error_message": daemon_type_errors.error_message,
                 "type_errors": json.dumps(daemon_type_errors.type_errors_to_json()),
+                "type_check_durations": {
+                    "long_pole_type_check": type_errors_timer.stop_in_millisecond(),
+                    **daemon_type_errors.durations,
+                },
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
