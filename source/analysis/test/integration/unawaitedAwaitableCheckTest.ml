@@ -763,6 +763,17 @@ let test_forward =
                   pass
             |}
            ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+      (* TODO(T197284307): False negative due to not handling splats in RHS of multi-assign. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_awaitable_errors
+           {|
+              from typing import Awaitable
+              
+              async def main() -> None:
+                  w: tuple[Awaitable[int], str]
+                  x, y, z = *w, 5
+            |}
+           [];
     ]
 
 
