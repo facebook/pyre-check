@@ -35,6 +35,7 @@ from typing import (
     Optional,
     Protocol,
     Set,
+    Tuple,
     TypeVar,
     Union,
 )
@@ -42,7 +43,7 @@ from typing import (
 from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
 
-from .. import background_tasks, identifiers, json_rpc, log, timer
+from .. import background_tasks, error, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import (
@@ -69,6 +70,18 @@ from .source_code_context import SourceCodeContext
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreDaemonTypeErrors:
+    type_errors: Dict[Path, List[error.Error]]
+    error_message: Optional[str]
+
+    def type_errors_to_json(self) -> Dict[str, object]:
+        return {
+            str(path): [document_error.to_json() for document_error in errors]
+            for path, errors in self.type_errors.items()
+        }
 
 
 async def read_lsp_request(
@@ -522,6 +535,31 @@ class PyreLanguageServer(PyreLanguageServerApi):
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def _query_pyre_daemon_type_errors(
+        self, document_path: Path, open_documents: List[Path]
+    ) -> PyreDaemonTypeErrors:
+        type_errors_timer = timer.Timer()
+        await self.update_overlay_if_needed(document_path)
+        result = await self.querier.get_type_errors(
+            open_documents,
+        )
+        error_message: Optional[str] = None
+        type_errors: Dict[Path, List[error.Error]] = {}
+        if isinstance(result, DaemonQueryFailure):
+            error_message = result.error_message
+        else:
+            type_errors = result
+            for opened_document in self.server_state.opened_documents:
+                document_errors = result.get(opened_document, [])
+                await self.client_type_error_handler.show_overlay_type_errors(
+                    path=opened_document,
+                    type_errors=document_errors,
+                )
+
+        return PyreDaemonTypeErrors(
+            type_errors=type_errors, error_message=error_message
+        )
+
     async def handle_overlay_type_errors(
         self,
         document_path: Path,
@@ -532,26 +570,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
             return
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
-        await self.update_overlay_if_needed(document_path)
-        result = await self.querier.get_type_errors(
-            list(self.server_state.opened_documents.keys())
-        )
-        error_message = None
-        if isinstance(result, DaemonQueryFailure):
-            error_message = result.error_message
-            result = []
-        else:
-            for opened_document in self.server_state.opened_documents:
-                document_errors = result.get(opened_document, [])
-                await self.client_type_error_handler.show_overlay_type_errors(
-                    path=opened_document,
-                    type_errors=document_errors,
-                )
+        open_documents = list(self.server_state.opened_documents.keys())
 
-            result = {
-                str(path): [document_error.to_json() for document_error in errors]
-                for path, errors in result.items()
-            }
+        daemon_type_errors = await self._query_pyre_daemon_type_errors(
+            document_path, open_documents
+        )
 
         await self.write_telemetry(
             {
@@ -562,8 +585,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     self.server_state.opened_documents
                 ),
                 "duration_ms": type_errors_timer.stop_in_millisecond(),
-                "error_message": error_message,
-                "type_errors": json.dumps(result),
+                "error_message": daemon_type_errors.error_message,
+                "type_errors": json.dumps(daemon_type_errors.type_errors_to_json()),
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
