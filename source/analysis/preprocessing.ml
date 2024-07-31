@@ -339,6 +339,418 @@ module Qualify (Context : QualifyContext) = struct
           stars ^ renamed )
 
 
+  let qualify_reference ~scope:{ aliases; _ } reference =
+    match Reference.as_list reference with
+    | [] -> Reference.empty
+    | head :: tail -> (
+        match Map.find aliases head with
+        | Some { name; _ } -> Reference.combine name (Reference.create_from_list tail)
+        | _ -> reference)
+
+
+  let qualify_function_name
+      ~scope:({ aliases; is_in_function; is_class_toplevel; qualifier; _ } as scope)
+      name
+    =
+    if is_in_function then
+      match Reference.as_list name with
+      | [simple_name] ->
+          let scope, alias =
+            qualify_local_identifier_ignore_preexisting ~scope ~qualifier simple_name
+          in
+          scope, Reference.create alias
+      | _ -> scope, qualify_reference ~scope name
+    else
+      let scope =
+        if is_class_toplevel then
+          scope
+        else
+          let function_name = Reference.show name in
+          {
+            scope with
+            aliases =
+              Map.set
+                aliases
+                ~key:function_name
+                ~data:{ name = Reference.combine qualifier name; qualifier };
+          }
+      in
+      scope, qualify_reference ~scope name
+
+
+  let rec qualify_target ~scope ~qualifier target =
+    let rec renamed_scope scope target =
+      match target with
+      | { Node.value = Expression.Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Name (Name.Identifier name); _ } ->
+          let scope, _ = qualify_local_identifier ~scope ~qualifier name in
+          scope
+      | _ -> scope
+    in
+    let scope = renamed_scope scope target in
+    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
+
+
+  and qualify_comprehension_target ~scope target =
+    let rec renamed_scope scope target =
+      match target with
+      | { Node.value = Expression.Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Name (Name.Identifier name); _ } -> (
+          match prefix_identifier ~scope ~prefix:"target" name with
+          | Some (scope, _) -> scope
+          | None -> scope)
+      | _ -> scope
+    in
+    let scope = renamed_scope scope target in
+    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
+
+
+  and qualify_name ~qualify_strings ~location ~scope:({ aliases; _ } as scope) = function
+    | Name.Identifier identifier -> (
+        match Map.find aliases identifier with
+        | Some { name; _ } -> create_name_from_reference ~location name
+        | _ -> Name.Identifier identifier)
+    | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
+      ->
+        Name.Identifier attribute
+    | Name.Attribute ({ base; _ } as name) ->
+        Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
+
+
+  and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
+    let value =
+      let qualify_entry ~qualify_strings ~scope entry =
+        let open Dictionary.Entry in
+        match entry with
+        | KeyValue { key; value } ->
+            KeyValue
+              {
+                key = qualify_expression ~qualify_strings ~scope key;
+                value = qualify_expression ~qualify_strings ~scope value;
+              }
+        | Splat s -> Splat (qualify_expression ~qualify_strings ~scope s)
+      in
+      let qualify_generators ~qualify_strings ~scope generators =
+        let qualify_generator
+            (scope, reversed_generators)
+            ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
+          =
+          let renamed_scope, target = qualify_comprehension_target ~scope target in
+          ( renamed_scope,
+            {
+              generator with
+              Comprehension.Generator.target;
+              iterator = qualify_expression ~qualify_strings ~scope iterator;
+              conditions =
+                List.map conditions ~f:(qualify_expression ~qualify_strings ~scope:renamed_scope);
+            }
+            :: reversed_generators )
+        in
+        let scope, reversed_generators =
+          List.fold generators ~init:(scope, []) ~f:qualify_generator
+        in
+        scope, List.rev reversed_generators
+      in
+      match value with
+      | Expression.Await expression ->
+          Expression.Await (qualify_expression ~qualify_strings ~scope expression)
+      | BinaryOperator { BinaryOperator.left; operator; right } ->
+          BinaryOperator
+            {
+              BinaryOperator.left = qualify_expression ~qualify_strings ~scope left;
+              operator;
+              right = qualify_expression ~qualify_strings ~scope right;
+            }
+      | BooleanOperator { BooleanOperator.left; operator; right } ->
+          BooleanOperator
+            {
+              BooleanOperator.left = qualify_expression ~qualify_strings ~scope left;
+              operator;
+              right = qualify_expression ~qualify_strings ~scope right;
+            }
+      | Subscript { Subscript.base; index } ->
+          let qualified_base = qualify_expression ~qualify_strings ~scope base in
+          let qualified_index =
+            let qualify_strings =
+              if
+                name_is ~name:"typing_extensions.Literal" qualified_base
+                || name_is ~name:"typing.Literal" qualified_base
+              then
+                DoNotQualify
+              else
+                qualify_strings
+            in
+            qualify_expression ~qualify_strings ~scope index
+          in
+          Subscript { Subscript.base = qualified_base; index = qualified_index }
+      | Call { callee; arguments } ->
+          let callee = qualify_expression ~qualify_strings ~scope callee in
+          let arguments =
+            match arguments with
+            | [type_argument; value_argument]
+              when name_is ~name:"pyre_extensions.safe_cast" callee
+                   || name_is ~name:"typing.cast" callee
+                   || name_is ~name:"cast" callee
+                   || name_is ~name:"safe_cast" callee ->
+                [
+                  qualify_argument ~qualify_strings:Qualify ~scope type_argument;
+                  qualify_argument ~qualify_strings ~scope value_argument;
+                ]
+            | [value_argument; type_argument] when name_is ~name:"typing.assert_type" callee ->
+                [
+                  qualify_argument ~qualify_strings ~scope value_argument;
+                  qualify_argument ~qualify_strings:Qualify ~scope type_argument;
+                ]
+            | variable_name :: remaining_arguments when name_is ~name:"typing.TypeVar" callee ->
+                variable_name
+                :: List.map
+                     ~f:(qualify_argument ~qualify_strings:Qualify ~scope)
+                     remaining_arguments
+            | arguments ->
+                List.map ~f:(qualify_argument ~qualify_strings:DoNotQualify ~scope) arguments
+          in
+          Expression.Call { callee; arguments }
+      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
+          ComparisonOperator
+            {
+              ComparisonOperator.left = qualify_expression ~qualify_strings ~scope left;
+              operator;
+              right = qualify_expression ~qualify_strings ~scope right;
+            }
+      | Dictionary entries ->
+          Dictionary (List.map entries ~f:(qualify_entry ~qualify_strings ~scope))
+      | DictionaryComprehension { Comprehension.element = { key; value }; generators } ->
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
+          DictionaryComprehension
+            {
+              Comprehension.element =
+                {
+                  key = qualify_expression ~qualify_strings ~scope key;
+                  value = qualify_expression ~qualify_strings ~scope value;
+                };
+              generators;
+            }
+      | Generator { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
+          Generator
+            {
+              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
+              generators;
+            }
+      | Lambda { Lambda.parameters; body } ->
+          let scope, parameters = qualify_parameters ~scope parameters in
+          Lambda { Lambda.parameters; body = qualify_expression ~qualify_strings ~scope body }
+      | List elements -> List (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
+      | ListComprehension { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
+          ListComprehension
+            {
+              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
+              generators;
+            }
+      | Name name -> Name (qualify_name ~qualify_strings ~location ~scope name)
+      | Set elements -> Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
+      | SetComprehension { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
+          SetComprehension
+            {
+              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
+              generators;
+            }
+      | Slice { Slice.start; stop; step } ->
+          Slice
+            {
+              Slice.start = start >>| qualify_expression ~qualify_strings ~scope;
+              stop = stop >>| qualify_expression ~qualify_strings ~scope;
+              step = step >>| qualify_expression ~qualify_strings ~scope;
+            }
+      | Starred (Starred.Once expression) ->
+          Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
+      | Starred (Starred.Twice expression) ->
+          Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
+      | FormatString substrings ->
+          let qualify_substring = function
+            | Substring.Literal _ as substring -> substring
+            | Substring.Format { value; format_spec } ->
+                Substring.Format
+                  {
+                    value = qualify_expression ~qualify_strings ~scope value;
+                    format_spec =
+                      Option.map ~f:(qualify_expression ~qualify_strings ~scope) format_spec;
+                  }
+          in
+          FormatString (List.map substrings ~f:qualify_substring)
+      | Constant (Constant.String { StringLiteral.value; kind }) -> (
+          let error_on_qualification_failure =
+            match qualify_strings with
+            | Qualify -> true
+            | _ -> false
+          in
+          match qualify_strings with
+          | Qualify
+          | OptionallyQualify -> (
+              match
+                PyreMenhirParser.Parser.parse [value ^ "\n"] ~relative:Context.source_relative
+              with
+              | Ok [{ Node.value = Expression expression; _ }] ->
+                  qualify_expression ~qualify_strings ~scope expression
+                  |> Expression.show
+                  |> fun value ->
+                  Expression.Constant (Constant.String { StringLiteral.value; kind })
+              | Ok _
+              | Error _
+                when error_on_qualification_failure ->
+                  Log.debug
+                    "Invalid string annotation `%s` at %s:%a"
+                    value
+                    Context.source_relative
+                    Location.pp
+                    location;
+                  Constant (Constant.String { StringLiteral.value; kind })
+              | _ -> Constant (Constant.String { StringLiteral.value; kind }))
+          | DoNotQualify -> Constant (Constant.String { StringLiteral.value; kind }))
+      | Ternary { Ternary.target; test; alternative } ->
+          Ternary
+            {
+              Ternary.target = qualify_expression ~qualify_strings ~scope target;
+              test = qualify_expression ~qualify_strings ~scope test;
+              alternative = qualify_expression ~qualify_strings ~scope alternative;
+            }
+      | Tuple elements -> Tuple (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
+      | WalrusOperator { target; value } ->
+          WalrusOperator
+            {
+              target = qualify_expression ~qualify_strings ~scope target;
+              value = qualify_expression ~qualify_strings ~scope value;
+            }
+      | UnaryOperator { UnaryOperator.operator; operand } ->
+          UnaryOperator
+            { UnaryOperator.operator; operand = qualify_expression ~qualify_strings ~scope operand }
+      | Yield (Some expression) ->
+          Yield (Some (qualify_expression ~qualify_strings ~scope expression))
+      | Yield None -> Yield None
+      | YieldFrom expression -> YieldFrom (qualify_expression ~qualify_strings ~scope expression)
+      | Constant _ -> value
+    in
+    { expression with Node.value }
+
+
+  and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
+    let name =
+      let rename identifier =
+        let parameter_prefix = "$parameter$" in
+        if String.is_prefix identifier ~prefix:parameter_prefix then
+          identifier
+        else
+          parameter_prefix ^ identifier
+      in
+      name >>| Node.map ~f:rename
+    in
+    { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
+
+
+  and qualify_parameters ~scope parameters =
+    (* Rename parameters to prevent aliasing. *)
+    let parameters =
+      let qualify_annotation { Node.location; value = { Parameter.annotation; _ } as parameter } =
+        {
+          Node.location;
+          value =
+            {
+              parameter with
+              Parameter.annotation =
+                annotation >>| qualify_expression ~qualify_strings:Qualify ~scope;
+            };
+        }
+      in
+      List.map parameters ~f:qualify_annotation
+    in
+    let rename_parameter
+        (scope, reversed_parameters)
+        ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
+      =
+      match prefix_identifier ~scope ~prefix:"parameter" name with
+      | Some (scope, renamed) ->
+          ( scope,
+            {
+              parameter with
+              Node.value =
+                {
+                  Parameter.name = renamed;
+                  value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
+                  annotation;
+                };
+            }
+            :: reversed_parameters )
+      | None -> scope, parameter :: reversed_parameters
+    in
+    let scope, parameters =
+      List.fold parameters ~init:({ scope with locals = String.Set.empty }, []) ~f:rename_parameter
+    in
+    scope, List.rev parameters
+
+
+  let rec qualify_pattern ~scope { Node.value; location } =
+    let qualify_pattern = qualify_pattern ~scope in
+    let qualify_expression = qualify_expression ~qualify_strings:DoNotQualify ~scope in
+    let qualify_match_target name =
+      match
+        qualify_name
+          ~scope
+          ~qualify_strings:DoNotQualify
+          ~location:Location.any
+          (Name.Identifier name)
+      with
+      | Name.Identifier name -> name
+      | _ -> name
+    in
+    let value =
+      match value with
+      | Match.Pattern.MatchAs { pattern; name } ->
+          Match.Pattern.MatchAs
+            { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
+      | MatchClass
+          {
+            class_name = { Node.value = class_name; location };
+            patterns;
+            keyword_attributes;
+            keyword_patterns;
+          } ->
+          MatchClass
+            {
+              class_name =
+                Node.create
+                  ~location
+                  (qualify_name ~qualify_strings:DoNotQualify ~scope ~location class_name);
+              patterns = List.map patterns ~f:qualify_pattern;
+              keyword_attributes;
+              keyword_patterns = List.map keyword_patterns ~f:qualify_pattern;
+            }
+      | MatchMapping { keys; patterns; rest } ->
+          MatchMapping
+            {
+              keys = List.map keys ~f:qualify_expression;
+              patterns = List.map patterns ~f:qualify_pattern;
+              rest = rest >>| qualify_match_target;
+            }
+      | MatchOr patterns -> MatchOr (List.map patterns ~f:qualify_pattern)
+      | MatchSequence patterns -> MatchSequence (List.map patterns ~f:qualify_pattern)
+      | MatchSingleton constant -> (
+          let expression =
+            qualify_expression { Node.value = Expression.Constant constant; location }
+          in
+          match expression.value with
+          | Expression.Constant constant -> MatchSingleton constant
+          | _ -> MatchValue expression)
+      | MatchStar maybe_identifier -> MatchStar (maybe_identifier >>| qualify_match_target)
+      | MatchValue expression -> MatchValue (qualify_expression expression)
+      | _ -> value
+    in
+    { Node.value; location }
+
+
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name =
       { name = Reference.combine qualifier (Reference.create name); qualifier }
@@ -408,78 +820,7 @@ module Qualify (Context : QualifyContext) = struct
     List.fold statements ~init:scope ~f:explore_scope
 
 
-  and qualify_function_name
-      ~scope:({ aliases; is_in_function; is_class_toplevel; qualifier; _ } as scope)
-      name
-    =
-    if is_in_function then
-      match Reference.as_list name with
-      | [simple_name] ->
-          let scope, alias =
-            qualify_local_identifier_ignore_preexisting ~scope ~qualifier simple_name
-          in
-          scope, Reference.create alias
-      | _ -> scope, qualify_reference ~scope name
-    else
-      let scope =
-        if is_class_toplevel then
-          scope
-        else
-          let function_name = Reference.show name in
-          {
-            scope with
-            aliases =
-              Map.set
-                aliases
-                ~key:function_name
-                ~data:{ name = Reference.combine qualifier name; qualifier };
-          }
-      in
-      scope, qualify_reference ~scope name
-
-
-  and qualify_parameters ~scope parameters =
-    (* Rename parameters to prevent aliasing. *)
-    let parameters =
-      let qualify_annotation { Node.location; value = { Parameter.annotation; _ } as parameter } =
-        {
-          Node.location;
-          value =
-            {
-              parameter with
-              Parameter.annotation =
-                annotation >>| qualify_expression ~qualify_strings:Qualify ~scope;
-            };
-        }
-      in
-      List.map parameters ~f:qualify_annotation
-    in
-    let rename_parameter
-        (scope, reversed_parameters)
-        ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
-      =
-      match prefix_identifier ~scope ~prefix:"parameter" name with
-      | Some (scope, renamed) ->
-          ( scope,
-            {
-              parameter with
-              Node.value =
-                {
-                  Parameter.name = renamed;
-                  value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
-                  annotation;
-                };
-            }
-            :: reversed_parameters )
-      | None -> scope, parameter :: reversed_parameters
-    in
-    let scope, parameters =
-      List.fold parameters ~init:({ scope with locals = String.Set.empty }, []) ~f:rename_parameter
-    in
-    scope, List.rev parameters
-
-
-  and qualify_statements ~scope statements =
+  let rec qualify_statements ~scope statements =
     let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
       let qualify (scope, statements) statement =
@@ -941,347 +1282,6 @@ module Qualify (Context : QualifyContext) = struct
         guard = guard >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
         body;
       } )
-
-
-  and qualify_pattern ~scope { Node.value; location } =
-    let qualify_pattern = qualify_pattern ~scope in
-    let qualify_expression = qualify_expression ~qualify_strings:DoNotQualify ~scope in
-    let qualify_match_target name =
-      match
-        qualify_name
-          ~scope
-          ~qualify_strings:DoNotQualify
-          ~location:Location.any
-          (Name.Identifier name)
-      with
-      | Name.Identifier name -> name
-      | _ -> name
-    in
-    let value =
-      match value with
-      | Match.Pattern.MatchAs { pattern; name } ->
-          Match.Pattern.MatchAs
-            { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
-      | MatchClass
-          {
-            class_name = { Node.value = class_name; location };
-            patterns;
-            keyword_attributes;
-            keyword_patterns;
-          } ->
-          MatchClass
-            {
-              class_name =
-                Node.create
-                  ~location
-                  (qualify_name ~qualify_strings:DoNotQualify ~scope ~location class_name);
-              patterns = List.map patterns ~f:qualify_pattern;
-              keyword_attributes;
-              keyword_patterns = List.map keyword_patterns ~f:qualify_pattern;
-            }
-      | MatchMapping { keys; patterns; rest } ->
-          MatchMapping
-            {
-              keys = List.map keys ~f:qualify_expression;
-              patterns = List.map patterns ~f:qualify_pattern;
-              rest = rest >>| qualify_match_target;
-            }
-      | MatchOr patterns -> MatchOr (List.map patterns ~f:qualify_pattern)
-      | MatchSequence patterns -> MatchSequence (List.map patterns ~f:qualify_pattern)
-      | MatchSingleton constant -> (
-          let expression =
-            qualify_expression { Node.value = Expression.Constant constant; location }
-          in
-          match expression.value with
-          | Expression.Constant constant -> MatchSingleton constant
-          | _ -> MatchValue expression)
-      | MatchStar maybe_identifier -> MatchStar (maybe_identifier >>| qualify_match_target)
-      | MatchValue expression -> MatchValue (qualify_expression expression)
-      | _ -> value
-    in
-    { Node.value; location }
-
-
-  and qualify_target ~scope ~qualifier target =
-    let rec renamed_scope scope target =
-      match target with
-      | { Node.value = Expression.Tuple elements; _ } ->
-          List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Name (Name.Identifier name); _ } ->
-          let scope, _ = qualify_local_identifier ~scope ~qualifier name in
-          scope
-      | _ -> scope
-    in
-    let scope = renamed_scope scope target in
-    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
-
-
-  and qualify_comprehension_target ~scope target =
-    let rec renamed_scope scope target =
-      match target with
-      | { Node.value = Expression.Tuple elements; _ } ->
-          List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Name (Name.Identifier name); _ } -> (
-          match prefix_identifier ~scope ~prefix:"target" name with
-          | Some (scope, _) -> scope
-          | None -> scope)
-      | _ -> scope
-    in
-    let scope = renamed_scope scope target in
-    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
-
-
-  and qualify_reference ~scope:{ aliases; _ } reference =
-    match Reference.as_list reference with
-    | [] -> Reference.empty
-    | head :: tail -> (
-        match Map.find aliases head with
-        | Some { name; _ } -> Reference.combine name (Reference.create_from_list tail)
-        | _ -> reference)
-
-
-  and qualify_name ~qualify_strings ~location ~scope:({ aliases; _ } as scope) = function
-    | Name.Identifier identifier -> (
-        match Map.find aliases identifier with
-        | Some { name; _ } -> create_name_from_reference ~location name
-        | _ -> Name.Identifier identifier)
-    | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
-      ->
-        Name.Identifier attribute
-    | Name.Attribute ({ base; _ } as name) ->
-        Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
-
-
-  and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
-    let value =
-      let qualify_entry ~qualify_strings ~scope entry =
-        let open Dictionary.Entry in
-        match entry with
-        | KeyValue { key; value } ->
-            KeyValue
-              {
-                key = qualify_expression ~qualify_strings ~scope key;
-                value = qualify_expression ~qualify_strings ~scope value;
-              }
-        | Splat s -> Splat (qualify_expression ~qualify_strings ~scope s)
-      in
-      let qualify_generators ~qualify_strings ~scope generators =
-        let qualify_generator
-            (scope, reversed_generators)
-            ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
-          =
-          let renamed_scope, target = qualify_comprehension_target ~scope target in
-          ( renamed_scope,
-            {
-              generator with
-              Comprehension.Generator.target;
-              iterator = qualify_expression ~qualify_strings ~scope iterator;
-              conditions =
-                List.map conditions ~f:(qualify_expression ~qualify_strings ~scope:renamed_scope);
-            }
-            :: reversed_generators )
-        in
-        let scope, reversed_generators =
-          List.fold generators ~init:(scope, []) ~f:qualify_generator
-        in
-        scope, List.rev reversed_generators
-      in
-      match value with
-      | Expression.Await expression ->
-          Expression.Await (qualify_expression ~qualify_strings ~scope expression)
-      | BinaryOperator { BinaryOperator.left; operator; right } ->
-          BinaryOperator
-            {
-              BinaryOperator.left = qualify_expression ~qualify_strings ~scope left;
-              operator;
-              right = qualify_expression ~qualify_strings ~scope right;
-            }
-      | BooleanOperator { BooleanOperator.left; operator; right } ->
-          BooleanOperator
-            {
-              BooleanOperator.left = qualify_expression ~qualify_strings ~scope left;
-              operator;
-              right = qualify_expression ~qualify_strings ~scope right;
-            }
-      | Subscript { Subscript.base; index } ->
-          let qualified_base = qualify_expression ~qualify_strings ~scope base in
-          let qualified_index =
-            let qualify_strings =
-              if
-                name_is ~name:"typing_extensions.Literal" qualified_base
-                || name_is ~name:"typing.Literal" qualified_base
-              then
-                DoNotQualify
-              else
-                qualify_strings
-            in
-            qualify_expression ~qualify_strings ~scope index
-          in
-          Subscript { Subscript.base = qualified_base; index = qualified_index }
-      | Call { callee; arguments } ->
-          let callee = qualify_expression ~qualify_strings ~scope callee in
-          let arguments =
-            match arguments with
-            | [type_argument; value_argument]
-              when name_is ~name:"pyre_extensions.safe_cast" callee
-                   || name_is ~name:"typing.cast" callee
-                   || name_is ~name:"cast" callee
-                   || name_is ~name:"safe_cast" callee ->
-                [
-                  qualify_argument ~qualify_strings:Qualify ~scope type_argument;
-                  qualify_argument ~qualify_strings ~scope value_argument;
-                ]
-            | [value_argument; type_argument] when name_is ~name:"typing.assert_type" callee ->
-                [
-                  qualify_argument ~qualify_strings ~scope value_argument;
-                  qualify_argument ~qualify_strings:Qualify ~scope type_argument;
-                ]
-            | variable_name :: remaining_arguments when name_is ~name:"typing.TypeVar" callee ->
-                variable_name
-                :: List.map
-                     ~f:(qualify_argument ~qualify_strings:Qualify ~scope)
-                     remaining_arguments
-            | arguments ->
-                List.map ~f:(qualify_argument ~qualify_strings:DoNotQualify ~scope) arguments
-          in
-          Expression.Call { callee; arguments }
-      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
-          ComparisonOperator
-            {
-              ComparisonOperator.left = qualify_expression ~qualify_strings ~scope left;
-              operator;
-              right = qualify_expression ~qualify_strings ~scope right;
-            }
-      | Dictionary entries ->
-          Dictionary (List.map entries ~f:(qualify_entry ~qualify_strings ~scope))
-      | DictionaryComprehension { Comprehension.element = { key; value }; generators } ->
-          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
-          DictionaryComprehension
-            {
-              Comprehension.element =
-                {
-                  key = qualify_expression ~qualify_strings ~scope key;
-                  value = qualify_expression ~qualify_strings ~scope value;
-                };
-              generators;
-            }
-      | Generator { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
-          Generator
-            {
-              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
-              generators;
-            }
-      | Lambda { Lambda.parameters; body } ->
-          let scope, parameters = qualify_parameters ~scope parameters in
-          Lambda { Lambda.parameters; body = qualify_expression ~qualify_strings ~scope body }
-      | List elements -> List (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
-      | ListComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
-          ListComprehension
-            {
-              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
-              generators;
-            }
-      | Name name -> Name (qualify_name ~qualify_strings ~location ~scope name)
-      | Set elements -> Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
-      | SetComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
-          SetComprehension
-            {
-              Comprehension.element = qualify_expression ~qualify_strings ~scope element;
-              generators;
-            }
-      | Slice { Slice.start; stop; step } ->
-          Slice
-            {
-              Slice.start = start >>| qualify_expression ~qualify_strings ~scope;
-              stop = stop >>| qualify_expression ~qualify_strings ~scope;
-              step = step >>| qualify_expression ~qualify_strings ~scope;
-            }
-      | Starred (Starred.Once expression) ->
-          Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
-      | Starred (Starred.Twice expression) ->
-          Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
-      | FormatString substrings ->
-          let qualify_substring = function
-            | Substring.Literal _ as substring -> substring
-            | Substring.Format { value; format_spec } ->
-                Substring.Format
-                  {
-                    value = qualify_expression ~qualify_strings ~scope value;
-                    format_spec =
-                      Option.map ~f:(qualify_expression ~qualify_strings ~scope) format_spec;
-                  }
-          in
-          FormatString (List.map substrings ~f:qualify_substring)
-      | Constant (Constant.String { StringLiteral.value; kind }) -> (
-          let error_on_qualification_failure =
-            match qualify_strings with
-            | Qualify -> true
-            | _ -> false
-          in
-          match qualify_strings with
-          | Qualify
-          | OptionallyQualify -> (
-              match
-                PyreMenhirParser.Parser.parse [value ^ "\n"] ~relative:Context.source_relative
-              with
-              | Ok [{ Node.value = Expression expression; _ }] ->
-                  qualify_expression ~qualify_strings ~scope expression
-                  |> Expression.show
-                  |> fun value ->
-                  Expression.Constant (Constant.String { StringLiteral.value; kind })
-              | Ok _
-              | Error _
-                when error_on_qualification_failure ->
-                  Log.debug
-                    "Invalid string annotation `%s` at %s:%a"
-                    value
-                    Context.source_relative
-                    Location.pp
-                    location;
-                  Constant (Constant.String { StringLiteral.value; kind })
-              | _ -> Constant (Constant.String { StringLiteral.value; kind }))
-          | DoNotQualify -> Constant (Constant.String { StringLiteral.value; kind }))
-      | Ternary { Ternary.target; test; alternative } ->
-          Ternary
-            {
-              Ternary.target = qualify_expression ~qualify_strings ~scope target;
-              test = qualify_expression ~qualify_strings ~scope test;
-              alternative = qualify_expression ~qualify_strings ~scope alternative;
-            }
-      | Tuple elements -> Tuple (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
-      | WalrusOperator { target; value } ->
-          WalrusOperator
-            {
-              target = qualify_expression ~qualify_strings ~scope target;
-              value = qualify_expression ~qualify_strings ~scope value;
-            }
-      | UnaryOperator { UnaryOperator.operator; operand } ->
-          UnaryOperator
-            { UnaryOperator.operator; operand = qualify_expression ~qualify_strings ~scope operand }
-      | Yield (Some expression) ->
-          Yield (Some (qualify_expression ~qualify_strings ~scope expression))
-      | Yield None -> Yield None
-      | YieldFrom expression -> YieldFrom (qualify_expression ~qualify_strings ~scope expression)
-      | Constant _ -> value
-    in
-    { expression with Node.value }
-
-
-  and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
-    let name =
-      let rename identifier =
-        let parameter_prefix = "$parameter$" in
-        if String.is_prefix identifier ~prefix:parameter_prefix then
-          identifier
-        else
-          parameter_prefix ^ identifier
-      in
-      name >>| Node.map ~f:rename
-    in
-    { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
 end
 
 (* Qualification is a way to differentiate names between files/functions/etc. It currently renames the names making them unique.
