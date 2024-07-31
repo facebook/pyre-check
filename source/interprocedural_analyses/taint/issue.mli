@@ -66,12 +66,6 @@ end
    analysis, because one of the partial sinks was fulfilled. This map is created during the forward
    analysis of a callable using `TriggeredSinkForCall` and is passed to the backward analysis. *)
 module TriggeredSinkForBackward : sig
-  module CallSite : sig
-    type t [@@deriving hash, sexp, compare]
-
-    val create : Location.t -> t
-  end
-
   type t
 
   val create : unit -> t

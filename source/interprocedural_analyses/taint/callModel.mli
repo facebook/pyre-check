@@ -78,6 +78,7 @@ val sink_trees_of_argument
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   model:Model.t ->
+  call_site:CallSite.t ->
   location:Location.WithModule.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
@@ -90,6 +91,7 @@ val sink_trees_of_argument
 val source_tree_of_argument
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   model:Model.t ->
+  call_site:CallSite.t ->
   location:Location.WithModule.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
@@ -147,6 +149,7 @@ module StringFormatCall : sig
   val apply_call
     :  callee:Target.t ->
     pyre_in_context:PyrePysaApi.InContext.t ->
+    call_site:CallSite.t ->
     location:Location.WithModule.t ->
     BackwardState.Tree.t ->
     BackwardState.Tree.t

@@ -159,6 +159,22 @@ module ClassIntervals = struct
   let show = Format.asprintf "%a" pp
 end
 
+(* Represent a call site. *)
+module CallSite = struct
+  module T = struct
+    type t = Location.t [@@deriving hash, sexp, compare, equal, show]
+  end
+
+  include T
+
+  let create = Fn.id
+
+  let any = Location.any
+
+  module Hashable = Core.Hashable.Make (T)
+  module Map = Hashable.Table
+end
+
 (* Represents the link between frames. *)
 module CallInfo = struct
   let name = "call info"
@@ -175,6 +191,7 @@ module CallInfo = struct
     | Origin of {
         location: Location.WithModule.t;
         class_intervals: ClassIntervals.t;
+        call_site: CallSite.t;
       }
     (* Taint propagated from a call. *)
     | CallSite of {
@@ -183,29 +200,36 @@ module CallInfo = struct
         location: Location.WithModule.t;
         callees: Target.t list;
         class_intervals: ClassIntervals.t;
+        call_site: CallSite.t;
       }
   [@@deriving compare, equal]
 
   let declaration = Declaration { leaf_name_provided = false }
 
-  let origin ?(class_intervals = ClassIntervals.top) location = Origin { location; class_intervals }
+  let origin ?(class_intervals = ClassIntervals.top) ?(call_site = Location.any) location =
+    Origin { location; class_intervals; call_site }
+
 
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
     | Tito -> Format.fprintf formatter "Tito"
-    | Origin { location; class_intervals } ->
+    | Origin { location; class_intervals; call_site } ->
         Format.fprintf
           formatter
-          "Origin(location=%a, class_intervals=%a)"
+          "Origin(call_site=%a, location=%a, class_intervals=%a)"
+          CallSite.pp
+          call_site
           Location.WithModule.pp
           location
           ClassIntervals.pp
           class_intervals
-    | CallSite { location; callees; port; path; class_intervals } ->
+    | CallSite { location; callees; port; path; class_intervals; call_site } ->
         Format.fprintf
           formatter
-          "CallSite(callees=[%s], location=%a, port=%a, class_intervals=%a)"
+          "CallSite(callees=[%s], call_site=%a, location=%a, port=%a, class_intervals=%a)"
           (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
+          CallSite.pp
+          call_site
           Location.WithModule.pp
           location
           AccessPath.pp
@@ -229,12 +253,12 @@ module CallInfo = struct
   (* Only called when emitting models before we compute the json so we can dedup *)
   let expand_overrides ~override_graph ~is_valid_callee ~trace_kind trace =
     match trace with
-    | CallSite { location; callees; port; path; class_intervals } ->
+    | CallSite { location; callees; port; path; class_intervals; call_site } ->
         let callees =
           OverrideGraph.SharedMemory.ReadOnly.expand_override_targets override_graph callees
           |> List.filter ~f:(fun callee -> is_valid_callee ~trace_kind ~port ~path ~callee)
         in
-        CallSite { location; callees; port; path; class_intervals }
+        CallSite { location; callees; port; path; class_intervals; call_site }
     | _ -> trace
 
 
@@ -249,11 +273,11 @@ module CallInfo = struct
     match trace with
     | Declaration _ -> ["declaration", `Null]
     | Tito -> ["tito", `Null]
-    | Origin { location; class_intervals } ->
+    | Origin { location; class_intervals; call_site = _ } ->
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
         ("origin", `Assoc location_json) :: class_intervals_json_list
-    | CallSite { location; callees; port; path; class_intervals } ->
+    | CallSite { location; callees; port; path; class_intervals; call_site = _ } ->
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
@@ -566,6 +590,7 @@ module type TAINT_DOMAIN = sig
   (* Add trace info at call-site *)
   val apply_call
     :  pyre_in_context:PyrePysaApi.InContext.t ->
+    call_site:CallSite.t ->
     location:Location.WithModule.t ->
     callee:Target.t ->
     arguments:Ast.Expression.Call.Argument.t list ->
@@ -1203,6 +1228,7 @@ end = struct
 
   let apply_call
       ~pyre_in_context
+      ~call_site
       ~location
       ~callee
       ~arguments
@@ -1292,14 +1318,15 @@ end = struct
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
           let call_info =
-            CallInfo.CallSite { location; callees = [callee]; port; path; class_intervals }
+            CallInfo.CallSite
+              { location; callees = [callee]; port; path; class_intervals; call_site }
           in
           let local_taint =
             local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
           in
           call_info, local_taint
       | CallInfo.Declaration { leaf_name_provided } ->
-          let call_info = CallInfo.Origin { location; class_intervals } in
+          let call_info = CallInfo.Origin { location; class_intervals; call_site } in
           let new_leaf_names =
             if leaf_name_provided then
               Features.LeafNameSet.bottom
@@ -1322,9 +1349,9 @@ end = struct
   let for_override_model ~callable ~port ~path taint =
     let apply (call_info, local_taint) =
       (* Override models are temporary models used at the call site for base methods, which means we
-         will call `apply_call` on them, which will remove tito positions. Overrides models are not
-         exported to SAPP, thus tito positions are not necessary. Let's remove them to save
-         memory. *)
+         will call `apply_call` on them, which will remove tito positions and call sites. Overrides
+         models are not exported to SAPP, thus tito positions and call sites are not necessary.
+         Let's remove them to save memory. *)
       let local_taint =
         LocalTaintDomain.update
           LocalTaintDomain.Slots.TitoPosition
@@ -1333,12 +1360,22 @@ end = struct
       in
       match call_info with
       | CallInfo.Origin { class_intervals; _ } ->
-          let call_info = CallInfo.Origin { location = Location.WithModule.any; class_intervals } in
+          let call_info =
+            CallInfo.Origin
+              { location = Location.WithModule.any; class_intervals; call_site = CallSite.any }
+          in
           call_info, local_taint
-      | CallSite { port; path; location = _; callees; class_intervals } ->
+      | CallSite { port; path; location = _; callees; class_intervals; call_site = _ } ->
           let call_info =
             CallInfo.CallSite
-              { port; path; location = Location.WithModule.any; callees; class_intervals }
+              {
+                port;
+                path;
+                location = Location.WithModule.any;
+                callees;
+                class_intervals;
+                call_site = CallSite.any;
+              }
           in
           call_info, local_taint
       | Declaration { leaf_name_provided = true } -> call_info, local_taint
@@ -1439,6 +1476,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let apply_call
       ~pyre_in_context
+      ~call_site
       ~location
       ~callee
       ~arguments
@@ -1452,6 +1490,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ( path,
         Taint.apply_call
           ~pyre_in_context
+          ~call_site
           ~location
           ~callee
           ~arguments

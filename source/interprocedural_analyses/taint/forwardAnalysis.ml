@@ -260,6 +260,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
                 |> BackwardTaint.apply_call
                      ~pyre_in_context
+                     ~call_site:(CallSite.create location)
                      ~location:value_location_with_module
                      ~callee:call_target.CallGraph.CallTarget.target
                      ~arguments:[]
@@ -506,6 +507,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       CallEffects.add call_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
     in
+    let call_site = CallSite.create call_location in
     let analyze_argument_effect
         (call_effects, state)
         ( argument_taint,
@@ -525,6 +527,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
+          ~call_site
           ~location
           ~call_target
           ~arguments
@@ -596,6 +599,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             CallModel.source_tree_of_argument
               ~pyre_in_context
               ~model:taint_model
+              ~call_site
               ~location
               ~call_target
               ~arguments
@@ -630,6 +634,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.generations
         |> ForwardState.Tree.apply_call
              ~pyre_in_context
+             ~call_site
              ~location:
                (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
              ~callee:target
@@ -662,7 +667,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
       store_triggered_sinks_to_propagate_for_call
-        ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
+        ~call_site
         ~triggered_sinks:triggered_sinks_for_call
     in
 
@@ -2305,11 +2310,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         location = call_location;
       }
     =
+    let call_site = CallSite.create call_location in
     (* This is the backward model of the callee -- each actual argument has this taint tree. *)
     let string_combine_partial_sink_tree =
       CallModel.StringFormatCall.apply_call
         ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
+        ~call_site
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier call_location)
         FunctionContext.string_combine_partial_sink_tree
     in
@@ -2422,9 +2429,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardTaint.add_local_breadcrumbs breadcrumbs
       |>> ForwardTaint.join string_literal_taint
     in
-    store_triggered_sinks_to_propagate_for_call
-      ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
-      ~triggered_sinks;
+    store_triggered_sinks_to_propagate_for_call ~call_site ~triggered_sinks;
     (* Compute flows to literal string sinks if applicable. *)
     StringFormatCall.check_flow_implicit_string_literal_sinks
       ~pyre_in_context
@@ -2747,6 +2752,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_condition ~(pyre_in_context : PyrePysaApi.InContext.t) expression state =
     let { Node.location; _ } = expression in
+    let call_site = CallSite.create location in
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let taint, state =
       analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
@@ -2759,6 +2765,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
                |> BackwardTaint.apply_call
                     ~pyre_in_context
+                    ~call_site
                     ~location
                     ~callee:Interprocedural.Target.ArtificialTargets.condition
                     ~arguments:[]
@@ -2926,6 +2933,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ForwardState.read ~root ~path:[] parameter_sources
       |> ForwardState.Tree.apply_call
            ~pyre_in_context
+           ~call_site:(CallSite.create define_location)
            ~location
            ~callee:FunctionContext.callable
              (* Provide leaf callable names when sources originate from parameters. *)

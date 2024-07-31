@@ -72,6 +72,7 @@ let get_source { models; pyre_in_context; location; interval } =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] generations
     |> ForwardState.Tree.apply_call
          ~pyre_in_context
+         ~call_site:(location |> Location.strip_module |> CallSite.create)
          ~location
          ~callee:target
          ~arguments:[]
@@ -96,6 +97,7 @@ let get_sinks { models; pyre_in_context; location; interval } =
       BackwardState.read ~root:global_root ~path:[] sink_taint
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
+           ~call_site:(location |> Location.strip_module |> CallSite.create)
            ~location
            ~callee:target
            ~arguments:[]

@@ -339,6 +339,7 @@ let sink_trees_of_argument
     ~pyre_in_context
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
+    ~call_site
     ~location
     ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
     ~arguments
@@ -352,6 +353,7 @@ let sink_trees_of_argument
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
+           ~call_site
            ~location
            ~callee:target
            ~arguments
@@ -376,6 +378,7 @@ let sink_trees_of_argument
 let source_tree_of_argument
     ~pyre_in_context
     ~model:{ Model.forward; _ }
+    ~call_site
     ~location
     ~call_target:{ CallGraph.CallTarget.target; _ }
     ~arguments
@@ -387,6 +390,7 @@ let source_tree_of_argument
   ForwardState.read ~root ~path:[] forward.generations
   |> ForwardState.Tree.apply_call
        ~pyre_in_context
+       ~call_site
        ~location
        ~callee:target
        ~arguments
@@ -524,6 +528,7 @@ module StringFormatCall = struct
           ForwardTaint.singleton CallInfo.declaration kind Frame.initial
           |> ForwardTaint.apply_call
                ~pyre_in_context
+               ~call_site:(CallSite.create location)
                ~location:value_location
                ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
@@ -560,6 +565,7 @@ module StringFormatCall = struct
           BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
           |> BackwardTaint.apply_call
                ~pyre_in_context
+               ~call_site:(CallSite.create location)
                ~location:value_location
                ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
@@ -591,9 +597,10 @@ module StringFormatCall = struct
     CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
 
 
-  let apply_call ~callee ~pyre_in_context ~location =
+  let apply_call ~callee ~pyre_in_context ~call_site ~location =
     BackwardState.Tree.apply_call
       ~pyre_in_context
+      ~call_site
       ~location
       ~callee
       ~arguments:[]
@@ -654,6 +661,7 @@ let return_sink ~pyre_in_context ~location ~callee ~sink_model =
     BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
     |> BackwardState.Tree.apply_call
          ~pyre_in_context
+         ~call_site:(location |> Location.strip_module |> CallSite.create)
          ~location
          ~callee
            (* When the source and sink meet at the return statement, we want the leaf callable to be

@@ -579,6 +579,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> Option.value ~default:Interprocedural.ClassIntervalSet.top;
       }
     in
+    let call_site = CallSite.create call_location in
     let analyze_argument
         (arguments_taint, state)
         {
@@ -595,7 +596,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let add_triggered_sinks ({ SinkTreeWithHandle.sink_tree; _ } as sink_tree_with_handle) =
         let sink_tree =
           Issue.TriggeredSinkForBackward.add_triggered_sinks
-            ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create call_location)
+            ~call_site
             ~argument_location:argument.Node.location
             ~argument_sink:sink_tree
             FunctionContext.triggered_sinks
@@ -607,6 +608,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~transform_non_leaves
           ~model:taint_model
+          ~call_site
           ~location
           ~call_target
           ~arguments
@@ -2095,11 +2097,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~f:TraceLength.increase
         taint
     in
+    let call_site = CallSite.create location in
     (* This is the backward model of the callee -- each actual argument has this taint tree. *)
     let string_combine_partial_sink_tree =
       CallModel.StringFormatCall.apply_call
         ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
+        ~call_site
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
         FunctionContext.string_combine_partial_sink_tree
     in
@@ -2170,7 +2174,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let taint =
         Issue.TriggeredSinkForBackward.add_triggered_sinks
-          ~call_site:(Issue.TriggeredSinkForBackward.CallSite.create location)
+          ~call_site
           ~argument_location:expression_location
           ~argument_sink:taint
           FunctionContext.triggered_sinks

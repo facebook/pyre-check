@@ -459,18 +459,9 @@ end
    analysis, because one of the partial sinks was fulfilled. This map is created during the forward
    analysis of a callable using `TriggeredSinkForCall` and is passed to the backward analysis. *)
 module TriggeredSinkForBackward = struct
-  module CallSite = struct
-    type t = Location.t [@@deriving hash, sexp, compare]
+  type t = TriggeredSinkForCall.t CallSite.Map.t
 
-    let create = Fn.id
-  end
-
-  module Hashable = Core.Hashable.Make (CallSite)
-  module CallSiteMap = Hashable.Table
-
-  type t = TriggeredSinkForCall.t CallSiteMap.t
-
-  let create () = CallSiteMap.create ()
+  let create () = CallSite.Map.create ()
 
   let add ~call_site ~triggered_sinks_for_call map =
     let update_map = function
