@@ -79,6 +79,7 @@ RenameAvailability = _Availability
 SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
+PerTargetTypeErrorsAvailability = _Availability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -93,6 +94,9 @@ class LanguageServerFeatures:
     status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
+    per_target_type_errors: PerTargetTypeErrorsAvailability = (
+        PerTargetTypeErrorsAvailability.DISABLED
+    )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
     completion: CompletionAvailability = CompletionAvailability.DISABLED
