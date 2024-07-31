@@ -35,7 +35,6 @@ from typing import (
     Optional,
     Protocol,
     Set,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -83,6 +82,13 @@ class PyreDaemonTypeErrors:
             str(path): [document_error.to_json() for document_error in errors]
             for path, errors in self.type_errors.items()
         }
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreBuckTypeErrorMetadata:
+    number_files_buck_checked: int
+    preempted: Optional[bool]
+    durations: Dict[str, float]
 
 
 async def read_lsp_request(
@@ -536,10 +542,94 @@ class PyreLanguageServer(PyreLanguageServerApi):
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def _query_buck_type_errors(
+        self, open_documents: List[Path]
+    ) -> PyreBuckTypeErrorMetadata:
+        buck_query_timer = timer.Timer()
+        buck_query_durations: Dict[str, float] = {}
+        query_parameters = [
+            "buck2",
+            "bxl",
+            "prelude//python/sourcedb/typing_query.bxl:typing_query",
+            "--",
+            *[
+                argument
+                for file in open_documents
+                for argument in ["--source", str(file)]
+            ],
+        ]
+        type_checked_files_query = await asyncio.create_subprocess_exec(
+            *query_parameters,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_data, stderr_data = await type_checked_files_query.communicate()
+
+        if type_checked_files_query.returncode != 0:
+            stderr = stderr_data.decode("utf-8")
+            LOG.error(f"Typing Query ended in error:\n{stderr}")
+            return PyreBuckTypeErrorMetadata(
+                durations=buck_query_durations,
+                preempted=None,
+                number_files_buck_checked=0,
+            )
+
+        stdout_decoded = stdout_data.decode("utf-8")
+        query_data = json.loads(stdout_decoded)
+        type_checkable_files = [
+            file for file, is_type_checkable in query_data.items() if is_type_checkable
+        ]
+
+        buck_query_durations["typing_query_duration"] = (
+            buck_query_timer.stop_in_millisecond()
+        )
+        buck_query_timer.reset()
+
+        if len(type_checkable_files) == 0:
+            LOG.debug(f"No type checkable files in {stdout_decoded}")
+            return PyreBuckTypeErrorMetadata(
+                durations=buck_query_durations,
+                preempted=None,
+                number_files_buck_checked=0,
+            )
+
+        type_check_parameters = [
+            "buck2",
+            "bxl",
+            "--preemptible",
+            "ondifferentstate",
+            "prelude//python/typecheck/batch_files.bxl:run",
+            "--",
+            *[
+                argument
+                for file in type_checkable_files
+                for argument in ["--source", file]
+            ],
+        ]
+        type_check = await asyncio.create_subprocess_exec(
+            *type_check_parameters,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_data, stderr_data = await type_check.communicate()
+        LOG.debug(
+            f"Buck type check results:\n{stdout_data.decode('utf-8')}\n{stderr_data.decode('utf-8')}"
+        )
+
+        was_preempted = type_check.returncode == 5
+
+        buck_query_durations["buck_type_check"] = buck_query_timer.stop_in_millisecond()
+        return PyreBuckTypeErrorMetadata(
+            durations=buck_query_durations,
+            preempted=was_preempted,
+            number_files_buck_checked=len(type_checkable_files),
+        )
+
     async def _query_pyre_daemon_type_errors(
         self, document_path: Path, open_documents: List[Path]
     ) -> PyreDaemonTypeErrors:
         type_errors_timer = timer.Timer()
+        # TODO(connernilsen): we should get rid of this
         await self.update_overlay_if_needed(document_path)
         overlay_update_duration = type_errors_timer.stop_in_millisecond()
         type_errors_timer.reset()
@@ -583,9 +673,20 @@ class PyreLanguageServer(PyreLanguageServerApi):
         type_errors_timer = timer.Timer()
         open_documents = list(self.server_state.opened_documents.keys())
 
-        daemon_type_errors = await self._query_pyre_daemon_type_errors(
-            document_path, open_documents
-        )
+        if self.get_language_server_features().per_target_type_errors.is_enabled():
+            daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
+                self._query_pyre_daemon_type_errors(document_path, open_documents),
+                self._query_buck_type_errors(open_documents),
+            )
+        else:
+            daemon_type_errors = await self._query_pyre_daemon_type_errors(
+                document_path, open_documents
+            )
+            pyre_buck_metadata = PyreBuckTypeErrorMetadata(
+                durations={},
+                number_files_buck_checked=0,
+                preempted=None,
+            )
 
         await self.write_telemetry(
             {
@@ -598,9 +699,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "duration_ms": sum(daemon_type_errors.durations.values()),
                 "error_message": daemon_type_errors.error_message,
                 "type_errors": json.dumps(daemon_type_errors.type_errors_to_json()),
-                "type_check_durations": {
-                    "long_pole_type_check": type_errors_timer.stop_in_millisecond(),
-                    **daemon_type_errors.durations,
+                "buck_type_check_metadata": {
+                    "type_check_durations": {
+                        "long_pole_type_check": type_errors_timer.stop_in_millisecond(),
+                        **daemon_type_errors.durations,
+                        **pyre_buck_metadata.durations,
+                    },
+                    "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
+                    "preempted": pyre_buck_metadata.preempted,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
