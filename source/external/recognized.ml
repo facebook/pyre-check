@@ -21,6 +21,7 @@ let property_decorators =
       "__property__";
       "property";
       "builtins.property";
+      "_magic_enum_attr";
     ]
 
 

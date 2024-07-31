@@ -32,6 +32,58 @@ let test_enumeration_methods =
       @@ assert_strict_type_errors
            {|
               from typing import reveal_type
+              from enum import IntEnum
+
+              class Color(IntEnum):
+                RED = 1
+                GREEN = 2
+                BLUE = 3
+
+              reveal_type(Color.RED._value_)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.Color.RED._value_` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
+              from enum import IntEnum
+
+              class Color(IntEnum):
+                RED = 1
+                GREEN = 2
+                BLUE = 3
+
+              reveal_type(Color.RED.value)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.Color.RED.value` is `int` (final)."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+            from enum import Enum
+
+            class UnloadModelEvent(Enum):
+                UNLOAD_MODEL_SCHEDULED = 0
+                UNLOADING = 1
+
+            class LoadModelEvent(Enum):
+                LOAD_SCHEDULED = 0
+                LOADING = 1
+
+
+            def fn(e: Enum) -> str:
+                return e.name
+
+            fn(UnloadModelEvent.UNLOADING)
+            fn(LoadModelEvent.LOADING.name)
+            |}
+           [
+             "Incompatible parameter type [6]: In call `fn`, for 1st positional argument, expected \
+              `Enum` but got `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
               from enum import EnumMeta
 
               class CustomEnumType(EnumMeta):
@@ -269,8 +321,7 @@ let test_functional_syntax =
              "Revealed type [-1]: Revealed type for `x` is `Color`.";
              "Revealed type [-1]: Revealed type for `y` is `Color` (inferred: \
               `typing_extensions.Literal[Color.RED]`).";
-             "Revealed type [-1]: Revealed type for `x.value` is `unknown`.";
-             "Undefined attribute [16]: `Color` has no attribute `value`.";
+             "Revealed type [-1]: Revealed type for `x.value` is `unknown` (final).";
            ];
     ]
 

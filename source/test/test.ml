@@ -1722,14 +1722,23 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from abc import ABCMeta as ABCMeta
         from typing import Type, Mapping
+        _magic_enum_attr = property
         _T = typing.TypeVar('_T')
         class EnumMeta(ABCMeta):
           def __members__(self: Type[_T]) -> Mapping[str, _T]: ...
           def __iter__(self: typing.Type[_T]) -> typing.Iterator[_T]: ...
         class Enum(metaclass=EnumMeta):
           def __new__(cls: typing.Type[_T], value: object) -> _T: ...
+          _value_: Any
+          @_magic_enum_attr
+          def value(self) -> Any: ...
+          _name_: str
+          @_magic_enum_attr
+          def name(self) -> str: ...
         class IntEnum(int, Enum):
-          value: int = ...
+          _value_: int
+          @_magic_enum_attr
+          def value(self) -> int: ...
         if sys.version_info >= (3, 6):
           _auto_null: typing.Any
           class auto(IntFlag):
