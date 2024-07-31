@@ -2593,10 +2593,38 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let forward ~statement_key:_ _ ~statement:_ = failwith "Don't call me"
 end
 
+module SinkPartition = struct
+  type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
+
+  let read_and_partition_sinks ~root ~extract_sink sink_taint : t =
+    sink_taint
+    |> BackwardState.read ~root ~path:[]
+    |> BackwardState.Tree.partition BackwardTaint.kind By ~f:extract_sink
+
+
+  let merge_partitions : t -> BackwardState.Tree.t =
+    Map.Poly.fold ~init:BackwardState.Tree.empty ~f:(fun ~key:_ ~data:taint sofar ->
+        BackwardState.Tree.join taint sofar)
+end
+
+let get_normalized_parameters { Statement.Define.signature = { parameters; _ }; captures; _ } =
+  let normalized_parameters =
+    parameters
+    |> AccessPath.normalize_parameters
+    |> List.map ~f:(fun { AccessPath.NormalizedParameter.root; qualified_name; original } ->
+           root, qualified_name, original.Node.value.Parameter.annotation)
+  in
+  let captures =
+    List.map captures ~f:(fun capture ->
+        AccessPath.Root.CapturedVariable { name = capture.name }, capture.name, None)
+  in
+  List.append normalized_parameters captures
+
+
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and
    sink_taint. *)
 let extract_tito_and_sink_models
-    define
+    ~normalized_parameters
     ~pyre_api
     ~is_constructor
     ~taint_configuration:
@@ -2644,8 +2672,10 @@ let extract_tito_and_sink_models
   in
   let split_and_simplify model (parameter, qualified_name, annotation) =
     let partition =
-      BackwardState.read ~root:(AccessPath.Root.Variable qualified_name) ~path:[] entry_taint
-      |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Sinks.discard_transforms
+      SinkPartition.read_and_partition_sinks
+        ~root:(AccessPath.Root.Variable qualified_name)
+        ~extract_sink:Sinks.discard_transforms
+        entry_taint
     in
     let taint_in_taint_out =
       let breadcrumbs_to_attach, via_features_to_attach =
@@ -2694,8 +2724,7 @@ let extract_tito_and_sink_models
                    true
                | _ -> false)
         |> discard_trivial_tito
-        |> Map.Poly.fold ~init:BackwardState.Tree.empty ~f:(fun ~key:_ ~data:taint sofar ->
-               BackwardState.Tree.join taint sofar)
+        |> SinkPartition.merge_partitions
         |> simplify
              ~shape_breadcrumbs:(Features.model_tito_shaping_set ())
              ~limit_breadcrumbs:(Features.model_tito_broadening_set ())
@@ -2771,19 +2800,64 @@ let extract_tito_and_sink_models
         sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
       }
   in
-  let { Statement.Define.signature = { parameters; _ }; captures; _ } = define in
-  let normalized_parameters =
-    parameters
-    |> AccessPath.normalize_parameters
-    |> List.map ~f:(fun { AccessPath.NormalizedParameter.root; qualified_name; original } ->
-           root, qualified_name, original.Node.value.Parameter.annotation)
+  List.fold normalized_parameters ~f:split_and_simplify ~init:Model.Backward.empty
+
+
+let remove_unmatched_partial_sinks
+    ~normalized_parameters
+    ({ Model.Backward.sink_taint; _ } as model)
+  =
+  let collect_call_info = BackwardState.Tree.fold BackwardTaint.call_info ~init:[] ~f:List.cons in
+  (* A partial sink tree is matched if for one of its partial sink, there exists another parameter
+     who has a partial sink tree where one of its partial sink comes from the same call site. *)
+  let has_matching_partial_sink ~other_partial_sinks partial_sink_tree =
+    let call_infos = collect_call_info partial_sink_tree in
+    List.exists other_partial_sinks ~f:(fun other_partial_sink_tree ->
+        other_partial_sink_tree
+        |> collect_call_info
+        |> List.exists ~f:(fun other_call_info ->
+               List.exists call_infos ~f:(CallInfo.at_same_call_site other_call_info)))
   in
-  let captures =
-    List.map captures ~f:(fun capture ->
-        AccessPath.Root.CapturedVariable { name = capture.name }, capture.name, None)
+  let remove_unmatched_partial_sinks ~index ~parameter_with_sink_partitions =
+    List.filter ~f:(fun partial_sink_tree ->
+        List.existsi
+          parameter_with_sink_partitions
+          ~f:(fun other_index (_, other_partial_sinks, _) ->
+            if Int.equal index other_index then
+              (* A matched partial sink must be from a different parameter. *)
+              false
+            else
+              has_matching_partial_sink ~other_partial_sinks partial_sink_tree))
   in
-  List.append normalized_parameters captures
-  |> List.fold ~f:split_and_simplify ~init:Model.Backward.empty
+  let parameter_with_sink_partitions =
+    List.map normalized_parameters ~f:(fun (parameter, _, _) ->
+        let partial_sinks, other_sinks =
+          sink_taint
+          |> SinkPartition.read_and_partition_sinks ~root:parameter ~extract_sink:Fn.id
+          |> Map.Poly.partitioni_tf ~f:(fun ~key ~data:_ ->
+                 match key with
+                 | Sinks.PartialSink _ -> true
+                 | _ -> false)
+        in
+        parameter, Map.Poly.data partial_sinks, Map.Poly.data other_sinks)
+  in
+  let merge_trees =
+    Algorithms.fold_balanced ~init:BackwardState.Tree.empty ~f:BackwardState.Tree.join
+  in
+  let sink_taint =
+    List.foldi
+      parameter_with_sink_partitions
+      ~init:BackwardState.empty
+      ~f:(fun index so_far (parameter, partial_sinks, other_sinks) ->
+        let sink_tree =
+          partial_sinks
+          |> remove_unmatched_partial_sinks ~index ~parameter_with_sink_partitions
+          |> merge_trees
+          |> BackwardState.Tree.join (merge_trees other_sinks)
+        in
+        BackwardState.assign ~root:parameter ~path:[] sink_tree so_far)
+  in
+  { model with sink_taint }
 
 
 let run
@@ -2877,18 +2951,19 @@ let run
   let apply_broadening =
     not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
   in
+  let normalized_parameters = get_normalized_parameters define.value in
   let extract_model State.{ taint; _ } =
-    let model =
-      TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
-          extract_tito_and_sink_models
-            ~pyre_api
-            ~is_constructor:State.is_constructor
-            ~taint_configuration:FunctionContext.taint_configuration
-            ~existing_backward:existing_model.Model.backward
-            ~apply_broadening
-            define.value
-            taint)
-    in
+    TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
+        extract_tito_and_sink_models
+          ~normalized_parameters
+          ~pyre_api
+          ~is_constructor:State.is_constructor
+          ~taint_configuration:FunctionContext.taint_configuration
+          ~existing_backward:existing_model.Model.backward
+          ~apply_broadening
+          taint)
+  in
+  let log_model model =
     let () = State.log "Backward Model:@,%a" Model.Backward.pp model in
     model
   in
@@ -2901,4 +2976,8 @@ let run
     ~timer
     ();
 
-  entry_state >>| extract_model |> Option.value ~default:Model.Backward.empty
+  entry_state
+  >>| extract_model
+  >>| remove_unmatched_partial_sinks ~normalized_parameters
+  >>| log_model
+  |> Option.value ~default:Model.Backward.empty

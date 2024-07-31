@@ -188,14 +188,14 @@ def issue_with_wrapper_node_get_send_triggered_context():
 
 
 def wrapper_node_send(id, vc):
-    # TODO(T196830603): Expect no partial sink, because we need two partial sinks on different
+    # Expect no partial sink, because we need two partial sinks on different
     # parameters to file an issue
     id = 0
     Node.get(id).send(vc)
 
 
 def wrapper_combined_node_get_send(combined):
-    # TODO(T196830603): Expect no partial sink, because we need two partial sinks on different
+    # Expect no partial sink, because we need two partial sinks on different
     # parameters to file an issue
     if 1 == 1:
         id = combined
@@ -205,7 +205,7 @@ def wrapper_combined_node_get_send(combined):
 
 
 def wrapper_mismatched_partial_sinks(id, vc):
-    # TODO(T196830603): Expect no partial sink, because the two partial sinks are from different
+    # Expect no partial sink, because the two partial sinks are from different
     # call sites.
     Node.get(id).send(0)
     Node.get(0).send(vc)

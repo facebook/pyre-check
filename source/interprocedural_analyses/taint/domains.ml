@@ -204,6 +204,21 @@ module CallInfo = struct
       }
   [@@deriving compare, equal]
 
+  let at_same_call_site left right =
+    match left, right with
+    | Declaration _, Declaration _
+    | Tito, Tito ->
+        true
+    | Origin { call_site = left_call_site; _ }, Origin { call_site = right_call_site; _ }
+    | CallSite { call_site = left_call_site; _ }, CallSite { call_site = right_call_site; _ } ->
+        CallSite.equal left_call_site right_call_site
+    | Declaration _, _
+    | Tito, _
+    | Origin _, _
+    | CallSite _, _ ->
+        false
+
+
   let declaration = Declaration { leaf_name_provided = false }
 
   let origin ?(class_intervals = ClassIntervals.top) ?(call_site = Location.any) location =

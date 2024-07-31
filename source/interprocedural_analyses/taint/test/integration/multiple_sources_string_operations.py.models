@@ -1164,14 +1164,6 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
-              {
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
@@ -1315,18 +1307,6 @@
           {
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
-              {
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
@@ -1369,18 +1349,6 @@
         "taint": [
           {
             "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
               {
                 "extra_traces": [
                   {
@@ -1470,14 +1438,6 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
-              {
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
@@ -1519,14 +1479,6 @@
         "taint": [
           {
             "kinds": [
-              {
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
               {
                 "extra_traces": [
                   {
