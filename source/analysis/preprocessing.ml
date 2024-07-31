@@ -821,7 +821,6 @@ module Qualify (Context : QualifyContext) = struct
 
 
   let rec qualify_statements ~scope statements =
-    let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
       let qualify (scope, statements) statement =
         let scope, statement = qualify_statement ~scope statement in
@@ -992,7 +991,10 @@ module Qualify (Context : QualifyContext) = struct
           }
         in
         let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
-        let _, body = qualify_statements ~scope:inner_scope body in
+        let _, body =
+          let scope = explore_scope ~scope:inner_scope body in
+          qualify_statements ~scope body
+        in
         let signature =
           {
             define.signature with
@@ -1307,7 +1309,11 @@ let qualify
       is_class_toplevel = false;
     }
   in
-  { source with Source.statements = Qualify.qualify_statements ~scope statements |> snd }
+  let statements =
+    let scope = Qualify.explore_scope ~scope statements in
+    Qualify.qualify_statements ~scope statements |> snd
+  in
+  { source with Source.statements }
 
 
 let replace_version_specific_code ~major_version ~minor_version ~micro_version source =
