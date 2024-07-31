@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module defines the entrypoint for the backend portion of running `pyre check`. The `pyre
+   check` command's fontend shells out to the backend to run the check, which runs in an environment
+   with no dependency tracking. At the end we dump errors to stdout and exit, passing control back
+   to the frontend which will handle displaying the errors for end users.
+
+   Note that running `pyre` is actually using `pyre incremental` under the hood, which does not
+   depend on this logic but rather on `serverCommand.ml`. *)
 
 open Core
 
