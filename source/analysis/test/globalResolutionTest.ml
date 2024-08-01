@@ -265,20 +265,16 @@ let test_constructors =
                 int)], test.Foo]"
               ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]"));
       (* Generic classes. *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_constructor
-           {|
-      _K = typing.TypeVar('_K')
-      _V = typing.TypeVar('_V')
-      class Foo(typing.Generic[_K, _V]):
-        def __init__(self) -> None: pass
-    |}
-           "Foo"
-           (Some
-              "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, \
-               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')])], \
-               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]], \
-               test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]");
+      (* TODO T197463208: add the following test after creating a function like assert_constructor
+         but which uses declaration parsing intead of parse annotation. Right now as expected, those
+         type vars will be parsed to nothing: Ex test.Foo[]. So this test is not meaningful.
+
+         labeled_test_case __FUNCTION__ __LINE__ @@ assert_constructor {| _K = typing.TypeVar('_K')
+         _V = typing.TypeVar('_V') class Foo(typing.Generic[_K, _V]): def __init__(self) -> None:
+         pass |} "Foo" (Some "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, \
+         test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')])], \
+         test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]], \
+         test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]"); *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constructor
            {|

@@ -133,38 +133,6 @@ let test_create _ =
   assert_create "typing.Set[typing.Any]" (Type.set Type.Any);
   assert_create "typing.Dict[str, typing.Any]" (Type.dictionary ~key:Type.string ~value:Type.Any);
 
-  (* Check variables. *)
-  assert_create "typing.TypeVar('_T')" (Type.variable "_T");
-  assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable ~variance:Covariant "_T");
-  assert_create "typing.TypeVar('_T', covariant=False)" (Type.variable "_T");
-  assert_create
-    "typing.TypeVar('_T', contravariant=True)"
-    (Type.variable ~variance:Contravariant "_T");
-  assert_create "typing.TypeVar('_T', contravariant=False)" (Type.variable "_T");
-  assert_create
-    "typing.TypeVar('_T', int)"
-    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
-  assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
-  assert_create
-    "typing.TypeVar('_T', bound=int)"
-    (Type.variable ~constraints:(Type.Variable.Bound Type.integer) "_T");
-  assert_create
-    "typing.TypeVar('_T', bound='C')"
-    (Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "C")) "_T");
-  assert_create
-    "typing.TypeVar('_T', 'C', X)"
-    (Type.variable
-       ~constraints:(Type.Variable.Explicit [Type.Primitive "C"; Type.Primitive "X"])
-       "_T");
-  assert_create
-    "typing.TypeVar('_T', int, name=float)"
-    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
-  assert_create
-    "typing.TypeVar('_CallableT', bound='typing.Callable')"
-    (Type.variable
-       ~constraints:(Type.Variable.Bound (Type.Primitive "typing.Callable"))
-       "_CallableT");
-
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
   assert_create "'foo.bar'" (Type.Primitive "foo.bar");
@@ -2673,7 +2641,27 @@ let test_collect_all _ =
   ()
 
 
+(* location insensitive compare for type variables with bounds *)
+(* TODO T197463208: improve the comparator function *)
+let declaration_equality (d1 : 'd) (d2 : 'd) =
+  match d1, d2 with
+  | Some d1, Some d2 ->
+      String.equal
+        ([%show: Type.Variable.Declaration.t] d1)
+        ([%show: Type.Variable.Declaration.t] d2)
+  | _ -> false
+
+
 let test_parse_type_variable_declarations _ =
+  let assert_parses_declaration_with_bounds expression expected =
+    assert_equal
+      ?cmp:(Some declaration_equality)
+      (Some expected)
+      (Type.Variable.Declaration.parse
+         (parse_single_expression expression)
+         ~target:(Reference.create "target"))
+  in
+
   let assert_parses_declaration expression expected =
     assert_equal
       (Some expected)
@@ -2701,7 +2689,85 @@ let test_parse_type_variable_declarations _ =
   assert_parses_declaration
     "pyre_extensions.TypeVarTuple('Ts')"
     (Type.Variable.Declaration.DTypeVarTuple { name = "target" });
+
+  assert_parses_declaration
+    "typing.TypeVar('_T')"
+    (DTypeVar
+       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variable.Invariant });
+
+  assert_parses_declaration
+    "typing.TypeVar('_T', covariant=True)"
+    (DTypeVar
+       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variable.Covariant });
+
+  assert_parses_declaration
+    "typing.TypeVar('_T', covariant=False)"
+    (DTypeVar
+       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variable.Invariant });
+
+  assert_parses_declaration
+    "typing.TypeVar('_T', contravariant=True)"
+    (DTypeVar
+       {
+         name = "target";
+         constraints = Unconstrained;
+         variance = Type.Record.Variable.Contravariant;
+       });
+
+  assert_parses_declaration
+    "typing.TypeVar('_T', name=int)"
+    (DTypeVar
+       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variable.Invariant });
+  assert_parses_declaration_with_bounds
+    "typing.TypeVar('_T', int)"
+    (DTypeVar
+       {
+         name = "target";
+         constraints = Type.Record.Variable.Explicit [Type.expression Type.integer];
+         variance = Type.Record.Variable.Invariant;
+       });
+
+  assert_parses_declaration_with_bounds
+    "typing.TypeVar('_T', bound='C')"
+    (DTypeVar
+       {
+         name = "target";
+         constraints = Type.Record.Variable.Bound (Type.expression (Type.Primitive "\"C\""));
+         variance = Type.Record.Variable.Invariant;
+       });
+
+  assert_parses_declaration_with_bounds
+    "typing.TypeVar('_T', 'C', X)"
+    (DTypeVar
+       {
+         name = "target";
+         constraints =
+           Type.Record.Variable.Explicit
+             [Type.expression (Type.Primitive "\"C\""); Type.expression (Type.Primitive "X")];
+         variance = Type.Record.Variable.Invariant;
+       });
+
+  assert_parses_declaration_with_bounds
+    "typing.TypeVar('_T', int, name=float)"
+    (DTypeVar
+       {
+         name = "target";
+         constraints = Type.Record.Variable.Explicit [Type.expression Type.integer];
+         variance = Type.Record.Variable.Invariant;
+       });
+
+  assert_parses_declaration_with_bounds
+    "typing.TypeVar('_CallableT', bound='typing.Callable')"
+    (DTypeVar
+       {
+         name = "target";
+         constraints =
+           Type.Record.Variable.Bound (Type.expression (Type.Primitive "\"typing.Callable\""));
+         variance = Type.Record.Variable.Invariant;
+       });
+
   assert_declaration_does_not_parse "typing.TypeVarTuple('Ts', covariant=True)";
+
   ()
 
 

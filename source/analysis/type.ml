@@ -3029,17 +3029,7 @@ module Variable = struct
 
     let parse expression ~target =
       match expression with
-      | {
-       Node.value =
-         Expression.Call
-           {
-             callee;
-             arguments =
-               { Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }
-               :: arguments;
-           };
-       _;
-      }
+      | { Node.value = Expression.Call { callee; arguments = _arg :: arguments }; _ }
         when name_is ~name:"typing.TypeVar" callee ->
           let constraints =
             let explicits =
@@ -4476,62 +4466,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
 
   let result =
     match expression with
-    | Call
-        {
-          callee;
-          arguments =
-            {
-              Call.Argument.value =
-                { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
-              _;
-            }
-            :: arguments;
-        }
-      when name_is ~name:"typing.TypeVar" callee ->
-        let constraints =
-          let explicits =
-            let explicit = function
-              | { Call.Argument.name = None; value } -> Some (create_logic value)
-              | _ -> None
-            in
-            List.filter_map ~f:explicit arguments
-          in
-          let bound =
-            let bound = function
-              | { Call.Argument.value; name = Some { Node.value = bound; _ } }
-                when String.equal (Identifier.sanitized bound) "bound" ->
-                  Some (create_logic value)
-              | _ -> None
-            in
-            List.find_map ~f:bound arguments
-          in
-          if not (List.is_empty explicits) then
-            Record.Variable.Explicit explicits
-          else if Option.is_some bound then
-            Bound (Option.value_exn bound)
-          else
-            Unconstrained
-        in
-        let variance =
-          let variance_definition = function
-            | {
-                Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = Constant Constant.True; _ };
-              }
-              when String.equal (Identifier.sanitized name) "covariant" ->
-                Some Record.Variable.Covariant
-            | {
-                Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = Constant Constant.True; _ };
-              }
-              when String.equal (Identifier.sanitized name) "contravariant" ->
-                Some Contravariant
-            | _ -> None
-          in
-          List.find_map arguments ~f:variance_definition
-          |> Option.value ~default:Record.Variable.Invariant
-        in
-        Constructors.variable value ~constraints ~variance
     | Call
         {
           callee;
