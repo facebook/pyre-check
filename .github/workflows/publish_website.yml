@@ -23,7 +23,7 @@ jobs:
       run: echo "The time was ${{ env.OUTPUT_TIME }} (UTC)"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
-      uses: JamesIves/github-pages-deploy-action@5c6e9e9f3672ce8fd37b9856193d2a537941e66c # releases/v4
+      uses: JamesIves/github-pages-deploy-action@94f3c658273cf92fb48ef99e5fbc02bd2dc642b2 # v4.6.3
       with:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
