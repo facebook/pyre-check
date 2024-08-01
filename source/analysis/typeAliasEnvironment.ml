@@ -295,26 +295,19 @@ module OutgoingDataComputation = struct
 
 
   let parse_annotation_without_validating_type_parameters
-      (Queries.{ get_type_alias; get_variable; _ } as queries)
+      (Queries.{ get_type_alias; _ } as queries)
       ?modify_aliases
-      ?modify_variables
+      ~variables
       ?(allow_untracked = false)
       expression
     =
     let modify_aliases =
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
-    let modify_variables =
-      Option.value modify_variables ~default:(fun ?replace_unbound_parameters_with_any:_ name ->
-          name)
-    in
     let parsed =
       let expression = Type.preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
-      in
-      let variables ?replace_unbound_parameters_with_any name =
-        get_variable name >>| modify_variables ?replace_unbound_parameters_with_any
       in
       Type.create ~variables ~aliases expression
     in

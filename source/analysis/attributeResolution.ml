@@ -59,8 +59,7 @@ module Queries = struct
     class_exists: string -> bool;
     parse_annotation_without_validating_type_parameters:
       ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
-      ?modify_variables:
-        (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
+      variables:(string -> Type.Variable.t option) ->
       ?allow_untracked:bool ->
       Ast.Expression.t ->
       Type.t;
@@ -77,6 +76,7 @@ module Queries = struct
     is_typed_dictionary: Type.Primitive.t -> bool;
     has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
     least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
+    get_variable: ?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option;
   }
 
   let class_summary_for_outer_type { get_class_summary; _ } annotation =
@@ -2463,7 +2463,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~assumptions
         ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
         expression =
-      let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
+      let { Queries.parse_annotation_without_validating_type_parameters; get_variable; _ } =
+        queries
+      in
       let modify_aliases ?replace_unbound_parameters_with_any = function
         | alias ->
             self#check_invalid_type_parameters
@@ -2498,10 +2500,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | ValidatePrimitivesAndTypeParameters ->
             false
       in
+      let variables ?replace_unbound_parameters_with_any name =
+        get_variable name >>| modify_variables ?replace_unbound_parameters_with_any
+      in
       let annotation =
         parse_annotation_without_validating_type_parameters
           ~modify_aliases
-          ~modify_variables
+          ~variables
           ~allow_untracked
           expression
       in
@@ -4757,6 +4762,9 @@ let create_queries ~class_metadata_environment ~dependency =
         ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
           ?dependency
           class_metadata_environment;
+      get_variable =
+        alias_environment class_metadata_environment
+        |> TypeAliasEnvironment.ReadOnly.get_variable ?dependency;
     }
 
 

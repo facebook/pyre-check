@@ -68,8 +68,7 @@ val get_variable
 val parse_annotation_without_validating_type_parameters
   :  t ->
   ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
-  ?modify_variables:
-    (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
+  variables:(string -> Type.Variable.t option) ->
   ?allow_untracked:bool ->
   Expression.t ->
   Type.t

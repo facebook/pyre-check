@@ -30,11 +30,11 @@ module IncomingDataComputation = struct
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
       parse_annotation_without_validating_type_parameters:
         ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
-        ?modify_variables:
-          (?replace_unbound_parameters_with_any:bool -> Type.Variable.t -> Type.Variable.t) ->
+        variables:(string -> Type.Variable.t option) ->
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;
+      get_variable: ?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option;
     }
   end
 
@@ -79,7 +79,13 @@ module IncomingDataComputation = struct
 
   let get_parents
       Queries.
-        { class_exists; get_class_summary; parse_annotation_without_validating_type_parameters; _ }
+        {
+          class_exists;
+          get_class_summary;
+          parse_annotation_without_validating_type_parameters;
+          get_variable;
+          _;
+        }
       name
     =
     (* Split `base_expression` into `(name, params)` where `name` is the name of the class and
@@ -92,7 +98,10 @@ module IncomingDataComputation = struct
       | Expression.Subscript _
       | Name _ -> (
           let supertype, parameters =
-            parse_annotation_without_validating_type_parameters ~allow_untracked:true value
+            parse_annotation_without_validating_type_parameters
+              ~allow_untracked:true
+              value
+              ~variables:(get_variable ?replace_unbound_parameters_with_any:(Some true))
             |> Type.split
           in
           match supertype with
@@ -182,7 +191,11 @@ module IncomingDataComputation = struct
         let generic_base =
           let open Option in
           let parsed_bases =
-            List.map base_classes ~f:parse_annotation_without_validating_type_parameters
+            List.map
+              base_classes
+              ~f:
+                (parse_annotation_without_validating_type_parameters
+                   ~variables:(get_variable ?replace_unbound_parameters_with_any:(Some true)))
           in
           compute_generic_base parsed_bases
           >>= fun base ->
@@ -256,6 +269,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
             TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               alias_environment
               ?dependency;
+          get_variable = alias_environment |> TypeAliasEnvironment.ReadOnly.get_variable ?dependency;
         }
     in
     IncomingDataComputation.get_parents queries key
