@@ -5,7 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This command is the backend entrypoint to the Pyre (classic) daemon (aka backend server). The
+   frontent shells out to this command whenever a user runs `pyre start` or `pyre restart`; it also
+   *may* be launched if a user runs `pyre incremental` (or just `pyre`) and there is not a daemon
+   already running.
+
+   The daemon relies on a Pyre environment that can handle incremental updates, and is able to ask
+   for incremental type check results as well as other requests to power `pyre query` and the
+   "classic" Pyre language server. It listens to requests and allows "subscriptions" to get updated
+   type errors on a socket, and it knows to trigger incremental updates whenever watchman tells it
+   about file changes.
+
+   Note that the `pyre code-navigation` command, which is an alternative lanugage server to `pyre
+   persistent`, uses a different backend setup that does not rely on this code but rather on the
+   entrypoint in`codeNavigationCommand.ml`. *)
 
 module CamlUnix = Unix
 open Core
