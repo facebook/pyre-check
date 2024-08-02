@@ -25,6 +25,24 @@ let test_type_variable_scoping =
              "Mutually recursive type variables [36]: Solving type variables for call `f1` led to \
               infinite recursion.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            def func[T](a: T, b: T) -> T:
+                ...
+            reveal_type(func)
+            x: int = ...
+            reveal_type(func(x))
+
+            |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `T` is used but not defined in the current scope.";
+             "Revealed type [-1]: Revealed type for `test.func` is \
+              `typing.Callable(func)[[Named(a, unknown), Named(b, unknown)], unknown]`.";
+             "Revealed type [-1]: Revealed type for `test.func(x)` is `unknown`.";
+             "Missing argument [20]: Call `func` expects argument `b`.";
+           ];
     ]
 
 
