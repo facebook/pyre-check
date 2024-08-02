@@ -77,6 +77,70 @@ let test_ignore_readonly =
               `str.capitalize` may modify its object. Cannot call it on readonly expression `s` of \
               type `pyre_extensions.ReadOnly[str]`.";
            ];
+      (* Verify the behavior of overload selection, when ordering is correct *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+
+              from typing import overload, Self
+              from pyre_extensions import ReadOnly
+
+              class Bar:
+                  @overload
+                  def method_rw_ro(self) -> Self:
+                      ...
+
+                  @overload
+                  def method_rw_ro(self: ReadOnly[Self]) -> ReadOnly[Self]:
+                      ...
+
+
+              def f(rw: Bar, ro: ReadOnly[Bar]) -> None:
+                reveal_type(rw.method_rw_ro())
+                reveal_type(ro.method_rw_ro())
+            |}
+           [
+             "Missing overload implementation [42]: Overloaded function `Bar.method_rw_ro` must \
+              have an implementation.";
+             "Revealed type [-1]: Revealed type for `rw.method_rw_ro()` is `Bar`.";
+             "Revealed type [-1]: Revealed type for `ro.method_rw_ro()` is \
+              `pyre_extensions.ReadOnly[Bar]`.";
+           ];
+      (* Verify the behavior of overload selection, when ordering is incorrect *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+
+              from typing import overload, Self
+              from pyre_extensions import ReadOnly
+
+              class Bar:
+                  @overload
+                  def method_ro_rw(self: ReadOnly[Self]) -> ReadOnly[Self]:
+                      ...
+
+                  @overload
+                  def method_ro_rw(self) -> Self:
+                      ...
+
+
+              def f(rw: Bar, ro: ReadOnly[Bar]) -> None:
+                reveal_type(rw.method_ro_rw())
+                reveal_type(ro.method_ro_rw())
+            |}
+           [
+             "Missing overload implementation [42]: Overloaded function `Bar.method_ro_rw` must \
+              have an implementation.";
+             "Incompatible overload [43]: The overloaded function `Bar.method_ro_rw` on line 12 \
+              will never be matched. The signature `(self: \
+              pyre_extensions.ReadOnly[Variable[test._Self_test_Bar__ (bound to test.Bar)]]) -> \
+              pyre_extensions.ReadOnly[Variable[test._Self_test_Bar__ (bound to test.Bar)]]` is \
+              the same or broader.";
+             "Revealed type [-1]: Revealed type for `rw.method_ro_rw()` is \
+              `pyre_extensions.ReadOnly[Bar]`.";
+             "Revealed type [-1]: Revealed type for `ro.method_ro_rw()` is \
+              `pyre_extensions.ReadOnly[Bar]`.";
+           ];
     ]
 
 
