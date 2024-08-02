@@ -17,8 +17,6 @@ from . import (  # noqa F401
     analyze,
     check,
     code_navigation,
-    coverage,
-    expression_level_coverage,
     incremental,
     infer,
     info,

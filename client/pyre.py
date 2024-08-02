@@ -1513,59 +1513,6 @@ def statistics(
 
 
 @pyre.command()
-@click.argument(
-    "paths_deprecated",
-    type=str,
-    nargs=-1,
-)
-@click.option(
-    "--working-directory",
-    metavar="DIR",
-    default=os.curdir,
-    show_default="current directory",
-    type=str,
-    help="In the output, make paths relative to directory specified.",
-)
-@click.option(
-    "--path",
-    "paths",
-    metavar="PATH",
-    type=str,
-    multiple=True,
-)
-@click.option(
-    "--print-summary",
-    is_flag=True,
-    default=False,
-    help="Pretty print human-readable per-line type coverage summary for project.",
-)
-@click.pass_context
-def coverage(
-    context: click.Context,
-    paths_deprecated: Iterable[str],
-    working_directory: str,
-    paths: Iterable[str],
-    print_summary: bool,
-) -> int:
-    """
-    Collect line-level type coverage.
-    """
-    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration(command_argument, Path("."))
-    paths = list(paths)
-    paths_deprecated = list(paths_deprecated)
-    paths = paths if len(paths) > 0 else paths_deprecated
-    return commands.coverage.run(
-        configuration,
-        command_arguments.CoverageArguments(
-            working_directory=working_directory,
-            paths=paths,
-            print_summary=print_summary,
-        ),
-    )
-
-
-@pyre.command()
 @click.option(
     "--flavor",
     type=click.Choice(identifiers.PyreFlavor.server_flavor_choices()),
