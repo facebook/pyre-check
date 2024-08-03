@@ -93,6 +93,12 @@ class PyreBuckTypeErrorMetadata:
     durations: Dict[str, float]
 
 
+@dataclasses.dataclass(frozen=True)
+class PythonAutoTargetsMetadata:
+    duration: Optional[float]
+    error_message: Optional[str]
+
+
 @functools.lru_cache(maxsize=1)
 def get_buck_root() -> str:
     buck_root_query_parameters = ["buck2", "root", "--kind", "project"]
@@ -788,6 +794,49 @@ class PyreLanguageServer(PyreLanguageServerApi):
             await self.handle_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key
             )
+
+    async def _run_python_auto_targets(
+        self,
+        changed_file: Path,
+    ) -> PythonAutoTargetsMetadata:
+        try:
+            buck2_root = get_buck_root()
+        except subprocess.CalledProcessError as error:
+            LOG.error(f"Error occurred while querying buck root: {str(error)}")
+            return PythonAutoTargetsMetadata(
+                duration=None,
+                error_message=f"Error occurred while querying buck root: {str(error)}",
+            )
+
+        pyautotargets_timer = timer.Timer()
+
+        pyautodeps_parameters = [
+            f"{buck2_root}/xplat/tools/pyautotargets",
+            "--verbose",
+            "--buck-root",
+            buck2_root,
+            "--isolation-dir=.pyautotargets",
+            str(changed_file),
+        ]
+        pyautodeps_run = await asyncio.create_subprocess_exec(
+            *pyautodeps_parameters,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=buck2_root,
+        )
+        stdout_data, stderr_data = await pyautodeps_run.communicate()
+
+        if pyautodeps_run.returncode != 0:
+            stderr = stderr_data.decode("utf-8")
+            LOG.error(f"Pyautodeps run failed:\n{stderr}")
+            return PythonAutoTargetsMetadata(duration=None, error_message=stderr)
+
+        stdout = stdout_data.decode("utf-8")
+        LOG.debug(f"Pyautodeps result:\n{stdout}")
+        return PythonAutoTargetsMetadata(
+            duration=pyautotargets_timer.stop_in_millisecond(),
+            error_message=None,
+        )
 
     async def process_did_save_request(
         self,
