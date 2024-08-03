@@ -80,6 +80,7 @@ SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
 PerTargetTypeErrorsAvailability = _Availability
+PythonAutoTargetsAvailability = _Availability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -105,6 +106,9 @@ class LanguageServerFeatures:
     symbol: SymbolSearchAvailability = SymbolSearchAvailability.DISABLED
     inlay_hint: InlayHintAvailability = InlayHintAvailability.DISABLED
     formatting: FormattingAvailability = FormattingAvailability.DISABLED
+    python_auto_targets: PythonAutoTargetsAvailability = (
+        PythonAutoTargetsAvailability.DISABLED
+    )
 
     def capabilities(self) -> Dict[str, bool]:
         return {
