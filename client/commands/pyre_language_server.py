@@ -71,6 +71,9 @@ from .source_code_context import SourceCodeContext
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
+PYAUTOTARGETS_ENABLED_SUFFIXES: Set[str] = {
+    ".py",
+}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -866,6 +869,15 @@ class PyreLanguageServer(PyreLanguageServerApi):
             pyre_code_updated=False,
         )
 
+        if (
+            self.get_language_server_features().python_auto_targets.is_enabled()
+            and document_path.suffix in PYAUTOTARGETS_ENABLED_SUFFIXES
+        ):
+            auto_targets_metadata = await self._run_python_auto_targets(document_path)
+        else:
+            auto_targets_metadata = PythonAutoTargetsMetadata(
+                duration=None, error_message=None
+            )
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -877,6 +889,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 # We don't do any blocking work on didSave, but analytics are easier if
                 # we avoid needlessly introducing NULL values.
                 "duration_ms": 0,
+                "python_auto_targets_metadata": {
+                    "duration": auto_targets_metadata.duration,
+                    "error_message": auto_targets_metadata.error_message,
+                },
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
