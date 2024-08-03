@@ -19,9 +19,11 @@ import abc
 import asyncio
 
 import dataclasses
+import functools
 import json
 import logging
 import random
+import subprocess
 import traceback
 from collections import defaultdict
 from pathlib import Path
@@ -89,6 +91,18 @@ class PyreBuckTypeErrorMetadata:
     number_files_buck_checked: int
     preempted: Optional[bool]
     durations: Dict[str, float]
+
+
+@functools.lru_cache(maxsize=1)
+def get_buck_root() -> str:
+    buck_root_query_parameters = ["buck2", "root", "--kind", "project"]
+    buck2_root_query = subprocess.run(
+        buck_root_query_parameters,
+        capture_output=True,
+        check=True,
+    )
+
+    return buck2_root_query.stdout.decode("utf-8").strip()
 
 
 async def read_lsp_request(
