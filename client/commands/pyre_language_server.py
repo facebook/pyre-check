@@ -546,7 +546,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
             await self.handle_overlay_type_errors(
-                document_path=document_path, activity_key=activity_key
+                document_path=document_path,
+                new_file_loaded=True,
+                activity_key=activity_key,
             )
 
     async def process_close_request(
@@ -687,6 +689,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
     async def handle_overlay_type_errors(
         self,
         document_path: Path,
+        new_file_loaded: bool,
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         client_register_event = self.server_state.client_register_event
@@ -730,6 +733,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     },
                     "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
                     "preempted": pyre_buck_metadata.preempted,
+                    "new_file_loaded": new_file_loaded,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
@@ -795,7 +799,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             != identifiers.PyreFlavor.CODE_NAVIGATION
         ):
             await self.handle_overlay_type_errors(
-                document_path=document_path, activity_key=activity_key
+                document_path=document_path,
+                new_file_loaded=False,
+                activity_key=activity_key,
             )
 
     async def _run_python_auto_targets(
@@ -905,7 +911,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
             await self.handle_overlay_type_errors(
-                document_path=document_path, activity_key=activity_key
+                document_path=document_path,
+                new_file_loaded=False,
+                activity_key=activity_key,
             )
 
     async def process_type_coverage_request(
