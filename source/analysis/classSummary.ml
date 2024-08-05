@@ -966,6 +966,26 @@ let is_final definition =
   has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
 
 
+let has_possible_enum_members { class_attributes = { explicitly_assigned_attributes; _ }; _ } =
+  not
+    (Identifier.SerializableMap.is_empty
+       (Identifier.SerializableMap.filter
+          (fun _ { Node.value = { Attribute.kind; name }; _ } ->
+            (* Ignore dunder/sunder names, and only take simple attributes with no annotation & a
+               single explicitly assigned value.
+               https://typing.readthedocs.io/en/latest/spec/enums.html#defining-members *)
+            if String.is_prefix ~prefix:"_" name then
+              false
+            else
+              match kind with
+              | Simple
+                  { Attribute.values = [{ Attribute.origin = Explicit; _ }]; annotation = None; _ }
+                ->
+                  true
+              | _ -> false)
+          explicitly_assigned_attributes))
+
+
 let is_abstract { bases = { base_classes; metaclass; _ }; _ } =
   let open Expression in
   let is_abstract_base_class { Node.value; _ } =

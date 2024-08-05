@@ -58,8 +58,20 @@ module IncomingDataComputation = struct
         | Result.Error _ -> None
       in
       let successors = successors class_name in
+      (* This check doesn't consider metaclass=EnumMeta, since the metaclass has not been resolved
+         to a type yet. *)
+      let is_enum =
+        List.exists
+          ~f:([%compare.equal: Type.Primitive.t] "enum.Enum")
+          (Option.value successors ~default:[])
+      in
       let is_final =
-        definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
+        definition
+        |> fun { Node.value = definition; _ } ->
+        (* Enums with defined members are implicitly final
+           https://typing.readthedocs.io/en/latest/spec/enums.html#enum-behaviors *)
+        ClassSummary.is_final definition
+        || (ClassSummary.has_possible_enum_members definition && is_enum)
       in
       let is_test =
         List.exists

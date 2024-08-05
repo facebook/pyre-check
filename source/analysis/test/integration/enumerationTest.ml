@@ -8,6 +8,50 @@
 open OUnit2
 open IntegrationTest
 
+let test_enumeration_inheritance =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from enum import Enum
+
+              class NoDefinedMembers(Enum):
+                pass
+
+              class HasDefinedMembers(NoDefinedMembers):
+                RED = 1
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from enum import Enum
+
+              class HasDefinedMembers(Enum):
+                RED = 1
+
+              class InvalidChildEnum(HasDefinedMembers):
+                pass
+            |}
+           ["Invalid inheritance [39]: Cannot inherit from final class `HasDefinedMembers`."];
+      (* StringEnum should be extensible
+         https://www.internalfb.com/code/fbsource/[18e22aca0c7dcf600fa15510a72af801118ff07b]/fbcode/instagram-server/distillery/util/enum.pyi?lines=13 *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from enum import Enum
+
+              class StringEnum(Enum):
+                value: str = ...
+
+              class OtherStringEnum(StringEnum):
+                pass
+            |}
+           [];
+    ]
+
+
 let test_enumeration_methods =
   test_list
     [
@@ -328,5 +372,10 @@ let test_functional_syntax =
 
 let () =
   "enumeration"
-  >::: [test_check_enumeration_attributes; test_enumeration_methods; test_functional_syntax]
+  >::: [
+         test_check_enumeration_attributes;
+         test_enumeration_methods;
+         test_functional_syntax;
+         test_enumeration_inheritance;
+       ]
   |> Test.run

@@ -131,6 +131,8 @@ val has_decorator : t -> string -> bool
 
 val is_final : t -> bool
 
+val has_possible_enum_members : t -> bool
+
 val is_abstract : t -> bool
 
 val fields_tuple_value : t -> string list option
