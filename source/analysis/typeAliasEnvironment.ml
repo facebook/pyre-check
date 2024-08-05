@@ -150,11 +150,10 @@ module IncomingDataComputation = struct
               match Type.Variable.Declaration.parse (delocalize value) ~target:name with
               | Some variable -> Some (VariableAlias variable)
               | _ ->
-                  let variable_aliases _ = None in
                   let value = Type.preprocess_alias_value value |> delocalize in
                   let value_annotation =
                     Type.create
-                      ~variables:variable_aliases
+                      ~variables:Type.resolved_empty_variables
                       ~aliases:Type.resolved_empty_aliases
                       value
                   in
@@ -253,13 +252,15 @@ module IncomingDataComputation = struct
                     | _ -> None
                   in
 
-                  let rec variable_aliases name =
+                  let variable_aliases name =
                     match aliases name with
                     | Some (RawAlias.VariableAlias variable) ->
                         let type_variables =
                           Type.Variable.of_declaration
                             ~create_type:
-                              (Type.create ~aliases:resolved_aliases ~variables:variable_aliases)
+                              (Type.create
+                                 ~aliases:resolved_aliases
+                                 ~variables:Type.resolved_empty_variables)
                             variable
                         in
                         Some type_variables
