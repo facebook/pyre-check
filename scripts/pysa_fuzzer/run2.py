@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 import shutil
 import logging
+import random
 from code_generator2 import CodeGenerator
 
 logging.basicConfig(level=logging.INFO)
@@ -18,18 +19,31 @@ def run_command(command, output_file=None):
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
-def generate_python_files(num_files):
+def generate_random_seed(num_files, num_mutations=48):
+    return [random.randint(1, num_mutations) for _ in range(num_files)]
+
+def apply_mutation(generator, mutation_number):
+    if 1 <= mutation_number <= 24:
+        # Apply source mutation
+        mutation_method = getattr(generator, f"source_mutation_{mutation_number}")
+        mutation_method()
+    elif 25 <= mutation_number <= 48:
+        # Apply sink mutation
+        mutation_method = getattr(generator, f"sink_mutation_{mutation_number - 24}")
+        mutation_method()
+
+def generate_python_files(num_files, seed):
     generator = CodeGenerator()
     output_dir = Path('generated_files')
 
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
-    for i in range(1, num_files + 1):
-        mutation_function = generator.add_function_1 if i % 2 == 1 else generator.add_function_2
-        mutation_function()
+    for i in range(num_files):
+        mutation_number = seed[i]
+        apply_mutation(generator, mutation_number)
         generated_code = generator.generate()
-        filename = output_dir / f'test_{i}.py'
+        filename = output_dir / f'test_{i+1}.py'
         with open(filename, 'w') as file:
             file.write("import random\n")
             file.write(generated_code)
@@ -83,7 +97,7 @@ def run_pyre():
 def find_undetected_files():
     # Load the filenames from the temp file
     try:
-        with open('filenames.tmp', 'r') as tmp_file:
+        with open('../filenames.tmp', 'r') as tmp_file:
             filenames = json.load(tmp_file)
     except FileNotFoundError:
         logging.error("Temporary file with filenames not found.")
@@ -91,7 +105,7 @@ def find_undetected_files():
 
     # Load the analysis output from the file
     try:
-        with open('analysis_output.tmp', 'r') as file:
+        with open('../analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
@@ -139,7 +153,9 @@ def main():
     args = parser.parse_args()
 
     if args.action == 'all':
-        generate_python_files(args.num_files)
+        seed = generate_random_seed(args.num_files)
+        print(f"Generated seed: {seed}")
+        generate_python_files(args.num_files, seed)
         configure_and_analyze()
         run_pyre()
     elif args.action == "find-undetected":
