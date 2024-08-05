@@ -196,6 +196,7 @@ and override_kind =
 
 and invalid_inheritance =
   | FinalClass of Identifier.t
+  | FinalEnum of Identifier.t
   | GenericProtocol
   | ProtocolBaseClass
   | NonMethodFunction of Identifier.t
@@ -2110,6 +2111,13 @@ let rec messages ~concise ~signature location kind =
             Format.asprintf
               "If Protocol is included as a base class, all other base classes must be protocols \
                or Generic.";
+          ]
+      | FinalEnum enum_name ->
+          [
+            Format.asprintf
+              "Cannot inherit from final enum `%a`. Enums with defined members cannot be extended."
+              pp_identifier
+              enum_name;
           ]
       | FinalClass class_name ->
           [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
@@ -4159,6 +4167,7 @@ let dequalify
   in
   let dequalify_invalid_inheritance = function
     | FinalClass name -> FinalClass (dequalify_identifier name)
+    | FinalEnum name -> FinalEnum (dequalify_identifier name)
     | GenericProtocol -> GenericProtocol
     | ProtocolBaseClass -> ProtocolBaseClass
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)

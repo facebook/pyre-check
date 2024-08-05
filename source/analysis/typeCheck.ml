@@ -7771,12 +7771,18 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     if Define.is_class_toplevel define then
       let check_final_inheritance errors =
         let is_final errors expression_value =
-          let add_error { ClassSuccessorMetadataEnvironment.is_final; _ } =
+          let add_error { ClassSuccessorMetadataEnvironment.is_final; extends_enum; _ } =
             if is_final then
+              let error_kind =
+                if extends_enum then
+                  Error.FinalEnum (Expression.show expression_value)
+                else
+                  FinalClass (Expression.show expression_value)
+              in
               let error =
                 Error.create
                   ~location:(Location.with_module ~module_reference:Context.qualifier location)
-                  ~kind:(Error.InvalidInheritance (FinalClass (Expression.show expression_value)))
+                  ~kind:(Error.InvalidInheritance error_kind)
                   ~define:Context.define
               in
               error :: errors

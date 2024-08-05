@@ -162,6 +162,7 @@ and override_kind =
 
 and invalid_inheritance =
   | FinalClass of Identifier.t
+  | FinalEnum of Identifier.t
   | GenericProtocol
   | ProtocolBaseClass
   | NonMethodFunction of Identifier.t

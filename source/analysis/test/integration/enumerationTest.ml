@@ -34,7 +34,10 @@ let test_enumeration_inheritance =
               class InvalidChildEnum(HasDefinedMembers):
                 pass
             |}
-           ["Invalid inheritance [39]: Cannot inherit from final class `HasDefinedMembers`."];
+           [
+             "Invalid inheritance [39]: Cannot inherit from final enum `HasDefinedMembers`. Enums \
+              with defined members cannot be extended.";
+           ];
       (* StringEnum should be extensible
          https://www.internalfb.com/code/fbsource/[18e22aca0c7dcf600fa15510a72af801118ff07b]/fbcode/instagram-server/distillery/util/enum.pyi?lines=13 *)
       labeled_test_case __FUNCTION__ __LINE__
