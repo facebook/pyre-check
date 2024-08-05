@@ -44,6 +44,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     {|
@@ -62,6 +63,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     {|
@@ -78,6 +80,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = true;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     {|
@@ -94,6 +97,7 @@ let test_simple_registration context =
          is_protocol = true;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     ~source_name:"unittest"
@@ -111,6 +115,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     ~source_name:"mock"
@@ -128,6 +133,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   assert_registers
     ~source_name:"unittest/mock"
@@ -145,6 +151,7 @@ let test_simple_registration context =
          is_protocol = false;
          is_abstract = false;
          is_typed_dictionary = false;
+         extends_enum = false;
        });
   ()
 
@@ -231,6 +238,7 @@ let test_updates context =
               is_protocol = false;
               is_abstract = false;
               is_typed_dictionary = false;
+              extends_enum = false;
             } );
       ]
     ~expected_triggers:[]
@@ -247,6 +255,7 @@ let test_updates context =
               is_protocol = false;
               is_abstract = false;
               is_typed_dictionary = false;
+              extends_enum = false;
             } );
       ]
     ();
@@ -274,6 +283,7 @@ let test_updates context =
               is_protocol = false;
               is_abstract = false;
               is_typed_dictionary = false;
+              extends_enum = false;
             } );
       ]
     ~expected_triggers:[dependency]
@@ -290,6 +300,7 @@ let test_updates context =
               is_protocol = false;
               is_abstract = false;
               is_typed_dictionary = false;
+              extends_enum = false;
             } );
       ]
     ();
@@ -317,6 +328,7 @@ let test_updates context =
               is_protocol = false;
               is_abstract = false;
               is_typed_dictionary = false;
+              extends_enum = false;
             } );
       ]
     ();

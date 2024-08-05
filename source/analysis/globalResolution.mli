@@ -225,6 +225,8 @@ val attribute_from_annotation
 
 val is_typed_dictionary : t -> Type.t -> bool
 
+val is_enum : t -> Type.t -> bool
+
 val is_consistent_with
   :  t ->
   resolve:(Expression.expression Node.t -> Type.t) ->

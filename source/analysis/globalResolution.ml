@@ -213,6 +213,12 @@ let is_class_typed_dictionary ({ dependency; _ } as resolution) =
     ?dependency
 
 
+let does_class_extend_enum ({ dependency; _ } as resolution) =
+  ClassSuccessorMetadataEnvironment.ReadOnly.does_class_extend_enum
+    (class_metadata_environment resolution)
+    ?dependency
+
+
 let full_order ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.full_order ?dependency (attribute_resolution resolution)
 
@@ -462,6 +468,19 @@ let is_typed_dictionary resolution annotation =
   Type.primitive_name annotation
   >>| is_class_typed_dictionary resolution
   |> Option.value ~default:false
+
+
+let is_enum resolution annotation =
+  (* The class either directly extends Enum, or has a metaclass that extends EnumMeta or EnumType *)
+  let class_name = Type.primitive_name annotation in
+  if class_name >>| does_class_extend_enum resolution |> Option.value ~default:false then
+    true
+  else
+    match class_name >>| metaclass resolution |> Option.value ~default:None with
+    | Some metaclass_type ->
+        less_or_equal resolution ~left:metaclass_type ~right:(Primitive "enum.EnumMeta")
+        || less_or_equal resolution ~left:metaclass_type ~right:(Primitive "enum.EnumType")
+    | None -> false
 
 
 let is_consistent_with resolution ~resolve left right ~expression =

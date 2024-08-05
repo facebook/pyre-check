@@ -15,6 +15,7 @@ type class_metadata = {
   is_abstract: bool;
   is_protocol: bool;
   is_typed_dictionary: bool;
+  extends_enum: bool;
 }
 [@@deriving compare, show]
 
@@ -32,6 +33,8 @@ module MetadataReadOnly : sig
     ?dependency:DependencyKey.registered ->
     Type.Primitive.t ->
     bool
+
+  val does_class_extend_enum : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> bool
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 

@@ -33,6 +33,7 @@ type class_metadata = {
   is_abstract: bool;
   is_protocol: bool;
   is_typed_dictionary: bool;
+  extends_enum: bool;
 }
 [@@deriving compare, show]
 
@@ -58,12 +59,11 @@ module IncomingDataComputation = struct
         | Result.Error _ -> None
       in
       let successors = successors class_name in
-      (* This check doesn't consider metaclass=EnumMeta, since the metaclass has not been resolved
-         to a type yet. *)
-      let is_enum =
-        List.exists
-          ~f:([%compare.equal: Type.Primitive.t] "enum.Enum")
-          (Option.value successors ~default:[])
+      let successors_or_empty = Option.value successors ~default:[] in
+      let extends_enum =
+        not
+          (Set.is_empty
+             (Set.inter Recognized.enumeration_classes (String.Set.of_list successors_or_empty)))
       in
       let is_final =
         definition
@@ -71,12 +71,10 @@ module IncomingDataComputation = struct
         (* Enums with defined members are implicitly final
            https://typing.readthedocs.io/en/latest/spec/enums.html#enum-behaviors *)
         ClassSummary.is_final definition
-        || (ClassSummary.has_possible_enum_members definition && is_enum)
+        || (ClassSummary.has_possible_enum_members definition && extends_enum)
       in
       let is_test =
-        List.exists
-          ~f:Type.Primitive.is_unit_test
-          (class_name :: Option.value successors ~default:[])
+        List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors_or_empty)
       in
       let is_mock =
         let is_mock_class = function
@@ -87,7 +85,7 @@ module IncomingDataComputation = struct
               true
           | _ -> false
         in
-        List.exists ~f:is_mock_class (class_name :: Option.value successors ~default:[])
+        List.exists ~f:is_mock_class (class_name :: successors_or_empty)
       in
       let is_protocol = ClassSummary.is_protocol (Node.value definition) in
       let is_abstract = ClassSummary.is_abstract (Node.value definition) in
@@ -98,9 +96,18 @@ module IncomingDataComputation = struct
           ~f:(fun class_name ->
             Identifier.equal total_typed_dictionary_name class_name
             || Identifier.equal non_total_typed_dictionary_name class_name)
-          (Option.value successors ~default:[])
+          successors_or_empty
       in
-      { is_test; is_mock; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
+      {
+        is_test;
+        is_mock;
+        successors;
+        is_final;
+        is_protocol;
+        is_abstract;
+        is_typed_dictionary;
+        extends_enum;
+      }
     in
     get_class_summary class_name >>| add
 end
@@ -207,6 +214,12 @@ module ReadOnly = struct
     get read_only ?dependency class_name
     |> Option.value_map ~default:false ~f:(fun ({ is_typed_dictionary; _ } : class_metadata) ->
            is_typed_dictionary)
+
+
+  let does_class_extend_enum read_only ?dependency class_name =
+    get read_only ?dependency class_name
+    |> Option.value_map ~default:false ~f:(fun ({ extends_enum; _ } : class_metadata) ->
+           extends_enum)
 
 
   let class_hierarchy_environment = upstream_environment
