@@ -189,10 +189,7 @@ let normalize_parameters parameters =
     else
       let unqualified_name = Root.chop_parameter_prefix qualified_name in
       let positional_only =
-        (not seen_star)
-        && (not has_pep570_syntax)
-        && String.is_prefix unqualified_name ~prefix:"__"
-        && not (String.is_suffix unqualified_name ~suffix:"__")
+        (not seen_star) && (not has_pep570_syntax) && Identifier.is_private_name unqualified_name
       in
       ( position + 1,
         false,

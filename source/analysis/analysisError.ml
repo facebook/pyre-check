@@ -2868,8 +2868,7 @@ let rec messages ~concise ~signature location kind =
       ]
   | UndefinedAttribute { attribute; origin } -> (
       let private_attribute_warning () =
-        if String.is_prefix ~prefix:"__" attribute && not (String.is_suffix ~suffix:"__" attribute)
-        then
+        if Identifier.is_private_name attribute then
           Format.asprintf
             " `%s` looks like a private attribute, which is not accessible from outside its parent \
              class."

@@ -63,7 +63,7 @@ let rec coerce_special_methods { Node.location; value } =
   let open Expression in
   match value with
   | Expression.Name (Name.Attribute ({ base; attribute; _ } as name))
-    when String.is_prefix ~prefix:"__" attribute && String.is_suffix ~suffix:"__" attribute ->
+    when is_dunder_attribute attribute ->
       {
         Node.location;
         value =

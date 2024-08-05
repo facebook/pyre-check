@@ -61,3 +61,7 @@ let pp_sanitized format identifier = Format.fprintf format "%s" (sanitized ident
 let remove_leading_underscores name =
   let renaming_pattern = Str.regexp "\\(\\$.*\\$\\)_+" in
   Str.global_replace renaming_pattern "\\1" name
+
+
+let is_private_name name =
+  String.is_prefix ~prefix:"__" name && not (String.is_suffix ~suffix:"__" name)

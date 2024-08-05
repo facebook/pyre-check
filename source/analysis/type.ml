@@ -1463,15 +1463,14 @@ module Callable = struct
             | "**" -> index + 1, Keywords annotation
             | "*" -> index + 1, Variable (Concrete annotation)
             | _ ->
-                let sanitized = Identifier.sanitized name in
                 (* Parameters that start but do not end with __, occurring in functions that do not
                    have PEP570's special parameter syntax * and /, are treated as positional-only
                    unless they occur after a variadic parameter *)
+                let sanitized = Identifier.sanitized name in
                 if
                   (not keyword_only)
                   && (not has_pep570_syntax)
-                  && String.is_prefix sanitized ~prefix:"__"
-                  && not (String.is_suffix sanitized ~suffix:"__")
+                  && Identifier.is_private_name sanitized
                 then
                   index + 1, CallableParamType.PositionalOnly { index; annotation; default }
                 else

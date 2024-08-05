@@ -3853,9 +3853,7 @@ let mangle_private_attributes source =
         (* TODO(T97954725): Remove special casing *)
         String.equal identifier "__T"
       in
-      String.is_prefix ~prefix:"__" identifier
-      && (not (String.is_suffix ~suffix:"__" identifier))
-      && not thrift_typing_import_special_case
+      Identifier.is_private_name identifier && not thrift_typing_import_special_case
 
 
     let transform_expression_children _ _ = true
