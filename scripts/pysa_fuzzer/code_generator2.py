@@ -782,3 +782,11 @@ def {function_1}(x):
     """)
         self.last_sink = function_1
 
+generator = CodeGenerator()
+generator.source_mutation_8()
+generator.source_mutation_17()
+generator.sink_mutation_5()
+generator.sink_mutation_22()
+generator.sink_mutation_21()
+
+print(generator.generate())

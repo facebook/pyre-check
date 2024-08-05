@@ -39,6 +39,7 @@ def generate_python_files(num_files, seed):
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
+    mutation_mapping = {}
     for i in range(num_files):
         mutation_number = seed[i]
         apply_mutation(generator, mutation_number)
@@ -48,11 +49,16 @@ def generate_python_files(num_files, seed):
             file.write("import random\n")
             file.write(generated_code)
         filenames.append(str(filename))
-        logging.info(f"Generated {filename}")
+        mutation_mapping[filename.name] = mutation_number  # Map the filename to its mutation
+        logging.info(f"Generated {filename} with mutation {mutation_number}")
 
     # Save the filenames to a temporary file
     with open('filenames.tmp', 'w') as tmp_file:
         json.dump(filenames, tmp_file)
+
+    # Save the mutation mapping to a temporary file
+    with open('mutation_mapping.tmp', 'w') as tmp_file:
+        json.dump(mutation_mapping, tmp_file)
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -103,6 +109,14 @@ def find_undetected_files():
         logging.error("Temporary file with filenames not found.")
         return
 
+    # Load the mutation mapping from the temp file
+    try:
+        with open('../mutation_mapping.tmp', 'r') as tmp_file:
+            mutation_mapping = json.load(tmp_file)
+    except FileNotFoundError:
+        logging.error("Temporary file with mutation mapping not found.")
+        return
+
     # Load the analysis output from the file
     try:
         with open('../analysis_output.tmp', 'r') as file:
@@ -133,8 +147,14 @@ def find_undetected_files():
     undetected_percentage = (undetected_count / total_files) * 100
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
+    # Print the first undetected file and its mutation
+    if undetected_files:
+        first_undetected_file = sorted(undetected_files, key=lambda x: int(x[len('test_'):-len('.py')]))[0]
+        mutation_number = mutation_mapping[first_undetected_file]
+        logging.info(f"First undetected file: {first_undetected_file} with mutation {mutation_number}")
+
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp', 'mutation_mapping.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
