@@ -3495,14 +3495,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~parent
         ?(defined = true)
         ~accessed_via_metaclass
-        { Attribute.name = attribute_name; kind } =
+        ({ Attribute.name = attribute_name; kind } as attribute) =
       let Queries.{ exists_matching_class_decorator; successors; extends_enum; _ } = queries in
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
       let annotation, class_variable, visibility, undecorated_signature, problem =
         match kind with
-        | Simple { annotation; values; toplevel; implicit; primitive; _ } ->
+        | Simple { annotation; values; toplevel; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
             let parsed_annotation = annotation >>| self#parse_annotation ~assumptions in
             (* Account for class attributes. *)
@@ -3544,9 +3544,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               if
                 (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
                 && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
-                && primitive
-                && defined
-                && not implicit
+                && Attribute.may_be_enum_member attribute
               then
                 ( Some
                     (Type.Literal

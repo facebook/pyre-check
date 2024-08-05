@@ -266,7 +266,7 @@ let test_check_enumeration_attributes =
             |}
            [
              "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type \
-              `C` but is never initialized.";
+              `int` but is never initialized.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -339,12 +339,7 @@ let test_check_enumeration_attributes =
                       self.x: str = "another string"
               reveal_type(A.x)
             |}
-           [
-             "Illegal annotation target [35]: Target `self.x` cannot be annotated as it shadows \
-              the class-level annotation of `typing_extensions.Literal[test.A.x]` with `str`.";
-             "Revealed type [-1]: Revealed type for `test.A.x` is `typing_extensions.Literal[A.x]` \
-              (final).";
-           ];
+           ["Revealed type [-1]: Revealed type for `test.A.x` is `str`."];
     ]
 
 

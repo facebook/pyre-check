@@ -81,6 +81,8 @@ module Attribute : sig
   val location_insensitive_compare : t -> t -> int
 
   val location_insensitive_compare_kind : kind -> kind -> int
+
+  val may_be_enum_member : attribute -> bool
 end
 
 module ClassAttributes : sig
