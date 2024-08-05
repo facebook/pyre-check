@@ -93,8 +93,11 @@ module IncomingDataComputation = struct
       let is_abstract = ClassSummary.is_abstract (Node.value definition) in
       let is_typed_dictionary =
         let total_typed_dictionary_name = Type.TypedDictionary.class_name ~total:true in
+        let non_total_typed_dictionary_name = Type.TypedDictionary.class_name ~total:false in
         List.exists
-          ~f:([%compare.equal: Type.Primitive.t] total_typed_dictionary_name)
+          ~f:(fun class_name ->
+            Identifier.equal total_typed_dictionary_name class_name
+            || Identifier.equal non_total_typed_dictionary_name class_name)
           (Option.value successors ~default:[])
       in
       { is_test; is_mock; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
