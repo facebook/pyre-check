@@ -178,7 +178,11 @@ val check_invalid_type_parameters
   Type.t ->
   AttributeResolution.type_parameters_mismatch list * Type.t
 
-val resolve_literal : t -> Expression.t -> Type.t
+val resolve_literal
+  :  t ->
+  variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
+  Expression.t ->
+  Type.t
 
 val attribute_names
   :  t ->

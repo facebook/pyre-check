@@ -4093,6 +4093,8 @@ let create_literal = function
 
 let resolved_empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
+let empty_variable_map ?replace_unbound_parameters_with_any:_ _ = None
+
 let resolved_empty_variables _ = None
 
 let alternate_name_to_canonical_name_map =

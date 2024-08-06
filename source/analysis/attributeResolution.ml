@@ -1627,7 +1627,7 @@ end
 (* This function mutably updates an UninstantiatedAttributeTable.t if a class has any dataclass
    transforms (including @dataclass itself) applied to it. *)
 let apply_dataclass_transforms_to_table
-    ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
+    ~queries:(Queries.{ get_class_summary; successors; get_variable; _ } as queries)
     ~definition
     create_attribute
     instantiate_attribute
@@ -1758,6 +1758,7 @@ let apply_dataclass_transforms_to_table
             in
 
             ( create_attribute
+                ~variable_map:get_variable
                 ~parent
                 ?defined:None
                 ~accessed_via_metaclass:false
@@ -2527,7 +2528,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~in_test
         ~accessed_via_metaclass
         ({ Node.value = { ClassSummary.name = parent_name; _ }; _ } as parent) =
-      let { Queries.get_class_summary; successors; _ } = queries in
+      let { Queries.get_class_summary; successors; get_variable; _ } = queries in
       let class_name = Reference.show parent_name in
       let unannotated_attributes
           ~include_generated_attributes
@@ -2541,6 +2542,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         let unannotated_attribute { Node.value = attribute; _ } =
           self#create_attribute
+            ~variable_map:get_variable
             ~assumptions
             ~parent
             ?defined:(Some true)
@@ -2654,7 +2656,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~accessed_via_metaclass
         ~class_name
         ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
-      let Queries.{ is_typed_dictionary; get_class_summary; successors; _ } = queries in
+      let Queries.{ is_typed_dictionary; get_class_summary; successors; get_variable; _ } =
+        queries
+      in
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
         let successor_definitions =
@@ -2686,6 +2690,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
                  ( self#create_attribute
+                     ~variable_map:get_variable
                      ~assumptions
                      ~parent:parent_definition
                      ?defined:(Some true)
@@ -2781,7 +2786,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
-      let Queries.{ get_class_summary; get_class_metadata; _ } = queries in
+      let Queries.{ get_class_summary; get_class_metadata; get_variable; _ } = queries in
 
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
@@ -2801,6 +2806,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let collect_attributes attribute =
             let created_attribute =
               self#create_attribute
+                ~variable_map:get_variable
                 (Node.value attribute)
                 ~assumptions
                 ~parent
@@ -3491,14 +3497,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~uninstantiated_annotation
 
     method create_attribute
+        ~variable_map
         ~assumptions
         ~parent
         ?(defined = true)
         ~accessed_via_metaclass
         ({ Attribute.name = attribute_name; kind } as attribute) =
-      let Queries.{ exists_matching_class_decorator; successors; extends_enum; get_variable; _ } =
-        queries
-      in
+      let Queries.{ exists_matching_class_decorator; successors; extends_enum; _ } = queries in
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
@@ -3523,7 +3528,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | Simple { annotation; values; toplevel; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
             let parsed_annotation =
-              annotation >>| self#parse_annotation ~assumptions ~variable_map:get_variable
+              annotation >>| self#parse_annotation ~assumptions ~variable_map
             in
             (* Account for class attributes. *)
             let annotation, final, class_variable =
@@ -3583,7 +3588,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               match annotation, value with
               | Some annotation, _ -> annotation
               | None, Some value ->
-                  let literal_value_annotation = self#resolve_literal ~assumptions value in
+                  let literal_value_annotation =
+                    self#resolve_literal ~variable_map ~assumptions value
+                  in
                   let is_dataclass_attribute =
                     exists_matching_class_decorator
                       ~names:["dataclasses.dataclass"; "dataclass"]
@@ -3665,7 +3672,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             callable, false, visibility, Some undecorated_signature, problem
         | Property { kind; _ } -> (
             let parse_annotation_option annotation =
-              annotation >>| self#parse_annotation ~assumptions ~variable_map:get_variable
+              annotation >>| self#parse_annotation ~assumptions ~variable_map
             in
             match kind with
             | ReadWrite
@@ -3843,8 +3850,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
 
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
-    method resolve_literal ~assumptions expression =
-      let Queries.{ variables; get_unannotated_global; get_variable; _ } = queries in
+    method resolve_literal ~assumptions ~variable_map expression =
+      let Queries.{ variables; get_unannotated_global; _ } = queries in
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
@@ -3855,9 +3862,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let fully_specified_type = function
         | { Node.value = Expression.Name name; _ } as annotation when is_simple_name name ->
-            let class_type =
-              self#parse_annotation ~assumptions annotation ~variable_map:get_variable
-            in
+            let class_type = self#parse_annotation ~assumptions annotation ~variable_map in
             if
               Type.is_none class_type || is_concrete_class class_type |> Option.value ~default:false
             then
@@ -3867,9 +3872,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | { Node.value = Subscript { base = { Node.value = Name generic_name; _ }; _ }; _ } as
           annotation
           when is_simple_name generic_name ->
-            let class_type =
-              self#parse_annotation ~assumptions annotation ~variable_map:get_variable
-            in
+            let class_type = self#parse_annotation ~assumptions annotation ~variable_map in
             if is_concrete_class class_type >>| not |> Option.value ~default:false then
               Some class_type
             else
@@ -3892,15 +3895,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let order = self#full_order ~assumptions in
       match Node.value expression with
       | Expression.Await expression ->
-          self#resolve_literal ~assumptions expression
+          self#resolve_literal ~assumptions expression ~variable_map
           |> Type.awaitable_value
           |> Option.value ~default:Type.Any
       | BooleanOperator { BooleanOperator.left; right; _ } ->
           let annotation =
             TypeOrder.join
               order
-              (self#resolve_literal ~assumptions left)
-              (self#resolve_literal ~assumptions right)
+              (self#resolve_literal ~assumptions ~variable_map left)
+              (self#resolve_literal ~assumptions ~variable_map right)
           in
           if Type.is_concrete annotation then annotation else Type.Any
       | Call { callee; _ } ->
@@ -3947,9 +3950,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               let open Dictionary.Entry in
               match entry with
               | KeyValue { key; value } ->
-                  ( TypeOrder.join order key_annotation (self#resolve_literal ~assumptions key),
-                    TypeOrder.join order value_annotation (self#resolve_literal ~assumptions value)
-                  )
+                  ( TypeOrder.join
+                      order
+                      key_annotation
+                      (self#resolve_literal ~assumptions ~variable_map key),
+                    TypeOrder.join
+                      order
+                      value_annotation
+                      (self#resolve_literal ~assumptions ~variable_map value) )
               | Splat _ -> key_annotation, value_annotation
             in
             List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
@@ -3961,7 +3969,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | List elements ->
           let parameter =
             let join sofar element =
-              TypeOrder.join order sofar (self#resolve_literal ~assumptions element)
+              TypeOrder.join order sofar (self#resolve_literal ~assumptions ~variable_map element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -3969,7 +3977,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Set elements ->
           let parameter =
             let join sofar element =
-              TypeOrder.join order sofar (self#resolve_literal ~assumptions element)
+              TypeOrder.join order sofar (self#resolve_literal ~assumptions ~variable_map element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -3978,11 +3986,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let annotation =
             TypeOrder.join
               order
-              (self#resolve_literal ~assumptions target)
-              (self#resolve_literal ~assumptions alternative)
+              (self#resolve_literal ~assumptions ~variable_map target)
+              (self#resolve_literal ~assumptions ~variable_map alternative)
           in
           if Type.is_concrete annotation then annotation else Type.Any
-      | Tuple elements -> Type.tuple (List.map elements ~f:(self#resolve_literal ~assumptions))
+      | Tuple elements ->
+          Type.tuple (List.map elements ~f:(self#resolve_literal ~assumptions ~variable_map))
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
@@ -4222,7 +4231,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                  ~error:
                                    (AnnotatedAttribute.InvalidDecorator { index; reason = error })
                         | expression ->
-                            let resolved = self#resolve_literal ~assumptions expression in
+                            let resolved =
+                              self#resolve_literal
+                                ~assumptions
+                                ~variable_map:get_variable
+                                expression
+                            in
                             if Type.is_untyped resolved || Type.contains_unknown resolved then
                               make_error error
                             else
@@ -4629,11 +4643,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             let annotation, is_explicit, is_final =
               match explicit_annotation with
-              | None -> value >>| self#resolve_literal ~assumptions, false, false
+              | None ->
+                  ( value >>| self#resolve_literal ~assumptions ~variable_map:get_variable,
+                    false,
+                    false )
               | Some explicit -> (
                   match Type.final_value explicit with
                   | `Ok final_value -> Some final_value, true, true
-                  | `NoParameter -> value >>| self#resolve_literal ~assumptions, false, true
+                  | `NoParameter ->
+                      ( value >>| self#resolve_literal ~assumptions ~variable_map:get_variable,
+                        false,
+                        true )
                   | `NotFinal -> Some explicit, true, false)
             in
             match annotation with
@@ -4644,7 +4664,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             | _ -> None)
         | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
-              match self#resolve_literal ~assumptions value with
+              match self#resolve_literal ~assumptions ~variable_map:get_variable value with
               | Type.Tuple (Concrete parameters) when List.length parameters = total_length ->
                   List.nth parameters index
                   (* This should always be Some, but I don't think its worth being fragile here *)

@@ -257,7 +257,7 @@ let test_resolve_literal context =
     assert_equal
       ~printer:Type.show
       expected
-      (GlobalResolution.resolve_literal resolution expression)
+      (GlobalResolution.resolve_literal ~variable_map:Type.empty_variable_map resolution expression)
   in
   assert_resolve_literal "i" Type.Any;
   assert_resolve_literal "await i" Type.Any;
