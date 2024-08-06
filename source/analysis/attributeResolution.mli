@@ -217,6 +217,7 @@ module AttributeReadOnly : sig
   val parse_annotation
     :  t ->
     ?dependency:DependencyKey.registered ->
+    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
     ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     Expression.expression Node.t ->
     Type.t

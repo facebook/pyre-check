@@ -2463,10 +2463,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
     method parse_annotation
         ~assumptions
         ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
+        ~variable_map
         expression =
-      let { Queries.parse_annotation_without_validating_type_parameters; get_variable; _ } =
-        queries
-      in
+      let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
         | alias ->
             self#check_invalid_type_parameters
@@ -2502,7 +2501,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             false
       in
       let variables ?replace_unbound_parameters_with_any name =
-        get_variable name >>| modify_variables ?replace_unbound_parameters_with_any
+        variable_map ?replace_unbound_parameters_with_any name
+        >>| modify_variables ?replace_unbound_parameters_with_any
       in
       let annotation =
         parse_annotation_without_validating_type_parameters
@@ -3496,7 +3496,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ?(defined = true)
         ~accessed_via_metaclass
         ({ Attribute.name = attribute_name; kind } as attribute) =
-      let Queries.{ exists_matching_class_decorator; successors; extends_enum; _ } = queries in
+      let Queries.{ exists_matching_class_decorator; successors; extends_enum; get_variable; _ } =
+        queries
+      in
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
@@ -3504,7 +3506,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         match kind with
         | Simple { annotation; values; toplevel; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
-            let parsed_annotation = annotation >>| self#parse_annotation ~assumptions in
+            let parsed_annotation =
+              annotation >>| self#parse_annotation ~assumptions ~variable_map:get_variable
+            in
             (* Account for class attributes. *)
             let annotation, final, class_variable =
               parsed_annotation
@@ -3653,7 +3657,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             callable, false, visibility, Some undecorated_signature, problem
         | Property { kind; _ } -> (
             let parse_annotation_option annotation =
-              annotation >>| self#parse_annotation ~assumptions
+              annotation >>| self#parse_annotation ~assumptions ~variable_map:get_variable
             in
             match kind with
             | ReadWrite
@@ -3739,7 +3743,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~problem
 
     method metaclass ~assumptions target =
-      let Queries.{ get_class_summary; _ } = queries in
+      let Queries.{ get_class_summary; get_variable; _ } = queries in
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
@@ -3748,7 +3752,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           original)
         =
         let open Expression in
-        let parse_annotation = self#parse_annotation ~assumptions ?validation:None in
+        let parse_annotation =
+          self#parse_annotation ~assumptions ?validation:None ~variable_map:get_variable
+        in
         let metaclass_candidates =
           let explicit_metaclass = metaclass >>| parse_annotation in
           let metaclass_of_bases =
@@ -3830,7 +3836,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
     method resolve_literal ~assumptions expression =
-      let Queries.{ variables; get_unannotated_global; _ } = queries in
+      let Queries.{ variables; get_unannotated_global; get_variable; _ } = queries in
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
@@ -3841,7 +3847,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let fully_specified_type = function
         | { Node.value = Expression.Name name; _ } as annotation when is_simple_name name ->
-            let class_type = self#parse_annotation ~assumptions annotation in
+            let class_type =
+              self#parse_annotation ~assumptions annotation ~variable_map:get_variable
+            in
             if
               Type.is_none class_type || is_concrete_class class_type |> Option.value ~default:false
             then
@@ -3851,7 +3859,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | { Node.value = Subscript { base = { Node.value = Name generic_name; _ }; _ }; _ } as
           annotation
           when is_simple_name generic_name ->
-            let class_type = self#parse_annotation ~assumptions annotation in
+            let class_type =
+              self#parse_annotation ~assumptions annotation ~variable_map:get_variable
+            in
             if is_concrete_class class_type >>| not |> Option.value ~default:false then
               Some class_type
             else
@@ -3969,7 +3979,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads =
-      let Queries.{ resolve_exports; param_spec_from_vararg_annotations; variables; _ } = queries in
+      let Queries.
+            { resolve_exports; param_spec_from_vararg_annotations; variables; get_variable; _ }
+        =
+        queries
+      in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -4266,7 +4280,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let parse =
         let parser =
           {
-            AnnotatedCallable.parse_annotation = self#parse_annotation ~assumptions;
+            AnnotatedCallable.parse_annotation =
+              self#parse_annotation ~assumptions ~variable_map:get_variable;
             param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
           }
         in
@@ -4522,7 +4537,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> signature
 
     method global_annotation ~assumptions name =
-      let Queries.{ class_exists; get_unannotated_global; _ } = queries in
+      let Queries.{ class_exists; get_unannotated_global; get_variable; _ } = queries in
       let process_unannotated_global global =
         let produce_assignment_global ~is_explicit ~is_final annotation =
           let original =
@@ -4590,7 +4605,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             let location = Location.strip_module location in
             Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
             |> Node.create ~location
-            |> self#parse_annotation ~validation:ValidatePrimitives ~assumptions
+            |> self#parse_annotation
+                 ~validation:ValidatePrimitives
+                 ~assumptions
+                 ~variable_map:get_variable
             |> Type.meta
             |> TypeInfo.Unit.create_immutable
             |> fun type_info ->
@@ -4598,7 +4616,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | SimpleAssign { explicit_annotation; value; _ } -> (
             let explicit_annotation =
               explicit_annotation
-              >>| self#parse_annotation ~assumptions
+              >>| self#parse_annotation ~assumptions ~variable_map:get_variable
               >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
             in
             let annotation, is_explicit, is_final =
@@ -4792,10 +4810,15 @@ module ParseAnnotationCache = struct
         { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
         ~dependency
       =
+      let queries = create_queries ~class_metadata_environment ~dependency in
       let implementation =
         new base ~queries:(create_queries ~class_metadata_environment ~dependency)
       in
-      implementation#parse_annotation ~assumptions:empty_assumptions ~validation expression
+      implementation#parse_annotation
+        ~assumptions:empty_assumptions
+        ~validation
+        ~variable_map:queries.get_variable
+        expression
 
 
     let filter_upstream_dependency = function
@@ -4828,6 +4851,7 @@ module ParseAnnotationCache = struct
         method! parse_annotation
             ~assumptions:_
             ?(validation = controls read_only |> ParsingValidation.parse_annotation_validation_kind)
+            ~variable_map:_
             expression =
           get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
       end
@@ -5116,11 +5140,13 @@ module ReadOnly = struct
         o#check_invalid_type_parameters ~replace_unbound_parameters_with_any:true)
 
 
-  let parse_annotation read_only ?dependency =
+  let parse_annotation read_only ?dependency ~variable_map =
     let attributes_cached_but_not_annotations =
       new with_uninstantiated_attributes_cache dependency read_only
     in
-    attributes_cached_but_not_annotations#parse_annotation ~assumptions:empty_assumptions
+    attributes_cached_but_not_annotations#parse_annotation
+      ~assumptions:empty_assumptions
+      ~variable_map
 
 
   let metaclass = add_all_caches_and_empty_assumptions (fun o -> o#metaclass)

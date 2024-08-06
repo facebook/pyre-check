@@ -224,7 +224,10 @@ let full_order ({ dependency; _ } as resolution) =
 
 
 let parse_annotation ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
+  AttributeResolution.ReadOnly.parse_annotation
+    ?dependency
+    (attribute_resolution resolution)
+    ~variable_map:(get_variable resolution)
 
 
 let global ({ dependency; _ } as resolution) =
