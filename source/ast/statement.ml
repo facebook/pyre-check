@@ -507,6 +507,8 @@ and Define : sig
 
     val is_class_property : t -> bool
 
+    val is_enum_member : t -> bool
+
     val is_dunder_method : t -> bool
 
     val is_constructor : ?in_test:bool -> t -> bool
@@ -596,6 +598,8 @@ and Define : sig
   val is_class_method : t -> bool
 
   val is_class_property : t -> bool
+
+  val is_enum_member : t -> bool
 
   val is_dunder_method : t -> bool
 
@@ -792,6 +796,10 @@ end = struct
       && Set.exists Recognized.classproperty_decorators ~f:(has_decorator signature)
 
 
+    let is_enum_member ({ parent; _ } as signature) =
+      Option.is_some parent && has_decorator signature "enum.member"
+
+
     let test_initializers =
       String.Set.of_list
         [
@@ -980,6 +988,8 @@ end = struct
   let is_class_method { signature; _ } = Signature.is_class_method signature
 
   let is_class_property { signature; _ } = Signature.is_class_property signature
+
+  let is_enum_member { signature; _ } = Signature.is_enum_member signature
 
   let is_constructor ?(in_test = false) { signature; _ } =
     Signature.is_constructor ~in_test signature

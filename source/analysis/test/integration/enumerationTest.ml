@@ -62,6 +62,23 @@ let test_enumeration_methods =
       @@ assert_strict_type_errors
            {|
               from typing import reveal_type
+              from enum import Enum, member
+
+              class MyEnum(Enum):
+                @member
+                def foo(self) -> None:
+                  pass
+
+              reveal_type(MyEnum.foo)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `test.MyEnum.foo` is \
+              `typing_extensions.Literal[MyEnum.foo]` (final).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
               from enum import Enum
 
               class Color(Enum):

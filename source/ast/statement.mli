@@ -195,6 +195,8 @@ and Define : sig
 
     val is_class_property : t -> bool
 
+    val is_enum_member : t -> bool
+
     val is_dunder_method : t -> bool
 
     val is_constructor : ?in_test:bool -> t -> bool
@@ -278,6 +280,8 @@ and Define : sig
   val is_class_method : t -> bool
 
   val is_class_property : t -> bool
+
+  val is_enum_member : t -> bool
 
   val is_dunder_method : t -> bool
 

@@ -3502,6 +3502,22 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
+      let is_enum =
+        let metaclass_extends_enummeta class_name =
+          match self#metaclass ~assumptions class_name with
+          | Some metaclass_type ->
+              let metaclass_name = Type.class_name metaclass_type |> Reference.show_sanitized in
+              let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
+              not
+                (Set.is_empty
+                   (Set.inter
+                      (String.Set.of_list ["enum.EnumMeta"; "enum.EnumType"])
+                      metaclass_superclasses))
+          | _ -> false
+        in
+        (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
+        && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
+      in
       let annotation, class_variable, visibility, undecorated_signature, problem =
         match kind with
         | Simple { annotation; values; toplevel; _ } ->
@@ -3530,26 +3546,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             (* Handle enumeration attributes. *)
             let annotation, visibility =
-              (* TODO(yangdanny): align with enum logic in typeCheck.ml *)
-              let metaclass_extends_enummeta class_name =
-                match self#metaclass ~assumptions class_name with
-                | Some metaclass_type ->
-                    let metaclass_name =
-                      Type.class_name metaclass_type |> Reference.show_sanitized
-                    in
-                    let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
-                    not
-                      (Set.is_empty
-                         (Set.inter
-                            (String.Set.of_list ["enum.EnumMeta"; "enum.EnumType"])
-                            metaclass_superclasses))
-                | _ -> false
-              in
-              if
-                (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
-                && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
-                && Attribute.may_be_enum_member attribute
-              then
+              if is_enum && Attribute.may_be_enum_member attribute then
                 ( Some
                     (Type.Literal
                        (Type.EnumerationMember
@@ -3582,7 +3579,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   List.map elements ~f:string_literal_value_to_type |> Option.all >>| Type.tuple
               | _ -> annotation
             in
-
             let annotation =
               match annotation, value with
               | Some annotation, _ -> annotation
@@ -3653,6 +3649,18 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
                 undecorated_signature,
                 Result.error decorated )
+            in
+            (* If the method is decorated with @enum.member, it's an enum member so we should infer
+               a literal type *)
+            let callable, visibility =
+              if is_enum && Attribute.may_be_enum_member attribute then
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute
+                    (Type.Literal
+                       (Type.EnumerationMember
+                          { enumeration_type = class_annotation; member_name = attribute_name })),
+                  AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
+              else
+                callable, visibility
             in
             callable, false, visibility, Some undecorated_signature, problem
         | Property { kind; _ } -> (

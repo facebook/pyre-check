@@ -1747,6 +1747,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             pass
           class IntFlag(int, Flag):  # type: ignore
             pass
+        _EnumMemberT = TypeVar("_EnumMemberT")
+        if sys.version_info >= (3, 11):
+          class nonmember(Generic[_EnumMemberT]):
+            value: _EnumMemberT
+            def __init__(self, value: _EnumMemberT) -> None: ...
+          class member(Generic[_EnumMemberT]):
+            value: _EnumMemberT
+            def __init__(self, value: _EnumMemberT) -> None: ...
         |}
     );
     "threading.pyi", {|

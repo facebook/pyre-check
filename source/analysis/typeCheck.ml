@@ -7306,6 +7306,8 @@ module State (Context : Context) = struct
                               Reference.create "typing.override";
                               Reference.create "typing_extensions.override";
                               Reference.create "pyre_extensions.override";
+                              Reference.create "enum.member";
+                              Reference.create "enum.nonmember";
                             ]
                           in
                           let is_equal_to_decorator_ref name ref =

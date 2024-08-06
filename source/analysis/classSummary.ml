@@ -223,6 +223,7 @@ module Attribute = struct
     else
       match kind with
       | Simple { values = [{ origin = Explicit; _ }]; _ } -> true
+      | Method { signatures; _ } -> List.exists signatures ~f:Define.Signature.is_enum_member
       | _ -> false
 end
 
