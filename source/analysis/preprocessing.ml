@@ -912,9 +912,18 @@ module Qualify (Context : QualifyContext) = struct
                 | Name (Attribute attribute as name) ->
                     let name =
                       if is_class_toplevel then
-                        qualify_if_needed ~qualifier (name_to_reference_exn name)
-                        |> create_name_from_reference ~location
-                        |> fun name -> Expression.Name name
+                        match name_to_reference name with
+                        | Some reference ->
+                            qualify_if_needed ~qualifier reference
+                            |> create_name_from_reference ~location
+                            |> fun name -> Expression.Name name
+                        | None ->
+                            let { Name.Attribute.base; _ } = attribute in
+                            let qualified_base =
+                              qualify_expression ~qualify_strings:DoNotQualify ~scope base
+                            in
+                            Expression.Name
+                              (Name.Attribute { attribute with base = qualified_base })
                       else
                         match
                           qualify_attribute_name ~qualify_strings:DoNotQualify ~scope attribute

@@ -746,6 +746,18 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
+      def foo(): pass
+      class C:
+        foo().x = 1
+    |}
+           {|
+      def qualifier.foo(): pass
+      class qualifier.C:
+        qualifier.foo().x = 1
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
       local = 0
       class C:
         def __init__(self):
