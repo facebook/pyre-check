@@ -4601,244 +4601,264 @@ module State (Context : Context) = struct
                 | _ -> None)
             | _ -> None
           in
-          let check_errors ~name_reference errors resolved =
-            match reference with
-            | Some reference ->
-                let check_assignment_compatibility errors =
-                  let is_valid_enumeration_assignment =
-                    let parent_annotation =
-                      match parent with
-                      | None -> Type.Top
-                      | Some reference -> Type.Primitive (Reference.show reference)
-                    in
-                    let compatible =
-                      if has_explicit_annotation then
-                        GlobalResolution.less_or_equal
+          let check_errors ~name_reference errors resolved reference =
+            let check_assignment_compatibility errors =
+              let is_valid_enumeration_assignment, expected_enumeration_type =
+                let parent_annotation =
+                  match parent with
+                  | None -> Type.Top
+                  | Some reference -> Type.Primitive (Reference.show reference)
+                in
+                let is_enum = GlobalResolution.is_enum global_resolution parent_annotation in
+                let compatible_with_explicit_annotation =
+                  if has_explicit_annotation then
+                    GlobalResolution.less_or_equal global_resolution ~left:expected ~right:resolved
+                  else
+                    true
+                in
+                (* If a type annotation is provided for _value_, the members of the enum must match
+                   that type. *)
+                let compatible_with_value_attr, expected_enumeration_type =
+                  match
+                    ( resolved,
+                      GlobalResolution.attribute_from_annotation
+                        global_resolution
+                        ~parent:parent_annotation
+                        ~name:"_value_" )
+                  with
+                  (* When the member is defined as a tuple, the unpacked values get passed to the
+                     constructor instead of being assigned to _value_ directly, so we don't have to
+                     do this check. *)
+                  | Type.Tuple _, Some _ -> true, expected
+                  | _, Some instantiated -> begin
+                      let { TypeInfo.Unit.annotation; _ } =
+                        AnnotatedAttribute.annotation instantiated
+                      in
+                      ( GlobalResolution.less_or_equal
                           global_resolution
-                          ~left:expected
-                          ~right:resolved
-                      else
-                        true
-                    in
-                    GlobalResolution.is_enum global_resolution parent_annotation && compatible
-                  in
-                  let is_incompatible =
-                    let expression_is_ellipses =
-                      match value with
-                      | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> true
-                      | _ -> false
-                    in
-                    is_immutable
-                    && (not expression_is_ellipses)
-                    && (not
-                          (GlobalResolution.constraints_solution_exists
-                             global_resolution
-                             ~get_typed_dictionary_override:(fun _ -> None)
-                             ~left:resolved
-                             ~right:expected))
-                    && not is_valid_enumeration_assignment
-                  in
-                  match attribute with
-                  | Some (attribute, name) when is_incompatible ->
-                      Error.IncompatibleAttributeType
+                          ~left:annotation
+                          ~right:resolved,
+                        annotation )
+                    end
+                  | _ -> true, expected
+                in
+                ( is_enum && compatible_with_explicit_annotation && compatible_with_value_attr,
+                  expected_enumeration_type )
+              in
+              (* Use the type annotation for _value_ on enum assignments for better error
+                 messages *)
+              let expected =
+                if not is_valid_enumeration_assignment then expected_enumeration_type else expected
+              in
+              let is_incompatible =
+                let expression_is_ellipses =
+                  match value with
+                  | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> true
+                  | _ -> false
+                in
+                is_immutable
+                && (not expression_is_ellipses)
+                && (not
+                      (GlobalResolution.constraints_solution_exists
+                         global_resolution
+                         ~get_typed_dictionary_override:(fun _ -> None)
+                         ~left:resolved
+                         ~right:expected))
+                && not is_valid_enumeration_assignment
+              in
+              match attribute with
+              | Some (attribute, name) when is_incompatible ->
+                  Error.IncompatibleAttributeType
+                    {
+                      parent = Primitive (AnnotatedAttribute.parent attribute);
+                      incompatible_type =
                         {
-                          parent = Primitive (AnnotatedAttribute.parent attribute);
-                          incompatible_type =
-                            {
-                              Error.name = Reference.create name;
-                              mismatch =
-                                Error.create_mismatch
-                                  ~resolution:global_resolution
-                                  ~actual:resolved
-                                  ~expected
-                                  ~covariant:true;
-                            };
-                        }
-                      |> fun kind -> emit_error ~errors ~location ~kind
-                  | None when is_incompatible ->
-                      incompatible_variable_type_error_kind
-                        ~global_resolution
-                        {
-                          Error.name = reference;
+                          Error.name = Reference.create name;
                           mismatch =
                             Error.create_mismatch
                               ~resolution:global_resolution
                               ~actual:resolved
                               ~expected
                               ~covariant:true;
-                        }
-                      |> fun kind -> emit_error ~errors ~location ~kind
-                  | _ -> errors
-                in
-                let check_assign_class_variable_on_instance errors =
-                  match
-                    ( resolved_base,
-                      attribute >>| fst >>| AnnotatedAttribute.class_variable,
-                      attribute >>| fst >>| AnnotatedAttribute.name )
-                  with
-                  | `Attribute (_, parent), Some true, Some class_variable
-                    when Option.is_none unwrapped_annotation_type && not (Type.is_meta parent) ->
-                      emit_error
-                        ~errors
-                        ~location
-                        ~kind:
-                          (Error.InvalidAssignment
-                             (ClassVariable { class_name = Type.show parent; class_variable }))
-                  | _ -> errors
-                in
-                let check_undefined_attribute_target errors =
-                  match resolved_base, attribute with
-                  | `Attribute (_, parent), Some (attribute, _)
-                    when not (AnnotatedAttribute.defined attribute) ->
-                      let is_meta_typed_dictionary =
-                        Type.is_meta parent
-                        && GlobalResolution.is_typed_dictionary
-                             global_resolution
-                             (Type.single_parameter parent)
-                      in
-                      let is_getattr_returning_any_defined =
-                        match
-                          find_getattr parent
-                          >>| AnnotatedAttribute.annotation
-                          >>| TypeInfo.Unit.annotation
-                        with
-                        | Some
-                            (Type.Parametric
-                              {
-                                name = "BoundMethod";
-                                parameters =
-                                  [Single (Callable { implementation = { annotation; _ }; _ }); _];
-                              })
-                        | Some (Type.Callable { implementation = { annotation; _ }; _ }) ->
-                            Type.is_any annotation
-                        | _ -> false
-                      in
-                      if is_meta_typed_dictionary || is_getattr_returning_any_defined then
-                        (* Ignore the error from the attribute declaration `Movie.name = ...`, which
-                           would raise an error because `name` was removed as an attribute from the
-                           TypedDictionary. *)
-                        errors
-                      else
-                        (* TODO(T64156088): To catch errors against the implicit call to a custom
-                           definition of `__setattr__`, we should run signature select against the
-                           value type. *)
-                        let parent_module_path = module_path_of_type ~global_resolution parent in
-                        emit_error
-                          ~errors
-                          ~location
-                          ~kind:
-                            (Error.UndefinedAttribute
-                               {
-                                 attribute = AnnotatedAttribute.public_name attribute;
-                                 origin =
-                                   Error.Class
-                                     { class_origin = ClassType parent; parent_module_path };
-                               })
-                  | _ -> errors
-                in
-                let check_nested_explicit_type_alias errors =
-                  match name, unwrapped_annotation_type with
-                  | Name.Identifier identifier, Some annotation
-                    when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
-                      emit_error
-                        ~errors
-                        ~location
-                        ~kind:(Error.InvalidType (NestedAlias identifier))
-                  | _ -> errors
-                in
-                let check_enumeration_literal errors =
-                  unwrapped_annotation_type
-                  >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
-                  |> Option.value ~default:errors
-                in
-                let check_previously_annotated errors =
-                  match name with
-                  | Name.Identifier identifier ->
-                      let is_defined =
-                        Option.is_some
-                          (Resolution.get_local
-                             ~global_fallback:true
-                             ~reference:(Reference.create identifier)
-                             resolution)
-                      in
-                      let is_reannotation_with_same_type =
-                        (* TODO(T77219514): special casing for re-annotation in loops can be removed
-                           when fixpoint is gone *)
-                        TypeInfo.Unit.is_immutable target_annotation
-                        && Type.equal expected (TypeInfo.Unit.original target_annotation)
-                      in
-                      if
-                        has_explicit_annotation
-                        && (not (Define.is_toplevel define))
-                        && is_defined
-                        && not is_reannotation_with_same_type
-                      then
-                        emit_error
-                          ~errors
-                          ~location
-                          ~kind:(Error.IllegalAnnotationTarget { target; kind = Reassignment })
-                      else
-                        errors
-                  | _ -> errors
-                in
-                let check_assignment_to_readonly_type errors =
-                  let is_readonly_attribute =
-                    target_annotation |> TypeInfo.Unit.annotation |> Type.ReadOnly.is_readonly
+                        };
+                    }
+                  |> fun kind -> emit_error ~errors ~location ~kind
+              | None when is_incompatible ->
+                  incompatible_variable_type_error_kind
+                    ~global_resolution
+                    {
+                      Error.name = reference;
+                      mismatch =
+                        Error.create_mismatch
+                          ~resolution:global_resolution
+                          ~actual:resolved
+                          ~expected
+                          ~covariant:true;
+                    }
+                  |> fun kind -> emit_error ~errors ~location ~kind
+              | _ -> errors
+            in
+            let check_assign_class_variable_on_instance errors =
+              match
+                ( resolved_base,
+                  attribute >>| fst >>| AnnotatedAttribute.class_variable,
+                  attribute >>| fst >>| AnnotatedAttribute.name )
+              with
+              | `Attribute (_, parent), Some true, Some class_variable
+                when Option.is_none unwrapped_annotation_type && not (Type.is_meta parent) ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.InvalidAssignment
+                         (ClassVariable { class_name = Type.show parent; class_variable }))
+              | _ -> errors
+            in
+            let check_undefined_attribute_target errors =
+              match resolved_base, attribute with
+              | `Attribute (_, parent), Some (attribute, _)
+                when not (AnnotatedAttribute.defined attribute) ->
+                  let is_meta_typed_dictionary =
+                    Type.is_meta parent
+                    && GlobalResolution.is_typed_dictionary
+                         global_resolution
+                         (Type.single_parameter parent)
                   in
-                  match attribute, resolved_base with
-                  | Some (_, attribute_name), `Attribute (_, resolved_base_type)
-                    when is_readonly_attribute
-                         && Type.ReadOnly.is_readonly resolved_base_type
-                         && not (Define.is_class_toplevel define) ->
-                      emit_error
-                        ~errors
-                        ~location
-                        ~kind:
-                          (Error.ReadOnlynessMismatch
-                             (AssigningToReadOnlyAttribute { attribute_name }))
-                  | _ -> errors
-                in
-                let errors =
-                  let modifying_read_only_error =
-                    let is_locally_initialized =
-                      name_reference
-                      >>| (fun reference ->
-                            Resolution.has_nontemporary_type_info ~reference resolution)
-                      |> Option.value ~default:false
-                    in
-                    match attribute, unwrapped_annotation_type with
-                    | None, _ when is_locally_initialized || not has_explicit_annotation ->
-                        Option.some_if
-                          (TypeInfo.Unit.is_final target_annotation)
-                          (AnalysisError.FinalAttribute reference)
-                    | None, _ -> None
-                    | Some _, Some _ ->
-                        (* We presume assignments to annotated targets are valid re: Finality *)
-                        None
-                    | Some (attribute, _), None -> (
-                        let open AnnotatedAttribute in
-                        match visibility attribute, property attribute, initialized attribute with
-                        | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define ->
-                            None
-                        | ReadOnly _, false, OnClass when Define.is_class_toplevel define -> None
-                        | ReadOnly _, false, _ -> Some (AnalysisError.FinalAttribute reference)
-                        | ReadOnly _, true, _ -> Some (ReadOnly reference)
-                        | _ -> None)
+                  let is_getattr_returning_any_defined =
+                    match
+                      find_getattr parent
+                      >>| AnnotatedAttribute.annotation
+                      >>| TypeInfo.Unit.annotation
+                    with
+                    | Some
+                        (Type.Parametric
+                          {
+                            name = "BoundMethod";
+                            parameters =
+                              [Single (Callable { implementation = { annotation; _ }; _ }); _];
+                          })
+                    | Some (Type.Callable { implementation = { annotation; _ }; _ }) ->
+                        Type.is_any annotation
+                    | _ -> false
                   in
-                  match modifying_read_only_error with
-                  | Some error -> emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
-                  | None ->
-                      (* Check compatibility only when we're not already erroring about Final
-                         reassignment. *)
-                      check_assignment_compatibility errors
+                  if is_meta_typed_dictionary || is_getattr_returning_any_defined then
+                    (* Ignore the error from the attribute declaration `Movie.name = ...`, which
+                       would raise an error because `name` was removed as an attribute from the
+                       TypedDictionary. *)
+                    errors
+                  else
+                    (* TODO(T64156088): To catch errors against the implicit call to a custom
+                       definition of `__setattr__`, we should run signature select against the value
+                       type. *)
+                    let parent_module_path = module_path_of_type ~global_resolution parent in
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.UndefinedAttribute
+                           {
+                             attribute = AnnotatedAttribute.public_name attribute;
+                             origin =
+                               Error.Class { class_origin = ClassType parent; parent_module_path };
+                           })
+              | _ -> errors
+            in
+            let check_nested_explicit_type_alias errors =
+              match name, unwrapped_annotation_type with
+              | Name.Identifier identifier, Some annotation
+                when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
+                  emit_error ~errors ~location ~kind:(Error.InvalidType (NestedAlias identifier))
+              | _ -> errors
+            in
+            let check_enumeration_literal errors =
+              unwrapped_annotation_type
+              >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
+              |> Option.value ~default:errors
+            in
+            let check_previously_annotated errors =
+              match name with
+              | Name.Identifier identifier ->
+                  let is_defined =
+                    Option.is_some
+                      (Resolution.get_local
+                         ~global_fallback:true
+                         ~reference:(Reference.create identifier)
+                         resolution)
+                  in
+                  let is_reannotation_with_same_type =
+                    (* TODO(T77219514): special casing for re-annotation in loops can be removed
+                       when fixpoint is gone *)
+                    TypeInfo.Unit.is_immutable target_annotation
+                    && Type.equal expected (TypeInfo.Unit.original target_annotation)
+                  in
+                  if
+                    has_explicit_annotation
+                    && (not (Define.is_toplevel define))
+                    && is_defined
+                    && not is_reannotation_with_same_type
+                  then
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:(Error.IllegalAnnotationTarget { target; kind = Reassignment })
+                  else
+                    errors
+              | _ -> errors
+            in
+            let check_assignment_to_readonly_type errors =
+              let is_readonly_attribute =
+                target_annotation |> TypeInfo.Unit.annotation |> Type.ReadOnly.is_readonly
+              in
+              match attribute, resolved_base with
+              | Some (_, attribute_name), `Attribute (_, resolved_base_type)
+                when is_readonly_attribute
+                     && Type.ReadOnly.is_readonly resolved_base_type
+                     && not (Define.is_class_toplevel define) ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.ReadOnlynessMismatch (AssigningToReadOnlyAttribute { attribute_name }))
+              | _ -> errors
+            in
+            let errors =
+              let modifying_read_only_error =
+                let is_locally_initialized =
+                  name_reference
+                  >>| (fun reference -> Resolution.has_nontemporary_type_info ~reference resolution)
+                  |> Option.value ~default:false
                 in
-                check_assign_class_variable_on_instance errors
-                |> check_undefined_attribute_target
-                |> check_nested_explicit_type_alias
-                |> check_enumeration_literal
-                |> check_previously_annotated
-                |> check_assignment_to_readonly_type
-            | _ -> errors
+                match attribute, unwrapped_annotation_type with
+                | None, _ when is_locally_initialized || not has_explicit_annotation ->
+                    Option.some_if
+                      (TypeInfo.Unit.is_final target_annotation)
+                      (AnalysisError.FinalAttribute reference)
+                | None, _ -> None
+                | Some _, Some _ ->
+                    (* We presume assignments to annotated targets are valid re: Finality *)
+                    None
+                | Some (attribute, _), None -> (
+                    let open AnnotatedAttribute in
+                    match visibility attribute, property attribute, initialized attribute with
+                    | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define -> None
+                    | ReadOnly _, false, OnClass when Define.is_class_toplevel define -> None
+                    | ReadOnly _, false, _ -> Some (AnalysisError.FinalAttribute reference)
+                    | ReadOnly _, true, _ -> Some (ReadOnly reference)
+                    | _ -> None)
+              in
+              match modifying_read_only_error with
+              | Some error -> emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
+              | None ->
+                  (* Check compatibility only when we're not already erroring about Final
+                     reassignment. *)
+                  check_assignment_compatibility errors
+            in
+            check_assign_class_variable_on_instance errors
+            |> check_undefined_attribute_target
+            |> check_nested_explicit_type_alias
+            |> check_enumeration_literal
+            |> check_previously_annotated
+            |> check_assignment_to_readonly_type
           in
           let check_for_missing_annotations errors resolved =
             let insufficiently_annotated, thrown_at_source =
@@ -5192,7 +5212,12 @@ module State (Context : Context) = struct
           in
           match resolved_value_weakened with
           | { resolved = resolved_value_weakened; typed_dictionary_errors = [] } ->
-              let errors = check_errors ~name_reference errors resolved_value_weakened in
+              let errors =
+                match reference with
+                | Some reference ->
+                    check_errors ~name_reference errors resolved_value_weakened reference
+                | _ -> errors
+              in
               let errors, is_valid_annotation =
                 check_for_missing_annotations errors resolved_value_weakened
               in

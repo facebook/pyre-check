@@ -241,6 +241,43 @@ let test_check_enumeration_attributes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from enum import Enum
+
+              class C(Enum):
+                _value_: str
+                X = "X"
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from enum import Enum
+
+              class C(Enum):
+                _value_: str
+                X = 1
+            |}
+           [
+             "Incompatible attribute type [8]: Attribute `X` declared in class `C` has type `str` \
+              but is used as type `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from enum import Enum
+
+              class C(Enum):
+                _value_: str
+                def __init__(self) -> None:
+                  self._value_ = 1
+            |}
+           [
+             "Incompatible attribute type [8]: Attribute `_value_` declared in class `C` has type \
+              `str` but is used as type `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               import enum
 
               class C(enum.IntEnum):
@@ -275,10 +312,7 @@ let test_check_enumeration_attributes =
               class C(enum.IntEnum):
                 a: str = 1
             |}
-           [
-             "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type `str` \
-              but is used as type `int`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
