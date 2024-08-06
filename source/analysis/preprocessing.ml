@@ -378,6 +378,12 @@ module Qualify (Context : QualifyContext) = struct
       scope, qualify_reference ~scope name
 
 
+  let qualify_identifier_name ~location ~scope:{ aliases; _ } identifier =
+    match Map.find aliases identifier with
+    | Some { name; _ } -> create_name_from_reference ~location name
+    | _ -> Name.Identifier identifier
+
+
   let rec qualify_target ~scope ~qualifier target =
     let rec renamed_scope scope target =
       match target with
@@ -407,16 +413,16 @@ module Qualify (Context : QualifyContext) = struct
     scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
 
 
-  and qualify_name ~qualify_strings ~location ~scope:({ aliases; _ } as scope) = function
-    | Name.Identifier identifier -> (
-        match Map.find aliases identifier with
-        | Some { name; _ } -> create_name_from_reference ~location name
-        | _ -> Name.Identifier identifier)
-    | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
-      ->
-        Name.Identifier attribute
-    | Name.Attribute ({ base; _ } as name) ->
-        Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
+  and qualify_attribute_name ~qualify_strings ~scope ({ Name.Attribute.base; attribute; _ } as name)
+    =
+    match base with
+    | { Node.value = Name (Name.Identifier "builtins"); _ } -> Name.Identifier attribute
+    | _ -> Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
+
+
+  and qualify_name ~qualify_strings ~location ~scope = function
+    | Name.Identifier identifier -> qualify_identifier_name ~location ~scope identifier
+    | Name.Attribute attribute -> qualify_attribute_name ~qualify_strings ~scope attribute
 
 
   and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
@@ -696,13 +702,7 @@ module Qualify (Context : QualifyContext) = struct
     let qualify_pattern = qualify_pattern ~scope in
     let qualify_expression = qualify_expression ~qualify_strings:DoNotQualify ~scope in
     let qualify_match_target name =
-      match
-        qualify_name
-          ~scope
-          ~qualify_strings:DoNotQualify
-          ~location:Location.any
-          (Name.Identifier name)
-      with
+      match qualify_identifier_name ~location:Location.any ~scope name with
       | Name.Identifier name -> name
       | _ -> name
     in
@@ -908,21 +908,17 @@ module Qualify (Context : QualifyContext) = struct
                       let scope, _ = qualify_local_identifier ~scope ~qualifier name in
                       scope
                     in
-                    ( scope,
-                      Expression.Name
-                        (qualify_name
-                           ~qualify_strings:DoNotQualify
-                           ~location
-                           ~scope
-                           (Name.Identifier name)) )
-                | Name name ->
+                    scope, Expression.Name (qualify_identifier_name ~location ~scope name)
+                | Name (Attribute attribute as name) ->
                     let name =
                       if is_class_toplevel then
                         qualify_if_needed ~qualifier (name_to_reference_exn name)
                         |> create_name_from_reference ~location
                         |> fun name -> Expression.Name name
                       else
-                        match qualify_name ~qualify_strings:DoNotQualify ~location ~scope name with
+                        match
+                          qualify_attribute_name ~qualify_strings:DoNotQualify ~scope attribute
+                        with
                         | Name.Identifier name ->
                             Expression.Name (Name.Identifier (Identifier.sanitized name))
                         | qualified -> Name qualified
