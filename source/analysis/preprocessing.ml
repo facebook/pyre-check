@@ -1057,14 +1057,9 @@ module Qualify (Context : QualifyContext) = struct
                         qualify_expression ~qualify_strings:DoNotQualify ~scope decorator
                   in
                   let decorators = List.map decorators ~f:qualify_decorator in
+                  let _, name = qualify_function_name ~scope name in
                   let signature =
-                    {
-                      define.signature with
-                      name = qualify_reference ~scope name;
-                      parameters;
-                      decorators;
-                      return_annotation;
-                    }
+                    { define.signature with name; parameters; decorators; return_annotation }
                   in
                   scope, { Node.location; value = Statement.Define { define with signature } }
               | _ -> qualify_statement statement ~scope
