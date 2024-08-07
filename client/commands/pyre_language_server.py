@@ -575,6 +575,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         query_parameters = [
             "buck2",
             "bxl",
+            "--reuse-current-config",
+            "--oncall=pyre",
+            "--client-metadata=client_id=pyre.ide",
             "prelude//python/sourcedb/typing_query.bxl:typing_query",
             "--",
             *[
@@ -621,8 +624,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
         type_check_parameters = [
             "buck2",
             "bxl",
-            "--preemptible",
-            "ondifferentstate",
+            "--reuse-current-config",
+            "--preemptible=ondifferentstate",
+            "--oncall=pyre",
+            "--client-metadata=client_id=pyre.ide",
             "prelude//python/typecheck/batch_files.bxl:run",
             "--",
             *[
