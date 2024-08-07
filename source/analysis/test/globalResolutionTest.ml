@@ -1792,7 +1792,9 @@ let test_metaclasses =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass resolution target)
+    assert_equal
+      (Some (Type.Primitive metaclass))
+      (GlobalResolution.metaclass ~variable_map:Type.empty_variable_map resolution target)
   in
   test_list
     [

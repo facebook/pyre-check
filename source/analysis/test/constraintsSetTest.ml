@@ -219,7 +219,9 @@ let make_assert_functions context =
       ()
     =
     let handler =
-      let metaclass name ~assumptions:_ = GlobalResolution.metaclass resolution name in
+      let metaclass name ~assumptions:_ =
+        GlobalResolution.metaclass ~variable_map:Type.empty_variable_map resolution name
+      in
       let order =
         {
           ConstraintsSet.class_hierarchy = hierarchy environment;

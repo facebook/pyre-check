@@ -147,7 +147,11 @@ val instantiate_attribute
   AnnotatedAttribute.uninstantiated ->
   AnnotatedAttribute.instantiated
 
-val metaclass : t -> Type.Primitive.t -> Type.t option
+val metaclass
+  :  t ->
+  variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
+  Type.Primitive.t ->
+  Type.t option
 
 val resolve_mutable_literals
   :  t ->

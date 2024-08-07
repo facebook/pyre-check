@@ -479,7 +479,11 @@ let is_enum resolution annotation =
   if class_name >>| does_class_extend_enum resolution |> Option.value ~default:false then
     true
   else
-    match class_name >>| metaclass resolution |> Option.value ~default:None with
+    match
+      class_name
+      >>| metaclass ~variable_map:(get_variable resolution) resolution
+      |> Option.value ~default:None
+    with
     | Some metaclass_type ->
         less_or_equal resolution ~left:metaclass_type ~right:(Primitive "enum.EnumMeta")
         || less_or_equal resolution ~left:metaclass_type ~right:(Primitive "enum.EnumType")
