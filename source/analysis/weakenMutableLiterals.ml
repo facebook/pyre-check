@@ -108,7 +108,6 @@ let distribute_union_over_parametric ~parametric_name ~number_of_parameters anno
 
 let rec weaken_mutable_literals
     ~resolve
-    ~resolve_items_individually
     ~get_typed_dictionary
     ~expression
     ~resolved
@@ -129,7 +128,6 @@ let rec weaken_mutable_literals
                 ~expression
                 ~resolved
                 ~expected:expected_type
-                ~resolve_items_individually
                 ~comparator:comparator_without_override,
               expected_type ))
           expected_types
@@ -179,10 +177,10 @@ let rec weaken_mutable_literals
           ~f:(fun item ->
             let resolved_item_type = resolve item in
             let resolved =
-              if resolve_items_individually && not (Type.is_top resolved_item_type) then
-                resolved_item_type
-              else
-                actual_item_type
+              (* Check whether there are multiple element types that need individual resolution. *)
+              match actual_item_type, Type.is_top resolved_item_type with
+              | Type.Union _, false -> resolved_item_type
+              | _ -> actual_item_type
             in
             weaken_mutable_literals
               ~get_typed_dictionary
@@ -190,7 +188,6 @@ let rec weaken_mutable_literals
               ~expression:(Some item)
               ~resolved
               ~expected:expected_item_type
-              ~resolve_items_individually
               ~comparator:comparator_without_override)
           items
       in
@@ -226,7 +223,6 @@ let rec weaken_mutable_literals
               ~expression:(Some item)
               ~resolved:actual_item_type
               ~expected:expected_item_type
-              ~resolve_items_individually
               ~comparator:comparator_without_override)
           items
           actual_item_types
@@ -257,7 +253,6 @@ let rec weaken_mutable_literals
                 ~expression:(Some item)
                 ~resolved:actual_item_type
                 ~expected:expected_item_type
-                ~resolve_items_individually
                 ~comparator:comparator_without_override)
             items
             actual_item_types
@@ -310,7 +305,6 @@ let rec weaken_mutable_literals
                             ~resolved
                             ~expected:annotation
                             ~comparator:comparator_without_override
-                            ~resolve_items_individually
                             ~get_typed_dictionary
                         else if comparator ~left:resolved ~right:annotation then
                           make_weakened_type annotation
@@ -453,7 +447,6 @@ let rec weaken_mutable_literals
           ~expected:(Type.parametric mutable_generic_name parameters)
           ~comparator:comparator_without_override
           ~expression
-          ~resolve_items_individually
       in
       let resolved =
         match weakened_fallback_type with
@@ -477,7 +470,6 @@ let rec weaken_mutable_literals
         ~actual_value_type
         ~expected_key_type
         ~expected_value_type
-        ~resolve_items_individually
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
       Type.Parametric { name = "dict"; parameters = [Single actual_key; Single actual_value] },
       Type.Parametric { name = "dict"; parameters = [Single expected_key; Single expected_value] } )
@@ -519,7 +511,6 @@ let rec weaken_mutable_literals
           ~resolved
           ~expected:(Type.RecursiveType.unfold_recursive_type recursive_type)
           ~comparator:comparator_without_override
-          ~resolve_items_individually:true
       in
       let resolved =
         if comparator ~left:weakened_fallback_type ~right:expected then
@@ -536,7 +527,6 @@ let rec weaken_mutable_literals
         ~resolved
         ~comparator:comparator_without_override
         ~expression
-        ~resolve_items_individually
   | _ ->
       weaken_by_distributing_union
         ~get_typed_dictionary
@@ -545,7 +535,6 @@ let rec weaken_mutable_literals
         ~resolved
         ~comparator:comparator_without_override
         ~expression
-        ~resolve_items_individually
 
 
 and weaken_dictionary_entries
@@ -558,7 +547,6 @@ and weaken_dictionary_entries
     ~actual_value_type
     ~expected_key_type
     ~expected_value_type
-    ~resolve_items_individually
   =
   let comparator_without_override = comparator in
   let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
@@ -574,7 +562,6 @@ and weaken_dictionary_entries
                  ~expression:(Some key)
                  ~resolved:actual_key_type
                  ~expected:expected_key_type
-                 ~resolve_items_individually
                  ~comparator:comparator_without_override)
         | Splat _ -> None)
       entries
@@ -585,14 +572,19 @@ and weaken_dictionary_entries
       ~f:(fun entry ->
         match entry with
         | KeyValue { value; _ } ->
+            let resolved =
+              (* Check whether there are multiple element types that need individual resolution. *)
+              match actual_value_type with
+              | Type.Union _ -> resolve value
+              | _ -> actual_value_type
+            in
             Some
               (weaken_mutable_literals
                  ~get_typed_dictionary
                  ~resolve
                  ~expression:(Some value)
-                 ~resolved:(if resolve_items_individually then resolve value else actual_value_type)
+                 ~resolved
                  ~expected:expected_value_type
-                 ~resolve_items_individually
                  ~comparator:comparator_without_override)
         | Splat _ -> None)
       entries
@@ -616,7 +608,6 @@ and weaken_by_distributing_union
     ~resolved
     ~comparator
     ~expression
-    ~resolve_items_individually
   =
   let open Expression in
   let comparator_without_override = comparator in
@@ -648,7 +639,6 @@ and weaken_by_distributing_union
             ~expression
             ~resolved
             ~expected
-            ~resolve_items_individually
             ~comparator:comparator_without_override
       | None -> make_weakened_type resolved)
   | _ -> make_weakened_type resolved
@@ -661,7 +651,6 @@ and weaken_against_readonly
     ~resolved
     ~comparator
     ~expression
-    ~resolve_items_individually
   =
   let open Expression in
   let comparator_ignoring_readonly_without_override ~get_typed_dictionary_override ~left ~right =
@@ -687,7 +676,6 @@ and weaken_against_readonly
         ~resolved
         ~expected
         ~comparator:comparator_ignoring_readonly_without_override
-        ~resolve_items_individually
     in
     if comparator_ignoring_readonly ~left:weakened_resolved_type ~right:expected then
       { weakened_type with resolved = expected }
@@ -721,6 +709,3 @@ and weaken_against_readonly
         ~parametric_name
         [expected_parameter_type]
   | _ -> make_weakened_type resolved
-
-
-let weaken_mutable_literals = weaken_mutable_literals ~resolve_items_individually:false

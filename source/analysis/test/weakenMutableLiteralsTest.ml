@@ -25,6 +25,7 @@ let test_weaken_mutable_literals context =
       import enum
       class C: ...
       class D(C): ...
+      class E(C): ...
       class Q: ...
       class MyEnum(enum.Enum):
         ONE = 1
@@ -65,6 +66,10 @@ let test_weaken_mutable_literals context =
     ~source:"[test.D()]"
     ~against:"typing.List[test.C]"
     "typing.List[test.C]";
+  assert_weaken_mutable_literals
+    ~source:"[[test.D()], [test.E()]]"
+    ~against:"typing.List[typing.List[test.C]]"
+    "typing.List[typing.List[test.C]]";
   assert_weaken_mutable_literals
     ~source:"[test.Q()]"
     ~against:"typing.List[test.C]"
@@ -737,9 +742,7 @@ let test_weaken_mutable_literals_typed_dictionary context =
       "{'hello': { 'name': 'The Matrix', 'year': 1999 }, 'world': { 'name': 37, 'year': 1999 }}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))
     (name_type_mismatch
-       ~resolved:
-         "typing.Dict[str, typing.Union[typing.Dict[str, int], typing.Dict[str, typing.Union[int, \
-          str]], test.ClassBasedMovie]]");
+       ~resolved:"typing.Dict[str, typing.Union[typing.Dict[str, int], test.ClassBasedMovie]]");
   assert_weaken_mutable_literals
     ~source:"{'hello': { 'name': 37, 'year': 1999 }}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))
