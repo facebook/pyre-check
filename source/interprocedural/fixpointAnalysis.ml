@@ -566,7 +566,12 @@ module Make (Analysis : ANALYSIS) = struct
             Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
         | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define)
     | Target.Override _ as callable ->
-        analyze_overrides ~max_iterations ~override_graph ~step ~callable
+        Alarm.with_alarm
+          ~max_time_in_seconds:60
+          ~event_name:"override analysis"
+          ~callable:(Target.show_pretty callable)
+          (fun () -> analyze_overrides ~max_iterations ~override_graph ~step ~callable)
+          ()
     | Target.Object _ as target ->
         Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty target |> failwith
 
