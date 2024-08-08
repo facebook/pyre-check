@@ -3560,22 +3560,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         Some annotation, true, is_class_variable)
               |> Option.value ~default:(None, false, false)
             in
-            (* Handle enumeration attributes. *)
-            let annotation, visibility =
-              if is_enum && Attribute.may_be_enum_member attribute then
-                ( Some
-                    (Type.Literal
-                       (Type.EnumerationMember
-                          { enumeration_type = class_annotation; member_name = attribute_name })),
-                  AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
+            let visibility =
+              if final then
+                AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
               else
-                let visibility =
-                  if final then
-                    AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
-                  else
-                    ReadWrite
-                in
-                annotation, visibility
+                ReadWrite
             in
             (* Try resolve to tuple of string literal types for __match_args__ *)
             let annotation =
@@ -3595,9 +3584,27 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   List.map elements ~f:string_literal_value_to_type |> Option.all >>| Type.tuple
               | _ -> annotation
             in
-            let annotation =
+            let annotation, visibility =
               match annotation, value with
-              | Some annotation, _ -> annotation
+              | _, Some value when is_enum && Attribute.may_be_enum_member attribute ->
+                  let literal_value_annotation =
+                    self#resolve_literal ~variable_map ~assumptions value
+                  in
+                  let is_enum_member =
+                    match literal_value_annotation with
+                    | Type.Primitive "enum.nonmember" -> false
+                    | _ -> true
+                  in
+                  if is_enum_member then
+                    ( Type.Literal
+                        (Type.EnumerationMember
+                           { enumeration_type = class_annotation; member_name = attribute_name }),
+                      AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
+                  else if (not (Type.is_partially_typed literal_value_annotation)) && toplevel then
+                    Option.value annotation ~default:literal_value_annotation, visibility
+                  else
+                    Option.value annotation ~default:Type.Top, visibility
+              | Some annotation, _ -> annotation, visibility
               | None, Some value ->
                   let literal_value_annotation =
                     self#resolve_literal ~variable_map ~assumptions value
@@ -3612,10 +3619,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     && (not is_dataclass_attribute)
                     && toplevel
                   then (* Treat literal attributes as having been explicitly annotated. *)
-                    literal_value_annotation
+                    literal_value_annotation, visibility
                   else
-                    Type.Top
-              | _ -> Type.Top
+                    Type.Top, visibility
+              | _ -> Type.Top, visibility
             in
             ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
               class_variable,
@@ -3900,7 +3907,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         else
           Type.Any
       in
-
       let order = self#full_order ~assumptions in
       match Node.value expression with
       | Expression.Await expression ->
