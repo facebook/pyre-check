@@ -4610,15 +4610,9 @@ module State (Context : Context) = struct
                   | Some reference -> Type.Primitive (Reference.show reference)
                 in
                 let is_enum = GlobalResolution.is_enum global_resolution parent_annotation in
-                let compatible_with_explicit_annotation =
-                  if has_explicit_annotation then
-                    GlobalResolution.less_or_equal global_resolution ~left:expected ~right:resolved
-                  else
-                    true
-                in
-                (* If a type annotation is provided for _value_, the members of the enum must match
-                   that type. *)
-                let compatible_with_value_attr, expected_enumeration_type =
+                if is_enum then
+                  (* If a type annotation is provided for _value_, the members of the enum must
+                     match that type. *)
                   match
                     ( resolved,
                       GlobalResolution.attribute_from_annotation
@@ -4630,7 +4624,7 @@ module State (Context : Context) = struct
                      constructor instead of being assigned to _value_ directly, so we don't have to
                      do this check. *)
                   | Type.Tuple _, Some _ -> true, expected
-                  | _, Some instantiated -> begin
+                  | _, Some instantiated ->
                       let { TypeInfo.Unit.annotation; _ } =
                         AnnotatedAttribute.annotation instantiated
                       in
@@ -4639,11 +4633,9 @@ module State (Context : Context) = struct
                           ~left:annotation
                           ~right:resolved,
                         annotation )
-                    end
                   | _ -> true, expected
-                in
-                ( is_enum && compatible_with_explicit_annotation && compatible_with_value_attr,
-                  expected_enumeration_type )
+                else
+                  false, expected
               in
               (* Use the type annotation for _value_ on enum assignments for better error
                  messages *)
