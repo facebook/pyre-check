@@ -2171,7 +2171,7 @@ module State (Context : Context) = struct
                         _;
                       } );
             };
-          arguments = { Call.Argument.value; _ } :: _;
+          arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Special case reveal_type(). *)
         let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
