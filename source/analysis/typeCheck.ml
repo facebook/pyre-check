@@ -6858,6 +6858,7 @@ module State (Context : Context) = struct
                 else
                   errors
             | Top
+            | Any
             (* There's some other problem we already errored on *)
             | Primitive _
             | Parametric _

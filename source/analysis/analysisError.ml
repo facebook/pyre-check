@@ -3972,6 +3972,13 @@ let filter ~resolution errors =
             | ClassHierarchy.Untracked _ -> false
           in
           Type.exists actual ~predicate:is_subclass_of_mock
+      | InvalidOverride { parent; _ } -> (
+          try
+            match GlobalResolution.get_class_metadata resolution parent with
+            | None -> false
+            | Some { ClassSuccessorMetadataEnvironment.is_mock; _ } -> is_mock
+          with
+          | ClassHierarchy.Untracked _ -> false)
       | UnexpectedKeyword { callee = Some callee; _ } ->
           String.is_prefix ~prefix:"unittest.mock" (Reference.show callee)
       | _ -> false

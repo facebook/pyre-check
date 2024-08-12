@@ -1979,7 +1979,7 @@ let test_check_invalid_inheritance =
               class MySpecialClass(Any, int):
                 pass
             |}
-           ["Invalid inheritance [39]: `typing.Any` is not a valid parent class."];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
