@@ -672,7 +672,7 @@ So, for example, if I have a directory tree with just `a/b/c.py` then Pyre will 
 A namespace package module can never contain useful types or code so it is rare to directly import it, but in special cases it might be useful (for example to access the `__name__` attribute).
 In these cases, you'll need to suppress Pyre errors.
 
-### 19: Too Many Argument
+### 19: Too Many Arguments
 
 Pyre verifies that you pass a legal number of arguments to functions.
 
