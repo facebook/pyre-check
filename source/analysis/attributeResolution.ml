@@ -1668,7 +1668,6 @@ let apply_dataclass_transforms_to_table
         }
         :: parameters
       in
-
       let callable =
         {
           Type.Callable.kind = Named (Reference.combine name (Reference.create attribute_name));
@@ -1677,7 +1676,6 @@ let apply_dataclass_transforms_to_table
             { annotation; parameters = Defined (Type.Callable.CallableParamType.create parameters) };
         }
       in
-
       AnnotatedAttribute.create_uninstantiated
         ~uninstantiated_annotation:
           {
@@ -1727,12 +1725,14 @@ let apply_dataclass_transforms_to_table
                                {
                                  Node.value =
                                    Name
-                                     (Name.Attribute
-                                       {
-                                         attribute = "ClassVar";
-                                         base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                         _;
-                                       });
+                                     ( Name.Attribute
+                                         {
+                                           attribute = "ClassVar";
+                                           base =
+                                             { Node.value = Name (Name.Identifier "typing"); _ };
+                                           _;
+                                         }
+                                     | Name.Identifier "typing.ClassVar" );
                                  _;
                                };
                              _;
@@ -1746,7 +1746,7 @@ let apply_dataclass_transforms_to_table
               false
           | _ -> true
         in
-        let get_table_from_classsummary ({ Node.value = class_summary; _ } as parent) =
+        let get_table_from_class_summary ({ Node.value = class_summary; _ } as parent) =
           let create attribute : AnnotatedAttribute.uninstantiated * Expression.t =
             let value =
               match attribute with
@@ -1756,7 +1756,6 @@ let apply_dataclass_transforms_to_table
               | { Node.location; _ } ->
                   Node.create (Expression.Constant Constant.Ellipsis) ~location
             in
-
             ( create_attribute
                 ~variable_map:get_variable
                 ~parent
@@ -1776,17 +1775,15 @@ let apply_dataclass_transforms_to_table
           |> List.sort ~compare:compare_by_location
           |> List.map ~f:create
         in
-
         let attribute_tables =
           (Reference.show name
           |> successors
           |> List.filter_map ~f:get_class_summary
           |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
           |> List.rev
-          |> List.map ~f:get_table_from_classsummary)
-          @ [get_table_from_classsummary definition]
+          |> List.map ~f:get_table_from_class_summary)
+          @ [get_table_from_class_summary definition]
         in
-
         let extract_dataclass_field_arguments (_, value) =
           match value with
           | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
@@ -1798,7 +1795,6 @@ let apply_dataclass_transforms_to_table
                 arguments
           | _ -> None
         in
-
         let init_not_disabled attribute =
           let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
             match name, value with
@@ -1811,7 +1807,6 @@ let apply_dataclass_transforms_to_table
           | Some arguments -> not (List.exists arguments ~f:is_disable_init)
           | _ -> true
         in
-
         let extract_init_value (attribute, value) =
           let initialized = AnnotatedAttribute.initialized attribute in
           let get_default_value { Call.Argument.name; value } =
@@ -1847,7 +1842,6 @@ let apply_dataclass_transforms_to_table
                 | _ -> Some false)
             | _ -> None
           in
-
           match initialized with
           | NotInitialized -> None
           | _ -> (
@@ -1855,7 +1849,6 @@ let apply_dataclass_transforms_to_table
               | Some arguments -> List.find_map arguments ~f:get_is_keyword_only
               | _ -> None)
         in
-
         let split_parameters_by_keyword_only parameters =
           let keyword_only, not_keyword_only =
             List.partition_tf parameters ~f:(function
@@ -1953,7 +1946,6 @@ let apply_dataclass_transforms_to_table
                   single_parameter, true
               | _ -> original_annotation, false)
         in
-
         (* Override the attribute table with respect to frozen attributes *)
         let handle_frozen_attributes table frozen =
           let frozen_attributes attribute name =
@@ -1970,7 +1962,6 @@ let apply_dataclass_transforms_to_table
           Stdlib.Hashtbl.iter (fun name attribute -> frozen_attributes attribute name) table
         in
         handle_frozen_attributes table.attributes frozen;
-
         (* We are unable to use init_parameters because slots items can have different values
          * for ancestors and we do not want the dummy star argument.
          * TODO(T130663259) Inaccurate for ancestors *)
@@ -1983,7 +1974,6 @@ let apply_dataclass_transforms_to_table
           else
             []
         in
-
         let methods =
           if init && not (already_in_table "__init__") then
             [
@@ -2034,7 +2024,6 @@ let apply_dataclass_transforms_to_table
         let methods =
           if match_args && not (already_in_table "__match_args__") then
             let parameter_name { Callable.CallableParamType.name; _ } = Identifier.sanitized name in
-
             let params = match_parameters ~implicitly_initialize:false in
             let is_not_initvar param =
               match param.Callable.CallableParamType.annotation with
