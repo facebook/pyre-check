@@ -165,6 +165,7 @@ val resolve_define
   :  t ->
   implementation:Define.Signature.t option ->
   overloads:Define.Signature.t list ->
+  variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
   AttributeResolution.resolved_define
 
 val signature_select

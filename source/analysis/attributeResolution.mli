@@ -293,6 +293,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     implementation:Define.Signature.t option ->
     overloads:Define.Signature.t list ->
+    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
     resolved_define
 
   val signature_select

@@ -14,7 +14,13 @@ open Statement
 open Test
 
 let resolve_define resolution define =
-  match GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[] with
+  match
+    GlobalResolution.resolve_define
+      resolution
+      ~implementation:(Some define)
+      ~overloads:[]
+      ~variable_map:(GlobalResolution.get_variable resolution)
+  with
   | { decorated = Ok (Callable { implementation; _ }); _ } -> implementation
   | _ -> failwith "impossible"
 

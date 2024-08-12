@@ -3643,7 +3643,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 List.fold ~init:(None, []) ~f:to_signature overloads
               in
               let { decorated; undecorated_signature } =
-                self#resolve_define ~implementation ~overloads ~assumptions
+                self#resolve_define ~implementation ~overloads ~assumptions ~variable_map
               in
               let annotation =
                 match decorated with
@@ -3942,6 +3942,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 |> fun (overloads, implementations) ->
                 self#resolve_define
                   ~assumptions
+                  ~variable_map
                   ~implementation:(List.last implementations)
                   ~overloads
               in
@@ -3999,12 +4000,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
-    method resolve_define ~assumptions ~implementation ~overloads =
-      let Queries.
-            { resolve_exports; param_spec_from_vararg_annotations; variables; get_variable; _ }
-        =
-        queries
-      in
+    method resolve_define ~assumptions ~implementation ~overloads ~variable_map =
+      let Queries.{ resolve_exports; param_spec_from_vararg_annotations; variables; _ } = queries in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -4236,10 +4233,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                    (AnnotatedAttribute.InvalidDecorator { index; reason = error })
                         | expression ->
                             let resolved =
-                              self#resolve_literal
-                                ~assumptions
-                                ~variable_map:get_variable
-                                expression
+                              self#resolve_literal ~assumptions ~variable_map expression
                             in
                             if Type.is_untyped resolved || Type.contains_unknown resolved then
                               make_error error
@@ -4306,8 +4300,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let parse =
         let parser =
           {
-            AnnotatedCallable.parse_annotation =
-              self#parse_annotation ~assumptions ~variable_map:get_variable;
+            AnnotatedCallable.parse_annotation = self#parse_annotation ~assumptions ~variable_map;
             param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
           }
         in
@@ -4587,6 +4580,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               |> fun (overloads, implementations) ->
               self#resolve_define
                 ~implementation:(List.last implementations)
+                ~variable_map:get_variable
                 ~overloads
                 ~assumptions
             in

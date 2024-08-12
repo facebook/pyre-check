@@ -56,7 +56,11 @@ let decorate
   | [] -> define_node
   | _ -> (
       match
-        GlobalResolution.resolve_define resolution ~implementation:(Some signature) ~overloads:[]
+        GlobalResolution.resolve_define
+          resolution
+          ~implementation:(Some signature)
+          ~overloads:[]
+          ~variable_map:(GlobalResolution.get_variable resolution)
       with
       | {
        decorated =

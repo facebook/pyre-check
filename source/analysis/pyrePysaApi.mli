@@ -82,10 +82,17 @@ module ReadOnly : sig
 
   val get_define_body : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
 
+  val get_variable
+    :  t ->
+    ?replace_unbound_parameters_with_any:bool ->
+    string ->
+    Type.Variable.t option
+
   val resolve_define
     :  t ->
     implementation:Ast.Statement.Define.Signature.t option ->
     overloads:Ast.Statement.Define.Signature.t list ->
+    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
     AttributeResolution.resolved_define
 
   val global : t -> Ast.Reference.t -> AttributeResolution.Global.t option

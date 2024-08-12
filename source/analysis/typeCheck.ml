@@ -806,6 +806,7 @@ module State (Context : Context) = struct
     match
       GlobalResolution.resolve_define
         global_resolution
+        ~variable_map:(GlobalResolution.get_variable global_resolution)
         ~implementation:(Some signature)
         ~overloads:[]
     with
