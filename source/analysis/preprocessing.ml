@@ -2562,22 +2562,20 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         |> (fun parameters -> Expression.Tuple parameters)
         |> node
       in
-      let annotation =
-        let create_name name =
-          Node.create ~location (Expression.Name (create_name ~location name))
-        in
-        let p = subscript "typing.Tuple" ~location in
-        let q =
+      let fields_annotation =
+        let create_name name = Expression.Name (create_name ~location name) |> node in
+        let tuple_members =
           match List.length attributes with
-          | 0 -> [Node.create ~location (Expression.Tuple [])]
+          | 0 -> [Expression.Tuple [] |> node]
           | l -> List.init l ~f:(fun _ -> create_name "str")
         in
-        q |> p |> Node.create ~location
+        let tuple_annotation = subscript "typing.Tuple" ~location tuple_members |> node in
+        subscript "typing.ClassVar" ~location [tuple_annotation] |> node
       in
       Statement.Assign
         {
           Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
-          annotation = Some annotation;
+          annotation = Some fields_annotation;
           value = Some value;
         }
       |> Node.create ~location

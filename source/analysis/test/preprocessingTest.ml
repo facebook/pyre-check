@@ -4688,7 +4688,7 @@ let test_transform_ast =
         def __new__(cls, a: typing.Any) -> typing.NamedTuple: ...
         def __init__(self, a: typing.Any) -> None:
           self.a = a
-        _fields: typing.Tuple[str] = ('a',)
+        _fields: typing.ClassVar[typing.Tuple[str]] = ('a',)
         a: typing.Final[typing.Any] = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -4702,7 +4702,7 @@ let test_transform_ast =
         def __init__(self, one: typing.Any, two: typing.Any) -> None:
          self.one = one
          self.two = two
-        _fields: typing.Tuple[str, str] = ('one', 'two')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
         one: typing.Final[typing.Any] = ...
         two: typing.Final[typing.Any] = ...
     |};
@@ -4717,7 +4717,7 @@ let test_transform_ast =
         def __init__(self, one: int, two: str) -> None:
          self.one = one
          self.two = two
-        _fields: typing.Tuple[str, str] = ('one', 'two')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
         one: typing.Final[int] = ...
         two: typing.Final[str] = ...
     |};
@@ -4737,7 +4737,7 @@ let test_transform_ast =
           self.a = a
           self.b = b
           self.c = c
-        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
         a: typing.Final[typing.Any] = ...
         b: typing.Final[typing.Any] = ...
         c: typing.Final[typing.Any] = ...
@@ -4758,7 +4758,7 @@ let test_transform_ast =
           self.a = a
           self.b = b
           self.c = c
-        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
         a: typing.Final[typing.Any] = ...
         b: typing.Final[typing.Any] = ...
         c: typing.Final[typing.Any] = ...
@@ -4782,7 +4782,7 @@ let test_transform_ast =
           self.a = a
           self.b = b
           self.c = c
-        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
         a: typing.Final[typing.Any] = ...
         b: typing.Final[typing.Any] = ...
         c: typing.Final[typing.Any] = ...
@@ -4801,7 +4801,7 @@ let test_transform_ast =
         def __init__(self, a: typing.Any, b: typing.Any) -> None:
           self.a = a
           self.b = b
-        _fields: typing.Tuple[str, str] = ('a', 'b')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('a', 'b')
         a: typing.Final[typing.Any] = ...
         b: typing.Final[typing.Any] = ...
   |};
@@ -4817,7 +4817,7 @@ let test_transform_ast =
         def __init__(self, one: typing.Any, two: typing.Any) -> None:
           self.one = one
           self.two = two
-        _fields: typing.Tuple[str, str] = ('one', 'two')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
         one: typing.Final[typing.Any] = ...
         two: typing.Final[typing.Any] = ...
         three: int = 1
@@ -4837,7 +4837,7 @@ let test_transform_ast =
           self.a = a
           self.b = b
           self.c = c
-        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
         a: typing.Final[int] = ...
         b: typing.Final[str] = ...
         c: typing.Final[int] = ...
@@ -4863,7 +4863,7 @@ let test_transform_ast =
         def __init__(self, blah: int, state: State) -> None:
           self.blah = blah
           self.state = state
-        _fields: Tuple[str, str] = ('blah', 'state')
+        _fields: typing.ClassVar[Tuple[str, str]] = ('blah', 'state')
         blah: Final[int] = ...
         state: Final[State] = ...
     |};
@@ -4888,7 +4888,7 @@ let test_transform_ast =
         def __init__(self, blah: int, state: State) -> None:
           self.blah = blah
           self.state = state
-        _fields: Tuple[str, str] = ('blah', 'state')
+        _fields: typing.ClassVar[Tuple[str, str]] = ('blah', 'state')
         blah: Final[int] = ...
         state: Final[State] = ...
     |};
@@ -4920,7 +4920,7 @@ let test_transform_ast =
            self.value = value
            self.ts = ts
            self.lazy = lazy
-         _fields: typing.Tuple[str, str, str, str, str] = ('op', 'path', 'value', 'ts', 'lazy')
+         _fields: typing.ClassVar[typing.Tuple[str, str, str, str, str]] = ('op', 'path', 'value', 'ts', 'lazy')
          op: typing.Final[typing.Any] = ...
          path: typing.Final[typing.Any] = ...
          value: typing.Final[typing.Any] = ...
@@ -4941,7 +4941,7 @@ let test_transform_ast =
           def __init__(self, a: typing.Any, b: typing.Any) -> None:
             self.a = a
             self.b = b
-          _fields: typing.Tuple[str, str] = ('a', 'b')
+          _fields: typing.ClassVar[typing.Tuple[str, str]] = ('a', 'b')
           a: typing.Final[typing.Any] = ...
           b: typing.Final[typing.Any] = ...
     |};
@@ -4956,7 +4956,7 @@ let test_transform_ast =
         class T(typing.NamedTuple):
           def __new__(cls) -> typing.NamedTuple: ...
           def __init__(self) -> None: ...
-          _fields: typing.Tuple[()] = ()
+          _fields: typing.ClassVar[typing.Tuple[()]] = ()
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -4979,7 +4979,7 @@ let test_transform_ast =
     |}
            {|
       class Foo(typing.NamedTuple):
-        _fields: typing.Tuple[str, str] = ('one', 'two')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
         one: typing.Final[typing.Any] = ...
         two: typing.Final[typing.Any] = ...
         def __new__(cls, one) -> typing.NamedTuple:
@@ -4996,7 +4996,7 @@ let test_transform_ast =
         def __init__(self, one: int, two: str) -> None:
           self.one = one
           self.two = two
-        _fields: typing.Tuple[str, str] = ('one', 'two')
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
         one: typing.Final[int] = ...
         two: typing.Final[str] = ...
     |};
