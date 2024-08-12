@@ -539,6 +539,10 @@ and kind =
     }
   | DuplicateParameter of string
   | TupleConcatenationError of tuple_concatenation_problem
+  | AssertType of {
+      actual: Type.t;
+      expected: Type.t;
+    }
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

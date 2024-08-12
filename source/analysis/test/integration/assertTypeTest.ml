@@ -69,12 +69,9 @@ let test_assert_type_from_conformance =
                   assert_type(e, int)  # Error: Type mismatch
             |}
            [
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `int` but got `Union[int, str]`.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `int` but got `typing.Any`.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `int` but got `typing_extensions.Literal[4]`.";
+             "Assert type [70]: Expected `int` but got `Union[int, str]`.";
+             "Assert type [70]: Expected `int` but got `typing.Any`.";
+             "Assert type [70]: Expected `int` but got `typing_extensions.Literal[4]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -93,8 +90,7 @@ let test_assert_type_from_conformance =
             |}
            [
              "Missing argument [20]: Call `assert_type` expects argument in position 0.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `int` but got `str`.";
+             "Assert type [70]: Expected `int` but got `typing_extensions.Literal['']`.";
              "Too many arguments [19]: Call `assert_type` expects 2 positional arguments, 3 were \
               provided.";
            ];
@@ -120,7 +116,7 @@ let test_assert_type_edge_cases =
       @@ assert_type_errors
            {|
               from typing import assert_type, Dict, Tuple
-        
+
               def f(
                   *args: int,
                   **kwargs: int,

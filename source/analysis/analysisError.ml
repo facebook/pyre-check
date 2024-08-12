@@ -885,6 +885,10 @@ and kind =
     }
   | DuplicateParameter of string
   | TupleConcatenationError of tuple_concatenation_problem
+  | AssertType of {
+      actual: Type.t;
+      expected: Type.t;
+    }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -969,6 +973,7 @@ let code_of_kind = function
   | InvalidExceptionGroupHandler _ -> 67
   | InvalidTypeGuard _ -> 68
   | InvalidPositionalOnlyParameter -> 69
+  | AssertType _ -> 70
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1056,6 +1061,7 @@ let name_of_kind = function
   | UnusedIgnore _ -> "Unused ignore"
   | UnusedLocalMode _ -> "Unused local mode"
   | TupleConcatenationError _ -> "Unable to concatenate tuple"
+  | AssertType _ -> "Assert type"
 
 
 let weaken_literals kind =
@@ -3107,6 +3113,12 @@ let rec messages ~concise ~signature location kind =
           (mode_string actual_mode)
           (Location.line (Node.location actual_mode));
       ]
+  | AssertType { actual; expected } ->
+      let mismatch = { actual; expected; due_to_invariance = false } in
+      let { actual; expected; _ } = simplify_mismatch mismatch in
+      let expected = Format.asprintf "`%a`" pp_type expected in
+      let actual = Format.asprintf "`%a`" pp_type actual in
+      [Format.sprintf "Expected %s but got %s." expected actual]
 
 
 module T = struct
@@ -3257,6 +3269,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedAttribute { origin = Class { class_origin = ClassType annotation; _ }; _ } ->
       Type.contains_unknown annotation
   | AnalysisFailure _
+  | AssertType _
   | BroadcastError _
   | ParserFailure _
   | DeadStore _
@@ -3837,6 +3850,7 @@ let join ~resolution left right =
     | UnsafeCast _, _
     | TooManyArguments _, _
     | TupleConcatenationError _, _
+    | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryKeyNotFound _, _
     | TypedDictionaryInvalidOperation _, _
@@ -4545,6 +4559,8 @@ let dequalify
     | UnusedIgnore codes -> UnusedIgnore codes
     | UnusedLocalMode mode -> UnusedLocalMode mode
     | Unpack unpack -> Unpack unpack
+    | AssertType { actual; expected } ->
+        AssertType { actual = dequalify actual; expected = dequalify expected }
   in
   let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =

@@ -58,8 +58,6 @@ let test_enumeration_inheritance =
 let test_enumeration_methods =
   test_list
     [
-      (* nonmember is a constructor, but we should probably use the type of the parameter for
-         typechecking the attribute *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
@@ -74,8 +72,8 @@ let test_enumeration_methods =
             |}
            [
              "Revealed type [-1]: Revealed type for `test.MyEnum.foo` is `nonmember`.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing_extensions.Literal[MyEnum.foo]` but got `nonmember`.";
+             "Assert type [70]: Expected `typing_extensions.Literal[MyEnum.foo]` but got \
+              `nonmember`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
@@ -295,6 +293,7 @@ let test_enumeration_methods =
               assert_type(Color.__RED, Literal[Color.__RED])
             |}
            [
+             "Assert type [70]: Expected `typing_extensions.Literal[Color.__RED]` but got `unknown`.";
              "Undefined attribute [16]: `Color` has no attribute `__RED`. `__RED` looks like a \
               private attribute, which is not accessible from outside its parent class.";
            ];
@@ -311,8 +310,8 @@ let test_enumeration_methods =
                   assert_type(Color.__RED, Literal[Color.__RED])
             |}
            [
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing_extensions.Literal[Color._Color__RED]` but got `int`.";
+             "Assert type [70]: Expected `typing_extensions.Literal[Color._Color__RED]` but got \
+              `int`.";
            ];
     ]
 

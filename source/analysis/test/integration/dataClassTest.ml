@@ -2654,9 +2654,8 @@ let test_check_dataclasses =
          |}
            [
              "Undefined attribute [16]: `typing.Type` has no attribute `a`.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing.Callable[[str], int]` but got `BoundMethod[typing.Callable[[str], \
-              int], DC6]`.";
+             "Assert type [70]: Expected `typing.Callable[[str], int]` but got \
+              `BoundMethod[typing.Callable[[str], int], DC6]`.";
            ];
       (* TODO: T190780655 Report when dataclasses are not compatible with hashable protocol *)
       labeled_test_case __FUNCTION__ __LINE__

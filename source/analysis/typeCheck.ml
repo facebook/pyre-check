@@ -2224,19 +2224,7 @@ module State (Context : Context) = struct
             emit_error
               ~errors:(List.append expected_type_errors errors)
               ~location
-              ~kind:
-                (Error.IncompatibleParameterType
-                   {
-                     keyword_argument_name = None;
-                     position = 1;
-                     callee = Some (Reference.create "typing.assert_type");
-                     mismatch =
-                       {
-                         Error.actual = value_type;
-                         expected = expected_type;
-                         due_to_invariance = false;
-                       };
-                   })
+              ~kind:(Error.AssertType { actual = value_type; expected = expected_type })
         in
         {
           resolution;
