@@ -61,8 +61,13 @@ module TypecheckFlags = struct
     (* We do not fall back to declarative mode on a typo when attempting to only suppress certain
        errors. *)
     let is_declare = is_pyre_comment "pyre-ignore-all-errors" in
+    let is_type_ignore = is_pyre_comment "type: ignore" in
     let is_default_with_suppress line = Str.string_match default_with_suppress_regex line 0 in
-    let collect index (local_mode, unused_local_modes, ignore_codes, ignore_lines) line =
+    let collect
+        index
+        (local_mode, unused_local_modes, ignore_codes, ignore_lines, allows_whole_file_ignore)
+        line
+      =
       let current_line_mode =
         let location =
           let length = String.length line in
@@ -76,6 +81,8 @@ module TypecheckFlags = struct
         else if is_unsafe line then
           Some (Node.create ~location Unsafe)
         else if is_declare line then
+          Some (Node.create ~location Declare)
+        else if is_type_ignore line && allows_whole_file_ignore then
           Some (Node.create ~location Declare)
         else
           None
@@ -177,11 +184,16 @@ module TypecheckFlags = struct
         else
           ignore_codes
       in
-      local_mode, unused_local_modes, ignore_codes, ignores
+      let allows_whole_file_ignore =
+        match allows_whole_file_ignore with
+        | false -> false
+        | true -> String.is_empty line || String.is_prefix ~prefix:"#" line
+      in
+      local_mode, unused_local_modes, ignore_codes, ignores, allows_whole_file_ignore
     in
-    let local_mode, unused_local_modes, ignore_codes, ignore_lines =
+    let local_mode, unused_local_modes, ignore_codes, ignore_lines, _ =
       List.map ~f:(fun line -> String.rstrip line |> String.lowercase) lines
-      |> List.foldi ~init:(None, [], [], Int.Map.empty) ~f:collect
+      |> List.foldi ~init:(None, [], [], Int.Map.empty, true) ~f:collect
     in
     {
       local_mode;
