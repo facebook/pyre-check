@@ -78,6 +78,7 @@ module IncomingDataComputation = struct
       in
       let is_mock =
         let is_mock_class = function
+          | "typing.Any"
           | "unittest.mock.Base"
           | "mock.Base"
           | "unittest.mock.NonCallableMock"

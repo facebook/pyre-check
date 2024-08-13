@@ -113,6 +113,7 @@ module IncomingDataComputation = struct
               Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
               None
           | Type.Primitive supertype -> Some (supertype, parameters)
+          | Type.Any -> Some ("typing.Any", parameters)
           | _ -> None)
       | _ -> None
     in
@@ -155,8 +156,8 @@ module IncomingDataComputation = struct
       List.fold_right name_and_parameters ~init:[] ~f:process_parent
     in
     let is_not_primitive_cycle (parent, _) = not (String.equal name parent) in
-    let convert_to_targets =
-      List.map ~f:(fun (name, parameters) -> { ClassHierarchy.Target.target = name; parameters })
+    let convert_to_targets x =
+      List.map ~f:(fun (name, parameters) -> { ClassHierarchy.Target.target = name; parameters }) x
     in
     let deduplicate targets =
       let deduplicate (visited, sofar) ({ ClassHierarchy.Target.target; _ } as edge) =

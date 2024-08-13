@@ -217,6 +217,9 @@ let missing_typing_classes =
     make_class "typing.Optional" ~bases:single_unary_generic;
     make_class "typing.NoReturn";
     make_class "typing.Never";
+    (* Although Any is represented by a special variant in our type system, we still create a
+       definition for it so it can be used as a base class *)
+    make_class "typing.Any";
     make_class "typing.Annotated" ~bases:catch_all_generic;
     make_class "typing.Protocol" ~bases:catch_all_generic;
     make_class "typing.Callable" ~bases:catch_all_generic ~body:callable_body;

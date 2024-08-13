@@ -638,7 +638,6 @@ let test_check_local_refinement =
              "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, ...]`.";
              "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, ...]`.";
            ];
-      (* TODO: T128657902 type refinement reachability incorrect for type(Any)) *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -649,7 +648,10 @@ let test_check_local_refinement =
                 return
             reveal_type(x)
       |}
-           ["Revealed type [-1]: Revealed type for `x` is `int`."];
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+           ];
     ]
 
 
@@ -1624,18 +1626,18 @@ let test_check_temporary_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-    from typing import Any
+    from typing import TypedDict
 
     def foo() -> None: ...
 
-    if isinstance(Any, int):
-        reveal_type(Any)  # temporary refinement is permitted
+    if isinstance(TypedDict, int):
+        reveal_type(TypedDict)  # temporary refinement is permitted
         foo()
-        reveal_type(Any)  # but it is cleared as it shoudl be
+        reveal_type(TypedDict)  # but it is cleared as it should be
   |}
            [
-             "Revealed type [-1]: Revealed type for `typing.Any` is `int`.";
-             "Revealed type [-1]: Revealed type for `typing.Any` is `object`.";
+             "Revealed type [-1]: Revealed type for `typing.TypedDict` is `int`.";
+             "Revealed type [-1]: Revealed type for `typing.TypedDict` is `object`.";
            ];
       (* Check whether the order of temporary / non-temporary refinements matters *)
       labeled_test_case __FUNCTION__ __LINE__
