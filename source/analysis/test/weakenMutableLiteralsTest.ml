@@ -601,6 +601,10 @@ let test_weaken_mutable_literals_typed_dictionary context =
         year: int
       class NameNotRequiredYearRequired(YearRequired, total=False):
         name: str
+
+      class DictWithSequenceField(mypy_extensions.TypedDict):
+        k: str
+        v: typing.Sequence[ClassBasedMovie]
     |}
   in
   let resolve_expression_with_fresh_namespace resolution expression =
@@ -908,6 +912,10 @@ let test_weaken_mutable_literals_typed_dictionary context =
              class_name = "test.NameNotRequiredYearRequired";
            };
        ]);
+  assert_weaken_mutable_literals
+    ~source:"{'k': 'Key', 'v': [{'name': 'Name', 'year': 1969}]}"
+    ~against_type:(Type.Primitive "test.DictWithSequenceField")
+    (make_weakened_type (Type.Primitive "test.DictWithSequenceField"));
   ()
 
 

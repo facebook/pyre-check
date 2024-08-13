@@ -295,10 +295,13 @@ let rec weaken_mutable_literals
                     let { resolved; typed_dictionary_errors }, required =
                       let resolved = resolve value in
                       let relax { annotation; _ } =
-                        if
-                          Type.is_dictionary resolved
-                          || Option.is_some (get_typed_dictionary resolved)
-                        then
+                        (* We recursively call weaken_mutable_literals to weaken the field type. The
+                           recursive call uses `comparator_without_override`, which does not allow,
+                           e.g., a resolved type of `Literal["foo"]` to weaken to an expected type
+                           of `str`, so we first do a comparison with the original `comparator`. *)
+                        if comparator ~left:resolved ~right:annotation then
+                          make_weakened_type annotation
+                        else
                           weaken_mutable_literals
                             ~resolve
                             ~expression:(Some value)
@@ -306,10 +309,6 @@ let rec weaken_mutable_literals
                             ~expected:annotation
                             ~comparator:comparator_without_override
                             ~get_typed_dictionary
-                        else if comparator ~left:resolved ~right:annotation then
-                          make_weakened_type annotation
-                        else
-                          make_weakened_type resolved
                       in
                       find_matching_field expected_fields ~name
                       >>| (fun field -> relax field, field.required)
