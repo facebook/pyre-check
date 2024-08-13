@@ -4745,56 +4745,64 @@ let resolve_aliases ~aliases annotation =
                   alias
               | _ -> annotation)
           | Parametric { name = alias_name; parameters = given_parameters } ->
-              let deduplicate_preserving_order list =
-                List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
-                    if Core.Set.mem seen_set x then
-                      sofar, seen_set
-                    else
-                      x :: sofar, Core.Set.add seen_set x)
-                |> fst
-                |> List.rev
-              in
-              let instantiate ~given_parameters uninstantiated_alias_annotation =
-                let variable_pairs =
-                  Variable.zip_variables_with_parameters
-                    ~parameters:given_parameters
-                    (Variable.all_free_variables uninstantiated_alias_annotation
-                    |> deduplicate_preserving_order)
-                in
-                match variable_pairs with
-                | Some variable_pairs ->
-                    uninstantiated_alias_annotation
-                    |> Variable.GlobalTransforms.TypeVar.replace_all (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | TypeVarPair (variable, replacement)
-                                 when [%equal: Variable.unary_t] variable given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                    |> Variable.GlobalTransforms.ParamSpec.replace_all (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | ParamSpecPair (variable, replacement)
-                                 when [%equal: Variable.parameter_variadic_t]
-                                        variable
-                                        given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                    |> Variable.GlobalTransforms.TypeVarTuple.replace_all (fun given_variable ->
-                           List.find_map variable_pairs ~f:(function
-                               | TypeVarTuplePair (variable, replacement)
-                                 when [%equal: Variable.tuple_variadic_t] variable given_variable ->
-                                   Some replacement
-                               | _ -> None))
-                | _ -> uninstantiated_alias_annotation
-              in
+              (* Pyre allows generic type aliases using the legacy (pre- PEP 695) syntax.
+
+                 We consider generic over the type vars as deduplicated an in order of appearance
+                 (in-order tree traversal) in the alias.
+
+                 As an example, consider analyzing ``` T = TypeVar("T") MyDictAlias = dict[T, T] x:
+                 MyDictAlias[int] = {} ``` When we are processing the annotation on `x` we treat the
+                 alias as generic do the following: - note that the form is `Parametric` with one
+                 type param (`given_parameters` is [int]) - look up the type alias, and note that
+                 its tree representation has two free type vars `T` and `T` - deduplicate the type
+                 vars preserving the order, in this gase giving us just [T] - pair the type vars
+                 with the parameters in `given_parameters` and instantiate to get that `x` has type
+                 `dict[int, int]`. *)
               let resolved =
-                (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
-                   (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T].
-                   We will not find any free type variables in Foo[Any] and simply resolve it as
-                   Foo[Any]. *)
                 match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-                | Some uninstantiated_alias_annotation ->
-                    instantiate ~given_parameters uninstantiated_alias_annotation
-                | _ -> annotation
+                | None -> annotation
+                | Some uninstantiated_alias_annotation -> (
+                    let variable_pairs =
+                      let deduplicate_preserving_order list =
+                        List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
+                            if Core.Set.mem seen_set x then
+                              sofar, seen_set
+                            else
+                              x :: sofar, Core.Set.add seen_set x)
+                        |> fst
+                        |> List.rev
+                      in
+                      Variable.zip_variables_with_parameters
+                        ~parameters:given_parameters
+                        (Variable.all_free_variables uninstantiated_alias_annotation
+                        |> deduplicate_preserving_order)
+                    in
+                    match variable_pairs with
+                    | Some variable_pairs ->
+                        uninstantiated_alias_annotation
+                        |> Variable.GlobalTransforms.TypeVar.replace_all (fun given_variable ->
+                               List.find_map variable_pairs ~f:(function
+                                   | TypeVarPair (variable, replacement)
+                                     when [%equal: Variable.unary_t] variable given_variable ->
+                                       Some replacement
+                                   | _ -> None))
+                        |> Variable.GlobalTransforms.ParamSpec.replace_all (fun given_variable ->
+                               List.find_map variable_pairs ~f:(function
+                                   | ParamSpecPair (variable, replacement)
+                                     when [%equal: Variable.parameter_variadic_t]
+                                            variable
+                                            given_variable ->
+                                       Some replacement
+                                   | _ -> None))
+                        |> Variable.GlobalTransforms.TypeVarTuple.replace_all (fun given_variable ->
+                               List.find_map variable_pairs ~f:(function
+                                   | TypeVarTuplePair (variable, replacement)
+                                     when [%equal: Variable.tuple_variadic_t]
+                                            variable
+                                            given_variable ->
+                                       Some replacement
+                                   | _ -> None))
+                    | _ -> uninstantiated_alias_annotation)
               in
               mark_recursive_alias_as_visited resolved;
               resolved
