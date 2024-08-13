@@ -69,7 +69,7 @@ module Queries = struct
       unit ->
       Type.Variable.ParamSpec.t option;
     class_hierarchy: unit -> (module ClassHierarchy.Handler);
-    variables:
+    generic_parameters_as_variables:
       ?default:Type.Variable.t list option -> Type.Primitive.t -> Type.Variable.t list option;
     successors: Type.Primitive.t -> string list;
     get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
@@ -2270,7 +2270,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             instantiate_successors_parameters =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
             has_transitive_successor;
-            variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
+            generic_parameters_as_variables =
+              ClassHierarchy.generic_parameters_as_variables class_hierarchy_handler;
             least_upper_bound;
           };
         attribute;
@@ -2285,7 +2286,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ?(replace_unbound_parameters_with_any = true)
         ~assumptions
         annotation =
-      let Queries.{ variables; _ } = queries in
+      let Queries.{ generic_parameters_as_variables; _ } = queries in
       let open TypeParameterValidationTypes in
       let module InvalidTypeParametersTransform = Type.VisitWithTransform.Make (struct
         type state = type_parameters_mismatch list
@@ -2319,7 +2320,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create "Ps");
                     Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create "R");
                   ]
-              | _ -> variables name |> Option.value ~default:[]
+              | _ -> generic_parameters_as_variables name |> Option.value ~default:[]
             in
             let invalid_type_parameters ~name ~given =
               let generics = generics_for_name name in
@@ -3061,7 +3062,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ?instantiated
         ?(apply_descriptors = true)
         attribute =
-      let Queries.{ variables; _ } = queries in
+      let Queries.{ generic_parameters_as_variables; _ } = queries in
       let make_annotation_readonly = function
         | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
             AnnotatedAttribute.UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
@@ -3163,7 +3164,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               "__getitem__",
               "typing.GenericMeta" ) ->
               let implementation, overloads =
-                let generics = variables name |> Option.value ~default:[] in
+                let generics = generic_parameters_as_variables name |> Option.value ~default:[] in
                 let create_parameter annotation =
                   Type.Callable.CallableParamType.PositionalOnly
                     { index = 0; annotation; default = false }
@@ -3825,11 +3826,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       get_class_summary target >>| handle
 
     method constraints ~assumptions ~target ?parameters ~instantiated () =
-      let Queries.{ variables; _ } = queries in
+      let Queries.{ generic_parameters_as_variables; _ } = queries in
       let parameters =
         match parameters with
         | None ->
-            variables target >>| List.map ~f:Type.Variable.to_parameter |> Option.value ~default:[]
+            generic_parameters_as_variables target
+            >>| List.map ~f:Type.Variable.to_parameter
+            |> Option.value ~default:[]
         | Some parameters -> parameters
       in
       if List.is_empty parameters then
@@ -3856,13 +3859,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
     method resolve_literal ~assumptions ~variable_map expression =
-      let Queries.{ variables; get_unannotated_global; _ } = queries in
+      let Queries.{ generic_parameters_as_variables; get_unannotated_global; _ } = queries in
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
         |> Queries.class_summary_for_outer_type queries
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
-        >>= variables ~default:(Some [])
+        >>= generic_parameters_as_variables ~default:(Some [])
         >>| List.is_empty
       in
       let fully_specified_type = function
@@ -4001,7 +4004,16 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads ~variable_map =
-      let Queries.{ resolve_exports; param_spec_from_vararg_annotations; variables; _ } = queries in
+      let Queries.
+            {
+              resolve_exports;
+              param_spec_from_vararg_annotations;
+              generic_parameters_as_variables;
+              _;
+            }
+        =
+        queries
+      in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -4304,7 +4316,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
           }
         in
-        AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
+        AnnotatedCallable.create_overload_without_applying_decorators
+          ~parser
+          ~generic_parameters_as_variables
       in
       let kind =
         match implementation, overloads with
@@ -4452,10 +4466,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       |> Option.is_some
 
     method constructor ~assumptions class_name ~instantiated =
-      let Queries.{ variables; successors; _ } = queries in
+      let Queries.{ generic_parameters_as_variables; successors; _ } = queries in
       let return_annotation =
         let generics =
-          variables class_name
+          generic_parameters_as_variables class_name
           >>| List.map ~f:Type.Variable.to_parameter
           |> Option.value ~default:[]
         in
@@ -4778,9 +4792,9 @@ let create_queries ~class_metadata_environment ~dependency =
       param_spec_from_vararg_annotations =
         alias_environment class_metadata_environment
         |> TypeAliasEnvironment.ReadOnly.param_spec_from_vararg_annotations ?dependency;
-      variables =
+      generic_parameters_as_variables =
         class_hierarchy_environment class_metadata_environment
-        |> ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables ?dependency;
+        |> ClassHierarchyEnvironment.ReadOnly.generic_parameters_as_variables ?dependency;
       class_hierarchy =
         (fun () ->
           class_hierarchy_environment class_metadata_environment

@@ -331,8 +331,8 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
 
 
-  let type_parameters_as_variables api =
-    global_resolution api |> GlobalResolution.type_parameters_as_variables
+  let generic_parameters_as_variables api =
+    global_resolution api |> GlobalResolution.generic_parameters_as_variables
 
 
   let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier

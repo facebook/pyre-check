@@ -94,7 +94,7 @@ val method_resolution_order_linearize
 
 val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
-val type_parameters_as_variables
+val generic_parameters_as_variables
   :  ?default:Type.Variable.t list option ->
   (module Handler) ->
   Type.Primitive.t ->

@@ -81,7 +81,7 @@ val param_spec_from_vararg_annotations
 
 val immediate_parents : t -> Type.Primitive.t -> string list
 
-val type_parameters_as_variables
+val generic_parameters_as_variables
   :  ?default:Type.Variable.t list option ->
   t ->
   Type.Primitive.t ->

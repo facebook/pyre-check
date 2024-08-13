@@ -133,7 +133,7 @@ module ReadOnly : sig
     ClassSummary.t Ast.Node.t ->
     bool
 
-  val type_parameters_as_variables : t -> string -> Type.Variable.t list option
+  val generic_parameters_as_variables : t -> string -> Type.Variable.t list option
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 

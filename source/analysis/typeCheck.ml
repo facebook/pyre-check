@@ -817,7 +817,9 @@ module State (Context : Context) = struct
   let type_of_parent ~global_resolution parent =
     let parent_name = Reference.show parent in
     let parent_type = Type.Primitive parent_name in
-    let variables = GlobalResolution.type_parameters_as_variables global_resolution parent_name in
+    let variables =
+      GlobalResolution.generic_parameters_as_variables global_resolution parent_name
+    in
     match variables with
     | None
     | Some [] ->
@@ -5921,7 +5923,7 @@ module State (Context : Context) = struct
                 Type.Parameter.all_singles extended_parameters
                 >>| (fun extended_parameters ->
                       let actual_parameters =
-                        GlobalResolution.type_parameters_as_variables global_resolution name
+                        GlobalResolution.generic_parameters_as_variables global_resolution name
                         >>= Type.Variable.all_unary
                         >>| List.map ~f:(fun unary -> Type.Variable unary)
                         |> Option.value ~default:[]
@@ -7408,15 +7410,20 @@ module State (Context : Context) = struct
           | TypeVarTupleVariable variable -> TypeVarTupleVariable variable
         in
         Reference.show class_name
-        |> GlobalResolution.type_parameters_as_variables global_resolution
+        |> GlobalResolution.generic_parameters_as_variables global_resolution
         >>| List.map ~f:extract
         |> Option.value ~default:[]
       in
       let type_variables_of_define signature =
         let parser = GlobalResolution.nonvalidating_annotation_parser global_resolution in
-        let variables = GlobalResolution.type_parameters_as_variables global_resolution in
+        let generic_parameters_as_variables =
+          GlobalResolution.generic_parameters_as_variables global_resolution
+        in
         let define_variables =
-          AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
+          AnnotatedCallable.create_overload_without_applying_decorators
+            ~parser
+            ~generic_parameters_as_variables
+            signature
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
           |> Type.Variable.all_free_variables
           |> List.dedup_and_sort ~compare:Type.Variable.compare
@@ -8007,9 +8014,14 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
   in
   let overload_errors errors =
     let parser = GlobalResolution.nonvalidating_annotation_parser global_resolution in
-    let variables = GlobalResolution.type_parameters_as_variables global_resolution in
+    let generic_parameters_as_variables =
+      GlobalResolution.generic_parameters_as_variables global_resolution
+    in
     let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
-      AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
+      AnnotatedCallable.create_overload_without_applying_decorators
+        ~parser
+        ~generic_parameters_as_variables
+        signature
     in
     let handle ~undecorated_signature ~problem =
       let overload_to_callable overload =

@@ -88,7 +88,9 @@ let test_create_overload context =
     in
     let resolution = Resolution.global_resolution resolution in
     let parser = GlobalResolution.annotation_parser resolution in
-    let variables = GlobalResolution.type_parameters_as_variables resolution in
+    let generic_parameters_as_variables =
+      GlobalResolution.generic_parameters_as_variables resolution
+    in
     let last_statement_define { Source.statements; _ } =
       match List.last_exn statements with
       | { Node.value = Statement.Define define; _ } -> define
@@ -101,7 +103,9 @@ let test_create_overload context =
       |> Test.parse
       |> last_statement_define
       |> (fun { Define.signature; _ } -> { signature with parent })
-      |> Callable.create_overload_without_applying_decorators ~parser ~variables)
+      |> Callable.create_overload_without_applying_decorators
+           ~parser
+           ~generic_parameters_as_variables)
   in
   assert_overload
     {|

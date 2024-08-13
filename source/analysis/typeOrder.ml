@@ -120,7 +120,12 @@ module OrderImplementation = struct
     and join
         ({
            ConstraintsSet.class_hierarchy =
-             { least_upper_bound; instantiate_successors_parameters; variables; _ };
+             {
+               least_upper_bound;
+               instantiate_successors_parameters;
+               generic_parameters_as_variables;
+               _;
+             };
            is_protocol;
            assumptions = { protocol_assumptions; _ };
            _;
@@ -234,7 +239,7 @@ module OrderImplementation = struct
               let handle_target target =
                 let left_parameters = instantiate_successors_parameters ~source:left ~target in
                 let right_parameters = instantiate_successors_parameters ~source:right ~target in
-                let variables = variables target in
+                let variables = generic_parameters_as_variables target in
                 let join_parameters_respecting_variance = function
                   | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right)
                     -> (

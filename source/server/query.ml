@@ -528,7 +528,7 @@ let rec process_request_exn
         match fill_missing_type_parameters_with_any, annotation with
         | true, Type.Primitive annotation -> (
             let generics =
-              GlobalResolution.type_parameters_as_variables global_resolution annotation
+              GlobalResolution.generic_parameters_as_variables global_resolution annotation
             in
             match generics with
             | Some generics

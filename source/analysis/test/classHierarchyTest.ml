@@ -214,7 +214,7 @@ let test_to_dot _ =
     ("\n" ^ to_dot order ~class_names:keys)
 
 
-let test_type_parameters_as_variables _ =
+let test_generic_parameters_as_variables _ =
   let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let order =
     let order = MockClassHierarchyHandler.create () in
@@ -231,16 +231,16 @@ let test_type_parameters_as_variables _ =
       ~successor:"typing.Generic";
     handler order
   in
-  let assert_type_parameters_as_variables ~expected source =
-    assert_equal expected (type_parameters_as_variables order source)
+  let assert_generic_parameters_as_variables ~expected source =
+    assert_equal expected (generic_parameters_as_variables order source)
   in
-  assert_type_parameters_as_variables ~expected:None "B";
-  assert_type_parameters_as_variables
+  assert_generic_parameters_as_variables ~expected:None "B";
+  assert_generic_parameters_as_variables
     ~expected:(Some [TypeVarVariable (Type.Variable.TypeVar.create "T")])
     "A";
 
-  assert_type_parameters_as_variables ~expected:None "Nonexistent";
-  assert_type_parameters_as_variables
+  assert_generic_parameters_as_variables ~expected:None "Nonexistent";
+  assert_generic_parameters_as_variables
     ~expected:(Some [TypeVarTupleVariable (Type.Variable.TypeVarTuple.create "Ts")])
     "Tensor";
   ()
@@ -564,7 +564,7 @@ let () =
          "is_instantiated" >:: test_is_instantiated;
          "immediate_parents" >:: test_immediate_parents;
          "to_dot" >:: test_to_dot;
-         "type_parameters_as_variables" >:: test_type_parameters_as_variables;
+         "generic_parameters_as_variables" >:: test_generic_parameters_as_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
          "method_resolution_order_linearize" >:: test_method_resolution_order_linearize;
        ]

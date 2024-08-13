@@ -222,8 +222,8 @@ module OutgoingDataComputation = struct
     end : ClassHierarchy.Handler)
 
 
-  let type_parameters_as_variables queries ?(default = None) class_name =
-    ClassHierarchy.type_parameters_as_variables ~default (class_hierarchy queries) class_name
+  let generic_parameters_as_variables queries ?(default = None) class_name =
+    ClassHierarchy.generic_parameters_as_variables ~default (class_hierarchy queries) class_name
 end
 
 module EdgesValue = struct
@@ -316,8 +316,9 @@ module ReadOnly = struct
       }
 
 
-  let type_parameters_as_variables read_only ?dependency =
-    outgoing_queries ?dependency read_only |> OutgoingDataComputation.type_parameters_as_variables
+  let generic_parameters_as_variables read_only ?dependency =
+    outgoing_queries ?dependency read_only
+    |> OutgoingDataComputation.generic_parameters_as_variables
 
 
   let class_hierarchy ?dependency read_only =

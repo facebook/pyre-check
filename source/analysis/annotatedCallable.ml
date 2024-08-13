@@ -52,7 +52,7 @@ let return_annotation_without_applying_decorators
 
 let create_overload_without_applying_decorators
     ~parser:({ parse_annotation; param_spec_from_vararg_annotations; _ } as parser)
-    ~variables
+    ~generic_parameters_as_variables
     ({ Define.Signature.parameters; parent; _ } as signature)
   =
   let open Type.Callable in
@@ -121,7 +121,7 @@ let create_overload_without_applying_decorators
         let replacement ~meta =
           let parent_type =
             let class_annotation = Reference.show parent in
-            variables class_annotation
+            generic_parameters_as_variables class_annotation
             >>| List.map ~f:Type.Variable.to_parameter
             >>| Type.parametric class_annotation
             |> Option.value ~default:(Type.Primitive class_annotation)

@@ -75,10 +75,12 @@ let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
       } ->
         if Reference.equal define_name name && predicate define then
           let parser = PyrePysaApi.ReadOnly.annotation_parser pyre_api in
-          let variables = PyrePysaApi.ReadOnly.type_parameters_as_variables pyre_api in
+          let generic_parameters_as_variables =
+            PyrePysaApi.ReadOnly.generic_parameters_as_variables pyre_api
+          in
           Analysis.AnnotatedDefine.Callable.create_overload_without_applying_decorators
             ~parser
-            ~variables
+            ~generic_parameters_as_variables
             signature
           |> Option.some
         else
