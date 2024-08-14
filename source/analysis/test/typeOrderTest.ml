@@ -135,7 +135,7 @@ let attribute_from_attributes attributes =
 
 let less_or_equal
     ?(attributes = fun _ ~assumptions:_ -> None)
-    ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
+    ?(is_protocol = fun _ -> false)
     handler
   =
   always_less_or_equal
@@ -161,7 +161,7 @@ let join ?(attributes = fun _ ~assumptions:_ -> None) handler =
       ConstraintsSet.class_hierarchy = hierarchy handler;
       instantiated_attributes = attributes;
       attribute = attribute_from_attributes attributes;
-      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
+      is_protocol = (fun _ -> false);
       assumptions =
         {
           protocol_assumptions = ProtocolAssumptions.empty;
@@ -179,7 +179,7 @@ let meet handler =
       ConstraintsSet.class_hierarchy = hierarchy handler;
       instantiated_attributes = (fun _ ~assumptions:_ -> None);
       attribute = (fun _ ~assumptions:_ ~name:_ -> None);
-      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
+      is_protocol = (fun _ -> false);
       assumptions =
         {
           protocol_assumptions = ProtocolAssumptions.empty;
@@ -706,7 +706,7 @@ let test_less_or_equal =
     in
     parse_callable ~aliases:resolved_aliases
   in
-  let is_protocol annotation ~protocol_assumptions:_ =
+  let is_protocol annotation =
     match annotation with
     | Type.Primitive "MatchesProtocol"
     | Type.Primitive "DoesNotMatchProtocol"

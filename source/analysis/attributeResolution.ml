@@ -2258,8 +2258,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                    ~accessed_through_readonly
                    ?apply_descriptors:None)
       in
-
-      let is_protocol annotation ~protocol_assumptions:_ = is_protocol annotation in
       let class_hierarchy_handler = class_hierarchy () in
       let metaclass class_name ~assumptions =
         self#metaclass class_name ~assumptions ~variable_map:get_variable

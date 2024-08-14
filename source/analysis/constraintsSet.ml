@@ -55,7 +55,7 @@ type order = {
     assumptions:Assumptions.t ->
     name:Ast.Identifier.t ->
     AnnotatedAttribute.instantiated option;
-  is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
+  is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
   metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
   assumptions: Assumptions.t;
@@ -460,7 +460,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
              _;
            };
          is_protocol;
-         assumptions = { protocol_assumptions; _ } as assumptions;
+         assumptions;
          get_typed_dictionary;
          metaclass;
          _;
@@ -478,7 +478,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       if has_transitive_successor ~successor:target source then
         [constraints]
       else if
-        is_protocol right ~protocol_assumptions
+        is_protocol right
         && [%compare.equal: Type.Parameter.t list option]
              (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
              (Some [])
@@ -553,8 +553,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~constraints
           ~left:(Type.RecursiveType.unfold_recursive_type recursive_type)
           ~right
-    | (Type.Callable _ | Type.NoneType), Type.Primitive protocol
-      when is_protocol right ~protocol_assumptions ->
+    | (Type.Callable _ | Type.NoneType), Type.Primitive protocol when is_protocol right ->
         if
           [%compare.equal: Type.Parameter.t list option]
             (instantiate_protocol_parameters order ~protocol ~candidate:left)
@@ -563,8 +562,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           [constraints]
         else
           impossible
-    | (Type.Callable _ | Type.NoneType), Type.Parametric { name; _ }
-      when is_protocol right ~protocol_assumptions ->
+    | (Type.Callable _ | Type.NoneType), Type.Parametric { name; _ } when is_protocol right ->
         instantiate_protocol_parameters order ~protocol:name ~candidate:left
         >>| Type.parametric name
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
@@ -659,7 +657,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           | _ -> impossible
         in
         let through_protocol_hierarchy =
-          match right, is_protocol right ~protocol_assumptions with
+          match right, is_protocol right with
           | Primitive right_name, true ->
               if
                 [%compare.equal: Type.Parameter.t list option]
@@ -739,7 +737,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let left_parameters =
           let left_parameters = instantiate_successors_parameters ~source:left ~target:right_name in
           match left_parameters with
-          | None when is_protocol right ~protocol_assumptions ->
+          | None when is_protocol right ->
               instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
           | _ -> left_parameters
         in

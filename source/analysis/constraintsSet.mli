@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Assumptions
-
 type class_hierarchy = {
   instantiate_successors_parameters:
     source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
@@ -24,7 +22,7 @@ type order = {
     assumptions:Assumptions.t ->
     name:Ast.Identifier.t ->
     AnnotatedAttribute.instantiated option;
-  is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
+  is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
   metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
   assumptions: Assumptions.t;

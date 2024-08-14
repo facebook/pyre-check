@@ -127,7 +127,6 @@ module OrderImplementation = struct
                _;
              };
            is_protocol;
-           assumptions = { protocol_assumptions; _ };
            _;
          } as order)
         left
@@ -375,13 +374,8 @@ module OrderImplementation = struct
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)
-        | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right
-          ->
-            right
-        | _
-          when is_protocol left ~protocol_assumptions
-               && always_less_or_equal order ~left:right ~right:left ->
-            left
+        | _ when is_protocol right && always_less_or_equal order ~left ~right -> right
+        | _ when is_protocol left && always_less_or_equal order ~left:right ~right:left -> left
         | Primitive left, Primitive right -> (
             match least_upper_bound left right with
             | Some joined ->
@@ -456,7 +450,7 @@ module OrderImplementation = struct
       >>| fun parameters -> { annotation = meet order left_annotation right_annotation; parameters }
 
 
-    and meet ({ is_protocol; assumptions = { protocol_assumptions; _ }; _ } as order) left right =
+    and meet ({ is_protocol; _ } as order) left right =
       if Type.equal left right then
         left
       else
@@ -588,13 +582,8 @@ module OrderImplementation = struct
               Type.Bottom
         | Type.Primitive _, _ when always_less_or_equal order ~left ~right -> left
         | _, Type.Primitive _ when always_less_or_equal order ~left:right ~right:left -> right
-        | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right
-          ->
-            left
-        | _
-          when is_protocol left ~protocol_assumptions
-               && always_less_or_equal order ~left:right ~right:left ->
-            right
+        | _ when is_protocol right && always_less_or_equal order ~left ~right -> left
+        | _ when is_protocol left && always_less_or_equal order ~left:right ~right:left -> right
         | _ ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
             Type.Bottom
