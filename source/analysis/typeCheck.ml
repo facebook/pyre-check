@@ -1919,15 +1919,29 @@ module State (Context : Context) = struct
             let { Resolved.resolution; resolved = new_resolved; errors = new_errors; _ } =
               forward_expression ~resolution expression
             in
-            let parameter =
-              new_resolved
-              |> GlobalResolution.type_of_iteration_value global_resolution
-              |> Option.value ~default:Type.Any
+            let errors = List.append new_errors errors in
+            (* We have a splat (`*expression`). Make sure it has a valid iterable type. *)
+            let parameter, has_error =
+              match GlobalResolution.type_of_iteration_value global_resolution new_resolved with
+              | Some iteration_type -> iteration_type, false
+              | None -> Type.Any, not (Type.is_any new_resolved)
+            in
+            let errors =
+              if has_error then
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidArgument
+                       (Error.ConcreteVariable
+                          { expression = Some expression; annotation = new_resolved }))
+              else
+                errors
             in
             {
               Resolved.resolution;
               resolved = GlobalResolution.join global_resolution resolved parameter;
-              errors = List.append new_errors errors;
+              errors;
               resolved_annotation = None;
               base = None;
             }

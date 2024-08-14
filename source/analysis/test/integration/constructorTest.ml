@@ -1222,6 +1222,32 @@ let test_dictionary_constructor =
     ]
 
 
+let test_list_constructor =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           def f(x: int) -> None:
+             new_list = [*x]
+             reveal_type(new_list)
+          |}
+           [
+             "Invalid argument [32]: Variable argument `x` has type `int` but must be an iterable.";
+             "Revealed type [-1]: Revealed type for `new_list` is `typing.List[typing.Any]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
+           from typing import Any
+           def f(x: Any) -> None:
+             new_list = [*x]
+             reveal_type(new_list)
+           |}
+           ["Revealed type [-1]: Revealed type for `new_list` is `typing.List[typing.Any]`."];
+    ]
+
+
 let test_register_buffer_attribute =
   test_list
     [
@@ -1355,6 +1381,7 @@ let () =
          test_newtype;
          test_init_subclass;
          test_dictionary_constructor;
+         test_list_constructor;
          test_register_buffer_attribute;
          test_generic__new__;
        ]
