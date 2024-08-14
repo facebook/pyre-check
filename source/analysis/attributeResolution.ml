@@ -3060,7 +3060,16 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ?instantiated
         ?(apply_descriptors = true)
         attribute =
-      let Queries.{ generic_parameters_as_variables; _ } = queries in
+      let Queries.
+            {
+              get_class_summary;
+              exists_matching_class_decorator;
+              generic_parameters_as_variables;
+              _;
+            }
+        =
+        queries
+      in
       let make_annotation_readonly = function
         | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
             AnnotatedAttribute.UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
@@ -3118,7 +3127,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     setter = setter >>| instantiate_property_annotation;
                   })
       in
-
       let annotation, original =
         let instantiated =
           match instantiated with
@@ -3255,7 +3263,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               |> Option.value ~default:(Type.Callable callable)
           | _ -> Type.Callable callable
         in
-
         match annotation with
         | Property { getter = getter_annotation; setter = setter_annotation } -> (
             (* Special case properties with type variables. *)
@@ -3364,7 +3371,28 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ConstraintsSet.Solution.instantiate_single_type_var solution synthetic
                 in
                 let function_dunder_get callable =
-                  if accessed_through_class then
+                  let is_dataclass_attribute =
+                    match get_class_summary class_name with
+                    | Some class_summary ->
+                        exists_matching_class_decorator
+                          ~names:["dataclasses.dataclass"; "dataclass"]
+                          class_summary
+                    | _ -> false
+                  in
+                  let has_self_or_cls_param { Type.Callable.implementation = { parameters; _ }; _ } =
+                    match parameters with
+                    | Defined (Named { name = "$parameter$self"; _ } :: _) -> true
+                    | Defined (Named { name = "$parameter$cls"; _ } :: _) -> true
+                    | Defined
+                        (PositionalOnly { index = 0; annotation = Type.Primitive class_; _ } :: _)
+                      when String.equal class_ class_name ->
+                        true
+                    | _ -> false
+                  in
+                  if
+                    accessed_through_class
+                    || (is_dataclass_attribute && not (has_self_or_cls_param callable))
+                  then
                     if accessed_through_readonly then
                       Type.ReadOnly.create (Type.Callable callable)
                     else
@@ -3437,7 +3465,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                Callables, but for now lets just ignore that *)
                             `DescriptorNotACallable)
                 in
-
                 match Type.class_data_for_attribute_lookup annotation with
                 | None ->
                     (* This means we have a type that can't be `Type.split`, (most of) which aren't

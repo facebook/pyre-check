@@ -90,44 +90,6 @@ let test_transform_environment =
 
               @dataclass(match_args=False)
               class Foo:
-                def foo() -> None: ...
-            |}
-           ~class_name:"Foo"
-           {|
-                # spacer
-                class Foo:
-                  def foo() -> None: ...
-                  def __init__(self) -> None: ...
-                  def __repr__(self) -> str: ...
-                  def __eq__(self, o: object) -> bool: ...
-              |};
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_equivalent_attributes
-           ~source:
-             {|
-              import dataclasses
-
-              @dataclasses.dataclass(match_args=False)
-              class Foo:
-                def foo() -> None: ...
-            |}
-           ~class_name:"Foo"
-           {|
-                @spacer
-                class Foo:
-                  def foo() -> None: ...
-                  def __init__(self) -> None: ...
-                  def __repr__(self) -> str: ...
-                  def __eq__(self, o: object) -> bool: ...
-              |};
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_equivalent_attributes
-           ~source:
-             {|
-              from dataclasses import dataclass
-
-              @dataclass(match_args=False)
-              class Foo:
                 def __init__(self) -> None: ...
                 def __repr__(self) -> str: ...
             |}
@@ -2606,10 +2568,6 @@ let test_check_dataclasses =
              "Invalid inheritance [39]: Frozen dataclass `Baz` cannot inherit from non-frozen \
               dataclass `Foo`.";
            ];
-      (* TODO T179013702: why is the following testcase emitting in a type error? in matcher:
-         Callable[[str], bool] = dataclasses.field(), matcher is a BoundMethod. If we remove the
-         dataclasses.field() assignment, matcher becomes a Callable and the typechecker succeeds.
-         Why is this? *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2624,10 +2582,8 @@ let test_check_dataclasses =
 
          |}
            [
-             "Revealed type [-1]: Revealed type for `self.matcher` is \
-              `BoundMethod[typing.Callable[[str], bool], C]`.";
-             "Too many arguments [19]: PositionalOnly call expects 0 positional arguments, 1 was \
-              provided.";
+             "Revealed type [-1]: Revealed type for `self.matcher` is `typing.Callable[[str], \
+              bool]`.";
            ];
       (* TODO: T190778258 The only type error here should be that that default value cannot be
          followed by non-default value*)
@@ -2652,11 +2608,7 @@ let test_check_dataclasses =
             dc6 = DC6()
             assert_type(dc6.c, Callable[[str], int])
          |}
-           [
-             "Undefined attribute [16]: `typing.Type` has no attribute `a`.";
-             "Assert type [70]: Expected `typing.Callable[[str], int]` but got \
-              `BoundMethod[typing.Callable[[str], int], DC6]`.";
-           ];
+           ["Undefined attribute [16]: `typing.Type` has no attribute `a`."];
       (* TODO: T190780655 Report when dataclasses are not compatible with hashable protocol *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

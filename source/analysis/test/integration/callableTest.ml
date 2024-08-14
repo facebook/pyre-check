@@ -118,6 +118,147 @@ let test_callable_parameters =
              "Duplicate parameter [65]: Duplicate parameter name `a`.";
              "Duplicate parameter [65]: Duplicate parameter name `b`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  default_fn: Callable[[str], str] = lambda val: val
+              Foo.default_fn("X")
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  default_fn: Callable[[str], str] = lambda val: val
+              foo = Foo()
+              foo.default_fn("X")
+            |}
+           [
+             "Too many arguments [19]: PositionalOnly call expects 0 positional arguments, 1 was \
+              provided.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  default_fn: Callable[[str], str] = lambda val: val
+              Foo.default_fn("X")
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  default_fn: Callable[[str], str] = lambda val: val
+              foo = Foo()
+              foo.default_fn("X")
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  def method(cls) -> None:
+                    pass
+              foo = Foo()
+              foo.method()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  def method(cls) -> None:
+                    pass
+              Foo.method()
+            |}
+           ["Missing argument [20]: Call `Foo.method` expects argument `cls`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  def method(cls) -> None:
+                    pass
+              foo = Foo()
+              foo.method()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  def method(cls) -> None:
+                    pass
+              Foo.method()
+            |}
+           ["Missing argument [20]: Call `Foo.method` expects argument `cls`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  @classmethod
+                  def method(cls) -> None:
+                    pass
+              foo = Foo()
+              foo.method()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from dataclasses import dataclass
+              from typing import Callable
+              @dataclass
+              class Foo:
+                  @classmethod
+                  def method(cls) -> None:
+                    pass
+              Foo.method()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  @classmethod
+                  def method(cls) -> None:
+                    pass
+              foo = Foo()
+              foo.method()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Callable
+              class Foo:
+                  @classmethod
+                  def method(cls) -> None:
+                    pass
+              Foo.method()
+            |}
+           [];
     ]
 
 
