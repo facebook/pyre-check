@@ -2201,16 +2201,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> None
 
     method full_order ~cycle_detections =
-      let Queries.
-            {
-              is_protocol;
-              class_hierarchy;
-              has_transitive_successor;
-              least_upper_bound;
-              get_variable;
-              _;
-            }
-        =
+      let Queries.{ is_protocol; class_hierarchy; has_transitive_successor; least_upper_bound; _ } =
         queries
       in
       let resolve class_type =
@@ -2259,9 +2250,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                    ?apply_descriptors:None)
       in
       let class_hierarchy_handler = class_hierarchy () in
-      let metaclass class_name ~cycle_detections =
-        self#metaclass class_name ~cycle_detections ~variable_map:get_variable
-      in
+      let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
       {
         ConstraintsSet.class_hierarchy =
           {
@@ -2848,7 +2837,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let is_declarative_sqlalchemy_class () =
             Option.equal
               Type.equal
-              (self#metaclass ~cycle_detections ~variable_map:get_variable class_name)
+              (self#metaclass ~cycle_detections class_name)
               (Some (Type.Primitive "sqlalchemy.ext.declarative.api.DeclarativeMeta"))
           in
           let table =
@@ -2880,7 +2869,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~include_generated_attributes
         ~special_method
         class_name =
-      let Queries.{ successors; get_class_metadata; get_variable; _ } = queries in
+      let Queries.{ successors; get_class_metadata; _ } = queries in
       let handle { ClassSuccessorMetadataEnvironment.successors = the_successors; _ } =
         let get_table ~accessed_via_metaclass =
           self#single_uninstantiated_attribute_table
@@ -2909,7 +2898,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               let metaclass_hierarchy =
                 (* Class over meta hierarchy if necessary. *)
                 if accessed_through_class then
-                  self#metaclass ~cycle_detections ~variable_map:get_variable class_name
+                  self#metaclass ~cycle_detections class_name
                   >>| Type.split
                   >>| fst
                   >>= Type.primitive_name
@@ -3535,7 +3524,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let class_annotation = Type.Primitive parent_name in
       let is_enum =
         let metaclass_extends_enummeta class_name =
-          match self#metaclass ~cycle_detections ~variable_map class_name with
+          match self#metaclass ~cycle_detections class_name with
           | Some metaclass_type ->
               let metaclass_name = Type.class_name metaclass_type |> Reference.show_sanitized in
               let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
@@ -3790,8 +3779,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~undecorated_signature
         ~problem
 
-    method metaclass ~cycle_detections ~variable_map target =
-      let Queries.{ get_class_summary; _ } = queries in
+    method metaclass ~cycle_detections target =
+      let Queries.{ get_class_summary; get_variable; _ } = queries in
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
@@ -3800,6 +3789,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           original)
         =
         let open Expression in
+        let variable_map = get_variable in
         let parse_annotation =
           self#parse_annotation ~cycle_detections ?validation:None ~variable_map
         in
@@ -4969,7 +4959,6 @@ module MetaclassCache = struct
       implementation_with_cached_parse_annotation#metaclass
         key
         ~cycle_detections:empty_cycle_detections
-        ~variable_map:Type.empty_variable_map
 
 
     let filter_upstream_dependency = function
@@ -4995,7 +4984,7 @@ module MetaclassCache = struct
             dependency
             (upstream_environment read_only)
 
-        method! metaclass ~cycle_detections:_ ~variable_map:_ key = get read_only ?dependency key
+        method! metaclass ~cycle_detections:_ key = get read_only ?dependency key
       end
   end
 end
