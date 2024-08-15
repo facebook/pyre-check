@@ -61,12 +61,6 @@ type order = {
   assumptions: Assumptions.t;
 }
 
-module Solution = struct
-  (* For now we're just arbitrarily picking the first solution, but we want to allow us the
-     opportunity to augment that behavior in the future *)
-  include TypeConstraints.Solution
-end
-
 type t = TypeConstraints.t list [@@deriving show]
 
 let empty = [TypeConstraints.empty]
@@ -89,7 +83,11 @@ type kind =
 module type OrderedConstraintsSetType = sig
   val add_and_simplify : t -> new_constraint:kind -> order:order -> t
 
-  val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
+  val solve
+    :  ?only_solve_for:Type.Variable.t list ->
+    t ->
+    order:order ->
+    TypeConstraints.Solution.t option
 
   val get_parameter_specification_possibilities
     :  t ->

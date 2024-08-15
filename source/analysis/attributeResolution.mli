@@ -279,7 +279,7 @@ module AttributeReadOnly : sig
     ?parameters:Type.Parameter.t list ->
     instantiated:Type.t ->
     unit ->
-    ConstraintsSet.Solution.t
+    TypeConstraints.Solution.t
 
   val resolve_literal
     :  t ->

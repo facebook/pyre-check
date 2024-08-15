@@ -762,7 +762,7 @@ module SignatureSelection = struct
         in
         TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order
         >>| fun solution ->
-        ConstraintsSet.Solution.instantiate_single_type_var solution synthetic_variable
+        TypeConstraints.Solution.instantiate_single_type_var solution synthetic_variable
         |> Option.value ~default:Type.Any
       in
       let bind_arguments_to_variadic ~expected ~arguments =
@@ -1202,7 +1202,7 @@ module SignatureSelection = struct
                 ~order
                 ~only_solve_for:[Type.Record.Variable.TypeVarVariable parameter_variable]
               >>= fun solution ->
-              ConstraintsSet.Solution.instantiate_single_type_var solution parameter_variable
+              TypeConstraints.Solution.instantiate_single_type_var solution parameter_variable
             in
             match solution with
             | None -> signature_match
@@ -1502,10 +1502,10 @@ module SignatureSelection = struct
         constraints_set
         ~only_solve_for:local_free_variables
         ~order
-      |> Option.value ~default:ConstraintsSet.Solution.empty
+      |> Option.value ~default:TypeConstraints.Solution.empty
     in
     let instantiated =
-      ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
+      TypeConstraints.Solution.instantiate solution uninstantiated_return_annotation
     in
     let instantiated_return_annotation =
       if skip_marking_escapees then
@@ -2098,12 +2098,12 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
               ~new_constraint:(LessOrEqual { left = self_type; right = annotation })
               ~order
             |> TypeOrder.OrderedConstraintsSet.solve ~order
-            |> Option.value ~default:ConstraintsSet.Solution.empty
+            |> Option.value ~default:TypeConstraints.Solution.empty
           with
-          | ClassHierarchy.Untracked _ -> ConstraintsSet.Solution.empty
+          | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
         in
         let instantiated =
-          ConstraintsSet.Solution.instantiate
+          TypeConstraints.Solution.instantiate
             solution
             (Type.Callable { kind = Anonymous; implementation; overloads })
         in
@@ -3108,7 +3108,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | None -> annotation
         | Some instantiated -> (
             let solution = self#constraints ~target:class_name ~instantiated ~assumptions () in
-            let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
+            let instantiate annotation = TypeConstraints.Solution.instantiate solution annotation in
             match annotation with
             | Attribute annotation ->
                 AnnotatedAttribute.UninstantiatedAnnotation.Attribute (instantiate annotation)
@@ -3286,7 +3286,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     | None -> ConstraintsSet.empty
                   in
                   match TypeOrder.OrderedConstraintsSet.solve ~order constraints with
-                  | Some solution -> ConstraintsSet.Solution.instantiate solution annotation
+                  | Some solution -> TypeConstraints.Solution.instantiate solution annotation
                   | None -> Type.Top)
             in
             match setter_annotation with
@@ -3368,7 +3368,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     ~order
                   |> TypeOrder.OrderedConstraintsSet.solve ~order
                   >>= fun solution ->
-                  ConstraintsSet.Solution.instantiate_single_type_var solution synthetic
+                  TypeConstraints.Solution.instantiate_single_type_var solution synthetic
                 in
                 let function_dunder_get callable =
                   let is_dataclass_attribute =
@@ -3861,7 +3861,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | Some parameters -> parameters
       in
       if List.is_empty parameters then
-        ConstraintsSet.Solution.empty
+        TypeConstraints.Solution.empty
       else
         let right = Type.parametric target parameters in
         match instantiated, right with
@@ -3870,7 +3870,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             (* TODO(T42259381) This special case is only necessary because constructor calls
                attributes with an "instantiated" type of a bare parametric, which will fill with
                Anys *)
-            ConstraintsSet.Solution.empty
+            TypeConstraints.Solution.empty
         | _ ->
             let order = self#full_order ~assumptions in
             TypeOrder.OrderedConstraintsSet.add_and_simplify
@@ -3879,7 +3879,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ~order
             |> TypeOrder.OrderedConstraintsSet.solve ~order
             (* TODO(T39598018): error in this case somehow, something must be wrong *)
-            |> Option.value ~default:ConstraintsSet.Solution.empty
+            |> Option.value ~default:TypeConstraints.Solution.empty
 
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)

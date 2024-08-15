@@ -121,7 +121,7 @@ val constraints
   ?parameters:Type.Parameter.t list ->
   instantiated:Type.t ->
   unit ->
-  ConstraintsSet.Solution.t
+  TypeConstraints.Solution.t
 
 val uninstantiated_attributes
   :  t ->

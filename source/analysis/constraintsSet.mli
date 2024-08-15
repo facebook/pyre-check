@@ -38,21 +38,6 @@ val impossible : t
 
 val potentially_satisfiable : t -> bool
 
-module Solution : sig
-  type t [@@deriving eq]
-
-  val empty : t
-
-  val instantiate : t -> Type.t -> Type.t
-
-  val instantiate_single_type_var : t -> Type.Variable.TypeVar.t -> Type.t option
-
-  (* For testing *)
-  val create : Type.Variable.pair list -> t
-
-  val show : t -> string
-end
-
 type kind =
   | LessOrEqual of {
       left: Type.t;
@@ -67,7 +52,11 @@ type kind =
 module type OrderedConstraintsSetType = sig
   val add_and_simplify : t -> new_constraint:kind -> order:order -> t
 
-  val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
+  val solve
+    :  ?only_solve_for:Type.Variable.t list ->
+    t ->
+    order:order ->
+    TypeConstraints.Solution.t option
 
   val get_parameter_specification_possibilities
     :  t ->

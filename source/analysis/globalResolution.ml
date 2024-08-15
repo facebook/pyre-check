@@ -517,11 +517,6 @@ module ConstraintsSet = struct
 
   let solve constraints ~global_resolution =
     TypeOrder.OrderedConstraintsSet.solve constraints ~order:(full_order global_resolution)
-
-
-  module Solution = struct
-    include ConstraintsSet.Solution
-  end
 end
 
 let extract_type_parameters resolution ~source ~target =
@@ -548,7 +543,7 @@ let extract_type_parameters resolution ~source ~target =
         ~order:(full_order resolution)
       |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
-      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_type_var solution)
+      List.map unaries ~f:(TypeConstraints.Solution.instantiate_single_type_var solution)
       |> Option.all
 
 
@@ -628,7 +623,7 @@ let refine global_resolution annotation refined_type =
       ~new_constraint:(ConstraintsSet.LessOrEqual { left; right })
       ~global_resolution
     |> ConstraintsSet.solve ~global_resolution
-    >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
+    >>| fun solution -> TypeConstraints.Solution.instantiate solution left
   in
   let type_less_or_equal = less_or_equal global_resolution in
   TypeInfo.Unit.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation
