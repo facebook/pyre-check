@@ -384,11 +384,16 @@ module TriggeredSinkForCall = struct
     (* Information about why a triggered sink is created: the sources that triggered them, the
        source traces, as well as the locations that the sources flow into. The source traces will be
        shown as subtraces *)
-    type t = {
-      source: Sources.TriggeringSource.t;
-      source_trace: Domains.ExtraTraceFirstHop.t;
-      argument_location: Location.t;
-    }
+    module T = struct
+      type t = {
+        source: Sources.TriggeringSource.t;
+        source_trace: Domains.ExtraTraceFirstHop.t;
+        argument_location: Location.t;
+      }
+      [@@deriving compare]
+    end
+
+    include T
 
     let create_taint
         ~call_info
@@ -412,9 +417,12 @@ module TriggeredSinkForCall = struct
                ExtraTraceFirstHop.Set.Self
                Map
                ~f:(ExtraTraceFirstHop.Set.add source_trace))
+
+
+    module Set = Stdlib.Set.Make (T)
   end
 
-  type t = Trigger.t list HashMap.t
+  type t = Trigger.Set.t HashMap.t
 
   let create () = HashMap.create ()
 
@@ -432,8 +440,8 @@ module TriggeredSinkForCall = struct
       { Trigger.source = triggering_source; source_trace = extra_trace; argument_location }
     in
     let update = function
-      | Some existing_triggers -> trigger :: existing_triggers
-      | None -> [trigger]
+      | Some existing_triggers -> Trigger.Set.add trigger existing_triggers
+      | None -> Trigger.Set.singleton trigger
     in
     Core.Hashtbl.update map partial_sink ~f:update
 
@@ -442,6 +450,7 @@ module TriggeredSinkForCall = struct
      triggered this partial sink. *)
   let create_triggered_sink_taint ~argument_location ~call_info ~partial_sink ~frame map =
     Core.Hashtbl.find map partial_sink
+    >>| Trigger.Set.elements
     >>| List.filter_map ~f:(Trigger.create_taint ~call_info ~partial_sink ~frame ~argument_location)
     >>| Algorithms.fold_balanced ~f:BackwardTaint.join ~init:BackwardTaint.bottom
     |> Option.value ~default:BackwardTaint.bottom
@@ -450,7 +459,7 @@ module TriggeredSinkForCall = struct
   let merge =
     Core.Hashtbl.merge ~f:(fun ~key:_ value ->
         match value with
-        | `Both (left, right) -> Some (List.rev_append left right)
+        | `Both (left, right) -> Some (Trigger.Set.union left right)
         | `Left left -> Some left
         | `Right right -> Some right)
 end

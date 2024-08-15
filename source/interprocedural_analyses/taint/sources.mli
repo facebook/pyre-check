@@ -67,7 +67,7 @@ val contains_sanitize_transforms : t -> SanitizeTransformSet.t -> bool
 
 (* A source that can result in creating triggered sinks. *)
 module TriggeringSource : sig
-  type t = string
+  type t = string [@@deriving compare]
 
   module Map : Data_structures.SerializableMap.S with type key = t
 end
