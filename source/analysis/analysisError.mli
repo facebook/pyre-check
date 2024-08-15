@@ -112,7 +112,7 @@ and invalid_argument =
       annotation: Type.t;
       require_string_keys: bool;
     }
-  | ConcreteVariable of {
+  | RequiresIterable of {
       expression: Expression.t option;
       annotation: Type.t;
     }

@@ -169,7 +169,7 @@ let errors_from_not_found
             (Error.Keyword { expression; annotation; require_string_keys = true }) );
       ]
   | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-      [Some location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
+      [Some location, Error.InvalidArgument (Error.RequiresIterable { expression; annotation })]
   | Mismatches mismatches ->
       let convert_to_error = function
         | SignatureSelectionTypes.Mismatch
@@ -1933,7 +1933,7 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.InvalidArgument
-                       (Error.ConcreteVariable
+                       (Error.RequiresIterable
                           { expression = Some expression; annotation = new_resolved }))
               else
                 errors

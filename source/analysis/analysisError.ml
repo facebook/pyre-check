@@ -146,7 +146,7 @@ and invalid_argument =
       annotation: Type.t;
       require_string_keys: bool;
     }
-  | ConcreteVariable of {
+  | RequiresIterable of {
       expression: Expression.t option;
       annotation: Type.t;
     }
@@ -1700,7 +1700,7 @@ let rec messages ~concise ~signature location kind =
               "Keyword argument must be a mapping%s."
               (if require_string_keys then " with string keys" else "");
           ]
-      | ConcreteVariable _ -> ["Variable argument must be an iterable."]
+      | RequiresIterable _ -> ["Variable argument must be an iterable."]
       | VariableArgumentsWithUnpackableType { variable; mismatch = ConstraintFailure _ } ->
           [
             Format.asprintf
@@ -1733,7 +1733,7 @@ let rec messages ~concise ~signature location kind =
               annotation
               (if require_string_keys then " with string keys" else "");
           ]
-      | ConcreteVariable { expression; annotation } ->
+      | RequiresIterable { expression; annotation } ->
           [
             Format.asprintf
               "Variable argument%s has type `%a` but must be an iterable."
@@ -3249,7 +3249,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
-  | InvalidArgument (ConcreteVariable { annotation = actual; _ })
+  | InvalidArgument (RequiresIterable { annotation = actual; _ })
   | InvalidArgument
       (VariableArgumentsWithUnpackableType
         { mismatch = NotUnpackableType { annotation = actual; _ }; _ })
@@ -3588,10 +3588,10 @@ let join ~resolution left right =
                left with
                annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
-    | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
+    | InvalidArgument (RequiresIterable left), InvalidArgument (RequiresIterable right)
       when Option.equal [%compare.equal: Expression.t] left.expression right.expression ->
         InvalidArgument
-          (ConcreteVariable
+          (RequiresIterable
              {
                left with
                annotation = GlobalResolution.join resolution left.annotation right.annotation;
@@ -4297,8 +4297,8 @@ let dequalify
     | InvalidArgument (Keyword { expression; annotation; require_string_keys }) ->
         InvalidArgument
           (Keyword { expression; annotation = dequalify annotation; require_string_keys })
-    | InvalidArgument (ConcreteVariable { expression; annotation }) ->
-        InvalidArgument (ConcreteVariable { expression; annotation = dequalify annotation })
+    | InvalidArgument (RequiresIterable { expression; annotation }) ->
+        InvalidArgument (RequiresIterable { expression; annotation = dequalify annotation })
     | InvalidArgument (VariableArgumentsWithUnpackableType { variable; mismatch }) ->
         let mismatch =
           match mismatch with
