@@ -3076,6 +3076,24 @@ module Variable = struct
 
           Some (DTypeVar { name = Reference.show target; constraints; variance })
       | {
+       Node.value =
+         Expression.Call
+           {
+             callee;
+             arguments =
+               [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+           };
+       _;
+      }
+        when name_is ~name:"typing_extensions.IntVar" callee ->
+          Some
+            (DTypeVar
+               {
+                 name = Reference.show target;
+                 constraints = LiteralIntegers;
+                 variance = Record.Variable.Invariant;
+               })
+      | {
           Node.value =
             Expression.Call
               {
@@ -4467,20 +4485,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
 
   let result =
     match expression with
-    | Call
-        {
-          callee;
-          arguments =
-            [
-              {
-                Call.Argument.value =
-                  { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"typing_extensions.IntVar" callee ->
-        Constructors.variable value ~constraints:LiteralIntegers
     | Subscript { base; index = subscript_index } ->
         create_from_subscript ~location:(Node.location base) ~base ~subscript_index
     | Constant Constant.NoneLiteral -> Constructors.none
