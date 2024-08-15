@@ -4641,19 +4641,6 @@ let weaken_literals annotation =
   Transforms.apply_type_map ~type_map annotation
 
 
-(* Weaken specific literal to arbitrary literal before weakening to `str`. *)
-let weaken_to_arbitrary_literal_if_possible =
-  let open Constructors in
-  function
-  | Literal (Integer _) -> integer
-  | Literal (String (LiteralValue _)) -> Literal (String AnyLiteral)
-  | Literal (String AnyLiteral) -> string
-  | Literal (Bytes _) -> bytes
-  | Literal (Boolean _) -> bool
-  | Literal (EnumerationMember { enumeration_type; _ }) -> enumeration_type
-  | annotation -> annotation
-
-
 let split annotation =
   let open Record.Parameter in
   match annotation with
