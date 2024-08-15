@@ -14,6 +14,21 @@ let test_check_implementation =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            from typing import overload, Literal
+
+            @overload
+            def f(x: int, y: str | None, z: Literal[True]) -> str: ...
+            @overload
+            def f(x: int, y: str | None = ..., *, z: Literal[True]) -> str: ...
+            def f(x: int, y: str | None = None, z: bool = True) -> str | int:
+                if z:
+                    return "hello"
+                return 1
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
       @overload
       def foo() -> None:

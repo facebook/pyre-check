@@ -254,8 +254,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   (CallableParamType.Named left)
                   (CallableParamType.Named right)
               then
-                solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
-                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+                (* If the callable requires a particular parameter, it cannot be called as a
+                   signature that allows the parameter to be omitted *)
+                if right.default && not left.default then
+                  impossible
+                else
+                  solve_less_or_equal
+                    order
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
               else
                 impossible
           | ( CallableParamType.Variable (Concrete left_annotation) :: _,
