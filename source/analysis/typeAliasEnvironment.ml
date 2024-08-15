@@ -129,7 +129,11 @@ module IncomingDataComputation = struct
               (from_reference ~location:Location.any name)
           in
           match Node.value value, explicit_annotation with
-          | ( (BinaryOperator _ | Subscript _ | Call _ | Name _ | Constant (Constant.String _)),
+          | Call _, None -> (
+              match Type.Variable.Declaration.parse (delocalize value) ~target:name with
+              | Some variable -> Some (VariableAlias variable)
+              | None -> None)
+          | ( (BinaryOperator _ | Subscript _ | Name _ | Constant (Constant.String _)),
               Some
                 {
                   Node.value =
@@ -146,26 +150,23 @@ module IncomingDataComputation = struct
                         });
                   _;
                 } )
-          | (BinaryOperator _ | Subscript _ | Call _ | Name _), None -> (
-              match Type.Variable.Declaration.parse (delocalize value) ~target:name with
-              | Some variable -> Some (VariableAlias variable)
-              | _ ->
-                  let value = Type.preprocess_alias_value value |> delocalize in
-                  let value_annotation =
-                    Type.create
-                      ~variables:Type.resolved_empty_variables
-                      ~aliases:Type.resolved_empty_aliases
-                      value
-                  in
-                  if
-                    not
-                      (Type.contains_unknown target_annotation
-                      || Type.contains_unknown value_annotation
-                      || Type.equal value_annotation target_annotation)
-                  then
-                    Some (TypeAlias { target = name; value })
-                  else
-                    None)
+          | (BinaryOperator _ | Subscript _ | Name _), None ->
+              let value = Type.preprocess_alias_value value |> delocalize in
+              let value_annotation =
+                Type.create
+                  ~variables:Type.resolved_empty_variables
+                  ~aliases:Type.resolved_empty_aliases
+                  value
+              in
+              if
+                not
+                  (Type.contains_unknown target_annotation
+                  || Type.contains_unknown value_annotation
+                  || Type.equal value_annotation target_annotation)
+              then
+                Some (TypeAlias { target = name; value })
+              else
+                None
           | _ -> None)
       | Imported import -> (
           if class_exists (Reference.show name) then
