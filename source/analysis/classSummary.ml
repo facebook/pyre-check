@@ -217,8 +217,8 @@ module Attribute = struct
   (* If an attribute meeting these criteria is in an Enum class, it will be considered a member of
      the enum *)
   let may_be_enum_member { name; kind; _ } =
-    (* Names with single leading underscores are reserved *)
-    if String.is_prefix ~prefix:"_" name then
+    (* Names with single leading & trailing underscores are reserved *)
+    if String.is_prefix ~prefix:"_" name && String.is_suffix ~suffix:"_" name then
       false
     else
       match kind with

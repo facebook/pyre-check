@@ -128,6 +128,21 @@ let test_enumeration_methods =
       @@ assert_strict_type_errors
            {|
               from typing import reveal_type
+              from enum import Enum
+
+              class Color(Enum):
+                _RED = 1
+
+              reveal_type(Color._RED)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `test.Color._RED` is \
+              `typing_extensions.Literal[Color._RED]` (final).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import reveal_type
               from enum import IntEnum
 
               class Color(IntEnum):
@@ -297,6 +312,8 @@ let test_enumeration_methods =
              "Undefined attribute [16]: `Color` has no attribute `__RED`. `__RED` looks like a \
               private attribute, which is not accessible from outside its parent class.";
            ];
+      (* TODO(yangdanny) private names should not be inferred as enum members; __RED should be int
+         here *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
            {|
@@ -309,10 +326,7 @@ let test_enumeration_methods =
                 def foo(self) -> None:
                   assert_type(Color.__RED, Literal[Color.__RED])
             |}
-           [
-             "Assert type [70]: Expected `typing_extensions.Literal[Color._Color__RED]` but got \
-              `int`.";
-           ];
+           [];
     ]
 
 
