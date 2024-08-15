@@ -16,16 +16,16 @@ type class_hierarchy = {
 type order = {
   class_hierarchy: class_hierarchy;
   instantiated_attributes:
-    Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+    Type.t -> cycle_detections:CycleDetection.t -> AnnotatedAttribute.instantiated list option;
   attribute:
     Type.t ->
-    assumptions:Assumptions.t ->
+    cycle_detections:CycleDetection.t ->
     name:Ast.Identifier.t ->
     AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
-  metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
-  assumptions: Assumptions.t;
+  metaclass: Type.Primitive.t -> cycle_detections:CycleDetection.t -> Type.t option;
+  cycle_detections: CycleDetection.t;
 }
 
 val resolve_callable_protocol : assumption:Type.t -> order:order -> Type.t -> Type.t option

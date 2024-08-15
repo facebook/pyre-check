@@ -36,7 +36,7 @@
 open Core
 open Ast
 open Pyre
-open Assumptions
+open CycleDetection
 
 type class_hierarchy = {
   instantiate_successors_parameters:
@@ -49,16 +49,16 @@ type class_hierarchy = {
 type order = {
   class_hierarchy: class_hierarchy;
   instantiated_attributes:
-    Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+    Type.t -> cycle_detections:CycleDetection.t -> AnnotatedAttribute.instantiated list option;
   attribute:
     Type.t ->
-    assumptions:Assumptions.t ->
+    cycle_detections:CycleDetection.t ->
     name:Ast.Identifier.t ->
     AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
-  metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
-  assumptions: Assumptions.t;
+  metaclass: Type.Primitive.t -> cycle_detections:CycleDetection.t -> Type.t option;
+  cycle_detections: CycleDetection.t;
 }
 
 type t = TypeConstraints.t list [@@deriving show]
@@ -104,23 +104,26 @@ end
 
 let resolve_callable_protocol
     ~assumption
-    ~order:{ attribute; assumptions = { callable_assumptions; _ } as assumptions; _ }
+    ~order:{ attribute; cycle_detections = { assumed_callable_types; _ } as cycle_detections; _ }
     annotation
   =
   match
-    CallableAssumptions.find_assumed_callable_type ~candidate:annotation callable_assumptions
+    AssumedCallableTypes.find_assumed_callable_type ~candidate:annotation assumed_callable_types
   with
   | Some assumption -> Some assumption
   | None -> (
-      let new_assumptions =
+      let new_cycle_detections =
         {
-          assumptions with
-          callable_assumptions =
-            CallableAssumptions.add ~candidate:annotation ~callable:assumption callable_assumptions;
+          cycle_detections with
+          assumed_callable_types =
+            AssumedCallableTypes.add
+              ~candidate:annotation
+              ~callable:assumption
+              assumed_callable_types;
         }
       in
 
-      attribute annotation ~assumptions:new_assumptions ~name:"__call__"
+      attribute annotation ~cycle_detections:new_cycle_detections ~name:"__call__"
       >>| AnnotatedAttribute.annotation
       >>| TypeInfo.Unit.annotation
       >>= fun annotation ->
@@ -458,7 +461,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
              _;
            };
          is_protocol;
-         assumptions;
+         cycle_detections;
          get_typed_dictionary;
          metaclass;
          _;
@@ -649,7 +652,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let through_meta_hierarchy =
           match meta_parameter, right with
           | Primitive meta_parameter, Primitive _ ->
-              metaclass meta_parameter ~assumptions
+              metaclass meta_parameter ~cycle_detections
               >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
               |> Option.value ~default:impossible
           | _ -> impossible
@@ -987,7 +990,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   and instantiate_protocol_parameters_with_solve
       ({
          class_hierarchy = { generic_parameters_as_variables; _ };
-         assumptions = { protocol_assumptions; _ } as assumptions;
+         cycle_detections = { assumed_protocol_instantiations; _ } as cycle_detections;
          _;
        } as order)
       ~solve_candidate_less_or_equal_protocol
@@ -1005,8 +1008,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.Parametric { name; parameters } when Identifier.equal name protocol -> Some parameters
     | _ -> (
         let assumed_protocol_parameters =
-          ProtocolAssumptions.find_assumed_protocol_parameters
-            protocol_assumptions
+          AssumedProtocolInstantiations.find_assumed_protocol_parameters
+            assumed_protocol_instantiations
             ~candidate
             ~protocol
         in
@@ -1017,15 +1020,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             let protocol_generic_parameters =
               protocol_generics >>| List.map ~f:Type.Variable.to_parameter
             in
-            let new_assumptions =
-              ProtocolAssumptions.add
-                protocol_assumptions
+            let new_cycle_detections =
+              AssumedProtocolInstantiations.add
+                assumed_protocol_instantiations
                 ~candidate
                 ~protocol
                 ~protocol_parameters:(Option.value protocol_generic_parameters ~default:[])
             in
-            let assumptions = { assumptions with protocol_assumptions = new_assumptions } in
-            let order_with_new_assumption = { order with assumptions } in
+            let cycle_detections =
+              { cycle_detections with assumed_protocol_instantiations = new_cycle_detections }
+            in
+            let order_with_new_assumption = { order with cycle_detections } in
             let candidate, desanitize_map =
               match candidate with
               | Type.Callable _ -> candidate, []
@@ -1129,7 +1134,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
        `x` in the protocol. *)
     let solve_all_protocol_attributes_less_or_equal
-        ({ attribute; instantiated_attributes; assumptions; _ } as order)
+        ({ attribute; instantiated_attributes; cycle_detections; _ } as order)
         ~candidate
         ~protocol_annotation
       =
@@ -1154,13 +1159,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             in
 
             attribute_type_with_getattr_fallback
-              ~attribute_lookup:(attribute ~assumptions candidate)
+              ~attribute_lookup:(attribute ~cycle_detections candidate)
               ~name:(AnnotatedAttribute.name protocol_attribute)
             >>| (fun left ->
                   let right =
                     match attribute_type protocol_attribute with
                     | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
-                        attribute ~assumptions bound_method ~name:"__call__"
+                        attribute ~cycle_detections bound_method ~name:"__call__"
                         >>| attribute_type
                         |> Option.value ~default:Type.object_primitive
                     | annotation -> annotation
@@ -1175,7 +1180,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           (not (Type.is_object (Primitive parent)))
           && not (Type.is_generic_primitive (Primitive parent))
         in
-        instantiated_attributes ~assumptions protocol_annotation
+        instantiated_attributes ~cycle_detections protocol_annotation
         >>| List.filter ~f:is_not_object_or_generic_method
       in
       protocol_attributes

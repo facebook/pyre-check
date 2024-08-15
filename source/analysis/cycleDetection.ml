@@ -11,7 +11,7 @@ open Core
 open Ast
 module Callable = Type.Callable
 
-module ProtocolAssumptions = struct
+module AssumedProtocolInstantiations = struct
   type protocol_parameters = Type.Parameter.t list [@@deriving compare, sexp, hash, show]
 
   type assumption = {
@@ -22,13 +22,13 @@ module ProtocolAssumptions = struct
 
   type t = (assumption * protocol_parameters) list [@@deriving compare, sexp, hash, show]
 
-  let find_assumed_protocol_parameters ~candidate ~protocol assumptions =
-    List.Assoc.find assumptions { candidate; protocol } ~equal:equal_assumption
+  let find_assumed_protocol_parameters ~candidate ~protocol cycle_detections =
+    List.Assoc.find cycle_detections { candidate; protocol } ~equal:equal_assumption
 
 
-  let add ~candidate ~protocol ~protocol_parameters existing_assumptions =
+  let add ~candidate ~protocol ~protocol_parameters existing_cycle_detections =
     List.Assoc.add
-      existing_assumptions
+      existing_cycle_detections
       { candidate; protocol }
       protocol_parameters
       ~equal:equal_assumption
@@ -37,23 +37,23 @@ module ProtocolAssumptions = struct
   let empty = []
 end
 
-module CallableAssumptions = struct
+module AssumedCallableTypes = struct
   type callable_assumption = Type.t [@@deriving compare, sexp, hash, show]
 
   type t = (Type.t * callable_assumption) list [@@deriving compare, sexp, hash, show]
 
-  let find_assumed_callable_type ~candidate assumptions =
-    List.Assoc.find assumptions candidate ~equal:Type.equal
+  let find_assumed_callable_type ~candidate cycle_detections =
+    List.Assoc.find cycle_detections candidate ~equal:Type.equal
 
 
-  let add ~candidate ~callable existing_assumptions =
-    List.Assoc.add existing_assumptions candidate callable ~equal:Type.equal
+  let add ~candidate ~callable existing_cycle_detections =
+    List.Assoc.add existing_cycle_detections candidate callable ~equal:Type.equal
 
 
   let empty = []
 end
 
-module DecoratorAssumptions = struct
+module DecoratorsBeingResolved = struct
   type t = Reference.t list [@@deriving compare, sexp, hash, show]
 
   let add sofar ~assume_is_not_a_decorator = assume_is_not_a_decorator :: sofar
@@ -64,8 +64,8 @@ module DecoratorAssumptions = struct
 end
 
 type t = {
-  protocol_assumptions: ProtocolAssumptions.t;
-  callable_assumptions: CallableAssumptions.t;
-  decorator_assumptions: DecoratorAssumptions.t;
+  assumed_protocol_instantiations: AssumedProtocolInstantiations.t;
+  assumed_callable_types: AssumedCallableTypes.t;
+  decorators_being_resolved: DecoratorsBeingResolved.t;
 }
 [@@deriving compare, sexp, hash, show]

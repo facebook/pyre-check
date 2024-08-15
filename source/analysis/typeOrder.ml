@@ -10,7 +10,7 @@
 open Core
 open Ast
 open Pyre
-open Assumptions
+open CycleDetection
 
 type class_hierarchy = ConstraintsSet.class_hierarchy
 

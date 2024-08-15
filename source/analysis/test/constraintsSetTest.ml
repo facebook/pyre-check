@@ -12,7 +12,7 @@ open Analysis
 open Ast
 open Test
 open TypeOrder
-open Assumptions
+open CycleDetection
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
@@ -75,9 +75,9 @@ let hierarchy global_environment =
 
 
 let attribute_from_attributes attributes =
-  let attribute annotation ~assumptions ~name =
+  let attribute annotation ~cycle_detections ~name =
     let find attribute = String.equal (AnnotatedAttribute.name attribute) name in
-    attributes annotation ~assumptions >>= List.find ~f:find
+    attributes annotation ~cycle_detections >>= List.find ~f:find
   in
   attribute
 
@@ -212,7 +212,7 @@ let make_assert_functions context =
       ~left
       ~right
       ?(is_protocol = fun _ -> false)
-      ?(attributes = fun _ ~assumptions:_ -> None)
+      ?(attributes = fun _ ~cycle_detections:_ -> None)
       ?constraints
       ?(postprocess = default_postprocess)
       ?(do_prep = true)
@@ -220,7 +220,7 @@ let make_assert_functions context =
       ()
     =
     let handler =
-      let metaclass name ~assumptions:_ =
+      let metaclass name ~cycle_detections:_ =
         GlobalResolution.metaclass ~variable_map:Type.empty_variable_map resolution name
       in
       let order =
@@ -229,18 +229,18 @@ let make_assert_functions context =
           instantiated_attributes = attributes;
           attribute = attribute_from_attributes attributes;
           is_protocol;
-          assumptions =
+          cycle_detections =
             {
-              protocol_assumptions = ProtocolAssumptions.empty;
-              callable_assumptions = CallableAssumptions.empty;
-              decorator_assumptions = DecoratorAssumptions.empty;
+              assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+              assumed_callable_types = AssumedCallableTypes.empty;
+              decorators_being_resolved = DecoratorsBeingResolved.empty;
             };
           get_typed_dictionary;
           metaclass;
         }
       in
-      let attributes annotation ~assumptions =
-        match attributes annotation ~assumptions with
+      let attributes annotation ~cycle_detections =
+        match attributes annotation ~cycle_detections with
         | Some attributes -> Some attributes
         | None -> (
             match Type.class_data_for_attribute_lookup annotation with
@@ -755,7 +755,7 @@ let test_add_constraint context =
     | Type.Parametric { name = "test.G_invariant"; _ } -> true
     | _ -> false
   in
-  let attributes annotation ~assumptions:_ =
+  let attributes annotation ~cycle_detections:_ =
     match annotation with
     | Type.Parametric { name = "test.G_invariant"; _ } ->
         Some
@@ -774,7 +774,7 @@ let test_add_constraint context =
     ~right:"G_invariant[T1]"
     ~expected_solutions:[["T1", "int"]]
     ();
-  let attributes annotation ~assumptions:_ =
+  let attributes annotation ~cycle_detections:_ =
     match annotation with
     | Type.Primitive "HasBoundMethodCall" ->
         Some
@@ -1528,7 +1528,7 @@ let test_instantiate_protocol_parameters context =
     in
     let order =
       let classes, protocols = parse_attributes classes, parse_attributes protocols in
-      let attributes annotation ~assumptions:_ =
+      let attributes annotation ~cycle_detections:_ =
         match annotation with
         | Type.Parametric { name = primitive; _ }
         | Type.Primitive primitive ->
@@ -1545,14 +1545,14 @@ let test_instantiate_protocol_parameters context =
         instantiated_attributes = attributes;
         attribute = attribute_from_attributes attributes;
         is_protocol;
-        assumptions =
+        cycle_detections =
           {
-            protocol_assumptions = ProtocolAssumptions.empty;
-            callable_assumptions = CallableAssumptions.empty;
-            decorator_assumptions = DecoratorAssumptions.empty;
+            assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+            assumed_callable_types = AssumedCallableTypes.empty;
+            decorators_being_resolved = DecoratorsBeingResolved.empty;
           };
         get_typed_dictionary;
-        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+        metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
       }
     in
     assert_equal
@@ -1715,17 +1715,17 @@ let test_mark_escaped_as_escaped context =
     let order =
       {
         ConstraintsSet.class_hierarchy = hierarchy environment;
-        instantiated_attributes = (fun _ ~assumptions:_ -> None);
-        attribute = (fun _ ~assumptions:_ ~name:_ -> None);
+        instantiated_attributes = (fun _ ~cycle_detections:_ -> None);
+        attribute = (fun _ ~cycle_detections:_ ~name:_ -> None);
         is_protocol = (fun _ -> false);
-        assumptions =
+        cycle_detections =
           {
-            protocol_assumptions = ProtocolAssumptions.empty;
-            callable_assumptions = CallableAssumptions.empty;
-            decorator_assumptions = DecoratorAssumptions.empty;
+            assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+            assumed_callable_types = AssumedCallableTypes.empty;
+            decorators_being_resolved = DecoratorsBeingResolved.empty;
           };
         get_typed_dictionary;
-        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+        metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
       }
     in
     TypeOrder.OrderedConstraintsSet.add_and_simplify

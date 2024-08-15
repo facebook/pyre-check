@@ -12,7 +12,7 @@ open Analysis
 open Ast
 open Test
 open TypeOrder
-open Assumptions
+open CycleDetection
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
@@ -126,15 +126,15 @@ let hierarchy class_hierarchy_handler =
 
 
 let attribute_from_attributes attributes =
-  let attribute annotation ~assumptions ~name =
+  let attribute annotation ~cycle_detections ~name =
     let find attribute = String.equal (AnnotatedAttribute.name attribute) name in
-    attributes annotation ~assumptions >>= List.find ~f:find
+    attributes annotation ~cycle_detections >>= List.find ~f:find
   in
   attribute
 
 
 let less_or_equal
-    ?(attributes = fun _ ~assumptions:_ -> None)
+    ?(attributes = fun _ ~cycle_detections:_ -> None)
     ?(is_protocol = fun _ -> false)
     handler
   =
@@ -144,32 +144,32 @@ let less_or_equal
       instantiated_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol;
-      assumptions =
+      cycle_detections =
         {
-          protocol_assumptions = ProtocolAssumptions.empty;
-          callable_assumptions = CallableAssumptions.empty;
-          decorator_assumptions = DecoratorAssumptions.empty;
+          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_callable_types = AssumedCallableTypes.empty;
+          decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
-      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+      metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 
 
-let join ?(attributes = fun _ ~assumptions:_ -> None) handler =
+let join ?(attributes = fun _ ~cycle_detections:_ -> None) handler =
   join
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
       instantiated_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol = (fun _ -> false);
-      assumptions =
+      cycle_detections =
         {
-          protocol_assumptions = ProtocolAssumptions.empty;
-          callable_assumptions = CallableAssumptions.empty;
-          decorator_assumptions = DecoratorAssumptions.empty;
+          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_callable_types = AssumedCallableTypes.empty;
+          decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
-      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+      metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -177,17 +177,17 @@ let meet handler =
   meet
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
-      instantiated_attributes = (fun _ ~assumptions:_ -> None);
-      attribute = (fun _ ~assumptions:_ ~name:_ -> None);
+      instantiated_attributes = (fun _ ~cycle_detections:_ -> None);
+      attribute = (fun _ ~cycle_detections:_ ~name:_ -> None);
       is_protocol = (fun _ -> false);
-      assumptions =
+      cycle_detections =
         {
-          protocol_assumptions = ProtocolAssumptions.empty;
-          callable_assumptions = CallableAssumptions.empty;
-          decorator_assumptions = DecoratorAssumptions.empty;
+          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_callable_types = AssumedCallableTypes.empty;
+          decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
-      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+      metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -645,7 +645,7 @@ let test_less_or_equal =
                ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
-    let attributes annotation ~assumptions:_ =
+    let attributes annotation ~cycle_detections:_ =
       let parse_annotation =
         let aliases = function
           | "_T" -> Some (Type.variable "_T")
@@ -1973,7 +1973,7 @@ let test_join =
       | _ as source ->
           parse_single_expression source |> Type.create ~variables:variable_aliases ~aliases
     in
-    let attributes annotation ~assumptions:_ =
+    let attributes annotation ~cycle_detections:_ =
       let parse_annotation =
         let aliases = function
           | "_T" -> Some (Type.variable "_T")
