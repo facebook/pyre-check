@@ -10,6 +10,7 @@ TODO(T132414938) Add a module-level docstring
 """
 
 
+import dataclasses
 import json
 import logging
 import os
@@ -271,13 +272,13 @@ def _run_setup_command(
     os.chdir(old_dir)
 
 
-def _create_dist_directory(pyre_directory: Path) -> None:
-    (pyre_directory / "scripts" / "dist").mkdir(exist_ok=True)
+@dataclasses.dataclass
+class BuildArtifacts:
+    wheel_path: Path
+    source_distribution_path: Path
 
 
-def _rename_and_move_artifacts(
-    pyre_directory: Path, build_root: Path
-) -> Tuple[Path, Path]:
+def _rename_and_get_artifacts(build_root: Path) -> BuildArtifacts:
     dist_directory = build_root / "dist"
     wheel = list(dist_directory.glob("**/*.whl"))
     source_distribution = list(dist_directory.glob("**/*.tar.gz"))
@@ -285,25 +286,28 @@ def _rename_and_move_artifacts(
     if not len(wheel) == 1 and not len(source_distribution) == 1:
         raise ValueError("Unexpected files found in {}/dist.".format(build_root))
     source_distribution, wheel = source_distribution[0], wheel[0]
-    destination_path = pyre_directory / "scripts" / "dist"
-    source_distribution_name = source_distribution.name
-    source_distribution_destination = destination_path / (
-        source_distribution_name.split(".tar.gz")[0]
+
+    source_distribution_destination = Path(*source_distribution.parts[:-1]) / (
+        source_distribution.name.split(".tar.gz")[0]
         + _distribution_platform()
         + ".tar.gz"
     )
-    wheel_name = wheel.name
-    wheel_destination = destination_path / wheel_name.replace(
+    wheel_destination = Path(*wheel.parts[:-1]) / wheel.name.replace(
         "-any", _distribution_platform()
     )
-    shutil.move(wheel, wheel_destination)
-    shutil.move(source_distribution, source_distribution_destination)
-    return wheel_destination, source_distribution_destination
+
+    wheel.replace(wheel_destination)
+    source_distribution.replace(source_distribution_destination)
+
+    return BuildArtifacts(
+        wheel_path=wheel_destination,
+        source_distribution_path=source_distribution_destination,
+    )
 
 
 def build_pypi_package(
     pyre_directory: Path, typeshed_path: Path, version: str, nightly: bool
-) -> None:
+) -> BuildArtifacts:
     _validate_typeshed(typeshed_path)
     _validate_version(version)
     _ensure_usable_binary_exists(pyre_directory)
@@ -313,51 +317,49 @@ def build_pypi_package(
         for line in (pyre_directory / "requirements.txt").read_text().split("\n")
         if len(line) > 0
     ]
-    with tempfile.TemporaryDirectory() as build_root:
-        build_path = Path(build_root)
-        _add_init_files(build_path, version)
-        _create_setup_py(pyre_directory, version, build_path, dependencies, nightly)
 
-        _sync_python_files(pyre_directory, build_path)
-        _sync_pysa_stubs(pyre_directory, build_path)
-        _sync_stubs(pyre_directory, build_path)
-        _sync_typeshed(build_path, typeshed_path)
-        _sync_sapp_filters(pyre_directory, build_path)
-        _sync_binary(pyre_directory, build_path)
-        _strip_binary(build_path)
-        _sync_documentation_files(pyre_directory, build_path)
+    build_path = Path(tempfile.mkdtemp(prefix="pyre_package_build_"))
 
-        _patch_version(version, build_path)
+    _add_init_files(build_path, version)
+    _create_setup_py(pyre_directory, version, build_path, dependencies, nightly)
 
-        _run_setup_command(
-            pyre_directory,
-            # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
-            build_root,
-            dependencies,
-            version,
-            "sdist",
-            nightly,
-        )
-        _create_dist_directory(pyre_directory)
-        _create_setup_configuration(build_path)
-        twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
+    _sync_python_files(pyre_directory, build_path)
+    _sync_pysa_stubs(pyre_directory, build_path)
+    _sync_stubs(pyre_directory, build_path)
+    _sync_typeshed(build_path, typeshed_path)
+    _sync_sapp_filters(pyre_directory, build_path)
+    _sync_binary(pyre_directory, build_path)
+    _strip_binary(build_path)
+    _sync_documentation_files(pyre_directory, build_path)
 
-        _run_setup_command(
-            pyre_directory,
-            # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
-            build_root,
-            dependencies,
-            version,
-            "bdist_wheel",
-            nightly,
+    _patch_version(version, build_path)
+
+    _run_setup_command(
+        pyre_directory,
+        build_path,
+        dependencies,
+        version,
+        "sdist",
+        nightly,
+    )
+    _create_setup_configuration(build_path)
+    twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
+
+    _run_setup_command(
+        pyre_directory,
+        build_path,
+        dependencies,
+        version,
+        "bdist_wheel",
+        nightly,
+    )
+    artifacts = _rename_and_get_artifacts(build_path)
+    LOG.info("All done.")
+    LOG.info("\n Build artifact available at:\n {}\n".format(str(artifacts.wheel_path)))
+    LOG.info(
+        "\n Source distribution available at:\n {}\n".format(
+            str(artifacts.source_distribution_path)
         )
-        wheel_destination, distribution_destination = _rename_and_move_artifacts(
-            pyre_directory, build_path
-        )
-        LOG.info("All done.")
-        LOG.info("\n Build artifact available at:\n {}\n".format(wheel_destination))
-        LOG.info(
-            "\n Source distribution available at:\n {}\n".format(
-                distribution_destination
-            )
-        )
+    )
+
+    return artifacts
