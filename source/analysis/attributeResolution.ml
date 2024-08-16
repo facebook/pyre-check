@@ -2396,6 +2396,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     | "typing.Callable" ->
                         Type.Callable.create ~annotation:Type.Any (), List.length generics, false
                     | "tuple" ->
+                        (* Note: this case can only be hit by a bare `tuple` or `typing.Tuple`
+                           because the generic form gets converted to Type.Tuple as part of
+                           Type.create, and this logic is only run against `Primitive` and
+                           `Parametric` run against `Type.Tuple`. *)
                         ( Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any),
                           List.length generics,
                           true )
