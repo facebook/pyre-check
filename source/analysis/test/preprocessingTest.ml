@@ -729,7 +729,7 @@ let test_qualify_source =
       from module import C
       $local_qualifier$a = module.C
       class qualifier.C: ...
-      $local_qualifier$b = qualifier.C
+      $local_qualifier$b = module.C
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify

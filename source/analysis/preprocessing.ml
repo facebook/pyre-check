@@ -1113,19 +1113,7 @@ module Qualify (Context : QualifyContext) = struct
                   Option.map message ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope);
                 origin;
               } )
-      | Class ({ name; _ } as definition) ->
-          let scope =
-            let class_name = Reference.show name in
-            {
-              scope with
-              aliases =
-                Map.set
-                  aliases
-                  ~key:class_name
-                  ~data:(local_alias ~qualifier ~name:(Reference.combine qualifier name));
-            }
-          in
-          scope, Class (qualify_class definition)
+      | Class definition -> scope, Class (qualify_class definition)
       | Define define ->
           let scope, define = qualify_define scope define in
           scope, Define define
