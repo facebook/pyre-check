@@ -780,6 +780,8 @@ module State (Context : Context) = struct
            ~all_parameters:(Type.Callable.Defined parameters)
            ~parameters
            ~self_argument:None
+           ~order:(GlobalResolution.full_order (Resolution.global_resolution resolution))
+           ~location:(Node.location statement)
       |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
       parameter_argument_mapping
     in

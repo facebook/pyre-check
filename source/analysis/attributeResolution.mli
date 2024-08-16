@@ -127,9 +127,11 @@ module SignatureSelection : sig
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
     parameters:Type.t Type.Callable.CallableParamType.t list ->
-    self_argument:'argument_type option ->
-    'argument_type Argument.WithPosition.t list ->
-    'argument_type ParameterArgumentMapping.t
+    self_argument:Type.t option ->
+    order:ConstraintsSet.order ->
+    location:Location.t ->
+    Type.t Argument.WithPosition.t list ->
+    Type.t ParameterArgumentMapping.t
 
   val check_arguments_against_parameters
     :  order:ConstraintsSet.order ->

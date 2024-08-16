@@ -1390,6 +1390,19 @@ let test_check_keyword_arguments =
              "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
               expected `int` but got `float`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Dict
+      def f() -> None:
+        pass
+      def g(x: Dict[int, str]) -> None:
+        f(**x)
+           |}
+           [
+             "Invalid argument [32]: Keyword argument `x` has type `Dict[int, str]` "
+             ^ "but must be a mapping with string keys.";
+           ];
     ]
 
 
