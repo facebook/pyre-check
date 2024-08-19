@@ -225,90 +225,6 @@ let test_parse_reference context =
   assert_parse_reference "typing.List" (Type.Primitive "list")
 
 
-let test_resolve_literal context =
-  let resolution =
-    make_resolution
-      ~context
-      {|
-      class C:
-        def __init__(self) -> None:
-          pass
-      T = typing.TypeVar("T")
-      class G(typing.Generic[T]):
-        def __init__(self, x: T) -> None:
-          pass
-      def foo()->int:
-        ...
-      i = 1
-      j = foo()
-      s = 'asdf'
-      t = 1, 1.0
-      none = None
-      awaitable: typing.Awaitable[int]
-    |}
-    |> Resolution.global_resolution
-  in
-  let assert_resolve_literal source expected =
-    let expression =
-      match parse_single_statement source with
-      | { Node.value = Statement.Expression expression; _ } -> expression
-      | _ -> failwith "No Assign to parse"
-    in
-    assert_equal
-      ~printer:Type.show
-      expected
-      (GlobalResolution.resolve_literal ~variable_map:Type.empty_variable_map resolution expression)
-  in
-  assert_resolve_literal "i" Type.Any;
-  assert_resolve_literal "await i" Type.Any;
-  assert_resolve_literal "await awaitable" Type.Any;
-  assert_resolve_literal "\"\"" Type.string;
-  assert_resolve_literal "1" Type.integer;
-  assert_resolve_literal "1+1" Type.Any;
-  assert_resolve_literal "j" Type.Any;
-  assert_resolve_literal "foo()" Type.Any;
-  assert_resolve_literal "C()" (Type.Primitive "C");
-  assert_resolve_literal "G(7)" Type.Any;
-  assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
-  assert_resolve_literal "G" Type.Any;
-
-  (* None *)
-  assert_resolve_literal "None" Type.Any;
-  assert_resolve_literal "[None]" (Type.list Type.Any);
-
-  (* Dictionary *)
-  assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);
-  assert_resolve_literal "{'a': i}" (Type.dictionary ~key:Type.string ~value:Type.Any);
-  assert_resolve_literal "{'a': [], 'b': [1]}" (Type.dictionary ~key:Type.string ~value:Type.Any);
-  assert_resolve_literal "{**foo}" (Type.dictionary ~key:Type.Any ~value:Type.Any);
-  assert_resolve_literal "{'a': 1, **foo}" (Type.dictionary ~key:Type.Any ~value:Type.Any);
-
-  (* Boolean Operator *)
-  assert_resolve_literal "1 or 2" Type.integer;
-  assert_resolve_literal "True or 1" Type.integer;
-  assert_resolve_literal "True or i" Type.Any;
-
-  (* List *)
-  assert_resolve_literal "[1]" (Type.list Type.integer);
-  assert_resolve_literal "[1, 'string']" (Type.list (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "[1, i]" (Type.list Type.Any);
-
-  (* Set *)
-  assert_resolve_literal "{1}" (Type.set Type.integer);
-  assert_resolve_literal "{1, 'string'}" (Type.set (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "{1, i}" (Type.set Type.Any);
-
-  (* Tuple *)
-  assert_resolve_literal "(1,)" (Type.Tuple (Concrete [Type.integer]));
-  assert_resolve_literal "(1, 'string')" (Type.Tuple (Concrete [Type.integer; Type.string]));
-  assert_resolve_literal "(1, i)" (Type.Tuple (Concrete [Type.integer; Type.Any]));
-
-  (* Ternary *)
-  assert_resolve_literal "1 if x else 2" Type.integer;
-  assert_resolve_literal "'hi' if x else 1" (Type.union [Type.string; Type.integer]);
-  assert_resolve_literal "1 if i else i" Type.Any
-
-
 let test_get_typed_dictionary context =
   let resolution =
     make_resolution
@@ -594,7 +510,6 @@ let () =
          "parse_annotation_no_validation_on_class_lookup_failure"
          >:: test_parse_annotation_for_no_validation_on_class_lookup_failure_environment;
          "parse_reference" >:: test_parse_reference;
-         "resolve_literal" >:: test_resolve_literal;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
          test_fallback_attribute;
        ]

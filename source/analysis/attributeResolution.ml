@@ -5293,8 +5293,6 @@ module ReadOnly = struct
 
   let constraints = add_all_caches_and_empty_cycle_detections (fun o -> o#constraints)
 
-  let resolve_literal = add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_literal)
-
   let resolve_define = add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_define)
 
   let resolve_mutable_literals =

@@ -278,13 +278,6 @@ module AttributeReadOnly : sig
     unit ->
     TypeConstraints.Solution.t
 
-  val resolve_literal
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
-    Expression.expression Node.t ->
-    Type.t
-
   val resolve_define
     :  t ->
     ?dependency:DependencyKey.registered ->

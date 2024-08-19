@@ -315,10 +315,6 @@ let check_invalid_type_parameters ({ dependency; _ } as resolution) =
     ?dependency
 
 
-let resolve_literal ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.resolve_literal ?dependency (attribute_resolution resolution)
-
-
 let attribute_names
     ({ dependency; _ } as resolution)
     ?(transitive = false)
