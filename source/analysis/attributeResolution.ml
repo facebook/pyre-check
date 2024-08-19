@@ -481,13 +481,73 @@ module SignatureSelection = struct
         in
         Option.is_some (TypeOrder.OrderedConstraintsSet.solve constraints ~order)
       in
+      (* Get a copy of parameter_argument_mapping_with_reasons with an annotation error added. *)
+      let add_annotation_error expression resolved error_factory =
+        let argument_location = get_location ~expression ~default:location in
+        let invalid_argument : SignatureSelectionTypes.invalid_argument =
+          { expression; annotation = resolved }
+        in
+        let error = error_factory (Node.create ~location:argument_location invalid_argument) in
+        {
+          parameter_argument_mapping_with_reasons with
+          reasons = { reasons with annotation = error :: annotation };
+        }
+      in
       match arguments, parameters with
       | [], [] ->
           (* Both empty *)
           parameter_argument_mapping_with_reasons
-      | { Argument.WithPosition.kind = SingleStar; _ } :: arguments_tail, [] ->
-          (* Starred argument; parameters empty *)
-          consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+      | ( ({ Argument.WithPosition.kind = SingleStar; resolved; expression; _ } as argument)
+          :: arguments_tail,
+          _ ) -> (
+          (* Starred argument; first check if its type is assignable to Iterable[Any], then match it
+             against the first parameter (if any) *)
+          let iterable_type = Type.iterable Type.Any in
+          let parameter_argument_mapping_with_reasons =
+            if is_less_or_equal resolved iterable_type then
+              parameter_argument_mapping_with_reasons
+            else
+              let error_factory invalid_argument =
+                SignatureSelectionTypes.InvalidVariableArgument invalid_argument
+              in
+              add_annotation_error expression resolved error_factory
+          in
+          match parameters with
+          | [] ->
+              (* Starred argument; parameters empty *)
+              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+          | (CallableParamType.Variable _ as parameter) :: _ ->
+              (* Starred argument; starred parameter *)
+              let parameter_argument_mapping =
+                update_mapping parameter (make_matched_argument ?index_into_starred_tuple argument)
+              in
+              (* We don't need to slice any further `*xs` arguments since they are consumed fully by
+                 the expected `Variable` parameter. *)
+              consume_with_new_index
+                ?index_into_starred_tuple:None
+                ~arguments:arguments_tail
+                ~parameters
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+          | CallableParamType.Keywords _ :: parameters_tail ->
+              (* Starred argument, double starred parameter *)
+              consume
+                ~arguments
+                ~parameters:parameters_tail
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+          | Type.Callable.CallableParamType.KeywordOnly _ :: _ ->
+              (* Starred argument, keyword only parameter *)
+              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+          | parameter :: parameters_tail ->
+              (* Starred argument, parameter *)
+              let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
+              let parameter_argument_mapping =
+                update_mapping parameter (make_matched_argument ~index_into_starred_tuple argument)
+              in
+              consume_with_new_index
+                ~index_into_starred_tuple:(index_into_starred_tuple + 1)
+                ~arguments
+                ~parameters:parameters_tail
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping })
       | ({ kind = DoubleStar; resolved; expression; _ } as argument) :: arguments_tail, _ -> (
           (* Double starred argument; first check if its type is assignable to Mapping[str, Any],
              then match it against the first parameter (if any) *)
@@ -498,16 +558,10 @@ module SignatureSelection = struct
             if is_less_or_equal resolved mapping_type then
               parameter_argument_mapping_with_reasons
             else
-              let argument_location = get_location ~expression ~default:location in
-              let open SignatureSelectionTypes in
-              let error =
-                InvalidKeywordArgument
-                  (Node.create ~location:argument_location { expression; annotation = resolved })
+              let error_factory invalid_argument =
+                SignatureSelectionTypes.InvalidKeywordArgument invalid_argument
               in
-              {
-                parameter_argument_mapping_with_reasons with
-                reasons = { reasons with annotation = error :: annotation };
-              }
+              add_annotation_error expression resolved error_factory
           in
           match parameters with
           | [] ->
@@ -624,25 +678,6 @@ module SignatureSelection = struct
             ~arguments:arguments_tail
             ~parameters:remaining_parameters
             { parameter_argument_mapping; reasons }
-      | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
-          (CallableParamType.Variable _ as parameter) :: _ ) ->
-          (* Starred argument; starred parameter *)
-          let parameter_argument_mapping =
-            update_mapping parameter (make_matched_argument ?index_into_starred_tuple argument)
-          in
-          (* We don't need to slice any further `*xs` arguments since they are consumed fully by the
-             expected `Variable` parameter. *)
-          consume_with_new_index
-            ?index_into_starred_tuple:None
-            ~arguments:arguments_tail
-            ~parameters
-            { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-      | { kind = SingleStar; _ } :: _, CallableParamType.Keywords _ :: parameters_tail ->
-          (* Starred argument, double starred parameter *)
-          consume
-            ~arguments
-            ~parameters:parameters_tail
-            { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
       | { kind = Positional; _ } :: _, CallableParamType.Keywords _ :: parameters_tail ->
           (* Unlabeled argument, double starred parameter *)
           consume
@@ -659,21 +694,6 @@ module SignatureSelection = struct
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           in
           consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-      | ( { kind = SingleStar; _ } :: arguments_tail,
-          Type.Callable.CallableParamType.KeywordOnly _ :: _ ) ->
-          (* Starred argument, keyword only parameter *)
-          consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-      | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
-          (* Starred argument, parameter *)
-          let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
-          let parameter_argument_mapping =
-            update_mapping parameter (make_matched_argument ~index_into_starred_tuple argument)
-          in
-          consume_with_new_index
-            ~index_into_starred_tuple:(index_into_starred_tuple + 1)
-            ~arguments
-            ~parameters:parameters_tail
-            { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
       | ( { kind = Positional; _ } :: _,
           (CallableParamType.KeywordOnly _ as parameter) :: parameters_tail ) ->
           (* Unlabeled argument, keyword only parameter *)
@@ -1047,33 +1067,20 @@ module SignatureSelection = struct
                     reasons = { reasons with annotation = error :: annotation };
                   }
                 in
-                let update_signature_match_for_iterable
-                    ~position
-                    ~create_error
-                    ~resolved
-                    iterable_item_type
-                  =
+                let update_signature_match_for_iterable ~position iterable_item_type =
                   let argument_location = get_location ~expression ~default:location in
-                  match iterable_item_type with
-                  | Some iterable_item_type ->
-                      check_argument_and_set_constraints_and_reasons
-                        ~position
-                        ~argument_location
-                        ~argument_annotation:iterable_item_type
-                        ~parameter_annotation
-                        ~name
-                        signature_match
-                      |> check ~arguments:tail
-                  | None ->
-                      let argument_location = get_location ~expression ~default:location in
-                      { expression; annotation = resolved }
-                      |> Node.create ~location:argument_location
-                      |> create_error
-                      |> add_annotation_error signature_match
+                  let iterable_item_type = Option.value iterable_item_type ~default:Type.Any in
+                  check_argument_and_set_constraints_and_reasons
+                    ~position
+                    ~argument_location
+                    ~argument_annotation:iterable_item_type
+                    ~parameter_annotation
+                    ~name
+                    signature_match
+                  |> check ~arguments:tail
                 in
                 match kind with
                 | DoubleStar ->
-                    let create_error error = InvalidKeywordArgument error in
                     let synthetic_variable = Type.Variable.TypeVar.create "$_T" in
                     let generic_iterable_type =
                       Type.parametric
@@ -1081,7 +1088,7 @@ module SignatureSelection = struct
                         [Single Type.string; Single (Type.Variable synthetic_variable)]
                     in
                     extract_iterable_item_type ~synthetic_variable ~generic_iterable_type resolved
-                    |> update_signature_match_for_iterable ~position ~create_error ~resolved
+                    |> update_signature_match_for_iterable ~position
                 | SingleStar -> (
                     let signature_match_for_single_element =
                       match parameter, index_into_starred_tuple, resolved with
@@ -1138,7 +1145,6 @@ module SignatureSelection = struct
                     match signature_match_for_single_element with
                     | Some signature_match_for_single_element -> signature_match_for_single_element
                     | None ->
-                        let create_error error = InvalidVariableArgument error in
                         let synthetic_variable = Type.Variable.TypeVar.create "$_T" in
                         let generic_iterable_type =
                           Type.iterable (Type.Variable synthetic_variable)
@@ -1149,8 +1155,7 @@ module SignatureSelection = struct
                           resolved
                         |> update_signature_match_for_iterable
                              ~position:(position + Option.value ~default:0 index_into_starred_tuple)
-                             ~create_error
-                             ~resolved)
+                    )
                 | Named _
                 | Positional -> (
                     let argument_annotation, weakening_error =

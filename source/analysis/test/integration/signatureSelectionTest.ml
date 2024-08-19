@@ -1403,6 +1403,15 @@ let test_check_keyword_arguments =
              "Invalid argument [32]: Keyword argument `x` has type `Dict[int, str]` "
              ^ "but must be a mapping with string keys.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      def f() -> None:
+        pass
+      def g(x: int) -> None:
+        f(*x)
+           |}
+           ["Invalid argument [32]: Variable argument `x` has type `int` but must be an iterable."];
     ]
 
 
