@@ -401,7 +401,7 @@ let fallback_attribute
         | Parametric
             {
               name = "BoundMethod";
-              parameters =
+              arguments =
                 [Single (Callable ({ implementation; _ } as callable)); Single self_argument];
             } ->
             let return_annotation =

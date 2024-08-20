@@ -377,7 +377,7 @@ let test_fallback_attribute =
               (Parametric
                  {
                    name = "BoundMethod";
-                   parameters =
+                   arguments =
                      [
                        Single
                          (parse_callable
@@ -401,7 +401,7 @@ let test_fallback_attribute =
               (Parametric
                  {
                    name = "BoundMethod";
-                   parameters =
+                   arguments =
                      [
                        Single
                          (parse_callable

@@ -3347,7 +3347,7 @@ let create_model_from_signature
     | Some
         (Global.Attribute
           (Type.Parametric
-            { name = "BoundMethod"; parameters = [Type.Argument.Single (Type.Callable t); _] })) ->
+            { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] })) ->
         Ok (Some t)
     | Some (Global.Attribute Type.Any) -> Ok None
     | Some (Global.Attribute Type.Top) -> Ok None
@@ -4461,7 +4461,7 @@ let create_callable_model_from_annotations
                   (Type.Parametric
                     {
                       name = "BoundMethod";
-                      parameters = [Type.Argument.Single (Type.Callable t); _];
+                      arguments = [Type.Argument.Single (Type.Callable t); _];
                     })) ->
                 Some t
             | _ -> None)

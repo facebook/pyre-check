@@ -150,7 +150,7 @@ let test_resolve context =
     ~expect:
       (Some
          (Global.Attribute
-            (Type.Parametric { name = "type"; parameters = [Single (Type.Primitive "test.Foo")] })));
+            (Type.Parametric { name = "type"; arguments = [Single (Type.Primitive "test.Foo")] })));
 
   (* Symbol is not found. *)
   assert_resolve

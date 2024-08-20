@@ -359,7 +359,7 @@ let rec unpack_callable_and_self_argument ~signature_select ~global_resolution i
             };
           self_argument = None;
         }
-  | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] } -> (
+  | Parametric { name = "BoundMethod"; arguments = [Single callable; Single self_argument] } -> (
       let self_argument = Some self_argument in
       match callable with
       | Callable callable -> Some { TypeOperation.callable; self_argument }
@@ -460,7 +460,7 @@ module State (Context : Context) = struct
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
     let mismatches, annotation =
-      GlobalResolution.check_invalid_type_parameters resolution annotation
+      GlobalResolution.check_invalid_type_arguments resolution annotation
     in
     let add_error errors mismatch =
       match annotation with
@@ -825,7 +825,7 @@ module State (Context : Context) = struct
     | Some [] ->
         parent_type
     | Some variables ->
-        List.map variables ~f:Type.Variable.to_parameter |> Type.parametric parent_name
+        List.map variables ~f:Type.Variable.to_argument |> Type.parametric parent_name
     | exception _ -> parent_type
 
 
@@ -1427,8 +1427,8 @@ module State (Context : Context) = struct
         let resolved_callee = Callee.resolved callee in
         match resolved_callee, potential_missing_operator_error undefined_attributes with
         | Type.Top, Some kind -> emit_error ~errors ~location ~kind
-        | Parametric { name = "type"; parameters = [Single Any] }, _
-        | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
+        | Parametric { name = "type"; arguments = [Single Any] }, _
+        | Parametric { name = "BoundMethod"; arguments = [Single Any; _] }, _
         | Type.Any, _
         | Type.Top, _ ->
             errors
@@ -2003,7 +2003,7 @@ module State (Context : Context) = struct
             }
         | _ -> (
             match
-              GlobalResolution.extract_type_parameters
+              GlobalResolution.extract_type_arguments
                 global_resolution
                 ~target:"typing.Awaitable"
                 ~source:resolved
@@ -2102,12 +2102,12 @@ module State (Context : Context) = struct
             | resolved_left, BooleanOperator.And when Type.is_truthy resolved_left ->
                 (* true_expression and b has the same type as b *)
                 forward_right None
-            | Type.Union parameters, BooleanOperator.Or ->
+            | Type.Union arguments, BooleanOperator.Or ->
                 (* If type_of(a) = Union[A, None], then type_of(a or b) = Union[A, type_of(b) under
                    assumption type_of(a) = None] *)
                 let not_none_left =
                   Type.union
-                    (List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter)))
+                    (List.filter arguments ~f:(fun parameter -> not (Type.is_none parameter)))
                 in
                 forward_right (Some not_none_left)
             | _, _ -> forward_right (Some resolved_left)))
@@ -2596,7 +2596,7 @@ module State (Context : Context) = struct
         let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
           let target_and_dynamic resolved_callee =
             if Type.is_meta resolved_callee then
-              Some (Type.single_parameter resolved_callee), false
+              Some (Type.single_argument resolved_callee), false
             else
               match resolved_base with
               | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
@@ -2625,8 +2625,7 @@ module State (Context : Context) = struct
             | _ -> Callee.NonAttribute { expression = callee; resolved }
           in
           match resolved_callee with
-          | Type.Parametric { name = "type"; parameters = [Single (Type.Union resolved_callees)] }
-            ->
+          | Type.Parametric { name = "type"; arguments = [Single (Type.Union resolved_callees)] } ->
               let forward_inner_callable (resolution, errors, annotations) inner_resolved_callee =
                 let target, dynamic = target_and_dynamic inner_resolved_callee in
                 forward_call_with_arguments
@@ -2660,7 +2659,7 @@ module State (Context : Context) = struct
                   | Type.Parametric
                       {
                         name = "pyre_extensions.BroadcastError";
-                        parameters = [Type.Argument.Single _; Type.Argument.Single _];
+                        arguments = [Type.Argument.Single _; Type.Argument.Single _];
                       } ->
                       true
                   | _ -> false
@@ -2674,7 +2673,7 @@ module State (Context : Context) = struct
                           | Type.Parametric
                               {
                                 name = "pyre_extensions.BroadcastError";
-                                parameters =
+                                arguments =
                                   [Type.Argument.Single left_type; Type.Argument.Single right_type];
                               } ->
                               emit_error
@@ -2895,7 +2894,7 @@ module State (Context : Context) = struct
                       | Type.Parametric
                           {
                             name = "BoundMethod";
-                            parameters =
+                            arguments =
                               [
                                 Single
                                   (Type.Callable
@@ -3035,7 +3034,7 @@ module State (Context : Context) = struct
                     None, resolution, errors
                 | _ -> (
                     match
-                      GlobalResolution.extract_type_parameters
+                      GlobalResolution.extract_type_arguments
                         global_resolution
                         ~source
                         ~target:"typing.Mapping"
@@ -3597,14 +3596,14 @@ module State (Context : Context) = struct
         | Type.Top -> (
             (* Try to resolve meta-types given as expressions. *)
             match resolve_expression_type ~resolution annotation with
-            | annotation when Type.is_meta annotation -> Type.single_parameter annotation
+            | annotation when Type.is_meta annotation -> Type.single_argument annotation
             | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_meta elements ->
-                List.map ~f:Type.single_parameter elements |> Type.union
+                List.map ~f:Type.single_argument elements |> Type.union
             | Type.Tuple (Concatenation concatenation) ->
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
                 >>= (fun element ->
                       if Type.is_meta element then
-                        Some (Type.single_parameter element)
+                        Some (Type.single_argument element)
                       else
                         None)
                 |> Option.value ~default:Type.Top
@@ -3626,7 +3625,7 @@ module State (Context : Context) = struct
           | _ -> annotation
         in
         let extract_union_members = function
-          | Type.Union parameters -> parameters
+          | Type.Union arguments -> arguments
           | annotation -> [annotation]
         in
         extract_union_members unfolded_annotation
@@ -4006,7 +4005,7 @@ module State (Context : Context) = struct
             match existing_annotation name with
             | Some existing_annotation -> (
                 match TypeInfo.Unit.annotation existing_annotation with
-                | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                | Type.Parametric { name = "type"; arguments = [Single typed_dictionary] } ->
                     if
                       Type.is_any typed_dictionary
                       || GlobalResolution.is_typed_dictionary global_resolution typed_dictionary
@@ -4052,7 +4051,7 @@ module State (Context : Context) = struct
             match existing_annotation name with
             | Some existing_annotation -> (
                 match TypeInfo.Unit.annotation existing_annotation with
-                | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                | Type.Parametric { name = "type"; arguments = [Single typed_dictionary] } ->
                     if GlobalResolution.is_typed_dictionary global_resolution typed_dictionary then
                       Unreachable
                     else
@@ -4090,7 +4089,7 @@ module State (Context : Context) = struct
             let reference = name_to_reference_exn name in
             let { Resolved.resolved; _ } = forward_expression ~resolution right in
             match
-              GlobalResolution.extract_type_parameters
+              GlobalResolution.extract_type_arguments
                 global_resolution
                 ~target:"typing.Iterable"
                 ~source:resolved
@@ -4139,9 +4138,9 @@ module State (Context : Context) = struct
     | Name name when is_simple_name name -> (
         match existing_annotation name with
         | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable
-        | Some ({ TypeInfo.Unit.annotation = Type.Union parameters; _ } as annotation) ->
+        | Some ({ TypeInfo.Unit.annotation = Type.Union arguments; _ } as annotation) ->
             let refined_annotation =
-              List.filter parameters ~f:(fun parameter ->
+              List.filter arguments ~f:(fun parameter ->
                   let unpacked_readonly_type =
                     Type.ReadOnly.unpack_readonly parameter |> Option.value ~default:parameter
                   in
@@ -4177,7 +4176,7 @@ module State (Context : Context) = struct
                 | Type.Parametric
                     {
                       name = "list";
-                      parameters =
+                      arguments =
                         [
                           Single
                             (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]));
@@ -4214,21 +4213,21 @@ module State (Context : Context) = struct
                   {
                     TypeInfo.Unit.annotation =
                       Type.Parametric
-                        { name = parametric_name; parameters = [Single (Type.Union parameters)] } as
+                        { name = parametric_name; arguments = [Single (Type.Union arguments)] } as
                       annotation;
                     _;
                   }
                 when GlobalResolution.less_or_equal
                        global_resolution
                        ~left:annotation
-                       ~right:(Type.iterable (Type.Union parameters)) ->
-                  let parameters =
-                    List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+                       ~right:(Type.iterable (Type.Union arguments)) ->
+                  let arguments =
+                    List.filter arguments ~f:(fun parameter -> not (Type.is_none parameter))
                   in
                   refine_local
                     ~name
                     (TypeInfo.Unit.create_mutable
-                       (Type.parametric parametric_name [Single (Type.union parameters)]))
+                       (Type.parametric parametric_name [Single (Type.union arguments)]))
               | _ -> resolution
             in
             Value resolution
@@ -4431,7 +4430,7 @@ module State (Context : Context) = struct
       | Some annotation -> annotation
       | None -> (
           match
-            GlobalResolution.extract_type_parameters
+            GlobalResolution.extract_type_arguments
               global_resolution
               ~target:"typing.Iterable"
               ~source:annotation
@@ -4439,9 +4438,9 @@ module State (Context : Context) = struct
           | Some [element_type] -> element_type
           | _ -> Type.Any)
     in
-    let nonuniform_sequence_parameters expected_size annotation =
+    let nonuniform_sequence_arguments expected_size annotation =
       match annotation with
-      | Type.Tuple (Concrete parameters) -> Some parameters
+      | Type.Tuple (Concrete arguments) -> Some arguments
       | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
           NamedTuple.field_annotations ~global_resolution annotation
       | annotation ->
@@ -4488,7 +4487,7 @@ module State (Context : Context) = struct
             | getitem_annotation -> Some (List.init ~f:(fun _ -> getitem_annotation) expected_size)
           in
           Option.first_some
-            (Type.type_parameters_for_bounded_tuple_union annotation)
+            (Type.type_arguments_for_bounded_tuple_union annotation)
             (parameters_from_getitem ())
     in
     let is_uniform_sequence annotation =
@@ -4499,7 +4498,7 @@ module State (Context : Context) = struct
       (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
       | Type.Tuple _ -> false
       | Type.Union (Type.Tuple _ :: _)
-        when Option.is_some (Type.type_parameters_for_bounded_tuple_union annotation) ->
+        when Option.is_some (Type.type_arguments_for_bounded_tuple_union annotation) ->
           false
       | _ ->
           (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
@@ -4526,7 +4525,7 @@ module State (Context : Context) = struct
                 let parent, accessed_through_class, accessed_through_readonly =
                   match Type.ReadOnly.unpack_readonly resolved, Type.is_meta resolved with
                   | Some resolved, _ -> resolved, false, true
-                  | None, true -> Type.single_parameter resolved, true, false
+                  | None, true -> Type.single_argument resolved, true, false
                   | _ -> resolved, false, false
                 in
                 let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
@@ -4598,7 +4597,7 @@ module State (Context : Context) = struct
             match attribute with
             | Some attribute when AnnotatedAttribute.defined attribute -> (
                 match AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation with
-                | Type.Parametric { name = "BoundMethod"; parameters = [Single (Callable _); _] }
+                | Type.Parametric { name = "BoundMethod"; arguments = [Single (Callable _); _] }
                 | Type.Callable _ ->
                     Some attribute
                 | _ -> None)
@@ -4717,7 +4716,7 @@ module State (Context : Context) = struct
                     Type.is_meta parent
                     && GlobalResolution.is_typed_dictionary
                          global_resolution
-                         (Type.single_parameter parent)
+                         (Type.single_argument parent)
                   in
                   let is_getattr_returning_any_defined =
                     match
@@ -4729,7 +4728,7 @@ module State (Context : Context) = struct
                         (Type.Parametric
                           {
                             name = "BoundMethod";
-                            parameters =
+                            arguments =
                               [Single (Callable { implementation = { annotation; _ }; _ }); _];
                           })
                     | Some (Type.Callable { implementation = { annotation; _ }; _ }) ->
@@ -5307,7 +5306,7 @@ module State (Context : Context) = struct
         in
         let target, dynamic =
           if Type.is_meta resolved_setitem_type then
-            Some (Type.single_parameter resolved_setitem_type), false
+            Some (Type.single_argument resolved_setitem_type), false
           else
             match resolved_setitem_base with
             | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
@@ -5388,9 +5387,7 @@ module State (Context : Context) = struct
           | Type.Any -> errors, List.map assignees ~f:(fun _ -> Type.Any)
           | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Any)
           | _ -> (
-              match
-                nonuniform_sequence_parameters (List.length assignees) guide_annotation_type
-              with
+              match nonuniform_sequence_arguments (List.length assignees) guide_annotation_type with
               | None ->
                   let errors =
                     emit_error
@@ -5488,7 +5485,7 @@ module State (Context : Context) = struct
           let final_annotation, is_final =
             match Type.final_value parsed_annotation with
             | `Ok final_annotation -> Some final_annotation, true
-            | `NoParameter -> None, true
+            | `NoArgument -> None, true
             | `NotFinal -> Some parsed_annotation, false
           in
           let annotation_errors =
@@ -5505,7 +5502,7 @@ module State (Context : Context) = struct
           in
           let unwrap_type_qualifiers annotation =
             match annotation with
-            | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single parameter_type] }
+            | Type.Parametric { name = "dataclasses.InitVar"; arguments = [Single parameter_type] }
               ->
                 (* If annotation is dataclasses.InitVar[T], return T *)
                 parameter_type
@@ -5708,7 +5705,7 @@ module State (Context : Context) = struct
         let expected = Type.Primitive "BaseException" in
         let actual =
           if Type.is_meta resolved then
-            Type.single_parameter resolved
+            Type.single_argument resolved
           else
             resolved
         in
@@ -5907,11 +5904,11 @@ module State (Context : Context) = struct
                   | _ -> errors)
               | _, _ -> errors
             in
-            let check_duplicate_typevars errors parameters base =
-              let rec get_duplicate_typevars parameters duplicates =
-                match parameters with
-                | parameter :: rest when List.exists ~f:(Type.Variable.equal parameter) rest ->
-                    get_duplicate_typevars rest (parameter :: duplicates)
+            let check_duplicate_type_parameters errors parametric base =
+              let rec get_duplicate_typevars variables duplicates =
+                match variables with
+                | variable :: rest when List.exists ~f:(Type.Variable.equal variable) rest ->
+                    get_duplicate_typevars rest (variable :: duplicates)
                 | _ -> duplicates
               in
               let emit_duplicate_errors errors variable =
@@ -5920,28 +5917,28 @@ module State (Context : Context) = struct
               List.fold_left
                 ~f:emit_duplicate_errors
                 ~init:errors
-                (get_duplicate_typevars (Type.Variable.all_free_variables parameters) [])
+                (get_duplicate_typevars (Type.Variable.all_free_variables parametric) [])
             in
             match base_type with
             | Type.Parametric { name; _ } as parametric when String.equal name "typing.Generic" ->
-                check_duplicate_typevars errors parametric GenericBase
-            | Type.Parametric { name; parameters = extended_parameters } as parametric ->
+                check_duplicate_type_parameters errors parametric GenericBase
+            | Type.Parametric { name; arguments = extended_arguments } as parametric ->
                 let errors =
                   if String.equal name "typing.Protocol" then
-                    check_duplicate_typevars errors parametric ProtocolBase
+                    check_duplicate_type_parameters errors parametric ProtocolBase
                   else
                     errors
                 in
-                Type.Argument.all_singles extended_parameters
-                >>| (fun extended_parameters ->
-                      let actual_parameters =
+                Type.Argument.all_singles extended_arguments
+                >>| (fun extended_arguments ->
+                      let actual_arguments =
                         GlobalResolution.generic_parameters_as_variables global_resolution name
                         >>= Type.Variable.all_unary
                         >>| List.map ~f:(fun unary -> Type.Variable unary)
                         |> Option.value ~default:[]
                       in
                       match
-                        List.fold2 extended_parameters actual_parameters ~init:errors ~f:check_pair
+                        List.fold2 extended_arguments actual_arguments ~init:errors ~f:check_pair
                       with
                       | Ok errors -> errors
                       | Unequal_lengths -> errors)
@@ -6838,7 +6835,7 @@ module State (Context : Context) = struct
           let errors = List.append annotation_errors old_errors in
           let errors =
             match parsed with
-            | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
+            | Type.Parametric { name = "type"; arguments = [Single Type.Any] } ->
                 (* Inheriting from type makes you a metaclass, and we don't want to
                  * suggest that instead you need to use typing.Type[Something] *)
                 old_errors
@@ -7106,7 +7103,7 @@ module State (Context : Context) = struct
                 | Type.Parametric
                     {
                       name = "BoundMethod";
-                      parameters = [Single (Type.Callable { implementation; kind; _ }); _];
+                      arguments = [Single (Type.Callable { implementation; kind; _ }); _];
                     }
                 | Type.Callable { Type.Callable.implementation; kind; _ } ->
                     let original_implementation =
@@ -7115,7 +7112,7 @@ module State (Context : Context) = struct
                       | Type.Callable { Type.Callable.implementation = original_implementation; _ }
                       | Type.Parametric
                           {
-                            parameters =
+                            arguments =
                               [
                                 Single
                                   (Type.Callable { implementation = original_implementation; _ });
@@ -7407,14 +7404,14 @@ module State (Context : Context) = struct
     let outer_scope_type_variables, current_scope_type_variables =
       let type_variables_of_class class_name =
         let unarize unary =
-          let fix_invalid_parameters_in_bounds unary =
+          let fix_invalid_arguments_in_bounds unary =
             match
-              GlobalResolution.check_invalid_type_parameters global_resolution (Type.Variable unary)
+              GlobalResolution.check_invalid_type_arguments global_resolution (Type.Variable unary)
             with
             | _, Type.Variable unary -> unary
             | _ -> failwith "did not transform"
           in
-          fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.TypeVarVariable unary
+          fix_invalid_arguments_in_bounds unary |> fun unary -> Type.Variable.TypeVarVariable unary
         in
         let extract = function
           | Type.Variable.TypeVarVariable unary -> unarize unary

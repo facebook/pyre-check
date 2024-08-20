@@ -952,7 +952,7 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name expre
                   (* If it is a call to a class method or static method, `Foo.my_class_method()`,
                      the resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
                   if Type.is_meta annotation then
-                    Ok (Type.single_parameter annotation)
+                    Ok (Type.single_argument annotation)
                   else
                     resolved
               | Error resolution_error ->
@@ -997,7 +997,7 @@ let resolve_attributes_for_expression ~resolution expression =
         (* If it is a call to a class method or static method, `Foo.my_class_method()`, the resolved
            base type will be `Type[Foo]`. Extract the class type `Foo`. *)
         if Type.is_meta annotation then
-          Some (Type.single_parameter annotation)
+          Some (Type.single_argument annotation)
         else
           Some annotation
     | Error _ -> None
@@ -1123,8 +1123,8 @@ let classify_coverage_data { expression; type_ } =
           | Some _ -> make_coverage_gap (TypeIsAny ParameterIsAny)
           | None -> make_coverage_gap (TypeIsAny OtherExpressionIsAny))
       | _ -> make_coverage_gap (TypeIsAny OtherExpressionIsAny))
-  | Parametric { name = "list" | "set"; parameters = [Single Any] }
-  | Parametric { name = "dict"; parameters = [Single Any; Single _] | [Single _; Single Any] } ->
+  | Parametric { name = "list" | "set"; arguments = [Single Any] }
+  | Parametric { name = "dict"; arguments = [Single Any; Single _] | [Single _; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
   | Callable { implementation = { annotation = Type.Any; _ }; _ } ->
       make_coverage_gap CallableReturnIsAny
@@ -1260,7 +1260,7 @@ let show_type_for_hover annotation =
   | Type.Parametric
       {
         name = "BoundMethod";
-        parameters = [Single (Callable { kind = Named reference; _ }); Single _];
+        arguments = [Single (Callable { kind = Named reference; _ }); Single _];
       } ->
       format_method_name reference annotation
   | _ -> Type.show_concise annotation

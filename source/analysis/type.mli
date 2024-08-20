@@ -210,7 +210,7 @@ and t =
   | NoneType
   | Parametric of {
       name: Identifier.t;
-      parameters: t Record.Argument.record list;
+      arguments: t Record.Argument.record list;
     }
   | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
   | Primitive of Primitive.t
@@ -483,7 +483,7 @@ val coroutine_value : t -> t option
 
 val class_variable_value : t -> t option
 
-val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
+val final_value : t -> [> `NoArgument | `NotFinal | `Ok of t ]
 
 val is_any : t -> bool
 
@@ -571,11 +571,11 @@ type type_guard_kind =
 
 val type_guard_kind_if_any : t -> type_guard_kind
 
-val parameters : t -> Argument.t list option
+val arguments : t -> Argument.t list option
 
-val type_parameters_for_bounded_tuple_union : t -> t list option
+val type_arguments_for_bounded_tuple_union : t -> t list option
 
-val single_parameter : t -> t
+val single_argument : t -> t
 
 val weaken_literals : t -> t
 
@@ -611,7 +611,7 @@ module OrderedTypes : sig
   (* Concatenation is only defined for certain members *)
   val concatenate : left:t -> right:t -> t option
 
-  val to_parameters : t -> Argument.t list
+  val to_arguments : t -> Argument.t list
 
   val to_starred_annotation_expression
     :  expression:(type_t -> Expression.t) ->
@@ -832,7 +832,7 @@ module Variable : sig
 
   type variable_zip_result = {
     variable_pair: pair;
-    received_parameter: Argument.t;
+    received_argument: Argument.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -866,22 +866,22 @@ module Variable : sig
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
-  val zip_variables_with_parameters : parameters:Argument.t list -> t list -> pair list option
+  val zip_variables_with_arguments : arguments:Argument.t list -> t list -> pair list option
 
-  val zip_variables_with_parameters_including_mismatches
-    :  parameters:Argument.t list ->
+  val zip_variables_with_arguments_including_mismatches
+    :  arguments:Argument.t list ->
     t list ->
     variable_zip_result list option
 
-  val zip_variables_with_two_parameter_lists
-    :  left_parameters:Argument.t list ->
-    right_parameters:Argument.t list ->
+  val zip_variables_with_two_argument_lists
+    :  left_arguments:Argument.t list ->
+    right_arguments:Argument.t list ->
     t list ->
     (pair * pair) list option
 
   val all_unary : t list -> TypeVar.t list option
 
-  val to_parameter : t -> Argument.t
+  val to_argument : t -> Argument.t
 end
 
 val namespace_insensitive_compare : t -> t -> int

@@ -8,7 +8,14 @@
 (* The classHierarchy module contains an implementation of the C3 superclass linearization
    algorithm. This algorithm (adopted in Python 2.3) is a way to determine a method resolution order
    (MRO) which maintains certain properties. More can be found on
-   [wikipedia](https://en.wikipedia.org/wiki/C3_linearization) *)
+   [wikipedia](https://en.wikipedia.org/wiki/C3_linearization)
+
+   Note that there are two blocks of code in this module that convert type *arguments* to type
+   *parameters*. This is because the pre-PEP-695 syntax for generic classes indicates the type
+   *parameters* of a class as *arguments* to its generic base class. That is the only reason such
+   coercion makes sense, in general the two concepts are not interchangeable (parameters are the
+   placeholders on a class treated as a type constructor, arguments are the actual types provided in
+   a concrete annotation that specializes the generic). *)
 open Core
 open Ast
 open Pyre
@@ -36,7 +43,7 @@ end
 module Target = struct
   type t = {
     target: Identifier.t;
-    parameters: Type.Argument.t list;
+    arguments: Type.Argument.t list;
   }
   [@@deriving compare, sexp, show]
 
@@ -265,13 +272,13 @@ let generic_parameters_as_variables ?(default = None) (module Handler : Handler)
       parents_and_generic_of_target (module Handler) primitive_name
       >>= List.find ~f:(fun { Target.target; _ } ->
               [%compare.equal: Identifier.t] target generic_primitive)
-      >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
+      >>| (fun { Target.arguments; _ } -> parameters_to_variables arguments)
       |> Option.value ~default
 
 
 let get_generic_parameters ~generic_primitive edges =
-  let generic_parameters { Target.target; parameters } =
-    Option.some_if ([%compare.equal: Identifier.t] generic_primitive target) parameters
+  let generic_parameters { Target.target; arguments } =
+    Option.some_if ([%compare.equal: Identifier.t] generic_primitive target) arguments
   in
   List.find_map ~f:generic_parameters edges
 
@@ -283,7 +290,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let to_any = function
         | Type.Variable.TypeVarVariable _ -> [Type.Argument.Single Type.Any]
         | ParamSpecVariable _ -> [CallableParameters Undefined]
-        | TypeVarTupleVariable _ -> Type.OrderedTypes.to_parameters Type.Variable.TypeVarTuple.any
+        | TypeVarTupleVariable _ -> Type.OrderedTypes.to_arguments Type.Variable.TypeVarTuple.any
       in
       target
       |> parents_and_generic_of_target (module Handler)
@@ -294,26 +301,26 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (Handler.contains primitive) -> None
-        | Primitive "tuple", [Type.Argument.Single parameter] ->
-            Some ("tuple", [Type.Argument.Single (Type.weaken_literals parameter)])
-        | Primitive primitive, parameters -> Some (primitive, parameters)
+        | Primitive "tuple", [Type.Argument.Single argument] ->
+            Some ("tuple", [Type.Argument.Single (Type.weaken_literals argument)])
+        | Primitive primitive, arguments -> Some (primitive, arguments)
         | _ ->
             (* We can only propagate from those that actually split off a primitive *)
             None
       in
-      let handle_split (primitive, parameters) =
+      let handle_split (primitive, arguments) =
         let worklist = Queue.create () in
-        Queue.enqueue worklist { Target.target = primitive; parameters };
+        Queue.enqueue worklist { Target.target = primitive; arguments };
         let rec iterate worklist =
           match Queue.dequeue worklist with
-          | Some { Target.target = target_index; parameters } ->
+          | Some { Target.target = target_index; arguments } ->
               let instantiated_successors =
                 (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has concrete
-                   parameters, all occurrences of _T1, _T2, etc. in other supertypes need to be
-                   replaced with the concrete parameter corresponding to the type variable. This
-                   function takes a target with concrete parameters and its supertypes, and
+                   arguments, all occurrences of _T1, _T2, etc. in other supertypes need to be
+                   replaced with the concrete argument corresponding to the type variable. This
+                   function takes a target with concrete arguments and its supertypes, and
                    instantiates the supertypes accordingly. *)
-                let get_instantiated_successors ~generic_primitive ~parameters successors =
+                let get_instantiated_successors ~generic_primitive ~arguments successors =
                   let variables =
                     get_generic_parameters successors ~generic_primitive
                     >>= parameters_to_variables
@@ -328,11 +335,11 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                       | TypeVarTupleVariable variadic ->
                           Type.Variable.TypeVarTuplePair (variadic, Type.Variable.TypeVarTuple.any)
                     in
-                    Type.Variable.zip_variables_with_parameters ~parameters variables
+                    Type.Variable.zip_variables_with_arguments ~arguments variables
                     |> Option.value ~default:(List.map ~f:to_any variables)
                     |> TypeConstraints.Solution.create
                   in
-                  let instantiate_parameters { Target.target; parameters } =
+                  let instantiate_parameters { Target.target; arguments } =
                     let instantiate = function
                       | Type.Argument.Single single ->
                           [
@@ -347,23 +354,23 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                                  parameters);
                           ]
                       | Unpacked unpackable ->
-                          Type.OrderedTypes.to_parameters
+                          Type.OrderedTypes.to_arguments
                             (TypeConstraints.Solution.instantiate_ordered_types
                                replacement
                                (Concatenation
                                   (Type.OrderedTypes.Concatenation.create_from_unpackable
                                      unpackable)))
                     in
-                    { Target.target; parameters = List.concat_map parameters ~f:instantiate }
+                    { Target.target; arguments = List.concat_map arguments ~f:instantiate }
                   in
                   List.map successors ~f:instantiate_parameters
                 in
                 parents_and_generic_of_target (module Handler) target_index
-                >>| get_instantiated_successors ~generic_primitive ~parameters
+                >>| get_instantiated_successors ~generic_primitive ~arguments
               in
               if [%compare.equal: Identifier.t] target_index target then
                 match target with
-                | "typing.Callable" -> Some parameters
+                | "typing.Callable" -> Some arguments
                 | _ -> instantiated_successors >>= get_generic_parameters ~generic_primitive
               else (
                 instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
@@ -421,10 +428,10 @@ let to_dot (module Handler : Handler) ~class_names =
   let add_edges class_name =
     parents_of (module Handler) class_name
     >>| List.sort ~compare:Target.compare
-    >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
+    >>| List.iter ~f:(fun { Target.target = successor; arguments } ->
             Format.asprintf "  %s -> %s" class_name successor |> Buffer.add_string buffer;
-            if not (List.is_empty parameters) then
-              Format.asprintf "[label=\"(%a)\"]" Type.Argument.pp_list parameters
+            if not (List.is_empty arguments) then
+              Format.asprintf "[label=\"(%a)\"]" Type.Argument.pp_list arguments
               |> Buffer.add_string buffer;
             Buffer.add_string buffer "\n")
     |> ignore

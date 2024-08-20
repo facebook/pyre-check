@@ -37,7 +37,7 @@ val make_weakened_type
 
 val distribute_union_over_parametric
   :  parametric_name:Identifier.t ->
-  number_of_parameters:int ->
+  number_of_arguments:int ->
   Type.t ->
   Type.t option
 

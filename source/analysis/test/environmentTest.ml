@@ -571,17 +571,17 @@ let test_populate context =
   assert_equal (parse_annotation environment !"test._T") (Type.variable "test._T");
   assert_equal (parse_annotation environment !"test.S") Type.string;
   assert_equal (parse_annotation environment !"test.S2") Type.string;
-  let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
+  let assert_superclasses ?(superclass_arguments = fun _ -> []) ~environment base ~superclasses =
     let (module TypeOrderHandler) = class_hierarchy environment in
     let targets = ClassHierarchy.parents_of (module TypeOrderHandler) base in
     let to_target annotation =
-      { ClassHierarchy.Target.target = annotation; parameters = superclass_parameters annotation }
+      { ClassHierarchy.Target.target = annotation; arguments = superclass_arguments annotation }
     in
     let show_targets = function
       | None -> ""
       | Some targets ->
-          let show_target { ClassHierarchy.Target.target; parameters } =
-            Format.asprintf "%s%a" target Type.Argument.pp_list parameters
+          let show_target { ClassHierarchy.Target.target; arguments } =
+            Format.asprintf "%s%a" target Type.Argument.pp_list arguments
           in
           List.to_string targets ~f:show_target
     in
@@ -1095,12 +1095,12 @@ let test_deduplicate context =
   let global_environment = ScratchProject.global_environment project in
   let (module Handler) = class_hierarchy global_environment in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
-    let assert_targets edges from target parameters create =
+    let assert_targets edges from target arguments create =
       assert_equal
         ~cmp:ListOrSet.equal
         ~printer:(ListOrSet.to_string ~f:ClassHierarchy.Target.show)
         (find_unsafe edges from)
-        (create { ClassHierarchy.Target.target; parameters })
+        (create { ClassHierarchy.Target.target; arguments })
   end
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
@@ -1142,8 +1142,7 @@ let test_remove_extra_edges_to_object context =
     ~printer
     (find_unsafe Handler.edges "test.Zero")
     {
-      ClassHierarchy.Edges.parents =
-        [{ ClassHierarchy.Target.target = "test.One"; parameters = [] }];
+      ClassHierarchy.Edges.parents = [{ ClassHierarchy.Target.target = "test.One"; arguments = [] }];
       generic_base = None;
     };
   ()

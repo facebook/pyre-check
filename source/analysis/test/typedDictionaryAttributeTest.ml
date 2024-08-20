@@ -30,7 +30,7 @@ let assert_equivalent_typed_dictionary_attribute_types
     | Type.Parametric
         {
           name = "BoundMethod";
-          parameters =
+          arguments =
             [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
         } ->
         let open Type.Callable.CallableParamType in
@@ -64,7 +64,7 @@ let assert_equivalent_typed_dictionary_attribute_types
         Type.Parametric
           {
             name = "BoundMethod";
-            parameters =
+            arguments =
               [
                 Single
                   (Callable

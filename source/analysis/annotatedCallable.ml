@@ -42,8 +42,7 @@ let return_annotation_without_applying_decorators
     Type.coroutine [Single Type.Any; Single Type.Any; Single annotation]
   else if Define.Signature.is_coroutine signature then
     match annotation with
-    | Type.Parametric { name = "typing.Generator"; parameters = [_; _; Single return_annotation] }
-      ->
+    | Type.Parametric { name = "typing.Generator"; arguments = [_; _; Single return_annotation] } ->
         Type.awaitable return_annotation
     | _ -> Type.Top
   else
@@ -122,7 +121,7 @@ let create_overload_without_applying_decorators
           let parent_type =
             let class_annotation = Reference.show parent in
             generic_parameters_as_variables class_annotation
-            >>| List.map ~f:Type.Variable.to_parameter
+            >>| List.map ~f:Type.Variable.to_argument
             >>| Type.parametric class_annotation
             |> Option.value ~default:(Type.Primitive class_annotation)
           in

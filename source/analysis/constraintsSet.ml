@@ -128,7 +128,7 @@ let resolve_callable_protocol
       >>| TypeInfo.Unit.annotation
       >>= fun annotation ->
       match annotation with
-      | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
+      | Type.Parametric { name = "BoundMethod"; arguments = [Single _; Single _] }
       | Callable _ ->
           Some annotation
       | _ -> None)
@@ -649,19 +649,19 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               solve_less_or_equal order ~constraints ~left ~right)
     | Type.ReadOnly _, _ -> impossible
     | ( Type.Parametric
-          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; parameters = [Single left] },
+          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; arguments = [Single left] },
         Type.Parametric
-          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; parameters = [Single right] }
+          { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; arguments = [Single right] }
       ) ->
         solve_less_or_equal order ~constraints ~left ~right
-    | ( Type.Parametric { name = "type"; parameters = [Single left] },
-        Type.Parametric { name = "type"; parameters = [Single right] } ) ->
+    | ( Type.Parametric { name = "type"; arguments = [Single left] },
+        Type.Parametric { name = "type"; arguments = [Single right] } ) ->
         solve_less_or_equal order ~constraints ~left ~right
-    | Type.Parametric { name = "type"; parameters = [Single meta_parameter] }, _ ->
+    | Type.Parametric { name = "type"; arguments = [Single meta_argument] }, _ ->
         let through_meta_hierarchy =
-          match meta_parameter, right with
-          | Primitive meta_parameter, Primitive _ ->
-              metaclass meta_parameter ~cycle_detections
+          match meta_argument, right with
+          | Primitive meta_argument, Primitive _ ->
+              metaclass meta_argument ~cycle_detections
               >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
               |> Option.value ~default:impossible
           | _ -> impossible
@@ -683,7 +683,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
               |> Option.value ~default:impossible
           | Callable _, _ -> (
-              match meta_parameter with
+              match meta_argument with
               | Type.Union types ->
                   solve_less_or_equal
                     order
@@ -697,7 +697,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           | _ -> impossible
         in
         List.append through_protocol_hierarchy through_meta_hierarchy
-    | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
+    | _, Type.Parametric { name = right_name; arguments = right_arguments } ->
         let solve_respecting_variance constraints = function
           | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right) -> (
               match left, right, unary with
@@ -737,22 +737,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                      solve_ordered_types_less_or_equal order ~left ~right ~constraints)
           | _ -> impossible
         in
-        let solve_parameters left_parameters right_parameters =
+        let solve_arguments left_arguments right_arguments =
           generic_parameters_as_variables right_name
-          >>= Type.Variable.zip_variables_with_two_parameter_lists
-                ~left_parameters
-                ~right_parameters
+          >>= Type.Variable.zip_variables_with_two_argument_lists ~left_arguments ~right_arguments
           >>| List.fold ~f:solve_respecting_variance ~init:[constraints]
         in
-        let left_parameters =
-          let left_parameters = instantiate_successors_parameters ~source:left ~target:right_name in
-          match left_parameters with
+        let left_arguments =
+          let left_arguments = instantiate_successors_parameters ~source:left ~target:right_name in
+          match left_arguments with
           | None when is_protocol right ->
               instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
-          | _ -> left_parameters
+          | _ -> left_arguments
         in
-        left_parameters
-        >>= (fun left_parameters -> solve_parameters left_parameters right_parameters)
+        left_arguments
+        >>= (fun left_arguments -> solve_arguments left_arguments right_arguments)
         |> Option.value ~default:impossible
     | Type.Primitive source, Type.Primitive target -> (
         let left_typed_dictionary = get_typed_dictionary left in
@@ -791,11 +789,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         solve_ordered_types_less_or_equal order ~left ~right ~constraints
     | Type.Tuple (Concatenation concatenation), Type.Primitive _ ->
         Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-        >>| (fun parameter ->
+        >>| (fun argument ->
               solve_less_or_equal
                 order
                 ~constraints
-                ~left:(Type.parametric "tuple" [Single parameter])
+                ~left:(Type.parametric "tuple" [Single argument])
                 ~right)
         |> Option.value ~default:impossible
     | Type.Tuple (Concrete members), Type.Primitive _ ->
@@ -1014,7 +1012,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
         None
     | Type.Primitive candidate_name when Identifier.equal candidate_name protocol -> Some []
-    | Type.Parametric { name; parameters } when Identifier.equal name protocol -> Some parameters
+    | Type.Parametric { name; arguments } when Identifier.equal name protocol -> Some arguments
     | _ -> (
         let assumed_protocol_parameters =
           AssumedProtocolInstantiations.find_assumed_protocol_parameters
@@ -1027,7 +1025,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | None ->
             let protocol_generics = generic_parameters_as_variables protocol in
             let protocol_generic_parameters =
-              protocol_generics >>| List.map ~f:Type.Variable.to_parameter
+              protocol_generics >>| List.map ~f:Type.Variable.to_argument
             in
             let new_cycle_detections =
               AssumedProtocolInstantiations.add
@@ -1098,7 +1096,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                         desanitization_solution
                         (Concatenation
                            (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
-                      |> Type.OrderedTypes.to_parameters
+                      |> Type.OrderedTypes.to_arguments
                 in
                 List.concat_map ~f:instantiate
               in
@@ -1115,7 +1113,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     TypeConstraints.Solution.instantiate_ordered_types
                       solution
                       (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
-                    |> Type.OrderedTypes.to_parameters
+                    |> Type.OrderedTypes.to_arguments
               in
               protocol_generics
               >>| List.concat_map ~f:instantiate
@@ -1161,7 +1159,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   match attribute_lookup ~name:"__getattr__" >>| attribute_type with
                   | Some
                       (Type.Parametric
-                        { name = "BoundMethod"; parameters = [Single (Type.Callable callable); _] })
+                        { name = "BoundMethod"; arguments = [Single (Type.Callable callable); _] })
                   | Some (Type.Callable callable) ->
                       Some callable.implementation.annotation
                   | _ -> None)

@@ -1070,7 +1070,7 @@ let test_invalid_type_parameters =
       GlobalResolution.create global_environment
     in
     let actual_mismatches, actual_transformed_type =
-      GlobalResolution.check_invalid_type_parameters global_resolution given_type
+      GlobalResolution.check_invalid_type_arguments global_resolution given_type
     in
     assert_equal
       ~cmp:[%equal: Type.t]
@@ -1097,7 +1097,7 @@ let test_invalid_type_parameters =
       in
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
-         `check_invalid_type_parameters`. *)
+         `check_invalid_type_arguments`. *)
       |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
     in
     assert_invalid_type_parameters_direct
@@ -1506,14 +1506,12 @@ let test_typed_dictionary_attributes =
 
 
 let test_constraints =
-  let assert_constraints ~target ~instantiated ?parameters source expected context =
+  let assert_constraints ~target ~instantiated ?arguments source expected context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let constraints =
-      GlobalResolution.constraints ~target resolution ?parameters ~instantiated ()
-    in
+    let constraints = GlobalResolution.constraints ~target resolution ?arguments ~instantiated () in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.TypeVarPair (variable, value))
     in
@@ -1692,7 +1690,7 @@ let test_constraints =
            ~target:"test.Iterator"
            ~instantiated:
              (Type.parametric "test.Iterable" !![Type.parametric "test.Iterable" !![Type.integer]])
-           ~parameters:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
+           ~arguments:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
            {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
@@ -1704,7 +1702,7 @@ let test_constraints =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
            ~target:"test.Foo"
-           ~parameters:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
+           ~arguments:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
            ~instantiated:
              (Type.parametric "test.Bar" !![Type.parametric "test.Bar" !![Type.integer]])
            {|
@@ -2060,7 +2058,7 @@ let test_extract_type_parameter =
   in
   let assert_extracted ~expected ~as_name parse_annotation context =
     let actual =
-      GlobalResolution.extract_type_parameters
+      GlobalResolution.extract_type_arguments
         (resolution context)
         ~source:(parse_annotation context)
         ~target:as_name

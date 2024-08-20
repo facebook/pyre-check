@@ -924,30 +924,30 @@ let test_distribute_union_over_parametric _ =
     assert_equal ~cmp:[%equal: Type.t option] ~printer:[%show: Type.t option] expected actual
   in
   assert_distributed
-    (distribute_union_over_parametric ~parametric_name:"list" ~number_of_parameters:1 Type.integer)
+    (distribute_union_over_parametric ~parametric_name:"list" ~number_of_arguments:1 Type.integer)
     None;
   assert_distributed
     (distribute_union_over_parametric
        ~parametric_name:"list"
-       ~number_of_parameters:1
+       ~number_of_arguments:1
        (Type.union [Type.list Type.integer; Type.integer]))
     None;
   assert_distributed
     (distribute_union_over_parametric
        ~parametric_name:"list"
-       ~number_of_parameters:2
+       ~number_of_arguments:2
        (Type.union [Type.list Type.integer; Type.list Type.string]))
     None;
   assert_distributed
     (distribute_union_over_parametric
        ~parametric_name:"list"
-       ~number_of_parameters:1
+       ~number_of_arguments:1
        (Type.union [Type.list Type.integer; Type.list Type.string]))
     (Some (Type.list (Type.union [Type.integer; Type.string])));
   assert_distributed
     (distribute_union_over_parametric
        ~parametric_name:"dict"
-       ~number_of_parameters:2
+       ~number_of_arguments:2
        (Type.union
           [
             Type.dictionary ~key:Type.integer ~value:Type.string;

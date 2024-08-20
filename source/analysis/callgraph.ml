@@ -122,7 +122,7 @@ module DefaultBuilder : Builder = struct
         | Type.Callable.Named direct_target when not (is_protocol ()) ->
             let class_name =
               if Type.is_meta annotation then
-                Type.single_parameter annotation
+                Type.single_argument annotation
               else
                 annotation
             in

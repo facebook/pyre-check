@@ -236,10 +236,10 @@ module OrderImplementation = struct
                 | ClassHierarchy.Untracked _ -> None
               in
               let handle_target target =
-                let left_parameters = instantiate_successors_parameters ~source:left ~target in
-                let right_parameters = instantiate_successors_parameters ~source:right ~target in
+                let left_arguments = instantiate_successors_parameters ~source:left ~target in
+                let right_arguments = instantiate_successors_parameters ~source:right ~target in
                 let variables = generic_parameters_as_variables target in
-                let join_parameters_respecting_variance = function
+                let join_arguments_respecting_variance = function
                   | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right)
                     -> (
                       match left, right, unary with
@@ -268,23 +268,23 @@ module OrderImplementation = struct
                       None
                   | _ -> None
                 in
-                match left_parameters, right_parameters, variables with
-                | Some left_parameters, Some right_parameters, Some variables ->
+                match left_arguments, right_arguments, variables with
+                | Some left_arguments, Some right_arguments, Some variables ->
                     let replace_free_unary_variables_with_top =
                       let replace_if_free variable =
                         Option.some_if (Type.Variable.TypeVar.is_free variable) Type.Top
                       in
                       Type.Variable.GlobalTransforms.TypeVar.replace_all replace_if_free
                     in
-                    Type.Variable.zip_variables_with_two_parameter_lists
-                      ~left_parameters
-                      ~right_parameters
+                    Type.Variable.zip_variables_with_two_argument_lists
+                      ~left_arguments
+                      ~right_arguments
                       variables
-                    >>| List.map ~f:join_parameters_respecting_variance
+                    >>| List.map ~f:join_arguments_respecting_variance
                     >>= Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top
                     >>| List.map ~f:(fun single -> Type.Argument.Single single)
-                    >>| fun parameters -> Type.parametric target parameters
+                    >>| fun arguments -> Type.parametric target arguments
                 | _ -> None
               in
               target >>= handle_target |> Option.value ~default:union
@@ -331,11 +331,11 @@ module OrderImplementation = struct
             | (Type.Primitive _ as annotation) ->
                 join order (Type.parametric "tuple" [Single unbounded_element]) annotation
             | _ -> Type.union [left; right])
-        | Type.Tuple (Concrete parameters), (Type.Parametric _ as annotation)
-        | (Type.Parametric _ as annotation), Type.Tuple (Concrete parameters) ->
+        | Type.Tuple (Concrete arguments), (Type.Parametric _ as annotation)
+        | (Type.Parametric _ as annotation), Type.Tuple (Concrete arguments) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-            let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
-            join order (Type.parametric "tuple" [Single parameter]) annotation
+            let argument = List.fold ~init:Type.Bottom ~f:(join order) arguments in
+            join order (Type.parametric "tuple" [Single argument]) annotation
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]

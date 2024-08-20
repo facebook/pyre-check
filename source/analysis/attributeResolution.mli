@@ -211,7 +211,7 @@ module AttributeReadOnly : sig
 
   val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
-  val check_invalid_type_parameters
+  val check_invalid_type_arguments
     :  t ->
     ?dependency:DependencyKey.registered ->
     Type.t ->
@@ -274,7 +274,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     target:Type.Primitive.t ->
-    ?parameters:Type.Argument.t list ->
+    ?arguments:Type.Argument.t list ->
     instantiated:Type.t ->
     unit ->
     TypeConstraints.Solution.t

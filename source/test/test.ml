@@ -210,7 +210,7 @@ let parse_callable ?name ?(aliases = Type.resolved_empty_aliases) callable =
       Type.Callable { callable with Type.Callable.kind = Named name }
   | ( Some name,
       Type.Parametric
-        { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] } ) ->
+        { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] } ) ->
       Type.parametric
         "BoundMethod"
         [Single (Callable { callable with Type.Callable.kind = Named name }); Single self_type]
@@ -3642,8 +3642,8 @@ module MockClassHierarchyHandler = struct
   let pp format { edges; _ } =
     let print_edge (source, { ClassHierarchy.Edges.parents; _ }) =
       let targets =
-        let target { ClassHierarchy.Target.target; parameters } =
-          Format.asprintf "%s [%a]" target Type.Argument.pp_list parameters
+        let target { ClassHierarchy.Target.target; arguments } =
+          Format.asprintf "%s [%a]" target Type.Argument.pp_list arguments
         in
         List.map parents ~f:target |> String.concat ~sep:", "
       in
@@ -3665,10 +3665,10 @@ module MockClassHierarchyHandler = struct
     end : ClassHierarchy.Handler)
 
 
-  let connect ?(parameters = []) order ~predecessor ~successor =
+  let connect ?(arguments = []) order ~predecessor ~successor =
     let edges = order.edges in
     (* Add edges. *)
-    let new_target = { ClassHierarchy.Target.target = successor; parameters } in
+    let new_target = { ClassHierarchy.Target.target = successor; arguments } in
     let predecessor_edges =
       match Hashtbl.find edges predecessor with
       | None -> { ClassHierarchy.Edges.parents = [new_target]; generic_base = None }

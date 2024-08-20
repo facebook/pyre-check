@@ -24,7 +24,7 @@ let test_simple_registration context =
         {
           ClassHierarchy.Edges.parents =
             List.map
-              ~f:(fun name -> { ClassHierarchy.Target.target = name; parameters = [] })
+              ~f:(fun name -> { ClassHierarchy.Target.target = name; arguments = [] })
               expected_edges;
           generic_base = None;
         }
@@ -61,7 +61,7 @@ let test_parents_and_inferred_generic_base context =
     let create_target (name, concretes) =
       {
         ClassHierarchy.Target.target = name;
-        parameters = List.map concretes ~f:(fun single -> Type.Argument.Single single);
+        arguments = List.map concretes ~f:(fun single -> Type.Argument.Single single);
       }
     in
     let expected =
@@ -198,7 +198,7 @@ let test_parents_and_inferred_generic_base context =
        T2 = typing.TypeVar("T2")
        class Foo1(typing.Generic[T1]): pass
        class Foo2(typing.Generic[T2]): pass
-       # Note that Foo1 doesn't have type parameter here
+       # Note that Foo1 doesn't have type argument here
        class Bar(typing.Generic[T1, T2], Foo1, Foo2[T2]): pass
      |}
     "test.Bar"
@@ -226,7 +226,7 @@ let test_parents_and_inferred_generic_base context =
        T2 = typing.TypeVar("T2")
        class Foo1(typing.Generic[T1]): pass
        class Foo2(typing.Generic[T2]): pass
-       # Note that Foo2 doesn't have type parameter here
+       # Note that Foo2 doesn't have type argument here
        class Bar(Foo1[T1], typing.Generic[T1, T2], Foo2): pass
      |}
     "test.Bar"
@@ -324,7 +324,7 @@ let test_updates context =
                 {
                   ClassHierarchy.Edges.parents =
                     List.map expectation ~f:(fun name ->
-                        { ClassHierarchy.Target.target = name; parameters = [] });
+                        { ClassHierarchy.Target.target = name; arguments = [] });
                   generic_base = None;
                 })
           in

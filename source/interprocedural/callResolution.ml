@@ -63,7 +63,7 @@ let is_super ~pyre_in_context ~define expression =
         PyrePysaApi.InContext.resolve_expression_to_type pyre_in_context expression
       in
       if Type.is_meta annotation then
-        let type_parameter = Type.single_parameter annotation in
+        let type_parameter = Type.single_argument annotation in
         match type_parameter with
         | Type.Parametric { name = parent_name; _ }
         | Type.Primitive parent_name ->

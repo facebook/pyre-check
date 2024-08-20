@@ -26,7 +26,7 @@ end
 module Target : sig
   type t = {
     target: Ast.Identifier.t;
-    parameters: Type.Argument.t list;
+    arguments: Type.Argument.t list;
   }
   [@@deriving compare, sexp, show]
 

@@ -35,9 +35,9 @@ let resolution ?source context =
   GlobalResolution.create environment
 
 
-let concrete_connect ?parameters =
-  let parameters = parameters >>| List.map ~f:(fun single -> Type.Argument.Single single) in
-  MockClassHierarchyHandler.connect ?parameters
+let concrete_connect ?arguments =
+  let arguments = arguments >>| List.map ~f:(fun single -> Type.Argument.Single single) in
+  MockClassHierarchyHandler.connect ?arguments
 
 
 let make_attributes ~class_name =
@@ -260,31 +260,31 @@ let variance_order =
     order
     ~predecessor:"LinkedList"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t];
+    ~arguments:[variable_t];
   concrete_connect
     order
     ~predecessor:"Map"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t; variable_t_2];
-  concrete_connect order ~predecessor:"Box" ~successor:"typing.Generic" ~parameters:[variable_t_co];
+    ~arguments:[variable_t; variable_t_2];
+  concrete_connect order ~predecessor:"Box" ~successor:"typing.Generic" ~arguments:[variable_t_co];
   concrete_connect
     order
     ~predecessor:"Sink"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_contra];
+    ~arguments:[variable_t_contra];
   insert order "Base";
   insert order "Derived";
   concrete_connect
     order
     ~predecessor:"Base"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_contra];
-  concrete_connect order ~predecessor:"Derived" ~successor:"Base" ~parameters:[variable_t_co];
+    ~arguments:[variable_t_contra];
+  concrete_connect order ~predecessor:"Derived" ~successor:"Base" ~arguments:[variable_t_co];
   concrete_connect
     order
     ~predecessor:"Derived"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_co];
+    ~arguments:[variable_t_co];
   handler order
 
 
@@ -334,19 +334,19 @@ let multiplane_variance_order =
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_co; variable_t_contra];
+    ~arguments:[variable_t_co; variable_t_contra];
   concrete_connect
     order
     ~predecessor:"B"
     ~successor:"A"
-    ~parameters:[variable_t_contra; variable_t_co];
+    ~arguments:[variable_t_contra; variable_t_co];
   concrete_connect
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_contra; variable_t_co];
-  concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
-  concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
+    ~arguments:[variable_t_contra; variable_t_co];
+  concrete_connect order ~predecessor:"C" ~successor:"B" ~arguments:[Type.integer; Type.integer];
+  concrete_connect order ~predecessor:"D" ~successor:"B" ~arguments:[Type.float; Type.float];
   handler order
 
 
@@ -395,19 +395,19 @@ let parallel_planes_variance_order =
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_co; variable_t_contra];
+    ~arguments:[variable_t_co; variable_t_contra];
   concrete_connect
     order
     ~predecessor:"B"
     ~successor:"A"
-    ~parameters:[variable_t_co; variable_t_contra];
+    ~arguments:[variable_t_co; variable_t_contra];
   concrete_connect
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
-    ~parameters:[variable_t_co; variable_t_contra];
-  concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
-  concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
+    ~arguments:[variable_t_co; variable_t_contra];
+  concrete_connect order ~predecessor:"C" ~successor:"B" ~arguments:[Type.integer; Type.integer];
+  concrete_connect order ~predecessor:"D" ~successor:"B" ~arguments:[Type.float; Type.float];
   handler order
 
 
@@ -431,7 +431,7 @@ let default =
   connect
     order
     ~predecessor:type_builtin
-    ~parameters:[Single type_variable]
+    ~arguments:[Single type_variable]
     ~successor:"typing.Generic";
   let typed_dictionary = "TypedDictionary" in
   let non_total_typed_dictionary = "NonTotalTypedDictionary" in
@@ -443,7 +443,7 @@ let default =
   concrete_connect
     order
     ~predecessor:typed_dictionary
-    ~parameters:[Type.string; Type.object_primitive]
+    ~arguments:[Type.string; Type.object_primitive]
     ~successor:typing_mapping;
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
@@ -453,61 +453,61 @@ let default =
     order
     ~predecessor:"typing.Sequence"
     ~successor:"typing.Generic"
-    ~parameters:[variable];
+    ~arguments:[variable];
   insert order "list";
   insert order "typing.Sized";
   connect order ~predecessor:"list" ~successor:"typing.Sized";
-  concrete_connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
-  concrete_connect order ~predecessor:"list" ~successor:"typing.Sequence" ~parameters:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Generic" ~arguments:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Sequence" ~arguments:[variable];
 
   insert order "typing.AbstractSet";
   insert order "set";
   connect order ~predecessor:"set" ~successor:"typing.Sized";
-  concrete_connect order ~predecessor:"set" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect order ~predecessor:"set" ~successor:"typing.Generic" ~arguments:[variable];
   concrete_connect
     order
     ~predecessor:"typing.AbstractSet"
     ~successor:"typing.Generic"
-    ~parameters:[variable];
-  concrete_connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~parameters:[variable];
+    ~arguments:[variable];
+  concrete_connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~arguments:[variable];
   insert order "typing.Iterator";
   concrete_connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Generic"
-    ~parameters:[variable_covariant];
+    ~arguments:[variable_covariant];
   insert order "typing.Iterable";
   concrete_connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Iterable"
-    ~parameters:[variable_covariant];
+    ~arguments:[variable_covariant];
   concrete_connect
     order
     ~predecessor:"typing.Iterable"
     ~successor:"typing.Generic"
-    ~parameters:[variable_covariant];
-  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
-  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
+    ~arguments:[variable_covariant];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterable" ~arguments:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~arguments:[variable];
   insert order "tuple";
-  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
-  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
+  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~arguments:[variable];
+  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~arguments:[variable];
   insert order "typing.Generator";
   concrete_connect
     order
     ~predecessor:"typing.Generator"
     ~successor:"typing.Iterator"
-    ~parameters:[variable];
+    ~arguments:[variable];
   concrete_connect
     order
     ~predecessor:"typing.Generator"
     ~successor:"typing.Generic"
-    ~parameters:[variable];
+    ~arguments:[variable];
   concrete_connect
     order
     ~predecessor:"str"
     ~successor:"typing.Iterable"
-    ~parameters:[Type.Primitive "str"];
+    ~arguments:[Type.Primitive "str"];
   connect order ~predecessor:"typing.Iterable" ~successor:"object";
   insert order "AnyIterable";
   connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
@@ -516,74 +516,74 @@ let default =
     order
     ~predecessor:"typing.Mapping"
     ~successor:"typing.Generic"
-    ~parameters:[variable; variable_covariant];
+    ~arguments:[variable; variable_covariant];
   insert order "dict";
 
   concrete_connect
     order
     ~predecessor:"dict"
     ~successor:"typing.Generic"
-    ~parameters:[variable; other_variable];
+    ~arguments:[variable; other_variable];
   concrete_connect
     order
     ~predecessor:"dict"
     ~successor:"typing.Mapping"
-    ~parameters:[variable; other_variable];
-  concrete_connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
+    ~arguments:[variable; other_variable];
+  concrete_connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~arguments:[variable];
   insert order "collections.OrderedDict";
   concrete_connect
     order
     ~predecessor:"collections.OrderedDict"
     ~successor:"typing.Generic"
-    ~parameters:[variable; other_variable];
+    ~arguments:[variable; other_variable];
   concrete_connect
     order
     ~predecessor:"collections.OrderedDict"
     ~successor:"dict"
-    ~parameters:[variable; other_variable];
+    ~arguments:[variable; other_variable];
   insert order "PartiallySpecifiedDict";
   concrete_connect
     order
     ~predecessor:"PartiallySpecifiedDict"
     ~successor:"dict"
-    ~parameters:[Primitive "int"];
+    ~arguments:[Primitive "int"];
   insert order "OverSpecifiedDict";
   concrete_connect
     order
     ~predecessor:"OverSpecifiedDict"
     ~successor:"dict"
-    ~parameters:[Primitive "int"; Primitive "int"; Primitive "str"];
+    ~arguments:[Primitive "int"; Primitive "int"; Primitive "str"];
   insert order "GenericContainer";
   concrete_connect
     order
     ~predecessor:"GenericContainer"
     ~successor:"typing.Generic"
-    ~parameters:[variable; other_variable];
+    ~arguments:[variable; other_variable];
 
   insert order "NonGenericContainerChild";
   concrete_connect
     order
     ~predecessor:"NonGenericContainerChild"
     ~successor:"GenericContainer"
-    ~parameters:[Primitive "int"; Primitive "str"];
+    ~arguments:[Primitive "int"; Primitive "str"];
 
   insert order "DifferentGenericContainer";
   concrete_connect
     order
     ~predecessor:"DifferentGenericContainer"
     ~successor:"typing.Generic"
-    ~parameters:[variable; other_variable];
+    ~arguments:[variable; other_variable];
   insert order "CommonNonGenericChild";
   concrete_connect
     order
     ~predecessor:"CommonNonGenericChild"
     ~successor:"GenericContainer"
-    ~parameters:[Primitive "int"; Primitive "str"];
+    ~arguments:[Primitive "int"; Primitive "str"];
   concrete_connect
     order
     ~predecessor:"CommonNonGenericChild"
     ~successor:"DifferentGenericContainer"
-    ~parameters:[Primitive "int"; Primitive "str"];
+    ~arguments:[Primitive "int"; Primitive "str"];
   insert order "Child";
   insert order "Base";
   connect order ~predecessor:"Child" ~successor:"Base";
@@ -667,8 +667,8 @@ let test_less_or_equal =
                ~class_name:"MatchesProtocol"
                ["__call__", "typing.Callable[[float], str]"])
       | Type.Parametric
-          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
-          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
+          { name = "ParametricCallableToStr"; arguments = [Single (Primitive argument)] } ->
+          let callable = Format.sprintf "typing.Callable[[%s], str]" argument in
           Some
             (parse_attributes
                ~parse_annotation
@@ -773,32 +773,32 @@ let test_less_or_equal =
       order
       ~predecessor:"A"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_1"; Type.variable "_2"];
+      ~arguments:[Type.variable "_1"; Type.variable "_2"];
     concrete_connect
       order
       ~predecessor:"B"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_T"];
+      ~arguments:[Type.variable "_T"];
     concrete_connect
       order
       ~predecessor:"C"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_T"];
+      ~arguments:[Type.variable "_T"];
 
     concrete_connect
       order
       ~predecessor:"A"
       ~successor:"B"
-      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
+      ~arguments:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     concrete_connect
       order
       ~predecessor:"B"
       ~successor:"C"
-      ~parameters:[Type.union [Type.variable "_T"; Type.float]];
+      ~arguments:[Type.union [Type.variable "_T"; Type.float]];
 
     concrete_connect
       order
-      ~parameters:[Type.variable "_T"]
+      ~arguments:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Generic";
     let typed_dictionary = "TypedDictionary" in
@@ -811,11 +811,11 @@ let test_less_or_equal =
     concrete_connect
       order
       ~predecessor:typed_dictionary
-      ~parameters:[Type.string; Type.object_primitive]
+      ~arguments:[Type.string; Type.object_primitive]
       ~successor:typing_mapping;
     concrete_connect
       order
-      ~parameters:[Type.variable "_T"; Type.variable ~variance:Covariant "_TCov"]
+      ~arguments:[Type.variable "_T"; Type.variable ~variance:Covariant "_TCov"]
       ~predecessor:typing_mapping
       ~successor:"typing.Generic";
     insert order "dict";
@@ -1995,8 +1995,8 @@ let test_join =
                ~class_name:"MatchesProtocol"
                ["__call__", "typing.Callable[[int], str]"])
       | Type.Parametric
-          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
-          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
+          { name = "ParametricCallableToStr"; arguments = [Single (Primitive argument)] } ->
+          let callable = Format.sprintf "typing.Callable[[%s], str]" argument in
           Some
             (parse_attributes
                ~parse_annotation
@@ -2149,31 +2149,31 @@ let test_join =
       order
       ~predecessor:"A"
       ~successor:"B"
-      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
+      ~arguments:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     concrete_connect
       order
       ~predecessor:"A"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_1"; Type.variable "_2"];
+      ~arguments:[Type.variable "_1"; Type.variable "_2"];
     concrete_connect
       order
       ~predecessor:"B"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_T"];
+      ~arguments:[Type.variable "_T"];
     concrete_connect
       order
       ~predecessor:"B"
       ~successor:"C"
-      ~parameters:[Type.union [Type.variable "_T"; Type.float]];
+      ~arguments:[Type.union [Type.variable "_T"; Type.float]];
     concrete_connect
       order
       ~predecessor:"C"
       ~successor:"typing.Generic"
-      ~parameters:[Type.variable "_T"];
+      ~arguments:[Type.variable "_T"];
 
     concrete_connect
       order
-      ~parameters:[Type.variable "_T"]
+      ~arguments:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Generic";
     handler order
@@ -2824,24 +2824,24 @@ let test_meet =
     insert order "int";
     let variable = Type.Variable (Type.Variable.TypeVar.create "T") in
     let variable2 = Type.Variable (Type.Variable.TypeVar.create "T2") in
-    concrete_connect order ~predecessor:"M" ~successor:"typing.Generic" ~parameters:[variable];
-    concrete_connect order ~predecessor:"M" ~successor:"A" ~parameters:[variable];
-    concrete_connect order ~predecessor:"M" ~successor:"X" ~parameters:[variable];
-    concrete_connect order ~predecessor:"M" ~successor:"Y" ~parameters:[variable];
-    concrete_connect order ~predecessor:"A" ~successor:"typing.Generic" ~parameters:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"typing.Generic" ~arguments:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"A" ~arguments:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"X" ~arguments:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"Y" ~arguments:[variable];
+    concrete_connect order ~predecessor:"A" ~successor:"typing.Generic" ~arguments:[variable];
     let connect_x () =
-      concrete_connect order ~predecessor:"X" ~successor:"typing.Generic" ~parameters:[variable];
-      concrete_connect order ~predecessor:"X" ~successor:"B" ~parameters:[variable; Type.string]
+      concrete_connect order ~predecessor:"X" ~successor:"typing.Generic" ~arguments:[variable];
+      concrete_connect order ~predecessor:"X" ~successor:"B" ~arguments:[variable; Type.string]
     in
     if x_before_y then connect_x ();
-    concrete_connect order ~predecessor:"Y" ~successor:"typing.Generic" ~parameters:[variable];
-    concrete_connect order ~predecessor:"Y" ~successor:"B" ~parameters:[Type.integer; variable];
+    concrete_connect order ~predecessor:"Y" ~successor:"typing.Generic" ~arguments:[variable];
+    concrete_connect order ~predecessor:"Y" ~successor:"B" ~arguments:[Type.integer; variable];
     if not x_before_y then connect_x ();
     concrete_connect
       order
       ~predecessor:"B"
       ~successor:"typing.Generic"
-      ~parameters:[variable; variable2];
+      ~arguments:[variable; variable2];
     handler order
   in
   let tree_annotation =

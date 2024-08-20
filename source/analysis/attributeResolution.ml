@@ -1255,7 +1255,7 @@ module SignatureSelection = struct
        implementation =
          {
            parameters = Defined parameters;
-           annotation = Type.Parametric { parameters = [Single key_type; _]; _ };
+           annotation = Type.Parametric { arguments = [Single key_type; _]; _ };
            _;
          };
        _;
@@ -2044,7 +2044,7 @@ let apply_dataclass_transforms_to_table
           process_parameters ~implicitly_initialize (fun original_annotation ->
               match original_annotation with
               | Type.Parametric
-                  { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
+                  { name = "dataclasses.InitVar"; arguments = [Single single_parameter] } ->
                   single_parameter, true
               | _ -> original_annotation, false)
         in
@@ -2129,7 +2129,7 @@ let apply_dataclass_transforms_to_table
             let params = match_parameters ~implicitly_initialize:false in
             let is_not_initvar param =
               match param.Callable.CallableParamType.annotation with
-              | Type.Parametric { name = "dataclasses.InitVar"; parameters = [Single _] } -> false
+              | Type.Parametric { name = "dataclasses.InitVar"; arguments = [Single _] } -> false
               | _ -> true
             in
             let initvar_params = List.filter ~f:is_not_initvar params in
@@ -2241,7 +2241,7 @@ let callable_call_special_cases
   | Some (Type.Callable _), "typing.Callable", "__call__", false -> instantiated
   | ( Some
         (Parametric
-          { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] }),
+          { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] }),
       "typing.Callable",
       "__call__",
       false ) ->
@@ -2371,7 +2371,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         metaclass;
       }
 
-    method check_invalid_type_parameters
+    method check_invalid_type_arguments
         ?(replace_unbound_parameters_with_any = true)
         ~cycle_detections
         annotation =
@@ -2411,17 +2411,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ]
               | _ -> generic_parameters_as_variables name |> Option.value ~default:[]
             in
-            let invalid_type_parameters ~name ~given =
+            let invalid_type_arguments ~name ~given =
               let generics = generics_for_name name in
               match
-                Type.Variable.zip_variables_with_parameters_including_mismatches
-                  ~parameters:given
+                Type.Variable.zip_variables_with_arguments_including_mismatches
+                  ~arguments:given
                   generics
               with
               | Some [] -> Type.Primitive name, sofar
               | Some paired ->
-                  let check_parameter { Type.Variable.variable_pair; received_parameter } =
-                    match variable_pair, received_parameter with
+                  let check_argument { Type.Variable.variable_pair; received_argument } =
+                    match variable_pair, received_argument with
                     | Type.Variable.TypeVarPair (unary, given), Type.Argument.Single _ ->
                         let invalid =
                           let order = self#full_order ~cycle_detections in
@@ -2447,7 +2447,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         [CallableParameters given], None
                     | TypeVarTuplePair (_, given), Single (Tuple _) ->
-                        Type.OrderedTypes.to_parameters given, None
+                        Type.OrderedTypes.to_arguments given, None
                     | Type.Variable.TypeVarPair (unary, given), _ ->
                         ( [Single given],
                           Some
@@ -2457,7 +2457,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                 UnexpectedKind
                                   {
                                     expected = Type.Variable.TypeVarVariable unary;
-                                    actual = received_parameter;
+                                    actual = received_argument;
                                   };
                             } )
                     | ParamSpecPair (param_spec, given), _ ->
@@ -2469,11 +2469,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                 UnexpectedKind
                                   {
                                     expected = ParamSpecVariable param_spec;
-                                    actual = received_parameter;
+                                    actual = received_argument;
                                   };
                             } )
                     | TypeVarTuplePair (type_var_tuple, given), _ ->
-                        ( Type.OrderedTypes.to_parameters given,
+                        ( Type.OrderedTypes.to_arguments given,
                           Some
                             {
                               name;
@@ -2481,17 +2481,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                 UnexpectedKind
                                   {
                                     expected = TypeVarTupleVariable type_var_tuple;
-                                    actual = received_parameter;
+                                    actual = received_argument;
                                   };
                             } )
                   in
-                  List.map paired ~f:check_parameter
+                  List.map paired ~f:check_argument
                   |> List.unzip
-                  |> fun (list_of_parameters, errors) ->
-                  ( Type.parametric name (List.concat list_of_parameters),
+                  |> fun (list_of_arguments, errors) ->
+                  ( Type.parametric name (List.concat list_of_arguments),
                     List.filter_map errors ~f:Fn.id @ sofar )
               | None when not replace_unbound_parameters_with_any ->
-                  Type.parametric name (List.map generics ~f:Type.Variable.to_parameter), sofar
+                  Type.parametric name (List.map generics ~f:Type.Variable.to_argument), sofar
               | None ->
                   let annotation, expected_parameter_count, can_accept_more_parameters =
                     match name with
@@ -2517,7 +2517,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                 | Type.Variable.TypeVarVariable _ -> [Type.Argument.Single Type.Any]
                                 | ParamSpecVariable _ -> [CallableParameters Undefined]
                                 | TypeVarTupleVariable _ ->
-                                    Type.OrderedTypes.to_parameters Type.Variable.TypeVarTuple.any))
+                                    Type.OrderedTypes.to_arguments Type.Variable.TypeVarTuple.any))
                         in
                         ( annotation,
                           List.filter generics ~f:(fun x -> not (is_tuple_variadic x))
@@ -2540,13 +2540,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             match annotation with
             | Type.Primitive ("typing.Final" | "typing_extensions.Final") -> annotation, sofar
-            | Type.Primitive name -> invalid_type_parameters ~name ~given:[]
+            | Type.Primitive name -> invalid_type_arguments ~name ~given:[]
             (* natural variadics *)
             | Type.Parametric { name = "typing.Protocol"; _ }
             | Type.Parametric { name = "typing.Generic"; _ } ->
                 annotation, sofar
-            | Type.Parametric { name; parameters } ->
-                invalid_type_parameters ~name ~given:parameters
+            | Type.Parametric { name; arguments } -> invalid_type_arguments ~name ~given:arguments
             | _ -> annotation, sofar
           in
           { Type.VisitWithTransform.transformed_annotation; new_state }
@@ -2562,7 +2561,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
         | alias ->
-            self#check_invalid_type_parameters
+            self#check_invalid_type_arguments
               ?replace_unbound_parameters_with_any
               alias
               ~cycle_detections
@@ -2571,7 +2570,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let modify_variables ?replace_unbound_parameters_with_any = function
         | Type.Variable.TypeVarVariable variable ->
             let visited_variable =
-              self#check_invalid_type_parameters
+              self#check_invalid_type_arguments
                 ?replace_unbound_parameters_with_any
                 (Variable variable)
                 ~cycle_detections
@@ -2582,8 +2581,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Variable variable -> Type.Variable.TypeVarVariable variable
               | _ ->
                   failwith
-                    "Impossible: check_invalid_type_parameters received a variable variant as \
-                     input and output a different variant."
+                    "Impossible: check_invalid_type_arguments received a variable variant as input \
+                     and output a different variant."
             end
         | result -> result
       in
@@ -2608,7 +2607,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let result =
         match validation with
         | ValidatePrimitivesAndTypeParameters ->
-            self#check_invalid_type_parameters annotation ~cycle_detections |> snd
+            self#check_invalid_type_arguments annotation ~cycle_detections |> snd
         | NoValidation
         | ValidatePrimitives ->
             annotation
@@ -3260,7 +3259,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 @ overloads
               in
               Type.Callable { callable with overloads }
-          | ( Parametric { name = "type"; parameters = [Single (Type.Primitive name)] },
+          | ( Parametric { name = "type"; arguments = [Single (Type.Primitive name)] },
               "__getitem__",
               "typing.GenericMeta" ) ->
               let implementation, overloads =
@@ -3297,7 +3296,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                       [] )
                 | _ -> (
                     let overload parameter =
-                      let generics = List.map generics ~f:Type.Variable.to_parameter in
+                      let generics = List.map generics ~f:Type.Variable.to_argument in
                       match name, generics with
                       | "typing.Optional", [Single generic] ->
                           {
@@ -3342,7 +3341,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           [] ))
               in
               Type.Callable { callable with implementation; overloads }
-          | Parametric { name = "type"; parameters = [Single meta_parameter] }, "__call__", "type"
+          | Parametric { name = "type"; arguments = [Single meta_argument] }, "__call__", "type"
             when accessed_via_metaclass ->
               let get_constructor { Type.instantiated; accessed_through_class; class_name; _ } =
                 if accessed_through_class then (* Type[Type[X]] is invalid *)
@@ -3350,7 +3349,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 else
                   Some (self#constructor ~cycle_detections class_name ~instantiated)
               in
-              Type.class_data_for_attribute_lookup meta_parameter
+              Type.class_data_for_attribute_lookup meta_argument
               >>| List.map ~f:get_constructor
               >>= Option.all
               >>| Type.union
@@ -3660,7 +3659,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                       | None -> false, annotation
                     in
                     match Type.final_value annotation with
-                    | `NoParameter -> None, true, false
+                    | `NoArgument -> None, true, false
                     | `NotFinal ->
                         let is_class_variable, annotation = process_class_variable annotation in
                         Some annotation, false, is_class_variable
@@ -3947,20 +3946,20 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       get_class_summary target >>| handle
 
-    method constraints ~cycle_detections ~target ?parameters ~instantiated () =
+    method constraints ~cycle_detections ~target ?arguments ~instantiated () =
       let Queries.{ generic_parameters_as_variables; _ } = queries in
-      let parameters =
-        match parameters with
+      let arguments =
+        match arguments with
         | None ->
             generic_parameters_as_variables target
-            >>| List.map ~f:Type.Variable.to_parameter
+            >>| List.map ~f:Type.Variable.to_argument
             |> Option.value ~default:[]
-        | Some parameters -> parameters
+        | Some arguments -> arguments
       in
-      if List.is_empty parameters then
+      if List.is_empty arguments then
         TypeConstraints.Solution.empty
       else
-        let right = Type.parametric target parameters in
+        let right = Type.parametric target arguments in
         match instantiated, right with
         | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name
           ->
@@ -4097,7 +4096,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           Type.dictionary ~key ~value
       | Dictionary _ -> Type.dictionary ~key:Type.Any ~value:Type.Any
       | List elements ->
-          let parameter =
+          let argument =
             let join sofar element =
               TypeOrder.join
                 order
@@ -4106,9 +4105,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
-          if Type.is_concrete parameter then Type.list parameter else Type.list Type.Any
+          if Type.is_concrete argument then Type.list argument else Type.list Type.Any
       | Set elements ->
-          let parameter =
+          let argument =
             let join sofar element =
               TypeOrder.join
                 order
@@ -4117,7 +4116,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
-          if Type.is_concrete parameter then Type.set parameter else Type.set Type.Any
+          if Type.is_concrete argument then Type.set argument else Type.set Type.Any
       | Ternary { Ternary.target; alternative; _ } ->
           let annotation =
             TypeOrder.join
@@ -4190,7 +4189,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                       Type.Callable.annotation =
                         Type.parametric
                           "typing.AsyncContextManager"
-                          [Single (Type.single_parameter joined)];
+                          [Single (Type.single_argument joined)];
                     }
                   else
                     overload
@@ -4229,7 +4228,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                       Type.Callable.annotation =
                         Type.parametric
                           "contextlib._GeneratorContextManager"
-                          [Single (Type.single_parameter joined)];
+                          [Single (Type.single_argument joined)];
                     }
                   else
                     overload
@@ -4541,7 +4540,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             (Type.Parametric
               {
                 name = ("typing.ClassMethod" | "typing.StaticMethod") as parametric_name;
-                parameters = [Single (Type.Callable callable)];
+                arguments = [Single (Type.Callable callable)];
               })
           when should_preserve_function_name ~undecorated_signature ~kind callable ->
             Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
@@ -4602,7 +4601,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let return_annotation =
         let generics =
           generic_parameters_as_variables class_name
-          >>| List.map ~f:Type.Variable.to_parameter
+          >>| List.map ~f:Type.Variable.to_argument
           |> Option.value ~default:[]
         in
         (* Tuples are special. *)
@@ -4617,9 +4616,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | _, [] -> instantiated
           | Type.Primitive instantiated_name, _ when String.equal instantiated_name class_name ->
               backup
-          | Type.Parametric { parameters; name = instantiated_name }, generics
+          | Type.Parametric { arguments; name = instantiated_name }, generics
             when String.equal instantiated_name class_name
-                 && List.length parameters <> List.length generics ->
+                 && List.length arguments <> List.length generics ->
               backup
           | _ -> instantiated
       in
@@ -4693,11 +4692,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       match signature with
       | Type.Callable callable -> Type.Callable (with_return callable)
       | Parametric
-          { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] } ->
+          { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] } ->
           Parametric
             {
               name = "BoundMethod";
-              parameters = [Single (Callable (with_return callable)); Single self_type];
+              arguments = [Single (Callable (with_return callable)); Single self_type];
             }
       | _ -> signature
 
@@ -4794,7 +4793,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Some explicit -> (
                   match Type.final_value explicit with
                   | `Ok final_value -> Some final_value, true, true
-                  | `NoParameter ->
+                  | `NoArgument ->
                       ( value >>| self#resolve_literal ~cycle_detections ~variable_map:get_variable,
                         false,
                         true )
@@ -4809,8 +4808,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
               match self#resolve_literal ~cycle_detections ~variable_map:get_variable value with
-              | Type.Tuple (Concrete parameters) when List.length parameters = total_length ->
-                  List.nth parameters index
+              | Type.Tuple (Concrete arguments) when List.length arguments = total_length ->
+                  List.nth arguments index
                   (* This should always be Some, but I don't think its worth being fragile here *)
                   |> Option.value ~default:Type.Top
               | Type.Tuple (Concatenation concatenation) ->
@@ -5312,9 +5311,9 @@ module ReadOnly = struct
 
   let attribute_details = add_all_caches_and_empty_cycle_detections (fun o -> o#attribute_details)
 
-  let check_invalid_type_parameters =
+  let check_invalid_type_arguments =
     add_all_caches_and_empty_cycle_detections (fun o ->
-        o#check_invalid_type_parameters ~replace_unbound_parameters_with_any:true)
+        o#check_invalid_type_arguments ~replace_unbound_parameters_with_any:true)
 
 
   let parse_annotation read_only ?dependency ~variable_map =

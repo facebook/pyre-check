@@ -118,7 +118,7 @@ val constraints_solution_exists
 val constraints
   :  t ->
   target:Type.Primitive.t ->
-  ?parameters:Type.Argument.t list ->
+  ?arguments:Type.Argument.t list ->
   instantiated:Type.t ->
   unit ->
   TypeConstraints.Solution.t
@@ -174,7 +174,7 @@ val signature_select
   self_argument:Type.t option ->
   SignatureSelectionTypes.instantiated_return_annotation
 
-val check_invalid_type_parameters
+val check_invalid_type_arguments
   :  t ->
   Type.t ->
   AttributeResolution.type_parameters_mismatch list * Type.t
@@ -235,7 +235,7 @@ val is_consistent_with
   bool
 
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
-val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
+val extract_type_arguments : t -> source:Type.t -> target:string -> Type.t list option
 
 val type_of_iteration_value : t -> Type.t -> Type.t option
 

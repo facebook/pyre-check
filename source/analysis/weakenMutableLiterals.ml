@@ -78,30 +78,30 @@ let undefined_field_mismatches
   List.filter resolved_fields ~f:is_undefined_field |> List.map ~f:make_undefined_field_mismatch
 
 
-let distribute_union_over_parametric ~parametric_name ~number_of_parameters annotation =
+let distribute_union_over_parametric ~parametric_name ~number_of_arguments annotation =
   match annotation with
-  | Type.Union parameters ->
-      let extract_matching_parameters = function
-        | Type.Parametric { name; parameters }
-          when Identifier.equal name parametric_name
-               && List.length parameters = number_of_parameters ->
-            Type.Argument.all_singles parameters
+  | Type.Union arguments ->
+      let extract_matching_arguments = function
+        | Type.Parametric { name; arguments }
+          when Identifier.equal name parametric_name && List.length arguments = number_of_arguments
+          ->
+            Type.Argument.all_singles arguments
         | _ -> None
       in
-      let combine_parameters parameters_list =
-        match number_of_parameters with
-        | 1 -> Some [Type.Argument.Single (Type.union (List.concat parameters_list))]
+      let combine_arguments arguments_list =
+        match number_of_arguments with
+        | 1 -> Some [Type.Argument.Single (Type.union (List.concat arguments_list))]
         | 2 ->
             Some
               [
-                Type.Argument.Single (Type.union (List.map ~f:List.hd_exn parameters_list));
-                Type.Argument.Single (Type.union (List.map ~f:List.last_exn parameters_list));
+                Type.Argument.Single (Type.union (List.map ~f:List.hd_exn arguments_list));
+                Type.Argument.Single (Type.union (List.map ~f:List.last_exn arguments_list));
               ]
         | _ -> None
       in
-      List.map parameters ~f:extract_matching_parameters
+      List.map arguments ~f:extract_matching_arguments
       |> Option.all
-      >>= combine_parameters
+      >>= combine_arguments
       >>| fun parametric_types -> Type.parametric parametric_name parametric_types
   | _ -> None
 
@@ -167,11 +167,11 @@ let rec weaken_mutable_literals
           in
           make_weakened_type ~typed_dictionary_errors resolved)
   | ( Some { Node.value = Expression.List items; _ },
-      Type.Parametric { name = "list" as container_name; parameters = [Single actual_item_type] },
-      Type.Parametric { name = "list"; parameters = [Single expected_item_type] } )
+      Type.Parametric { name = "list" as container_name; arguments = [Single actual_item_type] },
+      Type.Parametric { name = "list"; arguments = [Single expected_item_type] } )
   | ( Some { Node.value = Expression.Set items; _ },
-      Type.Parametric { name = "set" as container_name; parameters = [Single actual_item_type] },
-      Type.Parametric { name = "set"; parameters = [Single expected_item_type] } ) ->
+      Type.Parametric { name = "set" as container_name; arguments = [Single actual_item_type] },
+      Type.Parametric { name = "set"; arguments = [Single expected_item_type] } ) ->
       let weakened_item_types =
         List.map
           ~f:(fun item ->
@@ -201,14 +201,14 @@ let rec weaken_mutable_literals
         else
           Type.parametric container_name [Single weakened_item_type])
   | ( Some { Node.value = Expression.ListComprehension _; _ },
-      Type.Parametric { name = "list"; parameters = [Single actual] },
-      Type.Parametric { name = "list"; parameters = [Single expected_parameter] } )
-    when comparator ~left:actual ~right:expected_parameter ->
+      Type.Parametric { name = "list"; arguments = [Single actual] },
+      Type.Parametric { name = "list"; arguments = [Single expected_argument] } )
+    when comparator ~left:actual ~right:expected_argument ->
       make_weakened_type expected
   | ( Some { Node.value = Expression.SetComprehension _; _ },
-      Type.Parametric { name = "set"; parameters = [Single actual] },
-      Type.Parametric { name = "set"; parameters = [Single expected_parameter] } )
-    when comparator ~left:actual ~right:expected_parameter ->
+      Type.Parametric { name = "set"; arguments = [Single actual] },
+      Type.Parametric { name = "set"; arguments = [Single expected_argument] } )
+    when comparator ~left:actual ~right:expected_argument ->
       make_weakened_type expected
   | ( Some { Node.value = Expression.Tuple items; _ },
       Type.Tuple (Concrete actual_item_types),
@@ -421,14 +421,14 @@ let rec weaken_mutable_literals
       | None -> make_weakened_type resolved)
   | ( Some { Node.value = Expression.Dictionary _; _ },
       _,
-      Type.Parametric { name = "typing.Mapping" as generic_name; parameters } )
+      Type.Parametric { name = "typing.Mapping" as generic_name; arguments } )
   | ( Some { Node.value = Expression.List _; _ },
       _,
-      Type.Parametric { name = ("typing.Sequence" | "typing.Iterable") as generic_name; parameters }
+      Type.Parametric { name = ("typing.Sequence" | "typing.Iterable") as generic_name; arguments }
     )
   | ( Some { Node.value = Expression.Set _; _ },
       _,
-      Type.Parametric { name = "typing.AbstractSet" as generic_name; parameters } ) ->
+      Type.Parametric { name = "typing.AbstractSet" as generic_name; arguments } ) ->
       let mutable_generic_name =
         match generic_name with
         | "typing.Mapping" -> "dict"
@@ -443,22 +443,22 @@ let rec weaken_mutable_literals
           ~get_typed_dictionary
           ~resolve
           ~resolved
-          ~expected:(Type.parametric mutable_generic_name parameters)
+          ~expected:(Type.parametric mutable_generic_name arguments)
           ~comparator:comparator_without_override
           ~expression
       in
       let resolved =
         match weakened_fallback_type with
-        | Type.Parametric { name; parameters } when Identifier.equal name mutable_generic_name ->
-            Type.parametric generic_name parameters
+        | Type.Parametric { name; arguments } when Identifier.equal name mutable_generic_name ->
+            Type.parametric generic_name arguments
         | _ -> weakened_fallback_type
       in
       make_weakened_type ~typed_dictionary_errors resolved
   | ( Some { Node.value = Expression.Dictionary entries; _ },
       Type.Parametric
-        { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
+        { name = "dict"; arguments = [Single actual_key_type; Single actual_value_type] },
       Type.Parametric
-        { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } ) ->
+        { name = "dict"; arguments = [Single expected_key_type; Single expected_value_type] } ) ->
       weaken_dictionary_entries
         ~get_typed_dictionary
         ~resolve
@@ -470,8 +470,8 @@ let rec weaken_mutable_literals
         ~expected_key_type
         ~expected_value_type
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
-      Type.Parametric { name = "dict"; parameters = [Single actual_key; Single actual_value] },
-      Type.Parametric { name = "dict"; parameters = [Single expected_key; Single expected_value] } )
+      Type.Parametric { name = "dict"; arguments = [Single actual_key; Single actual_value] },
+      Type.Parametric { name = "dict"; arguments = [Single expected_key; Single expected_value] } )
     when comparator ~left:actual_key ~right:expected_key
          && comparator ~left:actual_value ~right:expected_value ->
       make_weakened_type expected
@@ -616,19 +616,19 @@ and weaken_by_distributing_union
       Type.Parametric
         {
           name = ("list" | "set") as parametric_name;
-          parameters = [Single (Type.Union _)] as parameters;
+          arguments = [Single (Type.Union _)] as arguments;
         } )
   | ( Some { Node.value = Expression.Dictionary _; _ },
       Type.Union _,
       Type.Parametric
         {
           name = "dict" as parametric_name;
-          parameters = ([Single (Type.Union _); _] | [_; Single (Type.Union _)]) as parameters;
+          arguments = ([Single (Type.Union _); _] | [_; Single (Type.Union _)]) as arguments;
         } ) -> (
       match
         distribute_union_over_parametric
           ~parametric_name
-          ~number_of_parameters:(List.length parameters)
+          ~number_of_arguments:(List.length arguments)
           resolved
       with
       | Some resolved ->
@@ -683,28 +683,28 @@ and weaken_against_readonly
   in
   match expression, resolved, expected with
   | ( Some { Node.value = Expression.ListComprehension _; _ },
-      Type.Parametric { name = "list" as parametric_name; parameters = [Single _] },
+      Type.Parametric { name = "list" as parametric_name; arguments = [Single _] },
       Type.ReadOnly
-        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type]; _ }) )
+        (Type.Parametric { name = "list"; arguments = [Single expected_argument_type]; _ }) )
   | ( Some { Node.value = Expression.Set _ | SetComprehension _; _ },
-      Type.Parametric { name = "set" as parametric_name; parameters = [Single _] },
+      Type.Parametric { name = "set" as parametric_name; arguments = [Single _] },
       Type.ReadOnly
-        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type]; _ }) ) ->
-      weaken_parametric_type ~parametric_name [expected_parameter_type]
+        (Type.Parametric { name = "set"; arguments = [Single expected_argument_type]; _ }) ) ->
+      weaken_parametric_type ~parametric_name [expected_argument_type]
   | ( Some { Node.value = Expression.Dictionary _ | DictionaryComprehension _; _ },
-      Type.Parametric { name = "dict" as parametric_name; parameters = _ },
+      Type.Parametric { name = "dict" as parametric_name; arguments = _ },
       Type.ReadOnly
         (Type.Parametric
-          { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] }) )
+          { name = "dict"; arguments = [Single expected_key_type; Single expected_value_type] }) )
     ->
       weaken_parametric_type ~parametric_name [expected_key_type; expected_value_type]
   | ( Some { Node.value = Expression.List _; _ },
       Type.ReadOnly
-        (Type.Parametric { name = "list" as parametric_name; parameters = [Single parameter_type] }),
+        (Type.Parametric { name = "list" as parametric_name; arguments = [Single argument_type] }),
       Type.ReadOnly
-        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type]; _ }) ) ->
+        (Type.Parametric { name = "list"; arguments = [Single expected_argument_type]; _ }) ) ->
       weaken_parametric_type
-        ~resolved:(Type.list (Type.ReadOnly.create parameter_type))
+        ~resolved:(Type.list (Type.ReadOnly.create argument_type))
         ~parametric_name
-        [expected_parameter_type]
+        [expected_argument_type]
   | _ -> make_weakened_type resolved

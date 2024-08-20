@@ -93,7 +93,7 @@ module ReturnType = struct
             false
         | Type.Union [Type.NoneType; annotation]
         | Type.Union [annotation; Type.NoneType]
-        | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
+        | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
             matches_at_leaves ~f annotation
         | Type.Tuple (Concatenation concatenation) ->
             Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
@@ -1200,7 +1200,7 @@ module CalleeKind = struct
     in
     match callee_type with
     | _ when is_super_call -> Method { is_direct_call = true; is_static_method; is_class_method }
-    | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single receiver_type] } ->
+    | Type.Parametric { name = "BoundMethod"; arguments = [Single _; Single receiver_type] } ->
         let is_class_method =
           (* Sometimes the define body of the callee is unavailable, in which case we identify calls
              to class methods via the receiver type. The callee is a class method, if the callee
@@ -1255,7 +1255,7 @@ let strip_optional annotation = Type.optional_value annotation |> Option.value ~
 
 let strip_meta annotation =
   if Type.is_meta annotation then
-    Type.single_parameter annotation
+    Type.single_argument annotation
   else
     annotation
 
@@ -1416,8 +1416,7 @@ let rec resolve_callees_from_type
         ~debug
         ~reason:(Format.asprintf "%s has kind `Anonymous`" callable_type_string)
         ()
-  | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
-    ->
+  | Type.Parametric { name = "BoundMethod"; arguments = [Single callable; Single receiver_type] } ->
       resolve_callees_from_type
         ~debug
         ~pyre_in_context
@@ -1450,7 +1449,7 @@ let rec resolve_callees_from_type
             ~callee_kind
             new_target
           |> CallCallees.join combined_targets)
-  | Type.Parametric { name = "type"; parameters = [Single class_type] } ->
+  | Type.Parametric { name = "type"; arguments = [Single class_type] } ->
       resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_indexer class_type
       |> CallCallees.default_to_unresolved
            ~debug
@@ -1648,7 +1647,7 @@ let resolve_callee_from_defining_expression
   | _ -> (
       let implementing_class_name =
         if Type.is_meta implementing_class then
-          Type.parameters implementing_class
+          Type.arguments implementing_class
           >>= fun parameters ->
           List.nth parameters 0
           >>= function
@@ -1882,7 +1881,7 @@ let resolve_recognized_callees
       Type.Parametric
         {
           name = "BoundMethod";
-          parameters = [Single (Parametric { name; _ }); Single implementing_class];
+          arguments = [Single (Parametric { name; _ }); Single implementing_class];
         } )
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       resolve_callee_from_defining_expression
@@ -2026,17 +2025,17 @@ let resolve_callee_ignoring_decorators
            classes in the Method Resolution Order. *)
         match CallResolution.resolve_ignoring_errors ~pyre_in_context base with
         (* The base expression is a class. *)
-        | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+        | Type.Parametric { name = "type"; arguments = [Single (Type.Primitive class_name)] }
         (* The base expression is a class that has type parameters, such as `class A(Generic[T])`
            where `T` is a type variable. *)
         | Type.Parametric
-            { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] }
+            { name = "type"; arguments = [Single (Type.Parametric { name = class_name; _ })] }
         (* The base expression is an object (but not a class, since classes are technically objects
            as well). *)
         | Type.Primitive class_name
-        (* The base expression is an object that has type parameters. For example, the base
+        (* The base expression is an object that has type arguments. For example, the base
            expression is an instance of class `class. A(Generic[T])`. *)
-        | Type.Parametric { name = class_name; parameters = _ } -> (
+        | Type.Parametric { name = class_name; arguments = _ } -> (
             let find_attribute element =
               match
                 PyrePysaApi.ReadOnly.get_class_summary pyre_api element
@@ -2056,7 +2055,7 @@ let resolve_callee_ignoring_decorators
                   (* Discard the type parameters, assuming they do not affect finding the actual
                      callee. *)
                   Type.Parametric
-                    { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+                    { name = "type"; arguments = [Single (Type.Primitive class_name)] }
                 in
                 Target.Method
                   { Target.class_name = base_class; method_name = attribute; kind = Normal }
@@ -2225,7 +2224,7 @@ let resolve_attribute_access_global_targets
   | None ->
       let rec find_targets targets = function
         | Type.Union annotations -> List.fold ~init:targets ~f:find_targets annotations
-        | Parametric { name = "type"; parameters = [Single annotation] } ->
+        | Parametric { name = "type"; arguments = [Single annotation] } ->
             (* Access on a class, i.e `Foo.bar`, translated into `Foo.__class__.bar`. *)
             let parent =
               let attribute =

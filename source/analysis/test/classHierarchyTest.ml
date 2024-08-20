@@ -193,7 +193,7 @@ let test_to_dot _ =
     insert order "2";
     insert order "object";
     connect order ~predecessor:"0" ~successor:"2";
-    connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
+    connect order ~predecessor:"0" ~successor:"1" ~arguments:![Type.string];
 
     (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
     handler order, Hash_set.to_list order.all_class_names
@@ -223,10 +223,10 @@ let test_generic_parameters_as_variables _ =
     insert order "A";
     insert order "B";
     insert order "Tensor";
-    connect order ~parameters:![Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
+    connect order ~arguments:![Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
     connect
       order
-      ~parameters:[Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]
+      ~arguments:[Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]
       ~predecessor:"Tensor"
       ~successor:"typing.Generic";
     handler order
@@ -279,32 +279,32 @@ let parametric_order_base =
   insert order "str";
   insert order "bool";
   insert order "list";
-  connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:![variable];
+  connect order ~predecessor:"list" ~successor:"typing.Generic" ~arguments:![variable];
 
   insert order "typing.Iterator";
-  connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:![variable];
+  connect order ~predecessor:"list" ~successor:"typing.Iterator" ~arguments:![variable];
   connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Generic"
-    ~parameters:![variable_covariant];
+    ~arguments:![variable_covariant];
   insert order "typing.Iterable";
   connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Iterable"
-    ~parameters:![variable_covariant];
+    ~arguments:![variable_covariant];
   connect
     order
     ~predecessor:"typing.Iterable"
     ~successor:"typing.Generic"
-    ~parameters:![variable_covariant];
-  connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:![variable];
+    ~arguments:![variable_covariant];
+  connect order ~predecessor:"list" ~successor:"typing.Iterable" ~arguments:![variable];
   insert order "tuple";
-  connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:![variable];
-  connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:![variable];
+  connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~arguments:![variable];
+  connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~arguments:![variable];
   insert order "str";
-  connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:![Type.Primitive "str"];
+  connect order ~predecessor:"str" ~successor:"typing.Iterable" ~arguments:![Type.Primitive "str"];
   insert order "AnyIterable";
   connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
   insert order "dict";
@@ -312,33 +312,33 @@ let parametric_order_base =
     order
     ~predecessor:"dict"
     ~successor:"typing.Generic"
-    ~parameters:![variable; other_variable];
-  connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:![variable];
+    ~arguments:![variable; other_variable];
+  connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~arguments:![variable];
   insert order "PartiallySpecifiedDict";
   connect
     order
     ~predecessor:"PartiallySpecifiedDict"
     ~successor:"dict"
-    ~parameters:![Type.Primitive "int"];
+    ~arguments:![Type.Primitive "int"];
   insert order "OverSpecifiedDict";
   connect
     order
     ~predecessor:"OverSpecifiedDict"
     ~successor:"dict"
-    ~parameters:![Type.Primitive "int"; Primitive "int"; Primitive "str"];
+    ~arguments:![Type.Primitive "int"; Primitive "int"; Primitive "str"];
   insert order "GenericContainer";
   connect
     order
     ~predecessor:"GenericContainer"
     ~successor:"typing.Generic"
-    ~parameters:![variable; other_variable];
+    ~arguments:![variable; other_variable];
 
   insert order "NonGenericContainerChild";
   connect
     order
     ~predecessor:"NonGenericContainerChild"
     ~successor:"GenericContainer"
-    ~parameters:![Type.Primitive "int"; Primitive "str"];
+    ~arguments:![Type.Primitive "int"; Primitive "str"];
   order
 
 
@@ -352,7 +352,7 @@ let variadic_order =
     order
     ~predecessor:"ClassParametricOnParamSpec"
     ~successor:"typing.Generic"
-    ~parameters:
+    ~arguments:
       [
         CallableParameters
           (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
@@ -362,7 +362,7 @@ let variadic_order =
     order
     ~predecessor:"ChildClassParametricOnParamSpec"
     ~successor:"ClassParametricOnParamSpec"
-    ~parameters:
+    ~arguments:
       [
         CallableParameters
           (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
@@ -371,7 +371,7 @@ let variadic_order =
     order
     ~predecessor:"ChildClassParametricOnParamSpec"
     ~successor:"typing.Generic"
-    ~parameters:
+    ~arguments:
       [
         CallableParameters
           (Type.Variable.ParamSpec.self_reference (Type.Variable.ParamSpec.create "TParams"));
@@ -381,36 +381,32 @@ let variadic_order =
     order
     ~predecessor:"ConcreteChildClassParametricOnParamSpec"
     ~successor:"ClassParametricOnParamSpec"
-    ~parameters:[Single Type.integer];
+    ~arguments:[Single Type.integer];
 
   let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let variadic_parameter =
     Type.Argument.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
   in
   insert order "Base";
-  connect order ~predecessor:"Base" ~successor:"typing.Generic" ~parameters:[variadic_parameter];
+  connect order ~predecessor:"Base" ~successor:"typing.Generic" ~arguments:[variadic_parameter];
 
   insert order "Child";
-  connect order ~predecessor:"Child" ~successor:"typing.Generic" ~parameters:[variadic_parameter];
-  connect order ~predecessor:"Child" ~successor:"Base" ~parameters:[variadic_parameter];
+  connect order ~predecessor:"Child" ~successor:"typing.Generic" ~arguments:[variadic_parameter];
+  connect order ~predecessor:"Child" ~successor:"Base" ~arguments:[variadic_parameter];
 
   insert order "DTypedTensor";
   connect
     order
     ~predecessor:"DTypedTensor"
     ~successor:"typing.Generic"
-    ~parameters:[Single (Type.Variable (Type.Variable.TypeVar.create "DType")); variadic_parameter];
+    ~arguments:[Single (Type.Variable (Type.Variable.TypeVar.create "DType")); variadic_parameter];
   insert order "IntTensor";
-  connect
-    order
-    ~predecessor:"IntTensor"
-    ~successor:"typing.Generic"
-    ~parameters:[variadic_parameter];
+  connect order ~predecessor:"IntTensor" ~successor:"typing.Generic" ~arguments:[variadic_parameter];
   connect
     order
     ~predecessor:"IntTensor"
     ~successor:"DTypedTensor"
-    ~parameters:[Single Type.integer; variadic_parameter];
+    ~arguments:[Single Type.integer; variadic_parameter];
   handler order
 
 

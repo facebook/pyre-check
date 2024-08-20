@@ -637,7 +637,7 @@ module State (Context : Context) = struct
           when is_simple_name name && Type.is_list (resolve base) ->
             let base_element =
               match resolve base with
-              | Type.Parametric { name = "list"; parameters = [Single parameter] } -> parameter
+              | Type.Parametric { name = "list"; arguments = [Single argument] } -> argument
               | base -> base
             in
             let type_info =
@@ -864,17 +864,17 @@ module State (Context : Context) = struct
             infer_argument_types_using_parameter_types ~state ~resolution statement
         (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
         | Tuple values ->
-            let parameters =
+            let arguments =
               match target_type with
-              | Type.Tuple (Concrete parameters) -> parameters
+              | Type.Tuple (Concrete arguments) -> arguments
               | Type.Tuple (Concatenation concatenation) ->
                   Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
                   >>| (fun annotation -> List.map values ~f:(fun _ -> annotation))
                   |> Option.value ~default:[]
               | _ -> []
             in
-            if List.length values = List.length parameters then
-              List.fold2_exn ~init:resolution ~f:(propagate_assign statement) parameters values
+            if List.length values = List.length arguments then
+              List.fold2_exn ~init:resolution ~f:(propagate_assign statement) arguments values
             else
               resolution
         | _ -> resolution
@@ -919,10 +919,10 @@ module State (Context : Context) = struct
             |> TypeInfo.Unit.annotation
           in
           match return_annotation with
-          | Tuple (Concrete parameters)
-            when Int.equal (List.length parameters) (List.length expressions) ->
+          | Tuple (Concrete arguments)
+            when Int.equal (List.length arguments) (List.length expressions) ->
               List.fold2_exn
-                parameters
+                arguments
                 expressions
                 ~init:resolution
                 ~f:(fun resolution annotation expression ->
@@ -1065,7 +1065,7 @@ let infer_parameters_from_parent
     | Type.Parametric
         {
           name = "BoundMethod";
-          parameters =
+          arguments =
             [
               Single
                 (Type.Callable

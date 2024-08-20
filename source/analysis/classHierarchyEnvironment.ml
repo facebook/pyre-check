@@ -52,7 +52,7 @@ module IncomingDataComputation = struct
     in
     List.concat_map ~f:Type.Variable.all_free_variables parsed_bases
     |> deduplicate ~equal:Type.Variable.equal
-    |> List.map ~f:Type.Variable.to_parameter
+    |> List.map ~f:Type.Variable.to_argument
 
 
   let compute_generic_base parsed_bases =
@@ -60,17 +60,17 @@ module IncomingDataComputation = struct
       let primitive, _ = Type.split base_type in
       Type.is_generic_primitive primitive
     in
-    let extract_protocol_parameters base_type =
+    let extract_protocol_arguments base_type =
       match base_type with
-      | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
+      | Type.Parametric { name = "typing.Protocol"; arguments } -> Some arguments
       | _ -> None
     in
     match List.find ~f:is_generic parsed_bases with
     | Some _ as generic_base -> generic_base
     | None -> (
         let create variables = Type.parametric "typing.Generic" variables in
-        match List.find_map parsed_bases ~f:extract_protocol_parameters with
-        | Some parameters -> Some (create parameters)
+        match List.find_map parsed_bases ~f:extract_protocol_arguments with
+        | Some arguments -> Some (create arguments)
         | None ->
             (* TODO:(T60673574) Ban propagating multiple type variables *)
             let variables = find_propagated_type_variables parsed_bases in
@@ -97,7 +97,7 @@ module IncomingDataComputation = struct
       match Node.value value with
       | Expression.Subscript _
       | Name _ -> (
-          let supertype, parameters =
+          let supertype, arguments =
             parse_annotation_without_validating_type_parameters
               ~allow_untracked:true
               value
@@ -112,8 +112,8 @@ module IncomingDataComputation = struct
           | Type.Primitive primitive when not (class_exists primitive) ->
               Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
               None
-          | Type.Primitive supertype -> Some (supertype, parameters)
-          | Type.Any -> Some ("typing.Any", parameters)
+          | Type.Primitive supertype -> Some (supertype, arguments)
+          | Type.Any -> Some ("typing.Any", arguments)
           | _ -> None)
       | _ -> None
     in
@@ -132,20 +132,20 @@ module IncomingDataComputation = struct
        handling. This behavior was established in PEP 560 and gets implemented in CPython via
        `GenericAlias.__mro_entries__()`. See https://fburl.com/mro_in_pyre for more detailed
        explanation. *)
-    let filter_shadowed_generic_bases name_and_parameters =
+    let filter_shadowed_generic_bases name_and_arguments =
       let is_protocol =
-        List.exists name_and_parameters ~f:(fun (name, _) -> String.equal name "typing.Protocol")
+        List.exists name_and_arguments ~f:(fun (name, _) -> String.equal name "typing.Protocol")
       in
       let process_parent ((name, _) as current) rest =
         match name with
         | "typing.Generic" ->
-            (* TODO: type parameters of the `name` class is expected to be non-empty here because
+            (* TODO: type arguments of the `name` class is expected to be non-empty here because
                Python forbids inheriting from `typing.Generic` directly. But we currently can't
                check for that since we lack the setup to emit errors from this environment. *)
             if is_protocol then
               (* Hide `Generic` from MRO if the class also extends from `Protocol` *)
               rest
-            else if List.exists rest ~f:(fun (_, parameters) -> not (List.is_empty parameters)) then
+            else if List.exists rest ~f:(fun (_, arguments) -> not (List.is_empty arguments)) then
               (* Hide `Generic` from MRO if there exist other generic aliases down the base class
                  list *)
               rest
@@ -153,11 +153,11 @@ module IncomingDataComputation = struct
               current :: rest
         | _ -> current :: rest
       in
-      List.fold_right name_and_parameters ~init:[] ~f:process_parent
+      List.fold_right name_and_arguments ~init:[] ~f:process_parent
     in
     let is_not_primitive_cycle (parent, _) = not (String.equal name parent) in
     let convert_to_targets x =
-      List.map ~f:(fun (name, parameters) -> { ClassHierarchy.Target.target = name; parameters }) x
+      List.map ~f:(fun (name, arguments) -> { ClassHierarchy.Target.target = name; arguments }) x
     in
     let deduplicate targets =
       let deduplicate (visited, sofar) ({ ClassHierarchy.Target.target; _ } as edge) =
@@ -201,7 +201,7 @@ module IncomingDataComputation = struct
           compute_generic_base parsed_bases
           >>= fun base ->
           extract_supertype (Type.expression base)
-          >>= fun (name, parameters) -> Some { ClassHierarchy.Target.target = name; parameters }
+          >>= fun (name, arguments) -> Some { ClassHierarchy.Target.target = name; arguments }
         in
         Some { ClassHierarchy.Edges.parents; generic_base }
 end

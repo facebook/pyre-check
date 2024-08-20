@@ -309,8 +309,8 @@ let signature_select ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
-let check_invalid_type_parameters ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.check_invalid_type_parameters
+let check_invalid_type_arguments ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.check_invalid_type_arguments
     (attribute_resolution resolution)
     ?dependency
 
@@ -358,8 +358,8 @@ let widen resolution = full_order resolution |> TypeOrder.widen
 
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
-  | ( Type.Parametric { name = left_name; parameters = left_parameters },
-      Type.Parametric { name = right_name; parameters = right_parameters } )
+  | ( Type.Parametric { name = left_name; arguments = left_arguments },
+      Type.Parametric { name = right_name; arguments = right_arguments } )
     when Identifier.equal left_name right_name ->
       let zipped =
         let variances =
@@ -370,7 +370,7 @@ let is_invariance_mismatch resolution ~left ~right =
         in
         match variances with
         | Some variances -> (
-            match List.zip left_parameters right_parameters with
+            match List.zip left_arguments right_arguments with
             | Ok zipped -> (
                 match List.zip zipped variances with
                 | Ok zipped ->
@@ -511,7 +511,7 @@ module ConstraintsSet = struct
     TypeOrder.OrderedConstraintsSet.solve constraints ~order:(full_order global_resolution)
 end
 
-let extract_type_parameters resolution ~source ~target =
+let extract_type_arguments resolution ~source ~target =
   match source with
   | Type.Top
   | Bottom
@@ -541,7 +541,7 @@ let extract_type_parameters resolution ~source ~target =
 
 let type_of_iteration_value global_resolution iterator_type =
   match
-    extract_type_parameters global_resolution ~target:"typing.Iterable" ~source:iterator_type
+    extract_type_arguments global_resolution ~target:"typing.Iterable" ~source:iterator_type
   with
   | Some [iteration_type] -> Some iteration_type
   | _ -> None
@@ -552,7 +552,7 @@ let type_of_iteration_value global_resolution iterator_type =
 let type_of_generator_send_and_return global_resolution generator_type =
   (* First match against Generator *)
   match
-    extract_type_parameters global_resolution ~target:"typing.Generator" ~source:generator_type
+    extract_type_arguments global_resolution ~target:"typing.Generator" ~source:generator_type
   with
   | Some [_yield_type; send_type; return_type] -> send_type, return_type
   | _ -> (
@@ -560,7 +560,7 @@ let type_of_generator_send_and_return global_resolution generator_type =
          because, if the user mixes these types up we still ought to resolve their yield expressions
          to reasonable types *)
       match
-        extract_type_parameters
+        extract_type_arguments
           global_resolution
           ~target:"typing.AsyncGenerator"
           ~source:generator_type

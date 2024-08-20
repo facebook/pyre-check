@@ -830,12 +830,12 @@ module State (Context : Context) = struct
     let open Expression in
     let is_nonuniform_sequence ~minimum_length annotation =
       match annotation with
-      | Type.Tuple (Concrete parameters) when minimum_length <= List.length parameters -> true
+      | Type.Tuple (Concrete arguments) when minimum_length <= List.length arguments -> true
       | _ -> false
     in
-    let nonuniform_sequence_parameters annotation =
+    let nonuniform_sequence_arguments annotation =
       match annotation with
-      | Type.Tuple (Concrete parameters) -> parameters
+      | Type.Tuple (Concrete arguments) -> arguments
       | _ -> []
     in
     match Node.value target with
@@ -906,7 +906,7 @@ module State (Context : Context) = struct
         in
         match Node.value expression with
         | Tuple items -> (
-            match List.zip (nonuniform_sequence_parameters annotation) items with
+            match List.zip (nonuniform_sequence_arguments annotation) items with
             | Ok annotations ->
                 let tuple_values =
                   let left, tail = List.split_n annotations (List.length left) in
