@@ -16,6 +16,8 @@ from libcst.metadata import MetadataWrapper
 from .. import coverage_data
 from ..coverage_data import (
     AnnotationCollector,
+    EmptyContainerInfo,
+    EmptyContainerKind,
     find_module_paths,
     FunctionAnnotationInfo,
     FunctionAnnotationStatus,
@@ -1277,3 +1279,168 @@ class ModuleFindingHelpersTest(testslide.TestCase):
                     root_path / "a/s2.py",
                 ],
             )
+
+
+class EmptyContainerCollectorTest(testslide.TestCase):
+    def test_empty_containers__literal(self) -> None:
+        self.assertEqual(
+            coverage_data.collect_empty_containers(
+                parse_code(
+                    """
+                    a = []
+                    b = {}
+                    not_c = [1]
+                    not_d = {1: 1}
+                    not_e = {1}
+                    not_f = (1,)
+                    not_g = ()
+                    """
+                )
+            ),
+            [
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.LIST_LITERAL,
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=6,
+                    ),
+                ),
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.DICT_LITERAL,
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=6,
+                    ),
+                ),
+            ],
+        )
+
+    def test_empty_containers__call(self) -> None:
+        self.assertEqual(
+            coverage_data.collect_empty_containers(
+                parse_code(
+                    """
+                    a = set()
+                    b = frozenset()
+                    c = list()
+                    d = dict()
+                    not_empty = set([1])
+                    """
+                )
+            ),
+            [
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.SET_CALL,
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=9,
+                    ),
+                ),
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.FROZENSET_CALL,
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=15,
+                    ),
+                ),
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.LIST_CALL,
+                    location=Location(
+                        start_line=4,
+                        start_column=0,
+                        end_line=4,
+                        end_column=10,
+                    ),
+                ),
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.DICT_CALL,
+                    location=Location(
+                        start_line=5,
+                        start_column=0,
+                        end_line=5,
+                        end_column=10,
+                    ),
+                ),
+            ],
+        )
+
+    def test_empty_containers__multi_assign(self):
+        # This test mostly exists to note that un-annotated assignments can have multiple targets,
+        # but they only produce a single EmptyContainerInfo.
+        self.assertEqual(
+            coverage_data.collect_empty_containers(
+                parse_code(
+                    """
+                    a = b = []
+                    c = d = dict()
+                    """
+                ),
+            ),
+            [
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.LIST_LITERAL,
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=10,
+                    ),
+                ),
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.DICT_CALL,
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=14,
+                    ),
+                ),
+            ],
+        )
+
+    def test_empty_containers__false_positive(self) -> None:
+        self.assertEqual(
+            coverage_data.collect_empty_containers(
+                parse_code(
+                    """
+                    a: list[int] = []
+                    a = []  # false positive because a is annotated
+                    """
+                )
+            ),
+            [
+                EmptyContainerInfo(
+                    kind=EmptyContainerKind.LIST_LITERAL,
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=6,
+                    ),
+                ),
+            ],
+        )
+
+    def test_empty_containers__complex_names(self) -> None:
+        self.assertEqual(
+            len(
+                coverage_data.collect_empty_containers(
+                    parse_code(
+                        """
+                        s[:] = []  # clearing a list
+                        a.b = dict()  # assigning to an attribute
+                        d["key"] = {}
+                        """
+                    )
+                )
+            ),
+            0,
+        )

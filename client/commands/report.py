@@ -58,7 +58,7 @@ class ModulePath:
                 relative_to_root=absolute_path.relative_to(project_root),
             )
         except ValueError:
-            None
+            pass
 
 
 def get_module_paths(
@@ -92,6 +92,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
     mode: coverage_data.ModuleModeInfo
     suppressions: Sequence[coverage_data.TypeErrorSuppression]
     functions: Sequence[coverage_data.FunctionAnnotationInfo]
+    empty_containers: Sequence[coverage_data.EmptyContainerInfo]
 
     @staticmethod
     def collect(
@@ -105,10 +106,12 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         )
         suppressions = coverage_data.collect_suppressions(module)
         functions = coverage_data.collect_functions(module)
+        empty_containers = coverage_data.collect_empty_containers(module)
         return ModuleData(
             mode=mode,
             suppressions=suppressions,
             functions=functions,
+            empty_containers=empty_containers,
             # `path` is relative here so that data isn't tied to one machine.
             path=str(path.relative_to_root),
         )

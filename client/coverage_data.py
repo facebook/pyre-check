@@ -26,6 +26,7 @@ from re import compile
 from typing import Dict, Iterable, List, Optional, Pattern, Sequence
 
 import libcst
+import libcst.matchers as matchers
 from libcst.metadata import CodeRange, PositionProvider
 from typing_extensions import TypeAlias
 
@@ -500,6 +501,98 @@ class ModuleModeCollector(VisitorWithPositionData):
             self.is_generated = True
 
 
+class EmptyContainerKind(str, Enum):
+    LIST_LITERAL = "LIST_LITERAL"
+    DICT_LITERAL = "DICT_LITERAL"
+    LIST_CALL = "LIST_CALL"
+    DICT_CALL = "DICT_CALL"
+    SET_CALL = "SET_CALL"
+    FROZENSET_CALL = "FROZENSET_CALL"
+
+
+@dataclasses.dataclass(frozen=True)
+class EmptyContainerInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    kind: EmptyContainerKind
+    location: Location
+
+
+def _matches_names(targets: Sequence[libcst.AssignTarget]) -> bool:
+    return all(isinstance(t.target, libcst.Name) for t in targets)
+
+
+class EmptyContainerCollector(matchers.MatcherDecoratableVisitor):
+    """
+    Collects all empty containers in the module.
+    """
+
+    # An empty container is:
+    # - an empty list literal
+    # - an empty dict literal
+    # - a call to set(), frozenset(), list(), or dict() with no arguments
+
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.empty_containers: List[EmptyContainerInfo] = []
+
+    def location(self, node: libcst.CSTNode) -> Location:
+        return Location.from_code_range(self.get_metadata(PositionProvider, node))
+
+    def record_empty_container(self, kind: EmptyContainerKind, loc: Location) -> None:
+        self.empty_containers.append(EmptyContainerInfo(kind=kind, location=loc))
+
+    @matchers.visit(
+        matchers.Assign(
+            targets=matchers.MatchIfTrue(_matches_names),
+            value=matchers.List(elements=matchers.MatchIfTrue(lambda x: len(x) == 0)),
+        )
+    )
+    def record_empty_list(self, node: libcst.Assign) -> None:
+        self.record_empty_container(
+            EmptyContainerKind.LIST_LITERAL, self.location(node)
+        )
+
+    @matchers.visit(
+        matchers.Assign(
+            targets=matchers.MatchIfTrue(_matches_names),
+            value=matchers.Dict(elements=matchers.MatchIfTrue(lambda x: len(x) == 0)),
+        )
+    )
+    def record_empty_dict(self, node: libcst.Assign) -> None:
+        self.record_empty_container(
+            EmptyContainerKind.DICT_LITERAL, self.location(node)
+        )
+
+    @matchers.leave(
+        matchers.Assign(
+            targets=matchers.MatchIfTrue(_matches_names),
+            value=matchers.Call(
+                func=matchers.Name("list")
+                | matchers.Name("dict")
+                | matchers.Name("set")
+                | matchers.Name("frozenset"),
+                args=matchers.MatchIfTrue(lambda x: len(x) == 0),
+            ),
+        )
+    )
+    def record_constructor_call(self, node: libcst.Assign) -> None:
+        func = libcst.ensure_type(node.value, libcst.Call)
+        func_name = libcst.ensure_type(func.func, libcst.Name)
+        match func_name.value:
+            case "list":
+                kind = EmptyContainerKind.LIST_CALL
+            case "dict":
+                kind = EmptyContainerKind.DICT_CALL
+            case "set":
+                kind = EmptyContainerKind.SET_CALL
+            case "frozenset":
+                kind = EmptyContainerKind.FROZENSET_CALL
+            case _:
+                raise ValueError(f"Unexpected function call: {func_name}")
+        self.record_empty_container(kind, self.location(node))
+
+
 def collect_mode(
     module: libcst.MetadataWrapper,
     strict_by_default: bool,
@@ -532,6 +625,14 @@ def collect_suppressions(
     visitor = SuppressionCollector()
     module.visit(visitor)
     return visitor.suppressions
+
+
+def collect_empty_containers(
+    module: libcst.MetadataWrapper,
+) -> Sequence[EmptyContainerInfo]:
+    visitor = EmptyContainerCollector()
+    module.visit(visitor)
+    return visitor.empty_containers
 
 
 def module_from_code(code: str) -> Optional[libcst.MetadataWrapper]:
