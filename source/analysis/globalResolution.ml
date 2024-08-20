@@ -382,7 +382,7 @@ let is_invariance_mismatch resolution ~left ~right =
       in
       let due_to_invariant_variable (variance, left, right) =
         match variance, left, right with
-        | Type.Variable.Invariant, Type.Parameter.Single left, Type.Parameter.Single right ->
+        | Type.Variable.Invariant, Type.Argument.Single left, Type.Argument.Single right ->
             less_or_equal resolution ~left ~right
         | _ -> false
       in
@@ -526,7 +526,7 @@ let extract_type_parameters resolution ~source ~target =
       |> Type.Variable.all_unary
       >>= fun unaries ->
       let solve_against =
-        List.map unaries ~f:(fun unary -> Type.Parameter.Single (Type.Variable unary))
+        List.map unaries ~f:(fun unary -> Type.Argument.Single (Type.Variable unary))
         |> Type.parametric target
       in
       TypeOrder.OrderedConstraintsSet.add_and_simplify

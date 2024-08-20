@@ -154,7 +154,7 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
   end
 
-  module Parameter : sig
+  module Argument : sig
     type 'annotation record =
       | Single of 'annotation
       | CallableParameters of 'annotation Callable.record_parameters
@@ -210,7 +210,7 @@ and t =
   | NoneType
   | Parametric of {
       name: Identifier.t;
-      parameters: t Record.Parameter.record list;
+      parameters: t Record.Argument.record list;
     }
   | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
   | Primitive of Primitive.t
@@ -231,12 +231,12 @@ module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
-module Parameter : sig
+module Argument : sig
   include module type of struct
-    include Record.Parameter
+    include Record.Argument
   end
 
-  type t = type_t Record.Parameter.record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Argument.record [@@deriving compare, eq, sexp, show, hash]
 
   val all_singles : t list -> type_t list option
 
@@ -249,11 +249,11 @@ val pp_concise : Format.formatter -> t -> unit
 
 val show_concise : t -> string
 
-val parametric : string -> Parameter.t list -> t
+val parametric : string -> Argument.t list -> t
 
 val awaitable : t -> t
 
-val coroutine : Parameter.t list -> t
+val coroutine : Argument.t list -> t
 
 val bool : t
 
@@ -571,7 +571,7 @@ type type_guard_kind =
 
 val type_guard_kind_if_any : t -> type_guard_kind
 
-val parameters : t -> Parameter.t list option
+val parameters : t -> Argument.t list option
 
 val type_parameters_for_bounded_tuple_union : t -> t list option
 
@@ -611,7 +611,7 @@ module OrderedTypes : sig
   (* Concatenation is only defined for certain members *)
   val concatenate : left:t -> right:t -> t option
 
-  val to_parameters : t -> Parameter.t list
+  val to_parameters : t -> Argument.t list
 
   val to_starred_annotation_expression
     :  expression:(type_t -> Expression.t) ->
@@ -642,7 +642,7 @@ module OrderedTypes : sig
   val index : python_index:int -> 'annotation record -> 'annotation option
 end
 
-val split : t -> t * Parameter.t list
+val split : t -> t * Argument.t list
 
 val class_name : t -> Reference.t
 
@@ -832,7 +832,7 @@ module Variable : sig
 
   type variable_zip_result = {
     variable_pair: pair;
-    received_parameter: Parameter.t;
+    received_parameter: Argument.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -866,22 +866,22 @@ module Variable : sig
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
-  val zip_variables_with_parameters : parameters:Parameter.t list -> t list -> pair list option
+  val zip_variables_with_parameters : parameters:Argument.t list -> t list -> pair list option
 
   val zip_variables_with_parameters_including_mismatches
-    :  parameters:Parameter.t list ->
+    :  parameters:Argument.t list ->
     t list ->
     variable_zip_result list option
 
   val zip_variables_with_two_parameter_lists
-    :  left_parameters:Parameter.t list ->
-    right_parameters:Parameter.t list ->
+    :  left_parameters:Argument.t list ->
+    right_parameters:Argument.t list ->
     t list ->
     (pair * pair) list option
 
   val all_unary : t list -> TypeVar.t list option
 
-  val to_parameter : t -> Parameter.t
+  val to_parameter : t -> Argument.t
 end
 
 val namespace_insensitive_compare : t -> t -> int

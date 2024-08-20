@@ -2660,7 +2660,7 @@ module State (Context : Context) = struct
                   | Type.Parametric
                       {
                         name = "pyre_extensions.BroadcastError";
-                        parameters = [Type.Parameter.Single _; Type.Parameter.Single _];
+                        parameters = [Type.Argument.Single _; Type.Argument.Single _];
                       } ->
                       true
                   | _ -> false
@@ -2675,9 +2675,7 @@ module State (Context : Context) = struct
                               {
                                 name = "pyre_extensions.BroadcastError";
                                 parameters =
-                                  [
-                                    Type.Parameter.Single left_type; Type.Parameter.Single right_type;
-                                  ];
+                                  [Type.Argument.Single left_type; Type.Argument.Single right_type];
                               } ->
                               emit_error
                                 ~errors:current_errors
@@ -5934,7 +5932,7 @@ module State (Context : Context) = struct
                   else
                     errors
                 in
-                Type.Parameter.all_singles extended_parameters
+                Type.Argument.all_singles extended_parameters
                 >>| (fun extended_parameters ->
                       let actual_parameters =
                         GlobalResolution.generic_parameters_as_variables global_resolution name

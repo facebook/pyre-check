@@ -17,7 +17,7 @@ module StatementClass = Class
 module Attribute = AnnotatedAttribute
 module Argument = Call.Argument
 
-let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 let test_superclasses =
   let assert_successors target expected context =

@@ -2028,7 +2028,7 @@ let rec messages ~concise ~signature location kind =
         | CallableParameters actual ->
             Format.asprintf
               "callable parameters `%a`"
-              Type.Parameter.pp_list
+              Type.Argument.pp_list
               [CallableParameters actual]
         | Unpacked actual ->
             Format.asprintf "variadic `%a`" Type.OrderedTypes.Concatenation.pp_unpackable actual

@@ -50,7 +50,7 @@ open Ast
 module Callable = Type.Callable
 
 module AssumedProtocolInstantiations = struct
-  type protocol_parameters = Type.Parameter.t list [@@deriving compare, sexp, hash, show]
+  type protocol_parameters = Type.Argument.t list [@@deriving compare, sexp, hash, show]
 
   type assumption = {
     candidate: Type.t;

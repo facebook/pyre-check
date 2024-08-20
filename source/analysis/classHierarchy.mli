@@ -26,7 +26,7 @@ end
 module Target : sig
   type t = {
     target: Ast.Identifier.t;
-    parameters: Type.Parameter.t list;
+    parameters: Type.Argument.t list;
   }
   [@@deriving compare, sexp, show]
 
@@ -111,4 +111,4 @@ val instantiate_successors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  Type.Parameter.t list option
+  Type.Argument.t list option

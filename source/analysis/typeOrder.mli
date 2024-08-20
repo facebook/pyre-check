@@ -31,4 +31,4 @@ val instantiate_protocol_parameters
   :  order ->
   candidate:Type.t ->
   protocol:Ast.Identifier.t ->
-  Type.Parameter.t list option
+  Type.Argument.t list option

@@ -581,7 +581,7 @@ let test_populate context =
       | None -> ""
       | Some targets ->
           let show_target { ClassHierarchy.Target.target; parameters } =
-            Format.asprintf "%s%a" target Type.Parameter.pp_list parameters
+            Format.asprintf "%s%a" target Type.Argument.pp_list parameters
           in
           List.to_string targets ~f:show_target
     in

@@ -38,7 +38,7 @@ let param_spec_declaration_and_variable name =
 
 let empty_head variable = { Type.Callable.head = []; variable }
 
-let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 let make_callable_from_arguments annotations =
   Type.Callable.Defined
@@ -485,7 +485,7 @@ let test_create_type_operator _ =
           (Concrete
              [
                Type.Variable t_variable;
-               Type.Parametric { name = "Foo"; parameters = [Type.Parameter.Single Type.integer] };
+               Type.Parametric { name = "Foo"; parameters = [Type.Argument.Single Type.integer] };
                Type.Callable.create
                  ~parameters:
                    (Type.Callable.Defined
@@ -3283,7 +3283,7 @@ let test_zip_variables_with_parameters _ =
           (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
-          let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
+          let variables = List.map ~f:Type.Argument.to_variable parameters |> Option.all in
           Option.value_exn variables
       | _ -> failwith "expected Parametric"
     in
@@ -3631,7 +3631,7 @@ let test_zip_on_two_parameter_lists _ =
           (parse_single_expression ~preprocess:true generic_class)
       with
       | Type.Parametric { parameters; _ } ->
-          let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
+          let variables = List.map ~f:Type.Argument.to_variable parameters |> Option.all in
           Option.value_exn variables
       | _ -> failwith "expected Parametric"
     in

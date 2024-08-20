@@ -3268,7 +3268,7 @@ let test_coverage_gaps_in_module context =
               Some
                 (Expression.Name (Name.Identifier "$local_test$a")
                 |> Node.create_with_default_location);
-            type_ = Type.Parametric { name = "list"; parameters = [Type.Parameter.Single Type.Any] };
+            type_ = Type.Parametric { name = "list"; parameters = [Type.Argument.Single Type.Any] };
           };
         reason = ContainerParameterIsAny;
       };
@@ -3286,7 +3286,7 @@ let test_coverage_gaps_in_module context =
               Some
                 (Expression.Name (Name.Identifier "$local_test$a")
                 |> Node.create_with_default_location);
-            type_ = Type.Parametric { name = "set"; parameters = [Type.Parameter.Single Type.Any] };
+            type_ = Type.Parametric { name = "set"; parameters = [Type.Argument.Single Type.Any] };
           };
         reason = ContainerParameterIsAny;
       };
@@ -3308,7 +3308,7 @@ let test_coverage_gaps_in_module context =
               Type.Parametric
                 {
                   name = "dict";
-                  parameters = [Type.Parameter.Single Type.Any; Type.Parameter.Single Type.Any];
+                  parameters = [Type.Argument.Single Type.Any; Type.Argument.Single Type.Any];
                 };
           };
         reason = ContainerParameterIsAny;

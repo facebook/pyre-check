@@ -245,7 +245,7 @@ module Record = struct
     [@@deriving compare, eq, sexp, show, hash]
   end
 
-  module Parameter = struct
+  module Argument = struct
     type 'annotation record =
       | Single of 'annotation
       | CallableParameters of 'annotation Callable.record_parameters
@@ -320,7 +320,7 @@ module T = struct
     | NoneType
     | Parametric of {
         name: Identifier.t;
-        parameters: t Record.Parameter.record list;
+        parameters: t Record.Argument.record list;
       }
     | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
     | Primitive of Primitive.t
@@ -569,8 +569,8 @@ module VisitWithTransform = struct
               }
         | Parametric { name; parameters } ->
             let visit = function
-              | Record.Parameter.Single single ->
-                  Record.Parameter.Single (visit_annotation single ~state)
+              | Record.Argument.Single single ->
+                  Record.Argument.Single (visit_annotation single ~state)
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
               | Unpacked (Variadic _) as unpacked -> unpacked
               | Unpacked (UnboundedElements annotation) ->
@@ -1039,7 +1039,7 @@ module Canonicalization = struct
         Parametric
           {
             name = List.hd_exn Record.OrderedTypes.concatenate_public_names;
-            parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
+            parameters = List.map concretes ~f:(fun concrete -> Record.Argument.Single concrete);
           }
 end
 
@@ -1195,13 +1195,13 @@ module PrettyPrinting = struct
   let pp_parameters ~pp_type format = function
     | parameters
       when List.for_all parameters ~f:(function
-               | Record.Parameter.Single parameter ->
+               | Record.Argument.Single parameter ->
                    Predicates.is_unbound parameter || Predicates.is_top parameter
                | _ -> false) ->
         Format.fprintf format ""
     | parameters ->
         let s format = function
-          | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
+          | Record.Argument.Single parameter -> Format.fprintf format "%a" pp_type parameter
           | CallableParameters parameters ->
               Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
           | Unpacked unpackable ->
@@ -1369,9 +1369,9 @@ module PrettyPrinting = struct
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 end
 
-module Parameter = struct
+module Argument = struct
   open T
-  include Record.Parameter
+  include Record.Argument
 
   type t = T.t record [@@deriving compare, eq, sexp, show, hash]
 
@@ -1851,7 +1851,7 @@ module OrderedTypes = struct
   let concatenation_from_parameters parameters =
     let unpacked_element_index index parameter =
       match parameter with
-      | Parameter.Unpacked _ -> Some index
+      | Argument.Unpacked _ -> Some index
       | _ -> None
     in
     match List.filter_mapi parameters ~f:unpacked_element_index with
@@ -1859,7 +1859,7 @@ module OrderedTypes = struct
         let prefix, rest = List.split_n parameters unpacked_index in
         match rest with
         | Unpacked middle :: suffix -> (
-            match Parameter.all_singles prefix, Parameter.all_singles suffix with
+            match Argument.all_singles prefix, Argument.all_singles suffix with
             | Some prefix, Some suffix -> Some (Concatenation { prefix; middle; suffix })
             | _ -> None)
         | _ -> None)
@@ -1867,11 +1867,11 @@ module OrderedTypes = struct
 
 
   let to_parameters = function
-    | Concrete elements -> List.map elements ~f:(fun element -> Parameter.Single element)
+    | Concrete elements -> List.map elements ~f:(fun element -> Argument.Single element)
     | Concatenation { prefix; middle = unpacked; suffix } ->
-        List.map prefix ~f:(fun element -> Parameter.Single element)
-        @ [Parameter.Unpacked unpacked]
-        @ List.map suffix ~f:(fun element -> Parameter.Single element)
+        List.map prefix ~f:(fun element -> Argument.Single element)
+        @ [Argument.Unpacked unpacked]
+        @ List.map suffix ~f:(fun element -> Argument.Single element)
 
 
   let to_starred_annotation_expression ~expression = function
@@ -2605,8 +2605,8 @@ module Variable = struct
       | Parametric { name; parameters } ->
           let parameters =
             let map_parameter = function
-              | Parameter.CallableParameters parameters ->
-                  Parameter.CallableParameters (map parameters)
+              | Argument.CallableParameters parameters ->
+                  Argument.CallableParameters (map parameters)
               | parameter -> parameter
             in
             List.map parameters ~f:map_parameter
@@ -2628,7 +2628,7 @@ module Variable = struct
           List.filter_map (implementation :: overloads) ~f:extract
       | Parametric { parameters; _ } ->
           let extract = function
-            | Parameter.CallableParameters (FromParamSpec { variable; _ }) -> Some variable
+            | Argument.CallableParameters (FromParamSpec { variable; _ }) -> Some variable
             | _ -> None
           in
           List.filter_map parameters ~f:extract
@@ -2750,7 +2750,7 @@ module Variable = struct
       match annotation with
       | Parametric { parameters; _ } ->
           let extract = function
-            | Parameter.Unpacked unpackable -> collect_unpackable unpackable
+            | Argument.Unpacked unpackable -> collect_unpackable unpackable
             | _ -> []
           in
           List.concat_map parameters ~f:extract
@@ -2786,11 +2786,11 @@ module Variable = struct
           let replace parameter =
             let replaced =
               match parameter with
-              | Parameter.Unpacked unpackable -> (
+              | Argument.Unpacked unpackable -> (
                   replace_unpackable unpackable
                   >>| function
                   | Tuple record -> OrderedTypes.to_parameters record
-                  | other -> [Parameter.Single other])
+                  | other -> [Argument.Single other])
               | _ -> None
             in
             Option.value ~default:[parameter] replaced
@@ -2798,7 +2798,7 @@ module Variable = struct
           let parameters = List.concat_map parameters ~f:replace in
           let default = Parametric { parametric with parameters } |> Option.some in
           let extract_broadcast_error = function
-            | Parameter.Single
+            | Argument.Single
                 (Parametric { name = "pyre_extensions.BroadcastError"; _ } as parametric) ->
                 Some parametric
             | _ -> None
@@ -3174,7 +3174,7 @@ module Variable = struct
 
   type variable_zip_result = {
     variable_pair: pair;
-    received_parameter: Parameter.t;
+    received_parameter: Argument.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -3337,10 +3337,10 @@ module Variable = struct
 
 
   let coalesce_if_all_single parameters =
-    Parameter.all_singles parameters
+    Argument.all_singles parameters
     >>| (fun singles ->
           [
-            Parameter.CallableParameters
+            Argument.CallableParameters
               (Defined (Callable.prepend_anonymous_parameters ~head:singles ~tail:[]));
           ])
     |> Option.value ~default:parameters
@@ -3349,7 +3349,7 @@ module Variable = struct
   let make_variable_pair variable received_parameter =
     let variable_pair =
       match variable, received_parameter with
-      | TypeVarVariable unary, Parameter.Single annotation -> TypeVarPair (unary, annotation)
+      | TypeVarVariable unary, Argument.Single annotation -> TypeVarPair (unary, annotation)
       | ParamSpecVariable parameter_variadic, CallableParameters callable_parameters ->
           ParamSpecPair (parameter_variadic, callable_parameters)
       | TypeVarVariable unary, _ -> TypeVarPair (unary, TypeVar.any)
@@ -3382,21 +3382,21 @@ module Variable = struct
                   match OrderedTypes.concatenation_from_parameters parameters_middle with
                   | Some ordered_type -> Some ordered_type
                   | None ->
-                      Parameter.all_singles parameters_middle
+                      Argument.all_singles parameters_middle
                       >>| fun singles -> OrderedTypes.Concrete singles
                 in
                 ordered_type
                 >>| (fun ordered_type ->
                       {
                         variable_pair = TypeVarTuplePair (variadic, ordered_type);
-                        received_parameter = Single (Tuple ordered_type);
+                        received_parameter = Argument.Single (Tuple ordered_type);
                       })
                 |> Option.value
                      ~default:
                        {
                          variable_pair = TypeVarTuplePair (variadic, TypeVarTuple.any);
                          received_parameter =
-                           Single
+                           Argument.Single
                              (Constructors.parametric
                                 TypeVarTuple.synthetic_class_name_for_error
                                 parameters_middle);
@@ -3406,8 +3406,8 @@ module Variable = struct
           | _ -> None
         in
         let has_variadic_in_prefix_or_suffix =
-          List.exists parameters_prefix ~f:Parameter.is_unpacked
-          || List.exists parameters_suffix ~f:Parameter.is_unpacked
+          List.exists parameters_prefix ~f:Argument.is_unpacked
+          || List.exists parameters_suffix ~f:Argument.is_unpacked
         in
         if has_variadic_in_prefix_or_suffix then
           None
@@ -3465,9 +3465,9 @@ module Variable = struct
 
 
   let to_parameter = function
-    | TypeVarVariable variable -> Parameter.Single (TypeVar.self_reference variable)
-    | ParamSpecVariable variable -> Parameter.CallableParameters (ParamSpec.self_reference variable)
-    | TypeVarTupleVariable variadic -> Parameter.Unpacked (Variadic variadic)
+    | TypeVarVariable variable -> Argument.Single (TypeVar.self_reference variable)
+    | ParamSpecVariable variable -> Argument.CallableParameters (ParamSpec.self_reference variable)
+    | TypeVarTupleVariable variadic -> Argument.Unpacked (Variadic variadic)
 end
 
 module ToExpression = struct
@@ -3616,7 +3616,7 @@ module ToExpression = struct
     | Parametric { name; parameters } ->
         let parameters =
           let expression_of_parameter = function
-            | Record.Parameter.Single single -> expression single
+            | Record.Argument.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
             | Unpacked unpackable ->
                 OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable
@@ -4139,7 +4139,7 @@ let parameters_from_unpacked_annotation annotation ~get_variable =
     | Primitive variable_name -> (
         match get_variable variable_name with
         | Some (Record.Variable.TypeVarTupleVariable variadic) ->
-            Some (Parameter.Unpacked (Variadic variadic))
+            Some (Argument.Unpacked (Variadic variadic))
         | _ -> None)
     | _ -> None
   in
@@ -4165,8 +4165,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | Parametric { name; parameters }
       when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.concatenate_public_names -> (
         match List.rev parameters with
-        | Parameter.CallableParameters (FromParamSpec { variable; head = [] }) :: reversed_head ->
-            Parameter.all_singles reversed_head
+        | Argument.CallableParameters (FromParamSpec { variable; head = [] }) :: reversed_head ->
+            Argument.all_singles reversed_head
             >>| List.rev
             >>| fun head -> { Record.Callable.variable; head }
         | _ -> None)
@@ -4245,7 +4245,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
   in
   let create_ordered_type_from_parameters parameters =
-    match Parameter.all_singles parameters with
+    match Argument.all_singles parameters with
     | Some [annotation; Primitive "..."] ->
         Some (OrderedTypes.create_unbounded_concatenation annotation)
     | Some singles -> Some (Concrete singles)
@@ -4412,7 +4412,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
           let element_to_parameters = function
             | { Node.value = Expression.List elements; _ } ->
                 [
-                  Record.Parameter.CallableParameters
+                  Record.Argument.CallableParameters
                     (Defined (List.mapi ~f:extract_parameter elements));
                 ]
             | element -> (
@@ -4421,9 +4421,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 | Some parameters -> parameters
                 | None -> (
                     match substitute_parameter_variadic parsed with
-                    | Some variable ->
-                        [Record.Parameter.CallableParameters (FromParamSpec variable)]
-                    | _ -> [Record.Parameter.Single parsed]))
+                    | Some variable -> [Record.Argument.CallableParameters (FromParamSpec variable)]
+                    | _ -> [Record.Argument.Single parsed]))
           in
           match subscript_index with
           | { Node.value = Expression.Tuple elements; _ } ->
@@ -4532,7 +4531,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
   | Parametric { name; parameters } -> (
       let replace_with_special_form ~name parameters =
-        match name, Parameter.all_singles parameters with
+        match name, Argument.all_singles parameters with
         (* Annotated doesn't have an internal representation in Pyre, but the spec requires at least
            two params. We only unwrap it if there are >=2 type params; otherwise we leave it wrapped
            and check it like a variadic generic that requires >=2 params. *)
@@ -4642,7 +4641,7 @@ let weaken_literals annotation =
 
 
 let split annotation =
-  let open Record.Parameter in
+  let open Record.Argument in
   match annotation with
   | Union [NoneType; parameter]
   | Union [parameter; NoneType] ->
@@ -4847,14 +4846,14 @@ let dequalify map annotation =
               {
                 name = dequalify_string "typing.Union";
                 parameters =
-                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
+                  List.map parameters ~f:(fun parameter -> Record.Argument.Single parameter);
               }
         | Tuple (Concrete parameters) ->
             Parametric
               {
                 name = dequalify_string "typing.Tuple";
                 parameters =
-                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
+                  List.map parameters ~f:(fun parameter -> Record.Argument.Single parameter);
               }
         | Primitive name -> Primitive (dequalify_identifier map name)
         | Variable ({ name; _ } as annotation) ->
@@ -4911,7 +4910,7 @@ let infer_transform annotation =
         | Tuple (Concrete types) when List.length types > 2 ->
             shorten_tuple_type types |> Option.value ~default:annotation
         | Parametric { name = "typing.Tuple"; parameters } when List.length parameters > 2 ->
-            let types = List.filter_map parameters ~f:Parameter.is_single in
+            let types = List.filter_map parameters ~f:Argument.is_single in
             if List.length types < List.length parameters then
               annotation
             else
@@ -4943,7 +4942,7 @@ let infer_transform annotation =
         | Parametric { name = "_PathLike"; parameters } ->
             Parametric { name = "PathLike"; parameters }
         | Parametric { name = "Union" | "typing.Union"; parameters } ->
-            Parameter.all_singles parameters
+            Argument.all_singles parameters
             >>| Constructors.union
             |> Option.value ~default:annotation
         | _ -> annotation

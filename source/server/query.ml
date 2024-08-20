@@ -538,7 +538,7 @@ let rec process_request_exn
                           | _ -> false) ->
                 Type.parametric
                   annotation
-                  (List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any))
+                  (List.map generics ~f:(fun _ -> Type.Argument.Single Type.Any))
             | _ -> Type.Primitive annotation)
         | _ -> annotation
       in

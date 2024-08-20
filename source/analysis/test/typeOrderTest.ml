@@ -14,7 +14,7 @@ open Test
 open TypeOrder
 open CycleDetection
 
-let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 let variable_aliases name =
   match name with
@@ -36,7 +36,7 @@ let resolution ?source context =
 
 
 let concrete_connect ?parameters =
-  let parameters = parameters >>| List.map ~f:(fun single -> Type.Parameter.Single single) in
+  let parameters = parameters >>| List.map ~f:(fun single -> Type.Argument.Single single) in
   MockClassHierarchyHandler.connect ?parameters
 
 

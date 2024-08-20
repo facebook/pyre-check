@@ -403,7 +403,7 @@ let verify_global ~path ~location ~pyre_api ~name =
   | Some
       (Global.Attribute
         (Type.Parametric
-          { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable _); _] })) ->
+          { name = "BoundMethod"; parameters = [Type.Argument.Single (Type.Callable _); _] })) ->
       Error
         (model_verification_error
            ~path

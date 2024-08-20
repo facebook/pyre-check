@@ -308,7 +308,7 @@ module TypeParameterValidationTypes = struct
         expected: Type.Variable.TypeVar.t;
       }
     | UnexpectedKind of {
-        actual: Type.Parameter.t;
+        actual: Type.Argument.t;
         expected: Type.Variable.t;
       }
   [@@deriving compare, sexp, show, hash]
@@ -2422,7 +2422,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Some paired ->
                   let check_parameter { Type.Variable.variable_pair; received_parameter } =
                     match variable_pair, received_parameter with
-                    | Type.Variable.TypeVarPair (unary, given), Type.Parameter.Single _ ->
+                    | Type.Variable.TypeVarPair (unary, given), Type.Argument.Single _ ->
                         let invalid =
                           let order = self#full_order ~cycle_detections in
                           TypeOrder.OrderedConstraints.add_lower_bound
@@ -2435,14 +2435,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           |> Option.is_none
                         in
                         if invalid then
-                          ( [Type.Parameter.Single Type.Any],
+                          ( [Type.Argument.Single Type.Any],
                             Some
                               {
                                 name;
                                 kind = ViolateConstraints { expected = unary; actual = given };
                               } )
                         else
-                          [Type.Parameter.Single given], None
+                          [Type.Argument.Single given], None
                     | ParamSpecPair (_, given), CallableParameters _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         [CallableParameters given], None
@@ -2514,8 +2514,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           Type.parametric
                             name
                             (List.concat_map generics ~f:(function
-                                | Type.Variable.TypeVarVariable _ ->
-                                    [Type.Parameter.Single Type.Any]
+                                | Type.Variable.TypeVarVariable _ -> [Type.Argument.Single Type.Any]
                                 | ParamSpecVariable _ -> [CallableParameters Undefined]
                                 | TypeVarTupleVariable _ ->
                                     Type.OrderedTypes.to_parameters Type.Variable.TypeVarTuple.any))
@@ -3323,12 +3322,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         let meta_type_and_return_type = function
                           | Type.Variable.TypeVarVariable single ->
                               ( Type.meta (Variable single),
-                                Type.Parameter.Single (Type.Variable single) )
+                                Type.Argument.Single (Type.Variable single) )
                           | ParamSpecVariable _ ->
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                  without that we can't actually return the correct metatype, which
                                  is a bummer *)
-                              Type.Any, Type.Parameter.CallableParameters Undefined
+                              Type.Any, Type.Argument.CallableParameters Undefined
                           | TypeVarTupleVariable _ -> Type.Any, Single Any
                         in
                         let meta_types, return_parameters =

@@ -118,7 +118,7 @@ val constraints_solution_exists
 val constraints
   :  t ->
   target:Type.Primitive.t ->
-  ?parameters:Type.Parameter.t list ->
+  ?parameters:Type.Argument.t list ->
   instantiated:Type.t ->
   unit ->
   TypeConstraints.Solution.t

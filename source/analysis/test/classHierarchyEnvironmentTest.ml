@@ -61,7 +61,7 @@ let test_parents_and_inferred_generic_base context =
     let create_target (name, concretes) =
       {
         ClassHierarchy.Target.target = name;
-        parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
+        parameters = List.map concretes ~f:(fun single -> Type.Argument.Single single);
       }
     in
     let expected =
@@ -465,7 +465,7 @@ let test_updates context =
   ()
 
 
-let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 let test_compute_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
@@ -560,7 +560,7 @@ let test_compute_inferred_generic_base context =
        (Type.parametric
           "typing.Generic"
           [
-            Type.Parameter.CallableParameters
+            Type.Argument.CallableParameters
               (Type.Variable.ParamSpec.self_reference
                  (Type.Variable.ParamSpec.create "test.TParams"));
           ]));

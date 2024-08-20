@@ -36,7 +36,7 @@ end
 module Target = struct
   type t = {
     target: Identifier.t;
-    parameters: Type.Parameter.t list;
+    parameters: Type.Argument.t list;
   }
   [@@deriving compare, sexp, show]
 
@@ -248,7 +248,7 @@ let immediate_parents (module Handler : Handler) class_name =
 
 
 let parameters_to_variables parameters =
-  List.map parameters ~f:Type.Parameter.to_variable |> Option.all
+  List.map parameters ~f:Type.Argument.to_variable |> Option.all
 
 
 let generic_parameters_as_variables ?(default = None) (module Handler : Handler) = function
@@ -281,7 +281,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   match source with
   | Type.Bottom ->
       let to_any = function
-        | Type.Variable.TypeVarVariable _ -> [Type.Parameter.Single Type.Any]
+        | Type.Variable.TypeVarVariable _ -> [Type.Argument.Single Type.Any]
         | ParamSpecVariable _ -> [CallableParameters Undefined]
         | TypeVarTupleVariable _ -> Type.OrderedTypes.to_parameters Type.Variable.TypeVarTuple.any
       in
@@ -294,8 +294,8 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (Handler.contains primitive) -> None
-        | Primitive "tuple", [Type.Parameter.Single parameter] ->
-            Some ("tuple", [Type.Parameter.Single (Type.weaken_literals parameter)])
+        | Primitive "tuple", [Type.Argument.Single parameter] ->
+            Some ("tuple", [Type.Argument.Single (Type.weaken_literals parameter)])
         | Primitive primitive, parameters -> Some (primitive, parameters)
         | _ ->
             (* We can only propagate from those that actually split off a primitive *)
@@ -334,9 +334,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   let instantiate_parameters { Target.target; parameters } =
                     let instantiate = function
-                      | Type.Parameter.Single single ->
+                      | Type.Argument.Single single ->
                           [
-                            Type.Parameter.Single
+                            Type.Argument.Single
                               (TypeConstraints.Solution.instantiate replacement single);
                           ]
                       | CallableParameters parameters ->
@@ -424,7 +424,7 @@ let to_dot (module Handler : Handler) ~class_names =
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
             Format.asprintf "  %s -> %s" class_name successor |> Buffer.add_string buffer;
             if not (List.is_empty parameters) then
-              Format.asprintf "[label=\"(%a)\"]" Type.Parameter.pp_list parameters
+              Format.asprintf "[label=\"(%a)\"]" Type.Argument.pp_list parameters
               |> Buffer.add_string buffer;
             Buffer.add_string buffer "\n")
     |> ignore

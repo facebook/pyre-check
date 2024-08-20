@@ -15,12 +15,12 @@ module AssumedProtocolInstantiations : sig
     :  candidate:Type.t ->
     protocol:Identifier.t ->
     t ->
-    Type.Parameter.t list option
+    Type.Argument.t list option
 
   val add
     :  candidate:Type.t ->
     protocol:Identifier.t ->
-    protocol_parameters:Type.Parameter.t list ->
+    protocol_parameters:Type.Argument.t list ->
     t ->
     t
 

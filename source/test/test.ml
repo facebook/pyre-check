@@ -3643,7 +3643,7 @@ module MockClassHierarchyHandler = struct
     let print_edge (source, { ClassHierarchy.Edges.parents; _ }) =
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
-          Format.asprintf "%s [%a]" target Type.Parameter.pp_list parameters
+          Format.asprintf "%s [%a]" target Type.Argument.pp_list parameters
         in
         List.map parents ~f:target |> String.concat ~sep:", "
       in

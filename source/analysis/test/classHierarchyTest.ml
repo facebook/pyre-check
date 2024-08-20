@@ -11,7 +11,7 @@ open Analysis
 open Test
 open ClassHierarchy
 
-let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 (* Butterfly:
  *  0 - 2
@@ -385,7 +385,7 @@ let variadic_order =
 
   let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let variadic_parameter =
-    Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
+    Type.Argument.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
   in
   insert order "Base";
   connect order ~predecessor:"Base" ~successor:"typing.Generic" ~parameters:[variadic_parameter];
@@ -484,7 +484,7 @@ let test_instantiate_successors_parameters _ =
     (Some ![Type.Any; Type.Any]);
 
   let assert_equal actual expected =
-    assert_equal expected actual ~printer:[%show: Type.Parameter.t list option]
+    assert_equal expected actual ~printer:[%show: Type.Argument.t list option]
   in
   assert_equal
     (instantiate_successors_parameters
@@ -529,7 +529,7 @@ let test_instantiate_successors_parameters _ =
     (Some ![Type.integer; Type.literal_integer 1; Type.literal_integer 2]);
   let variadic = Type.Variable.TypeVarTuple.create "Ts" in
   let variadic_parameter =
-    Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
+    Type.Argument.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
   in
   assert_equal
     (instantiate_successors_parameters

@@ -14,7 +14,7 @@ open Test
 open TypeOrder
 open CycleDetection
 
-let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
@@ -1516,7 +1516,7 @@ let test_instantiate_protocol_parameters context =
       |> GlobalResolution.parse_annotation resolution ~validation:NoValidation
     in
     let optional_ordered_types_printer optional =
-      optional >>| Format.asprintf "%a" Type.Parameter.pp_list |> Option.value ~default:"None"
+      optional >>| Format.asprintf "%a" Type.Argument.pp_list |> Option.value ~default:"None"
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =

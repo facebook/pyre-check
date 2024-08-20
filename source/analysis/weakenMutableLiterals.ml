@@ -85,17 +85,17 @@ let distribute_union_over_parametric ~parametric_name ~number_of_parameters anno
         | Type.Parametric { name; parameters }
           when Identifier.equal name parametric_name
                && List.length parameters = number_of_parameters ->
-            Type.Parameter.all_singles parameters
+            Type.Argument.all_singles parameters
         | _ -> None
       in
       let combine_parameters parameters_list =
         match number_of_parameters with
-        | 1 -> Some [Type.Parameter.Single (Type.union (List.concat parameters_list))]
+        | 1 -> Some [Type.Argument.Single (Type.union (List.concat parameters_list))]
         | 2 ->
             Some
               [
-                Type.Parameter.Single (Type.union (List.map ~f:List.hd_exn parameters_list));
-                Type.Parameter.Single (Type.union (List.map ~f:List.last_exn parameters_list));
+                Type.Argument.Single (Type.union (List.map ~f:List.hd_exn parameters_list));
+                Type.Argument.Single (Type.union (List.map ~f:List.last_exn parameters_list));
               ]
         | _ -> None
       in
@@ -665,7 +665,7 @@ and weaken_against_readonly
     let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
       let expected =
         expected_parameter_types
-        |> List.map ~f:(fun type_ -> Type.Parameter.Single (Type.ReadOnly.create type_))
+        |> List.map ~f:(fun type_ -> Type.Argument.Single (Type.ReadOnly.create type_))
         |> Type.parametric parametric_name
       in
       weaken_mutable_literals

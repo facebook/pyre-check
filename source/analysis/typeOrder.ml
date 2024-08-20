@@ -283,7 +283,7 @@ module OrderImplementation = struct
                     >>| List.map ~f:join_parameters_respecting_variance
                     >>= Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top
-                    >>| List.map ~f:(fun single -> Type.Parameter.Single single)
+                    >>| List.map ~f:(fun single -> Type.Argument.Single single)
                     >>| fun parameters -> Type.parametric target parameters
                 | _ -> None
               in
