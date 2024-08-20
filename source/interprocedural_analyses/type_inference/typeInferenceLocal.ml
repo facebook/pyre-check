@@ -782,6 +782,7 @@ module State (Context : Context) = struct
            ~self_argument:None
            ~order:(GlobalResolution.full_order (Resolution.global_resolution resolution))
            ~location:(Node.location statement)
+           ~resolve:(Resolution.resolve_expression_to_type resolution)
       |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
       parameter_argument_mapping
     in

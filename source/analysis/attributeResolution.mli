@@ -130,6 +130,7 @@ module SignatureSelection : sig
     self_argument:Type.t option ->
     order:ConstraintsSet.order ->
     location:Location.t ->
+    resolve:(Expression.t -> Type.t) ->
     Type.t Argument.WithPosition.t list ->
     Type.t ParameterArgumentMapping.t
 

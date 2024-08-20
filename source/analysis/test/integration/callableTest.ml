@@ -51,14 +51,20 @@ let test_callable_parameters =
               foo(42, *(42,))
             |}
            [];
-      (* This is a pre-existing bug, we shouldn't consume all the positional arguments if we know
-         the tuple has only 1 item *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               def foo(a:int, b:int) -> None:
                 pass
               foo(*(42,), 42)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              def foo(a:int, b:int) -> None:
+                pass
+              foo(*(42, 42), 42)
             |}
            ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
       labeled_test_case __FUNCTION__ __LINE__

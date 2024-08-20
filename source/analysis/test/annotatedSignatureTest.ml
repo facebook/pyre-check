@@ -366,14 +366,11 @@ let test_unresolved_select =
       @@ assert_select
            "[[str], int]"
            "(*[1])"
-           (`NotFoundMismatch [Type.integer, Type.string, None, 1]);
+           (`NotFoundMismatch [Type.literal_integer 1, Type.string, None, 1]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
+      @@ assert_select "[[int, str], int]" "(*[1], 'asdf')" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select
-           "[[int, str], int]"
-           "(*[1], *['asdf'])"
-           (`NotFoundMismatch [Type.integer, Type.string, None, 2]);
+      @@ assert_select "[[int, str], int]" "(*[1], *['asdf'])" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[int, str], int]" "(1, *['asdf'])" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
@@ -428,7 +425,7 @@ let test_unresolved_select =
       @@ assert_select
            "[[Variable(int)], int]"
            "(*['string'])"
-           (`NotFoundMismatch [Type.string, Type.integer, None, 1]);
+           (`NotFoundMismatch [Type.literal_string "string", Type.integer, None, 1]);
       (* KeywordOnly *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "int");
@@ -439,8 +436,13 @@ let test_unresolved_select =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
            "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
-           "(*['a', 'b'])"
+           "(*['a'])"
            (`Found "int");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select
+           "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
+           "(*['a', 'b'])"
+           (`NotFoundTooManyArguments (1, 2));
       (* Named arguments. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[Named(i, int), Named(j, int)], int]" "(i=1, j=2)" (`Found "int");

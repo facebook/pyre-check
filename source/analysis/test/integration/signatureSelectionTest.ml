@@ -1412,6 +1412,22 @@ let test_check_keyword_arguments =
         f(*x)
            |}
            ["Invalid argument [32]: Variable argument `x` has type `int` but must be an iterable."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      def f() -> None:
+        pass
+      f(*[0])
+           |}
+           ["Too many arguments [19]: Call `f` expects 0 positional arguments, 1 was provided."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      def f(x: int, y: str) -> None:
+        pass
+      f(*[0, ""])
+           |}
+           [];
     ]
 
 

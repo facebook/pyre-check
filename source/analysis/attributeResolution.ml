@@ -398,6 +398,7 @@ module SignatureSelection = struct
       ~self_argument
       ~order
       ~location
+      ~resolve
       arguments
     =
     let open Type.Callable in
@@ -500,8 +501,7 @@ module SignatureSelection = struct
       | ( ({ Argument.WithPosition.kind = SingleStar; resolved; expression; _ } as argument)
           :: arguments_tail,
           _ ) -> (
-          (* Starred argument; first check if its type is assignable to Iterable[Any], then match it
-             against the first parameter (if any) *)
+          (* Starred argument. Check if its type is assignable to Iterable[Any] *)
           let iterable_type = Type.iterable Type.Any in
           let parameter_argument_mapping_with_reasons =
             if is_less_or_equal resolved iterable_type then
@@ -512,42 +512,72 @@ module SignatureSelection = struct
               in
               add_annotation_error expression resolved error_factory
           in
-          match parameters with
-          | [] ->
-              (* Starred argument; parameters empty *)
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | (CallableParamType.Variable _ as parameter) :: _ ->
-              (* Starred argument; starred parameter *)
-              let parameter_argument_mapping =
-                update_mapping parameter (make_matched_argument ?index_into_starred_tuple argument)
+          (* Expand the starred argument if it is a constant. *)
+          match expression with
+          | Some { Node.value = List items | Tuple items; _ } ->
+              let expanded_arguments =
+                List.map
+                  ~f:(fun item ->
+                    {
+                      Argument.WithPosition.kind = Positional;
+                      expression = Some item;
+                      position = argument.position;
+                      resolved = resolve item;
+                    })
+                  items
               in
-              (* We don't need to slice any further `*xs` arguments since they are consumed fully by
-                 the expected `Variable` parameter. *)
-              consume_with_new_index
-                ?index_into_starred_tuple:None
-                ~arguments:arguments_tail
-                ~parameters
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | CallableParamType.Keywords _ :: parameters_tail ->
-              (* Starred argument, double starred parameter *)
               consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | Type.Callable.CallableParamType.KeywordOnly _ :: _ ->
-              (* Starred argument, keyword only parameter *)
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | parameter :: parameters_tail ->
-              (* Starred argument, parameter *)
-              let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
-              let parameter_argument_mapping =
-                update_mapping parameter (make_matched_argument ~index_into_starred_tuple argument)
-              in
-              consume_with_new_index
-                ~index_into_starred_tuple:(index_into_starred_tuple + 1)
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping })
+                ~arguments:(expanded_arguments @ arguments_tail)
+                ~parameters
+                parameter_argument_mapping_with_reasons
+          | _ -> (
+              (* Non-constant starred argument. Match it against the first parameter (if any). *)
+              match parameters with
+              | [] ->
+                  (* Starred argument; parameters empty *)
+                  consume
+                    ~arguments:arguments_tail
+                    ~parameters
+                    parameter_argument_mapping_with_reasons
+              | (CallableParamType.Variable _ as parameter) :: _ ->
+                  (* Starred argument; starred parameter *)
+                  let parameter_argument_mapping =
+                    update_mapping
+                      parameter
+                      (make_matched_argument ?index_into_starred_tuple argument)
+                  in
+                  (* We don't need to slice any further `*xs` arguments since they are consumed
+                     fully by the expected `Variable` parameter. *)
+                  consume_with_new_index
+                    ?index_into_starred_tuple:None
+                    ~arguments:arguments_tail
+                    ~parameters
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+              | CallableParamType.Keywords _ :: parameters_tail ->
+                  (* Starred argument, double starred parameter *)
+                  consume
+                    ~arguments
+                    ~parameters:parameters_tail
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+              | Type.Callable.CallableParamType.KeywordOnly _ :: _ ->
+                  (* Starred argument, keyword only parameter *)
+                  consume
+                    ~arguments:arguments_tail
+                    ~parameters
+                    parameter_argument_mapping_with_reasons
+              | parameter :: parameters_tail ->
+                  (* Starred argument, parameter *)
+                  let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
+                  let parameter_argument_mapping =
+                    update_mapping
+                      parameter
+                      (make_matched_argument ~index_into_starred_tuple argument)
+                  in
+                  consume_with_new_index
+                    ~index_into_starred_tuple:(index_into_starred_tuple + 1)
+                    ~arguments
+                    ~parameters:parameters_tail
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }))
       | ({ kind = DoubleStar; resolved; expression; _ } as argument) :: arguments_tail, _ -> (
           (* Double starred argument; first check if its type is assignable to Mapping[str, Any],
              then match it against the first parameter (if any) *)
@@ -1367,6 +1397,7 @@ module SignatureSelection = struct
           ~self_argument
           ~order
           ~location
+          ~resolve:(resolve_with_locals ~locals:[])
           arguments
         |> check_arguments_against_parameters ~callable
         |> fun signature_match -> [signature_match]
@@ -1404,6 +1435,7 @@ module SignatureSelection = struct
             ~self_argument
             ~order
             ~location
+            ~resolve:(resolve_with_locals ~locals:[])
             front
           |> check_arguments_against_parameters ~callable
         in
@@ -1465,6 +1497,7 @@ module SignatureSelection = struct
               ~self_argument
               ~order
               ~location
+              ~resolve:(resolve_with_locals ~locals:[])
               arguments
             |> check_arguments_against_parameters ~callable
             |> fun signature_match -> [signature_match]

@@ -103,13 +103,10 @@ let test_prepare_arguments_for_signature_selection _ =
 let test_get_parameter_argument_mapping context =
   let open AttributeResolution in
   let open Type.Callable in
-  let order =
-    ScratchProject.setup ~context ["test.py", ""]
-    |> ScratchProject.build_global_environment
-    |> (fun { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } -> global_environment)
-    |> GlobalResolution.create
-    |> GlobalResolution.full_order
+  let resolution =
+    ScratchProject.build_resolution (ScratchProject.setup ~context ["test.py", ""])
   in
+  let order = GlobalResolution.full_order (Resolution.global_resolution resolution) in
   let assert_parameter_argument_mapping ~callable ~self_argument arguments expected =
     let parameters =
       match parse_callable callable with
@@ -123,6 +120,7 @@ let test_get_parameter_argument_mapping context =
         ~self_argument
         ~order
         ~location:Location.any
+        ~resolve:(Resolution.resolve_expression_to_type resolution)
         arguments
     in
     assert_equal
