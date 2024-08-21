@@ -241,8 +241,8 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
       raise (Cyclic class_name));
     let visited = Set.add visited class_name in
     let successors =
-      let create_annotation { Target.target = index; _ } = index in
-      class_name |> get_successors |> Option.value ~default:[] |> List.map ~f:create_annotation
+      let get_class_name { Target.target; _ } = target in
+      class_name |> get_successors |> Option.value ~default:[] |> List.map ~f:get_class_name
     in
     let linearized_successors = List.map successors ~f:(linearize ~visited) in
     class_name :: merge (List.append linearized_successors [successors])
