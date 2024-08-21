@@ -14,7 +14,6 @@ from ..configuration import Configuration
 
 
 class ConfigurationTest(unittest.TestCase):
-
     mock_completed_process = MagicMock(stdout="[]")
 
     @patch.object(subprocess, "call")

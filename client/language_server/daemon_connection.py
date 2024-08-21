@@ -15,7 +15,6 @@ This module is NOT responsible for any kind of processing that happens to the re
 which is left to the higher layers.
 """
 
-
 from __future__ import annotations
 
 import asyncio

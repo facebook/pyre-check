@@ -10,7 +10,6 @@ Defines data types specifying patches Pyre wants to apply to
 the upstream typeshed. These patches are defined in toml files.
 """
 
-
 import dataclasses
 import enum
 import pathlib

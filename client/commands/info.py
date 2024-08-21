@@ -10,7 +10,6 @@ Logic for the `pyre info` command, which prints information about
 the current pyre environment (e.g. socket path, log locations).
 """
 
-
 import dataclasses
 import logging
 from typing import Optional

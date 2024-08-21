@@ -1072,7 +1072,6 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         original_node: cst.Assign,
         updated_node: cst.Assign,
     ) -> Union[cst.Assign, cst.AnnAssign]:
-
         self.current_assign = None
 
         if len(original_node.targets) > 1:

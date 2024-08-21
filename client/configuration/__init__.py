@@ -10,7 +10,6 @@ This subpackage contains classes describing Pyre configurations, as
 well as logic for finding and reading configuration files.
 """
 
-
 from . import extension, search_path  # noqa: F401
 from .configuration import (  # noqa: F401
     check_nested_local_configuration,

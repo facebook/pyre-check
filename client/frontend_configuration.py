@@ -14,7 +14,6 @@ possible to customize Pyre by implementing a new command-line tool
 with additional configuration, using open-source Pyre as a library.
 """
 
-
 from __future__ import annotations
 
 import abc

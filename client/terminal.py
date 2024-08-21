@@ -9,7 +9,6 @@
 This module defines code related to terminal interactions.
 """
 
-
 import os
 import sys
 from typing import TextIO

@@ -17,7 +17,6 @@ server telemetry, which (when enabled) is accomplished by sending special
 json messages to the editor, which is responsible for loggign them.
 """
 
-
 import enum
 from typing import Dict, Optional
 

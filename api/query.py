@@ -10,7 +10,6 @@ This module contains logic for transforming the raw output of Pyre queries
 into structured Pythonic data structure.
 """
 
-
 import logging
 from dataclasses import dataclass
 from functools import lru_cache

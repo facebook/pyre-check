@@ -12,7 +12,6 @@ This module provides the logic for the `pyre init-pysa` command, which:
 - runs pyre infer if desired which can provide extra type information
 """
 
-
 import logging
 import os
 import subprocess

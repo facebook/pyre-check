@@ -177,11 +177,13 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         # Note that there's a type error here in the TypedDict
         response = {"contents": [{"value": 32, "docstring": None}]}
         with self.assertRaises(ValidationError):
-            code_navigation_request.parse_response(
-                response,
-                response_type=code_navigation_request.HoverResponse,
-                raw_request="RAW_REQUEST",
-            ),
+            (
+                code_navigation_request.parse_response(
+                    response,
+                    response_type=code_navigation_request.HoverResponse,
+                    raw_request="RAW_REQUEST",
+                ),
+            )
 
     def test_definition_response(self) -> None:
         response = {

@@ -663,7 +663,6 @@ class AnnotationCollectorTest(testslide.TestCase):
 
 
 class FunctionAnnotationStatusTest(testslide.TestCase):
-
     ANNOTATION = cst.Annotation(cst.Name("Foo"))
 
     def _parameter(self, name: str, annotated: bool) -> cst.Param:

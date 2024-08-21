@@ -11,7 +11,6 @@ in a .pyre_configuration file. This is needed because for large projects we
 might want a larger heap and fatter hash table than the defaults.
 """
 
-
 import dataclasses
 from typing import Dict, Optional
 

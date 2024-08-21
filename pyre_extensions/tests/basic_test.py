@@ -18,7 +18,7 @@ class BasicTestCase(unittest.TestCase):
             TReturn = TypeVar("T")
 
             def listify(
-                f: Callable[TParams, TReturn]
+                f: Callable[TParams, TReturn],
             ) -> Callable[TParams, List[TReturn]]:
                 def wrapped(*args: TParams.args, **kwargs: TParams.kwargs):
                     return [f(*args, **kwargs)]

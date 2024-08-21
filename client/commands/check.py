@@ -11,7 +11,6 @@ single-shot type check (as opposed to `pyre incremental`, which starts a
 server to enable quick incremental updates.)
 """
 
-
 import contextlib
 import dataclasses
 import json

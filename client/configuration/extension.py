@@ -23,7 +23,6 @@ import package.module.custom_py
 to resolve to `package/module.custom_py`.
 """
 
-
 import dataclasses
 import json
 

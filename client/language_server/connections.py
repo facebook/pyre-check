@@ -11,7 +11,6 @@ string formats. We use these to manage the standard input and output
 connections in language servers.
 """
 
-
 import abc
 import asyncio
 import contextlib

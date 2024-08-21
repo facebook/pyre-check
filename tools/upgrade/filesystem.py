@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import ast as builtin_ast
 import functools
 import logging

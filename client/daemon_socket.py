@@ -10,7 +10,6 @@ This module has logic defining the paths at which Pyre daemons may be
 listening.
 """
 
-
 from __future__ import annotations
 
 import hashlib

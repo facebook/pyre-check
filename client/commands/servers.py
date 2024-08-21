@@ -11,7 +11,6 @@ running servers (i.e. daemons - background backend processes available for
 incremental checks and queries, including from language servers).
 """
 
-
 import dataclasses
 import json
 import logging

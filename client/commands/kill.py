@@ -11,7 +11,6 @@ shut down a pyre daemon using `pyre stop`, but if the daemon is not
 responsive `pyre kill` will kill it right away.
 """
 
-
 import logging
 import os
 import shutil

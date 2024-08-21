@@ -17,7 +17,6 @@ from ..language_server import protocol as lsp
 
 @dataclasses.dataclass(frozen=True)
 class SourceCodeContext:
-
     MAX_LINES_BEFORE_OR_AFTER: ClassVar[int] = 2500
 
     @staticmethod

@@ -14,7 +14,6 @@ This module also has become something of a dumping ground for filename
 constants that are not directly related to directory searching.
 """
 
-
 from __future__ import annotations
 
 import enum

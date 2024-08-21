@@ -16,7 +16,6 @@ Pyre daemon. Context on this:
   the client.
 """
 
-
 import dataclasses
 import json
 from typing import Optional, Union

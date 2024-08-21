@@ -593,7 +593,6 @@ class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class PyreHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-
     value: Optional[str] = None
     docstring: Optional[str] = None
 

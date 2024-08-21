@@ -15,7 +15,6 @@ https://pyre-check.org/docs/configuration/
 for details.
 """
 
-
 import dataclasses
 import enum
 import logging

@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import itertools
 import json
 import logging
@@ -725,7 +724,7 @@ def _error_to_fixme_comment_lines(
 
 
 def _build_error_map(
-    errors: Iterable[Dict[str, Any]]
+    errors: Iterable[Dict[str, Any]],
 ) -> Dict[int, List[Dict[str, str]]]:
     error_map = defaultdict(lambda: [])
     for error in errors:

@@ -171,7 +171,6 @@ b : int = 1 + 1
         self.assertEqual(results, [])
 
     def test_booleans(self) -> None:
-
         test_code: str = """
 def foo() -> None:
     if True:

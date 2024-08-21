@@ -12,7 +12,6 @@ for all of the subcommands of pyre such as `pyre check` and
 library code used by several commands.
 """
 
-
 from . import (  # noqa F401
     analyze,
     check,

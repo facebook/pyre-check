@@ -9,7 +9,6 @@
 Entrypoint for the `pyre analyze` command, which runs Pysa analysis.
 """
 
-
 import contextlib
 import dataclasses
 import json
@@ -414,7 +413,6 @@ def run(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-
     start_command = configuration.get_server_start_command(download_if_needed=True)
     if start_command is None:
         raise configuration_module.InvalidConfiguration(

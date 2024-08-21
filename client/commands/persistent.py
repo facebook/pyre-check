@@ -22,7 +22,6 @@ The main responsibilities of this class is to:
 
 """
 
-
 from __future__ import annotations
 
 import asyncio
@@ -79,9 +78,7 @@ def process_initialize_request(
     )
 
 
-READY_MESSAGE: str = (
-    "Pyre has completed an incremental check and is currently watching on further source changes."
-)
+READY_MESSAGE: str = "Pyre has completed an incremental check and is currently watching on further source changes."
 
 
 class PyrePersistentSubscriptionResponseParser(

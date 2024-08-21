@@ -410,7 +410,6 @@ class TypeErrorSuppression(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
 
 class SuppressionCollector(VisitorWithPositionData):
-
     suppression_regexes: Dict[SuppressionKind, str] = {
         SuppressionKind.PYRE_FIXME: r".*# *pyre-fixme(\[(\d* *,? *)*\])?",
         SuppressionKind.PYRE_IGNORE: r".*# *pyre-ignore(\[(\d* *,? *)*\])?",

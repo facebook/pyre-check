@@ -16,7 +16,6 @@ socket connections and using the better-typed interface to
 code-navigation deamons.
 """
 
-
 import enum
 import json
 import logging

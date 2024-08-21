@@ -14,7 +14,6 @@ and start one if none is found, then ask for type errors and display
 them in the same format as `pyre check` would.
 """
 
-
 import dataclasses
 import enum
 import json

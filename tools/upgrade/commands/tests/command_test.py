@@ -167,4 +167,4 @@ class CommandTest(unittest.TestCase):
                 parser.parse_args([directory]).error_source, ErrorSource.GENERATE
             )
             with self.assertRaises(SystemExit):
-                parser.parse_args([directory, "--error-source", "foo"]).error_source,
+                (parser.parse_args([directory, "--error-source", "foo"]).error_source,)

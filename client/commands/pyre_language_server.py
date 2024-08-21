@@ -365,7 +365,7 @@ def log_exceptions_factory(
     operation: str,
 ) -> LanguageServerDecorator:
     def log_exceptions(
-        func: Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]
+        func: Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]],
     ) -> Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]:
         async def new_func(
             self_: PyreLanguageServer, *args: P.args, **kwargs: P.kwargs
@@ -427,9 +427,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         parameters: Dict[str, object],
         activity_key: Optional[Dict[str, object]],
     ) -> None:
-        should_write_telemetry = (
-            self.server_state.server_options.language_server_features.telemetry.is_enabled()
-        )
+        should_write_telemetry = self.server_state.server_options.language_server_features.telemetry.is_enabled()
         if should_write_telemetry:
             parameters = dict(parameters)
             parameters["project_identifier"] = (
@@ -762,9 +760,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         did_change_timer = timer.Timer()
 
-        process_unsaved_changes = (
-            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
-        )
+        process_unsaved_changes = self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         error_message = None
         code_changes = str(
             "".join(
@@ -1392,14 +1388,16 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     symbol_search_response.data
                 )["workspaceSymbols"]
 
-        await lsp.write_json_rpc(
-            self.output_channel,
-            json_rpc.SuccessResponse(
-                id=request_id,
-                activity_key=activity_key,
-                result=raw_results,
+        (
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=raw_results,
+                ),
             ),
-        ),
+        )
 
         await self.write_telemetry(
             {
@@ -1450,14 +1448,16 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     document_formatting_response
                 )["listOfEdits"]
 
-                await lsp.write_json_rpc(
-                    self.output_channel,
-                    json_rpc.SuccessResponse(
-                        id=request_id,
-                        activity_key=activity_key,
-                        result=raw_results,
+                (
+                    await lsp.write_json_rpc(
+                        self.output_channel,
+                        json_rpc.SuccessResponse(
+                            id=request_id,
+                            activity_key=activity_key,
+                            result=raw_results,
+                        ),
                     ),
-                ),
+                )
 
             await self.write_telemetry(
                 {

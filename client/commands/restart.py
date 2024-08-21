@@ -11,7 +11,6 @@ is a single command that effectively runs `pyre stop` followed by
 `pyre incremental`.
 """
 
-
 import logging
 
 from .. import command_arguments, frontend_configuration, identifiers

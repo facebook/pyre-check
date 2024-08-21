@@ -16,7 +16,6 @@ TraceEvent tools like Perfetto or the Chrome tracevent tool to
 standard output.
 """
 
-
 import dataclasses
 import json
 import logging

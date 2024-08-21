@@ -10,7 +10,6 @@ This module describes a configuration option to modify how Pyre watches
 some files in a project.
 """
 
-
 import dataclasses
 from typing import Dict
 

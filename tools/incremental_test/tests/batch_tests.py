@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import json
 import unittest
 from dataclasses import asdict

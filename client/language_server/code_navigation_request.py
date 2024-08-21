@@ -236,7 +236,6 @@ class PyreDocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     def to_lsp_document_symbol(
         self,
     ) -> lsp.DocumentSymbol:
-
         children = []
         for child in self.children:
             res = child.to_lsp_document_symbol()

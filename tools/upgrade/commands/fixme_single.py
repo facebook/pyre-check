@@ -10,7 +10,6 @@ Fixes errors provided through stdin for a single Pyre sub project
 (directory with a .pyre_configuration.local).
 """
 
-
 import argparse
 import logging
 from pathlib import Path

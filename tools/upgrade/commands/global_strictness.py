@@ -12,6 +12,7 @@ For example, if a global configuration is strict and local configurations are no
 strict=False, remove strict=False, and set any unset local configurations to strict=True. Alternatively, running with strict=True will set the global configuration to
 strict, remove any configurations strict=True, and any unset configurations will be set to False.
 """
+
 from __future__ import annotations
 
 import argparse

@@ -9,7 +9,6 @@
 This module specifies how to configure the Python version in Pyre.
 """
 
-
 import dataclasses
 
 from . import exceptions

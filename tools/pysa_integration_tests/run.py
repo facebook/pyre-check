@@ -7,7 +7,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import argparse
 import logging
 import os

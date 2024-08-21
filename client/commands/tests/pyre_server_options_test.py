@@ -35,7 +35,6 @@ class FakeFrontendConfiguration(frontend_configuration.OpenSource):
 
 class ServerOptionsTest(testslide.TestCase):
     def test_create(self) -> None:
-
         language_server_features = features.LanguageServerFeatures()
         start_arguments = start.Arguments(
             backend_arguments.BaseArguments(

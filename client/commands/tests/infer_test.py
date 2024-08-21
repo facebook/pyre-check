@@ -57,7 +57,6 @@ class ArgumentTest(testslide.TestCase):
 
 
 class InferTest(testslide.TestCase):
-
     maxDiff = 2000
 
     def test_create_infer_arguments(self) -> None:
@@ -417,7 +416,6 @@ class ExpectedModuleAnnotationItem:
 
 
 class ModuleAnnotationTest(testslide.TestCase):
-
     maxDiff = 2000
 
     def test_module_annotations_from_infer_output(self) -> None:

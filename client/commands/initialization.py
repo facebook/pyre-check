@@ -9,6 +9,7 @@
 This module handles the initialization-related code for the LSP server, including the
 LSP handshake and the policy of starting a Pyre server.
 """
+
 from __future__ import annotations
 
 import asyncio

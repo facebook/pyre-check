@@ -12,7 +12,6 @@ This command will sanity check that Pysa taint models make sense for
 the given project.
 """
 
-
 import dataclasses
 import logging
 import os

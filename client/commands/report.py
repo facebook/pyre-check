@@ -10,6 +10,7 @@ This module provides the entrypoint for `pyre report`, a command to
 collect data about code and how well Pyre can understand its types.
 
 """
+
 from __future__ import annotations
 
 import dataclasses

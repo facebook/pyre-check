@@ -10,7 +10,6 @@ This module contains logic for `pyre init`, which interactively
 helps a user create a new pyre configuration.
 """
 
-
 import json
 import logging
 import os

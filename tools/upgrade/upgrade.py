@@ -9,7 +9,6 @@
 The pyre-upgrade command is composed of many subcommands related to upgrading a project or performing codemods. See the module-level documentation for each subcommand for more details.
 """
 
-
 import argparse
 import enum
 import logging

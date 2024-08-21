@@ -13,7 +13,6 @@ by the classic daemon. Client code must decode the `object`-typed
 of the response for any given query.
 """
 
-
 from __future__ import annotations
 
 import dataclasses

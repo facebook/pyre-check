@@ -10,6 +10,7 @@ Tools for pulling an upstream typeshed zip archive from github, cleaning out
 irrelevant data, and producing either a typeshed.Typeshed object or a
 directory.
 """
+
 from __future__ import annotations
 
 import io

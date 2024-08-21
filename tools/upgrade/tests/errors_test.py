@@ -247,7 +247,6 @@ class ErrorsTest(unittest.TestCase):
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
-
         self.assertEqual(
             _suppress_errors(
                 _normalize(input),

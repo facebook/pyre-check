@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Optional

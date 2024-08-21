@@ -16,7 +16,6 @@ Note that this module does not handle requests of every format (such as overlay 
 nor incremental updates), it only handles queries.
 """
 
-
 from __future__ import annotations
 
 import json

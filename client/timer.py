@@ -9,7 +9,6 @@
 This module defines a timer class we can use to track and report performance.
 """
 
-
 import sys
 import time
 from typing import Callable, Optional

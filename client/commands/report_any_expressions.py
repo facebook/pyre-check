@@ -16,6 +16,7 @@ There are two main causes of safety gaps:
 - The expression being passed to a function whose parameters lack annotations.
 
 """
+
 from __future__ import annotations
 
 import dataclasses

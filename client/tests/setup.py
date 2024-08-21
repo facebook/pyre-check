@@ -12,7 +12,6 @@ files and directories exist and controlling the working directory
 from which tests are run.
 """
 
-
 import asyncio
 import contextlib
 import functools

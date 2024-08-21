@@ -12,7 +12,6 @@ TaintConfigurationError and ModelVerificationError represent problems
 validating a Pysa run.
 """
 
-
 import dataclasses
 import json
 import logging
@@ -375,9 +374,8 @@ def errors_to_sarif(
         Sequence[Error],
         Sequence[TaintConfigurationError],
         Sequence[ModelVerificationError],
-    ]
+    ],
 ) -> Dict[str, Any]:
-
     results: List[Dict[str, Any]] = [error.to_sarif() for error in errors]
     rules: List[Dict[str, Any]] = [error.get_sarif_rule() for error in errors]
     return {

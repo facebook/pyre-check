@@ -100,10 +100,12 @@ class FrontendConfigurationTest(testslide.TestCase):
             ).get_server_start_command()
             self.assertIsNotNone(start_command)
 
-            self.assertEqual(
-                start_command.get_pyre_binary_location(),
-                "foo",
-            ),
+            (
+                self.assertEqual(
+                    start_command.get_pyre_binary_location(),
+                    "foo",
+                ),
+            )
 
     def test_get_binary_cannot_auto_determine(self) -> None:
         self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()

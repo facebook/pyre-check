@@ -9,7 +9,6 @@
 This module is used to configure remote logging logic for the Python client.
 """
 
-
 import json
 import logging
 import os

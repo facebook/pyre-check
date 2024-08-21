@@ -10,7 +10,6 @@ This module provides some utility code for handling exit status and
 uncaught exceptions in Pyre commands.
 """
 
-
 import enum
 import signal
 

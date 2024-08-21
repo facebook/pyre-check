@@ -12,7 +12,6 @@ cann connect to a socket and wait (used when initializing new
 daemons).
 """
 
-
 import dataclasses
 import enum
 import json

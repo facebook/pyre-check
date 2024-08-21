@@ -79,17 +79,11 @@ def get_language_server_empty_reason(
         if query_source == DaemonQuerierSource.GLEAN_INDEXER:
             return PyreLanguageServerEmptyReason.PYRE_DAEMON_ERROR_AND_FELLBACK_TO_GLEAN
         else:
-            return (
-                PyreLanguageServerEmptyReason.PYRE_DAEMON_ERROR_AND_FAILED_TO_FALLBACK_TO_GLEAN
-            )
+            return PyreLanguageServerEmptyReason.PYRE_DAEMON_ERROR_AND_FAILED_TO_FALLBACK_TO_GLEAN
     else:
         # We assume that Pyre daemon always returns an empty reason or error when it returns an empty response, this means that
         # if Pyre daemon doesn't return an empty, then it means it's unavailable: https://fburl.com/code/a2ilz0iw
         if query_source == DaemonQuerierSource.GLEAN_INDEXER:
-            return (
-                PyreLanguageServerEmptyReason.PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN
-            )
+            return PyreLanguageServerEmptyReason.PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN
         else:
-            return (
-                PyreLanguageServerEmptyReason.PYRE_DAEMON_UNAVAILABLE_AND_FAILED_TO_FALLBACK_TO_GLEAN
-            )
+            return PyreLanguageServerEmptyReason.PYRE_DAEMON_UNAVAILABLE_AND_FAILED_TO_FALLBACK_TO_GLEAN

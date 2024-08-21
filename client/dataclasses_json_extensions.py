@@ -12,7 +12,6 @@ configurations for translating between json field names and class field
 names.
 """
 
-
 import functools
 from typing import Mapping
 

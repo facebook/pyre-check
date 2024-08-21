@@ -11,7 +11,6 @@ configuration logic, which allows Pyre to handle a project differently
 depending on the operating system.
 """
 
-
 import dataclasses
 import platform
 from typing import Dict, Generic, Optional, TypeVar

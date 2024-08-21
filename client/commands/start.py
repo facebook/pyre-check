@@ -15,7 +15,6 @@ dedicated start command, particularly to start a deamon that we can later
 query.
 """
 
-
 import contextlib
 import dataclasses
 import datetime

@@ -14,7 +14,6 @@ particular the "Commands and Groups" subsection to understand
 how click works with subcommands.
 """
 
-
 import json
 import logging
 import os

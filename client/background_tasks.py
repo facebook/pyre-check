@@ -12,7 +12,6 @@ green thread, which exposes hooks to start, stop, and query whether
 it is running but is otherwise opaque to the rest of the program).
 """
 
-
 import abc
 import asyncio
 import logging

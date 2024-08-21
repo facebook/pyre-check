@@ -12,7 +12,6 @@ from the client and daemon, recent repository history) and prints it to
 standard output so that it can be uploaded in a bug report.
 """
 
-
 import dataclasses
 import datetime
 import itertools

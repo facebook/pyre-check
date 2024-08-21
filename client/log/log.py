@@ -11,7 +11,6 @@ including file tailing logic used to forward logs from the backend
 and pretty-printing goodies such as the color-coding of interactive logs.
 """
 
-
 import contextlib
 import copy
 import io

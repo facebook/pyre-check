@@ -12,7 +12,6 @@ differs from fixme_single in the sense that this runs over a whole repository
 sub-projects with .pyre_configuration.local files.
 """
 
-
 import argparse
 import logging
 

@@ -11,7 +11,6 @@ language server - for example, the location of the backend binary and
 which features to enable.
 """
 
-
 from __future__ import annotations
 
 import dataclasses
@@ -94,7 +93,6 @@ class PyreServerOptions:
         language_server_features: features.LanguageServerFeatures,
         unsaved_changes_only: bool = False,
     ) -> PyreServerOptions:
-
         start_arguments = start.create_server_arguments(
             configuration,
             start_command_argument,

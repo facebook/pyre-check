@@ -9,6 +9,7 @@
 This module provides libcst transform classes for applying various
 stub patches to open-source typeshed stubs.
 """
+
 from __future__ import annotations
 
 from typing import Callable, Iterable, Sequence
@@ -353,7 +354,6 @@ def run_actions_in_sequence(
 
 
 class PatchTransform(libcst.codemod.ContextAwareTransformer):
-
     CONTEXT_KEY = "PatchTransform"
 
     actions_by_parent: dict[str, list[patch_specs.Action]]

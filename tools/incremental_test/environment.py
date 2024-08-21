@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import logging
 import subprocess
 from abc import ABC, abstractmethod

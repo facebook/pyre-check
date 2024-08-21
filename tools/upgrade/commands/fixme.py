@@ -14,7 +14,6 @@ If your project contains sub-projects (.pyre_configuration.local files), then
 consider using fixme_single or fixme_all instead.
 """
 
-
 import argparse
 import logging
 from typing import Optional

@@ -11,7 +11,6 @@ gathering document symbols for a language server. We traverse the
 output of `ast.parse` to do this.
 """
 
-
 import ast
 import dataclasses
 from typing import List, Optional, Union
@@ -33,7 +32,7 @@ class SymbolInfo:
 
 
 def _node_to_symbol(
-    node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef]
+    node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef],
 ) -> DocumentSymbol:
     node_is_class_def = isinstance(node, ast.ClassDef)
     symbol_info = SymbolKind.CLASS if node_is_class_def else SymbolKind.FUNCTION

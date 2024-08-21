@@ -22,7 +22,6 @@ the `--noninteractive` flag will determine the
 determine the `StartArguments.terminal` field.
 """
 
-
 from __future__ import annotations
 
 import enum

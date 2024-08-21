@@ -11,7 +11,6 @@ shutdown of a running Pyre daemon by sending it a shutdown request
 via a socket connection.
 """
 
-
 import logging
 from pathlib import Path
 
