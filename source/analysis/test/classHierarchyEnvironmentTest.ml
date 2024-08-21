@@ -26,7 +26,7 @@ let test_simple_registration context =
             List.map
               ~f:(fun name -> { ClassHierarchy.Target.target = name; arguments = [] })
               expected_edges;
-          generic_base = None;
+          parameters_as_generic_base_arguments = None;
         }
     in
     assert_equal
@@ -64,11 +64,16 @@ let test_parents_and_inferred_generic_base context =
         arguments = List.map concretes ~f:(fun single -> Type.Argument.Single single);
       }
     in
+    let create_argument_list (_, concretes) =
+      List.map concretes ~f:(fun single -> Type.Argument.Single single)
+    in
+
     let expected =
       Some
         {
           ClassHierarchy.Edges.parents = List.map expected_parents ~f:create_target;
-          generic_base = Option.map expected_inferred_generic_base ~f:create_target;
+          parameters_as_generic_base_arguments =
+            Option.map expected_inferred_generic_base ~f:create_argument_list;
         }
     in
     assert_equal
@@ -325,7 +330,7 @@ let test_updates context =
                   ClassHierarchy.Edges.parents =
                     List.map expectation ~f:(fun name ->
                         { ClassHierarchy.Target.target = name; arguments = [] });
-                  generic_base = None;
+                  parameters_as_generic_base_arguments = None;
                 })
           in
           ClassHierarchyEnvironment.ReadOnly.get_edges read_only ~dependency class_name

@@ -66,7 +66,7 @@ end
 module Edges : sig
   type t = {
     parents: Target.t list;
-    generic_base: Target.t option;
+    parameters_as_generic_base_arguments: Type.Argument.t list option;
   }
   [@@deriving sexp, compare]
 end

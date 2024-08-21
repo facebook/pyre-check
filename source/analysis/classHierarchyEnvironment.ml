@@ -189,7 +189,7 @@ module IncomingDataComputation = struct
           |> deduplicate
           |> remove_extra_edges_to_object
         in
-        let generic_base =
+        let parameters_as_generic_base_arguments =
           let open Option in
           let parsed_bases =
             List.map
@@ -200,10 +200,9 @@ module IncomingDataComputation = struct
           in
           compute_generic_base parsed_bases
           >>= fun base ->
-          extract_supertype (Type.expression base)
-          >>= fun (name, arguments) -> Some { ClassHierarchy.Target.target = name; arguments }
+          extract_supertype (Type.expression base) >>= fun (_, arguments) -> Some arguments
         in
-        Some { ClassHierarchy.Edges.parents; generic_base }
+        Some { ClassHierarchy.Edges.parents; parameters_as_generic_base_arguments }
 end
 
 module OutgoingDataComputation = struct
