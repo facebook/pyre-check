@@ -2491,6 +2491,33 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ( Type.parametric name (List.concat list_of_arguments),
                     List.filter_map errors ~f:Fn.id @ sofar )
               | None when not replace_unbound_parameters_with_any ->
+                  (* There is *exactly* one place in Pyre where
+                     `replace_unbound_parameters_with_any` would be set to `false`, which is when we
+                     are resolving a parametric invocation of a type alias.
+
+                     In this case, if the alias itself is structually invalid (so that the zip
+                     fails), then we treat the alias "as if" it were a stand in for the target
+                     directly, with the same type vars.
+
+                     The purpose of this is to handle aliases that are bare names of generic
+                     targets, e.g. `MyDictAlias = dict`. Aliases like this are implicitly generic;
+                     they have no type variables but they inherit the generic structure of their
+                     target, and the `Type.create` code wants to resolve the type arguments of the
+                     alias as if they were type arguments of the target itself, e.g. treat
+                     `MyDictAlias[int, str]` as if it were `dict[int, str]`.
+
+                     That scenario hits this branch, because when we zip the type arguments of the
+                     bare `dict` (an empty list) against the type parameters of `dict` (which has
+                     two type parameters) the zip fails. So if the
+                     `replace_unbound_parameters_with_any` flag is set, we just return the
+                     parameterized target `dict[K, V]`, which allows `Type.create` to match `int` to
+                     `K` and `str` to `V`.
+
+                     Note that because we are doing this implicitly via a zip failure rather than
+                     explicitly when the alias is a primitive form, we will also treat a
+                     structurally invalid alias the same way. In other words, `OopsDictAlias =
+                     dict[str, int, float]` will follow exactly the same code path as `MyDictAlias =
+                     dict`. This is probably unintended. *)
                   Type.parametric name (List.map generics ~f:Type.Variable.to_argument), sofar
               | None ->
                   let annotation, expected_parameter_count, can_accept_more_parameters =

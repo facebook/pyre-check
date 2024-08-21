@@ -4731,14 +4731,30 @@ let resolve_aliases ~aliases annotation =
                  We consider generic over the type vars as deduplicated an in order of appearance
                  (in-order tree traversal) in the alias.
 
-                 As an example, consider analyzing ``` T = TypeVar("T") MyDictAlias = dict[T, T] x:
-                 MyDictAlias[int] = {} ``` When we are processing the annotation on `x` we treat the
-                 alias as generic do the following: - note that the form is `Parametric` with one
-                 type param (`given_arguments` is [int]) - look up the type alias, and note that its
-                 tree representation has two free type vars `T` and `T` - deduplicate the type vars
-                 preserving the order, in this gase giving us just [T] - pair the type vars with the
-                 arguments in `given_arguments` and instantiate to get that `x` has type `dict[int,
-                 int]`. *)
+                 As an example, consider analyzing ``` T = TypeVar("T"); MyDictAlias = dict[T, T];
+                 x: MyDictAlias[int] = {} ``` When we are processing the annotation on `x` we treat
+                 the alias as generic do the following: - note that the form is `Parametric` with
+                 one type param (`given_arguments` is [int]) - look up the type alias, and note that
+                 its tree representation has two free type vars `T` and `T` - deduplicate the type
+                 vars preserving the order, in this gase giving us just [T] - pair the type vars
+                 with the arguments in `given_arguments` and instantiate to get that `x` has type
+                 `dict[int, int]`.
+
+                 In addition to handling explicitly generic type aliases, Pyre also treats type
+                 aliases whose targets are generic as implicitly generic, e.g. `MyDictAlias = dict`
+                 is implicitly generic with the same type arguments as `dict` itself. The reason we
+                 pass `replace_unbound_parameters_with_any:(Some false)` here is because if we did
+                 not, then in some cases the `aliases` function would eagerly sanitize the bare
+                 `dict` to `dict[Any, Any]`, thereby preventing us from treating it as implicitly
+                 generic.
+
+                 One thing to note about this logic is that if the type arguments on the alias
+                 itself are structurally invalid (e.g. MyDictAlias[int, str, float]) then the zip
+                 will fail and we'll return the alias target (in this case dict[K, V] directly,
+                 which means we're returning a `Type.t` with unbound type variables. This is
+                 probably a bug, although the semantics of Pyre's physical modeling of type
+                 variables is complex enough that I cannot say for certain whether this causes
+                 actual problems. *)
               let resolved =
                 match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
                 | None -> annotation
