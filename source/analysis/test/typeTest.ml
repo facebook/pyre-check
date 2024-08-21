@@ -485,7 +485,7 @@ let test_create_type_operator _ =
           (Concrete
              [
                Type.Variable t_variable;
-               Type.Parametric { name = "Foo"; parameters = [Type.Argument.Single Type.integer] };
+               Type.Parametric { name = "Foo"; arguments = [Type.Argument.Single Type.integer] };
                Type.Callable.create
                  ~parameters:
                    (Type.Callable.Defined
@@ -1432,7 +1432,7 @@ let test_type_parameters_for_bounded_tuple_union _ =
       ~cmp:[%equal: Type.t list option]
       ~printer:[%show: Type.t list option]
       expected
-      (Type.type_parameters_for_bounded_tuple_union actual)
+      (Type.type_arguments_for_bounded_tuple_union actual)
   in
   assert_type_parameters Type.integer None;
   assert_type_parameters
@@ -1979,7 +1979,7 @@ let test_visit _ =
       let new_state, transformed_annotation =
         match annotation with
         | Type.Primitive primitive -> state ^ primitive, annotation
-        | Type.Parametric { name; parameters } -> "", Type.parametric (name ^ state) parameters
+        | Type.Parametric { name; arguments } -> "", Type.parametric (name ^ state) arguments
         | _ -> state, annotation
       in
       { Type.VisitWithTransform.transformed_annotation; new_state }
@@ -2008,7 +2008,7 @@ let test_visit _ =
       let new_state, transformed_annotation =
         match annotation with
         | Type.Primitive primitive -> "", Type.Primitive (state ^ primitive)
-        | Type.Parametric { name; parameters } -> state ^ name, Type.parametric name parameters
+        | Type.Parametric { name; arguments } -> state ^ name, Type.parametric name arguments
         | _ -> state, annotation
       in
       { Type.VisitWithTransform.transformed_annotation; new_state }
@@ -3265,14 +3265,14 @@ let test_zip_variables_with_parameters _ =
       | _ -> None
     in
     let variables = make_variables ~aliases in
-    let parameters =
+    let arguments =
       match
         Type.create
           ~variables
           ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true instantiation)
       with
-      | Type.Parametric { parameters; _ } -> parameters
+      | Type.Parametric { arguments; _ } -> arguments
       | _ -> failwith "expected Parametric"
     in
     let variables =
@@ -3282,8 +3282,8 @@ let test_zip_variables_with_parameters _ =
           ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true generic_class)
       with
-      | Type.Parametric { parameters; _ } ->
-          let variables = List.map ~f:Type.Argument.to_variable parameters |> Option.all in
+      | Type.Parametric { arguments; _ } ->
+          let variables = List.map ~f:Type.Argument.to_variable arguments |> Option.all in
           Option.value_exn variables
       | _ -> failwith "expected Parametric"
     in
@@ -3291,7 +3291,7 @@ let test_zip_variables_with_parameters _ =
       ~printer:[%show: Type.Variable.variable_zip_result list option]
       ~cmp:[%equal: Type.Variable.variable_zip_result list option]
       expected
-      (Type.Variable.zip_variables_with_parameters_including_mismatches ~parameters variables)
+      (Type.Variable.zip_variables_with_arguments_including_mismatches ~arguments variables)
   in
   assert_zipped
     ~generic_class:"Generic[T, T2]"
@@ -3300,11 +3300,11 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair = Type.Variable.TypeVarPair (t2_variable, Type.string);
-           received_parameter = Single Type.string;
+           received_argument = Single Type.string;
          };
        ]);
   assert_zipped ~generic_class:"Generic[T, T2]" ~instantiation:"Foo[int]" None;
@@ -3317,13 +3317,13 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
                (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
-           received_parameter =
+           received_argument =
              CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
        ]);
@@ -3337,12 +3337,12 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.Any);
-           received_parameter =
+           received_argument =
              CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
            variable_pair = Type.Variable.ParamSpecPair (tparams_variable, Undefined);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
        ]);
   (* This is pretty unintuitive, but PEP 612 dictates it. *)
@@ -3359,7 +3359,7 @@ let test_zip_variables_with_parameters _ =
                    (Type.Callable.prepend_anonymous_parameters
                       ~head:[Type.integer; Type.string]
                       ~tail:[]) );
-           received_parameter =
+           received_argument =
              CallableParameters
                (Defined
                   (Type.Callable.prepend_anonymous_parameters
@@ -3374,7 +3374,7 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
@@ -3385,7 +3385,7 @@ let test_zip_variables_with_parameters _ =
                      PositionalOnly { index = 0; annotation = Type.string; default = false };
                      PositionalOnly { index = 1; annotation = Type.bool; default = false };
                    ] );
-           received_parameter =
+           received_argument =
              CallableParameters
                (Defined
                   [
@@ -3405,7 +3405,7 @@ let test_zip_variables_with_parameters _ =
            variable_pair =
              Type.Variable.TypeVarTuplePair
                (ts_variable, Concatenation (Type.OrderedTypes.Concatenation.create ts_variable));
-           received_parameter =
+           received_argument =
              Single (Tuple (Concatenation (Type.OrderedTypes.Concatenation.create ts_variable)));
          };
        ]);
@@ -3416,11 +3416,11 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair = Type.Variable.TypeVarTuplePair (ts_variable, Concrete []);
-           received_parameter = Single (Tuple (Concrete []));
+           received_argument = Single (Tuple (Concrete []));
          };
        ]);
   assert_zipped
@@ -3430,13 +3430,13 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair
                (ts_variable, Concrete [Type.string; Type.integer; Type.bool]);
-           received_parameter = Single (Tuple (Concrete [Type.string; Type.integer; Type.bool]));
+           received_argument = Single (Tuple (Concrete [Type.string; Type.integer; Type.bool]));
          };
        ]);
   assert_zipped
@@ -3446,7 +3446,7 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
@@ -3457,7 +3457,7 @@ let test_zip_variables_with_parameters _ =
                       ~prefix:[Type.string]
                       ~suffix:[Type.bool]
                       ts2_variable) );
-           received_parameter =
+           received_argument =
              Single
                (Tuple
                   (Concatenation
@@ -3468,7 +3468,7 @@ let test_zip_variables_with_parameters _ =
          };
          {
            variable_pair = Type.Variable.TypeVarPair (t2_variable, Type.string);
-           received_parameter = Single Type.string;
+           received_argument = Single Type.string;
          };
        ]);
   (* Mix of unary, variadic, and ParamSpec. *)
@@ -3479,19 +3479,19 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
                (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
-           received_parameter =
+           received_argument =
              CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair (ts_variable, Concrete [Type.string; Type.bool]);
-           received_parameter = Single (Tuple (Concrete [Type.string; Type.bool]));
+           received_argument = Single (Tuple (Concrete [Type.string; Type.bool]));
          };
        ]);
   assert_zipped
@@ -3501,13 +3501,13 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.integer);
-           received_parameter = Single Type.integer;
+           received_argument = Single Type.integer;
          };
          {
            variable_pair =
              Type.Variable.ParamSpecPair
                (tparams_variable, Type.Callable.FromParamSpec (empty_head tparams_variable));
-           received_parameter =
+           received_argument =
              CallableParameters (Type.Variable.ParamSpec.self_reference tparams_variable);
          };
          {
@@ -3519,7 +3519,7 @@ let test_zip_variables_with_parameters _ =
                       ~prefix:[Type.string]
                       ~suffix:[]
                       ts2_variable) );
-           received_parameter =
+           received_argument =
              Single
                (Tuple
                   (Concatenation
@@ -3538,7 +3538,7 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.TypeVarPair (t_variable, Type.Any);
-           received_parameter =
+           received_argument =
              Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
          };
        ]);
@@ -3549,7 +3549,7 @@ let test_zip_variables_with_parameters _ =
        [
          {
            variable_pair = Type.Variable.ParamSpecPair (tparams_variable, Undefined);
-           received_parameter =
+           received_argument =
              Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable);
          };
        ]);
@@ -3561,7 +3561,7 @@ let test_zip_variables_with_parameters _ =
          {
            variable_pair =
              Type.Variable.TypeVarTuplePair (ts_variable, Type.Variable.TypeVarTuple.any);
-           received_parameter =
+           received_argument =
              Single
                (Type.parametric
                   Type.Variable.TypeVarTuple.synthetic_class_name_for_error
@@ -3603,24 +3603,24 @@ let test_zip_on_two_parameter_lists _ =
       | _ -> None
     in
     let variables = make_variables ~aliases in
-    let left_parameters =
+    let left_arguments =
       match
         Type.create
           ~variables
           ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true left)
       with
-      | Type.Parametric { parameters; _ } -> parameters
+      | Type.Parametric { arguments; _ } -> arguments
       | _ -> failwith "expected Parametric"
     in
-    let right_parameters =
+    let right_arguments =
       match
         Type.create
           ~variables
           ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true right)
       with
-      | Type.Parametric { parameters; _ } -> parameters
+      | Type.Parametric { arguments; _ } -> arguments
       | _ -> failwith "expected Parametric"
     in
     let variables =
@@ -3630,8 +3630,8 @@ let test_zip_on_two_parameter_lists _ =
           ~aliases:(resolved_aliases aliases)
           (parse_single_expression ~preprocess:true generic_class)
       with
-      | Type.Parametric { parameters; _ } ->
-          let variables = List.map ~f:Type.Argument.to_variable parameters |> Option.all in
+      | Type.Parametric { arguments; _ } ->
+          let variables = List.map ~f:Type.Argument.to_variable arguments |> Option.all in
           Option.value_exn variables
       | _ -> failwith "expected Parametric"
     in
@@ -3639,9 +3639,9 @@ let test_zip_on_two_parameter_lists _ =
       ~printer:[%show: (Type.Variable.pair * Type.Variable.pair) list option]
       ~cmp:[%equal: (Type.Variable.pair * Type.Variable.pair) list option]
       expected
-      (Type.Variable.zip_variables_with_two_parameter_lists
-         ~left_parameters
-         ~right_parameters
+      (Type.Variable.zip_variables_with_two_argument_lists
+         ~left_arguments
+         ~right_arguments
          variables)
   in
   assert_zipped
