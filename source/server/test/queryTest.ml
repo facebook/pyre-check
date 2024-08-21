@@ -2044,10 +2044,10 @@ let test_handle_query_with_build_system context =
   |> ScratchProject.test_server_with ~f:test_query
 
 
-let test_handle_query_pysa context =
+let test_handle_query_callees_with_location context =
   let queries_and_expected_responses =
     [
-      ( "callees_with_location(wait.bar)",
+      ( "callees_with_location(example.bar)",
         {|
         {
             "response": {
@@ -2055,7 +2055,7 @@ let test_handle_query_pysa context =
                     {
                         "locations": [
                             {
-                                "path":"wait.py",
+                                "path":"example.py",
                                 "start": {
                                     "line": 4,
                                     "column": 2
@@ -2067,14 +2067,14 @@ let test_handle_query_pysa context =
                             }
                         ],
                         "kind": "function",
-                        "target": "wait.await_me"
+                        "target": "example.await_me"
                     }
                 ]
             }
         }
         |}
       );
-      ( "callees_with_location(wait.does_not_exist)",
+      ( "callees_with_location(example.does_not_exist)",
         {|
         {
             "response": {
@@ -2083,6 +2083,31 @@ let test_handle_query_pysa context =
         }
         |}
       );
+    ]
+  in
+  assert_queries_with_local_root
+    ~context
+    ~sources:
+      [
+        ( "example.py",
+          {|
+               async def await_me() -> int: ...
+               async def bar():
+                 await_me()
+            |}
+        );
+      ]
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
+let test_handle_query_defines context =
+  let queries_and_expected_responses =
+    [
       ( "defines(test)",
         {|
         {
@@ -2931,7 +2956,9 @@ let () =
          "handle_query_types" >:: OUnitLwt.lwt_wrapper test_handle_types_query;
          "handle_query_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
-         "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
+         "handle_query_callees_with_location"
+         >:: OUnitLwt.lwt_wrapper test_handle_query_callees_with_location;
+         "handle_query_defines" >:: OUnitLwt.lwt_wrapper test_handle_query_defines;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
          "hover" >:: OUnitLwt.lwt_wrapper test_type_at_location;
          "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
