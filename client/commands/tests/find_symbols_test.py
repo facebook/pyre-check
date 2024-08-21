@@ -12,7 +12,6 @@ from typing import List, Optional
 import testslide
 
 from ...language_server import protocol as lsp
-
 from .. import find_symbols
 
 

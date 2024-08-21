@@ -25,10 +25,8 @@ from .. import (
     identifiers,
     log,
 )
-
 from ..language_server import connections
 from . import commands, daemon_query, no_daemon_query
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

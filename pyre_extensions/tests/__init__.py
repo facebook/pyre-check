@@ -7,5 +7,4 @@
 
 from . import basic_test, safe_json_test
 
-
 __all__ = ["safe_json_test", "basic_test"]

@@ -20,7 +20,6 @@ from ..errors import Errors, PartialErrorSuppression
 from ..filesystem import add_local_mode, LocalMode
 from ..repository import Repository
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

@@ -13,7 +13,6 @@ import testslide
 
 from ...language_server import connections
 from ...tests import setup
-
 from .. import server_event
 
 

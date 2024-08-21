@@ -21,7 +21,6 @@ from ..consolidate_nested_configurations import (
     ConsolidateNestedConfigurations,
 )
 
-
 repository = Repository()
 
 

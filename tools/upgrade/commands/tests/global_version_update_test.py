@@ -13,7 +13,6 @@ from ... import upgrade
 from ...repository import Repository
 from ..global_version_update import Configuration, GlobalVersionUpdate
 
-
 repository = Repository()
 
 

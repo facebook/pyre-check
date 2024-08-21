@@ -38,7 +38,6 @@ from .commands.support_sqlalchemy import SupportSqlalchemy
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .repository import Repository
 
-
 LOG: Logger = logging.getLogger(__name__)
 
 

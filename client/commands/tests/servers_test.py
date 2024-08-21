@@ -13,9 +13,7 @@ from pathlib import Path
 import testslide
 
 from ... import identifiers
-
 from ...tests import setup
-
 from .. import servers
 
 

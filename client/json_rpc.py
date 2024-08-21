@@ -17,7 +17,6 @@ from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
-
 JSON = Dict[str, Any]
 JSONRPC_VERSION = "2.0"
 

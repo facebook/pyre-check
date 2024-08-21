@@ -13,7 +13,6 @@ import testslide
 
 from ...language_server import connections, daemon_connection, protocol as lsp
 from ...tests import setup
-
 from .. import (
     pyre_server_options,
     server_state as state,

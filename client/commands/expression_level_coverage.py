@@ -28,7 +28,6 @@ from .. import (
     log,
     remote_logger,
 )
-
 from ..language_server import connections, protocol as lsp
 from . import commands, daemon_query
 

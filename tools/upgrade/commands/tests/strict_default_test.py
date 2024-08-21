@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ...filesystem import LocalMode
 from ...repository import Repository
-
 from .. import strict_default
 from ..strict_default import (
     _get_configuration_path,
@@ -21,7 +20,6 @@ from ..strict_default import (
     ErrorSuppressingCommand,
     StrictDefault,
 )
-
 
 repository = Repository()
 

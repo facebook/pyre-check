@@ -22,7 +22,6 @@ from ..repository import Repository
 from .command import Command, CommandArguments, ErrorSource
 from .fixme import Fixme
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

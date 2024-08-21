@@ -29,7 +29,6 @@ from typing_extensions import Final
 from .. import backend_arguments, command_arguments, frontend_configuration, identifiers
 from . import commands
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 PHASE_NAME: str = "phase_name"

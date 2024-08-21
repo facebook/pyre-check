@@ -13,11 +13,9 @@ the upstream typeshed. These patches are defined in toml files.
 import dataclasses
 import enum
 import pathlib
-
 from typing import ClassVar, List, Mapping, Optional, Union
 
 import toml
-
 from typing_extensions import TypeAlias
 
 

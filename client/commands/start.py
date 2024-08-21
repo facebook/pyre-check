@@ -49,7 +49,6 @@ from .. import (
 )
 from . import commands, server_event, stop
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 DAEMON_LOG_PATH_FORMAT: str = "server{flavor_suffix}.stderr.{time}"

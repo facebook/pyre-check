@@ -39,9 +39,7 @@ from ..daemon_querier import (
     PersistentDaemonQuerier,
     RemoteIndexBackedQuerier,
 )
-
 from ..server_state import ConnectionStatus
-
 from ..tests import server_setup
 
 _DaemonQuerier_Failure_Message = "Some kind of failure has occured"

@@ -32,7 +32,6 @@ from . import (
     frontend_configuration,
     identifiers,
 )
-
 from .configuration import search_path
 
 LOG: logging.Logger = logging.getLogger(__name__)

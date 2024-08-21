@@ -16,7 +16,6 @@ import logging
 from .. import command_arguments, frontend_configuration, identifiers
 from . import commands, incremental, stop
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

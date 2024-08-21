@@ -23,7 +23,6 @@ import click
 
 from . import command_arguments, log
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

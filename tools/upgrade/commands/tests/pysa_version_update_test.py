@@ -12,7 +12,6 @@ from unittest.mock import call, MagicMock, mock_open, patch
 from ...repository import Repository
 from ..pysa_version_update import Configuration, PysaVersionUpdate
 
-
 repository = Repository()
 
 

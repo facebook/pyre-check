@@ -25,7 +25,6 @@ from ..errors import Errors
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

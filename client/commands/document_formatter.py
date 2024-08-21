@@ -6,7 +6,6 @@
 # pyre-strict
 
 import abc
-
 from pathlib import Path
 
 from ..language_server import protocol as lsp

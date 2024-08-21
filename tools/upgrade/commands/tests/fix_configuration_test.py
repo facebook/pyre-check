@@ -16,7 +16,6 @@ from unittest.mock import MagicMock, patch
 from ...repository import Repository
 from ..fix_configuration import Configuration, FixConfiguration
 
-
 repository = Repository()
 
 

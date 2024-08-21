@@ -24,7 +24,6 @@ from typing_extensions import Final, Literal
 from .environment import Environment
 from .specification import Specification
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

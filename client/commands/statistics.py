@@ -34,7 +34,6 @@ from libcst.metadata import CodePosition, CodeRange
 from .. import command_arguments, coverage_data, frontend_configuration, log
 from . import commands
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

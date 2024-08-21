@@ -26,7 +26,6 @@ from typing import Dict, Generator, Iterable, Optional, Pattern, Sequence, TextI
 
 import click
 
-
 PERFORMANCE: int = 15
 PROMPT: int = 50
 SUCCESS: int = 60

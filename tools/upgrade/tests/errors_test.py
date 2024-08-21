@@ -26,7 +26,6 @@ from ..errors import (
     SkippingGeneratedFileException,
 )
 
-
 unittest.util._MAX_LENGTH = 200
 
 

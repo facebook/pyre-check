@@ -10,7 +10,6 @@
 import testslide
 
 from ...language_server import protocol as lsp
-
 from ..source_code_context import SourceCodeContext
 
 

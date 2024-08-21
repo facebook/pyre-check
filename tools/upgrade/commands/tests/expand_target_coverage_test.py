@@ -11,11 +11,9 @@ from pathlib import Path
 from unittest.mock import call, MagicMock, mock_open, patch
 
 from ...configuration import Configuration
-
 from ...repository import Repository
 from .. import expand_target_coverage
 from ..expand_target_coverage import ErrorSuppressingCommand, ExpandTargetCoverage
-
 
 repository = Repository()
 

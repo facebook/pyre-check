@@ -10,9 +10,7 @@ from pathlib import Path
 import testslide
 
 from ...language_server import protocol as lsp
-
 from .. import libcst_util
-
 
 test_root = "/test_root"
 test_path = "/test_root/test_project/test_module.py"

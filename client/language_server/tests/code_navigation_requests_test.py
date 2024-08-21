@@ -10,11 +10,9 @@ import json
 from pathlib import Path
 
 import testslide
-
 from marshmallow import ValidationError
 
 from ... import error
-
 from .. import code_navigation_request, protocol as lsp
 
 

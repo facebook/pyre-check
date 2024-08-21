@@ -19,7 +19,6 @@ from typing import Any, ContextManager, Dict, Iterator, List
 
 from .environment import Environment
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

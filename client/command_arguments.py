@@ -31,7 +31,6 @@ from typing import Any, Dict, List, Optional, Set
 
 from .identifiers import PyreFlavor
 
-
 TEXT: str = "text"
 JSON: str = "json"
 SARIF: str = "sarif"

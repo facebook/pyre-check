@@ -28,7 +28,6 @@ from .. import (
 )
 from . import commands, incremental, start
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

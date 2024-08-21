@@ -32,7 +32,6 @@ from .initialization import (
     InitializationSuccess,
 )
 from .persistent import process_initialize_request
-
 from .pyre_language_server import _wait_for_exit, read_lsp_request
 
 LOG: logging.Logger = logging.getLogger(__name__)

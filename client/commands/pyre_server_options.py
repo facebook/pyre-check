@@ -29,7 +29,6 @@ from .. import (
     log_lsp_event,
 )
 from ..language_server import features
-
 from . import commands, start
 
 PyreServerOptionsReader = Callable[[], "PyreServerOptions"]

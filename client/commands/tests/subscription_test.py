@@ -11,7 +11,6 @@ from pathlib import Path
 import testslide
 
 from ... import error
-
 from .. import incremental, subscription
 
 

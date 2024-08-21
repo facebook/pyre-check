@@ -13,7 +13,6 @@ import testslide
 
 from ... import coverage_data
 from ...tests import setup
-
 from .. import statistics
 
 

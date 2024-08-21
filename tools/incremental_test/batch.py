@@ -25,7 +25,6 @@ from .runner import (
 )
 from .specification import Specification
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

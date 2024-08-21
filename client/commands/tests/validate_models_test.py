@@ -12,7 +12,6 @@ from typing import Iterable
 import testslide
 
 from ... import error
-
 from ...tests import setup
 from .. import daemon_query, validate_models
 

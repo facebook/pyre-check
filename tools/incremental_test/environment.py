@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Container, Optional
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

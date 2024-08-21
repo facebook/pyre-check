@@ -28,7 +28,6 @@ from typing import AsyncIterator, Optional, Union
 from .. import dataclasses_json_extensions as json_mixins, log
 from . import connections
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

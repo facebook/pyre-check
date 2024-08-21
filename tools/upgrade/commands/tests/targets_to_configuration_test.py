@@ -25,7 +25,6 @@ from ..targets_to_configuration import (
     TargetsToConfiguration,
 )
 
-
 repository = Repository()
 
 

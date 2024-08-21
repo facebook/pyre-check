@@ -23,7 +23,6 @@ import libcst.matchers as libcst_matchers
 
 from . import ast, UserError
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 MAX_LINES_PER_FIXME: int = 4
 

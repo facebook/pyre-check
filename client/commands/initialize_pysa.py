@@ -20,7 +20,6 @@ from pathlib import Path
 
 from .. import log
 from ..find_directories import find_pysa_filters_directory
-
 from . import commands
 from .initialize import (
     get_configuration_and_path,

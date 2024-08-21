@@ -17,7 +17,6 @@ from ..daemon_socket import (
     get_md5_short,
     HASH_LENGTH,
 )
-
 from ..identifiers import get_project_identifier, PyreFlavor
 
 

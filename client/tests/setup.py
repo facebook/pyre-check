@@ -41,7 +41,6 @@ from ..find_directories import (
     LOCAL_CONFIGURATION_FILE,
 )
 
-
 TParams = ParameterSpecification("TParams")
 T = TypeVar("T")
 

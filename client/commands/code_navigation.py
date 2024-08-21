@@ -18,7 +18,6 @@ import asyncio
 import json
 import logging
 import traceback
-
 from typing import Dict, Optional
 
 from .. import (
@@ -48,7 +47,6 @@ from . import (
     subscription,
     type_error_handler,
 )
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

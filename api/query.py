@@ -18,7 +18,6 @@ from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, T
 
 from .connection import PyreConnection, PyreQueryResult
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

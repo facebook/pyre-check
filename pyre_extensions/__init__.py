@@ -14,7 +14,6 @@ from . import safe_json, tests, type_variable_operators
 from .generic import Generic
 from .refinement import assert_is_instance, none_throws, safe_cast
 
-
 __all__ = [
     "assert_is_instance",
     "DecoratorFactory",

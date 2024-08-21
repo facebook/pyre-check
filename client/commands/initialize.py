@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
 from .. import log
-
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,

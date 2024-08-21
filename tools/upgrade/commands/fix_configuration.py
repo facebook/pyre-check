@@ -24,7 +24,6 @@ from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
 from .consolidate_nested_configurations import consolidate_nested
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

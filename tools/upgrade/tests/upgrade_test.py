@@ -10,7 +10,6 @@ import unittest
 from .. import errors
 from ..repository import Repository
 
-
 repository = Repository()
 
 

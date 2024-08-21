@@ -14,7 +14,6 @@ directory.
 from __future__ import annotations
 
 import io
-
 import json
 import logging
 import pathlib
@@ -23,7 +22,6 @@ import urllib.request
 import zipfile
 
 from . import typeshed
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 LATEST: str = "LATEST"

@@ -40,7 +40,6 @@ from . import (
 )
 from .language_server import features as language_server_features
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 CLASSIC_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 

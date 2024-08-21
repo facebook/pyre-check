@@ -27,7 +27,6 @@ from typing import Any, List, NamedTuple, Optional
 
 from typing_extensions import TypedDict
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

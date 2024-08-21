@@ -18,7 +18,6 @@ from .. import daemon_socket, frontend_configuration, identifiers
 from ..language_server import connections
 from . import commands
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

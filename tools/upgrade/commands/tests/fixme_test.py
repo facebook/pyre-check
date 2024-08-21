@@ -13,7 +13,6 @@ from ...repository import Repository
 from ..command import ErrorSource, ErrorSuppressingCommand
 from ..fixme import Fixme
 
-
 repository = Repository()
 
 

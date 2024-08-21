@@ -15,14 +15,12 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from pyre_extensions import override
-
 from typing_extensions import Final
 
 from ..configuration import Configuration
 from ..filesystem import find_files
 from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

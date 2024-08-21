@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Optional, Set
 
 from ..client.language_server import code_navigation_request, daemon_connection
-
 from . import daemon_launcher
 
 

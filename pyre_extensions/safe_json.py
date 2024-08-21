@@ -12,7 +12,6 @@ from typing import Any, cast, Dict, IO, List, Type, TypeVar, Union
 import typing_extensions
 from typing_inspect import get_origin, is_optional_type
 
-
 if sys.version_info[:2] < (3, 7):
     from typing_inspect import get_last_args as get_args
 else:

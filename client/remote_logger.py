@@ -18,7 +18,6 @@ import time
 from enum import Enum
 from typing import Mapping, Optional
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

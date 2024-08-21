@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 import libcst as cst
-
 import testslide
 from libcst.metadata import MetadataWrapper
 
@@ -31,7 +30,6 @@ from ..coverage_data import (
     SuppressionKind,
     TypeErrorSuppression,
 )
-
 from ..tests import setup
 
 

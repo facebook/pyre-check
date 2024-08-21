@@ -22,7 +22,6 @@ from typing import Dict, List, Optional
 from typing_extensions import Final
 
 from .. import timer
-
 from ..language_server import protocol as lsp
 from . import pyre_server_options
 

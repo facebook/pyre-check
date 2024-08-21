@@ -14,7 +14,6 @@ from ...repository import Repository
 from ..command import ErrorSuppressingCommand
 from ..fixme_single import Configuration, FixmeSingle
 
-
 repository = Repository()
 
 

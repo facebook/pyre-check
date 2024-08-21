@@ -17,7 +17,6 @@ from typing import Any, Dict, Optional, Sequence
 
 from .batch import RunnerResult, Sample
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

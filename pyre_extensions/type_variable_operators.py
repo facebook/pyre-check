@@ -8,7 +8,6 @@ from typing import Any, Generic, TypeVar
 
 from .generic import GenericMeta
 
-
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 

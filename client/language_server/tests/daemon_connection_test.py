@@ -13,7 +13,6 @@ from typing import AsyncContextManager, Optional, Type, TypeVar
 import testslide
 
 from ...tests import setup
-
 from .. import connections
 from ..daemon_connection import attempt_send_async_raw_request, DaemonConnectionFailure
 

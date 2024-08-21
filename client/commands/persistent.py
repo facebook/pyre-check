@@ -28,7 +28,6 @@ import asyncio
 import logging
 import os
 import traceback
-
 from typing import Optional
 
 from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
@@ -45,9 +44,7 @@ from . import (
     type_error_handler,
 )
 from .initialization import async_try_initialize_loop, InitializationExit
-
 from .server_state import ServerState
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

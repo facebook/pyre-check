@@ -13,9 +13,7 @@ LSP handshake and the policy of starting a Pyre server.
 from __future__ import annotations
 
 import asyncio
-
 import json
-
 import logging
 import os
 import subprocess
@@ -37,7 +35,6 @@ from .. import (
 )
 from ..language_server import connections, protocol as lsp
 from ..language_server.protocol import InitializeParameters, InitializeResult
-
 from . import pyre_language_server, server_event, start
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -29,10 +29,8 @@ from .. import (
     frontend_configuration,
     identifiers,
 )
-
 from ..language_server import connections
 from . import commands, server_event, start
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

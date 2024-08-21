@@ -15,9 +15,7 @@ because it illustrates that this is the intermediary between the Language server
 from __future__ import annotations
 
 import abc
-
 import asyncio
-
 import dataclasses
 import functools
 import json
@@ -45,7 +43,6 @@ from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
 
 from .. import background_tasks, error, identifiers, json_rpc, log, timer
-
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import (
     commands,
@@ -55,7 +52,6 @@ from . import (
     server_state as state,
     type_error_handler,
 )
-
 from .daemon_querier import DaemonQueryFailure, GetDefinitionLocationsResponse
 from .document_formatter import AbstractDocumentFormatter
 from .pyre_language_server_error import (
@@ -63,11 +59,8 @@ from .pyre_language_server_error import (
     get_language_server_error,
     PyreLanguageServerError,
 )
-
 from .server_state import OpenedDocumentState
-
 from .source_code_context import SourceCodeContext
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5

@@ -22,7 +22,6 @@ from .. import daemon_socket, error as error_module, frontend_configuration, ide
 from ..language_server import connections
 from . import commands, daemon_query
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 

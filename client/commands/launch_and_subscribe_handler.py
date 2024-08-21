@@ -14,7 +14,6 @@ The abstract methods serve as the interfaces that users of the daemon handler mu
 from __future__ import annotations
 
 import abc
-
 import asyncio
 import logging
 import traceback
@@ -38,7 +37,6 @@ from .initialization import (
 )
 from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

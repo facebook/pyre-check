@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-
 error_code_to_fragment: dict[int, str] = {
     0: "0-unused-ignore",
     2: "2-missing-parameter-annotation",

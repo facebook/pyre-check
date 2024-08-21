@@ -13,13 +13,11 @@ listening.
 from __future__ import annotations
 
 import hashlib
-
 import tempfile
 from pathlib import Path
 from typing import Iterable
 
 from .identifiers import PyreFlavor
-
 
 # Socket path logic ---
 

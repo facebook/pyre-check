@@ -24,7 +24,6 @@ import sys
 from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional
 
-
 CONFIGURATION_FILE: str = ".pyre_configuration"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 CODENAV_CONFIGURATION_FILE: str = ".pyre_configuration.codenav"

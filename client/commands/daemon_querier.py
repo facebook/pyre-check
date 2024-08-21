@@ -23,7 +23,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error, timer
-
 from ..language_server import (
     code_navigation_request,
     daemon_connection,

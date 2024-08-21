@@ -16,7 +16,6 @@ from ...repository import Repository
 from ..command import ErrorSource, ErrorSuppressingCommand
 from ..fixme_all import Configuration, FixmeAll
 
-
 repository = Repository()
 
 

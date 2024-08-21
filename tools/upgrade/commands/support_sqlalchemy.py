@@ -27,7 +27,6 @@ from ..errors import PathsToErrors, PyreError, UserError
 from ..filesystem import path_exists
 from ..repository import Repository
 
-
 LOG: Logger = logging.getLogger(__name__)
 
 
