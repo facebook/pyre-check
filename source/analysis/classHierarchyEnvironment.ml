@@ -202,7 +202,16 @@ module IncomingDataComputation = struct
           >>= fun base ->
           extract_supertype (Type.expression base) >>= fun (_, arguments) -> Some arguments
         in
-        Some { ClassHierarchy.Edges.parents; parameters_as_generic_base_arguments }
+        let to_variable parameters =
+          match parameters with
+          | Some parameters -> List.map parameters ~f:Type.Argument.to_variable |> Option.all
+          | None -> None
+        in
+        Some
+          {
+            ClassHierarchy.Edges.parents;
+            parameters_as_generic_base_arguments = to_variable parameters_as_generic_base_arguments;
+          }
 end
 
 module OutgoingDataComputation = struct

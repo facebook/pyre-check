@@ -128,7 +128,7 @@ module Edges = struct
     (* The instantiation of `typing.Generic` that the class inherits from but is not necessarily
        listed explicitly as a parent. It needs to be stored separately because this class may not
        take part in MRO computation. *)
-    parameters_as_generic_base_arguments: Type.Argument.t list option;
+    parameters_as_generic_base_arguments: Type.Variable.t list option;
   }
   [@@deriving sexp, compare]
 end
@@ -143,12 +143,23 @@ let parents_of (module Handler : Handler) target =
   Handler.edges target >>| fun { parents; _ } -> parents
 
 
+let type_variables_to_arguments variables = List.map variables ~f:Type.Variable.to_argument
+
 let parents_and_generic_of_target (module Handler : Handler) target =
   Handler.edges target
   >>= fun { parents; parameters_as_generic_base_arguments; _ } ->
   match parameters_as_generic_base_arguments with
   | None -> Some parents
-  | Some base -> Some (List.append parents [{ target = generic_primitive; arguments = base }])
+  | Some parameters_as_variables ->
+      Some
+        (List.append
+           parents
+           [
+             {
+               target = generic_primitive;
+               arguments = type_variables_to_arguments parameters_as_variables;
+             };
+           ])
 
 
 let is_instantiated (module Handler : Handler) annotation =
