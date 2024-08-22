@@ -25,6 +25,25 @@ let test_type_variable_scoping =
              "Mutually recursive type variables [36]: Solving type variables for call `f1` led to \
               infinite recursion.";
            ];
+      (* TODO T194670955: reveal_type(a.func(42)) should return int once we update
+         attributeResolution *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            class A[T]:
+                def func(self, x: T) -> T:
+                    ...
+            a = A[int]()
+            reveal_type(a.func(42))
+            |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `T` is used but not defined in the current scope.";
+             "Missing global annotation [5]: Globally accessible variable `a` has no type \
+              specified.";
+             "Undefined attribute [16]: `A` has no attribute `__getitem__`.";
+             "Revealed type [-1]: Revealed type for `a.func(42)` is `typing.Any`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
