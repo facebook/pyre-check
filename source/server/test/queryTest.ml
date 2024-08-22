@@ -2074,6 +2074,27 @@ let test_handle_query_callees_with_location context =
         }
         |}
       );
+      ( "callees_with_location(example.Foo.method)",
+        {|
+        {
+            "response": {
+                "callees": [
+                  {
+                    "locations": [
+                      {
+                        "path": "example.py",
+                        "start": { "line": 11, "column": 13 },
+                        "stop": { "line": 11, "column": 16 }
+                      }
+                    ],
+                    "kind": "function",
+                    "target": "example.bar"
+                  }
+                ]
+            }
+        }
+        |}
+      );
       ( "callees_with_location(example.does_not_exist)",
         {|
         {
@@ -2094,6 +2115,13 @@ let test_handle_query_callees_with_location context =
                async def await_me() -> int: ...
                async def bar():
                  await_me()
+
+               class Foo:
+                   x: str = "x"
+                   print(x)
+
+                   async def method(self):
+                      await bar()
             |}
         );
       ]
