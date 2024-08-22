@@ -497,8 +497,7 @@ module StatementContext = struct
     (* [parse_function_signature] takes function type comment as string and parse it into a
        [FunctionSignature.t]. *)
     parse_function_signature: string -> (FunctionSignature.t, Error.t) Result.t;
-    (* [parent] holds the name of the immediate containing class of a statement. *)
-    parent: Ast.Identifier.t option;
+    parent: Ast.ModuleContext.t;
   }
 end
 
@@ -666,7 +665,10 @@ let process_function_type_comment
                 let annotation_count = List.length annotations in
                 (* For methods, it is allowed to have one extra `self` and `cls` parameter without
                    annotation. *)
-                if Option.is_some parent && Int.equal annotation_count (parameter_count - 1) then
+                if
+                  Ast.ModuleContext.is_class parent
+                  && Int.equal annotation_count (parameter_count - 1)
+                then
                   None :: annotations
                 else
                   annotations
@@ -732,7 +734,12 @@ let statement =
       ~type_params
       ~context:({ StatementContext.parent; _ } as context)
     =
-    let body = build_statements ~context:{ context with StatementContext.parent = None } body in
+    let body =
+      build_statements
+        ~context:
+          { context with StatementContext.parent = Ast.ModuleContext.create_function ~parent name }
+        body
+    in
     let comment_location =
       (* NOTE(grievejia): This is just a rough estimation on where type comment is. We don't know
          for sure since CPython does not preserve the positions of those comments. *)
@@ -763,6 +770,11 @@ let statement =
         raise (InternalError { Error.line; column; end_line; end_column; message })
     | Result.Ok (parameters, return_annotation) ->
         let signature =
+          let parent =
+            match parent with
+            | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+            | _ -> None
+          in
           {
             Define.Signature.name = Ast.Reference.create name;
             parameters;
@@ -770,7 +782,7 @@ let statement =
             return_annotation;
             async;
             generator = is_generator body;
-            parent = Option.map parent ~f:Ast.Reference.create;
+            parent;
             nesting_define = None;
             type_params;
           }
@@ -841,12 +853,19 @@ let statement =
         base_arguments
       |> List.map ~f:fst
     in
+    let body =
+      let { StatementContext.parent; _ } = context in
+      build_statements
+        ~context:
+          { context with StatementContext.parent = Ast.ModuleContext.create_class ~parent name }
+        body
+    in
     [
       Statement.Class
         {
           Class.name = Ast.Reference.create name;
           base_arguments;
-          body = build_statements ~context:{ context with StatementContext.parent = Some name } body;
+          body;
           decorators = decorator_list;
           top_level_unbound_names = [];
           type_params;
@@ -1143,7 +1162,13 @@ let parse_module ?enable_type_comment ~context text =
     in
     PyreAst.Parser.TaglessFinal.parse_module ?enable_type_comment ~context ~spec:specification text
     >>= fun module_builder ->
-    Ok (module_builder ~context:{ StatementContext.parse_function_signature; parent = None })
+    Ok
+      (module_builder
+         ~context:
+           {
+             StatementContext.parse_function_signature;
+             parent = Ast.ModuleContext.create_toplevel ();
+           })
   with
   | InternalError error -> Result.Error error
 
