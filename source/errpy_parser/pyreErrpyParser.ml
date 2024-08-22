@@ -61,10 +61,7 @@ let translate_boolop = function
 
 
 module StatementContext = struct
-  type t = {
-    (* [parent] holds the name of the immediate containing class of a statement. *)
-    parent: Ast.Identifier.t option;
-  }
+  type t = { parent: Ast.ModuleContext.t }
 end
 
 module SingleParameter = struct
@@ -619,6 +616,11 @@ and translate_statements
     in
     let create_function_definition ~async ~name ~args ~body ~decorator_list ~returns ~_type_comment =
       let signature =
+        let parent =
+          match parent with
+          | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+          | _ -> None
+        in
         {
           Define.Signature.name = Ast.Reference.create name;
           parameters = args;
@@ -626,7 +628,7 @@ and translate_statements
           return_annotation = returns;
           async;
           generator = is_generator body;
-          parent = Option.map parent ~f:Ast.Reference.create;
+          parent;
           nesting_define = None;
           type_params = [];
         }
@@ -801,20 +803,24 @@ and translate_statements
           in
           List.map assign.targets ~f:create_assign_for_target
       | Errpyast.FunctionDef function_def ->
+          let name = function_def.name in
+          let parent = Ast.ModuleContext.create_function ~parent name in
           create_function_definition
             ~async:false
-            ~name:function_def.name
+            ~name
             ~args:(translate_arguments function_def.args)
-            ~body:(translate_statements function_def.body ~context:{ parent = None })
+            ~body:(translate_statements function_def.body ~context:{ parent })
             ~decorator_list:(List.map ~f:translate_expression function_def.decorator_list)
             ~returns:(Option.map ~f:translate_expression function_def.returns)
             ~_type_comment:function_def.type_comment
       | Errpyast.AsyncFunctionDef async_function_def ->
+          let name = async_function_def.name in
+          let parent = Ast.ModuleContext.create_function ~parent name in
           create_function_definition
             ~async:true
             ~name:async_function_def.name
             ~args:(translate_arguments async_function_def.args)
-            ~body:(translate_statements async_function_def.body ~context:{ parent = None })
+            ~body:(translate_statements async_function_def.body ~context:{ parent })
             ~decorator_list:(List.map ~f:translate_expression async_function_def.decorator_list)
             ~returns:(Option.map ~f:translate_expression async_function_def.returns)
             ~_type_comment:async_function_def.type_comment
@@ -840,12 +846,17 @@ and translate_statements
             |> List.map ~f:fst
           in
           let name = class_def.name in
+          let body =
+            translate_statements
+              ~context:{ parent = Ast.ModuleContext.create_class ~parent name }
+              class_def.body
+          in
           [
             Statement.Class
               {
                 Class.name = Ast.Reference.create name;
                 base_arguments;
-                body = translate_statements class_def.body ~context:{ parent = Some name };
+                body;
                 decorators = List.map ~f:translate_expression class_def.decorator_list;
                 top_level_unbound_names = [];
                 type_params = [];
@@ -865,7 +876,9 @@ and translate_statements
 let translate_module errpy_module =
   match errpy_module with
   | Errpyast.Module { body; _ } ->
-      translate_statements body ~context:{ StatementContext.parent = None }
+      translate_statements
+        body
+        ~context:{ StatementContext.parent = Ast.ModuleContext.create_toplevel () }
   | _ -> []
 
 
