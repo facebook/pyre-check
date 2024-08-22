@@ -432,7 +432,7 @@ module ParserToAst = struct
     |> Node.create ~location
 
 
-  and convert_statement { Node.location; value } =
+  and convert_statement ~parent { Node.location; value } =
     let value =
       let open Statement in
       match value with
@@ -459,18 +459,23 @@ module ParserToAst = struct
             }
       | Break -> AstStatement.Statement.Break
       | Class { Class.name; base_arguments; body; decorators } ->
+          let parent = ModuleContext.create_class ~parent (Reference.show name) in
           AstStatement.Statement.Class
             {
               AstStatement.Class.name;
               base_arguments = List.map ~f:convert_argument base_arguments;
-              body = List.map ~f:convert_statement body;
+              body = List.map ~f:(convert_statement ~parent) body;
               decorators = List.map ~f:convert_expression decorators;
               top_level_unbound_names = [];
               type_params = [];
             }
       | Continue -> AstStatement.Statement.Continue
       | Define { Define.signature; body } ->
-          let body = List.map ~f:convert_statement body in
+          let body =
+            let { ParserStatement.Define.Signature.name; _ } = signature in
+            let parent = ModuleContext.create_function ~parent (Reference.show name) in
+            List.map ~f:(convert_statement ~parent) body
+          in
           let convert_signature
               {
                 ParserStatement.Define.Signature.name;
@@ -478,9 +483,13 @@ module ParserToAst = struct
                 decorators;
                 return_annotation;
                 async;
-                parent;
               }
             =
+            let parent =
+              match parent with
+              | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+              | _ -> None
+            in
             {
               AstStatement.Define.Signature.name;
               parameters = List.map ~f:convert_parameter parameters;
@@ -508,8 +517,8 @@ module ParserToAst = struct
             {
               AstStatement.For.target = convert_expression target;
               iterator = convert_expression iterator;
-              body = List.map ~f:convert_statement body;
-              orelse = List.map ~f:convert_statement orelse;
+              body = List.map ~f:(convert_statement ~parent) body;
+              orelse = List.map ~f:(convert_statement ~parent) orelse;
               async;
             }
       | Global identifiers -> AstStatement.Statement.Global identifiers
@@ -517,8 +526,8 @@ module ParserToAst = struct
           AstStatement.Statement.If
             {
               AstStatement.If.test = convert_expression test;
-              body = List.map ~f:convert_statement body;
-              orelse = List.map ~f:convert_statement orelse;
+              body = List.map ~f:(convert_statement ~parent) body;
+              orelse = List.map ~f:(convert_statement ~parent) orelse;
             }
       | Import { Import.from = None; imports } ->
           AstStatement.Statement.Import { AstStatement.Import.from = None; imports }
@@ -554,15 +563,15 @@ module ParserToAst = struct
             {
               AstStatement.Try.Handler.kind = kind >>| convert_expression;
               name;
-              body = List.map ~f:convert_statement body;
+              body = List.map ~f:(convert_statement ~parent) body;
             }
           in
           AstStatement.Statement.Try
             {
-              AstStatement.Try.body = List.map ~f:convert_statement body;
+              AstStatement.Try.body = List.map ~f:(convert_statement ~parent) body;
               handlers = List.map ~f:convert_handler handlers;
-              orelse = List.map ~f:convert_statement orelse;
-              finally = List.map ~f:convert_statement finally;
+              orelse = List.map ~f:(convert_statement ~parent) orelse;
+              finally = List.map ~f:(convert_statement ~parent) finally;
               handles_exception_group;
             }
       | With { With.items; body; async } ->
@@ -572,18 +581,23 @@ module ParserToAst = struct
           AstStatement.Statement.With
             {
               AstStatement.With.items = List.map ~f:convert_item items;
-              body = List.map ~f:convert_statement body;
+              body = List.map ~f:(convert_statement ~parent) body;
               async;
             }
       | While { While.test; body; orelse } ->
           AstStatement.Statement.While
             {
               AstStatement.While.test = convert_expression test;
-              body = List.map ~f:convert_statement body;
-              orelse = List.map ~f:convert_statement orelse;
+              body = List.map ~f:(convert_statement ~parent) body;
+              orelse = List.map ~f:(convert_statement ~parent) orelse;
             }
     in
     Node.create ~location value
+
+
+  let convert_module statements =
+    let parent = ModuleContext.create_toplevel () in
+    List.map statements ~f:(convert_statement ~parent)
 end
 
 let parse ?start_line ?start_column ?relative lines =
@@ -601,7 +615,7 @@ let parse ?start_line ?start_column ?relative lines =
   with
   | Result.Error _ as e -> e
   | Result.Ok statements -> (
-      try Result.Ok (List.map statements ~f:ParserToAst.convert_statement) with
+      try Result.Ok (ParserToAst.convert_module statements) with
       | Error error -> Result.Error { error with Error.file_name })
 
 

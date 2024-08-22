@@ -94,8 +94,6 @@ and Define : sig
       decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
-      (* The class owning the method. *)
-      parent: Reference.t option;
     }
   end
 
@@ -111,8 +109,6 @@ end = struct
       decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
-      (* The class owning the method. *)
-      parent: Reference.t option;
     }
   end
 

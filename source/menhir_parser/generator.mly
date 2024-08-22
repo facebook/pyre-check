@@ -659,34 +659,6 @@ compound_statement:
       let body_location, body = body in
       let location = { location with Location.stop = body_location.Location.stop } in
       let _, name = name in
-      let body =
-        let rec transform_toplevel_statements = function
-          | { Node.location; value = Statement.Define ({ Define.signature; _ } as define) } ->
-              let signature = { signature with Define.Signature.parent = Some name } in
-              {
-                Node.location;
-                value = Statement.Define { define with Define.signature };
-              }
-          | {
-              Node.location;
-              value = Statement.If {
-                If.test;
-                body;
-                orelse;
-              };
-            } ->
-              {
-                Node.location;
-                value = Statement.If {
-                  If.test;
-                  body = List.map ~f:transform_toplevel_statements body;
-                  orelse = List.map ~f:transform_toplevel_statements orelse;
-                };
-              }
-          | statement ->
-              statement
-        in
-        List.map ~f:transform_toplevel_statements body in
       {
         Node.location;
         value = Statement.Class {
@@ -782,7 +754,6 @@ compound_statement:
             decorators = [];
             return_annotation = annotation;
             async = false;
-            parent = None;
           };
           body
         };
