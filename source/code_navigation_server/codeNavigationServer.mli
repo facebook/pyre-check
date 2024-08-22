@@ -576,7 +576,7 @@ module Testing : sig
           (** This error occurs when the server can not find the source file for the result. For
               example, if a go-to-def result's module reference is foo.bar, but foo/bar.py can't be
               found *)
-      | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
+      | LocationBasedLookupError of Analysis.LocationBasedLookup.SymbolSelection.lookup_error
           (** This error occurs when the server can't extract a location for the given position.
               This might be the correct result (for example, if the given position is whitespace) *)
 

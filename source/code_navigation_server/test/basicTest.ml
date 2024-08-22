@@ -377,7 +377,9 @@ let test_location_of_definition_request context =
                 {
                   definitions = [];
                   empty_reason =
-                    Some (LocationBasedLookupError Analysis.LocationBasedLookup.SymbolNotFound);
+                    Some
+                      (LocationBasedLookupError
+                         Analysis.LocationBasedLookup.SymbolSelection.SymbolNotFound);
                   duration = 0.;
                 });
         ScratchProject.ClientConnection.assert_response
@@ -458,7 +460,7 @@ let test_location_of_definition_attribute_not_found context =
                   empty_reason =
                     Some
                       (LocationBasedLookupError
-                         Analysis.LocationBasedLookup.(
+                         Analysis.LocationBasedLookup.SymbolSelection.(
                            AttributeDefinitionNotFound
                              (Some "foo.bar", ReferenceNotFoundAndBaseUnresolved ResolvedTop)));
                   duration = 0.;
@@ -515,7 +517,7 @@ let test_location_of_definition_attribute_unannotated_class_property context =
                   empty_reason =
                     Some
                       (LocationBasedLookupError
-                         Analysis.LocationBasedLookup.(
+                         Analysis.LocationBasedLookup.SymbolSelection.(
                            AttributeDefinitionNotFound
                              ( Some "$parameter$self.foo.bar",
                                ReferenceNotFoundAndBaseUnresolved ResolvedTop )));

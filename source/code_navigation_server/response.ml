@@ -145,7 +145,7 @@ end
 
 type empty_reason =
   | SourcePathNotFound of { module_reference: Ast.Reference.t }
-  | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
+  | LocationBasedLookupError of Analysis.LocationBasedLookup.SymbolSelection.lookup_error
 [@@deriving sexp, compare, yojson { strict = false }]
 
 type t =

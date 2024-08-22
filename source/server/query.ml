@@ -96,7 +96,7 @@ module Response = struct
     type coverage_at_path = {
       path: string;
       total_expressions: int;
-      coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
+      coverage_gaps: LocationBasedLookup.ExpressionLevelCoverage.coverage_gap_by_location list;
     }
     [@@deriving equal, to_yojson]
 
@@ -877,7 +877,10 @@ let rec process_request_exn
     | TypeAtLocation { path; location } ->
         qualifier_of_path path
         >>| (fun module_reference ->
-              LocationBasedLookup.type_at_location ~type_environment ~module_reference location)
+              LocationBasedLookup.SingleSymbolQueries.type_at_location
+                ~type_environment
+                ~module_reference
+                location)
         >>| (fun maybe_type -> Single (Base.TypeAtLocation maybe_type))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))

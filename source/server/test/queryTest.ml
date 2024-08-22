@@ -2410,10 +2410,12 @@ let test_expression_level_coverage context =
       function_name
       function_name
       function_name
-      (List.nth_exn LocationBasedLookup.callable_parameter_is_unknown_or_any_message 0)
-      (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
-      (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
-      (List.nth_exn LocationBasedLookup.expression_is_any_message 0)
+      (List.nth_exn
+         LocationBasedLookup.ExpressionLevelCoverage.callable_parameter_is_unknown_or_any_message
+         0)
+      (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.parameter_is_any_message 0)
+      (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.parameter_is_any_message 0)
+      (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.expression_is_any_message 0)
   in
   let error_response file_name error =
     Format.sprintf
@@ -2530,10 +2532,12 @@ let test_expression_level_coverage context =
           }
          |}
           (PyrePath.absolute custom_source_root)
-          (List.nth_exn LocationBasedLookup.callable_return_is_any_message 0)
-          (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
-          (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
-          (List.nth_exn LocationBasedLookup.expression_is_any_message 0) );
+          (List.nth_exn
+             LocationBasedLookup.ExpressionLevelCoverage.callable_return_is_any_message
+             0)
+          (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.parameter_is_any_message 0)
+          (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.parameter_is_any_message 0)
+          (List.nth_exn LocationBasedLookup.ExpressionLevelCoverage.expression_is_any_message 0) );
       (* Test Error FileNotFound *)
       ( Format.sprintf
           "expression_level_coverage('%s')"

@@ -76,7 +76,7 @@ module Response : sig
     type coverage_at_path = {
       path: string;
       total_expressions: int;
-      coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
+      coverage_gaps: LocationBasedLookup.ExpressionLevelCoverage.coverage_gap_by_location list;
     }
     [@@deriving equal, to_yojson]
 

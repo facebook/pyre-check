@@ -104,11 +104,16 @@ let handle_get_type_errors ~paths ~client_id { State.environment; build_system; 
   >>| fun type_errors -> Response.TypeErrors { errors = type_errors }
 
 
-let get_document_symbol_content_for_module source = LocationBasedLookup.document_symbol_info ~source
+let get_document_symbol_content_for_module source =
+  LocationBasedLookup.SingleSymbolQueries.document_symbol_info ~source
+
 
 let get_hover_content_for_module ~overlay ~position module_reference =
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
-  LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
+  LocationBasedLookup.SingleSymbolQueries.hover_info_for_position
+    ~type_environment
+    ~module_reference
+    position
 
 
 let get_hover_in_overlay ~overlay ~build_system ~position module_ =
@@ -148,67 +153,70 @@ let get_document_symbol_in_overlay ~overlay ~build_system module_ =
 
 let transform_symbol_kind symbol_kind =
   match symbol_kind with
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.File ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.File ->
       Response.DocumentSymbolItem.SymbolKind.File
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Module ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Module ->
       Response.DocumentSymbolItem.SymbolKind.Module
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Namespace ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Namespace ->
       Response.DocumentSymbolItem.SymbolKind.Namespace
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Package ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Package ->
       Response.DocumentSymbolItem.SymbolKind.Package
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Class ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Class ->
       Response.DocumentSymbolItem.SymbolKind.Class
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Method ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Method ->
       Response.DocumentSymbolItem.SymbolKind.Method
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Property ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Property ->
       Response.DocumentSymbolItem.SymbolKind.Property
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Field ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Field ->
       Response.DocumentSymbolItem.SymbolKind.Field
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Constructor ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Constructor ->
       Response.DocumentSymbolItem.SymbolKind.Constructor
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Enum ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Enum ->
       Response.DocumentSymbolItem.SymbolKind.Enum
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Interface ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Interface ->
       Response.DocumentSymbolItem.SymbolKind.Interface
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Function ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Function ->
       Response.DocumentSymbolItem.SymbolKind.Function
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Variable ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Variable ->
       Response.DocumentSymbolItem.SymbolKind.Variable
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Constant ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Constant ->
       Response.DocumentSymbolItem.SymbolKind.Constant
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.String ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.String ->
       Response.DocumentSymbolItem.SymbolKind.String
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Number ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Number ->
       Response.DocumentSymbolItem.SymbolKind.Number
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Boolean ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Boolean ->
       Response.DocumentSymbolItem.SymbolKind.Boolean
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Array ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Array ->
       Response.DocumentSymbolItem.SymbolKind.Array
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Object ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Object ->
       Response.DocumentSymbolItem.SymbolKind.Object
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Key ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Key ->
       Response.DocumentSymbolItem.SymbolKind.Key
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Null ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Null ->
       Response.DocumentSymbolItem.SymbolKind.Null
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.EnumMember ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.EnumMember ->
       Response.DocumentSymbolItem.SymbolKind.EnumMember
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Struct ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Struct ->
       Response.DocumentSymbolItem.SymbolKind.Struct
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Event ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Event ->
       Response.DocumentSymbolItem.SymbolKind.Event
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Operator ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.Operator ->
       Response.DocumentSymbolItem.SymbolKind.Operator
-  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.TypeParameter ->
+  | LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.SymbolKind.TypeParameter ->
       Response.DocumentSymbolItem.SymbolKind.TypeParameter
 
 
 let rec transform_symbol symbol =
   {
-    Response.DocumentSymbolItem.name = symbol.LocationBasedLookup.DocumentSymbolItem.name;
-    detail = symbol.LocationBasedLookup.DocumentSymbolItem.detail;
-    kind = transform_symbol_kind symbol.LocationBasedLookup.DocumentSymbolItem.kind;
-    range = symbol.LocationBasedLookup.DocumentSymbolItem.range;
-    selectionRange = symbol.LocationBasedLookup.DocumentSymbolItem.selectionRange;
+    Response.DocumentSymbolItem.name =
+      symbol.LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.name;
+    detail = symbol.LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.detail;
+    kind =
+      transform_symbol_kind symbol.LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.kind;
+    range = symbol.LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.range;
+    selectionRange =
+      symbol.LocationBasedLookup.SingleSymbolQueries.DocumentSymbolItem.selectionRange;
     children = List.map symbol.children ~f:(fun symbol -> transform_symbol symbol);
   }
 
@@ -228,7 +236,12 @@ let get_location_of_definition_for_module ~overlay ~build_system ~position modul
   let open Result in
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
-  match LocationBasedLookup.location_of_definition ~type_environment ~module_reference position with
+  match
+    LocationBasedLookup.SingleSymbolQueries.location_of_definition
+      ~type_environment
+      ~module_reference
+      position
+  with
   | Error error -> Error (Response.LocationBasedLookupError error)
   | Ok { Ast.Location.WithModule.module_reference; start; stop } -> (
       match
@@ -273,7 +286,10 @@ let handle_location_of_definition
 
 let get_completion_for_module ~overlay ~position module_reference =
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
-  LocationBasedLookup.completion_info_for_position ~type_environment ~module_reference position
+  LocationBasedLookup.SingleSymbolQueries.completion_info_for_position
+    ~type_environment
+    ~module_reference
+    position
   |> List.map ~f:(fun { AttributeResolution.AttributeDetail.kind; name; detail } ->
          let attribute_kind =
            match kind with

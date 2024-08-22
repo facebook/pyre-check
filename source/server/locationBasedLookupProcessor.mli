@@ -12,7 +12,8 @@ type error_reason = FileNotFound [@@deriving sexp, show, compare, to_yojson]
 
 type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
-type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
+type coverage_by_location =
+  (LocationBasedLookup.ExpressionLevelCoverage.coverage_for_path, error_reason) Result.t
 
 type module_path = (Ast.ModulePath.t, error_reason) Result.t
 
@@ -32,7 +33,7 @@ val get_lookup
   :  build_system:BuildSystem.t ->
   type_environment:TypeEnvironment.ReadOnly.t ->
   string ->
-  (LocationBasedLookup.coverage_data_lookup, error_reason) result
+  (LocationBasedLookup.ExpressionTypes.coverage_data_lookup, error_reason) result
 
 val get_module_path
   :  type_environment:TypeEnvironment.ReadOnly.t ->

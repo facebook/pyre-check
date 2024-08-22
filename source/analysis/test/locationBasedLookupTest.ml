@@ -84,7 +84,7 @@ let generate_lookup ~context ?(environment_sources = []) source =
     in
     type_environment
   in
-  let lookup = LocationBasedLookup.create_of_module environment !&"test" in
+  let lookup = LocationBasedLookup.ExpressionTypes.create_of_module environment !&"test" in
   Memory.reset_shared_memory ();
   lookup
 
@@ -95,8 +95,8 @@ let assert_annotation_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    (LocationBasedLookup.get_all_nodes_and_coverage_data lookup
-    |> List.map ~f:(fun (location, { LocationBasedLookup.type_; expression = _ }) ->
+    (LocationBasedLookup.ExpressionLevelCoverage.get_all_nodes_and_coverage_data lookup
+    |> List.map ~f:(fun (location, { LocationBasedLookup.ExpressionTypes.type_; expression = _ }) ->
            location, type_)
     |> List.sort ~compare:[%compare: Location.t * Type.t]
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data))
@@ -106,8 +106,8 @@ let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    (LocationBasedLookup.get_coverage_data lookup ~position
-    >>| fun (location, { LocationBasedLookup.type_; _ }) ->
+    (LocationBasedLookup.SymbolSelection.get_coverage_data lookup ~position
+    >>| fun (location, { LocationBasedLookup.ExpressionTypes.type_; _ }) ->
     Format.asprintf "%s/%a" (show_location location) Type.pp type_)
 
 
@@ -130,7 +130,8 @@ let test_lookup_out_of_bounds_location context =
         List.map indices ~f:(fun index_two -> index_one, index_two))
   in
   let test_one (line, column) =
-    LocationBasedLookup.get_coverage_data lookup ~position:{ Location.line; column } |> ignore
+    LocationBasedLookup.SymbolSelection.get_coverage_data lookup ~position:{ Location.line; column }
+    |> ignore
   in
   List.iter indices_product ~f:test_one
 
@@ -178,7 +179,7 @@ let test_narrowest_match _ =
       expressions
       |> List.map ~f:(fun (expression, location) ->
              {
-               symbol_with_definition =
+               LocationWithSymbol.symbol_with_definition =
                  Expression
                    {
                      (parse_single_expression ~coerce_special_methods:true expression) with
@@ -187,9 +188,9 @@ let test_narrowest_match _ =
                cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
                use_postcondition_info = false;
              })
-      |> narrowest_match
+      |> SymbolSelection.narrowest_match
       >>| function
-      | { symbol_with_definition = Expression expression; _ } -> expression
+      | { LocationWithSymbol.symbol_with_definition = Expression expression; _ } -> expression
       | _ -> failwith "Expected expression"
     in
     let assert_narrowest_matching_expression expressions =
@@ -261,10 +262,14 @@ let test_find_narrowest_spanning_symbol context =
     in
     assert_equal
       ~cmp:(fun left right ->
-        Option.compare location_insensitive_compare_symbol_and_cfg_data left right = 0)
-      ~printer:[%show: symbol_and_cfg_data option]
+        Option.compare
+          LocationWithSymbol.location_insensitive_compare_symbol_and_cfg_data
+          left
+          right
+        = 0)
+      ~printer:[%show: LocationWithSymbol.symbol_and_cfg_data option]
       expected
-      (LocationBasedLookup.find_narrowest_spanning_symbol
+      (LocationBasedLookup.SymbolSelection.find_narrowest_spanning_symbol
          ~type_environment
          ~module_reference:!&"test"
          (find_indicator_position ~source "cursor")
@@ -278,7 +283,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "test.getint");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "test.getint");
          cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -298,7 +304,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "int");
+         LocationWithSymbol.symbol_with_definition = TypeAnnotation (parse_single_expression "int");
          cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -310,7 +316,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "library.Base");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -322,7 +329,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "library.Base");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -333,7 +341,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "library");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -345,7 +353,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "library");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -359,7 +367,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "library");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -372,7 +380,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "b.x");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "b.x");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -385,7 +393,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "b.x");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "b.x");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -398,7 +406,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "b.x.Foo");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "b.x.Foo");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -411,7 +419,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "b.x");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "b.x");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -422,7 +430,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
          cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
@@ -437,7 +445,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$a")));
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
@@ -452,7 +460,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$local_test?foo$xs")));
@@ -468,7 +476,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression {|["a", "b"]|});
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression {|["a", "b"]|});
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -490,7 +499,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "list");
+         LocationWithSymbol.symbol_with_definition = TypeAnnotation (parse_single_expression "list");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -505,7 +514,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "library.Base");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -523,7 +533,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "test.getint() + 2");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "test.getint() + 2");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -539,7 +550,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression (parse_single_expression "(test.return_str()).capitalize");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
@@ -554,7 +565,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$parameter$self")));
@@ -573,7 +584,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name
@@ -599,7 +610,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "42");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "42");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -616,7 +627,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "test.Bar().some_attribute");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "test.Bar().some_attribute");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 2 };
          use_postcondition_info = false;
        });
@@ -631,7 +643,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "test.Foo");
+         LocationWithSymbol.symbol_with_definition =
+           TypeAnnotation (parse_single_expression "test.Foo");
          cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -654,7 +667,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "(test.Bar()).foo().bar");
          cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -666,7 +680,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$x")));
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
@@ -682,7 +696,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$local_test?foo$x")));
@@ -699,7 +713,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$local_test?foo$f")));
@@ -716,7 +730,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$local_test?foo$x")));
@@ -736,7 +750,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_static_method");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "(test.Foo).my_static_method");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -753,7 +768,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_class_method");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "(test.Foo).my_class_method");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -769,7 +785,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "(test.Foo).my_method");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -784,7 +801,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name (Name.Identifier "$parameter$my_dictionary")
              |> Node.create_with_default_location);
@@ -802,7 +819,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name
                 (Name.Attribute
@@ -829,7 +846,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name (Name.Identifier "$parameter$my_dictionary")
              |> Node.create_with_default_location);
@@ -851,7 +868,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name
                 (Name.Attribute
@@ -882,7 +899,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name
                 (Name.Attribute
@@ -914,7 +931,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name
                 (Name.Attribute
@@ -939,7 +956,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
          cfg_data = { define_name = !&"test.getint"; node_id = 6; statement_index = 0 };
@@ -954,7 +971,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
@@ -969,7 +986,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition =
+         LocationWithSymbol.symbol_with_definition =
            Expression
              (Expression.Name
                 (Name.Attribute
@@ -993,7 +1010,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "typing.Callable");
+         LocationWithSymbol.symbol_with_definition =
+           TypeAnnotation (parse_single_expression "typing.Callable");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -1006,7 +1024,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "typing.Callable");
+         LocationWithSymbol.symbol_with_definition =
+           TypeAnnotation (parse_single_expression "typing.Callable");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -1019,7 +1038,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "test.Foo");
+         LocationWithSymbol.symbol_with_definition =
+           TypeAnnotation (parse_single_expression "test.Foo");
          cfg_data = { define_name = !&"test.Foo.my_method"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -1030,7 +1050,8 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "typing.Callable");
+         LocationWithSymbol.symbol_with_definition =
+           Expression (parse_single_expression "typing.Callable");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -1041,7 +1062,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "typing");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "typing");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -1053,7 +1074,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "foo");
+         LocationWithSymbol.symbol_with_definition = Expression (parse_single_expression "foo");
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
@@ -1091,7 +1112,9 @@ let test_resolve_definition_for_symbol =
     in
     let actual =
       find_indicator_position ~source "cursor"
-      |> LocationBasedLookup.location_of_definition ~type_environment ~module_reference
+      |> LocationBasedLookup.SingleSymbolQueries.location_of_definition
+           ~type_environment
+           ~module_reference
       |> Result.ok
     in
     assert_equal
@@ -1786,7 +1809,7 @@ let _test_resolve_completions_for_symbol =
       |> fun { line; column } -> { Ast.Location.line; column = max 0 column - 1 }
     in
     let symbol_data =
-      LocationBasedLookup.find_narrowest_spanning_symbol
+      LocationBasedLookup.SymbolSelection.find_narrowest_spanning_symbol
         ~type_environment
         ~module_reference
         right_inclusive_cursor_position
@@ -1794,7 +1817,7 @@ let _test_resolve_completions_for_symbol =
     let attributes =
       symbol_data
       |> Result.ok
-      >>| LocationBasedLookup.resolve_completions_for_symbol ~type_environment
+      >>| LocationBasedLookup.SingleSymbolQueries.resolve_completions_for_symbol ~type_environment
       |> Option.value ~default:[]
     in
     assert_equal ~printer:[%show: AttributeResolution.AttributeDetail.t list] expected attributes
@@ -2742,9 +2765,11 @@ let test_classify_coverage_data _ =
       ~aliases:Type.resolved_empty_aliases
       (parse_single_expression type_)
   in
-  let make_coverage_data_record ~expression type_ = { LocationBasedLookup.expression; type_ } in
+  let make_coverage_data_record ~expression type_ =
+    { LocationBasedLookup.ExpressionTypes.type_; expression }
+  in
   let make_coverage_gap_record ~coverage_data reason =
-    Some { LocationBasedLookup.coverage_data; reason }
+    Some { LocationBasedLookup.ExpressionLevelCoverage.coverage_data; reason }
   in
   let make_coverage_gap ~coverage_data reason =
     match reason with
@@ -2753,10 +2778,10 @@ let test_classify_coverage_data _ =
   in
   let assert_coverage_gap ~coverage_data reason =
     assert_equal
-      ~cmp:[%compare.equal: LocationBasedLookup.coverage_gap option]
-      ~printer:[%show: LocationBasedLookup.coverage_gap option]
+      ~cmp:[%compare.equal: LocationBasedLookup.ExpressionLevelCoverage.coverage_gap option]
+      ~printer:[%show: LocationBasedLookup.ExpressionLevelCoverage.coverage_gap option]
       (make_coverage_gap ~coverage_data reason)
-      (LocationBasedLookup.classify_coverage_data coverage_data)
+      (LocationBasedLookup.ExpressionLevelCoverage.classify_coverage_data coverage_data)
   in
   let assert_coverage_gap_parse_both ~expression ~type_ reason =
     let coverage_data =
@@ -2775,43 +2800,49 @@ let test_classify_coverage_data _ =
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Any"
-    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.OtherExpressionIsAny));
+    (Some
+       (LocationBasedLookup.ExpressionLevelCoverage.TypeIsAny
+          LocationBasedLookup.ExpressionLevelCoverage.OtherExpressionIsAny));
   assert_coverage_gap_parse_type
     ~expression:
       (Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location))
     ~type_:"typing.Any"
-    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.ParameterIsAny));
+    (Some
+       (LocationBasedLookup.ExpressionLevelCoverage.TypeIsAny
+          LocationBasedLookup.ExpressionLevelCoverage.ParameterIsAny));
   assert_coverage_gap_parse_both
     ~expression:"print(x + 1)"
     ~type_:"typing.Any"
-    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.OtherExpressionIsAny));
+    (Some
+       (LocationBasedLookup.ExpressionLevelCoverage.TypeIsAny
+          LocationBasedLookup.ExpressionLevelCoverage.OtherExpressionIsAny));
   assert_coverage_gap_parse_both ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.List[typing.Any]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.List[float]" None;
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Set[typing.Any]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.Set[int]" None;
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Dict[str, typing.Any]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Dict[typing.Any, str]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Dict[typing.Any, typing.Any]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Dict[str, typing.Any]"
-    (Some LocationBasedLookup.ContainerParameterIsAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.ContainerParameterIsAny);
   assert_coverage_gap_parse_both ~expression:"Foo[Any]" ~type_:"Foo[Any]" None;
   (* TODO(T123023697): We only identify coverage gaps in Callable when all the parameters are
      Unknown or Any. Task handles niche cases such as keyword-only or positional arguments*)
@@ -2831,7 +2862,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2844,7 +2875,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2872,7 +2903,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2887,7 +2918,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2902,7 +2933,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2919,7 +2950,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2936,7 +2967,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2951,7 +2982,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
@@ -2966,7 +2997,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
+    (Some LocationBasedLookup.ExpressionLevelCoverage.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:(Type.Callable.create ~parameters:(Type.Callable.Defined []) ~annotation:Type.bytes ())
@@ -2977,11 +3008,14 @@ let test_classify_coverage_data _ =
 let test_lookup_expression context =
   let assert_coverage_data ~context ~source expected_coverage_gap_list =
     let coverage_data_lookup = generate_lookup ~context source in
-    let lookup_list = LocationBasedLookup.get_all_nodes_and_coverage_data coverage_data_lookup in
+    let lookup_list =
+      LocationBasedLookup.ExpressionLevelCoverage.get_all_nodes_and_coverage_data
+        coverage_data_lookup
+    in
     let coverage_data_list = List.map ~f:(fun (_, coverage_data) -> coverage_data) lookup_list in
     let actual_tuple_list =
       List.map
-        ~f:(fun { LocationBasedLookup.expression; type_ } -> expression, type_)
+        ~f:(fun { LocationBasedLookup.ExpressionTypes.expression; type_ } -> expression, type_)
         coverage_data_list
     in
     assert_equal
@@ -3112,26 +3146,38 @@ let test_lookup_expression context =
 let test_coverage_gaps_in_module context =
   let assert_coverage_gaps_in_module ~context ~source expected =
     let lookup = generate_lookup ~context source in
-    let all_nodes_and_coverage = LocationBasedLookup.get_all_nodes_and_coverage_data lookup in
+    let all_nodes_and_coverage =
+      LocationBasedLookup.ExpressionLevelCoverage.get_all_nodes_and_coverage_data lookup
+    in
     let coverage_data = List.map ~f:(fun (_, coverage) -> coverage) all_nodes_and_coverage in
     let equal_coverage_gap
         {
-          LocationBasedLookup.coverage_data = { expression = left_expression; type_ = left_type };
+          LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
+            { expression = left_expression; type_ = left_type };
           reason = left_reason;
         }
         {
-          LocationBasedLookup.coverage_data =
-            { LocationBasedLookup.expression = right_expression; type_ = right_type };
+          LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
+            {
+              LocationBasedLookup.ExpressionTypes.expression = right_expression;
+              type_ = right_type;
+            };
           reason = right_reason;
         }
       =
       Option.compare location_insensitive_compare left_expression right_expression = 0
       && Type.equal left_type right_type
-      && [%compare.equal: LocationBasedLookup.reason] left_reason right_reason
+      && [%compare.equal: LocationBasedLookup.ExpressionLevelCoverage.reason]
+           left_reason
+           right_reason
     in
-    let actual_coverage_gaps = LocationBasedLookup.coverage_gaps_in_module coverage_data in
+    let actual_coverage_gaps =
+      LocationBasedLookup.ExpressionLevelCoverage.coverage_gaps_in_module coverage_data
+    in
     assert_equal
-      ~printer:(fun x -> [%sexp_of: LocationBasedLookup.coverage_gap list] x |> Sexp.to_string_hum)
+      ~printer:(fun x ->
+        [%sexp_of: LocationBasedLookup.ExpressionLevelCoverage.coverage_gap list] x
+        |> Sexp.to_string_hum)
       ~cmp:(List.equal equal_coverage_gap)
       expected
       actual_coverage_gaps
@@ -3144,7 +3190,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3155,7 +3201,7 @@ let test_coverage_gaps_in_module context =
         reason = TypeIsAny ParameterIsAny;
       };
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3166,7 +3212,7 @@ let test_coverage_gaps_in_module context =
         reason = TypeIsAny ParameterIsAny;
       };
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3184,7 +3230,7 @@ let test_coverage_gaps_in_module context =
         reason = TypeIsAny OtherExpressionIsAny;
       };
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3235,7 +3281,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3262,7 +3308,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3280,7 +3326,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3298,7 +3344,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3337,7 +3383,7 @@ let test_coverage_gaps_in_module context =
       |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3356,7 +3402,7 @@ let test_coverage_gaps_in_module context =
         reason = CallableReturnIsAny;
       };
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3392,7 +3438,7 @@ let test_coverage_gaps_in_module context =
     |}
     [
       {
-        LocationBasedLookup.coverage_data =
+        LocationBasedLookup.ExpressionLevelCoverage.coverage_data =
           {
             expression =
               Some
@@ -3442,7 +3488,7 @@ let test_resolve_type_for_symbol context =
       type_environment
     in
     let symbol_data =
-      LocationBasedLookup.find_narrowest_spanning_symbol
+      LocationBasedLookup.SymbolSelection.find_narrowest_spanning_symbol
         ~type_environment
         ~module_reference
         (find_indicator_position ~source "cursor")
@@ -3451,7 +3497,9 @@ let test_resolve_type_for_symbol context =
       ~cmp:[%compare.equal: Type.t option]
       ~printer:[%show: Type.t option]
       expected
-      (symbol_data |> Result.ok >>= LocationBasedLookup.resolve_type_for_symbol ~type_environment)
+      (symbol_data
+      |> Result.ok
+      >>= LocationBasedLookup.SingleSymbolQueries.resolve_type_for_symbol ~type_environment)
   in
   let assert_resolved_type
       ?external_sources
@@ -3882,12 +3930,16 @@ let test_hover_info_for_position context =
       type_environment
     in
     let value =
-      LocationBasedLookup.hover_info_for_position
+      LocationBasedLookup.SingleSymbolQueries.hover_info_for_position
         ~type_environment
         ~module_reference:!&"test"
         (find_indicator_position ~source "cursor")
     in
-    assert_equal ~ctxt:context ~printer:[%show: LocationBasedLookup.hover_info] expected value
+    assert_equal
+      ~ctxt:context
+      ~printer:[%show: LocationBasedLookup.SingleSymbolQueries.hover_info]
+      expected
+      value
   in
   assert_hover_info_for_position
     {|
@@ -4023,7 +4075,7 @@ let test_hover_info_for_position context =
 
 let test_contains _ =
   let contains ~location position =
-    LocationBasedLookup.location_contains_position
+    LocationBasedLookup.SymbolSelection.location_contains_position
       (parse_location location)
       (parse_position position)
   in
@@ -4040,7 +4092,7 @@ let test_contains _ =
 
 let test_covers_position _ =
   let assert_covers ~source ~position expected =
-    LocationBasedLookup.covers_position ~position (parse_single_statement source)
+    LocationBasedLookup.SymbolSelection.covers_position ~position (parse_single_statement source)
     |> assert_bool_equals ~expected
   in
   let source =

@@ -16,7 +16,8 @@ type error_reason = FileNotFound [@@deriving sexp, show, compare, to_yojson]
 
 type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
-type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
+type coverage_by_location =
+  (LocationBasedLookup.ExpressionLevelCoverage.coverage_for_path, error_reason) Result.t
 
 type module_path = (Ast.ModulePath.t, error_reason) Result.t
 
@@ -48,7 +49,7 @@ let get_lookup ~build_system ~type_environment path =
   let module_path = get_module_path ~type_environment ~build_system path in
   let generate_lookup_for_existent_path { ModulePath.qualifier; _ } =
     let timer = Timer.start () in
-    let lookup = LocationBasedLookup.create_of_module type_environment qualifier in
+    let lookup = LocationBasedLookup.ExpressionTypes.create_of_module type_environment qualifier in
     Log.log
       ~section:`Performance
       "locationBasedLookupProcessor: create_of_module: %d"
@@ -63,12 +64,13 @@ let get_lookup ~build_system ~type_environment path =
 let find_all_resolved_types_for_path ~type_environment ~build_system path =
   let open Result in
   get_lookup ~type_environment ~build_system path
-  >>| LocationBasedLookup.get_all_nodes_and_coverage_data
-  >>| List.map ~f:(fun (location, { LocationBasedLookup.type_; expression = _ }) -> location, type_)
+  >>| LocationBasedLookup.ExpressionLevelCoverage.get_all_nodes_and_coverage_data
+  >>| List.map ~f:(fun (location, { LocationBasedLookup.ExpressionTypes.type_; expression = _ }) ->
+          location, type_)
   >>| List.sort ~compare:[%compare: Location.t * Type.t]
 
 
 let find_expression_level_coverage_for_path ~type_environment ~build_system path =
   let open Result in
   get_lookup ~type_environment ~build_system path
-  >>| LocationBasedLookup.get_expression_level_coverage
+  >>| LocationBasedLookup.ExpressionLevelCoverage.get_expression_level_coverage
