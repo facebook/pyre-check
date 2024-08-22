@@ -18,7 +18,8 @@ open Ast
 open Statement
 open Expression
 
-let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
+let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) ~in_module name =
+  let name = Reference.combine in_module (Reference.create name) in
   let create_base annotation = { Call.Argument.name = None; value = Type.expression annotation } in
   let create_metaclass annotation =
     {
@@ -27,7 +28,7 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) name =
     }
   in
   {
-    Class.name = Reference.create name;
+    Class.name;
     base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
     body;
     decorators = [];
@@ -76,8 +77,8 @@ let callable_body =
   |> List.map ~f:Node.create_with_default_location
 
 
-let make_dunder_get ~parent ~host ~host_type ~return =
-  let parent = Reference.create parent in
+let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
+  let parent = Reference.create ~prefix:in_module parent in
   Statement.Define
     {
       signature =
@@ -125,7 +126,8 @@ let classmethod_body =
    *)
   [
     make_dunder_get
-      ~parent:"typing.ClassMethod"
+      ~in_module:(Reference.create "typing")
+      ~parent:"ClassMethod"
       ~host:Type.object_primitive
       ~host_type:(Variable (Type.Variable.TypeVar.create "typing._S"))
       ~return:
@@ -147,7 +149,8 @@ let staticmethod_body =
    *)
   [
     make_dunder_get
-      ~parent:"typing.StaticMethod"
+      ~in_module:(Reference.create "typing")
+      ~parent:"StaticMethod"
       ~host:Type.object_primitive
       ~host_type:Type.object_primitive
       ~return:(Variable (Type.Variable.TypeVar.create "typing._T"));
@@ -189,14 +192,17 @@ let missing_builtin_classes =
   let t_self_expression =
     Expression.Name (Name.Identifier "TSelf") |> Node.create_with_default_location
   in
+  let in_module = Reference.empty in
   [
     make_class
       ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
       ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
+      ~in_module
       (Type.TypedDictionary.class_name ~total:true);
     make_class
       ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
       ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:false)
+      ~in_module
       (Type.TypedDictionary.class_name ~total:false);
     (* I think this may be actually covariant, covariant, but I don't think there's any value in
        going out on that limb yet *)
@@ -208,49 +214,52 @@ let missing_builtin_classes =
             "typing.Generic"
             [Single (Type.variable "typing._T"); Single (Type.variable "typing._S")];
         ]
+      ~in_module
       "BoundMethod";
   ]
 
 
 let missing_typing_classes =
+  let in_module = Reference.create "typing" in
   [
-    make_class "typing.Optional" ~bases:single_unary_generic;
-    make_class "typing.NoReturn";
-    make_class "typing.Never";
-    (* Although Any is represented by a special variant in our type system, we still create a
-       definition for it so it can be used as a base class *)
-    make_class "typing.Any";
-    make_class "typing.Annotated" ~bases:catch_all_generic;
-    make_class "typing.Protocol" ~bases:catch_all_generic;
-    make_class "typing.Callable" ~bases:catch_all_generic ~body:callable_body;
-    make_class "typing.FrozenSet" ~bases:single_unary_generic;
-    make_class "typing.ClassVar" ~bases:single_unary_generic;
-    make_class "typing.Final" ~bases:catch_all_generic;
-    make_class "typing.Literal" ~bases:catch_all_generic;
-    make_class "typing.Union" ~bases:catch_all_generic;
-    make_class ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
-    make_class "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
-    make_class "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
-    make_class "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
-    make_class "typing.TypeAlias";
-    make_class "typing.Required" ~bases:single_unary_generic;
-    make_class "typing.NotRequired" ~bases:single_unary_generic;
+    make_class ~in_module "Optional" ~bases:single_unary_generic;
+    make_class ~in_module "NoReturn";
+    make_class ~in_module "Never";
+    (* Although~in_module Any is represented by a special variant in our type system, we still
+       create a definiti~in_module on for it so it can be used as a base class *)
+    make_class ~in_module "Any";
+    make_class ~in_module "Annotated" ~bases:catch_all_generic;
+    make_class ~in_module "Protocol" ~bases:catch_all_generic;
+    make_class ~in_module "Callable" ~bases:catch_all_generic ~body:callable_body;
+    make_class ~in_module "FrozenSet" ~bases:single_unary_generic;
+    make_class ~in_module "ClassVar" ~bases:single_unary_generic;
+    make_class ~in_module "Final" ~bases:catch_all_generic;
+    make_class ~in_module "Literal" ~bases:catch_all_generic;
+    make_class ~in_module "Union" ~bases:catch_all_generic;
+    make_class ~in_module "Generic" ~metaclasses:[Primitive "typing.GenericMeta"];
+    make_class ~in_module "ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
+    make_class ~in_module "StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
+    make_class ~in_module "GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
+    make_class ~in_module "TypeAlias";
+    make_class ~in_module "Required" ~bases:single_unary_generic;
+    make_class ~in_module "NotRequired" ~bases:single_unary_generic;
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
-    make_class "typing.TypeIs" ~bases:(Type.bool :: single_unary_generic);
-    make_class "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "TypeIs" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "TypeGuard" ~bases:(Type.bool :: single_unary_generic);
   ]
 
 
 let missing_typing_extensions_classes =
+  let in_module = Reference.create "typing_extensions" in
   [
-    make_class "typing_extensions.Final";
-    make_class "typing_extensions.Literal" ~bases:catch_all_generic;
-    make_class "typing_extensions.Annotated" ~bases:catch_all_generic;
-    make_class "typing_extensions.TypeAlias";
-    make_class "typing_extensions.Never";
-    make_class "typing_extensions.Required" ~bases:single_unary_generic;
-    make_class "typing_extensions.NotRequired" ~bases:single_unary_generic;
+    make_class ~in_module "Final";
+    make_class ~in_module "Literal" ~bases:catch_all_generic;
+    make_class ~in_module "Annotated" ~bases:catch_all_generic;
+    make_class ~in_module "TypeAlias";
+    make_class ~in_module "Never";
+    make_class ~in_module "Required" ~bases:single_unary_generic;
+    make_class ~in_module "NotRequired" ~bases:single_unary_generic;
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
-    make_class "typing_extensions.TypeIs" ~bases:(Type.bool :: single_unary_generic);
-    make_class "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "TypeIs" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "TypeGuard" ~bases:(Type.bool :: single_unary_generic);
   ]
