@@ -1428,6 +1428,62 @@ let test_check_keyword_arguments =
       f(*[0, ""])
            |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Tuple
+      def f() -> None:
+        pass
+      x: Tuple[int, int]
+      f(*x)
+           |}
+           ["Too many arguments [19]: Call `f` expects 0 positional arguments, 2 were provided."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Tuple
+      def f(x: int, y: str) -> None:
+        pass
+      x: Tuple[int, str]
+      f(*x)
+           |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Tuple
+      def f(x: int, y: str) -> None:
+        pass
+      x: Tuple[int, int]
+      f(*x)
+           |}
+           [
+             "Incompatible parameter type [6]: In call `f`, for 2nd positional argument, expected \
+              `str` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Tuple
+      def f(x: int, y: int, z: str) -> None:
+        pass
+      x: Tuple[int, int]
+      f(*x, 42)
+           |}
+           [
+             "Incompatible parameter type [6]: In call `f`, for 3rd positional argument, expected \
+              `str` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Tuple
+      def f(x: int, y: str, z: float) -> None:
+        pass
+      x: Tuple[int, str]
+      f(*x)
+           |}
+           ["Missing argument [20]: Call `f` expects argument `z`."];
     ]
 
 

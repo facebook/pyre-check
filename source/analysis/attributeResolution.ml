@@ -524,26 +524,43 @@ module SignatureSelection = struct
               in
               add_annotation_error expression resolved error_factory
           in
-          (* Expand the starred argument if it is a constant. *)
-          match expression with
-          | Some { Node.value = List items | Tuple items; _ } ->
+          (* If we can determine from the expression or type that the starred argument expands into
+             a fixed number of arguments, do the expansion now. *)
+          let maybe_fixed_items =
+            match expression, resolved with
+            | Some { Node.value = List items | Tuple items; _ }, _ ->
+                Some (List.map ~f:(fun item -> Some item, resolve item) items)
+            | _, Type.Tuple (Concrete item_types) ->
+                Some (List.map ~f:(fun item_type -> None, item_type) item_types)
+            | _ -> None
+          in
+          match maybe_fixed_items with
+          | Some fixed_items ->
               let expanded_arguments =
-                List.map
-                  ~f:(fun item ->
+                List.mapi
+                  ~f:(fun i (expression, resolved) ->
                     {
                       Argument.WithPosition.kind = Positional;
-                      expression = Some item;
-                      position = argument.position;
-                      resolved = resolve item;
+                      expression;
+                      position = argument.position + i;
+                      resolved;
                     })
-                  items
+                  fixed_items
+              in
+              let position_delta = List.length expanded_arguments - 1 in
+              let updated_arguments_tail =
+                List.map
+                  ~f:(fun argument ->
+                    { argument with position = argument.position + position_delta })
+                  arguments_tail
               in
               consume
-                ~arguments:(expanded_arguments @ arguments_tail)
+                ~arguments:(expanded_arguments @ updated_arguments_tail)
                 ~parameters
                 parameter_argument_mapping_with_reasons
-          | _ -> (
-              (* Non-constant starred argument. Match it against the first parameter (if any). *)
+          | None -> (
+              (* Starred argument that cannot be expanded to a fixed number of arguments. Match it
+                 against the first parameter (if any). *)
               match parameters with
               | [] ->
                   (* Starred argument; parameters empty *)

@@ -211,10 +211,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "some_argument"; annotation = Type.string; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 2;
                   };
@@ -222,18 +221,23 @@ let test_get_parameter_argument_mapping context =
             ( Variable (Concrete Type.bool),
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.bool;
+                    kind = Positional;
                     expression = None;
-                    position = 2;
+                    position = 4;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.bool;
+                    kind = Positional;
+                    expression = None;
+                    position = 3;
                   };
               ] );
           ];
       reasons = { arity = []; annotation = [] };
     };
-  (* TODO(T107236583): We should raise an error about the extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[], None]"
     ~self_argument:None
@@ -247,9 +251,12 @@ let test_get_parameter_argument_mapping context =
     ]
     {
       parameter_argument_mapping = CallableParamType.Map.empty;
-      reasons = { arity = []; annotation = [] };
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 3 }];
+          annotation = [];
+        };
     };
-  (* TODO(T107236583): We should raise an error about the extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[], None]"
     ~self_argument:None
@@ -271,7 +278,7 @@ let test_get_parameter_argument_mapping context =
       parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
-          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 4 }];
           annotation = [];
         };
     };
@@ -307,22 +314,43 @@ let test_get_parameter_argument_mapping context =
               [
                 make_matched_argument
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 3;
+                    position = 6;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = None;
+                    position = 5;
                   };
                 make_matched_argument
                   {
                     Argument.WithPosition.resolved = Type.integer;
                     kind = Positional;
                     expression = parse_single_expression "42" |> Option.some;
+                    position = 4;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.bool;
+                    kind = Positional;
+                    expression = None;
+                    position = 3;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.bool;
+                    kind = Positional;
+                    expression = None;
                     position = 2;
                   };
                 make_matched_argument
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -355,7 +383,6 @@ let test_get_parameter_argument_mapping context =
           annotation = [];
         };
     };
-  (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Keywords(int)], None]"
     ~self_argument:None
@@ -369,9 +396,12 @@ let test_get_parameter_argument_mapping context =
     ]
     {
       parameter_argument_mapping = CallableParamType.Map.empty;
-      reasons = { arity = []; annotation = [] };
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 3 }];
+          annotation = [];
+        };
     };
-  (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Keywords(int)], None]"
     ~self_argument:None
@@ -391,9 +421,12 @@ let test_get_parameter_argument_mapping context =
     ]
     {
       parameter_argument_mapping = CallableParamType.Map.empty;
-      reasons = { arity = []; annotation = [] };
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 4 }];
+          annotation = [];
+        };
     };
-  (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[KeywordOnly(x, int)], None]"
     ~self_argument:None
@@ -406,12 +439,13 @@ let test_get_parameter_argument_mapping context =
       };
     ]
     {
-      parameter_argument_mapping =
-        CallableParamType.Map.of_alist_exn
-          [KeywordOnly { name = "x"; annotation = Type.integer; default = false }, []];
-      reasons = { arity = []; annotation = [] };
+      parameter_argument_mapping = CallableParamType.Map.empty;
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 3 }];
+          annotation = [];
+        };
     };
-  (* TODO(T107236583): We fail to complain about extra `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[KeywordOnly(x, int)], None]"
     ~self_argument:None
@@ -433,12 +467,10 @@ let test_get_parameter_argument_mapping context =
       parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
-          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 4 }];
           annotation = [];
         };
     };
-  (* TODO(T107236583): We currently store the argument for a named parameter as the entire
-     `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Named(x, int)], None]"
     ~self_argument:None
@@ -457,19 +489,20 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.integer; Type.string; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
               ] );
           ];
-      reasons = { arity = []; annotation = [] };
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 1; provided = 3 }];
+          annotation = [];
+        };
     };
-  (* TODO(T107236583): We mistakenly count `provided` arguments as 3. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Named(x, int), Named(y, int)], None]"
     ~self_argument:None
@@ -494,11 +527,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.integer; Type.string; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -506,19 +537,17 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "y"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.integer; Type.string; Type.bool];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 2;
                   };
               ] );
           ];
       reasons =
         {
-          arity = [SignatureSelectionTypes.TooManyArguments { expected = 2; provided = 3 }];
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 2; provided = 4 }];
           annotation = [];
         };
     };
@@ -546,11 +575,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -558,13 +585,25 @@ let test_get_parameter_argument_mapping context =
             ( Variable (Concatenation tuple_str_unbounded_int),
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 4;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = None;
+                    position = 3;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
+                    expression = None;
+                    position = 2;
                   };
               ] );
           ];
@@ -591,11 +630,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -603,13 +640,25 @@ let test_get_parameter_argument_mapping context =
             ( Variable (Concatenation tuple_str_unbounded_int),
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 4;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = None;
+                    position = 3;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
+                    expression = None;
+                    position = 2;
                   };
               ] );
           ];
@@ -636,11 +685,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -648,20 +695,30 @@ let test_get_parameter_argument_mapping context =
             ( Variable (Concatenation tuple_str_unbounded_int),
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved =
-                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 4;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = None;
+                    position = 3;
+                  };
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
+                    expression = None;
+                    position = 2;
                   };
               ] );
           ];
       reasons = { arity = []; annotation = [] };
     };
-  (* TODO(T107236583): Need to handle the case where there are multiple `*xs` that get used up by
-     positional parameters. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Named(x, str), Named(y, str), Named(z, int)], None]"
     ~self_argument:None
@@ -686,21 +743,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.string; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string];
-                    kind = SingleStar;
-                    expression = None;
-                    position = 1;
-                  };
-              ] );
-            ( Named { name = "y"; annotation = Type.string; default = false },
-              [
-                make_matched_argument
-                  ~index_into_starred_tuple:1
-                  {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -708,12 +753,21 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "z"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:2
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 3;
+                  };
+              ] );
+            ( Named { name = "y"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Positional;
+                    expression = None;
+                    position = 2;
                   };
               ] );
           ];
@@ -737,10 +791,9 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:0
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
                     position = 1;
                   };
@@ -748,25 +801,14 @@ let test_get_parameter_argument_mapping context =
             ( Named { name = "y"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
-                  ~index_into_starred_tuple:1
                   {
-                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                    kind = SingleStar;
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
                     expression = None;
-                    position = 1;
+                    position = 2;
                   };
               ] );
-            ( Named { name = "z"; annotation = Type.integer; default = false },
-              [
-                make_matched_argument
-                  ~index_into_starred_tuple:2
-                  {
-                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                    kind = SingleStar;
-                    expression = None;
-                    position = 1;
-                  };
-              ] );
+            Named { name = "z"; annotation = Type.integer; default = false }, [];
           ];
       reasons = { arity = []; annotation = [] };
     };

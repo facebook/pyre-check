@@ -623,7 +623,6 @@ let test_tuple_literal_access =
       func(1, *c)
     |}
            ["Missing argument [20]: Call `func` expects argument `c`."];
-      (* TODO(T133552317): Handle function calls with multiple unpacked tuples. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -633,7 +632,7 @@ let test_tuple_literal_access =
       d = (1, "abc")
       func(1, *c, *d)
     |}
-           ["Missing argument [20]: Call `func` expects argument `d`."];
+           [];
     ]
 
 
