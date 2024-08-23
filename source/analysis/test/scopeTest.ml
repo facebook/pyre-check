@@ -576,6 +576,7 @@ let test_define_local_bindings _ =
               return_annotation = None;
               async = false;
               generator = false;
+              parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
               legacy_parent = None;
               nesting_define = None;
               type_params = [];

@@ -685,7 +685,7 @@ let make_wrapper_define
     ~define:
       ({
          Define.signature =
-           { legacy_parent; return_annotation = original_return_annotation; _ } as
+           { parent; legacy_parent; return_annotation = original_return_annotation; _ } as
            original_signature;
          _;
        } as define)
@@ -727,7 +727,7 @@ let make_wrapper_define
   let inlined_wrapper_define_name = make_wrapper_function_name outer_decorator_reference in
   let wrapper_function_name = Reference.last inlined_wrapper_define_name in
   let outer_signature =
-    { outer_signature with legacy_parent; name = inlined_wrapper_define_name }
+    { outer_signature with parent; legacy_parent; name = inlined_wrapper_define_name }
   in
   let wrapper_qualifier = Reference.create ~prefix:qualifier wrapper_function_name in
   let make_helper_define

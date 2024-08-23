@@ -1284,6 +1284,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1312,6 +1313,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1341,6 +1343,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1365,6 +1368,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1393,6 +1397,7 @@ let test_define =
                         return_annotation = Some !"c";
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1417,6 +1422,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1441,6 +1447,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1465,6 +1472,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1489,6 +1497,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1524,6 +1533,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1548,6 +1558,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1586,6 +1597,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1618,6 +1630,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1646,6 +1659,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1678,6 +1692,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1709,6 +1724,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1733,6 +1749,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1761,6 +1778,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1779,51 +1797,55 @@ let test_define =
       @@ assert_parsed
            "def foo():\n  def bar():\n    1\n    2\n3"
            ~expected:
-             [
-               +Statement.Define
-                  {
-                    Define.signature =
-                      {
-                        Define.Signature.name = !&"foo";
-                        parameters = [];
-                        decorators = [];
-                        return_annotation = None;
-                        async = false;
-                        generator = false;
-                        legacy_parent = None;
-                        nesting_define = None;
-                        type_params = [];
-                      };
-                    captures = [];
-                    unbound_names = [];
-                    body =
-                      [
-                        +Statement.Define
-                           {
-                             Define.signature =
-                               {
-                                 Define.Signature.name = !&"bar";
-                                 parameters = [];
-                                 decorators = [];
-                                 return_annotation = None;
-                                 async = false;
-                                 generator = false;
-                                 legacy_parent = None;
-                                 nesting_define = None;
-                                 type_params = [];
-                               };
-                             captures = [];
-                             unbound_names = [];
-                             body =
-                               [
-                                 +Statement.Expression (+Expression.Constant (Constant.Integer 1));
-                                 +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-                               ];
-                           };
-                      ];
-                  };
-               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
-             ];
+             (let parent = ModuleContext.create_toplevel () in
+              [
+                +Statement.Define
+                   {
+                     Define.signature =
+                       {
+                         Define.Signature.name = !&"foo";
+                         parameters = [];
+                         decorators = [];
+                         return_annotation = None;
+                         async = false;
+                         generator = false;
+                         parent;
+                         legacy_parent = None;
+                         nesting_define = None;
+                         type_params = [];
+                       };
+                     captures = [];
+                     unbound_names = [];
+                     body =
+                       [
+                         (let parent = ModuleContext.create_function ~parent "foo" in
+                          +Statement.Define
+                             {
+                               Define.signature =
+                                 {
+                                   Define.Signature.name = !&"bar";
+                                   parameters = [];
+                                   decorators = [];
+                                   return_annotation = None;
+                                   async = false;
+                                   generator = false;
+                                   parent;
+                                   legacy_parent = None;
+                                   nesting_define = None;
+                                   type_params = [];
+                                 };
+                               captures = [];
+                               unbound_names = [];
+                               body =
+                                 [
+                                   +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                                   +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+                                 ];
+                             });
+                       ];
+                   };
+                +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+              ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "def foo(a: int):  1"
@@ -1840,6 +1862,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1871,6 +1894,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -1899,6 +1923,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];
@@ -2087,24 +2112,26 @@ let test_class =
                     parent;
                     body =
                       [
-                        +Statement.Define
-                           {
-                             Define.signature =
-                               {
-                                 Define.Signature.name = !&"bar";
-                                 parameters = [];
-                                 decorators = [];
-                                 return_annotation = None;
-                                 async = false;
-                                 generator = false;
-                                 legacy_parent = Some !&"foo";
-                                 nesting_define = None;
-                                 type_params = [];
-                               };
-                             captures = [];
-                             unbound_names = [];
-                             body = [+Statement.Pass];
-                           };
+                        (let parent = ModuleContext.create_class ~parent "foo" in
+                         +Statement.Define
+                            {
+                              Define.signature =
+                                {
+                                  Define.Signature.name = !&"bar";
+                                  parameters = [];
+                                  decorators = [];
+                                  return_annotation = None;
+                                  async = false;
+                                  generator = false;
+                                  parent;
+                                  legacy_parent = Some !&"foo";
+                                  nesting_define = None;
+                                  type_params = [];
+                                };
+                              captures = [];
+                              unbound_names = [];
+                              body = [+Statement.Pass];
+                            });
                       ];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2123,44 +2150,48 @@ let test_class =
                     parent;
                     body =
                       [
-                        +Statement.Define
-                           {
-                             Define.signature =
-                               {
-                                 Define.Signature.name = !&"bar";
-                                 parameters = [];
-                                 decorators = [];
-                                 return_annotation = None;
-                                 async = false;
-                                 generator = false;
-                                 legacy_parent = Some !&"foo";
-                                 nesting_define = None;
-                                 type_params = [];
-                               };
-                             captures = [];
-                             unbound_names = [];
-                             body =
-                               [
-                                 +Statement.Define
-                                    {
-                                      Define.signature =
-                                        {
-                                          Define.Signature.name = !&"baz";
-                                          parameters = [];
-                                          decorators = [];
-                                          return_annotation = None;
-                                          async = false;
-                                          generator = false;
-                                          legacy_parent = None;
-                                          nesting_define = None;
-                                          type_params = [];
-                                        };
-                                      captures = [];
-                                      unbound_names = [];
-                                      body = [+Statement.Pass];
-                                    };
-                               ];
-                           };
+                        (let parent = ModuleContext.create_class ~parent "foo" in
+                         +Statement.Define
+                            {
+                              Define.signature =
+                                {
+                                  Define.Signature.name = !&"bar";
+                                  parameters = [];
+                                  decorators = [];
+                                  return_annotation = None;
+                                  async = false;
+                                  generator = false;
+                                  parent;
+                                  legacy_parent = Some !&"foo";
+                                  nesting_define = None;
+                                  type_params = [];
+                                };
+                              captures = [];
+                              unbound_names = [];
+                              body =
+                                [
+                                  (let parent = ModuleContext.create_function ~parent "bar" in
+                                   +Statement.Define
+                                      {
+                                        Define.signature =
+                                          {
+                                            Define.Signature.name = !&"baz";
+                                            parameters = [];
+                                            decorators = [];
+                                            return_annotation = None;
+                                            async = false;
+                                            generator = false;
+                                            parent;
+                                            legacy_parent = None;
+                                            nesting_define = None;
+                                            type_params = [];
+                                          };
+                                        captures = [];
+                                        unbound_names = [];
+                                        body = [+Statement.Pass];
+                                      });
+                                ];
+                            });
                       ];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2255,24 +2286,26 @@ let test_class =
                     parent;
                     body =
                       [
-                        +Statement.Define
-                           {
-                             Define.signature =
-                               {
-                                 Define.Signature.name = !&"bar";
-                                 parameters = [];
-                                 decorators = [];
-                                 return_annotation = None;
-                                 async = false;
-                                 generator = false;
-                                 legacy_parent = Some !&"foo";
-                                 nesting_define = None;
-                                 type_params = [];
-                               };
-                             captures = [];
-                             unbound_names = [];
-                             body = [+Statement.Pass];
-                           };
+                        (let parent = ModuleContext.create_class ~parent "foo" in
+                         +Statement.Define
+                            {
+                              Define.signature =
+                                {
+                                  Define.Signature.name = !&"bar";
+                                  parameters = [];
+                                  decorators = [];
+                                  return_annotation = None;
+                                  async = false;
+                                  generator = false;
+                                  parent;
+                                  legacy_parent = Some !&"foo";
+                                  nesting_define = None;
+                                  type_params = [];
+                                };
+                              captures = [];
+                              unbound_names = [];
+                              body = [+Statement.Pass];
+                            });
                       ];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2290,56 +2323,60 @@ let test_class =
                     base_arguments = [];
                     parent;
                     body =
-                      [
-                        +Statement.Define
-                           {
-                             Define.signature =
-                               {
-                                 Define.Signature.name = !&"foo";
-                                 parameters = [];
-                                 decorators = [];
-                                 return_annotation = None;
-                                 async = false;
-                                 generator = false;
-                                 legacy_parent = Some !&"A";
-                                 nesting_define = None;
-                                 type_params = [];
-                               };
-                             captures = [];
-                             unbound_names = [];
-                             body = [+Statement.Pass];
-                           };
-                        +Statement.Class
-                           {
-                             Class.name = !&"B";
-                             base_arguments = [];
-                             parent = ModuleContext.create_class ~parent "A";
-                             body =
-                               [
-                                 +Statement.Define
-                                    {
-                                      Define.signature =
-                                        {
-                                          Define.Signature.name = !&"bar";
-                                          parameters = [];
-                                          decorators = [];
-                                          return_annotation = None;
-                                          async = false;
-                                          generator = false;
-                                          legacy_parent = Some !&"B";
-                                          nesting_define = None;
-                                          type_params = [];
-                                        };
-                                      captures = [];
-                                      unbound_names = [];
-                                      body = [+Statement.Pass];
-                                    };
-                               ];
-                             decorators = [];
-                             top_level_unbound_names = [];
-                             type_params = [];
-                           };
-                      ];
+                      (let parent = ModuleContext.create_class ~parent "A" in
+                       [
+                         +Statement.Define
+                            {
+                              Define.signature =
+                                {
+                                  Define.Signature.name = !&"foo";
+                                  parameters = [];
+                                  decorators = [];
+                                  return_annotation = None;
+                                  async = false;
+                                  generator = false;
+                                  parent;
+                                  legacy_parent = Some !&"A";
+                                  nesting_define = None;
+                                  type_params = [];
+                                };
+                              captures = [];
+                              unbound_names = [];
+                              body = [+Statement.Pass];
+                            };
+                         +Statement.Class
+                            {
+                              Class.name = !&"B";
+                              base_arguments = [];
+                              parent;
+                              body =
+                                [
+                                  (let parent = ModuleContext.create_class ~parent "B" in
+                                   +Statement.Define
+                                      {
+                                        Define.signature =
+                                          {
+                                            Define.Signature.name = !&"bar";
+                                            parameters = [];
+                                            decorators = [];
+                                            return_annotation = None;
+                                            async = false;
+                                            generator = false;
+                                            parent;
+                                            legacy_parent = Some !&"B";
+                                            nesting_define = None;
+                                            type_params = [];
+                                          };
+                                        captures = [];
+                                        unbound_names = [];
+                                        body = [+Statement.Pass];
+                                      });
+                                ];
+                              decorators = [];
+                              top_level_unbound_names = [];
+                              type_params = [];
+                            };
+                       ]);
                     decorators = [];
                     top_level_unbound_names = [];
                     type_params = [];
@@ -2360,6 +2397,7 @@ let test_class =
                         return_annotation = None;
                         async = false;
                         generator = false;
+                        parent;
                         legacy_parent = None;
                         nesting_define = None;
                         type_params = [];

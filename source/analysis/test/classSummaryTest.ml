@@ -210,6 +210,7 @@ let test_class_attributes =
                 return_annotation = Some !"int";
                 async = false;
                 generator = false;
+                parent = ModuleContext.create_toplevel ();
                 legacy_parent = None;
                 nesting_define = None;
                 type_params = [];

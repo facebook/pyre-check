@@ -456,11 +456,11 @@ let test_qualify_source =
         | ModuleContext.Function { name; parent } ->
             ModuleContext.create_function
               ~parent:(dequalify_parent parent)
-              (Reference.create name |> Reference.last)
+              (Identifier.sanitized name |> Reference.create |> Reference.last)
         | ModuleContext.Class { name; parent } ->
             ModuleContext.create_class
               ~parent:(dequalify_parent parent)
-              (Reference.create name |> Reference.last)
+              (Identifier.sanitized name |> Reference.create |> Reference.last)
 
 
       let statement _ = function
@@ -470,6 +470,25 @@ let test_qualify_source =
                 {
                   Node.value =
                     Statement.Class { class_body with Class.parent = dequalify_parent parent };
+                  location;
+                };
+              ] )
+        | {
+            Node.value =
+              Statement.Define
+                ({ Define.signature = { Define.Signature.parent; _ } as signature; _ } as define);
+            location;
+          } ->
+            ( (),
+              [
+                {
+                  Node.value =
+                    Statement.Define
+                      {
+                        define with
+                        Define.signature =
+                          { signature with Define.Signature.parent = dequalify_parent parent };
+                      };
                   location;
                 };
               ] )
@@ -2315,53 +2334,56 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "Foo";
-                  base_arguments = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"some_method";
-                               parameters =
-                                 [+{ Parameter.name = "self"; value = None; annotation = None }];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target = +Expression.Name (Name.Identifier "x");
-                                    annotation = Some (+Expression.Name (Name.Identifier "Foo"));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base = +Expression.Name (Name.Identifier "self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "Foo";
+                   base_arguments = [];
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"some_method";
+                                 parameters =
+                                   [+{ Parameter.name = "self"; value = None; annotation = None }];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target = +Expression.Name (Name.Identifier "x");
+                                      annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base = +Expression.Name (Name.Identifier "self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
+                                    };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ]
            [
              +Statement.Assign
@@ -2370,71 +2392,74 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "Foo.Foo";
-                  base_arguments = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"Foo.Foo.some_method";
-                               parameters =
-                                 [
-                                   +{
-                                      Parameter.name = "$parameter$self";
-                                      value = None;
-                                      annotation = None;
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "Foo.Foo";
+                   base_arguments = [];
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"Foo.Foo.some_method";
+                                 parameters =
+                                   [
+                                     +{
+                                        Parameter.name = "$parameter$self";
+                                        value = None;
+                                        annotation = None;
+                                      };
+                                   ];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target =
+                                        +Expression.Name
+                                           (Name.Identifier "$local_Foo?Foo?some_method$x");
+                                      annotation =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base = +Expression.Name (Name.Identifier "Foo");
+                                                   attribute = "Foo";
+                                                   special = false;
+                                                 }));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base =
+                                                     +Expression.Name
+                                                        (Name.Identifier "$parameter$self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
                                     };
-                                 ];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target =
-                                      +Expression.Name
-                                         (Name.Identifier "$local_Foo?Foo?some_method$x");
-                                    annotation =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base = +Expression.Name (Name.Identifier "Foo");
-                                                 attribute = "Foo";
-                                                 special = false;
-                                               }));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base =
-                                                   +Expression.Name
-                                                      (Name.Identifier "$parameter$self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ];
       (* Module name is `Foo`, global variable is `Foo`, and class is `Foo`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -2447,53 +2472,56 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "Foo";
-                  base_arguments = [];
-                  parent = ModuleContext.create_toplevel ();
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"some_method";
-                               parameters =
-                                 [+{ Parameter.name = "self"; value = None; annotation = None }];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target = +Expression.Name (Name.Identifier "x");
-                                    annotation = Some (+Expression.Name (Name.Identifier "Foo"));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base = +Expression.Name (Name.Identifier "self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "Foo";
+                   base_arguments = [];
+                   parent;
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"some_method";
+                                 parameters =
+                                   [+{ Parameter.name = "self"; value = None; annotation = None }];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target = +Expression.Name (Name.Identifier "x");
+                                      annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base = +Expression.Name (Name.Identifier "self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
+                                    };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ]
            [
              +Statement.Assign
@@ -2502,64 +2530,67 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "Foo.Foo";
-                  base_arguments = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"Foo.Foo.some_method";
-                               parameters =
-                                 [
-                                   +{
-                                      Parameter.name = "$parameter$self";
-                                      value = None;
-                                      annotation = None;
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "Foo.Foo";
+                   base_arguments = [];
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"Foo.Foo.some_method";
+                                 parameters =
+                                   [
+                                     +{
+                                        Parameter.name = "$parameter$self";
+                                        value = None;
+                                        annotation = None;
+                                      };
+                                   ];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target =
+                                        +Expression.Name
+                                           (Name.Identifier "$local_Foo?Foo?some_method$x");
+                                      annotation =
+                                        Some (+Expression.Name (Name.Identifier "$local_Foo$Foo"));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base =
+                                                     +Expression.Name
+                                                        (Name.Identifier "$parameter$self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
                                     };
-                                 ];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target =
-                                      +Expression.Name
-                                         (Name.Identifier "$local_Foo?Foo?some_method$x");
-                                    annotation =
-                                      Some (+Expression.Name (Name.Identifier "$local_Foo$Foo"));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base =
-                                                   +Expression.Name
-                                                      (Name.Identifier "$parameter$self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ];
       (* Module name is `NotFoo`, global variable is `Foo`, and class is `Foo`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -2572,53 +2603,56 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "Foo";
-                  base_arguments = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"some_method";
-                               parameters =
-                                 [+{ Parameter.name = "self"; value = None; annotation = None }];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target = +Expression.Name (Name.Identifier "x");
-                                    annotation = Some (+Expression.Name (Name.Identifier "Foo"));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base = +Expression.Name (Name.Identifier "self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "Foo";
+                   base_arguments = [];
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"some_method";
+                                 parameters =
+                                   [+{ Parameter.name = "self"; value = None; annotation = None }];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target = +Expression.Name (Name.Identifier "x");
+                                      annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base = +Expression.Name (Name.Identifier "self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
+                                    };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ]
            [
              +Statement.Assign
@@ -2627,64 +2661,68 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             +Statement.Class
-                {
-                  Class.name = Reference.create "NotFoo.Foo";
-                  base_arguments = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"NotFoo.Foo.some_method";
-                               parameters =
-                                 [
-                                   +{
-                                      Parameter.name = "$parameter$self";
-                                      value = None;
-                                      annotation = None;
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = Reference.create "NotFoo.Foo";
+                   base_arguments = [];
+                   top_level_unbound_names = [];
+                   type_params = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"NotFoo.Foo.some_method";
+                                 parameters =
+                                   [
+                                     +{
+                                        Parameter.name = "$parameter$self";
+                                        value = None;
+                                        annotation = None;
+                                      };
+                                   ];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               [
+                                 +Statement.Assign
+                                    {
+                                      target =
+                                        +Expression.Name
+                                           (Name.Identifier "$local_NotFoo?Foo?some_method$x");
+                                      annotation =
+                                        Some
+                                          (+Expression.Name (Name.Identifier "$local_NotFoo$Foo"));
+                                      value =
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base =
+                                                     +Expression.Name
+                                                        (Name.Identifier "$parameter$self");
+                                                   attribute = "some_attribute";
+                                                   special = false;
+                                                 }));
                                     };
-                                 ];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    target =
-                                      +Expression.Name
-                                         (Name.Identifier "$local_NotFoo?Foo?some_method$x");
-                                    annotation =
-                                      Some (+Expression.Name (Name.Identifier "$local_NotFoo$Foo"));
-                                    value =
-                                      Some
-                                        (+Expression.Name
-                                            (Name.Attribute
-                                               {
-                                                 base =
-                                                   +Expression.Name
-                                                      (Name.Identifier "$parameter$self");
-                                                 attribute = "some_attribute";
-                                                 special = false;
-                                               }));
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                };
+                               ];
+                           };
+                      ]);
+                   decorators = [];
+                 });
            ];
     ]
 
@@ -3602,6 +3640,7 @@ let test_expand_implicit_returns =
                     return_annotation = None;
                     async = false;
                     generator = false;
+                    parent = ModuleContext.create_toplevel ();
                     legacy_parent = None;
                     nesting_define = None;
                     type_params = [];
@@ -3789,7 +3828,7 @@ let test_defines =
       |> List.length)
       (Preprocessing.count_defines source)
   in
-  let create_define name =
+  let create_define ~parent name =
     {
       Define.signature =
         {
@@ -3799,6 +3838,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
+          parent;
           legacy_parent = None;
           nesting_define = None;
           type_params = [];
@@ -3818,6 +3858,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
+          parent = ModuleContext.create_toplevel ();
           legacy_parent = None;
           nesting_define = None;
           type_params = [];
@@ -3837,6 +3878,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
+          parent = ModuleContext.create_class ~parent:(ModuleContext.create_toplevel ()) parent;
           legacy_parent = Some (Reference.create parent);
           nesting_define = None;
           type_params = [];
@@ -3848,7 +3890,7 @@ let test_defines =
   in
   test_list
     [
-      (let define = create_define "foo" in
+      (let define = create_define ~parent:(ModuleContext.create_toplevel ()) "foo" in
        labeled_test_case __FUNCTION__ __LINE__
        @@ assert_defines
             [+Statement.Define define]
@@ -3863,6 +3905,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
+               parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                legacy_parent = None;
                nesting_define = None;
                type_params = [];
@@ -3882,6 +3925,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
+               parent = ModuleContext.create_toplevel ();
                legacy_parent = None;
                nesting_define = None;
                type_params = [];
@@ -3909,6 +3953,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
+               parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                legacy_parent = None;
                nesting_define = None;
                type_params = [];
@@ -3928,6 +3973,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
+               parent = ModuleContext.create_toplevel ();
                legacy_parent = None;
                nesting_define = None;
                type_params = [];
@@ -3953,8 +3999,9 @@ let test_defines =
             [+Statement.If if_define]
             [create_toplevel [+Statement.If if_define]; define]);
       ((* Note: Defines are returned in reverse order. *)
-       let define_foo = create_define "foo" in
-       let define_bar = create_define "bar" in
+       let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "Foo") in
+       let define_foo = create_define ~parent "foo" in
+       let define_bar = create_define ~parent "bar" in
        let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
        let parent =
          {
@@ -3989,31 +4036,34 @@ let test_classes =
   test_list
     [
       (let class_define =
+         let parent = ModuleContext.create_toplevel () in
          {
            Class.name = !&"foo";
            base_arguments = [];
-           parent = ModuleContext.create_toplevel ();
+           parent;
            body =
-             [
-               +Statement.Define
-                  {
-                    signature =
-                      {
-                        name = !&"bar";
-                        parameters = [];
-                        decorators = [];
-                        return_annotation = None;
-                        async = false;
-                        generator = false;
-                        legacy_parent = Some !&"foo";
-                        nesting_define = None;
-                        type_params = [];
-                      };
-                    captures = [];
-                    unbound_names = [];
-                    body = [+Statement.Pass];
-                  };
-             ];
+             (let parent = ModuleContext.create_class ~parent "foo" in
+              [
+                +Statement.Define
+                   {
+                     signature =
+                       {
+                         name = !&"bar";
+                         parameters = [];
+                         decorators = [];
+                         return_annotation = None;
+                         async = false;
+                         generator = false;
+                         parent;
+                         legacy_parent = Some !&"foo";
+                         nesting_define = None;
+                         type_params = [];
+                       };
+                     captures = [];
+                     unbound_names = [];
+                     body = [+Statement.Pass];
+                   };
+              ]);
            decorators = [];
            top_level_unbound_names = [];
            type_params = [];
@@ -5078,6 +5128,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent = ModuleContext.create_toplevel ();
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -5096,6 +5147,8 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent =
+                                 ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                                legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
@@ -5132,6 +5185,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent = ModuleContext.create_toplevel ();
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -5150,6 +5204,8 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent =
+                                 ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                                legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
@@ -5168,6 +5224,8 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent =
+                                 ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                                legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
@@ -5188,64 +5246,70 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = None;
-                               nesting_define = Some !&"foo";
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"baz";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"bar";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     (let parent = ModuleContext.create_function ~parent "foo" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = None;
+                                 nesting_define = Some !&"foo";
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               (let parent = ModuleContext.create_function ~parent "bar" in
+                                [
+                                  +Statement.Define
+                                     {
+                                       signature =
+                                         {
+                                           name = !&"baz";
+                                           parameters = [];
+                                           decorators = [];
+                                           return_annotation = None;
+                                           async = false;
+                                           generator = false;
+                                           parent;
+                                           legacy_parent = None;
+                                           nesting_define = Some !&"bar";
+                                           type_params = [];
+                                         };
+                                       captures = [];
+                                       unbound_names = [];
+                                       body = [+Statement.Pass];
+                                     };
+                                ]);
+                           };
+                      ]);
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5259,72 +5323,77 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.If
-                         {
-                           If.test = +Expression.Constant Constant.True;
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                           orelse =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"baz";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     (let parent = ModuleContext.create_function ~parent "foo" in
+                      [
+                        +Statement.If
+                           {
+                             If.test = +Expression.Constant Constant.True;
+                             body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"bar";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                             orelse =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"baz";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                           };
+                      ]);
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5338,72 +5407,77 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.While
-                         {
-                           While.test = +Expression.Constant Constant.True;
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                           orelse =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"baz";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     (let parent = ModuleContext.create_function ~parent "foo" in
+                      [
+                        +Statement.While
+                           {
+                             While.test = +Expression.Constant Constant.True;
+                             body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"bar";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                             orelse =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"baz";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                           };
+                      ]);
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5414,52 +5488,56 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.With
-                         {
-                           With.items = [+Expression.Constant Constant.True, None];
-                           async = false;
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     (let parent = ModuleContext.create_function ~parent "foo" in
+                      [
+                        +Statement.With
+                           {
+                             With.items = [+Expression.Constant Constant.True, None];
+                             async = false;
+                             body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"bar";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                           };
+                      ]);
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5476,101 +5554,107 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Try
-                         {
-                           Try.body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                           orelse = [];
-                           handlers =
-                             [
-                               {
-                                 Try.Handler.kind = None;
-                                 name = None;
-                                 body =
-                                   [
-                                     +Statement.Define
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     (let parent = ModuleContext.create_function ~parent "foo" in
+                      [
+                        +Statement.Try
+                           {
+                             Try.body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
                                         {
-                                          signature =
-                                            {
-                                              name = !&"baz";
-                                              parameters = [];
-                                              decorators = [];
-                                              return_annotation = None;
-                                              async = false;
-                                              generator = false;
-                                              legacy_parent = None;
-                                              nesting_define = Some !&"foo";
-                                              type_params = [];
-                                            };
-                                          captures = [];
-                                          unbound_names = [];
-                                          body = [+Statement.Pass];
+                                          name = !&"bar";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
                                         };
-                                   ];
-                               };
-                             ];
-                           finally =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"qux";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                           handles_exception_group = false;
-                         };
-                    ];
-                };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                             orelse = [];
+                             handlers =
+                               [
+                                 {
+                                   Try.Handler.kind = None;
+                                   name = None;
+                                   body =
+                                     [
+                                       +Statement.Define
+                                          {
+                                            signature =
+                                              {
+                                                name = !&"baz";
+                                                parameters = [];
+                                                decorators = [];
+                                                return_annotation = None;
+                                                async = false;
+                                                generator = false;
+                                                parent;
+                                                legacy_parent = None;
+                                                nesting_define = Some !&"foo";
+                                                type_params = [];
+                                              };
+                                            captures = [];
+                                            unbound_names = [];
+                                            body = [+Statement.Pass];
+                                          };
+                                     ];
+                                 };
+                               ];
+                             finally =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"qux";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = Some !&"foo";
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                             handles_exception_group = false;
+                           };
+                      ]);
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5581,56 +5665,61 @@ let test_populate_nesting_define =
               pass
     |}
            [
-             +Statement.Class
-                {
-                  Class.name = !&"C";
-                  base_arguments = [];
-                  decorators = [];
-                  parent = ModuleContext.create_toplevel ();
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           signature =
-                             {
-                               name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = Some !&"C";
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"baz";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = Some !&"bar";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Class
+                 {
+                   Class.name = !&"C";
+                   base_arguments = [];
+                   decorators = [];
+                   parent;
+                   body =
+                     (let parent = ModuleContext.create_class ~parent "C" in
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent;
+                                 legacy_parent = Some !&"C";
+                                 nesting_define = None;
+                                 type_params = [];
+                               };
+                             captures = [];
+                             unbound_names = [];
+                             body =
+                               (let parent = ModuleContext.create_function ~parent "bar" in
+                                [
+                                  +Statement.Define
+                                     {
+                                       signature =
+                                         {
+                                           name = !&"baz";
+                                           parameters = [];
+                                           decorators = [];
+                                           return_annotation = None;
+                                           async = false;
+                                           generator = false;
+                                           parent;
+                                           legacy_parent = None;
+                                           nesting_define = Some !&"bar";
+                                           type_params = [];
+                                         };
+                                       captures = [];
+                                       unbound_names = [];
+                                       body = [+Statement.Pass];
+                                     };
+                                ]);
+                           };
+                      ]);
+                   top_level_unbound_names = [];
+                   type_params = [];
+                 });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_populated
@@ -5642,77 +5731,85 @@ let test_populate_nesting_define =
                 pass
     |}
            [
-             +Statement.Define
-                {
-                  signature =
-                    {
-                      name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      legacy_parent = None;
-                      nesting_define = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Class
-                         {
-                           Class.name = !&"C";
-                           base_arguments = [];
-                           decorators = [];
-                           parent =
-                             ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    signature =
-                                      {
-                                        name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = Some !&"C";
-                                        nesting_define = None;
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body =
-                                      [
-                                        +Statement.Define
-                                           {
-                                             signature =
+             (let parent = ModuleContext.create_toplevel () in
+              +Statement.Define
+                 {
+                   signature =
+                     {
+                       name = !&"foo";
+                       parameters = [];
+                       decorators = [];
+                       return_annotation = None;
+                       async = false;
+                       generator = false;
+                       parent;
+                       legacy_parent = None;
+                       nesting_define = None;
+                       type_params = [];
+                     };
+                   captures = [];
+                   unbound_names = [];
+                   body =
+                     [
+                       (let parent = ModuleContext.(create_function ~parent "foo") in
+                        +Statement.Class
+                           {
+                             Class.name = !&"C";
+                             base_arguments = [];
+                             decorators = [];
+                             parent;
+                             body =
+                               (let parent = ModuleContext.create_class ~parent "C" in
+                                [
+                                  +Statement.Define
+                                     {
+                                       signature =
+                                         {
+                                           name = !&"bar";
+                                           parameters = [];
+                                           decorators = [];
+                                           return_annotation = None;
+                                           async = false;
+                                           generator = false;
+                                           parent;
+                                           legacy_parent = Some !&"C";
+                                           nesting_define = None;
+                                           type_params = [];
+                                         };
+                                       captures = [];
+                                       unbound_names = [];
+                                       body =
+                                         (let parent =
+                                            ModuleContext.create_function ~parent "bar"
+                                          in
+                                          [
+                                            +Statement.Define
                                                {
-                                                 name = !&"baz";
-                                                 parameters = [];
-                                                 decorators = [];
-                                                 return_annotation = None;
-                                                 async = false;
-                                                 generator = false;
-                                                 legacy_parent = None;
-                                                 nesting_define = Some !&"bar";
-                                                 type_params = [];
+                                                 signature =
+                                                   {
+                                                     name = !&"baz";
+                                                     parameters = [];
+                                                     decorators = [];
+                                                     return_annotation = None;
+                                                     async = false;
+                                                     generator = false;
+                                                     parent;
+                                                     legacy_parent = None;
+                                                     nesting_define = Some !&"bar";
+                                                     type_params = [];
+                                                   };
+                                                 captures = [];
+                                                 unbound_names = [];
+                                                 body = [+Statement.Pass];
                                                };
-                                             captures = [];
-                                             unbound_names = [];
-                                             body = [+Statement.Pass];
-                                           };
-                                      ];
-                                  };
-                             ];
-                           top_level_unbound_names = [];
-                           type_params = [];
-                         };
-                    ];
-                };
+                                          ]);
+                                     };
+                                ]);
+                             top_level_unbound_names = [];
+                             type_params = [];
+                           });
+                     ];
+                 });
            ];
     ]
 
@@ -5871,6 +5968,7 @@ let test_populate_captures =
                          return_annotation = Some (int_annotation (3, 21) (3, 24));
                          async = false;
                          generator = false;
+                         parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                          legacy_parent = None;
                          nesting_define = None;
                          type_params = [];
@@ -6576,6 +6674,7 @@ let test_populate_captures =
                          return_annotation = None;
                          async = false;
                          generator = false;
+                         parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
                          legacy_parent = None;
                          nesting_define = None;
                          type_params = [];

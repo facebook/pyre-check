@@ -501,6 +501,7 @@ module ParserToAst = struct
               return_annotation = return_annotation >>| convert_expression;
               async;
               generator = Ast.Statement.is_generator body;
+              parent;
               legacy_parent;
               nesting_define = None;
               type_params = [];

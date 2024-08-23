@@ -3110,6 +3110,7 @@ let mock_signature =
     return_annotation = None;
     async = false;
     generator = false;
+    parent = ModuleContext.create_toplevel ();
     legacy_parent = None;
     nesting_define = None;
     type_params = [];

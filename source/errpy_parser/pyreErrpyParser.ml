@@ -628,6 +628,7 @@ and translate_statements
           return_annotation = returns;
           async;
           generator = is_generator body;
+          parent;
           legacy_parent;
           nesting_define = None;
           type_params = [];

@@ -79,12 +79,12 @@ let callable_body =
 
 
 let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
-  let parent = Reference.create ~prefix:in_module parent in
+  let prefix = ModuleContext.to_qualifier ~module_name:in_module parent in
   Statement.Define
     {
       signature =
         {
-          name = Reference.combine parent (Reference.create "__get__");
+          name = Reference.create ~prefix "__get__";
           parameters =
             [
               Node.create_with_default_location
@@ -108,7 +108,8 @@ let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
           return_annotation = Some (Type.expression return);
           async = false;
           generator = false;
-          legacy_parent = Some parent;
+          parent;
+          legacy_parent = Some prefix;
           nesting_define = None;
           type_params = [];
         };
@@ -125,10 +126,11 @@ let classmethod_body =
    * class ClassMethod(Generic[_T]):
    *   def __get__(self, host: object, host_type: _S = None) -> BoundMethod[_T, _S]: ...
    *)
+  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "ClassMethod") in
   [
     make_dunder_get
       ~in_module:(Reference.create "typing")
-      ~parent:"ClassMethod"
+      ~parent
       ~host:Type.object_primitive
       ~host_type:(Variable (Type.Variable.TypeVar.create "typing._S"))
       ~return:
@@ -148,10 +150,11 @@ let staticmethod_body =
    * class StaticMethod(Generic[_T]):
    *   def __get__(self, host: object, host_type: object = None) -> _T: ...
    *)
+  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "StaticMethod") in
   [
     make_dunder_get
       ~in_module:(Reference.create "typing")
-      ~parent:"StaticMethod"
+      ~parent
       ~host:Type.object_primitive
       ~host_type:Type.object_primitive
       ~return:(Variable (Type.Variable.TypeVar.create "typing._T"));
@@ -160,12 +163,15 @@ let staticmethod_body =
 
 
 let generic_meta_body =
+  let module_name = Reference.create "typing" in
+  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "GenericMeta") in
+  let prefix = ModuleContext.to_qualifier ~module_name parent in
   [
     Statement.Define
       {
         signature =
           {
-            name = Reference.create "typing.GenericMeta.__getitem__";
+            name = Reference.create ~prefix "__getitem__";
             parameters =
               [
                 { Parameter.name = "cls"; value = None; annotation = None }
@@ -177,7 +183,8 @@ let generic_meta_body =
             return_annotation = None;
             async = false;
             generator = false;
-            legacy_parent = Some (Reference.create "typing.GenericMeta");
+            parent;
+            legacy_parent = Some prefix;
             nesting_define = None;
             type_params = [];
           };

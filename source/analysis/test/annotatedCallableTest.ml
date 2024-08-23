@@ -35,6 +35,7 @@ let test_return_annotation context =
           return_annotation;
           async;
           generator;
+          parent = ModuleContext.create_toplevel ();
           legacy_parent = None;
           nesting_define = None;
           type_params = [];

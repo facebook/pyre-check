@@ -56,6 +56,7 @@ let assert_not_parsed source _context =
 
 
 let test_lexer =
+  let parent = ModuleContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -152,6 +153,7 @@ let test_lexer =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -686,6 +688,7 @@ let decorator ?arguments name =
 
 
 let test_define =
+  let parent = ModuleContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -702,6 +705,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -729,6 +733,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -757,6 +762,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -780,6 +786,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -803,6 +810,7 @@ let test_define =
                       return_annotation = None;
                       async = true;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -826,6 +834,7 @@ let test_define =
                       return_annotation = None;
                       async = true;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -849,6 +858,7 @@ let test_define =
                       return_annotation = None;
                       async = true;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -872,6 +882,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -904,6 +915,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -927,6 +939,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -964,6 +977,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -995,6 +1009,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1022,6 +1037,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1053,6 +1069,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1083,6 +1100,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1106,6 +1124,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1133,6 +1152,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1161,6 +1181,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1179,6 +1200,7 @@ let test_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent = ModuleContext.create_function ~parent "foo";
                                legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
@@ -1210,6 +1232,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1240,6 +1263,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1267,6 +1291,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1303,6 +1328,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1330,6 +1356,7 @@ let test_define =
                       return_annotation = Some !"c";
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1353,6 +1380,7 @@ let test_define =
                       return_annotation = Some !"str";
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1386,6 +1414,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1422,6 +1451,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1458,6 +1488,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1494,6 +1525,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1529,6 +1561,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1564,6 +1597,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1609,6 +1643,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1654,6 +1689,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1707,6 +1743,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1753,6 +1790,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1798,6 +1836,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1834,6 +1873,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1888,6 +1928,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1942,6 +1983,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -1997,6 +2039,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2037,6 +2080,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2074,6 +2118,7 @@ let test_define =
                           (+Expression.Constant (Constant.String (StringLiteral.create "List[str]")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2132,6 +2177,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2180,6 +2226,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2221,6 +2268,7 @@ let test_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2259,6 +2307,7 @@ let test_define =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -2294,6 +2343,7 @@ let test_define =
                       return_annotation = None;
                       async = true;
                       generator = true;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -4082,6 +4132,7 @@ let test_class =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -4114,24 +4165,26 @@ let test_class =
                   parent;
                   body =
                     [
-                      +Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = Some !&"foo";
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body = [+Statement.Pass];
-                         };
+                      (let parent = ModuleContext.create_class ~parent "foo" in
+                       +Statement.Define
+                          {
+                            Define.signature =
+                              {
+                                Define.Signature.name = !&"bar";
+                                parameters = [];
+                                decorators = [];
+                                return_annotation = None;
+                                async = false;
+                                generator = false;
+                                parent;
+                                legacy_parent = Some !&"foo";
+                                nesting_define = None;
+                                type_params = [];
+                              };
+                            captures = [];
+                            unbound_names = [];
+                            body = [+Statement.Pass];
+                          });
                     ];
                   decorators = [];
                   top_level_unbound_names = [];
@@ -4148,46 +4201,50 @@ let test_class =
                   base_arguments = [];
                   parent;
                   body =
-                    [
-                      +Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               legacy_parent = Some !&"foo";
-                               nesting_define = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    Define.signature =
-                                      {
-                                        Define.Signature.name = !&"baz";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        legacy_parent = None;
-                                        nesting_define = None;
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                         };
-                    ];
+                    (let parent = ModuleContext.create_class ~parent "foo" in
+                     [
+                       +Statement.Define
+                          {
+                            Define.signature =
+                              {
+                                Define.Signature.name = !&"bar";
+                                parameters = [];
+                                decorators = [];
+                                return_annotation = None;
+                                async = false;
+                                generator = false;
+                                parent;
+                                legacy_parent = Some !&"foo";
+                                nesting_define = None;
+                                type_params = [];
+                              };
+                            captures = [];
+                            unbound_names = [];
+                            body =
+                              [
+                                (let parent = ModuleContext.create_function ~parent "bar" in
+                                 +Statement.Define
+                                    {
+                                      Define.signature =
+                                        {
+                                          Define.Signature.name = !&"baz";
+                                          parameters = [];
+                                          decorators = [];
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent;
+                                          legacy_parent = None;
+                                          nesting_define = None;
+                                          type_params = [];
+                                        };
+                                      captures = [];
+                                      unbound_names = [];
+                                      body = [+Statement.Pass];
+                                    });
+                              ];
+                          };
+                     ]);
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4369,6 +4426,7 @@ let test_class =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent = ModuleContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
                                nesting_define = None;
                                type_params = [];
@@ -4405,6 +4463,7 @@ let test_class =
                                return_annotation = None;
                                async = false;
                                generator = false;
+                               parent = ModuleContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
                                nesting_define = None;
                                type_params = [];
@@ -4467,6 +4526,7 @@ let test_class =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
+                                        parent = ModuleContext.create_class ~parent "foo";
                                         legacy_parent = Some !&"foo";
                                         nesting_define = None;
                                         type_params = [];
@@ -5919,6 +5979,7 @@ let test_stubs =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -5942,6 +6003,7 @@ let test_stubs =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -5965,6 +6027,7 @@ let test_stubs =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -5995,6 +6058,7 @@ let test_stubs =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent;
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
@@ -6086,6 +6150,7 @@ let test_ellipsis =
                       return_annotation = None;
                       async = false;
                       generator = false;
+                      parent = ModuleContext.create_toplevel ();
                       legacy_parent = None;
                       nesting_define = None;
                       type_params = [];

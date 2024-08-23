@@ -971,6 +971,7 @@ let test_class_locations =
                                      return_annotation = None;
                                      async = false;
                                      generator = false;
+                                     parent = ModuleContext.(create_class ~parent "foo");
                                      legacy_parent = Some !&"foo";
                                      nesting_define = None;
                                      type_params = [];
@@ -1078,6 +1079,7 @@ let test_class_locations =
                                                 return_annotation = None;
                                                 async = false;
                                                 generator = false;
+                                                parent = ModuleContext.(create_class ~parent "foo");
                                                 legacy_parent = Some !&"foo";
                                                 nesting_define = None;
                                                 type_params = [];
@@ -1120,6 +1122,7 @@ let test_define_locations =
                           return_annotation = None;
                           async = true;
                           generator = false;
+                          parent = ModuleContext.create_toplevel ();
                           legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
@@ -1151,68 +1154,72 @@ let test_define_locations =
       |})
            ~expected:
              [
-               node
-                 ~start:(2, 0)
-                 ~stop:(5, 9)
-                 (Statement.Define
-                    {
-                      Define.signature =
-                        {
-                          Define.Signature.name = !&"foo";
-                          parameters = [];
-                          decorators = [];
-                          return_annotation = None;
-                          async = false;
-                          generator = false;
-                          legacy_parent = None;
-                          nesting_define = None;
-                          type_params = [];
-                        };
-                      captures = [];
-                      unbound_names = [];
-                      body =
-                        [
-                          node
-                            ~start:(3, 4)
-                            ~stop:(5, 9)
-                            (Statement.Define
-                               {
-                                 Define.signature =
-                                   {
-                                     Define.Signature.name = !&"bar";
-                                     parameters = [];
-                                     decorators = [];
-                                     return_annotation = None;
-                                     async = false;
-                                     generator = false;
-                                     legacy_parent = None;
-                                     nesting_define = None;
-                                     type_params = [];
-                                   };
-                                 captures = [];
-                                 unbound_names = [];
-                                 body =
-                                   [
-                                     node
-                                       ~start:(4, 8)
-                                       ~stop:(4, 9)
-                                       (Statement.Expression
-                                          (node
-                                             ~start:(4, 8)
-                                             ~stop:(4, 9)
-                                             (Expression.Constant (Constant.Integer 1))));
-                                     node
-                                       ~start:(5, 8)
-                                       ~stop:(5, 9)
-                                       (Statement.Expression
-                                          (node
-                                             ~start:(5, 8)
-                                             ~stop:(5, 9)
-                                             (Expression.Constant (Constant.Integer 2))));
-                                   ];
-                               });
-                        ];
-                    });
+               (let parent = ModuleContext.create_toplevel () in
+                node
+                  ~start:(2, 0)
+                  ~stop:(5, 9)
+                  (Statement.Define
+                     {
+                       Define.signature =
+                         {
+                           Define.Signature.name = !&"foo";
+                           parameters = [];
+                           decorators = [];
+                           return_annotation = None;
+                           async = false;
+                           generator = false;
+                           parent;
+                           legacy_parent = None;
+                           nesting_define = None;
+                           type_params = [];
+                         };
+                       captures = [];
+                       unbound_names = [];
+                       body =
+                         [
+                           (let parent = ModuleContext.create_function ~parent "foo" in
+                            node
+                              ~start:(3, 4)
+                              ~stop:(5, 9)
+                              (Statement.Define
+                                 {
+                                   Define.signature =
+                                     {
+                                       Define.Signature.name = !&"bar";
+                                       parameters = [];
+                                       decorators = [];
+                                       return_annotation = None;
+                                       async = false;
+                                       generator = false;
+                                       parent;
+                                       legacy_parent = None;
+                                       nesting_define = None;
+                                       type_params = [];
+                                     };
+                                   captures = [];
+                                   unbound_names = [];
+                                   body =
+                                     [
+                                       node
+                                         ~start:(4, 8)
+                                         ~stop:(4, 9)
+                                         (Statement.Expression
+                                            (node
+                                               ~start:(4, 8)
+                                               ~stop:(4, 9)
+                                               (Expression.Constant (Constant.Integer 1))));
+                                       node
+                                         ~start:(5, 8)
+                                         ~stop:(5, 9)
+                                         (Statement.Expression
+                                            (node
+                                               ~start:(5, 8)
+                                               ~stop:(5, 9)
+                                               (Expression.Constant (Constant.Integer 2))));
+                                     ];
+                                 }));
+                         ];
+                     }));
                node
                  ~start:(6, 0)
                  ~stop:(6, 1)

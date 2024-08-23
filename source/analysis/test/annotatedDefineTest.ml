@@ -17,6 +17,11 @@ module Define = AnnotatedDefine
 
 let test_parent_definition context =
   let parent_class_summary environment name parent =
+    let legacy_parent =
+      match parent with
+      | ModuleContext.Class _ -> Some (ModuleContext.to_qualifier ~module_name:!&"test" parent)
+      | _ -> None
+    in
     {
       StatementDefine.signature =
         {
@@ -26,7 +31,8 @@ let test_parent_definition context =
           return_annotation = None;
           async = false;
           generator = false;
-          legacy_parent = Some (Reference.create parent);
+          parent;
+          legacy_parent;
           nesting_define = None;
           type_params = [];
         };
@@ -52,20 +58,21 @@ let test_parent_definition context =
     in
     assert_equal ~cmp ~printer expected actual
   in
+  let foo_parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "foo") in
   assert_parent
     ~source:{|
       class foo():
         def bar(): pass
     |}
     ~name:"test.bar"
-    ~parent:"test.foo"
+    ~parent:foo_parent
     ~expected:(Some !&"test.foo");
   assert_parent
     ~source:{|
       def bar(): pass
     |}
     ~name:"test.bar"
-    ~parent:"test.foo"
+    ~parent:foo_parent
     ~expected:None;
   assert_parent
     ~source:{|
@@ -74,7 +81,7 @@ let test_parent_definition context =
         def bar(): pass
     |}
     ~name:"test.bar"
-    ~parent:"test.foo"
+    ~parent:foo_parent
     ~expected:(Some !&"test.foo")
 
 

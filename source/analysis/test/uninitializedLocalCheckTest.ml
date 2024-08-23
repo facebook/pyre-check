@@ -392,10 +392,10 @@ let assert_defined_locals source expected _context =
     |> Node.map ~f:(Transform.transform_in_statement ~transform:make_dunder_attribute_special)
   in
   let item_equal (left_statement, left_identifiers) (right_statement, right_identifiers) =
-    Statement.location_insensitive_compare
-      (sanitize_for_tests left_statement)
-      (sanitize_for_tests right_statement)
-    = 0
+    (* Compare string representations to avoid getting mismatches on metadata like `parent` *)
+    String.equal
+      (sanitize_for_tests left_statement |> Format.asprintf "%a" Ast.Statement.pp)
+      (sanitize_for_tests right_statement |> Format.asprintf "%a" Ast.Statement.pp)
     && [%compare.equal: (Identifier.t * Location.t) list] left_identifiers right_identifiers
   in
   let parse_statement_and_locals (statement_string, locals_with_locations) =

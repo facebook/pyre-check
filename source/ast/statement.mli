@@ -160,9 +160,14 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      (* The class owning the method. *)
+      parent: ModuleContext.t;
+      (* The qualified name of the class owning the method. *)
+      (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
+         `parent` in all cases. *)
       legacy_parent: Reference.t option;
-      (* If the define is nested, this is the name of the nesting define. *)
+      (* If the define is nested, this is the qualified name of the nesting define. *)
+      (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
+         `parent` in all cases. *)
       nesting_define: Reference.t option;
       type_params: Expression.TypeParam.t list;
     }

@@ -477,9 +477,14 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      (* The class owning the method. *)
+      parent: ModuleContext.t;
+      (* The qualified name of the class owning the method. *)
+      (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
+         `parent` in all cases. *)
       legacy_parent: Reference.t option;
-      (* If the define is nested, this is the name of the nesting define. *)
+      (* If the define is nested, this is the qualified name of the nesting define. *)
+      (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
+         `parent` in all cases. *)
       nesting_define: Reference.t option;
       type_params: Expression.TypeParam.t list;
     }
@@ -648,6 +653,7 @@ end = struct
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
+      parent: ModuleContext.t;
       (* The class owning the method *)
       legacy_parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
@@ -690,24 +696,27 @@ end = struct
                           match Bool.compare left.generator right.generator with
                           | x when not (Int.equal x 0) -> x
                           | _ -> (
-                              match
-                                [%compare: Reference.t option]
-                                  left.legacy_parent
-                                  right.legacy_parent
-                              with
+                              match ModuleContext.compare left.parent right.parent with
                               | x when not (Int.equal x 0) -> x
                               | _ -> (
                                   match
                                     [%compare: Reference.t option]
-                                      left.nesting_define
-                                      right.nesting_define
+                                      left.legacy_parent
+                                      right.legacy_parent
                                   with
                                   | x when not (Int.equal x 0) -> x
-                                  | _ ->
-                                      List.compare
-                                        Expression.TypeParam.location_insensitive_compare
-                                        left.type_params
-                                        right.type_params)))))))
+                                  | _ -> (
+                                      match
+                                        [%compare: Reference.t option]
+                                          left.nesting_define
+                                          right.nesting_define
+                                      with
+                                      | x when not (Int.equal x 0) -> x
+                                      | _ ->
+                                          List.compare
+                                            Expression.TypeParam.location_insensitive_compare
+                                            left.type_params
+                                            right.type_params))))))))
 
 
     let create_toplevel module_name =
@@ -718,6 +727,7 @@ end = struct
         return_annotation = None;
         async = false;
         generator = false;
+        parent = ModuleContext.create_toplevel ();
         legacy_parent = None;
         nesting_define = None;
         type_params = [];
@@ -733,6 +743,7 @@ end = struct
         return_annotation = None;
         async = false;
         generator = false;
+        parent = local_context;
         legacy_parent = Some qualified_class_name;
         nesting_define = None;
         type_params = [];

@@ -2604,7 +2604,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       in
       fields_attribute :: attribute_statements
     in
-    let tuple_constructors ~parent ~location attributes =
+    let tuple_constructors ~class_name ~parent ~location attributes =
       let parameters =
         let to_parameter (name, annotation, value) =
           let value =
@@ -2673,13 +2673,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           {
             signature =
               {
-                name = Reference.create ~prefix:parent name;
+                name = Reference.create ~prefix:class_name name;
                 parameters = self_parameter :: parameters;
                 decorators = [];
                 return_annotation = Some return_annotation;
                 async = false;
                 generator = false;
-                legacy_parent = Some parent;
+                parent;
+                legacy_parent = Some class_name;
                 nesting_define = None;
                 type_params = [];
               };
@@ -2706,7 +2707,13 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)
             when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
-              let constructors = tuple_constructors ~parent:name ~location attributes in
+              let constructors =
+                tuple_constructors
+                  ~class_name:name
+                  ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                  ~location
+                  attributes
+              in
               let attributes =
                 List.map attributes ~f:(Node.create ~location)
                 |> tuple_attributes ~parent:name ~location
@@ -2767,7 +2774,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             in
             let attributes, other = List.partition_map body ~f:extract_assign in
             let constructors =
-              List.map attributes ~f:Node.value |> tuple_constructors ~parent:name ~location
+              List.map attributes ~f:Node.value
+              |> tuple_constructors
+                   ~class_name:name
+                   ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                   ~location
             in
             let tuple_attributes = tuple_attributes ~parent:name ~location attributes in
             Class { original with Class.body = constructors @ tuple_attributes @ other }
@@ -2791,7 +2802,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     then
                       []
                     else
-                      tuple_constructors ~parent:name ~location attributes
+                      tuple_constructors
+                        ~class_name:name
+                        ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                        ~location
+                        attributes
                   in
                   let attributes =
                     List.map attributes ~f:(Node.create ~location)
@@ -2879,6 +2894,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
                 Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
               async = false;
               generator = false;
+              parent = ModuleContext.create_class ~parent:class_parent (Reference.last name);
               legacy_parent = Some name;
               nesting_define = None;
               type_params = [];
@@ -3888,6 +3904,8 @@ let mangle_private_attributes source =
       | _, _ -> state, true
 
 
+    (* TODO(T199670045): This transformation does not play well with `parent` field, which needs to
+       be fixed. *)
     let statement state ({ Node.value; _ } as statement) =
       let state, statement =
         match state, value with
@@ -3906,17 +3924,26 @@ let mangle_private_attributes source =
             tail, { statement with value = Statement.Class { metadata with body } }
         | ( { mangling_prefix; _ } :: _,
             Statement.Define
-              ({ Define.signature = { Define.Signature.name; legacy_parent; _ } as signature; _ } as
-              define) )
+              ({
+                 Define.signature = { Define.Signature.name; parent; legacy_parent; _ } as signature;
+                 _;
+               } as define) )
           when should_mangle (Reference.last name) ->
-            let mangle_parent_name parent =
+            let parent, legacy_parent =
               (* Update if the parent of this statement is a class that itself is private and will
                  be mangled. *)
-              match state with
-              | _ :: { mangling_prefix = parent_prefix; _ } :: _
-                when should_mangle (Reference.last parent) ->
-                  mangle_reference parent_prefix parent
-              | _ -> parent
+              match state, parent with
+              | ( _ :: { mangling_prefix = parent_prefix; _ } :: _,
+                  ModuleContext.Class { name; parent } )
+                when should_mangle name ->
+                  let mangled_parent =
+                    ModuleContext.create_class ~parent (mangle_identifier parent_prefix name)
+                  in
+                  let mangled_legacy_parent =
+                    Option.map legacy_parent ~f:(mangle_reference parent_prefix)
+                  in
+                  mangled_parent, mangled_legacy_parent
+              | _ -> parent, legacy_parent
             in
             ( state,
               {
@@ -3929,7 +3956,8 @@ let mangle_private_attributes source =
                         {
                           signature with
                           name = mangle_reference mangling_prefix name;
-                          legacy_parent = legacy_parent >>| mangle_parent_name;
+                          parent;
+                          legacy_parent;
                         };
                     };
               } )
