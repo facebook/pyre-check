@@ -9,11 +9,20 @@ open Ast
 open Analysis
 
 module Request : sig
+  type define_kind =
+    | DefBody
+    | ClassToplevel
+    | ModuleToplevel
+  [@@deriving equal, show]
+
   type t =
     | Attributes of Reference.t
     | Batch of t list
     | Callees of Reference.t
-    | CalleesWithLocation of Reference.t
+    | CalleesWithLocation of {
+        caller: Reference.t;
+        define_kind: define_kind;
+      }
     | Defines of Reference.t list
     | DumpCallGraph
     | ExpressionLevelCoverage of string list

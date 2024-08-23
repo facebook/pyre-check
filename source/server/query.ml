@@ -29,11 +29,20 @@ exception InvalidQuery of string
 exception IncorrectParameters of Type.t
 
 module Request = struct
+  type define_kind =
+    | DefBody
+    | ClassToplevel
+    | ModuleToplevel
+  [@@deriving equal, show]
+
   type t =
     | Attributes of Reference.t
     | Batch of t list
     | Callees of Reference.t
-    | CalleesWithLocation of Reference.t
+    | CalleesWithLocation of {
+        caller: Reference.t;
+        define_kind: define_kind;
+      }
     | Defines of Reference.t list
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
@@ -426,7 +435,26 @@ let rec parse_request_exn query =
           |> List.rev
           |> fun query_list -> Request.Batch query_list
       | "callees", [name] -> Request.Callees (reference name)
-      | "callees_with_location", [name] -> Request.CalleesWithLocation (reference name)
+      | "callees_with_location", arguments -> (
+          match arguments with
+          | [caller] ->
+              Request.CalleesWithLocation
+                { caller = reference caller; define_kind = Request.DefBody }
+          | [caller; define_kind_string] ->
+              let define_kind =
+                match string define_kind_string with
+                | "def_body" -> Request.DefBody
+                | "module_toplevel" -> Request.ModuleToplevel
+                | "class_toplevel" -> Request.ClassToplevel
+                | unknown_define_kind ->
+                    raise
+                      (InvalidQuery
+                         ("Unexpected define kind "
+                         ^ unknown_define_kind
+                         ^ "', expected one of 'def_body', 'module_top_level', 'class_top_level'"))
+              in
+              Request.CalleesWithLocation { caller = reference caller; define_kind }
+          | _ -> raise (InvalidQuery "Expected one or two arguments to `callees_with_location`"))
       | "defines", names -> Request.Defines (List.map names ~f:reference)
       | "dump_call_graph", [] -> Request.DumpCallGraph
       | "dump_class_hierarchy", [] -> Request.Superclasses []
@@ -695,13 +723,19 @@ let rec process_request_exn
           |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)
         in
         Single (Base.Callees callees)
-    | CalleesWithLocation caller ->
+    | CalleesWithLocation { caller; define_kind } ->
+        let mangled_caller =
+          match define_kind with
+          | DefBody -> caller
+          | ClassToplevel -> Reference.create ~prefix:caller Statement.class_toplevel_define_name
+          | ModuleToplevel -> Reference.create ~prefix:caller Statement.toplevel_define_name
+        in
         let instantiate =
           Location.WithModule.instantiate
             ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api)
         in
         let callees =
-          TypeEnvironment.ReadOnly.get_callees type_environment caller
+          TypeEnvironment.ReadOnly.get_callees type_environment mangled_caller
           >>| List.map ~f:(fun { Callgraph.callee; locations } ->
                   { Base.callee; locations = List.map locations ~f:instantiate })
         in

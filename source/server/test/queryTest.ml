@@ -2095,11 +2095,98 @@ let test_handle_query_callees_with_location context =
         }
         |}
       );
+      (* You can also specify the kind explicitly, default is 'def_body' *)
+      ( "callees_with_location(example.Foo.method, 'def_body')",
+        {|
+        {
+            "response": {
+                "callees": [
+                  {
+                    "locations": [
+                      {
+                        "path": "example.py",
+                        "start": { "line": 11, "column": 13 },
+                        "stop": { "line": 11, "column": 16 }
+                      }
+                    ],
+                    "kind": "function",
+                    "target": "example.bar"
+                  }
+                ]
+            }
+        }
+        |}
+      );
       ( "callees_with_location(example.does_not_exist)",
         {|
         {
             "response": {
                 "callees": null
+            }
+        }
+        |}
+      );
+      (* Verify getting the callees of a module top-level, which has to be explicitly requested *)
+      ( "callees_with_location(example)",
+        {|
+        {
+            "response": {
+                "callees": null
+            }
+        }
+        |}
+      );
+      ( "callees_with_location(example, 'module_toplevel')",
+        {|
+        {
+            "response": {
+                "callees": [
+                  {
+                    "locations": [
+                      {
+                        "path": "example.py",
+                        "start": { "line": 13, "column": 6 },
+                        "stop": { "line": 13, "column": 9 }
+                      }
+                    ],
+                    "kind": "method",
+                    "is_optional_class_attribute": false,
+                    "direct_target": "object.__init__",
+                    "class_name": "example.Foo",
+                    "dispatch": "static"
+                  }
+                ]
+            }
+        }
+        |}
+      );
+      (* Verify getting the callees of a class top-level, which has to be explicitly requested *)
+      ( "callees_with_location(example.Foo)",
+        {|
+        {
+            "response": {
+                "callees": null
+            }
+        }
+        |}
+      );
+      ( "callees_with_location(example.Foo, 'class_toplevel')",
+        {|
+        {
+            "response": {
+                "callees": [
+                  {
+                    "locations": [
+                      {
+                        "path": "example.py",
+                        "start": { "line": 8, "column": 4 },
+                        "stop": { "line": 8, "column": 9 }
+                      }
+                    ],
+                    "kind": "function",
+                    "target": "print"
+                  }
+                ]
             }
         }
         |}
@@ -2122,6 +2209,8 @@ let test_handle_query_callees_with_location context =
 
                    async def method(self):
                       await bar()
+              
+               foo = Foo()
             |}
         );
       ]
