@@ -317,7 +317,7 @@ let top_level_define
     { module_path = { ModulePath.qualifier; _ }; top_level_unbound_names; statements; _ }
   =
   Statement.Define.create_toplevel
-    ~qualifier:(Some qualifier)
+    ~module_name:qualifier
     ~unbound_names:top_level_unbound_names
     ~statements
 

@@ -25,8 +25,7 @@ let to_unused_ignore_error ~ignores_to_used_errors ~qualifier ({ Ignore.location
     {
       Error.location = Location.with_module ~module_reference:qualifier location;
       kind = Error.UnusedIgnore unused_codes;
-      signature =
-        { Node.location; value = Statement.Define.Signature.create_toplevel ~qualifier:None };
+      signature = { Node.location; value = Statement.Define.Signature.create_toplevel qualifier };
     }
   in
   match ignore, Hashtbl.find_multi ignores_to_used_errors ignore with
@@ -186,10 +185,7 @@ let run_on_qualifier environment ~dependency qualifier =
         }
       in
       let define =
-        Statement.Define.create_toplevel
-          ~unbound_names:[]
-          ~qualifier:(Some qualifier)
-          ~statements:[]
+        Statement.Define.create_toplevel ~unbound_names:[] ~module_name:qualifier ~statements:[]
         |> Node.create ~location
       in
       [

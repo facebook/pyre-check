@@ -40,7 +40,7 @@ let test_no_errors _ =
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =
-      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+      Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
     let candidates = Candidates.create () in
@@ -98,7 +98,7 @@ let test_errors _ =
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =
-      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+      Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
     let candidates = Candidates.create () in
@@ -132,7 +132,7 @@ let test_errors _ =
 let test_canonical_location _ =
   let assert_canonical_location ~set ~expected =
     let define =
-      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+      Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
     let locations =

@@ -7565,7 +7565,7 @@ module DummyContext = struct
   let no_validation_on_class_lookup_failure = false
 
   let define =
-    Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+    Define.create_toplevel ~unbound_names:[] ~module_name:qualifier ~statements:[]
     |> Node.create_with_default_location
 
 

@@ -170,7 +170,7 @@ and Define : sig
 
     val location_insensitive_compare : t -> t -> int
 
-    val create_toplevel : qualifier:Reference.t option -> t
+    val create_toplevel : Reference.t -> t
 
     val unqualified_name : t -> Identifier.t
 
@@ -249,8 +249,8 @@ and Define : sig
   val location_insensitive_compare : t -> t -> int
 
   val create_toplevel
-    :  unbound_names:NameAccess.t list ->
-    qualifier:Reference.t option ->
+    :  module_name:Reference.t ->
+    unbound_names:NameAccess.t list ->
     statements:Statement.t list ->
     t
 

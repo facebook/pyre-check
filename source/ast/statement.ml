@@ -487,7 +487,7 @@ and Define : sig
 
     val location_insensitive_compare : t -> t -> int
 
-    val create_toplevel : qualifier:Reference.t option -> t
+    val create_toplevel : Reference.t -> t
 
     val unqualified_name : t -> Identifier.t
 
@@ -566,8 +566,8 @@ and Define : sig
   val location_insensitive_compare : t -> t -> int
 
   val create_toplevel
-    :  unbound_names:NameAccess.t list ->
-    qualifier:Reference.t option ->
+    :  module_name:Reference.t ->
+    unbound_names:NameAccess.t list ->
     statements:Statement.t list ->
     t
 
@@ -706,9 +706,9 @@ end = struct
                                         right.type_params)))))))
 
 
-    let create_toplevel ~qualifier =
+    let create_toplevel module_name =
       {
-        name = Reference.create ?prefix:qualifier toplevel_define_name;
+        name = Reference.create ~prefix:module_name toplevel_define_name;
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -929,9 +929,9 @@ end = struct
             | _ -> List.compare Statement.location_insensitive_compare left.body right.body))
 
 
-  let create_toplevel ~unbound_names ~qualifier ~statements =
+  let create_toplevel ~module_name ~unbound_names ~statements =
     {
-      signature = Signature.create_toplevel ~qualifier;
+      signature = Signature.create_toplevel module_name;
       captures = [];
       unbound_names;
       body = statements;
