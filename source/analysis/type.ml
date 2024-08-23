@@ -3992,7 +3992,7 @@ module TypedDictionary = struct
               return_annotation;
               async = false;
               generator = false;
-              parent = Some (Reference.create class_name);
+              legacy_parent = Some (Reference.create class_name);
               nesting_define = None;
               type_params = [];
             };

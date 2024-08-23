@@ -24,7 +24,7 @@ let test_is_method _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = parent >>| Reference.create;
+          legacy_parent = parent >>| Reference.create;
           nesting_define = None;
           type_params = [];
         };
@@ -50,7 +50,7 @@ let test_is_classmethod _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = Some !&"bar";
+          legacy_parent = Some !&"bar";
           nesting_define = None;
           type_params = [];
         };
@@ -78,7 +78,7 @@ let test_is_class_property _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = Some !&"bar";
+          legacy_parent = Some !&"bar";
           nesting_define = None;
           type_params = [];
         };
@@ -104,7 +104,7 @@ let test_decorator _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = None;
+          legacy_parent = None;
           nesting_define = None;
           type_params = [];
         };
@@ -145,7 +145,7 @@ let test_is_constructor _ =
             return_annotation = None;
             async = false;
             generator = false;
-            parent = parent >>| Reference.create;
+            legacy_parent = parent >>| Reference.create;
             nesting_define = None;
             type_params = [];
           };

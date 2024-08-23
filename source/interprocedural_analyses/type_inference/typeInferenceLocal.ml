@@ -356,7 +356,7 @@ module State (Context : Context) = struct
 
 
   let initial_forward ~resolution =
-    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
+    let { Node.value = { Define.signature = { parameters; legacy_parent; _ }; _ } as define; _ } =
       Context.define
     in
     (* Re-use forward state from type check logic. *)
@@ -367,7 +367,7 @@ module State (Context : Context) = struct
         (resolution, snapshot_resolution)
         { Node.value = { Parameter.name; value; annotation }; _ }
       =
-      match index, parent with
+      match index, legacy_parent with
       | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
           resolution, snapshot_resolution
       | _ ->
@@ -1051,10 +1051,11 @@ let infer_local
 let infer_parameters_from_parent
     ~global_resolution
     ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
-    ~define:({ Node.value = { Define.signature = { parent; parameters; _ }; _ }; _ } as define)
+    ~define:
+      ({ Node.value = { Define.signature = { legacy_parent; parameters; _ }; _ }; _ } as define)
   =
   let overridden_callable =
-    parent
+    legacy_parent
     >>| Reference.show
     >>= GlobalResolution.overrides
           global_resolution

@@ -22,7 +22,7 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     return_annotation;
     async = false;
     generator = false;
-    parent = None;
+    legacy_parent = None;
     nesting_define = None;
     type_params = [];
   }

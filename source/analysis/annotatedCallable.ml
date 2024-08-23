@@ -52,7 +52,7 @@ let return_annotation_without_applying_decorators
 let create_overload_without_applying_decorators
     ~parser:({ parse_annotation; param_spec_from_vararg_annotations; _ } as parser)
     ~generic_parameters_as_variables
-    ({ Define.Signature.parameters; parent; _ } as signature)
+    ({ Define.Signature.parameters; legacy_parent; _ } as signature)
   =
   let open Type.Callable in
   let parameters =
@@ -113,7 +113,7 @@ let create_overload_without_applying_decorators
     List.map parameters ~f:parameter |> CallableParamType.create |> parse_parameters
   in
   let parameters =
-    match parameters, parent with
+    match parameters, legacy_parent with
     | ( Type.Callable.Defined
           (Named { CallableParamType.name; annotation = Type.Top; default } :: tail),
         Some parent ) ->

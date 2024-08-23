@@ -520,7 +520,7 @@ module State (Context : Context) = struct
 
 
   let forward ~statement_key _ ~statement:{ Node.value; location } =
-    let { Node.value = { Define.signature = { Define.Signature.parent = name; _ }; _ }; _ } =
+    let { Node.value = { Define.signature = { Define.Signature.legacy_parent = name; _ }; _ }; _ } =
       Context.define
     in
     let resolution =

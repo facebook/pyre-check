@@ -34,8 +34,9 @@ let parameter_annotations
   List.mapi ~f:element parameters |> Int.Map.of_alist_exn
 
 
-let parent_definition { Node.value = { Define.signature = { parent; _ }; _ }; _ } ~resolution =
-  match parent with
+let parent_definition { Node.value = { Define.signature = { legacy_parent; _ }; _ }; _ } ~resolution
+  =
+  match legacy_parent with
   | Some parent -> GlobalResolution.get_class_summary resolution (Reference.show parent)
   | _ -> None
 
@@ -135,10 +136,10 @@ let decorate
 
 
 let is_constructor
-    ({ Node.value = { Define.signature = { parent; _ }; _ }; _ } as definition)
+    ({ Node.value = { Define.signature = { legacy_parent; _ }; _ }; _ } as definition)
     ~resolution
   =
-  match parent >>| Reference.show with
+  match legacy_parent >>| Reference.show with
   | Some parent_class ->
       let in_test =
         let superclasses = GlobalResolution.successors resolution parent_class in

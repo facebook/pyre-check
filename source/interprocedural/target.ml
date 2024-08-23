@@ -158,7 +158,7 @@ let create define =
   let open Define in
   let kind = if Define.is_property_setter define then PropertySetter else Normal in
   let name = define.signature.name in
-  match define.signature.parent with
+  match define.signature.legacy_parent with
   | Some _ -> create_method ~kind name
   | None -> create_function ~kind name
 

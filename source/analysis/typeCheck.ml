@@ -4417,7 +4417,9 @@ module State (Context : Context) = struct
       ~is_final
       value
     =
-    let { Node.value = { Define.signature = { parent; _ }; _ } as define; _ } = Context.define in
+    let { Node.value = { Define.signature = { legacy_parent; _ }; _ } as define; _ } =
+      Context.define
+    in
     let global_resolution = Resolution.global_resolution resolution in
     let uniform_sequence_parameter annotation =
       let unbounded_annotation =
@@ -4607,7 +4609,7 @@ module State (Context : Context) = struct
             let check_assignment_compatibility errors =
               let is_valid_enumeration_assignment, expected_enumeration_type =
                 let parent_annotation =
-                  match parent with
+                  match legacy_parent with
                   | None -> Type.Top
                   | Some reference -> Type.Primitive (Reference.show reference)
                 in
@@ -4883,10 +4885,10 @@ module State (Context : Context) = struct
                   let thrown_at_source =
                     match define, attribute with
                     | _, None -> Define.is_toplevel define
-                    | ( { StatementDefine.signature = { parent = Some parent; _ }; _ },
+                    | ( { StatementDefine.signature = { legacy_parent = Some legacy_parent; _ }; _ },
                         Some (attribute, _) ) ->
                         Type.Primitive.equal
-                          (Reference.show parent)
+                          (Reference.show legacy_parent)
                           (AnnotatedAttribute.parent attribute)
                         && (Define.is_class_toplevel define || Define.is_constructor define)
                     | _ -> false
@@ -4899,7 +4901,7 @@ module State (Context : Context) = struct
             let is_illegal_attribute_annotation attribute =
               let attribute_parent = AnnotatedAttribute.parent attribute in
               let parent_annotation =
-                match parent with
+                match legacy_parent with
                 | None -> Type.Top
                 | Some reference -> Type.Primitive (Reference.show reference)
               in
@@ -6099,7 +6101,7 @@ module State (Context : Context) = struct
           Define.signature =
             {
               name;
-              parent;
+              legacy_parent;
               parameters;
               return_annotation;
               decorators;
@@ -6142,11 +6144,11 @@ module State (Context : Context) = struct
       let check_override_decorator errors =
         let is_override = Define.is_override_method define in
         match define with
-        | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+        | { Ast.Statement.Define.signature = { legacy_parent = Some legacy_parent; _ }; _ } -> (
             let possibly_overridden_attribute =
               GlobalResolution.overrides
                 global_resolution
-                (Reference.show parent)
+                (Reference.show legacy_parent)
                 ~name:(Define.unqualified_name define)
             in
             match possibly_overridden_attribute, is_override with
@@ -6165,15 +6167,15 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.InvalidOverride
-                       { parent = Reference.show parent; decorator = MissingOverride })
+                       { parent = Reference.show legacy_parent; decorator = MissingOverride })
             | None, true ->
                 emit_error
                   ~errors
                   ~location
                   ~kind:
                     (Error.InvalidOverride
-                       { parent = Reference.show parent; decorator = NothingOverridden }))
-        | { Ast.Statement.Define.signature = { parent = None; _ }; _ } when is_override ->
+                       { parent = Reference.show legacy_parent; decorator = NothingOverridden }))
+        | { Ast.Statement.Define.signature = { legacy_parent = None; _ }; _ } when is_override ->
             emit_error
               ~errors
               ~location
@@ -6566,8 +6568,8 @@ module State (Context : Context) = struct
         in
         let parse_as_type_var () =
           let errors, annotation =
-            match index, parent with
-            | 0, Some parent
+            match index, legacy_parent with
+            | 0, Some legacy_parent
             (* __new__ does not require an annotation for __cls__, even though it is a static
                method. *)
               when not
@@ -6575,7 +6577,7 @@ module State (Context : Context) = struct
                      || Define.is_static_method define
                         && not (String.equal (Define.unqualified_name define) "__new__")) -> (
                 let resolved, is_class_method =
-                  let parent_annotation = type_of_parent ~global_resolution parent in
+                  let parent_annotation = type_of_parent ~global_resolution legacy_parent in
                   if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
                     Type.meta parent_annotation, true
@@ -6823,7 +6825,7 @@ module State (Context : Context) = struct
     in
     (* Checks here will run once for each definition in the class. *)
     let check_base_classes resolution errors =
-      let current_class_name = parent >>| Reference.show in
+      let current_class_name = legacy_parent >>| Reference.show in
       let is_current_class_typed_dictionary =
         current_class_name
         >>| (fun class_name ->
@@ -7000,7 +7002,7 @@ module State (Context : Context) = struct
             attribute
           >>| AnnotatedAttribute.parent
         in
-        parent
+        legacy_parent
         >>| Reference.show
         >>| GlobalResolution.successors global_resolution
         >>= List.find_map ~f:find_init_subclass
@@ -7062,10 +7064,13 @@ module State (Context : Context) = struct
         else
           begin
             match define with
-            | { Ast.Statement.Define.signature = { parent = Some parent; decorators; _ }; _ } -> (
+            | {
+             Ast.Statement.Define.signature = { legacy_parent = Some legacy_parent; decorators; _ };
+             _;
+            } -> (
                 GlobalResolution.overrides
                   global_resolution
-                  (Reference.show parent)
+                  (Reference.show legacy_parent)
                   ~name:(StatementDefine.unqualified_name define)
                 >>| fun overridden_attribute ->
                 let errors =
@@ -7439,16 +7444,16 @@ module State (Context : Context) = struct
           |> List.dedup_and_sort ~compare:Type.Variable.compare
         in
         let parent_variables =
-          let { Define.Signature.parent; _ } = signature in
+          let { Define.Signature.legacy_parent; _ } = signature in
           (* PEP484 specifies that scope of the type variables of the outer class doesn't cover the
              inner one. We are able to inspect only 1 level of nesting class as a result. *)
-          Option.value_map parent ~f:type_variables_of_class ~default:[]
+          Option.value_map legacy_parent ~f:type_variables_of_class ~default:[]
         in
         List.append parent_variables define_variables
       in
       match Define.is_class_toplevel define with
       | true ->
-          let class_name = Option.value_exn parent in
+          let class_name = Option.value_exn legacy_parent in
           [], type_variables_of_class class_name
       | false ->
           let define_variables = type_variables_of_define signature in
@@ -7484,7 +7489,7 @@ module State (Context : Context) = struct
         |> List.fold ~init:resolution ~f:(fun resolution variable ->
                Resolution.add_type_variable resolution ~variable)
       in
-      let resolution = Resolution.with_parent resolution ~parent in
+      let resolution = Resolution.with_parent resolution ~parent:legacy_parent in
       let resolution, errors = add_capture_annotations ~outer_scope_type_variables resolution [] in
       let resolution, errors = check_parameter_annotations resolution errors in
       let errors =

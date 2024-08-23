@@ -394,7 +394,7 @@ module InContext = struct
 
 
   let create_at_statement_key pyre_api ~define ~statement_key =
-    let { Ast.Statement.Define.signature = { name; parent; _ }; _ } = define in
+    let { Ast.Statement.Define.signature = { name; legacy_parent; _ }; _ } = define in
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations (ReadOnly.type_environment pyre_api) name
     in
@@ -402,7 +402,7 @@ module InContext = struct
       TypeCheck.resolution_at_key
         ~global_resolution:(ReadOnly.global_resolution pyre_api)
         ~local_annotations
-        ~parent
+        ~parent:legacy_parent
         ~statement_key
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)

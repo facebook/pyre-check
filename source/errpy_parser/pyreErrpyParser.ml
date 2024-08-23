@@ -616,7 +616,7 @@ and translate_statements
     in
     let create_function_definition ~async ~name ~args ~body ~decorator_list ~returns ~_type_comment =
       let signature =
-        let parent =
+        let legacy_parent =
           match parent with
           | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
           | _ -> None
@@ -628,7 +628,7 @@ and translate_statements
           return_annotation = returns;
           async;
           generator = is_generator body;
-          parent;
+          legacy_parent;
           nesting_define = None;
           type_params = [];
         }

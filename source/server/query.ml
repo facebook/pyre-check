@@ -713,9 +713,12 @@ let rec process_request_exn
               Some module_or_class_name, fun _ -> false
             else
               let filter
-                  { Statement.Define.signature = { Statement.Define.Signature.parent; _ }; _ }
+                  {
+                    Statement.Define.signature = { Statement.Define.Signature.legacy_parent; _ };
+                    _;
+                  }
                 =
-                not (Option.equal Reference.equal parent (Some module_or_class_name))
+                not (Option.equal Reference.equal legacy_parent (Some module_or_class_name))
               in
               let rec find_module_name current_reference =
                 if SourceCodeApi.is_qualifier_tracked source_code_api current_reference then

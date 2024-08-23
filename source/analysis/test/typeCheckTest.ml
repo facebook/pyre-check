@@ -95,11 +95,18 @@ let description ~resolution error =
 
 
 let test_initial =
-  let assert_initial ?parent ?(environment = "") ?(immutables = []) ~annotations define context =
+  let assert_initial
+      ?legacy_parent
+      ?(environment = "")
+      ?(immutables = [])
+      ~annotations
+      define
+      context
+    =
     let define =
       match parse_single_statement define with
       | { Node.value = Define ({ signature; _ } as define); _ } ->
-          let signature = { signature with parent = parent >>| Reference.create } in
+          let signature = { signature with legacy_parent = legacy_parent >>| Reference.create } in
           { define with signature }
       | _ -> failwith "Unable to parse define."
     in
@@ -186,20 +193,20 @@ let test_initial =
            ~annotations:["x", Type.Any];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_initial
-           ~parent:"Foo"
+           ~legacy_parent:"Foo"
            ~environment:"class Foo: ..."
            "def __eq__(self, other: object) -> None: ..."
            ~immutables:["other", Type.object_primitive]
            ~annotations:["self", Type.Primitive "Foo"; "other", Type.object_primitive];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_initial
-           ~parent:"Foo"
+           ~legacy_parent:"Foo"
            ~environment:"class Foo: ..."
            "def foo(self) -> None: ..."
            ~annotations:["self", Type.Primitive "Foo"];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_initial
-           ~parent:"Foo"
+           ~legacy_parent:"Foo"
            ~environment:"class Foo: ..."
            "@staticmethod\ndef foo(a) -> None: ..."
            ~annotations:["a", Type.Any];

@@ -2335,7 +2335,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -2396,7 +2396,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -2467,7 +2467,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -2528,7 +2528,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -2592,7 +2592,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -2653,7 +2653,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = None;
                                type_params = [];
                              };
@@ -3602,7 +3602,7 @@ let test_expand_implicit_returns =
                     return_annotation = None;
                     async = false;
                     generator = false;
-                    parent = None;
+                    legacy_parent = None;
                     nesting_define = None;
                     type_params = [];
                   };
@@ -3799,7 +3799,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = None;
+          legacy_parent = None;
           nesting_define = None;
           type_params = [];
         };
@@ -3818,7 +3818,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = None;
+          legacy_parent = None;
           nesting_define = None;
           type_params = [];
         };
@@ -3837,7 +3837,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = Some (Reference.create parent);
+          legacy_parent = Some (Reference.create parent);
           nesting_define = None;
           type_params = [];
         };
@@ -3863,7 +3863,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = None;
+               legacy_parent = None;
                nesting_define = None;
                type_params = [];
              };
@@ -3882,7 +3882,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = None;
+               legacy_parent = None;
                nesting_define = None;
                type_params = [];
              };
@@ -3909,7 +3909,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = None;
+               legacy_parent = None;
                nesting_define = None;
                type_params = [];
              };
@@ -3928,7 +3928,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = None;
+               legacy_parent = None;
                nesting_define = None;
                type_params = [];
              };
@@ -4005,7 +4005,7 @@ let test_classes =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = Some !&"foo";
+                        legacy_parent = Some !&"foo";
                         nesting_define = None;
                         type_params = [];
                       };
@@ -5078,7 +5078,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5096,7 +5096,7 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
                              };
@@ -5132,7 +5132,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5150,7 +5150,7 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
                              };
@@ -5168,7 +5168,7 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
                              };
@@ -5198,7 +5198,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5216,7 +5216,7 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = None;
+                               legacy_parent = None;
                                nesting_define = Some !&"foo";
                                type_params = [];
                              };
@@ -5234,7 +5234,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"bar";
                                         type_params = [];
                                       };
@@ -5269,7 +5269,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5292,7 +5292,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5313,7 +5313,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5348,7 +5348,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5371,7 +5371,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5392,7 +5392,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5424,7 +5424,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5448,7 +5448,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5486,7 +5486,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5508,7 +5508,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5535,7 +5535,7 @@ let test_populate_nesting_define =
                                               return_annotation = None;
                                               async = false;
                                               generator = false;
-                                              parent = None;
+                                              legacy_parent = None;
                                               nesting_define = Some !&"foo";
                                               type_params = [];
                                             };
@@ -5558,7 +5558,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5599,7 +5599,7 @@ let test_populate_nesting_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = Some !&"C";
+                               legacy_parent = Some !&"C";
                                nesting_define = None;
                                type_params = [];
                              };
@@ -5617,7 +5617,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = None;
+                                        legacy_parent = None;
                                         nesting_define = Some !&"bar";
                                         type_params = [];
                                       };
@@ -5652,7 +5652,7 @@ let test_populate_nesting_define =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = None;
+                      legacy_parent = None;
                       nesting_define = None;
                       type_params = [];
                     };
@@ -5679,7 +5679,7 @@ let test_populate_nesting_define =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = Some !&"C";
+                                        legacy_parent = Some !&"C";
                                         nesting_define = None;
                                         type_params = [];
                                       };
@@ -5697,7 +5697,7 @@ let test_populate_nesting_define =
                                                  return_annotation = None;
                                                  async = false;
                                                  generator = false;
-                                                 parent = None;
+                                                 legacy_parent = None;
                                                  nesting_define = Some !&"bar";
                                                  type_params = [];
                                                };
@@ -5871,7 +5871,7 @@ let test_populate_captures =
                          return_annotation = Some (int_annotation (3, 21) (3, 24));
                          async = false;
                          generator = false;
-                         parent = None;
+                         legacy_parent = None;
                          nesting_define = None;
                          type_params = [];
                        } );
@@ -6576,7 +6576,7 @@ let test_populate_captures =
                          return_annotation = None;
                          async = false;
                          generator = false;
-                         parent = None;
+                         legacy_parent = None;
                          nesting_define = None;
                          type_params = [];
                        } );

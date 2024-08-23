@@ -770,7 +770,7 @@ let statement =
         raise (InternalError { Error.line; column; end_line; end_column; message })
     | Result.Ok (parameters, return_annotation) ->
         let signature =
-          let parent =
+          let legacy_parent =
             match parent with
             | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
             | _ -> None
@@ -782,7 +782,7 @@ let statement =
             return_annotation;
             async;
             generator = is_generator body;
-            parent;
+            legacy_parent;
             nesting_define = None;
             type_params;
           }

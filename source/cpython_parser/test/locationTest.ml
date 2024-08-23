@@ -997,7 +997,7 @@ let test_class_locations =
                                        return_annotation = None;
                                        async = false;
                                        generator = false;
-                                       parent = Some !&"foo";
+                                       legacy_parent = Some !&"foo";
                                        nesting_define = None;
                                        type_params = [];
                                      };
@@ -1104,7 +1104,7 @@ let test_class_locations =
                                                   return_annotation = None;
                                                   async = false;
                                                   generator = false;
-                                                  parent = Some !&"foo";
+                                                  legacy_parent = Some !&"foo";
                                                   nesting_define = None;
                                                   type_params = [];
                                                 };
@@ -1150,7 +1150,7 @@ let test_define_locations =
                             return_annotation = None;
                             async = true;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };
@@ -1194,7 +1194,7 @@ let test_define_locations =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };
@@ -1215,7 +1215,7 @@ let test_define_locations =
                                        return_annotation = None;
                                        async = false;
                                        generator = false;
-                                       parent = None;
+                                       legacy_parent = None;
                                        nesting_define = None;
                                        type_params = [];
                                      };
@@ -3103,7 +3103,7 @@ let test_stub_locations =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };
@@ -3867,7 +3867,7 @@ let test_type_comments =
                                    (Expression.Constant Constant.NoneLiteral));
                             async = false;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };
@@ -3914,7 +3914,7 @@ let test_type_comments =
                                    (Expression.Constant Constant.NoneLiteral));
                             async = true;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };
@@ -3973,7 +3973,7 @@ let test_type_comments =
                                       }));
                             async = false;
                             generator = false;
-                            parent = None;
+                            legacy_parent = None;
                             nesting_define = None;
                             type_params = [];
                           };

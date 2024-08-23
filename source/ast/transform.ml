@@ -310,7 +310,7 @@ module Make (Transformer : Transformer) = struct
                   decorators;
                   return_annotation;
                   async;
-                  parent;
+                  legacy_parent;
                   nesting_define;
                   generator;
                   type_params;
@@ -323,7 +323,7 @@ module Make (Transformer : Transformer) = struct
                 decorators = transform_list decorators ~f:transform_expression;
                 return_annotation = return_annotation >>| transform_expression;
                 async;
-                parent;
+                legacy_parent;
                 nesting_define;
                 generator;
                 type_params =

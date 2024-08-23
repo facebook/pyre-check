@@ -26,7 +26,7 @@ let test_parent_definition context =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = Some (Reference.create parent);
+          legacy_parent = Some (Reference.create parent);
           nesting_define = None;
           type_params = [];
         };

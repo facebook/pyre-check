@@ -396,10 +396,14 @@ module ClassAttributes = struct
               | {
                   Node.value =
                     Statement.Define
-                      { signature = { name = callee; parent = Some parent; _ }; body; _ };
+                      {
+                        signature = { name = callee; legacy_parent = Some legacy_parent; _ };
+                        body;
+                        _;
+                      };
                   _;
                 }
-                when Reference.equal callee (Reference.create ~prefix:parent name) ->
+                when Reference.equal callee (Reference.create ~prefix:legacy_parent name) ->
                   Some body
               | _ -> None
             in
@@ -442,7 +446,8 @@ module ClassAttributes = struct
 
     let create
         ~location
-        ({ Define.signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
+        ({ Define.signature = { name; return_annotation; parameters; legacy_parent; _ }; _ } as
+        define)
       =
       let inspect_decorators name =
         let async = Define.is_async define in
@@ -474,7 +479,7 @@ module ClassAttributes = struct
               Some (Setter { name; self_annotation; value_annotation })
           | _ -> None
       in
-      parent
+      legacy_parent
       >>= fun parent ->
       Attribute.name ~parent (Expression.from_reference ~location name) >>= inspect_decorators
   end

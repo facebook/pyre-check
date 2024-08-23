@@ -1108,7 +1108,7 @@ let test_define =
                           return_annotation = Some (+Expression.Name (Name.Identifier "T"));
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params =
                             [
@@ -1150,7 +1150,7 @@ let test_define =
                           return_annotation = Some (+Expression.Name (Name.Identifier "T"));
                           async = true;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params =
                             [
@@ -1185,7 +1185,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1213,7 +1213,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1242,7 +1242,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1267,7 +1267,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1295,7 +1295,7 @@ let test_define =
                           return_annotation = Some !"c";
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1319,7 +1319,7 @@ let test_define =
                           return_annotation = None;
                           async = true;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1343,7 +1343,7 @@ let test_define =
                           return_annotation = None;
                           async = true;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1367,7 +1367,7 @@ let test_define =
                           return_annotation = None;
                           async = true;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1391,7 +1391,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1426,7 +1426,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1450,7 +1450,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1488,7 +1488,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1520,7 +1520,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1548,7 +1548,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1580,7 +1580,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1611,7 +1611,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1635,7 +1635,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1663,7 +1663,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1692,7 +1692,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1710,7 +1710,7 @@ let test_define =
                                    return_annotation = None;
                                    async = false;
                                    generator = false;
-                                   parent = None;
+                                   legacy_parent = None;
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -1742,7 +1742,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1773,7 +1773,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1801,7 +1801,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1830,7 +1830,7 @@ let test_define =
                           return_annotation = Some !"str";
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1865,7 +1865,7 @@ let test_define =
                           return_annotation = Some !"str";
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1902,7 +1902,7 @@ let test_define =
                           return_annotation = Some !"str";
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -1957,7 +1957,7 @@ let test_define =
                                    return_annotation = Some !"str";
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"A";
+                                   legacy_parent = Some !&"A";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2019,7 +2019,7 @@ let test_define =
                                    return_annotation = Some !"str";
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"A";
+                                   legacy_parent = Some !&"A";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2078,7 +2078,7 @@ let test_define =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -2127,7 +2127,7 @@ let test_define =
                           return_annotation = Some !"int";
                           async = true;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -2163,7 +2163,7 @@ let test_define =
                           return_annotation = Some !"str";
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -2201,7 +2201,7 @@ let test_define =
                                   });
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };
@@ -2258,7 +2258,7 @@ let test_class =
                                    return_annotation = Some (+Expression.Name (Name.Identifier "T"));
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"foo";
+                                   legacy_parent = Some !&"foo";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2340,7 +2340,7 @@ let test_class =
                                    return_annotation = None;
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"foo";
+                                   legacy_parent = Some !&"foo";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2376,7 +2376,7 @@ let test_class =
                                    return_annotation = None;
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"foo";
+                                   legacy_parent = Some !&"foo";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2394,7 +2394,7 @@ let test_class =
                                             return_annotation = None;
                                             async = false;
                                             generator = false;
-                                            parent = None;
+                                            legacy_parent = None;
                                             nesting_define = None;
                                             type_params = [];
                                           };
@@ -2508,7 +2508,7 @@ let test_class =
                                    return_annotation = None;
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"foo";
+                                   legacy_parent = Some !&"foo";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2544,7 +2544,7 @@ let test_class =
                                    return_annotation = None;
                                    async = false;
                                    generator = false;
-                                   parent = Some !&"A";
+                                   legacy_parent = Some !&"A";
                                    nesting_define = None;
                                    type_params = [];
                                  };
@@ -2569,7 +2569,7 @@ let test_class =
                                             return_annotation = None;
                                             async = false;
                                             generator = false;
-                                            parent = Some !&"B";
+                                            legacy_parent = Some !&"B";
                                             nesting_define = None;
                                             type_params = [];
                                           };
@@ -2603,7 +2603,7 @@ let test_class =
                           return_annotation = None;
                           async = false;
                           generator = false;
-                          parent = None;
+                          legacy_parent = None;
                           nesting_define = None;
                           type_params = [];
                         };

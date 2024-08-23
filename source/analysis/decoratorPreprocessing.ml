@@ -157,7 +157,7 @@ let original_decorators_from_preprocessed_signature { Define.Signature.name; dec
 let sanitize_define
     ?(strip_decorators = true)
     ?(strip_parent = false)
-    ({ Define.signature = { decorators; parent; _ } as signature; _ } as define)
+    ({ Define.signature = { decorators; legacy_parent; _ } as signature; _ } as define)
   =
   {
     define with
@@ -165,7 +165,7 @@ let sanitize_define
       {
         signature with
         decorators = (if strip_decorators then [] else decorators);
-        parent = parent >>= Option.some_if (not strip_parent);
+        legacy_parent = legacy_parent >>= Option.some_if (not strip_parent);
       };
     unbound_names = [];
   }
@@ -342,10 +342,10 @@ let create_function_call_to ~location ~callee_name { Define.Signature.parameters
 
 
 let set_first_parameter_type
-    ~original_define:({ Define.signature = { parent; _ }; _ } as original_define)
+    ~original_define:({ Define.signature = { legacy_parent; _ }; _ } as original_define)
     ({ Define.signature = { parameters; _ } as signature; _ } as define)
   =
-  match parameters, parent with
+  match parameters, legacy_parent with
   | { Node.value = { annotation; _ } as first_parameter; location } :: rest, Some parent
     when not (Define.is_static_method original_define) ->
       let new_annotation =
@@ -685,7 +685,8 @@ let make_wrapper_define
     ~define:
       ({
          Define.signature =
-           { parent; return_annotation = original_return_annotation; _ } as original_signature;
+           { legacy_parent; return_annotation = original_return_annotation; _ } as
+           original_signature;
          _;
        } as define)
     ~function_to_call
@@ -725,7 +726,9 @@ let make_wrapper_define
   in
   let inlined_wrapper_define_name = make_wrapper_function_name outer_decorator_reference in
   let wrapper_function_name = Reference.last inlined_wrapper_define_name in
-  let outer_signature = { outer_signature with parent; name = inlined_wrapper_define_name } in
+  let outer_signature =
+    { outer_signature with legacy_parent; name = inlined_wrapper_define_name }
+  in
   let wrapper_qualifier = Reference.create ~prefix:qualifier wrapper_function_name in
   let make_helper_define
       ({ Define.signature = { name = helper_function_name; _ }; _ } as helper_define)

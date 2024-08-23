@@ -478,7 +478,7 @@ and Define : sig
       async: bool;
       generator: bool;
       (* The class owning the method. *)
-      parent: Reference.t option;
+      legacy_parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
       type_params: Expression.TypeParam.t list;
@@ -649,7 +649,7 @@ end = struct
       async: bool;
       generator: bool;
       (* The class owning the method *)
-      parent: Reference.t option;
+      legacy_parent: Reference.t option;
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
       type_params: Expression.TypeParam.t list;
@@ -690,7 +690,11 @@ end = struct
                           match Bool.compare left.generator right.generator with
                           | x when not (Int.equal x 0) -> x
                           | _ -> (
-                              match [%compare: Reference.t option] left.parent right.parent with
+                              match
+                                [%compare: Reference.t option]
+                                  left.legacy_parent
+                                  right.legacy_parent
+                              with
                               | x when not (Int.equal x 0) -> x
                               | _ -> (
                                   match
@@ -714,7 +718,7 @@ end = struct
         return_annotation = None;
         async = false;
         generator = false;
-        parent = None;
+        legacy_parent = None;
         nesting_define = None;
         type_params = [];
       }
@@ -729,7 +733,7 @@ end = struct
         return_annotation = None;
         async = false;
         generator = false;
-        parent = Some qualified_class_name;
+        legacy_parent = Some qualified_class_name;
         nesting_define = None;
         type_params = [];
       }
@@ -743,7 +747,7 @@ end = struct
       | _ -> "self"
 
 
-    let is_method { parent; _ } = Option.is_some parent
+    let is_method { legacy_parent; _ } = Option.is_some legacy_parent
 
     let has_decorator ?(match_prefix = false) { decorators; _ } decorator =
       Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
@@ -1898,7 +1902,7 @@ module PrettyPrinter = struct
             decorators;
             return_annotation;
             async;
-            parent;
+            legacy_parent;
             type_params;
             _;
           };
@@ -1920,8 +1924,8 @@ module PrettyPrinter = struct
       pp_async
       async
       pp_reference_option
-      parent
-      (if Option.is_some parent then "#" else "")
+      legacy_parent
+      (if Option.is_some legacy_parent then "#" else "")
       Reference.pp
       name
       Expression.pp_type_param_list

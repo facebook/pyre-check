@@ -108,7 +108,7 @@ let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
           return_annotation = Some (Type.expression return);
           async = false;
           generator = false;
-          parent = Some parent;
+          legacy_parent = Some parent;
           nesting_define = None;
           type_params = [];
         };
@@ -177,7 +177,7 @@ let generic_meta_body =
             return_annotation = None;
             async = false;
             generator = false;
-            parent = Some (Reference.create "typing.GenericMeta");
+            legacy_parent = Some (Reference.create "typing.GenericMeta");
             nesting_define = None;
             type_params = [];
           };

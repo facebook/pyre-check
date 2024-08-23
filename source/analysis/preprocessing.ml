@@ -968,7 +968,7 @@ module Qualify (Context : QualifyContext) = struct
           ({ qualifier; _ } as scope)
           ({
              Define.signature =
-               { name; parameters; decorators; return_annotation; parent; nesting_define; _ };
+               { name; parameters; decorators; return_annotation; legacy_parent; nesting_define; _ };
              body;
              _;
            } as define)
@@ -976,7 +976,7 @@ module Qualify (Context : QualifyContext) = struct
         let return_annotation =
           return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
         in
-        let parent = parent >>| fun parent -> qualify_reference ~scope parent in
+        let legacy_parent = legacy_parent >>| fun parent -> qualify_reference ~scope parent in
         let nesting_define =
           nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
         in
@@ -1007,7 +1007,7 @@ module Qualify (Context : QualifyContext) = struct
             parameters;
             decorators;
             return_annotation;
-            parent;
+            legacy_parent;
             nesting_define;
           }
         in
@@ -2679,7 +2679,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 return_annotation = Some return_annotation;
                 async = false;
                 generator = false;
-                parent = Some parent;
+                legacy_parent = Some parent;
                 nesting_define = None;
                 type_params = [];
               };
@@ -2879,7 +2879,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
                 Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
               async = false;
               generator = false;
-              parent = Some name;
+              legacy_parent = Some name;
               nesting_define = None;
               type_params = [];
             };
@@ -3369,7 +3369,7 @@ let populate_captures ({ Source.statements; _ } as source) =
             | Scope.Kind.(Module | Lambda | Comprehension) ->
                 (* We don't care about module-level and expression-level bindings *)
                 None
-            | Scope.Kind.Define ({ Define.Signature.parent; _ } as signature) -> (
+            | Scope.Kind.Define ({ Define.Signature.legacy_parent; _ } as signature) -> (
                 match binding_kind with
                 | Binding.Kind.(ClassName | ImportName _) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type
@@ -3517,10 +3517,10 @@ let populate_captures ({ Source.statements; _ } as source) =
                     in
                     Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.(ParameterName { star = None; index = 0; annotation })
-                  when Option.is_some parent
+                  when Option.is_some legacy_parent
                        && Option.is_none annotation
                        && not (Define.Signature.is_static_method signature) ->
-                    let parent = Option.value_exn parent in
+                    let parent = Option.value_exn legacy_parent in
                     if
                       Define.Signature.is_class_method signature
                       || Define.Signature.is_class_property signature
@@ -3906,7 +3906,7 @@ let mangle_private_attributes source =
             tail, { statement with value = Statement.Class { metadata with body } }
         | ( { mangling_prefix; _ } :: _,
             Statement.Define
-              ({ Define.signature = { Define.Signature.name; parent; _ } as signature; _ } as
+              ({ Define.signature = { Define.Signature.name; legacy_parent; _ } as signature; _ } as
               define) )
           when should_mangle (Reference.last name) ->
             let mangle_parent_name parent =
@@ -3929,7 +3929,7 @@ let mangle_private_attributes source =
                         {
                           signature with
                           name = mangle_reference mangling_prefix name;
-                          parent = parent >>| mangle_parent_name;
+                          legacy_parent = legacy_parent >>| mangle_parent_name;
                         };
                     };
               } )
@@ -4493,10 +4493,10 @@ module SelfType = struct
 
   let replace_self_type_in_signature
       ~qualifier
-      ({ Define.Signature.parameters; return_annotation; parent; _ } as signature)
+      ({ Define.Signature.parameters; return_annotation; legacy_parent; _ } as signature)
     =
     match
-      ( parent,
+      ( legacy_parent,
         can_bind_self_parameter_using_self_type_variable parameters,
         parameters,
         return_annotation )

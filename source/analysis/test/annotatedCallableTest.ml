@@ -35,7 +35,7 @@ let test_return_annotation context =
           return_annotation;
           async;
           generator;
-          parent = None;
+          legacy_parent = None;
           nesting_define = None;
           type_params = [];
         }
@@ -81,8 +81,8 @@ let test_return_annotation context =
 
 
 let test_create_overload context =
-  let assert_overload ?parent source expected =
-    let parent = parent >>| Reference.create in
+  let assert_overload ?legacy_parent source expected =
+    let legacy_parent = legacy_parent >>| Reference.create in
     let resolution =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
@@ -102,7 +102,7 @@ let test_create_overload context =
       (source
       |> Test.parse
       |> last_statement_define
-      |> (fun { Define.signature; _ } -> { signature with parent })
+      |> (fun { Define.signature; _ } -> { signature with legacy_parent })
       |> Callable.create_overload_without_applying_decorators
            ~parser
            ~generic_parameters_as_variables)
@@ -144,7 +144,7 @@ let test_create_overload context =
       def foo(x, y: str) -> None:
         pass
     |}
-    ~parent:"test.C"
+    ~legacy_parent:"test.C"
     {
       Type.Callable.annotation = Type.none;
       parameters =
@@ -165,7 +165,7 @@ let test_create_overload context =
       def foo(x, y: str) -> None:
         pass
     |}
-    ~parent:"test.C"
+    ~legacy_parent:"test.C"
     {
       Type.Callable.annotation = Type.none;
       parameters =
@@ -189,7 +189,7 @@ let test_create_overload context =
       def foo(x, y: str) -> None:
         pass
     |}
-    ~parent:"test.C"
+    ~legacy_parent:"test.C"
     {
       Type.Callable.annotation = Type.none;
       parameters =
@@ -209,7 +209,7 @@ let test_create_overload context =
       def foo(x, y: str) -> None:
         pass
     |}
-    ~parent:"test.C"
+    ~legacy_parent:"test.C"
     {
       Type.Callable.annotation = Type.none;
       parameters =

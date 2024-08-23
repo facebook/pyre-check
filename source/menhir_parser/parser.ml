@@ -489,7 +489,7 @@ module ParserToAst = struct
                 async;
               }
             =
-            let parent =
+            let legacy_parent =
               match parent with
               | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
               | _ -> None
@@ -501,7 +501,7 @@ module ParserToAst = struct
               return_annotation = return_annotation >>| convert_expression;
               async;
               generator = Ast.Statement.is_generator body;
-              parent;
+              legacy_parent;
               nesting_define = None;
               type_params = [];
             }

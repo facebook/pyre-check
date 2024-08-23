@@ -953,23 +953,25 @@ module State (Context : Context) = struct
     | _ -> state
 
 
-  let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
+  let resolution_for_statement ~local_annotations ~legacy_parent ~statement_key resolution =
     let type_info_store =
       local_annotations
       >>= TypeInfo.ForFunctionBody.ReadOnly.get_precondition ~statement_key
       |> Option.value ~default:TypeInfo.Store.empty
     in
-    resolution |> Resolution.with_type_info_store ~type_info_store |> Resolution.with_parent ~parent
+    resolution
+    |> Resolution.with_type_info_store ~type_info_store
+    |> Resolution.with_parent ~parent:legacy_parent
 
 
   let forward ~statement_key state ~statement:{ Node.value; location } =
-    let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+    let { Node.value = { Define.signature = { Define.Signature.legacy_parent; _ }; _ }; _ } =
       Context.define
     in
     let resolution =
       resolution_for_statement
         ~local_annotations:Context.local_annotations
-        ~parent
+        ~legacy_parent
         ~statement_key
         Context.resolution
     in
