@@ -942,6 +942,7 @@ let test_call_locations =
 
 
 let test_class_locations =
+  let parent = ModuleContext.create_toplevel () in
   let do_test context =
     let assert_parsed = assert_parsed ~context in
     test_list
@@ -958,6 +959,7 @@ let test_class_locations =
                       {
                         Class.name = !&"foo";
                         base_arguments = [];
+                        parent;
                         body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
                         decorators =
                           [
@@ -979,6 +981,7 @@ let test_class_locations =
                       {
                         Class.name = !&"foo";
                         base_arguments = [];
+                        parent;
                         body =
                           [
                             node
@@ -1038,6 +1041,7 @@ let test_class_locations =
                                   (Expression.Constant (Constant.Integer 2));
                             };
                           ];
+                        parent;
                         body =
                           [
                             node
@@ -1072,6 +1076,7 @@ let test_class_locations =
                       {
                         Class.name = !&"foo";
                         base_arguments = [];
+                        parent;
                         body =
                           [
                             node
@@ -3129,6 +3134,7 @@ let test_stub_locations =
                       {
                         Class.name = !&"foo";
                         base_arguments = [];
+                        parent = ModuleContext.create_toplevel ();
                         body =
                           [
                             node

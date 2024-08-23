@@ -291,6 +291,7 @@ and Class : sig
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
+    parent: ModuleContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -323,6 +324,7 @@ end = struct
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
+    parent: ModuleContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -344,29 +346,32 @@ end = struct
         with
         | x when not (Int.equal x 0) -> x
         | _ -> (
-            match List.compare Statement.location_insensitive_compare left.body right.body with
+            match ModuleContext.compare left.parent right.parent with
             | x when not (Int.equal x 0) -> x
             | _ -> (
-                match
-                  List.compare
-                    Expression.location_insensitive_compare
-                    left.decorators
-                    right.decorators
-                with
+                match List.compare Statement.location_insensitive_compare left.body right.body with
                 | x when not (Int.equal x 0) -> x
                 | _ -> (
                     match
                       List.compare
-                        Define.NameAccess.compare
-                        left.top_level_unbound_names
-                        right.top_level_unbound_names
+                        Expression.location_insensitive_compare
+                        left.decorators
+                        right.decorators
                     with
-                    | 0 ->
-                        List.compare
-                          Expression.TypeParam.location_insensitive_compare
-                          left.type_params
-                          right.type_params
-                    | x -> x))))
+                    | x when not (Int.equal x 0) -> x
+                    | _ -> (
+                        match
+                          List.compare
+                            Define.NameAccess.compare
+                            left.top_level_unbound_names
+                            right.top_level_unbound_names
+                        with
+                        | 0 ->
+                            List.compare
+                              Expression.TypeParam.location_insensitive_compare
+                              left.type_params
+                              right.type_params
+                        | x -> x)))))
 
 
   let toplevel_define { name; top_level_unbound_names; body; _ } =

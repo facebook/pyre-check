@@ -2240,7 +2240,7 @@ let expand_typed_dictionary_declarations
       let extract_totality arguments =
         List.find_map arguments ~f:extract_totality_from_base |> Option.value ~default:true
       in
-      let typed_dictionary_class_declaration ~name ~fields ~total ~bases =
+      let typed_dictionary_class_declaration ~name ~parent ~fields ~total ~bases =
         match name with
         | {
          Node.value =
@@ -2321,6 +2321,7 @@ let expand_typed_dictionary_declarations
                      else
                        [non_total_base]);
                    decorators = [];
+                   parent;
                    body = assignments;
                    top_level_unbound_names = [];
                    type_params = [];
@@ -2372,6 +2373,7 @@ let expand_typed_dictionary_declarations
           >>= (fun name ->
                 typed_dictionary_class_declaration
                   ~name:(string_literal (Reference.show (Reference.create ~prefix:qualifier name)))
+                  ~parent:(ModuleContext.create_toplevel ())
                   ~fields:
                     (List.filter_map entries ~f:(fun entry ->
                          let open Dictionary.Entry in
@@ -2385,6 +2387,7 @@ let expand_typed_dictionary_declarations
           {
             name = class_name;
             base_arguments = bases;
+            parent;
             body;
             decorators = _;
             top_level_unbound_names = _;
@@ -2411,6 +2414,7 @@ let expand_typed_dictionary_declarations
             let class_declaration =
               typed_dictionary_class_declaration
                 ~name:(string_literal class_name)
+                ~parent
                 ~fields
                 ~total:(extract_totality bases)
                 ~bases
@@ -2453,7 +2457,7 @@ let expand_typed_dictionary_declarations
 
 
 let expand_named_tuples ({ Source.statements; _ } as source) =
-  let rec expand_named_tuples ({ Node.location; value } as statement) =
+  let rec expand_named_tuples ~parent ({ Node.location; value } as statement) =
     let extract_attributes expression =
       match expression with
       | {
@@ -2711,13 +2715,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 {
                   Class.name;
                   base_arguments = [tuple_base ~location];
+                  parent;
                   body = constructors @ attributes;
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
                 }
           | _ -> value)
-      | Class ({ Class.name; base_arguments; body; _ } as original) ->
+      | Class ({ Class.name; base_arguments; parent; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
                 Call.Argument.value =
@@ -2802,15 +2807,34 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               {
                 original with
                 Class.base_arguments = List.rev reversed_bases;
-                body = attributes @ List.map ~f:expand_named_tuples body;
+                body =
+                  attributes
+                  @ List.map
+                      ~f:
+                        (expand_named_tuples
+                           ~parent:(ModuleContext.create_class ~parent (Reference.last name)))
+                      body;
               }
-      | Define ({ Define.body; _ } as define) ->
-          Define { define with Define.body = List.map ~f:expand_named_tuples body }
+      | Define ({ Define.signature = { Define.Signature.name; _ }; body; _ } as define) ->
+          Define
+            {
+              define with
+              Define.body =
+                List.map
+                  ~f:
+                    (expand_named_tuples
+                       ~parent:(ModuleContext.create_function ~parent (Reference.last name)))
+                  body;
+            }
       | _ -> value
     in
     { statement with Node.value }
   in
-  { source with Source.statements = List.map ~f:expand_named_tuples statements }
+  {
+    source with
+    Source.statements =
+      List.map ~f:(expand_named_tuples ~parent:(ModuleContext.create_toplevel ())) statements;
+  }
 
 
 let expand_new_types ({ Source.statements; _ } as source) =
@@ -2838,6 +2862,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
          } as base_argument)
       name
     =
+    let class_parent = ModuleContext.create_toplevel () in
     let constructor =
       Statement.Define
         {
@@ -2868,6 +2893,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
       {
         Class.name;
         base_arguments = [base_argument];
+        parent = class_parent;
         body = [constructor];
         decorators = [];
         top_level_unbound_names = [];
@@ -2973,6 +2999,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
             name = class_name_reference;
             base_arguments = [metaclass];
             decorators = [];
+            parent = ModuleContext.create_toplevel ();
             body = [Node.create ~location Statement.Pass];
             top_level_unbound_names = [];
             type_params = [];
@@ -4279,7 +4306,7 @@ let add_dataclass_keyword_only_specifiers source =
     let statement _ ({ Node.value; location } as statement) =
       match value with
       | Statement.Class
-          { name; base_arguments; body; decorators; top_level_unbound_names; type_params }
+          { name; base_arguments; parent; body; decorators; top_level_unbound_names; type_params }
         when List.exists decorators ~f:is_dataclass_decorator
              && List.exists body ~f:is_keyword_only_pseudo_field ->
           ( (),
@@ -4290,6 +4317,7 @@ let add_dataclass_keyword_only_specifiers source =
                     {
                       name;
                       base_arguments;
+                      parent;
                       body = set_keyword_only_after_pseudo_field body;
                       decorators;
                       top_level_unbound_names;
@@ -4668,6 +4696,7 @@ let expand_enum_functional_syntax
           name = class_reference;
           base_arguments;
           decorators = [];
+          parent = ModuleContext.create_toplevel ();
           body = assignments;
           top_level_unbound_names = [];
           type_params = [];

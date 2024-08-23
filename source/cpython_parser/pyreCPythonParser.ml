@@ -838,7 +838,16 @@ let statement =
       ~type_params
       ~context
   in
-  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~type_params ~context =
+  let class_def
+      ~location
+      ~name
+      ~bases
+      ~keywords
+      ~body
+      ~decorator_list
+      ~type_params
+      ~context:({ StatementContext.parent; _ } as context)
+    =
     let base_arguments =
       List.append
         (List.map bases ~f:(fun arg -> convert_positional_argument arg, arg.Node.location))
@@ -854,7 +863,6 @@ let statement =
       |> List.map ~f:fst
     in
     let body =
-      let { StatementContext.parent; _ } = context in
       build_statements
         ~context:
           { context with StatementContext.parent = Ast.ModuleContext.create_class ~parent name }
@@ -865,6 +873,7 @@ let statement =
         {
           Class.name = Ast.Reference.create name;
           base_arguments;
+          parent;
           body;
           decorators = decorator_list;
           top_level_unbound_names = [];

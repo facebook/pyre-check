@@ -30,6 +30,7 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) ~in_module name =
   {
     Class.name;
     base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
+    parent = ModuleContext.create_toplevel ();
     body;
     decorators = [];
     top_level_unbound_names = [];

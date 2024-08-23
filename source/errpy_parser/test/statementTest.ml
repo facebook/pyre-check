@@ -2039,6 +2039,7 @@ let test_define =
 
 
 let test_class =
+  let parent = ModuleContext.create_toplevel () in
   let assert_parsed = assert_parsed in
   test_list
     [
@@ -2051,6 +2052,7 @@ let test_class =
                   {
                     Class.name = !&"foo";
                     base_arguments = [];
+                    parent;
                     body = [+Statement.Pass];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2066,6 +2068,7 @@ let test_class =
                   {
                     Class.name = !&"foo";
                     base_arguments = [];
+                    parent;
                     body = [+Statement.Pass];
                     decorators = [!"bar"];
                     top_level_unbound_names = [];
@@ -2081,6 +2084,7 @@ let test_class =
                   {
                     Class.name = !&"foo";
                     base_arguments = [];
+                    parent;
                     body =
                       [
                         +Statement.Define
@@ -2116,6 +2120,7 @@ let test_class =
                   {
                     Class.name = !&"foo";
                     base_arguments = [];
+                    parent;
                     body =
                       [
                         +Statement.Define
@@ -2181,6 +2186,7 @@ let test_class =
                           value = +Expression.Constant (Constant.Integer 2);
                         };
                       ];
+                    parent;
                     body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2204,6 +2210,7 @@ let test_class =
                                (Constant.String (StringLiteral.create "literal_string"));
                         };
                       ];
+                    parent;
                     body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2229,6 +2236,7 @@ let test_class =
                           value = +Expression.Starred (Starred.Twice !"kwargs");
                         };
                       ];
+                    parent;
                     body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
                     decorators = [];
                     top_level_unbound_names = [];
@@ -2244,6 +2252,7 @@ let test_class =
                   {
                     Class.name = !&"foo";
                     base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
+                    parent;
                     body =
                       [
                         +Statement.Define
@@ -2279,6 +2288,7 @@ let test_class =
                   {
                     Class.name = !&"A";
                     base_arguments = [];
+                    parent;
                     body =
                       [
                         +Statement.Define
@@ -2303,6 +2313,7 @@ let test_class =
                            {
                              Class.name = !&"B";
                              base_arguments = [];
+                             parent = ModuleContext.create_class ~parent "A";
                              body =
                                [
                                  +Statement.Define
@@ -2332,6 +2343,42 @@ let test_class =
                     decorators = [];
                     top_level_unbound_names = [];
                     type_params = [];
+                  };
+             ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_parsed
+           "def foo():\n\tclass bar:\n\t\tpass"
+           ~expected:
+             [
+               +Statement.Define
+                  {
+                    Define.signature =
+                      {
+                        Define.Signature.name = !&"foo";
+                        parameters = [];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                        type_params = [];
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Class
+                           {
+                             Class.name = !&"bar";
+                             base_arguments = [];
+                             parent = ModuleContext.create_function ~parent "foo";
+                             body = [+Statement.Pass];
+                             decorators = [];
+                             top_level_unbound_names = [];
+                             type_params = [];
+                           };
+                      ];
                   };
              ];
     ]

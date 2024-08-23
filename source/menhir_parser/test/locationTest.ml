@@ -816,6 +816,7 @@ let test_call_locations _ =
 
 
 let test_class_locations _ =
+  let parent = ModuleContext.create_toplevel () in
   assert_source_locations
     "@bar\nclass foo():\n\tpass"
     [
@@ -826,6 +827,7 @@ let test_class_locations _ =
            {
              Class.name = !&"foo";
              base_arguments = [];
+             parent;
              body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
              decorators =
                [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
@@ -843,6 +845,7 @@ let test_class_locations _ =
            {
              Class.name = !&"foo";
              base_arguments = [];
+             parent;
              body =
                [
                  node
@@ -894,6 +897,7 @@ let test_class_locations _ =
                      node ~start:(1, 13) ~stop:(1, 14) (Expression.Constant (Constant.Integer 2));
                  };
                ];
+             parent;
              body =
                [
                  node
@@ -923,6 +927,7 @@ let test_class_locations _ =
            {
              Class.name = !&"foo";
              base_arguments = [];
+             parent;
              body =
                [
                  node
@@ -2677,6 +2682,7 @@ let test_string_locations _ =
 
 
 let test_stub_locations _ =
+  let parent = ModuleContext.create_toplevel () in
   assert_source_locations
     "a = ..."
     [
@@ -2809,6 +2815,7 @@ let test_stub_locations _ =
            {
              Class.name = !&"A";
              base_arguments = [];
+             parent;
              body =
                [
                  node
@@ -2847,6 +2854,7 @@ let test_stub_locations _ =
            {
              Class.name = !&"foo";
              base_arguments = [];
+             parent;
              body =
                [
                  node

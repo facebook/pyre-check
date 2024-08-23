@@ -459,12 +459,16 @@ module ParserToAst = struct
             }
       | Break -> AstStatement.Statement.Break
       | Class { Class.name; base_arguments; body; decorators } ->
-          let parent = ModuleContext.create_class ~parent (Reference.show name) in
+          let body =
+            let parent = ModuleContext.create_class ~parent (Reference.show name) in
+            List.map ~f:(convert_statement ~parent) body
+          in
           AstStatement.Statement.Class
             {
               AstStatement.Class.name;
               base_arguments = List.map ~f:convert_argument base_arguments;
-              body = List.map ~f:(convert_statement ~parent) body;
+              parent;
+              body;
               decorators = List.map ~f:convert_expression decorators;
               top_level_unbound_names = [];
               type_params = [];

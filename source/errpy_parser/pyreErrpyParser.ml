@@ -856,6 +856,7 @@ and translate_statements
               {
                 Class.name = Ast.Reference.create name;
                 base_arguments;
+                parent;
                 body;
                 decorators = List.map ~f:translate_expression class_def.decorator_list;
                 top_level_unbound_names = [];

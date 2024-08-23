@@ -120,6 +120,7 @@ and Class : sig
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
+    parent: ModuleContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;

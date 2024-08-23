@@ -54,6 +54,7 @@ let test_attributes =
       {
         Class.name = !&"";
         base_arguments = [];
+        parent = ModuleContext.create_toplevel ();
         body = [];
         decorators = [];
         top_level_unbound_names = [];

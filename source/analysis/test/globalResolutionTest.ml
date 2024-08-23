@@ -511,6 +511,7 @@ let test_is_protocol =
       {
         StatementClass.name = !&"Derp";
         base_arguments;
+        parent = ModuleContext.create_toplevel ();
         body = [];
         decorators = [];
         top_level_unbound_names = [];
