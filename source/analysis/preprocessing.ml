@@ -1883,7 +1883,7 @@ let defines
     ?(include_nested = false)
     ?(include_toplevels = false)
     ?(include_methods = true)
-    source
+    ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
   let module Collector = Visit.StatementCollector (struct
     type t = Define.t Node.t
@@ -1896,7 +1896,7 @@ let defines
 
     let predicate = function
       | { Node.location; value = Statement.Class class_; _ } when include_toplevels ->
-          Class.toplevel_define class_ |> Node.create ~location |> Option.some
+          Class.toplevel_define ~qualifier class_ |> Node.create ~location |> Option.some
       | { Node.location; value = Define define } when Define.is_stub define ->
           if include_stubs then
             Some { Node.location; Node.value = define }
@@ -3599,7 +3599,7 @@ let populate_captures ({ Source.statements; _ } as source) =
   { source with Source.statements = transform_statements ~scopes statements }
 
 
-let populate_unbound_names source =
+let populate_unbound_names ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let open Scope in
   let to_unbound_name ~scopes ({ Define.NameAccess.name; _ } as access) =
     match ScopeStack.lookup scopes name with
@@ -3643,7 +3643,9 @@ let populate_unbound_names source =
     | { Node.location; value = Class ({ Class.body; _ } as class_) } ->
         let top_level_unbound_names =
           let scopes =
-            ScopeStack.extend scopes ~with_:(Scope.of_define_exn (Class.toplevel_define class_))
+            ScopeStack.extend
+              scopes
+              ~with_:(Scope.of_define_exn (Class.toplevel_define ~qualifier class_))
           in
           AccessCollector.from_class class_ |> compute_unbound_names ~scopes
         in

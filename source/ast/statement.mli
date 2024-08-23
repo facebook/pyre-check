@@ -130,7 +130,7 @@ and Class : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val toplevel_define : t -> Define.t
+  val toplevel_define : qualifier:Reference.t -> t -> Define.t
 
   val constructors : ?in_test:bool -> t -> Define.t list
 
@@ -171,8 +171,6 @@ and Define : sig
     val location_insensitive_compare : t -> t -> int
 
     val create_toplevel : qualifier:Reference.t option -> t
-
-    val create_class_toplevel : parent:Reference.t -> t
 
     val unqualified_name : t -> Identifier.t
 

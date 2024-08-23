@@ -6630,7 +6630,7 @@ let test_populate_unbound_names =
     List.iter expected ~f:(fun (name, unbound_names) -> assert_unbound_names_ name unbound_names)
   in
   let toplevel_name = !&"test.$toplevel" in
-  let class_foo_toplevel_name = !&"Foo.$class_toplevel" in
+  let class_foo_toplevel_name = !&"test.Foo.$class_toplevel" in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__

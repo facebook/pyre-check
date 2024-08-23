@@ -40,7 +40,7 @@ let all_bodies { body; siblings; _ } =
   | Some body -> body :: sibling_bodies
 
 
-let collect_typecheck_units { Source.statements; _ } =
+let collect_typecheck_units { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let rec collect_from_statement ~ignore_class sofar { Node.value; location } =
     match value with
@@ -53,7 +53,7 @@ let collect_typecheck_units { Source.statements; _ } =
           sofar)
         else
           let sofar =
-            let define = Class.toplevel_define class_ |> Node.create ~location in
+            let define = Class.toplevel_define ~qualifier class_ |> Node.create ~location in
             define :: sofar
           in
           List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)

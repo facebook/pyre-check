@@ -301,7 +301,7 @@ and Class : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val toplevel_define : t -> Define.t
+  val toplevel_define : qualifier:Reference.t -> t -> Define.t
 
   val constructors : ?in_test:bool -> t -> Define.t list
 
@@ -374,10 +374,11 @@ end = struct
                         | x -> x)))))
 
 
-  let toplevel_define { name; top_level_unbound_names; body; _ } =
+  let toplevel_define ~qualifier { name; top_level_unbound_names; parent; body; _ } =
     Define.create_class_toplevel
       ~unbound_names:top_level_unbound_names
-      ~parent:name
+      ~module_name:qualifier
+      ~local_context:(ModuleContext.create_class ~parent (Reference.last name))
       ~statements:body
 
 
@@ -488,8 +489,6 @@ and Define : sig
 
     val create_toplevel : qualifier:Reference.t option -> t
 
-    val create_class_toplevel : parent:Reference.t -> t
-
     val unqualified_name : t -> Identifier.t
 
     val self_identifier : t -> Identifier.t
@@ -574,7 +573,8 @@ and Define : sig
 
   val create_class_toplevel
     :  unbound_names:NameAccess.t list ->
-    parent:Reference.t ->
+    module_name:Reference.t ->
+    local_context:ModuleContext.t ->
     statements:Statement.t list ->
     t
 
@@ -720,15 +720,16 @@ end = struct
       }
 
 
-    let create_class_toplevel ~parent =
+    let create_class_toplevel ~module_name local_context =
+      let qualified_class_name = ModuleContext.to_qualifier ~module_name local_context in
       {
-        name = Reference.create ~prefix:parent class_toplevel_define_name;
+        name = Reference.create ~prefix:qualified_class_name class_toplevel_define_name;
         parameters = [];
         decorators = [];
         return_annotation = None;
         async = false;
         generator = false;
-        parent = Some parent;
+        parent = Some qualified_class_name;
         nesting_define = None;
         type_params = [];
       }
@@ -937,9 +938,9 @@ end = struct
     }
 
 
-  let create_class_toplevel ~unbound_names ~parent ~statements =
+  let create_class_toplevel ~unbound_names ~module_name ~local_context ~statements =
     {
-      signature = Signature.create_class_toplevel ~parent;
+      signature = Signature.create_class_toplevel ~module_name local_context;
       captures = [];
       unbound_names;
       body = statements;
