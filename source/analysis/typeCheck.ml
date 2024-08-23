@@ -6131,7 +6131,7 @@ module State (Context : Context) = struct
     in
     let check_decorators resolution errors =
       let check_final_decorator errors =
-        if Option.is_none parent && Define.is_final_method define then
+        if (not (Define.is_method define)) && Define.is_final_method define then
           emit_error
             ~errors
             ~location
@@ -6262,7 +6262,7 @@ module State (Context : Context) = struct
       (* Positional-only parameters cannot appear after parameters which may be passed by name,
          ignoring the self/cls parameter for methods. *)
       let parameters_to_check =
-        if Option.is_some parent && not (Define.is_static_method define) then
+        if Define.is_method define && not (Define.is_static_method define) then
           List.drop parameter_types 1
         else
           parameter_types
@@ -6370,7 +6370,7 @@ module State (Context : Context) = struct
                 parameter_types
             in
             let is_non_static_method =
-              Option.is_some parent && not (Define.is_static_method define)
+              Define.is_method define && not (Define.is_static_method define)
             in
             if is_non_static_method then
               List.nth positional_parameters 1
@@ -6745,8 +6745,10 @@ module State (Context : Context) = struct
           errors )
       in
       let number_of_stars name = Identifier.split_star name |> fst |> String.length in
-      match List.rev parameters, parent with
-      | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define) ->
+      match List.rev parameters with
+      | []
+        when Define.is_method define
+             && not (Define.is_class_toplevel define || Define.is_static_method define) ->
           let errors =
             let name =
               if Define.is_class_method define || Define.is_class_property define then
@@ -6760,16 +6762,15 @@ module State (Context : Context) = struct
               ~kind:(Error.InvalidMethodSignature { annotation = None; name })
           in
           resolution, errors
-      | ( {
-            Node.value = { name = second_name; value = None; annotation = Some second_annotation };
-            _;
-          }
-          :: {
-               Node.value = { name = first_name; value = None; annotation = Some first_annotation };
-               _;
-             }
-          :: reversed_head,
-          _ )
+      | {
+          Node.value = { name = second_name; value = None; annotation = Some second_annotation };
+          _;
+        }
+        :: {
+             Node.value = { name = first_name; value = None; annotation = Some first_annotation };
+             _;
+           }
+        :: reversed_head
         when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
           match
             GlobalResolution.param_spec_from_vararg_annotations

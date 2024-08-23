@@ -790,21 +790,19 @@ end = struct
       String.is_prefix ~prefix:"__" name && String.is_suffix ~suffix:"__" name
 
 
-    let is_class_method ({ parent; _ } as signature) =
+    let is_class_method signature =
       let valid_names = ["__init_subclass__"; "__new__"; "__class_getitem__"] in
-      Option.is_some parent
+      is_method signature
       && (Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature)
          || List.mem valid_names (unqualified_name signature) ~equal:String.equal)
 
 
-    let is_class_property ({ parent; _ } as signature) =
-      Option.is_some parent
+    let is_class_property signature =
+      is_method signature
       && Set.exists Recognized.classproperty_decorators ~f:(has_decorator signature)
 
 
-    let is_enum_member ({ parent; _ } as signature) =
-      Option.is_some parent && has_decorator signature "enum.member"
-
+    let is_enum_member signature = is_method signature && has_decorator signature "enum.member"
 
     let test_initializers =
       String.Set.of_list
@@ -820,23 +818,21 @@ end = struct
         ]
 
 
-    let is_test_setup ({ parent; _ } as signature) =
+    let is_test_setup signature =
+      is_method signature
+      &&
       let name = unqualified_name signature in
-      if Option.is_none parent then
-        false
-      else
-        Set.mem test_initializers name
+      Set.mem test_initializers name
 
 
-    let is_constructor ?(in_test = false) ({ parent; _ } as signature) =
+    let is_constructor ?(in_test = false) signature =
+      is_method signature
+      &&
       let name = unqualified_name signature in
-      if Option.is_none parent then
-        false
-      else
-        String.equal name "__init__"
-        || String.equal name "__new__"
-        || String.equal name "__init_subclass__"
-        || (in_test && is_test_setup signature)
+      String.equal name "__init__"
+      || String.equal name "__new__"
+      || String.equal name "__init_subclass__"
+      || (in_test && is_test_setup signature)
 
 
     let is_property_setter signature =
