@@ -431,10 +431,22 @@ module SignatureSelection = struct
               in
               List.filter ~f:is_keyword_argument matched_arguments
             in
+            let keywords_parameter_adjustment =
+              let has_keywords_parameter =
+                List.exists
+                  ~f:(fun parameter ->
+                    match parameter with
+                    | CallableParamType.Keywords _ -> true
+                    | _ -> false)
+                  all_parameters
+              in
+              if has_keywords_parameter then 1 else 0
+            in
             let positional_parameter_count =
               List.length all_parameters
               - List.length unreachable_parameters
               - List.length matched_keyword_arguments
+              - keywords_parameter_adjustment
             in
             let self_argument_adjustment =
               if Option.is_some self_argument then

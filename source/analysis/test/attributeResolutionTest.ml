@@ -330,7 +330,6 @@ let test_get_parameter_argument_mapping context =
           ];
       reasons = { arity = []; annotation = [] };
     };
-  (* TODO(T107236583): We mistakenly count `provided` arguments as 3. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Keywords(int)], None]"
     ~self_argument:None
@@ -352,7 +351,7 @@ let test_get_parameter_argument_mapping context =
       parameter_argument_mapping = CallableParamType.Map.empty;
       reasons =
         {
-          arity = [SignatureSelectionTypes.TooManyArguments { expected = 1; provided = 3 }];
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 2 }];
           annotation = [];
         };
     };
