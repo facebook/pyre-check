@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import tempfile
 import textwrap
 from pathlib import Path
@@ -1369,7 +1371,7 @@ class EmptyContainerCollectorTest(testslide.TestCase):
             ],
         )
 
-    def test_empty_containers__multi_assign(self):
+    def test_empty_containers__multi_assign(self) -> None:
         # This test mostly exists to note that un-annotated assignments can have multiple targets,
         # but they only produce a single EmptyContainerInfo.
         self.assertEqual(
