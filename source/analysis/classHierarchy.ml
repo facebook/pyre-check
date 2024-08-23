@@ -128,7 +128,7 @@ module Edges = struct
     (* The instantiation of `typing.Generic` that the class inherits from but is not necessarily
        listed explicitly as a parent. It needs to be stored separately because this class may not
        take part in MRO computation. *)
-    parameters_as_generic_base_arguments: Type.Variable.t list option;
+    parameters_as_variables: Type.Variable.t list option;
   }
   [@@deriving sexp, compare]
 end
@@ -147,8 +147,8 @@ let type_variables_to_arguments variables = List.map variables ~f:Type.Variable.
 
 let parents_and_generic_of_target (module Handler : Handler) target =
   Handler.edges target
-  >>= fun { parents; parameters_as_generic_base_arguments; _ } ->
-  match parameters_as_generic_base_arguments with
+  >>= fun { parents; parameters_as_variables; _ } ->
+  match parameters_as_variables with
   | None -> Some parents
   | Some parameters_as_variables ->
       Some

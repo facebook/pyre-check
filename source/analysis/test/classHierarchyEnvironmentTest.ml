@@ -26,7 +26,7 @@ let test_simple_registration context =
             List.map
               ~f:(fun name -> { ClassHierarchy.Target.target = name; arguments = [] })
               expected_edges;
-          parameters_as_generic_base_arguments = None;
+          parameters_as_variables = None;
         }
     in
     assert_equal
@@ -69,7 +69,7 @@ let test_parents_and_inferred_generic_base context =
       Some
         {
           ClassHierarchy.Edges.parents = List.map expected_parents ~f:create_target;
-          parameters_as_generic_base_arguments = expected_parameters_as_variables;
+          parameters_as_variables = expected_parameters_as_variables;
         }
     in
     assert_equal
@@ -361,7 +361,7 @@ let test_updates context =
                   ClassHierarchy.Edges.parents =
                     List.map expectation ~f:(fun name ->
                         { ClassHierarchy.Target.target = name; arguments = [] });
-                  parameters_as_generic_base_arguments = None;
+                  parameters_as_variables = None;
                 })
           in
           ClassHierarchyEnvironment.ReadOnly.get_edges read_only ~dependency class_name

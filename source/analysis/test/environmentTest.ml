@@ -1143,7 +1143,7 @@ let test_remove_extra_edges_to_object context =
     (find_unsafe Handler.edges "test.Zero")
     {
       ClassHierarchy.Edges.parents = [{ ClassHierarchy.Target.target = "test.One"; arguments = [] }];
-      parameters_as_generic_base_arguments = None;
+      parameters_as_variables = None;
     };
   ()
 

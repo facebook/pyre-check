@@ -210,7 +210,7 @@ module IncomingDataComputation = struct
         Some
           {
             ClassHierarchy.Edges.parents;
-            parameters_as_generic_base_arguments = to_variable parameters_as_generic_base_arguments;
+            parameters_as_variables = to_variable parameters_as_generic_base_arguments;
           }
 end
 

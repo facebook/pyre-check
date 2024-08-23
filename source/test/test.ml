@@ -3671,11 +3671,7 @@ module MockClassHierarchyHandler = struct
     let new_target = { ClassHierarchy.Target.target = successor; arguments } in
     let predecessor_edges =
       match Hashtbl.find edges predecessor with
-      | None ->
-          {
-            ClassHierarchy.Edges.parents = [new_target];
-            parameters_as_generic_base_arguments = None;
-          }
+      | None -> { ClassHierarchy.Edges.parents = [new_target]; parameters_as_variables = None }
       | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
           { edges with parents = new_target :: parents }
     in
@@ -3687,5 +3683,5 @@ module MockClassHierarchyHandler = struct
     Hashtbl.set
       order.edges
       ~key:annotation
-      ~data:{ ClassHierarchy.Edges.parents = []; parameters_as_generic_base_arguments = None }
+      ~data:{ ClassHierarchy.Edges.parents = []; parameters_as_variables = None }
 end
