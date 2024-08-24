@@ -2176,6 +2176,33 @@ let test_duplicate_type_variables =
 let test_generic_aliases =
   test_list
     [
+      (* TODO: T194670955 at minimum, test.func(x) should return the correct type, which is list[T]
+         | set[T] *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import TypeVar
+
+            type ListOrSet[T] = list[T] | set[T]
+
+            S = TypeVar("S")
+            def func(x: ListOrSet[S]) -> ListOrSet[S]:
+                return x
+
+            x: ListOrSet[int] = []
+            reveal_type(func(x))
+
+            |}
+           [
+             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `ListOrSet` is used but not defined in the current scope.";
+             "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
+              function's parameters.";
+             "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
+              function's parameters.";
+             "Revealed type [-1]: Revealed type for `test.func(x)` is `unknown`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
