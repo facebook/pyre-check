@@ -394,31 +394,6 @@ module TriggeredSinkForCall = struct
 
     include T
 
-    let create_taint
-        ~call_info
-        ~partial_sink
-        ~frame
-        ~argument_location
-        ~source_traces
-        { source; argument_location = trigger_location }
-      =
-      if Location.equal argument_location trigger_location then
-        (* Only generate triggered taint on the non-fullfilled parameter. E.g., in `foo(a=source(),
-           b)`, we only want to create a triggered sink on `b`, not `a`. The flow on `a` triggers
-           creating a taint on `b`. *)
-        None
-      else
-        Some
-          (BackwardTaint.singleton
-             call_info
-             (Sinks.create_triggered_sink ~triggering_source:source partial_sink)
-             frame
-          |> BackwardTaint.transform
-               ExtraTraceFirstHop.Set.Self
-               Map
-               ~f:(ExtraTraceFirstHop.Set.join source_traces))
-
-
     let convert_partial_into_triggered_taint
         ~partial_sink
         ~sink_tree
@@ -484,24 +459,9 @@ module TriggeredSinkForCall = struct
     Core.Hashtbl.update map partial_sink ~f:update
 
 
-  (* Turn the given partial sink into a triggered sink taint at certain location, based on what has
-     triggered this partial sink. *)
-  let create_triggered_sink_taint ~argument_location ~call_info ~partial_sink ~frame map =
-    Core.Hashtbl.find map partial_sink
-    >>| Trigger.Map.bindings
-    >>| List.filter_map ~f:(fun (trigger, source_traces) ->
-            Trigger.create_taint
-              ~call_info
-              ~partial_sink
-              ~frame
-              ~argument_location
-              ~source_traces
-              trigger)
-    >>| Algorithms.fold_balanced ~f:BackwardTaint.join ~init:BackwardTaint.bottom
-    |> Option.value ~default:BackwardTaint.bottom
-
-
-  let update_triggered_sink_tree ~argument_location ~partial_sink ~sink_tree map =
+  (* Turn the given partial sink (within the given sink tree) into a triggered sink taint at certain
+     location, based on what has triggered this partial sink. *)
+  let convert_partial_sinks_into_triggered ~argument_location ~partial_sink ~sink_tree map =
     Core.Hashtbl.find map partial_sink
     >>| Trigger.Map.bindings
     >>| List.filter_map ~f:(fun (trigger, source_traces) ->
@@ -539,31 +499,27 @@ module TriggeredSinkForBackward = struct
     Hashtbl.update map call_site ~f:update_map
 
 
-  (* Update the partial sinks in the given taint into triggered sinks, and attach the trigger
-     information. *)
-  let add_triggered_sinks ~call_site ~argument_location ~argument_sink map =
-    let add_triggered_sinks ~triggered_sinks_for_call call_info (sink, frame) so_far =
-      match Sinks.extract_partial_sink sink with
-      | Some partial_sink ->
-          triggered_sinks_for_call
-          |> TriggeredSinkForCall.create_triggered_sink_taint
-               ~argument_location
-               ~call_info
-               ~partial_sink
-               ~frame
-          |> BackwardState.Tree.create_leaf
-          |> BackwardState.Tree.join so_far
-      | None -> so_far
+  (* Convert the partial sinks within the given taint tree into triggered sinks, and attach the
+     trigger information. *)
+  let convert_partial_sinks_into_triggered ~call_site ~argument_location ~argument_sink map =
+    let convert_into_triggered_sinks triggered_sinks_for_call =
+      argument_sink
+      |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Fn.id
+      |> Core.Map.Poly.to_alist
+      |> List.map ~f:(fun (sink, sink_tree) ->
+             match Sinks.extract_partial_sink sink with
+             | Some partial_sink ->
+                 TriggeredSinkForCall.convert_partial_sinks_into_triggered
+                   ~argument_location
+                   ~partial_sink
+                   ~sink_tree
+                   triggered_sinks_for_call
+             | None -> sink_tree)
+      |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
     in
     call_site
     |> Hashtbl.find map
-    >>| (fun triggered_sinks_for_call ->
-          BackwardState.Tree.reduce
-            BackwardTaint.kind_frame
-            ~f:(add_triggered_sinks ~triggered_sinks_for_call)
-            ~using:(Context (BackwardTaint.call_info, Acc))
-            ~init:argument_sink
-            argument_sink)
+    >>| convert_into_triggered_sinks
     |> Option.value ~default:argument_sink
 end
 
@@ -589,7 +545,7 @@ let compute_triggered_flows
     (* Since another flow has already been found, both flows are found and hence we emit an issue.
        No need to add subtraces for the discovered flow, since it is already an issue. *)
     let triggered_sink_taint =
-      TriggeredSinkForCall.update_triggered_sink_tree
+      TriggeredSinkForCall.convert_partial_sinks_into_triggered
         ~argument_location:(Location.strip_module location)
         ~sink_tree
         ~partial_sink

@@ -276,7 +276,7 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "format-string" }, { "always-via": "tito" }
+                  { "always-via": "format-string" }, { "always-via": "tito" }
                 ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
@@ -301,7 +301,9 @@
         ]
       }
     ],
-    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
@@ -354,7 +356,7 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "format-string" }, { "always-via": "tito" }
+                  { "always-via": "format-string" }, { "always-via": "tito" }
                 ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
@@ -379,7 +381,9 @@
         ]
       }
     ],
-    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
@@ -429,7 +433,7 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "format-string" }, { "always-via": "tito" }
+                  { "always-via": "format-string" }, { "always-via": "tito" }
                 ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
@@ -454,7 +458,9 @@
         ]
       }
     ],
-    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_triggered_sql",
@@ -507,7 +513,7 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "format-string" }, { "always-via": "tito" }
+                  { "always-via": "format-string" }, { "always-via": "tito" }
                 ],
                 "leaves": [
                   { "name": "Obj{<format-string>}", "port": "leaf:**" }
@@ -532,7 +538,9 @@
         ]
       }
     ],
-    "features": [ { "via": "format-string" }, { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multiple_sources_string_operations.format_string_triggered_user_controlled",
@@ -1179,7 +1187,7 @@
               }
             ],
             "local_features": [
-              { "via": "format-string" }, { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 24, "start": 8, "end": 28 } ],
             "origin": {
@@ -1207,18 +1215,6 @@
           {
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
-              {
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
@@ -1234,7 +1230,7 @@
               }
             ],
             "local_features": [
-              { "via": "format-string" }, { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 97, "start": 21, "end": 25 } ],
             "origin": {
@@ -1252,18 +1248,6 @@
           {
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[StringMayBeSQLSink]"
-              },
-              {
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "PartialSink[UserControlledSink]"
-              },
-              {
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
@@ -1279,7 +1263,7 @@
               }
             ],
             "local_features": [
-              { "via": "format-string" }, { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 97, "start": 7, "end": 11 } ],
             "origin": {
@@ -1322,7 +1306,7 @@
               }
             ],
             "local_features": [
-              { "via": "format-string" }, { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 88, "start": 24, "end": 27 } ],
             "origin": {
@@ -1365,7 +1349,7 @@
               }
             ],
             "local_features": [
-              { "via": "format-string" }, { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 78, "start": 14, "end": 17 } ],
             "origin": {

@@ -593,9 +593,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
-      let add_triggered_sinks ({ SinkTreeWithHandle.sink_tree; _ } as sink_tree_with_handle) =
+      let convert_partial_sinks_into_triggered
+          ({ SinkTreeWithHandle.sink_tree; _ } as sink_tree_with_handle)
+        =
         let sink_tree =
-          Issue.TriggeredSinkForBackward.add_triggered_sinks
+          Issue.TriggeredSinkForBackward.convert_partial_sinks_into_triggered
             ~call_site
             ~argument_location:argument.Node.location
             ~argument_sink:sink_tree
@@ -616,7 +618,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~is_class_method
           ~is_static_method
           ~call_info_intervals
-        |> List.map ~f:add_triggered_sinks
+        |> List.map ~f:convert_partial_sinks_into_triggered
       in
       let taint_in_taint_out =
         if apply_tito then
@@ -2173,7 +2175,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let taint =
-        Issue.TriggeredSinkForBackward.add_triggered_sinks
+        Issue.TriggeredSinkForBackward.convert_partial_sinks_into_triggered
           ~call_site
           ~argument_location:expression_location
           ~argument_sink:taint

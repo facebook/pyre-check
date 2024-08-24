@@ -72,7 +72,7 @@ module TriggeredSinkForBackward : sig
 
   val add : call_site:CallSite.t -> triggered_sinks_for_call:TriggeredSinkForCall.t -> t -> unit
 
-  val add_triggered_sinks
+  val convert_partial_sinks_into_triggered
     :  call_site:CallSite.t ->
     argument_location:Location.t ->
     argument_sink:BackwardState.Tree.t ->
