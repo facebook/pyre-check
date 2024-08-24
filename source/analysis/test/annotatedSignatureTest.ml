@@ -432,7 +432,12 @@ let test_unresolved_select =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 2));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select "[[KeywordOnly(i, int)], int]" "(**{'A': 7})" (`Found "int");
+      @@ assert_select
+           "[[KeywordOnly(i, int)], int]"
+           "(**{'A': 7})"
+           (`NotFoundUnexpectedKeyword "A");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[KeywordOnly(i, int)], int]" "(**{'i': 7})" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
            "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
@@ -482,9 +487,12 @@ let test_unresolved_select =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
            "[[Named(i, int), Named(j, int)], int]"
-           "( **{'j': 'string', 'i': 'string'})"
+           "( **{'j': 'stringj', 'i': 'stringi'})"
            (`NotFoundMismatch
-             [Type.string, Type.integer, None, 1; Type.string, Type.integer, None, 1]);
+             [
+               Type.literal_string "stringi", Type.integer, Some "$parameter$i", 1;
+               Type.literal_string "stringj", Type.integer, Some "$parameter$j", 1;
+             ]);
       (* Test iterable and mapping expansions. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[int], int]" "(*[1])" (`Found "int");
@@ -506,7 +514,12 @@ let test_unresolved_select =
              ( +Expression.Name (Name.Identifier "$local_test$int_to_int_dictionary"),
                Type.dictionary ~key:Type.integer ~value:Type.integer ));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select "[[int, Named(i, int)], int]" "(1, **{'a': 1})" (`Found "int");
+      @@ assert_select
+           "[[int, Named(i, int)], int]"
+           "(1, **{'a': 1})"
+           (`NotFoundUnexpectedKeyword "a");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[int, Named(i, int)], int]" "(1, **{'i': 1})" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select "[[Named(i, int), Named(j, int)], int]" "(**{'i': 1}, j=2)" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
@@ -520,7 +533,12 @@ let test_unresolved_select =
            "(**(ExtendsDictStrInt()))"
            (`NotFoundMismatch [Type.integer, Type.string, None, 1]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_select "[[Named(i, int), Named(j, int)], int]" "(**({}), j=2)" (`Found "int");
+      @@ assert_select
+           "[[Named(i, int), Named(j, int)], int]"
+           "(**({}), j=2)"
+           (`NotFoundMissingArgument "i");
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_select "[[Named(i, int), Named(j, int)], int]" "(**({'i': 1}), j=2)" (`Found "int");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_select
            "[[Named(i, int), Named(j, int)], int]"

@@ -608,8 +608,7 @@ module SignatureSelection = struct
                     ~parameters:parameters_tail
                     { parameter_argument_mapping_with_reasons with parameter_argument_mapping }))
       | ({ kind = DoubleStar; resolved; expression; _ } as argument) :: arguments_tail, _ -> (
-          (* Double starred argument; first check if its type is assignable to Mapping[str, Any],
-             then match it against the first parameter (if any) *)
+          (* Double starred argument. Check if its type is assignable to Mapping[str, Any] *)
           let mapping_type =
             Type.parametric "typing.Mapping" [Single Type.string; Single Type.Any]
           in
@@ -622,36 +621,89 @@ module SignatureSelection = struct
               in
               add_annotation_error expression resolved error_factory
           in
-          match parameters with
-          | [] ->
-              (* Double starred argument; parameters empty *)
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | (CallableParamType.Keywords _ as parameter) :: _ ->
-              (* Double starred argument; double starred parameter *)
-              let parameter_argument_mapping =
-                update_mapping parameter (make_matched_argument argument)
-              in
+          (* Expand the double starred argument if it is a constant. *)
+          let maybe_expanded_arguments =
+            match expression with
+            | Some { Node.value = Dictionary items; _ } ->
+                let filtered_arguments =
+                  let accumulate_argument item so_far =
+                    let open Expression in
+                    match item with
+                    | Dictionary.Entry.KeyValue
+                        {
+                          key =
+                            {
+                              Node.value =
+                                Constant (Constant.String { StringLiteral.value = name; _ });
+                              _;
+                            } as key;
+                          value;
+                        } ->
+                        let argument =
+                          {
+                            Argument.WithPosition.kind =
+                              Named
+                                { Node.value = "$parameter$" ^ name; location = Node.location key };
+                            expression = Some value;
+                            position = argument.position;
+                            resolved = resolve value;
+                          }
+                        in
+                        argument :: so_far
+                    | _ -> so_far
+                  in
+                  List.fold_right ~init:[] ~f:accumulate_argument items
+                in
+                if List.length filtered_arguments = List.length items then
+                  Some filtered_arguments
+                else
+                  None
+            | _ -> None
+          in
+          match maybe_expanded_arguments with
+          | Some expanded_arguments ->
               consume
-                ~arguments:arguments_tail
+                ~arguments:(expanded_arguments @ arguments_tail)
                 ~parameters
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | CallableParamType.Variable _ :: parameters_tail ->
-              (* Double starred argument, starred parameter *)
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | parameter :: parameters_tail ->
-              (* Double starred argument, parameter *)
-              let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
-              let parameter_argument_mapping =
-                update_mapping parameter (make_matched_argument ~index_into_starred_tuple argument)
-              in
-              consume_with_new_index
-                ~index_into_starred_tuple:(index_into_starred_tuple + 1)
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping })
+                parameter_argument_mapping_with_reasons
+          | None -> (
+              (* Non-constant double starred argument. Match it against the first parameter (if
+                 any). *)
+              match parameters with
+              | [] ->
+                  (* Double starred argument; parameters empty *)
+                  consume
+                    ~arguments:arguments_tail
+                    ~parameters
+                    parameter_argument_mapping_with_reasons
+              | (CallableParamType.Keywords _ as parameter) :: _ ->
+                  (* Double starred argument; double starred parameter *)
+                  let parameter_argument_mapping =
+                    update_mapping parameter (make_matched_argument argument)
+                  in
+                  consume
+                    ~arguments:arguments_tail
+                    ~parameters
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+              | CallableParamType.Variable _ :: parameters_tail ->
+                  (* Double starred argument, starred parameter *)
+                  consume
+                    ~arguments
+                    ~parameters:parameters_tail
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+              | parameter :: parameters_tail ->
+                  (* Double starred argument, parameter *)
+                  let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
+                  let parameter_argument_mapping =
+                    update_mapping
+                      parameter
+                      (make_matched_argument ~index_into_starred_tuple argument)
+                  in
+                  consume_with_new_index
+                    ~index_into_starred_tuple:(index_into_starred_tuple + 1)
+                    ~arguments
+                    ~parameters:parameters_tail
+                    { parameter_argument_mapping_with_reasons with parameter_argument_mapping }))
       | ({ kind = Named name; _ } as argument) :: _, [] -> (
           (* Named argument; parameters empty *)
           let matching_parameter, _ =

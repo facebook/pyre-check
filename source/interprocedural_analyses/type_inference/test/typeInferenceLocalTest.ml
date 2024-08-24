@@ -209,12 +209,13 @@ let test_backward_resolution_handling =
                  ] );
              "x", Type.integer;
            ];
-      (* TODO(T84365830): Extend implementation to pass starred and unstarred tests *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_backward [] "str_float_to_int(*(x, y))" ["x", Type.string; "y", Type.float];
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_backward [] "str_float_to_int(**{'s': x, 'f': y})" [];
-      (* "x", Type.string; "y", Type.float *)
+      @@ assert_backward
+           []
+           "str_float_to_int(**{'i': x, 'f': y})"
+           ["x", Type.string; "y", Type.float];
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_backward [] "star_int_to_int(*[], y)" [];
     ]
 

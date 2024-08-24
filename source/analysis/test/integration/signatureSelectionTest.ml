@@ -1484,6 +1484,22 @@ let test_check_keyword_arguments =
       f(*x)
            |}
            ["Missing argument [20]: Call `f` expects argument `z`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      def f() -> None:
+        pass
+      f(**{"x": 0})
+            |}
+           ["Unexpected keyword [28]: Unexpected keyword argument `x` to call `f`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      def f(x: int) -> None:
+        pass
+      f(**{"y": 0})
+           |}
+           ["Unexpected keyword [28]: Unexpected keyword argument `y` to call `f`."];
     ]
 
 
