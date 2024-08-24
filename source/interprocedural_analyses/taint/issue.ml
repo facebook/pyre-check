@@ -381,13 +381,12 @@ module TriggeredSinkForCall = struct
   module HashMap = Hashable.Table
 
   module Trigger = struct
-    (* Information about why a triggered sink is created: the sources that triggered them, the
-       source traces, as well as the locations that the sources flow into. The source traces will be
-       shown as subtraces *)
+    (* Information about why a triggered sink is created: the sources that triggered them, as well
+       as the locations that the sources flow into. The source traces are stored as values in the
+       map, and will be shown as subtraces *)
     module T = struct
       type t = {
         source: Sources.TriggeringSource.t;
-        source_trace: Domains.ExtraTraceFirstHop.t;
         argument_location: Location.t;
       }
       [@@deriving compare]
@@ -400,7 +399,8 @@ module TriggeredSinkForCall = struct
         ~partial_sink
         ~frame
         ~argument_location
-        { source; source_trace; argument_location = trigger_location }
+        ~source_traces
+        { source; argument_location = trigger_location }
       =
       if Location.equal argument_location trigger_location then
         (* Only generate triggered taint on the non-fullfilled parameter. E.g., in `foo(a=source(),
@@ -416,13 +416,46 @@ module TriggeredSinkForCall = struct
           |> BackwardTaint.transform
                ExtraTraceFirstHop.Set.Self
                Map
-               ~f:(ExtraTraceFirstHop.Set.add source_trace))
+               ~f:(ExtraTraceFirstHop.Set.join source_traces))
 
 
-    module Set = Stdlib.Set.Make (T)
+    let convert_partial_into_triggered_taint
+        ~partial_sink
+        ~sink_tree
+        ~argument_location
+        ~source_traces
+        { source; argument_location = trigger_location }
+      =
+      if Location.equal argument_location trigger_location then
+        (* Only generate triggered taint on the non-fullfilled parameter. E.g., in `foo(a=source(),
+           b)`, we only want to create a triggered sink on `b`, not `a`. The flow on `a` triggers
+           creating a taint on `b`. *)
+        None
+      else
+        let triggered_sink = Sinks.create_triggered_sink ~triggering_source:source partial_sink in
+        Some
+          (sink_tree
+          |> BackwardState.Tree.transform
+               ExtraTraceFirstHop.Set.Self
+               Map
+               ~f:(ExtraTraceFirstHop.Set.join source_traces)
+          |> BackwardState.Tree.transform BackwardTaint.kind Map ~f:(fun _ -> triggered_sink))
+
+
+    module Map = Stdlib.Map.Make (T)
+
+    let merge_map =
+      let merge_extra_traces left right =
+        match left, right with
+        | Some left, Some right -> Some (Domains.ExtraTraceFirstHop.Set.join left right)
+        | Some left, None -> Some left
+        | None, Some right -> Some right
+        | None, None -> None
+      in
+      Map.merge (fun _ left right -> merge_extra_traces left right)
   end
 
-  type t = Trigger.Set.t HashMap.t
+  type t = Domains.ExtraTraceFirstHop.Set.t Trigger.Map.t HashMap.t
 
   let create () = HashMap.create ()
 
@@ -433,15 +466,20 @@ module TriggeredSinkForCall = struct
   let add
       ~argument_location
       ~triggered_sink:{ Sinks.PartialSink.Triggered.partial_sink; triggering_source }
-      ~extra_trace
+      ~extra_traces
       map
     =
-    let trigger =
-      { Trigger.source = triggering_source; source_trace = extra_trace; argument_location }
-    in
+    let trigger = { Trigger.source = triggering_source; argument_location } in
     let update = function
-      | Some existing_triggers -> Trigger.Set.add trigger existing_triggers
-      | None -> Trigger.Set.singleton trigger
+      | Some existing_triggers ->
+          Trigger.Map.update
+            trigger
+            (function
+              | Some existing_extra_traces ->
+                  Some (Domains.ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces)
+              | None -> Some extra_traces)
+            existing_triggers
+      | None -> Trigger.Map.singleton trigger extra_traces
     in
     Core.Hashtbl.update map partial_sink ~f:update
 
@@ -450,16 +488,37 @@ module TriggeredSinkForCall = struct
      triggered this partial sink. *)
   let create_triggered_sink_taint ~argument_location ~call_info ~partial_sink ~frame map =
     Core.Hashtbl.find map partial_sink
-    >>| Trigger.Set.elements
-    >>| List.filter_map ~f:(Trigger.create_taint ~call_info ~partial_sink ~frame ~argument_location)
+    >>| Trigger.Map.bindings
+    >>| List.filter_map ~f:(fun (trigger, source_traces) ->
+            Trigger.create_taint
+              ~call_info
+              ~partial_sink
+              ~frame
+              ~argument_location
+              ~source_traces
+              trigger)
     >>| Algorithms.fold_balanced ~f:BackwardTaint.join ~init:BackwardTaint.bottom
     |> Option.value ~default:BackwardTaint.bottom
+
+
+  let update_triggered_sink_tree ~argument_location ~partial_sink ~sink_tree map =
+    Core.Hashtbl.find map partial_sink
+    >>| Trigger.Map.bindings
+    >>| List.filter_map ~f:(fun (trigger, source_traces) ->
+            Trigger.convert_partial_into_triggered_taint
+              ~partial_sink
+              ~sink_tree
+              ~argument_location
+              ~source_traces
+              trigger)
+    >>| Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
+    |> Option.value ~default:BackwardState.Tree.bottom
 
 
   let merge =
     Core.Hashtbl.merge ~f:(fun ~key:_ value ->
         match value with
-        | `Both (left, right) -> Some (Trigger.Set.union left right)
+        | `Both (left, right) -> Some (Trigger.merge_map left right)
         | `Left left -> Some left
         | `Right right -> Some right)
 end
@@ -516,97 +575,75 @@ let compute_triggered_flows
     ~source_tree
     ~sink_tree
   =
-  let partial_sinks =
-    if ForwardState.Tree.is_bottom source_tree then
-      []
-    else
-      BackwardState.Tree.reduce
-        BackwardTaint.kind_frame
-        ~using:(Context (BackwardTaint.call_info, Acc))
-        ~f:(fun call_info (sink, frame) sofar ->
-          match Sinks.extract_partial_sink sink with
-          | Some partial_sink -> (call_info, partial_sink, frame) :: sofar
-          | None -> sofar)
-        ~init:[]
-        sink_tree
+  let partial_sink_trees =
+    sink_tree
+    |> BackwardState.Tree.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
+    |> Core.Map.Poly.to_alist
   in
-  let sources =
-    if List.is_empty partial_sinks then
-      []
-    else
-      ForwardState.Tree.reduce
-        ForwardTaint.kind
-        ~using:(Context (ForwardTaint.call_info, Acc))
-        ~f:(fun call_info source sofar -> (call_info, source) :: sofar)
-        ~init:[]
-        source_tree
+  let source_trees =
+    source_tree
+    |> ForwardState.Tree.partition ForwardTaint.kind By ~f:Fn.id
+    |> Core.Map.Poly.to_alist
   in
-  let generate_issue_or_attach_subtraces
-      ~source_call_info
-      ~source
-      ~sink_call_info
-      ~partial_sink
-      ~sink_frame
-      triggered_sink
-    =
-    if TriggeredSinkForCall.mem triggered_sinks_for_call partial_sink then
-      (* Since another flow has already been found, both flows are found and hence we emit an issue.
-         No need to add subtraces for the discovered flow, since it is already an issue. *)
-      let triggered_sink_taint =
-        TriggeredSinkForCall.create_triggered_sink_taint
-          ~argument_location:(Location.strip_module location)
-          ~call_info:sink_call_info
-          ~frame:sink_frame
-          ~partial_sink
-          triggered_sinks_for_call
-      in
-      if BackwardTaint.is_bottom triggered_sink_taint then
-        None
-      else
-        Some
-          (generate_source_sink_matches
-             ~location
-             ~sink_handle
-             ~source_tree
-             ~sink_tree:(BackwardState.Tree.create_leaf triggered_sink_taint))
-    else (* Remember the discovered flow so that later it can be attached as a subtrace. *)
-      let extra_trace =
-        {
-          ExtraTraceFirstHop.call_info = source_call_info;
-          leaf_kind = Source source;
-          message = Some (Format.asprintf "Triggering source %s" (Sources.show source));
-        }
-      in
-      let () =
-        TriggeredSinkForCall.add
-          triggered_sinks_for_call
-          ~argument_location:(Location.strip_module location)
-          ~triggered_sink
-          ~extra_trace
-      in
+  let generate_issue ~partial_sink ~sink_tree =
+    (* Since another flow has already been found, both flows are found and hence we emit an issue.
+       No need to add subtraces for the discovered flow, since it is already an issue. *)
+    let triggered_sink_taint =
+      TriggeredSinkForCall.update_triggered_sink_tree
+        ~argument_location:(Location.strip_module location)
+        ~sink_tree
+        ~partial_sink
+        triggered_sinks_for_call
+    in
+    if BackwardState.Tree.is_bottom triggered_sink_taint then
       None
+    else
+      Some
+        (generate_source_sink_matches
+           ~location
+           ~sink_handle
+           ~source_tree
+           ~sink_tree:triggered_sink_taint)
   in
-  let check_source_sink_flows
-      ((source_call_info, source), (sink_call_info, partial_sink, sink_frame))
-    =
-    TaintConfiguration.PartialSinkConverter.get_triggered_sinks_if_matched
-      ~partial_sink
-      ~source
-      partial_sink_converter
+  let attach_subtraces ~source ~source_tree ~triggered_sink =
+    (* Remember the discovered flow so that later it can be attached as a subtrace. *)
+    let extra_traces =
+      ForwardState.Tree.fold
+        ForwardTaint.call_info
+        ~f:(fun call_info so_far ->
+          Domains.ExtraTraceFirstHop.Set.add
+            {
+              ExtraTraceFirstHop.call_info;
+              leaf_kind = Source source;
+              message = Some (Format.asprintf "Triggering source %s" (Sources.show source));
+            }
+            so_far)
+        ~init:Domains.ExtraTraceFirstHop.Set.bottom
+        source_tree
+    in
+    let () =
+      TriggeredSinkForCall.add
+        triggered_sinks_for_call
+        ~argument_location:(Location.strip_module location)
+        ~triggered_sink
+        ~extra_traces
+    in
+    None
+  in
+  let check_source_sink_flows ((source, source_tree), (partial_sink, sink_tree)) =
+    partial_sink_converter
+    |> TaintConfiguration.PartialSinkConverter.get_triggered_sinks_if_matched ~partial_sink ~source
     |> Sinks.PartialSink.Triggered.Set.elements
     (* One flow is found. If both flows are present, turn the flow into an issue. Otherwise, record
        the flow so that it can be attached later. *)
-    |> List.filter_map
-         ~f:
-           (generate_issue_or_attach_subtraces
-              ~source_call_info
-              ~source
-              ~sink_call_info
-              ~partial_sink
-              ~sink_frame)
+    |> List.filter_map ~f:(fun triggered_sink ->
+           if TriggeredSinkForCall.mem triggered_sinks_for_call partial_sink then
+             generate_issue ~partial_sink ~sink_tree
+           else
+             attach_subtraces ~source ~source_tree ~triggered_sink)
   in
-  partial_sinks
-  |> List.cartesian_product sources
+  partial_sink_trees
+  |> List.cartesian_product source_trees
   |> List.map ~f:check_source_sink_flows
   |> List.concat
 
