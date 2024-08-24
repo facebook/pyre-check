@@ -7837,7 +7837,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         >>| List.fold ~init:errors ~f:is_final
         |> Option.value ~default:errors
       in
-      let check_protocol definition errors = check_protocol_properties definition errors in
       let check_overrides class_summary errors =
         let attributes = ClassSummary.attributes ~include_generated_attributes:true class_summary in
 
@@ -8021,7 +8020,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           | None -> errors
           | Some { Node.value = definition; _ } ->
               check_final_inheritance errors
-              |> check_protocol definition
+              |> check_protocol_properties definition
               |> check_attribute_initialization definition
               |> check_overrides definition)
     else
