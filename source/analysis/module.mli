@@ -30,6 +30,11 @@ module UnannotatedGlobal : sig
         value: Ast.Expression.t option;
         target_location: Ast.Location.WithModule.t;
       }
+    | TypeStatement of {
+        type_params: Ast.Expression.TypeParam.t list;
+        value: Ast.Expression.t;
+        target_location: Ast.Location.WithModule.t;
+      }
     | TupleAssign of {
         value: Ast.Expression.t option;
         target_location: Ast.Location.WithModule.t;

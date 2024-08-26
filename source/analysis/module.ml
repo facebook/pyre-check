@@ -35,6 +35,11 @@ module UnannotatedGlobal = struct
         value: Expression.t option;
         target_location: Location.WithModule.t;
       }
+    | TypeStatement of {
+        type_params: Expression.TypeParam.t list;
+        value: Expression.t;
+        target_location: Location.WithModule.t;
+      }
     | TupleAssign of {
         value: Expression.t option;
         target_location: Location.WithModule.t;
@@ -58,6 +63,12 @@ module UnannotatedGlobal = struct
             value;
             _;
           } ->
+          (* For the purpose of handing type aliases, we are parsing statements so we can pass them
+             to the TypeAliasEnvironment layer. Here, identifier is the LHS of the statement. Ex: if
+             the AST input is the statement ListOrSet = List[T] | Set[T] then we get that the
+             identifier is ListOrSet and the annotation is None and the value is List[T] | Set[T].
+             Notice that we return the name as part of a tuple, and then we record the expression
+             location as the target. *)
           ( Identifier.sanitized identifier,
             SimpleAssign
               {
@@ -137,6 +148,16 @@ module UnannotatedGlobal = struct
           List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
       | Statement.With { With.body; _ } ->
           List.fold ~init:globals ~f:(visit_statement ~qualifier) body
+      | Statement.TypeAlias { TypeAlias.name; value; type_params } ->
+          (* TODO T194670955: We added a new variant to UG to store type params *)
+          ( Expression.show name,
+            TypeStatement
+              {
+                type_params;
+                value;
+                target_location = Location.with_module ~module_reference:qualifier location;
+              } )
+          :: globals
       | _ -> globals
     in
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> List.rev
@@ -271,6 +292,7 @@ module Metadata = struct
                   Name (Name.Define { is_getattr_any = List.exists defines ~f:is_getattr_any }))
         | Class -> Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Name.Class)
         | SimpleAssign _
+        | TypeStatement _
         | TupleAssign _ ->
             Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Name.GlobalVariable)
       in

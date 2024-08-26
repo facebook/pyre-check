@@ -198,6 +198,8 @@ module IncomingDataComputation = struct
       | Class
       | Define _ ->
           None
+      (* TODO for migeedz: Populate this case *)
+      | TypeStatement _ -> None
     in
     get_unannotated_global name >>= extract_alias
 
