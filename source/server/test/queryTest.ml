@@ -1220,8 +1220,8 @@ let test_handle_types_query context =
                types =
                  [
                    1, 0, 1, 24, Type.list Type.integer;
-                   1, 1, 1, 2, Type.integer;
-                   1, 7, 1, 8, Type.integer;
+                   1, 1, 1, 2, Type.literal_integer 0;
+                   1, 7, 1, 8, Type.literal_integer 0;
                    1, 12, 1, 15, Type.list Type.integer;
                    1, 13, 1, 14, Type.literal_integer 0;
                    1, 19, 1, 23, Type.bool;

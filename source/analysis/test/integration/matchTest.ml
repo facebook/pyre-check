@@ -124,7 +124,6 @@ let test_simple =
              "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[True]`.";
              "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[False]`.";
            ];
-      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -134,7 +133,10 @@ let test_simple =
           case "hello":
             reveal_type(subject)
     |}
-           ["Revealed type [-1]: Revealed type for `subject` is `typing.Union[int, str]`."];
+           [
+             "Revealed type [-1]: Revealed type for `subject` is \
+              `typing_extensions.Literal['hello']`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -258,7 +260,6 @@ let test_pattern =
              "Revealed type [-1]: Revealed type for `y` is `int`.";
              "Revealed type [-1]: Revealed type for `p` is `Tuple[int, int]`.";
            ];
-      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -270,10 +271,9 @@ let test_pattern =
             reveal_type(y)
     |}
            [
-             "Revealed type [-1]: Revealed type for `x` is `int`.";
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
            ];
-      (* TODO(T106580135): The imprecision comes from lack of refinement for equality. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -285,8 +285,8 @@ let test_pattern =
             reveal_type(y)
     |}
            [
-             "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
-             "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
            ];
       (* TODO(T105331662): TypeInfo on length needed. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -618,7 +618,8 @@ let test_enum =
             reveal_type(RED)
     |}
            [
-             "Revealed type [-1]: Revealed type for `color` is `Color`.";
+             "Revealed type [-1]: Revealed type for `color` is \
+              `typing_extensions.Literal[Color.RED]`.";
              "Revealed type [-1]: Revealed type for `RED` is `Color`.";
            ];
       (* TODO(T83684046): We should consider throwing a more direct error here about a

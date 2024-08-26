@@ -4071,11 +4071,7 @@ module State (Context : Context) = struct
             | Some previous ->
                 if annotation_less_or_equal ~left:refined ~right:previous then
                   Value (refine_local ~name refined)
-                else
-                  (* Keeping previous state, since it is more refined. *)
-                  (* TODO: once T38750424 is done, we should really return bottom if previous is not
-                     <= refined and refined is not <= previous, as this is an obvious
-                     contradiction. *)
+                else (* Keeping previous state, since it is more refined. *)
                   Value resolution
             | None -> Value resolution)
       end
@@ -4146,6 +4142,25 @@ module State (Context : Context) = struct
             in
             Value resolution
         | _ -> Value resolution)
+    (* Literal refinements *)
+    | ComparisonOperator
+        {
+          ComparisonOperator.left = refinement_target;
+          operator = ComparisonOperator.Equals;
+          right = value;
+        } -> (
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            let { Resolved.resolved = refined; _ } = forward_expression ~resolution value in
+            let refined = TypeInfo.Unit.create_mutable refined in
+            match existing_annotation name, refined with
+            | Some previous, { TypeInfo.Unit.annotation = Type.Literal _; _ } ->
+                if annotation_less_or_equal ~left:refined ~right:previous then
+                  Value (refine_local ~name refined)
+                else (* Keeping previous state, since it is more refined. *)
+                  Value resolution
+            | _, _ -> Value resolution))
     | Name name when is_simple_name name -> (
         match existing_annotation name with
         | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable

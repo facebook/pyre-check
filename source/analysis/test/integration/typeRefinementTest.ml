@@ -661,6 +661,36 @@ let test_check_if_else_clause =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+    from enum import Enum
+    class Color(Enum):
+      RED = 1
+      BLUE = 2
+
+    def foo(x: Color) -> None:
+      if x == Color.RED:
+        reveal_type(x)
+      reveal_type(x)
+  |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[Color.RED]`.";
+             "Revealed type [-1]: Revealed type for `x` is `Color`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+    import typing
+    def foo(x: int) -> None:
+      if x == 1:
+        reveal_type(x)
+      reveal_type(x)
+  |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     import typing
     def foo(x: bool) -> None:
       if x:
