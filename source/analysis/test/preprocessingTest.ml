@@ -2132,6 +2132,20 @@ let test_qualify_ast =
                });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement
+           (+Statement.TypeAlias
+               {
+                 name = +Expression.Name (Name.Identifier "a");
+                 type_params = [];
+                 value = +Expression.Name (Name.Identifier "b");
+               })
+           (+Statement.TypeAlias
+               {
+                 name = +Expression.Name (Name.Identifier "$local_qualifier$a");
+                 type_params = [];
+                 value = +Expression.Name (Name.Identifier "b");
+               });
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify_statement
            (+Statement.Match { subject = +Expression.Name (Name.Identifier "a"); cases = [] })
            (+Statement.Match { subject = +Expression.Name (Name.Identifier "b"); cases = [] });
       labeled_test_case __FUNCTION__ __LINE__
