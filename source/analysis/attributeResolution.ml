@@ -1215,42 +1215,11 @@ module SignatureSelection = struct
                               check_argument ~position:(position + index_into_starred_tuple) type_
                               |> check ~arguments:tail
                               |> Option.some
-                          | None -> (
+                          | None ->
                               (* We could not index into the tuple type to find the element for the
-                                 current parameter. *)
-                              match ordered_type with
-                              | Concrete _ -> (
-                                  (* If it is a concrete tuple, this means we have run out of
-                                     arguments, so emit an error about missing arguments. *)
-                                  match parameter with
-                                  | Named { default = true; _ }
-                                  | PositionalOnly { default = true; _ } ->
-                                      check signature_match ~arguments:tail |> Option.some
-                                  | Named { name; default = false; _ } ->
-                                      {
-                                        signature_match with
-                                        reasons =
-                                          {
-                                            reasons with
-                                            arity = MissingArgument (Named name) :: arity;
-                                          };
-                                      }
-                                      |> Option.some
-                                  | PositionalOnly { index; _ } ->
-                                      {
-                                        signature_match with
-                                        reasons =
-                                          {
-                                            reasons with
-                                            arity = MissingArgument (PositionalOnly index) :: arity;
-                                          };
-                                      }
-                                      |> Option.some
-                                  | _ -> None)
-                              | _ ->
-                                  (* If it is not a concrete tuple, then this will be handled later
-                                     in the function, so return None. *)
-                                  None))
+                                 current parameter. This will be handled later in the function, so
+                                 return None. *)
+                              None)
                       | _ -> None
                     in
                     match signature_match_for_single_element with

@@ -1219,12 +1219,18 @@ let test_check_arguments_against_parameters context =
               ( Variable (Concatenation tuple_unbounded_int),
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.string];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
+                    };
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.string;
+                      kind = Positional;
+                      expression = None;
+                      position = 2;
                     };
                 ] );
             ];
@@ -1241,7 +1247,7 @@ let test_check_arguments_against_parameters context =
                      SignatureSelectionTypes.actual = Type.string;
                      expected = Type.integer;
                      name = None;
-                     position = 1;
+                     position = 2;
                    }
                   |> Node.create_with_default_location);
               ];
@@ -1306,10 +1312,9 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:0
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
                     };
@@ -1317,25 +1322,14 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "y"; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
                     };
                 ] );
-              ( Named { name = "z"; annotation = Type.string; default = false },
-                [
-                  make_matched_argument
-                    ~index_into_starred_tuple:2
-                    {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
-                      expression = None;
-                      position = 1;
-                    };
-                ] );
+              Named { name = "z"; annotation = Type.string; default = false }, [];
             ];
         reasons = { arity = []; annotation = [] };
       }
@@ -1353,10 +1347,9 @@ let test_check_arguments_against_parameters context =
               ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:0
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
                     };
@@ -1364,25 +1357,14 @@ let test_check_arguments_against_parameters context =
               ( PositionalOnly { index = 1; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
-                      position = 1;
+                      position = 2;
                     };
                 ] );
-              ( PositionalOnly { index = 2; annotation = Type.bool; default = false },
-                [
-                  make_matched_argument
-                    ~index_into_starred_tuple:2
-                    {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
-                      expression = None;
-                      position = 1;
-                    };
-                ] );
+              PositionalOnly { index = 2; annotation = Type.bool; default = false }, [];
             ];
         reasons = { arity = []; annotation = [] };
       }
@@ -1480,10 +1462,9 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:0
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
                     };
@@ -1491,12 +1472,11 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "y"; annotation = Type.string; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
                     {
-                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
-                      position = 1;
+                      position = 2;
                     };
                 ] );
             ];
@@ -1533,11 +1513,9 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "x"; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:0
                     {
-                      Argument.WithPosition.resolved =
-                        Type.tuple [Type.integer; Type.string; Type.bool];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
                       expression = None;
                       position = 1;
                     };
@@ -1545,13 +1523,11 @@ let test_check_arguments_against_parameters context =
               ( Named { name = "y"; annotation = Type.string; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
                     {
-                      Argument.WithPosition.resolved =
-                        Type.tuple [Type.integer; Type.string; Type.bool];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.string;
+                      kind = Positional;
                       expression = None;
-                      position = 1;
+                      position = 2;
                     };
                 ] );
               ( Named { name = "z"; annotation = Type.bool; default = false },
@@ -1559,25 +1535,13 @@ let test_check_arguments_against_parameters context =
                   make_matched_argument
                     ~index_into_starred_tuple:2
                     {
-                      Argument.WithPosition.resolved =
-                        Type.tuple [Type.integer; Type.string; Type.bool];
-                      kind = SingleStar;
+                      Argument.WithPosition.resolved = Type.bool;
+                      kind = Positional;
                       expression = None;
-                      position = 1;
+                      position = 3;
                     };
                 ] );
-              ( Named { name = "a"; annotation = Type.bool; default = true },
-                [
-                  make_matched_argument
-                    ~index_into_starred_tuple:3
-                    {
-                      Argument.WithPosition.resolved =
-                        Type.tuple [Type.integer; Type.string; Type.bool];
-                      kind = SingleStar;
-                      expression = None;
-                      position = 1;
-                    };
-                ] );
+              Named { name = "a"; annotation = Type.integer; default = true }, [Default];
             ];
         reasons = { arity = []; annotation = [] };
       }
@@ -1588,19 +1552,7 @@ let test_check_arguments_against_parameters context =
       {
         parameter_argument_mapping =
           CallableParamType.Map.of_alist_exn
-            [
-              ( PositionalOnly { index = 0; annotation = Type.integer; default = true },
-                [
-                  make_matched_argument
-                    ~index_into_starred_tuple:0
-                    {
-                      Argument.WithPosition.resolved = Type.tuple [];
-                      kind = SingleStar;
-                      expression = None;
-                      position = 1;
-                    };
-                ] );
-            ];
+            [PositionalOnly { index = 0; annotation = Type.integer; default = true }, [Default]];
         reasons = { arity = []; annotation = [] };
       }
     [TypeConstraints.empty];
