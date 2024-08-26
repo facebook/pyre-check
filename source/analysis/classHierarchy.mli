@@ -63,10 +63,18 @@ module Target : sig
   module List : ListOrSet with type record = t list
 end
 
+module GenericMetadata : sig
+  type t =
+    | NotGeneric
+    | GenericBase of Type.Variable.t list
+    | InvalidGenericBase
+  [@@deriving sexp, show, compare]
+end
+
 module Edges : sig
   type t = {
     parents: Target.t list;
-    parameters_as_variables: Type.Variable.t list option;
+    generic_metadata: GenericMetadata.t;
   }
   [@@deriving sexp, compare]
 end

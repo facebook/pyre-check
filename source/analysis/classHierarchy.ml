@@ -120,18 +120,34 @@ module Target = struct
   end
 end
 
-let generic_primitive = "typing.Generic"
+module GenericMetadata = struct
+  (* This data stores information about whether the class is generic, and if so what the type
+     parameters are.
+
+     We explicitly track `InvalidGenericBase` in order to handle the case where code tries to
+     explicitly mark a class as inheriting from `Generic[C]` or `Protocol[C]` for some concrete type
+     `C`... this is needed in part because `missingFromStubs.ml` is using `Generic[Any]` as a base
+     class of many of made-up classes for typing special forms, and Pyre is relying on the fact that
+     when `generic_parameters_as_variables` gets called with a non-None default parameter we always
+     return None in these cases.
+
+     TODO(T199653412): we should clean this up, which may involve nontrivial downstream changes *)
+  type t =
+    | NotGeneric
+    | GenericBase of Type.Variable.t list
+    | InvalidGenericBase
+  [@@deriving sexp, show, compare]
+end
 
 module Edges = struct
   type t = {
     parents: Target.t list;
-    (* The instantiation of `typing.Generic` that the class inherits from but is not necessarily
-       listed explicitly as a parent. It needs to be stored separately because this class may not
-       take part in MRO computation. *)
-    parameters_as_variables: Type.Variable.t list option;
+    generic_metadata: GenericMetadata.t;
   }
   [@@deriving sexp, compare]
 end
+
+let generic_primitive = "typing.Generic"
 
 module type Handler = sig
   val edges : Identifier.t -> Edges.t option
@@ -147,10 +163,12 @@ let type_variables_to_arguments variables = List.map variables ~f:Type.Variable.
 
 let parents_and_generic_of_target (module Handler : Handler) target =
   Handler.edges target
-  >>= fun { parents; parameters_as_variables; _ } ->
-  match parameters_as_variables with
-  | None -> Some parents
-  | Some parameters_as_variables ->
+  >>= fun { parents; generic_metadata; _ } ->
+  match generic_metadata with
+  | GenericMetadata.NotGeneric
+  | GenericMetadata.InvalidGenericBase ->
+      Some parents
+  | GenericMetadata.GenericBase parameters_as_variables ->
       Some
         (List.append
            parents
@@ -279,12 +297,18 @@ let generic_parameters_as_variables ?(default = None) (module Handler : Handler)
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
       Some [TypeVarVariable (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
-  | primitive_name ->
-      parents_and_generic_of_target (module Handler) primitive_name
-      >>= List.find ~f:(fun { Target.target; _ } ->
-              [%compare.equal: Identifier.t] target generic_primitive)
-      >>| (fun { Target.arguments; _ } -> parameters_to_variables arguments)
-      |> Option.value ~default
+  | primitive_name -> (
+      Handler.edges primitive_name
+      >>| (fun { generic_metadata; _ } -> generic_metadata)
+      |> function
+      | None
+      | Some GenericMetadata.NotGeneric ->
+          (* Fall back to the default both for failed lookups and for non-generic classes*)
+          default
+      | Some GenericMetadata.InvalidGenericBase ->
+          (* Don't fall back if there's an invalid generic base, return None igonoring `default` *)
+          None
+      | Some (GenericMetadata.GenericBase parameters_as_variables) -> Some parameters_as_variables)
 
 
 let get_generic_parameters ~generic_primitive edges =

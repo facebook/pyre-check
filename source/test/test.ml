@@ -3668,13 +3668,36 @@ module MockClassHierarchyHandler = struct
 
   let connect ?(arguments = []) order ~predecessor ~successor =
     let edges = order.edges in
-    (* Add edges. *)
+    (* Compute the new parent information and possible updated generic metadata *)
     let new_target = { ClassHierarchy.Target.target = successor; arguments } in
+    let generic_metadata_from_this_successor =
+      match successor with
+      | "typing.Generic"
+      | "typing.Protocol" -> (
+          match List.map ~f:Type.Argument.to_variable arguments |> Option.all with
+          | Some variables -> ClassHierarchy.GenericMetadata.GenericBase variables
+          | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase)
+      | _ -> ClassHierarchy.GenericMetadata.NotGeneric
+    in
+    (* Fold the new information into what is already there. Note that this operation is messy
+       because we're taking an API that is actually functional and computed all at once and creating
+       a testing DSL that is mutation-based. *)
     let predecessor_edges =
       match Hashtbl.find edges predecessor with
-      | None -> { ClassHierarchy.Edges.parents = [new_target]; parameters_as_variables = None }
-      | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
-          { edges with parents = new_target :: parents }
+      | None ->
+          {
+            ClassHierarchy.Edges.parents = [new_target];
+            generic_metadata = generic_metadata_from_this_successor;
+          }
+      | Some { ClassHierarchy.Edges.parents = old_parents; generic_metadata = old_generic_metadata }
+        ->
+          let parents = new_target :: old_parents in
+          let generic_metadata =
+            match generic_metadata_from_this_successor with
+            | ClassHierarchy.GenericMetadata.NotGeneric -> old_generic_metadata
+            | _ -> generic_metadata_from_this_successor
+          in
+          { parents; generic_metadata }
     in
     Hashtbl.set edges ~key:predecessor ~data:predecessor_edges
 
@@ -3684,5 +3707,9 @@ module MockClassHierarchyHandler = struct
     Hashtbl.set
       order.edges
       ~key:annotation
-      ~data:{ ClassHierarchy.Edges.parents = []; parameters_as_variables = None }
+      ~data:
+        {
+          ClassHierarchy.Edges.parents = [];
+          generic_metadata = ClassHierarchy.GenericMetadata.NotGeneric;
+        }
 end
