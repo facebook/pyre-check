@@ -2194,11 +2194,12 @@ let test_generic_aliases =
 
             |}
            [
-             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
-             "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `ListOrSet` is used but not defined in the current scope.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `T` is used but not defined in the current scope.";
              "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
               function's parameters.";
+             "Undefined or invalid type [11]: Annotation `ListOrSet` is not defined as a type.";
              "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
               function's parameters.";
              "Revealed type [-1]: Revealed type for `test.func(x)` is `unknown`.";

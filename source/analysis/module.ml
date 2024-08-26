@@ -148,9 +148,14 @@ module UnannotatedGlobal = struct
           List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
       | Statement.With { With.body; _ } ->
           List.fold ~init:globals ~f:(visit_statement ~qualifier) body
-      | Statement.TypeAlias { TypeAlias.name; value; type_params } ->
-          (* TODO T194670955: We added a new variant to UG to store type params *)
-          ( Expression.show name,
+      | Statement.TypeAlias
+          {
+            TypeAlias.name = { Node.value = Expression.Name (Name.Identifier identifier); location };
+            value;
+            type_params;
+          } ->
+          (* We added a new variant to UG to store type params *)
+          ( Identifier.sanitized identifier,
             TypeStatement
               {
                 type_params;

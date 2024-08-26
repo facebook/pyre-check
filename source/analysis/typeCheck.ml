@@ -1004,7 +1004,9 @@ module State (Context : Context) = struct
     let reference =
       match target.Node.value with
       | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
-      | _ -> failwith "not possible"
+      (* TODO migeedz: Revist this line for type statements once we implement the end to end
+         feature *)
+      | expression -> Reference.create ([%show: expression] expression)
     in
     let annotation_kind =
       match parsed with

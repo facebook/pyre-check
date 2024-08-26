@@ -1254,7 +1254,13 @@ module Qualify (Context : QualifyContext) = struct
                 body;
                 orelse;
               } )
-      | TypeAlias _ (* TODO(yangdanny): handle TypeAlias? *)
+      | TypeAlias { TypeAlias.name; type_params; value } -> (
+          let scope, target, _, value =
+            qualify_assign ~target:name ~annotation:None ~value:(Some value)
+          in
+          match value with
+          | Some value -> scope, Statement.TypeAlias { TypeAlias.name = target; type_params; value }
+          | None -> failwith "ERROR: A type alias value is non-optional")
       | Break
       | Continue
       | Import _
@@ -3348,12 +3354,16 @@ module AccessCollector = struct
               from_optional_expression collected target)
         in
         from_statements collected body
+    | TypeAlias { TypeAlias.name; value; _ } ->
+        (* TODO migeedz: verify that this is the correct way to handle TypeAliases in this
+           function *)
+        let collected = from_expression collected name in
+        from_optional_expression collected (Some value)
     | Break
     | Continue
     | Global _
     | Import _
     | Nonlocal _
-    | TypeAlias _ (* TODO(T196994965): handle TypeAlias *)
     | Pass ->
         collected
 
