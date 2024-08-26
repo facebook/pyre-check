@@ -509,7 +509,7 @@ module Qualify (Context : QualifyContext) = struct
                   qualify_argument ~qualify_strings ~scope value_argument;
                   qualify_argument ~qualify_strings:Qualify ~scope type_argument;
                 ]
-            | variable_name :: remaining_arguments when name_is ~name:"typing.TypeVar" callee ->
+            | variable_name :: remaining_arguments when is_type_variable_definition callee ->
                 variable_name
                 :: List.map
                      ~f:(qualify_argument ~qualify_strings:Qualify ~scope)
