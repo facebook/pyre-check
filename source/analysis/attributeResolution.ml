@@ -5103,21 +5103,40 @@ module ParseAnnotationCache = struct
   module ReadOnly = struct
     include Cache.ReadOnly
 
+    (* The cache here is only sometimes used: PEP 695 scoped type variables aren't really very
+       friendly to caching the `Expression.t -> Type.t` conversion at this granularity, because the
+       scoped type variables are passed down. In principle we could add them to the cache key, but
+       that would make the hash lookups expensive and largely defeat the point of caching.
+
+       The solution we settled on to keep working on PEP 695 syntax is to turn off the caching when
+       scoped type variables are present, but keep it of only legacy-style type variables are
+       present. This allows us to keep working on support for scoped type variables while we
+       determine how to remove this cache without major perf issues. *)
     class with_cached_parse_annotation dependency read_only =
+      let queries =
+        create_queries ~class_metadata_environment:(upstream_environment read_only) ~dependency
+      in
+      let without_cache = new base ~queries in
       object
-        inherit
-          base
-            ~queries:
-              (create_queries
-                 ~class_metadata_environment:(upstream_environment read_only)
-                 ~dependency)
+        inherit base ~queries
 
         method! parse_annotation
-            ~cycle_detections:_
+            ~cycle_detections
             ?(validation = controls read_only |> ParsingValidation.parse_annotation_validation_kind)
-            ~scoped_type_variables:_
+            ~scoped_type_variables
             expression =
-          get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
+          match scoped_type_variables with
+          | Some _ ->
+              without_cache#parse_annotation
+                ~cycle_detections
+                ~validation
+                ~scoped_type_variables
+                expression
+          | None ->
+              get
+                read_only
+                ?dependency
+                { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
       end
   end
 end
