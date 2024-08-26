@@ -34,7 +34,7 @@ module IncomingDataComputation = struct
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;
-      get_variable: ?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option;
+      get_variable: string -> Type.Variable.t option;
     }
   end
 
@@ -101,7 +101,7 @@ module IncomingDataComputation = struct
             parse_annotation_without_validating_type_parameters
               ~allow_untracked:true
               value
-              ~variables:(get_variable ?replace_unbound_parameters_with_any:(Some true))
+              ~variables:get_variable
             |> Type.split
           in
           match supertype with
@@ -194,9 +194,7 @@ module IncomingDataComputation = struct
           let parsed_bases =
             List.map
               base_classes
-              ~f:
-                (parse_annotation_without_validating_type_parameters
-                   ~variables:(get_variable ?replace_unbound_parameters_with_any:(Some true)))
+              ~f:(parse_annotation_without_validating_type_parameters ~variables:get_variable)
           in
           let maybe_generic_base_arguments =
             compute_generic_base parsed_bases

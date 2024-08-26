@@ -339,7 +339,7 @@ let get_variable resolution =
 
 
 let variables resolution name =
-  match get_variable ?replace_unbound_parameters_with_any:(Some true) resolution name with
+  match get_variable resolution name with
   | Some variable -> Some variable
   | _ -> None
 

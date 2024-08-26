@@ -79,7 +79,7 @@ module Queries = struct
     extends_enum: Type.Primitive.t -> bool;
     has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
     least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
-    get_variable: ?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option;
+    get_variable: string -> Type.Variable.t option;
   }
 
   let class_summary_for_outer_type { get_class_summary; _ } annotation =
@@ -2642,7 +2642,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let variables_before_modify =
         match scoped_type_variables with
-        | None -> get_variable ~replace_unbound_parameters_with_any:false
+        | None -> get_variable
         | Some variable_map -> fun variable_name -> map_find variable_map variable_name
       in
       let modify_variables ?replace_unbound_parameters_with_any = function

@@ -26,14 +26,12 @@ module AliasReadOnly : sig
   val get_type_alias
     :  t ->
     ?dependency:DependencyKey.registered ->
-    ?replace_unbound_parameters_with_any:bool ->
     Type.Primitive.t ->
     Type.t option
 
   val get_variable
     :  t ->
     ?dependency:DependencyKey.registered ->
-    ?replace_unbound_parameters_with_any:bool ->
     Type.Primitive.t ->
     Type.Variable.t option
 

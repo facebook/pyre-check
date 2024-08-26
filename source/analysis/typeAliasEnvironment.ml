@@ -287,10 +287,8 @@ module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
       class_exists: Type.Primitive.t -> bool;
-      get_type_alias:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.t option;
-      get_variable:
-        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.Variable.t option;
+      get_type_alias: Type.Primitive.t -> Type.t option;
+      get_variable: Type.Primitive.t -> Type.Variable.t option;
     }
   end
 
@@ -405,17 +403,16 @@ include Aliases
 module ReadOnly = struct
   include Aliases.ReadOnly
 
-  let get_type_alias environment ?dependency ?replace_unbound_parameters_with_any:_ name =
+  let get_type_alias environment ?dependency name =
     match get environment ?dependency name with
     | Some (RawAlias.TypeAlias t) -> Some t
     | _ -> None
 
 
-  let get_variable environment ?dependency ?replace_unbound_parameters_with_any:_ name =
-    let aliases ?replace_unbound_parameters_with_any name =
-      get_type_alias environment ?dependency name ?replace_unbound_parameters_with_any
+  let get_variable environment ?dependency name =
+    let aliases ?replace_unbound_parameters_with_any:_ name =
+      get_type_alias environment ?dependency name
     in
-
     match get environment ?dependency name with
     | Some (RawAlias.VariableAlias t) ->
         let type_variables =
