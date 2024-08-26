@@ -1842,7 +1842,6 @@ module State (Context : Context) = struct
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
-
     let forward_entry ~resolution ~errors ~entry:Dictionary.Entry.KeyValue.{ key; value } =
       let { Resolved.resolution; resolved = key_resolved; errors = key_errors; _ } =
         forward_expression ~resolution key
@@ -4606,6 +4605,12 @@ module State (Context : Context) = struct
             | _ -> None
           in
           let check_errors ~name_reference errors resolved reference =
+            let parent_annotation =
+              match legacy_parent with
+              | None -> Type.Top
+              | Some reference -> Type.Primitive (Reference.show reference)
+            in
+            let is_enum = GlobalResolution.is_enum global_resolution parent_annotation in
             let check_assignment_compatibility errors =
               let is_valid_enumeration_assignment, expected_enumeration_type =
                 let parent_annotation =
@@ -4613,7 +4618,6 @@ module State (Context : Context) = struct
                   | None -> Type.Top
                   | Some reference -> Type.Primitive (Reference.show reference)
                 in
-                let is_enum = GlobalResolution.is_enum global_resolution parent_annotation in
                 if is_enum then
                   (* If a type annotation is provided for _value_, the members of the enum must
                      match that type. *)
@@ -4771,6 +4775,22 @@ module State (Context : Context) = struct
               >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
               |> Option.value ~default:errors
             in
+            let check_enumeration_member_annotations errors =
+              let expression_is_ellipses =
+                match value with
+                | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> true
+                | _ -> false
+              in
+              (* Enum member definitions may not have type annotations. *)
+              match TypeInfo.Unit.annotation target_annotation with
+              | Type.Literal (Type.EnumerationMember _)
+                when (has_explicit_annotation && not expression_is_ellipses) && is_enum ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:(Error.IllegalAnnotationTarget { target; kind = EnumerationMember })
+              | _ -> errors
+            in
             let check_previously_annotated errors =
               match name with
               | Name.Identifier identifier ->
@@ -4853,6 +4873,7 @@ module State (Context : Context) = struct
             |> check_undefined_attribute_target
             |> check_nested_explicit_type_alias
             |> check_enumeration_literal
+            |> check_enumeration_member_annotations
             |> check_previously_annotated
             |> check_assignment_to_readonly_type
           in
@@ -5512,7 +5533,6 @@ module State (Context : Context) = struct
           in
           annotation_errors, is_final, Option.map final_annotation ~f:unwrap_type_qualifiers
     in
-
     match Node.value target, value with
     | Expression.Name (Name.Identifier name), Some value
       when Reference.create name
@@ -5596,13 +5616,7 @@ module State (Context : Context) = struct
       let is_invalid_enumeration_member = function
         | Type.Literal (Type.EnumerationMember { enumeration_type; member_name }) ->
             let global_resolution = Resolution.global_resolution resolution in
-            let is_enumeration =
-              GlobalResolution.class_exists global_resolution (Type.show enumeration_type)
-              && GlobalResolution.less_or_equal
-                   global_resolution
-                   ~left:enumeration_type
-                   ~right:Type.enumeration
-            in
+            let is_enumeration = GlobalResolution.is_enum global_resolution enumeration_type in
             let is_member_of_enumeration =
               let literal_expression =
                 Node.create

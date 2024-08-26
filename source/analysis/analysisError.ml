@@ -302,6 +302,7 @@ and illegal_annotation_target_kind =
     }
   | InvalidExpression
   | Reassignment
+  | EnumerationMember
 
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
@@ -1387,6 +1388,9 @@ let rec messages ~concise ~signature location kind =
               Type.pp
               attribute_annotation
         | Reassignment -> " after it is first declared"
+        | EnumerationMember ->
+            " as it is an enum member. Enum value types can be specified by annotating the \
+             `_value_` attribute"
       in
       [
         Format.asprintf

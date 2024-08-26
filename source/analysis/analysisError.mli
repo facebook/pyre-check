@@ -268,6 +268,7 @@ and illegal_annotation_target_kind =
     }
   | InvalidExpression
   | Reassignment
+  | EnumerationMember
 
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }

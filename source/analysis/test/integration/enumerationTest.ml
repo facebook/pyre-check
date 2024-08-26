@@ -38,20 +38,6 @@ let test_enumeration_inheritance =
              "Invalid inheritance [39]: Cannot inherit from final enum `HasDefinedMembers`. Enums \
               with defined members cannot be extended.";
            ];
-      (* StringEnum should be extensible
-         https://www.internalfb.com/code/fbsource/[18e22aca0c7dcf600fa15510a72af801118ff07b]/fbcode/instagram-server/distillery/util/enum.pyi?lines=13 *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_strict_type_errors
-           {|
-              from enum import Enum
-
-              class StringEnum(Enum):
-                value: str = ...
-
-              class OtherStringEnum(StringEnum):
-                pass
-            |}
-           [];
     ]
 
 
@@ -253,7 +239,7 @@ let test_enumeration_methods =
            {|
               import enum
               class Foo(enum.IntEnum):
-                A: int = 1
+                A = 1
               class Bar:
                 A = Foo.A.value
             |}
@@ -277,7 +263,7 @@ let test_enumeration_methods =
            {|
               import enum
               class Foo(enum.IntEnum):
-                A: int = 1
+                A = 1
               def f() -> None:
                 b = 2 in Foo
                 reveal_type(b)
@@ -339,6 +325,19 @@ let test_check_enumeration_attributes =
               from enum import Enum
 
               class C(Enum):
+                X: str = "X"
+            |}
+           [
+             "Illegal annotation target [35]: Target `test.C.X` cannot be annotated as it is an \
+              enum member. Enum value types can be specified by annotating the `_value_` \
+              attribute.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from enum import Enum
+
+              class C(Enum):
                 _value_: str
                 X = "X"
             |}
@@ -351,6 +350,7 @@ let test_check_enumeration_attributes =
               class C(Enum):
                 _value_: str
                 X = 1
+                Y = "Y"
             |}
            [
              "Incompatible attribute type [8]: Attribute `X` declared in class `C` has type `str` \
@@ -376,15 +376,6 @@ let test_check_enumeration_attributes =
               import enum
 
               class C(enum.IntEnum):
-                a: int = 1
-            |}
-           [];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              import enum
-
-              class C(enum.IntEnum):
                 a = 1
             |}
            [];
@@ -394,20 +385,21 @@ let test_check_enumeration_attributes =
               import enum
 
               class C(enum.IntEnum):
-                a: int
+                a = "a"
             |}
            [
-             "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type \
-              `int` but is never initialized.";
+             "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type `int` \
+              but is used as type `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               import enum
+
               class C(enum.IntEnum):
-                a: str = 1
+                a
             |}
-           [];
+           ["Unbound name [10]: Name `a` is used but not defined in the current scope."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
