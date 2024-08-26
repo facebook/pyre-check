@@ -146,7 +146,7 @@ let resolve_global ~pyre_api name =
         | Some ({ signature = { nesting_define = Some _; _ }; _ } as define) ->
             Some
               (PyrePysaApi.ReadOnly.resolve_define
-                 ~variable_map:(PyrePysaApi.ReadOnly.get_variable pyre_api)
+                 ~scoped_type_variables:None
                  ~implementation:(Some define.signature)
                  ~overloads:[]
                  pyre_api)

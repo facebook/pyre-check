@@ -61,7 +61,7 @@ let decorate
           resolution
           ~implementation:(Some signature)
           ~overloads:[]
-          ~variable_map:(GlobalResolution.get_variable resolution)
+          ~scoped_type_variables:None
       with
       | {
        decorated =

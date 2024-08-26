@@ -46,6 +46,8 @@ open Statement
 open CycleDetection
 open ClassSummary
 
+let map_find = Map.find
+
 module Queries = struct
   type t = {
     controls: EnvironmentControls.t;
@@ -1779,7 +1781,7 @@ end
 (* This function mutably updates an UninstantiatedAttributeTable.t if a class has any dataclass
    transforms (including @dataclass itself) applied to it. *)
 let apply_dataclass_transforms_to_table
-    ~queries:(Queries.{ get_class_summary; successors; get_variable; _ } as queries)
+    ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
     ~definition
     create_attribute
     instantiate_attribute
@@ -1909,7 +1911,7 @@ let apply_dataclass_transforms_to_table
                   Node.create (Expression.Constant Constant.Ellipsis) ~location
             in
             ( create_attribute
-                ~variable_map:get_variable
+                ~scoped_type_variables:None
                 ~parent
                 ?defined:None
                 ~accessed_via_metaclass:false
@@ -2633,16 +2635,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
     method parse_annotation
         ~cycle_detections
         ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
-        ~variable_map
+        ~(scoped_type_variables : Type.Variable.t Identifier.Map.t option)
         expression =
-      let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
-      let modify_aliases ?replace_unbound_parameters_with_any = function
-        | alias ->
-            self#check_invalid_type_arguments
-              ?replace_unbound_parameters_with_any
-              alias
-              ~cycle_detections
-            |> snd
+      let { Queries.parse_annotation_without_validating_type_parameters; get_variable; _ } =
+        queries
+      in
+      let variables_before_modify =
+        match scoped_type_variables with
+        | None -> get_variable ~replace_unbound_parameters_with_any:false
+        | Some variable_map -> fun variable_name -> map_find variable_map variable_name
       in
       let modify_variables ?replace_unbound_parameters_with_any = function
         | Type.Variable.TypeVarVariable variable ->
@@ -2663,16 +2664,23 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             end
         | result -> result
       in
+      let variables ?replace_unbound_parameters_with_any name =
+        variables_before_modify name >>| modify_variables ?replace_unbound_parameters_with_any
+      in
+      let modify_aliases ?replace_unbound_parameters_with_any = function
+        | alias ->
+            self#check_invalid_type_arguments
+              ?replace_unbound_parameters_with_any
+              alias
+              ~cycle_detections
+            |> snd
+      in
       let allow_untracked =
         match validation with
         | NoValidation -> true
         | ValidatePrimitives
         | ValidatePrimitivesAndTypeParameters ->
             false
-      in
-      let variables ?replace_unbound_parameters_with_any name =
-        variable_map ?replace_unbound_parameters_with_any name
-        >>| modify_variables ?replace_unbound_parameters_with_any
       in
       let annotation =
         parse_annotation_without_validating_type_parameters
@@ -2697,7 +2705,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~in_test
         ~accessed_via_metaclass
         ({ Node.value = { ClassSummary.name = parent_name; _ }; _ } as parent) =
-      let { Queries.get_class_summary; successors; get_variable; _ } = queries in
+      let { Queries.get_class_summary; successors; _ } = queries in
       let class_name = Reference.show parent_name in
       let unannotated_attributes
           ~include_generated_attributes
@@ -2711,7 +2719,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         let unannotated_attribute { Node.value = attribute; _ } =
           self#create_attribute
-            ~variable_map:get_variable
+            ~scoped_type_variables:None
             ~cycle_detections
             ~parent
             ?defined:(Some true)
@@ -2825,9 +2833,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~accessed_via_metaclass
         ~class_name
         ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
-      let Queries.{ is_typed_dictionary; get_class_summary; successors; get_variable; _ } =
-        queries
-      in
+      let Queries.{ is_typed_dictionary; get_class_summary; successors; _ } = queries in
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
         let successor_definitions =
@@ -2859,7 +2865,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
                  ( self#create_attribute
-                     ~variable_map:get_variable
+                     ~scoped_type_variables:None
                      ~cycle_detections
                      ~parent:parent_definition
                      ?defined:(Some true)
@@ -2955,7 +2961,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
-      let Queries.{ get_class_summary; get_class_metadata; get_variable; _ } = queries in
+      let Queries.{ get_class_summary; get_class_metadata; _ } = queries in
 
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
@@ -2975,7 +2981,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let collect_attributes attribute =
             let created_attribute =
               self#create_attribute
-                ~variable_map:get_variable
+                ~scoped_type_variables:None
                 (Node.value attribute)
                 ~cycle_detections
                 ~parent
@@ -3693,7 +3699,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~uninstantiated_annotation
 
     method create_attribute
-        ~variable_map
+        ~scoped_type_variables
         ~cycle_detections
         ~parent
         ?(defined = true)
@@ -3724,7 +3730,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | Simple { annotation; values; toplevel; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
             let parsed_annotation =
-              annotation >>| self#parse_annotation ~cycle_detections ~variable_map
+              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
             in
             (* Account for class attributes. *)
             let annotation, final, class_variable =
@@ -3773,7 +3779,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               match annotation, value with
               | _, Some value when is_enum && Attribute.may_be_enum_member attribute ->
                   let literal_value_annotation =
-                    self#resolve_literal ~variable_map ~cycle_detections value
+                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
                   in
                   let is_enum_member =
                     match literal_value_annotation with
@@ -3792,7 +3798,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Some annotation, _ -> annotation, visibility
               | None, Some value ->
                   let literal_value_annotation =
-                    self#resolve_literal ~variable_map ~cycle_detections value
+                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
                   in
                   let is_dataclass_attribute =
                     exists_matching_class_decorator
@@ -3839,7 +3845,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 List.fold ~init:(None, []) ~f:to_signature overloads
               in
               let { decorated; undecorated_signature } =
-                self#resolve_define ~implementation ~overloads ~cycle_detections ~variable_map
+                self#resolve_define
+                  ~implementation
+                  ~overloads
+                  ~cycle_detections
+                  ~scoped_type_variables
               in
               let annotation =
                 match decorated with
@@ -3875,7 +3885,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             callable, false, visibility, Some undecorated_signature, problem
         | Property { kind; _ } -> (
             let parse_annotation_option annotation =
-              annotation >>| self#parse_annotation ~cycle_detections ~variable_map
+              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
             in
             match kind with
             | ReadWrite
@@ -3961,7 +3971,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~problem
 
     method metaclass ~cycle_detections target =
-      let Queries.{ get_class_summary; get_variable; _ } = queries in
+      let Queries.{ get_class_summary; _ } = queries in
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
@@ -3970,9 +3980,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           original)
         =
         let open Expression in
-        let variable_map = get_variable in
         let parse_annotation =
-          self#parse_annotation ~cycle_detections ?validation:None ~variable_map
+          self#parse_annotation ~cycle_detections ?validation:None ~scoped_type_variables:None
         in
         let metaclass_candidates =
           let explicit_metaclass = metaclass >>| parse_annotation in
@@ -4056,7 +4065,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
 
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
-    method resolve_literal ~cycle_detections ~variable_map expression =
+    method resolve_literal ~cycle_detections ~scoped_type_variables expression =
       let Queries.{ generic_parameters_as_variables; get_unannotated_global; _ } = queries in
       let open Ast.Expression in
       let is_concrete_class class_type =
@@ -4068,7 +4077,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let fully_specified_type = function
         | { Node.value = Expression.Name name; _ } as annotation when is_simple_name name ->
-            let class_type = self#parse_annotation ~cycle_detections annotation ~variable_map in
+            let class_type =
+              self#parse_annotation ~cycle_detections annotation ~scoped_type_variables
+            in
             if
               Type.is_none class_type || is_concrete_class class_type |> Option.value ~default:false
             then
@@ -4078,7 +4089,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | { Node.value = Subscript { base = { Node.value = Name generic_name; _ }; _ }; _ } as
           annotation
           when is_simple_name generic_name ->
-            let class_type = self#parse_annotation ~cycle_detections annotation ~variable_map in
+            let class_type =
+              self#parse_annotation ~cycle_detections annotation ~scoped_type_variables
+            in
             if is_concrete_class class_type >>| not |> Option.value ~default:false then
               Some class_type
             else
@@ -4100,15 +4113,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let order = self#full_order ~cycle_detections in
       match Node.value expression with
       | Expression.Await expression ->
-          self#resolve_literal ~cycle_detections expression ~variable_map
+          self#resolve_literal ~cycle_detections expression ~scoped_type_variables
           |> Type.awaitable_value
           |> Option.value ~default:Type.Any
       | BooleanOperator { BooleanOperator.left; right; _ } ->
           let annotation =
             TypeOrder.join
               order
-              (self#resolve_literal ~cycle_detections ~variable_map left)
-              (self#resolve_literal ~cycle_detections ~variable_map right)
+              (self#resolve_literal ~cycle_detections ~scoped_type_variables left)
+              (self#resolve_literal ~cycle_detections ~scoped_type_variables right)
           in
           if Type.is_concrete annotation then annotation else Type.Any
       | Call { callee; _ } ->
@@ -4143,7 +4156,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 |> fun (overloads, implementations) ->
                 self#resolve_define
                   ~cycle_detections
-                  ~variable_map
+                  ~scoped_type_variables
                   ~implementation:(List.last implementations)
                   ~overloads
               in
@@ -4159,11 +4172,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ( TypeOrder.join
                       order
                       key_annotation
-                      (self#resolve_literal ~cycle_detections ~variable_map key),
+                      (self#resolve_literal ~cycle_detections ~scoped_type_variables key),
                     TypeOrder.join
                       order
                       value_annotation
-                      (self#resolve_literal ~cycle_detections ~variable_map value) )
+                      (self#resolve_literal ~cycle_detections ~scoped_type_variables value) )
               | Splat _ -> key_annotation, value_annotation
             in
             List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
@@ -4178,7 +4191,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               TypeOrder.join
                 order
                 sofar
-                (self#resolve_literal ~cycle_detections ~variable_map element)
+                (self#resolve_literal ~cycle_detections ~scoped_type_variables element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -4189,7 +4202,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               TypeOrder.join
                 order
                 sofar
-                (self#resolve_literal ~cycle_detections ~variable_map element)
+                (self#resolve_literal ~cycle_detections ~scoped_type_variables element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -4198,16 +4211,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let annotation =
             TypeOrder.join
               order
-              (self#resolve_literal ~cycle_detections ~variable_map target)
-              (self#resolve_literal ~cycle_detections ~variable_map alternative)
+              (self#resolve_literal ~cycle_detections ~scoped_type_variables target)
+              (self#resolve_literal ~cycle_detections ~scoped_type_variables alternative)
           in
           if Type.is_concrete annotation then annotation else Type.Any
       | Tuple elements ->
-          Type.tuple (List.map elements ~f:(self#resolve_literal ~cycle_detections ~variable_map))
+          Type.tuple
+            (List.map elements ~f:(self#resolve_literal ~cycle_detections ~scoped_type_variables))
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
-    method resolve_define ~cycle_detections ~implementation ~overloads ~variable_map =
+    method resolve_define ~cycle_detections ~implementation ~overloads ~scoped_type_variables =
       let Queries.
             {
               resolve_exports;
@@ -4449,7 +4463,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                    (AnnotatedAttribute.InvalidDecorator { index; reason = error })
                         | expression ->
                             let resolved =
-                              self#resolve_literal ~cycle_detections ~variable_map expression
+                              self#resolve_literal
+                                ~cycle_detections
+                                ~scoped_type_variables
+                                expression
                             in
                             if Type.is_untyped resolved || Type.contains_unknown resolved then
                               make_error error
@@ -4517,7 +4534,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         let parser =
           {
             AnnotatedCallable.parse_annotation =
-              self#parse_annotation ~cycle_detections ~variable_map;
+              self#parse_annotation ~cycle_detections ~scoped_type_variables;
             param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
           }
         in
@@ -4778,7 +4795,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> signature
 
     method global_annotation ~cycle_detections name =
-      let Queries.{ class_exists; get_unannotated_global; get_variable; _ } = queries in
+      let Queries.{ class_exists; get_unannotated_global; _ } = queries in
       let process_unannotated_global global =
         let produce_assignment_global ~is_explicit ~is_final annotation =
           let original =
@@ -4802,7 +4819,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               |> fun (overloads, implementations) ->
               self#resolve_define
                 ~implementation:(List.last implementations)
-                ~variable_map:get_variable
+                ~scoped_type_variables:None
                 ~overloads
                 ~cycle_detections
             in
@@ -4850,7 +4867,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             |> self#parse_annotation
                  ~validation:ValidatePrimitives
                  ~cycle_detections
-                 ~variable_map:get_variable
+                 ~scoped_type_variables:None
             |> Type.meta
             |> TypeInfo.Unit.create_immutable
             |> fun type_info ->
@@ -4858,20 +4875,20 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | SimpleAssign { explicit_annotation; value; _ } -> (
             let explicit_annotation =
               explicit_annotation
-              >>| self#parse_annotation ~cycle_detections ~variable_map:get_variable
+              >>| self#parse_annotation ~cycle_detections ~scoped_type_variables:None
               >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
             in
             let annotation, is_explicit, is_final =
               match explicit_annotation with
               | None ->
-                  ( value >>| self#resolve_literal ~cycle_detections ~variable_map:get_variable,
+                  ( value >>| self#resolve_literal ~cycle_detections ~scoped_type_variables:None,
                     false,
                     false )
               | Some explicit -> (
                   match Type.final_value explicit with
                   | `Ok final_value -> Some final_value, true, true
                   | `NoArgument ->
-                      ( value >>| self#resolve_literal ~cycle_detections ~variable_map:get_variable,
+                      ( value >>| self#resolve_literal ~cycle_detections ~scoped_type_variables:None,
                         false,
                         true )
                   | `NotFinal -> Some explicit, true, false)
@@ -4884,7 +4901,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             | _ -> None)
         | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
-              match self#resolve_literal ~cycle_detections ~variable_map:get_variable value with
+              match self#resolve_literal ~cycle_detections ~scoped_type_variables:None value with
               | Type.Tuple (Concrete arguments) when List.length arguments = total_length ->
                   List.nth arguments index
                   (* This should always be Some, but I don't think its worth being fragile here *)
@@ -5058,14 +5075,13 @@ module ParseAnnotationCache = struct
         { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
         ~dependency
       =
-      let queries = create_queries ~class_metadata_environment ~dependency in
       let implementation =
         new base ~queries:(create_queries ~class_metadata_environment ~dependency)
       in
       implementation#parse_annotation
         ~cycle_detections:empty_cycle_detections
         ~validation
-        ~variable_map:queries.get_variable
+        ~scoped_type_variables:None
         expression
 
 
@@ -5099,7 +5115,7 @@ module ParseAnnotationCache = struct
         method! parse_annotation
             ~cycle_detections:_
             ?(validation = controls read_only |> ParsingValidation.parse_annotation_validation_kind)
-            ~variable_map:_
+            ~scoped_type_variables:_
             expression =
           get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
       end
@@ -5393,13 +5409,13 @@ module ReadOnly = struct
         o#check_invalid_type_arguments ~replace_unbound_parameters_with_any:true)
 
 
-  let parse_annotation read_only ?dependency ~variable_map =
+  let parse_annotation read_only ?dependency ~scoped_type_variables =
     let attributes_cached_but_not_annotations =
       new with_uninstantiated_attributes_cache dependency read_only
     in
     attributes_cached_but_not_annotations#parse_annotation
       ~cycle_detections:empty_cycle_detections
-      ~variable_map
+      ~scoped_type_variables
 
 
   let metaclass = add_all_caches_and_empty_cycle_detections (fun o -> o#metaclass)

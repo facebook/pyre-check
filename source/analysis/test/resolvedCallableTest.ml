@@ -19,7 +19,7 @@ let resolve_define resolution define =
       resolution
       ~implementation:(Some define)
       ~overloads:[]
-      ~variable_map:(GlobalResolution.get_variable resolution)
+      ~scoped_type_variables:None
   with
   | { decorated = Ok (Callable { implementation; _ }); _ } -> implementation
   | _ -> failwith "impossible"

@@ -220,7 +220,7 @@ module AttributeReadOnly : sig
   val parse_annotation
     :  t ->
     ?dependency:DependencyKey.registered ->
-    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
+    scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
     ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     Expression.expression Node.t ->
     Type.t
@@ -284,7 +284,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     implementation:Define.Signature.t option ->
     overloads:Define.Signature.t list ->
-    variable_map:(?replace_unbound_parameters_with_any:bool -> string -> Type.Variable.t option) ->
+    scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
     resolved_define
 
   val signature_select
