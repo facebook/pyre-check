@@ -4134,6 +4134,18 @@ module State (Context : Context) = struct
           right = { Node.value = Constant Constant.NoneLiteral; _ };
         } ->
         refine_resolution_for_assert ~resolution left
+    | UnaryOperator
+        { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value = Name name; _ } }
+      when is_simple_name name -> (
+        match existing_annotation name with
+        | Some ({ TypeInfo.Unit.annotation = Type.Primitive "bool"; _ } as annotation) ->
+            let resolution =
+              refine_local
+                ~name
+                { annotation with TypeInfo.Unit.annotation = Type.Literal (Boolean false) }
+            in
+            Value resolution
+        | _ -> Value resolution)
     | Name name when is_simple_name name -> (
         match existing_annotation name with
         | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable
@@ -4149,6 +4161,13 @@ module State (Context : Context) = struct
               refine_local
                 ~name
                 { annotation with TypeInfo.Unit.annotation = Type.union refined_annotation }
+            in
+            Value resolution
+        | Some ({ TypeInfo.Unit.annotation = Type.Primitive "bool"; _ } as annotation) ->
+            let resolution =
+              refine_local
+                ~name
+                { annotation with TypeInfo.Unit.annotation = Type.Literal (Boolean true) }
             in
             Value resolution
         | _ -> Value resolution)
