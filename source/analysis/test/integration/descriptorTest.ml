@@ -8,10 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_non_data_descriptors context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_non_data_descriptors =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         def __get__(self, o: object, t: object = None) -> int:
@@ -26,13 +28,14 @@ let test_non_data_descriptors context =
         y = Host.d
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-    ];
-  (* Distinguishing being called from instance/from class *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      (* Distinguishing being called from instance/from class *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         @overload
@@ -54,13 +57,14 @@ let test_non_data_descriptors context =
         y = Host.d
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-    ];
-  (* Overloading based on host class *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `str`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      (* Overloading based on host class *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, NoReturn
       class BaseA:
         a_prop: int = 1
@@ -96,14 +100,15 @@ let test_non_data_descriptors context =
         z = HostC().d
         reveal_type(z)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Revealed type [-1]: Revealed type for `z` is `bool`.";
-    ];
-  (* Generic descriptors *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
+             "Revealed type [-1]: Revealed type for `z` is `bool`.";
+           ];
+      (* Generic descriptors *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, Generic, TypeVar, Callable
       T = TypeVar("T")
       THost = TypeVar("THost")
@@ -125,17 +130,18 @@ let test_non_data_descriptors context =
         reveal_type(z)
         Host.d(1)
     |}
-    [
-      "Missing overload implementation [42]: Overloaded function `MyCallable.__get__` must have an \
-       implementation.";
-      "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[Host, int], \
-       str], Host]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[Host, int], str]`.";
-      "Revealed type [-1]: Revealed type for `z` is `str`.";
-      "Missing argument [20]: PositionalOnly call expects argument in position 1.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing overload implementation [42]: Overloaded function `MyCallable.__get__` must \
+              have an implementation.";
+             "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[Host, \
+              int], str], Host]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[Host, int], str]`.";
+             "Revealed type [-1]: Revealed type for `z` is `str`.";
+             "Missing argument [20]: PositionalOnly call expects argument in position 1.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         def __get__(self, o: object, t: object = None) -> str:
@@ -152,12 +158,13 @@ let test_non_data_descriptors context =
         y = Host.d
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]`.";
-      "Revealed type [-1]: Revealed type for `y` is `Union[int, str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `Union[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `Union[int, str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       from dataclasses import dataclass
 
@@ -173,9 +180,10 @@ let test_non_data_descriptors context =
         x = DC.d
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `str`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `x` is `str`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         # TODO(T65806273): should error here
@@ -190,12 +198,13 @@ let test_non_data_descriptors context =
         y = Host.d
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Inner:
         def __call__(self, descriptor: object, host: object, host_type: object = None) -> int:
@@ -218,13 +227,14 @@ let test_non_data_descriptors context =
         y = Host.d
         reveal_type(y)
     |}
-    [
-      (* TODO(T65807186): This should be supported (should be `int`) *)
-      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             (* TODO(T65807186): This should be supported (should be `int`) *)
+             "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List
 
       T = TypeVar("T")
@@ -246,12 +256,13 @@ let test_non_data_descriptors context =
         y = n.first
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List
 
       class Parent:
@@ -274,13 +285,14 @@ let test_non_data_descriptors context =
         y = Host.a
         reveal_type(y)
     |}
-    [
-      (* These are technically wrong, but its not our fault *)
-      "Revealed type [-1]: Revealed type for `x` is `Parent`.";
-      "Revealed type [-1]: Revealed type for `y` is `Parent`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             (* These are technically wrong, but its not our fault *)
+             "Revealed type [-1]: Revealed type for `x` is `Parent`.";
+             "Revealed type [-1]: Revealed type for `y` is `Parent`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List
 
       class Descriptor:
@@ -297,13 +309,14 @@ let test_non_data_descriptors context =
         h.a = 5
         h.a = Descriptor()
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Host` has type `int` but \
-       is used as type `Descriptor`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Incompatible attribute type [8]: Attribute `a` declared in class `Host` has type \
+              `int` but is used as type `Descriptor`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         @overload
@@ -331,14 +344,14 @@ let test_non_data_descriptors context =
         z = MetaclassHost.d
         reveal_type(z)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Revealed type [-1]: Revealed type for `z` is `int`.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `str`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
+             "Revealed type [-1]: Revealed type for `z` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List, ClassMethod, Callable, Type, Any
 
       def maker() -> Any: ...
@@ -355,18 +368,19 @@ let test_non_data_descriptors context =
         reveal_type(z)
         z = Host().cm(1, 2)
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[Type[Host], int, \
-       str], bool], Type[Host]]`.";
-      "Revealed type [-1]: Revealed type for `y` is `BoundMethod[typing.Callable[[Type[Host], int, \
-       str], bool], Type[Host]]`.";
-      "Revealed type [-1]: Revealed type for `z` is `bool`.";
-      "Incompatible parameter type [6]: In anonymous call, for 2nd positional argument, expected \
-       `str` but got `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+             "Revealed type [-1]: Revealed type for `x` is \
+              `BoundMethod[typing.Callable[[Type[Host], int, str], bool], Type[Host]]`.";
+             "Revealed type [-1]: Revealed type for `y` is \
+              `BoundMethod[typing.Callable[[Type[Host], int, str], bool], Type[Host]]`.";
+             "Revealed type [-1]: Revealed type for `z` is `bool`.";
+             "Incompatible parameter type [6]: In anonymous call, for 2nd positional argument, \
+              expected `str` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
      from typing import TypeVar, Type, Optional
      T = TypeVar("T")
      class X:
@@ -379,9 +393,10 @@ let test_non_data_descriptors context =
          reveal_type(z)
 
     |}
-    ["Revealed type [-1]: Revealed type for `z` is `Optional[int]`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `z` is `Optional[int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
 
       def maker() -> Any: ...
@@ -395,13 +410,14 @@ let test_non_data_descriptors context =
         y = Host.sm
         reveal_type(y)
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int, str], bool]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int, str], bool]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+             "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int, str], bool]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int, str], bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
 
       def free_function(h: object, x: int) -> str:
@@ -416,13 +432,14 @@ let test_non_data_descriptors context =
         y = Host.m
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[object, int], \
-       str], Host]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[object, int], str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[object, \
+              int], str], Host]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[object, int], str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
 
       class CallableClass:
@@ -444,17 +461,18 @@ let test_non_data_descriptors context =
         b = Host.as_callable
         reveal_type(b)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `CallableClass`.";
-      "Revealed type [-1]: Revealed type for `y` is `CallableClass`.";
-      (* This is wrong. Unfortunately its currently avoidable as long as we resolve defs to
-         Callables *)
-      "Revealed type [-1]: Revealed type for `a` is `BoundMethod[typing.Callable[[object, int], \
-       str], Host]`.";
-      "Revealed type [-1]: Revealed type for `b` is `typing.Callable[[object, int], str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `CallableClass`.";
+             "Revealed type [-1]: Revealed type for `y` is `CallableClass`.";
+             (* This is wrong. Unfortunately its currently avoidable as long as we resolve defs to
+                Callables *)
+             "Revealed type [-1]: Revealed type for `a` is `BoundMethod[typing.Callable[[object, \
+              int], str], Host]`.";
+             "Revealed type [-1]: Revealed type for `b` is `typing.Callable[[object, int], str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
 
       def free_function(h: object, x: int) -> str:
@@ -469,14 +487,15 @@ let test_non_data_descriptors context =
         y = Host.m
         reveal_type(y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `Union[BoundMethod[typing.Callable[[object, \
-       int], str], Host], int]`.";
-      "Revealed type [-1]: Revealed type for `y` is `Union[typing.Callable[[object, int], str], \
-       int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is \
+              `Union[BoundMethod[typing.Callable[[object, int], str], Host], int]`.";
+             "Revealed type [-1]: Revealed type for `y` is `Union[typing.Callable[[object, int], \
+              str], int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import NamedTuple
 
       class Descriptor:
@@ -491,9 +510,10 @@ let test_non_data_descriptors context =
           x = foo.value
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Descriptor`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `x` is `Descriptor`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
 
       class Descriptor:
@@ -519,14 +539,17 @@ let test_non_data_descriptors context =
           reveal_type(base.value)
           reveal_type(child.value)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.Base.value` is `Descriptor` (inferred: `str`).";
-      "Revealed type [-1]: Revealed type for `test.Child.value` is `Descriptor` (inferred: `str`).";
-      "Revealed type [-1]: Revealed type for `base.value` is `int`.";
-      "Revealed type [-1]: Revealed type for `child.value` is `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `test.Base.value` is `Descriptor` (inferred: \
+              `str`).";
+             "Revealed type [-1]: Revealed type for `test.Child.value` is `Descriptor` (inferred: \
+              `str`).";
+             "Revealed type [-1]: Revealed type for `base.value` is `int`.";
+             "Revealed type [-1]: Revealed type for `child.value` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload
 
       class Descriptor:
@@ -547,17 +570,19 @@ let test_non_data_descriptors context =
           normal_value: str = "child_normal_value"
           maybe_descriptor_value: Descriptor = Descriptor()
     |}
-    (* TODO(T146994981) this ought to produce an inconsistent override error, because accessing
-       `maybe_descriptor_value` on an *instance* of `Child` would give us an `int` which is not
-       compatible with `str`. We miss it because we only check class access. *)
-    [];
-  ()
+           (* TODO(T146994981) this ought to produce an inconsistent override error, because
+              accessing `maybe_descriptor_value` on an *instance* of `Child` would give us an `int`
+              which is not compatible with `str`. We miss it because we only check class access. *)
+           [];
+    ]
 
 
-let test_data_descriptors context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_data_descriptors =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
         def __get__(self, o: object, t: object = None) -> int:
@@ -584,21 +609,23 @@ let test_data_descriptors context =
         reveal_type(Host().d)
         reveal_type(Host.d)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      (* This is not a great error message but it is correct *)
-      "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type `str` but \
-       is used as type `Descriptor`.";
-      "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type \
-       `Descriptor` but is used as type `str`.";
-      (* This is an even more confusing message, but is also correct *)
-      "Revealed type [-1]: Revealed type for `test.Host().d` is `str` (inferred: `int`).";
-      "Revealed type [-1]: Revealed type for `test.Host.d` is `Descriptor` (inferred: `int`).";
-    ];
-  (* Overloading based on host class *)
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+             (* This is not a great error message but it is correct *)
+             "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type \
+              `str` but is used as type `Descriptor`.";
+             "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type \
+              `Descriptor` but is used as type `str`.";
+             (* This is an even more confusing message, but is also correct *)
+             "Revealed type [-1]: Revealed type for `test.Host().d` is `str` (inferred: `int`).";
+             "Revealed type [-1]: Revealed type for `test.Host.d` is `Descriptor` (inferred: \
+              `int`).";
+           ];
+      (* Overloading based on host class *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union, NoReturn
       class BaseA:
         a_prop: int = 1
@@ -626,13 +653,17 @@ let test_data_descriptors context =
         reveal_type(HostB().d)
         reveal_type(HostC().d)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.HostA().d` is `int` (inferred: `Descriptor`).";
-      "Revealed type [-1]: Revealed type for `test.HostB().d` is `str` (inferred: `Descriptor`).";
-      "Revealed type [-1]: Revealed type for `test.HostC().d` is `bool` (inferred: `Descriptor`).";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `test.HostA().d` is `int` (inferred: \
+              `Descriptor`).";
+             "Revealed type [-1]: Revealed type for `test.HostB().d` is `str` (inferred: \
+              `Descriptor`).";
+             "Revealed type [-1]: Revealed type for `test.HostC().d` is `bool` (inferred: \
+              `Descriptor`).";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     from typing import overload, Union
     from dataclasses import dataclass
 
@@ -650,14 +681,15 @@ let test_data_descriptors context =
     def f() -> None:
       DC("A")
     |}
-    [
-      (* TODO(T65806273): This should be accepted, but we're currently ignoring descriptors when
-         building dataclass constructors for perf reasons *)
-      "Incompatible parameter type [6]: In call `DC.__init__`, for 1st positional argument, \
-       expected `Descriptor` but got `str`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             (* TODO(T65806273): This should be accepted, but we're currently ignoring descriptors
+                when building dataclass constructors for perf reasons *)
+             "Incompatible parameter type [6]: In call `DC.__init__`, for 1st positional argument, \
+              expected `Descriptor` but got `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import overload, Union
       class Descriptor:
           def __set__(self, h: object, v: int) -> None:
@@ -680,25 +712,19 @@ let test_data_descriptors context =
           MetaclassHost.d = 3
           MetaclassHost.d = Descriptor()
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
-       `int` but is used as type `Descriptor`.";
-      "Revealed type [-1]: Revealed type for `\"separator\"` is \
-       `typing_extensions.Literal['separator']`.";
-      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
-       `int` but is used as type `Descriptor`.";
-      "Revealed type [-1]: Revealed type for `\"separator\"` is \
-       `typing_extensions.Literal['separator']`.";
-      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
-       `Descriptor` but is used as type `int`.";
-    ];
-  ()
+           [
+             "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has \
+              type `int` but is used as type `Descriptor`.";
+             "Revealed type [-1]: Revealed type for `\"separator\"` is \
+              `typing_extensions.Literal['separator']`.";
+             "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has \
+              type `int` but is used as type `Descriptor`.";
+             "Revealed type [-1]: Revealed type for `\"separator\"` is \
+              `typing_extensions.Literal['separator']`.";
+             "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has \
+              type `Descriptor` but is used as type `int`.";
+           ];
+    ]
 
 
-let () =
-  "descriptors"
-  >::: [
-         "check_non_data_descriptors" >:: test_non_data_descriptors;
-         "check_data_descriptors" >:: test_data_descriptors;
-       ]
-  |> Test.run
+let () = "descriptors" >::: [test_non_data_descriptors; test_data_descriptors] |> Test.run
