@@ -41,7 +41,8 @@ let test_updates =
         read_only
         ~dependency
         qualifier
-      |> assert_equal ~printer expectation
+      |> List.sort ~compare:Reference.compare
+      |> assert_equal ~printer (List.sort ~compare:Reference.compare expectation)
     in
     List.iter middle_actions ~f:execute_action;
     List.iter original_sources ~f:(fun (relative, _) ->
@@ -98,6 +99,56 @@ let test_updates =
            ~middle_actions:[!&"test", dependency, [!&"test.$toplevel"; !&"test.f"]]
            ~expected_triggers:[dependency]
            ~post_actions:[!&"test", dependency, [!&"test.$toplevel"; !&"test.f"]];
+      (* Test the behavior of nesting in classes and in defines. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_updates
+           ~original_sources:
+             [
+               ( "test.py",
+                 {|
+                    def outer():
+                        class NestedClass: pass
+                        def nested():
+                            def nested2(): ...
+                  |}
+               );
+             ]
+           ~new_sources:
+             [
+               ( "test.py",
+                 {|
+                    class OuterClass():
+                        def method(self):
+                            def nested(): ...
+                        class InnerClass():
+                            pass
+                  |}
+               );
+             ]
+           ~middle_actions:
+             [
+               ( !&"test",
+                 dependency,
+                 [
+                   !&"test.$toplevel";
+                   !&"test.outer";
+                   !&"$local_test?outer$nested";
+                   !&"$local_test?outer?nested$nested2";
+                 ] );
+             ]
+           ~expected_triggers:[dependency]
+           ~post_actions:
+             [
+               ( !&"test",
+                 dependency,
+                 [
+                   !&"test.$toplevel";
+                   !&"test.OuterClass.$class_toplevel";
+                   !&"test.OuterClass.method";
+                   !&"$local_test?OuterClass?method$nested";
+                   !&"test.OuterClass.InnerClass.$class_toplevel";
+                 ] );
+             ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_updates
            ~original_sources:
