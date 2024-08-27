@@ -9,22 +9,28 @@ open OUnit2
 open IntegrationTest
 open Test
 
-let test_check_with_qualification context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors {|
+let test_check_with_qualification =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       x: int = 1
       def foo(x: str) -> str:
         return x
-    |} [];
-  assert_type_errors
-    {|
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       x: int = 1
       def foo(y: str) -> str:
         return x
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       l: typing.List[int] = [1]
       def hello() -> int:
@@ -32,25 +38,28 @@ let test_check_with_qualification context =
           return i
         return -1
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 123
 
       def duh(global_number: str) -> int:
           return len(global_number)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 123
       def wut(global_number: str) -> None:
           def nonglobal_inner_access() -> int:
               return len(global_number)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 123
       def wut(global_number: str) -> None:
           def wut_inner_global() -> int:
@@ -58,9 +67,10 @@ let test_check_with_qualification context =
               return global_number
 
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `int` but got `str`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 123
       def rly() -> int:
           def rly_inner(global_number: str) -> None:
@@ -72,9 +82,10 @@ let test_check_with_qualification context =
           global_number: str = "a"
           return len(global_number)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def len(s: str) -> int:
         return 1
@@ -86,9 +97,10 @@ let test_check_with_qualification context =
               global global_number
               return global_number
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `int` but got `str`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def derp() -> int:
           def derp_inner() -> None:
@@ -96,41 +108,46 @@ let test_check_with_qualification context =
               pass
           return global_number
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def access_side_effect(global_number: str) -> int:
           side_effect=global_number
           return len(global_number)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def access_side_effect_2() -> int:
           side_effect=global_number
           return global_number
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def pure_sideffect() -> None:
           side_effect=global_number
           def pure_side_effect_inner() -> int:
               return global_number
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def access_transitive() -> int:
           transitive=global_number
           return transitive
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       global_number: int = 1
       def assign_transitive() -> None:
           another=global_number
@@ -143,155 +160,174 @@ let test_check_with_qualification context =
               global_number="a"
           return transitive
     |}
-    []
+           [];
+    ]
 
 
-let test_check_globals context =
-  let assert_type_errors ?other_sources source errors =
-    assert_type_errors ?other_sources source errors context
-  in
-  let assert_default_type_errors ?other_sources source errors =
-    assert_default_type_errors ?other_sources source errors context
-  in
-  assert_type_errors
-    {|
+let test_check_globals =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       constant: int = 1
       def foo() -> str:
         return constant
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       constant: typing.Union[int, str] = 1
       def foo() -> int:
         return constant
     |}
-    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       constant: int = 1
       constant: str = ""
       def foo() -> str:
         return constant
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       constant = 1
       constant = ""
       def foo() -> str:
         return constant
     |}
-    [
-      "Incompatible variable type [9]: constant is declared to have type `int` "
-      ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible variable type [9]: constant is declared to have type `int` "
+             ^ "but is used as type `str`.";
+             "Incompatible return type [7]: Expected `str` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       x = 1
       constant = x
       def foo() -> str:
         return constant
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` "
-      ^ "but no type is specified.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing global annotation [5]: Globally accessible variable `constant` has type `int` "
+             ^ "but no type is specified.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       nasty_global = foo()
       def foo() -> int:
         a = nasty_global
         return 0
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `nasty_global` "
-      ^ "has type `int` but no type is specified.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing global annotation [5]: Globally accessible variable `nasty_global` "
+             ^ "has type `int` but no type is specified.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       a, b = 1, 2
       def foo() -> str:
         return a
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       a: int
       b: int
       a, b = 1, 2
       def foo() -> str:
         return a
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       x: typing.List[int]
       def foo() -> int:
         return x[0]
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       x: typing.List[int]
       def foo() -> typing.List[int]:
         return x[0:1]
     |}
-    [];
-  assert_default_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
       import typing
       x: typing.List = [1,2,3]
       def foo() -> typing.List[typing.Any]:
         return x
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       x = []
       def foo() -> None:
         reveal_type(x)
     |}
-    [
-      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, add \
-       an explicit annotation.";
-      "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
-    ];
-  assert_default_type_errors
-    {|
+           [
+             "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is \
+              incomplete, add an explicit annotation.";
+             "Missing global annotation [5]: Globally accessible variable `x` has no type \
+              specified.";
+             "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
       import typing
       x: typing.Dict = { "derp": 42 }
       def foo() -> typing.Dict[typing.Any, typing.Any]:
         return x
     |}
-    [];
-  assert_type_errors
-    ~other_sources:[{ handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:[{ handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
+           {|
       from export import a
       def foo() -> str:
         return a
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    ~other_sources:
-      [{ handle = "export.py"; source = {|
+           ["Incompatible return type [7]: Expected `str` but got `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               {
+                 handle = "export.py";
+                 source = {|
           str_to_int_dictionary = {"a": 1}
-        |} }]
-    {|
+        |};
+               };
+             ]
+           {|
       from export import str_to_int_dictionary
       def foo() -> str:
         return str_to_int_dictionary
     |}
-    ["Incompatible return type [7]: Expected `str` but got `Dict[str, int]`."];
-  assert_type_errors
-    ~other_sources:[{ handle = "export.py"; source = "x = 1" }]
-    {|
+           ["Incompatible return type [7]: Expected `str` but got `Dict[str, int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:[{ handle = "export.py"; source = "x = 1" }]
+           {|
       from export import x
       def foo() -> str:
         return x
@@ -300,14 +336,15 @@ let test_check_globals context =
         x = ""
         return x
     |}
-    [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible variable type [9]: export.x is declared to have type `int` "
-      ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible return type [7]: Expected `str` but got `int`.";
+             "Incompatible variable type [9]: export.x is declared to have type `int` "
+             ^ "but is used as type `str`.";
+             "Incompatible return type [7]: Expected `str` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       x = None
       y = []
@@ -320,33 +357,38 @@ let test_check_globals context =
         y.append(1)
         return y
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `x` has type \
-       `typing.Optional[str]` but no type is specified.";
-      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, add \
-       an explicit annotation.";
-      "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
-    ];
-  assert_type_errors {|
+           [
+             "Missing global annotation [5]: Globally accessible variable `x` has type \
+              `typing.Optional[str]` but no type is specified.";
+             "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is \
+              incomplete, add an explicit annotation.";
+             "Missing global annotation [5]: Globally accessible variable `y` has no type \
+              specified.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors {|
       import typing
       A = typing.Mapping[int, str]
     |} [];
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       A = MappBoo[int, str]
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
-      "Unbound name [10]: Name `MappBoo` is used but not defined in the current scope.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
+             "Unbound name [10]: Name `MappBoo` is used but not defined in the current scope.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       MyType = typing.List[typing.Any]
     |}
-    ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."];
-  assert_type_errors
-    {|
+           ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       GLOBAL: typing.Optional[int]
       def foo() -> int:
@@ -354,9 +396,10 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       GLOBAL: typing.Optional[int]
       def call() -> None: pass
@@ -366,9 +409,10 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
-  assert_type_errors
-    {|
+           ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Any, Callable, Mapping, Union
       a: Union[Callable]
       b: Union[Mapping[str, Any]]
@@ -376,16 +420,18 @@ let test_check_globals context =
       d: Callable
       e: Mapping[str, Any]
     |}
-    [
-      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
-      "Missing global annotation [5]: Globally accessible variable `c` must be specified as type \
-       that does not contain `Any`.";
-      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
-      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
-    ];
-  (* Verify resolve literal for unannotated globals doesn't create huge types that cause OOMs. *)
-  assert_default_type_errors
-    {|
+           [
+             "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+             "Missing global annotation [5]: Globally accessible variable `c` must be specified as \
+              type that does not contain `Any`.";
+             "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+             "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+           ];
+      (* Verify resolve literal for unannotated globals doesn't create huge types that cause
+         OOMs. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
       def cos(x: int) -> int: ...
       def sin(x: int) -> int: ...
       def exp(x: int) -> int: ...
@@ -423,31 +469,37 @@ let test_check_globals context =
           "cosh":    [cosh, cosh],
       }
   |}
-    [];
-  ()
+           [];
+    ]
 
 
-let test_check_builtin_globals context =
-  assert_type_errors
-    {|
+let test_check_builtin_globals =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       reveal_type(...)
     |}
-    ["Revealed type [-1]: Revealed type for `...` is `typing.Any`."]
-    context;
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `...` is `typing.Any`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       reveal_type(__debug__)
     |}
-    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."]
-    context;
-  assert_type_errors
-    ~other_sources:
-      [
-        { handle = "__init__.pyi"; source = {|
+           ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               {
+                 handle = "__init__.pyi";
+                 source = {|
               def bar() -> None: pass
-            |} };
-      ]
-    {|
+            |};
+               };
+             ]
+           {|
       # Builtin name
       locals()
 
@@ -457,16 +509,11 @@ let test_check_builtin_globals context =
       # Defined in global with empty qualifier
       bar()
     |}
-    ["Unbound name [10]: Name `foo` is used but not defined in the current scope."]
-    context;
-  ()
+           ["Unbound name [10]: Name `foo` is used but not defined in the current scope."];
+    ]
 
 
 let () =
   "global"
-  >::: [
-         "check_with_qualification" >:: test_check_with_qualification;
-         "check_globals" >:: test_check_globals;
-         "check_builtin_globals" >:: test_check_builtin_globals;
-       ]
+  >::: [test_check_with_qualification; test_check_globals; test_check_builtin_globals]
   |> Test.run
