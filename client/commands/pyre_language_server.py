@@ -67,6 +67,7 @@ CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 PYAUTOTARGETS_ENABLED_SUFFIXES: Set[str] = {
     ".py",
 }
+PTT_ISOLATION_DIR = ".pyreptt"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -559,12 +560,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
     async def _query_buck_type_errors(
-        self, open_documents: List[Path]
+        self, open_documents: List[Path], isolation_dir: str
     ) -> PyreBuckTypeErrorMetadata:
         buck_query_timer = timer.Timer()
         buck_query_durations: Dict[str, float] = {}
         query_parameters = [
             "buck2",
+            f"--isolation-dir={isolation_dir}",
             "bxl",
             "--reuse-current-config",
             "--oncall=pyre",
@@ -614,6 +616,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         type_check_parameters = [
             "buck2",
+            f"--isolation-dir={isolation_dir}",
             "bxl",
             "--reuse-current-config",
             "--preemptible=ondifferentstate",
@@ -698,7 +701,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         if self.get_language_server_features().per_target_type_errors.is_enabled():
             daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
                 self._query_pyre_daemon_type_errors(document_path, open_documents),
-                self._query_buck_type_errors(open_documents),
+                self._query_buck_type_errors(
+                    open_documents, isolation_dir=PTT_ISOLATION_DIR
+                ),
             )
         else:
             daemon_type_errors = await self._query_pyre_daemon_type_errors(
@@ -730,6 +735,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
                     "preempted": pyre_buck_metadata.preempted,
                     "new_file_loaded": new_file_loaded,
+                    "isolation_dir": PTT_ISOLATION_DIR,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
