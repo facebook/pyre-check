@@ -1775,7 +1775,7 @@ let test_resolve_definition_for_symbol =
 let ( >>: ) test_name test_function = test_name >:: fun context -> test_function ~context
 
 let _test_resolve_completions_for_symbol =
-  let open AttributeResolution.AttributeDetail in
+  let open LocationBasedLookup.SingleSymbolQueries.AttributeDetail in
   let default_external_sources =
     [
       ( "library.py",
@@ -1820,7 +1820,10 @@ let _test_resolve_completions_for_symbol =
       >>| LocationBasedLookup.SingleSymbolQueries.resolve_completions_for_symbol ~type_environment
       |> Option.value ~default:[]
     in
-    assert_equal ~printer:[%show: AttributeResolution.AttributeDetail.t list] expected attributes
+    assert_equal
+      ~printer:[%show: LocationBasedLookup.SingleSymbolQueries.AttributeDetail.t list]
+      expected
+      attributes
   in
   let default_completions =
     [

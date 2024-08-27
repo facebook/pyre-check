@@ -877,6 +877,33 @@ module SingleSymbolQueries = struct
   }
   [@@deriving sexp, show, compare, yojson { strict = false }]
 
+  (* AttributeDetail is a datatype used to model attribute lookups for use cases like completions in
+     IDE. *)
+  module AttributeDetail = struct
+    type kind =
+      | Simple
+      | Variable
+      | Property
+      | Method
+    [@@deriving show, compare, sexp]
+
+    type t = {
+      kind: kind;
+      name: string;
+      detail: string;
+    }
+    [@@deriving show, compare, sexp]
+
+    let from_attribute attr =
+      let open AnnotatedAttribute in
+      let name = name attr in
+      let detail = parent_name attr in
+      match uninstantiated_annotation attr with
+      | UninstantiatedAnnotation.{ kind = Property _; _ } -> { kind = Property; name; detail }
+      | { kind = Attribute (Callable _); _ } -> { kind = Method; name; detail }
+      | _ -> { kind = Variable; name; detail }
+  end
+
   (* Please view diff D53973886 to to understand how this data structure maps to the corresponding
      Python data structure for document symbols *)
   module DocumentSymbolItem = struct
@@ -1112,6 +1139,16 @@ module SingleSymbolQueries = struct
     | _ -> Error (UnsupportedExpression (get_expression_constructor expression.value))
 
 
+  let attribute_details ~global_resolution ~accessed_through_class class_name =
+    GlobalResolution.uninstantiated_attributes
+      global_resolution
+      ~transitive:true
+      ~accessed_through_class
+      ~include_generated_attributes:true
+      class_name
+    >>| List.map ~f:AttributeDetail.from_attribute
+
+
   let resolve_attributes_for_expression ~resolution expression =
     (* Resolve prefix to check if this is a method. *)
     let base_type =
@@ -1128,9 +1165,9 @@ module SingleSymbolQueries = struct
     base_type
     >>| Type.split
     >>= (fun (parent, _) -> Type.primitive_name parent)
-    >>= GlobalResolution.attribute_details
-          (Resolution.global_resolution resolution)
-          ~transitive:true
+    >>= attribute_details
+          ~global_resolution:(Resolution.global_resolution resolution)
+          ~accessed_through_class:true
     |> Option.value ~default:[]
 
 
@@ -1243,7 +1280,7 @@ module SingleSymbolQueries = struct
       "Completions for symbol at position `%s:%s`: %s"
       (Reference.show module_reference)
       ([%show: Location.position] position)
-      ([%show: AttributeResolution.AttributeDetail.t list] completions);
+      ([%show: AttributeDetail.t list] completions);
     completions
 
 

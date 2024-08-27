@@ -290,7 +290,8 @@ let get_completion_for_module ~overlay ~position module_reference =
     ~type_environment
     ~module_reference
     position
-  |> List.map ~f:(fun { AttributeResolution.AttributeDetail.kind; name; detail } ->
+  |> List.map
+       ~f:(fun { LocationBasedLookup.SingleSymbolQueries.AttributeDetail.kind; name; detail } ->
          let attribute_kind =
            match kind with
            | Simple -> Response.CompletionItem.CompletionItemKind.Simple

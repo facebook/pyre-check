@@ -147,6 +147,22 @@ module SingleSymbolQueries : sig
   }
   [@@deriving sexp, show, compare, yojson { strict = false }]
 
+  module AttributeDetail : sig
+    type kind =
+      | Simple
+      | Variable
+      | Property
+      | Method
+    [@@deriving show, compare, sexp]
+
+    type t = {
+      kind: kind;
+      name: string;
+      detail: string;
+    }
+    [@@deriving show, compare, sexp]
+  end
+
   module DocumentSymbolItem : sig
     (** A type a document symbol response *)
     module SymbolKind : sig
@@ -206,13 +222,13 @@ module SingleSymbolQueries : sig
   val resolve_completions_for_symbol
     :  type_environment:TypeEnvironment.ReadOnly.t ->
     LocationWithSymbol.symbol_and_cfg_data ->
-    AttributeResolution.AttributeDetail.t list
+    AttributeDetail.t list
 
   val completion_info_for_position
     :  type_environment:TypeEnvironment.ReadOnly.t ->
     module_reference:Reference.t ->
     Location.position ->
-    AttributeResolution.AttributeDetail.t list
+    AttributeDetail.t list
 
   val resolve_type_for_symbol
     :  type_environment:TypeEnvironment.ReadOnly.t ->

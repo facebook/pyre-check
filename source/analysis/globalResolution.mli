@@ -123,14 +123,6 @@ val uninstantiated_attributes
   Type.Primitive.t ->
   AnnotatedAttribute.uninstantiated list option
 
-val attribute_details
-  :  t ->
-  ?transitive:bool ->
-  ?accessed_through_class:bool ->
-  ?include_generated_attributes:bool ->
-  Type.Primitive.t ->
-  AttributeResolution.AttributeDetail.t list option
-
 val instantiate_attribute
   :  t ->
   ?instantiated:Type.t ->

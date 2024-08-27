@@ -182,22 +182,6 @@ module SignatureSelection : sig
     signature_match option
 end
 
-module AttributeDetail : sig
-  type kind =
-    | Simple
-    | Variable
-    | Property
-    | Method
-  [@@deriving show, compare, sexp]
-
-  type t = {
-    kind: kind;
-    name: string;
-    detail: string;
-  }
-  [@@deriving show, compare, sexp]
-end
-
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
@@ -237,16 +221,6 @@ module AttributeReadOnly : sig
     attribute_name:Identifier.t ->
     string ->
     AnnotatedAttribute.instantiated option
-
-  val attribute_details
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    transitive:bool ->
-    accessed_through_class:bool ->
-    include_generated_attributes:bool ->
-    ?special_method:bool ->
-    string ->
-    AttributeDetail.t list option
 
   val uninstantiated_attributes
     :  t ->
