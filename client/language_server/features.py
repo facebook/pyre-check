@@ -97,8 +97,8 @@ RenameAvailability = _Availability
 SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
-PerTargetTypeErrorsAvailability = _Availability
-PythonAutoTargetsAvailability = _Availability
+PerTargetTypeErrorsAvailability = CustomAvailability
+PythonAutoTargetsAvailability = CustomAvailability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -114,7 +114,7 @@ class LanguageServerFeatures:
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     per_target_type_errors: PerTargetTypeErrorsAvailability = (
-        PerTargetTypeErrorsAvailability.DISABLED
+        PerTargetTypeErrorsAvailability.from_enabled(False)
     )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
@@ -125,7 +125,7 @@ class LanguageServerFeatures:
     inlay_hint: InlayHintAvailability = InlayHintAvailability.DISABLED
     formatting: FormattingAvailability = FormattingAvailability.DISABLED
     python_auto_targets: PythonAutoTargetsAvailability = (
-        PythonAutoTargetsAvailability.DISABLED
+        PythonAutoTargetsAvailability.from_enabled(False)
     )
 
     def capabilities(self) -> Dict[str, bool]:
