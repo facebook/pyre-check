@@ -4320,6 +4320,61 @@ let test_self_type =
     ]
 
 
+let test_nested_generic_defines =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from contextlib import contextmanager
+            from typing import (
+                Callable,
+                final,
+                Generator,
+                List,
+                ParamSpec,
+                Protocol,
+                Tuple,
+                TypeVar,
+                Iterator,
+            )
+      
+            _TParams = ParamSpec("_TParams")
+            _TReturn = TypeVar("_TReturn")
+      
+      
+            @final
+            class ProfiledDecorator(Protocol):
+                def __call__(
+                    self, fn: Callable[_TParams, _TReturn]
+                ) -> Callable[_TParams, _TReturn]: ...
+      
+      
+            _profiled_times: dict[Tuple[str, ...], float] = ...
+            _current_stack: List[str] = []
+      
+      
+            @contextmanager
+            def profile(name: str) -> Generator[None, None, None]:
+                ...
+      
+      
+            def profiled(name: str) -> ProfiledDecorator:
+                def _fn_profiled(
+                    fn: Callable[_TParams, _TReturn]
+                ) -> Callable[_TParams, _TReturn]:
+                    def _decorated(*args: _TParams.args, **vargs: _TParams.kwargs) -> _TReturn:
+                        with profile(name):
+                            return fn(*args, **vargs)
+      
+                    return _decorated
+      
+                return _fn_profiled
+            |}
+           [];
+    ]
+
+
 let () =
   "typeVariable"
   >::: [
@@ -4344,5 +4399,6 @@ let () =
          test_variadic_classes;
          test_variadic_callables;
          test_self_type;
+         test_nested_generic_defines;
        ]
   |> Test.run
