@@ -111,8 +111,8 @@ module IncomingDataComputation = struct
   end
 
   type extracted =
-    | VariableAlias of Type.Variable.Declaration.t
-    | TypeAlias of UnresolvedAlias.t
+    | ExtractedVariableDeclaration of Type.Variable.Declaration.t
+    | ExtractedAlias of UnresolvedAlias.t
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
     let open Module.UnannotatedGlobal in
@@ -129,7 +129,7 @@ module IncomingDataComputation = struct
           match Node.value value, explicit_annotation with
           | Call _, None -> (
               match Type.Variable.Declaration.parse (delocalize value) ~target:name with
-              | Some variable -> Some (VariableAlias variable)
+              | Some variable -> Some (ExtractedVariableDeclaration variable)
               | None -> None)
           | ( (BinaryOperator _ | Subscript _ | Name _ | Constant (Constant.String _)),
               Some
@@ -162,7 +162,7 @@ module IncomingDataComputation = struct
                   || Type.contains_unknown value_annotation
                   || Type.equal value_annotation target_annotation)
               then
-                Some (TypeAlias { target = name; value })
+                Some (ExtractedAlias { target = name; value })
               else
                 None
           | _ -> None)
@@ -191,7 +191,7 @@ module IncomingDataComputation = struct
                 None
             | _ ->
                 let value = from_reference ~location:Location.any original_name_of_alias in
-                Some (TypeAlias { target = name; value }))
+                Some (ExtractedAlias { target = name; value }))
       | TupleAssign _
       | Class
       | Define _ ->
@@ -230,8 +230,8 @@ module IncomingDataComputation = struct
       else
         let visited = Set.add visited current in
         let resolve_after_resolving_dependencies = function
-          | VariableAlias variable -> Some (RawAlias.VariableAlias variable)
-          | TypeAlias unresolved -> (
+          | ExtractedVariableDeclaration variable -> Some (RawAlias.VariableAlias variable)
+          | ExtractedAlias unresolved -> (
               match UnresolvedAlias.checked_resolve queries unresolved with
               | Resolved alias -> Some alias
               | HasDependents { unparsed; dependencies } ->
