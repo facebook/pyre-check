@@ -1878,7 +1878,7 @@ module OrderedTypes = struct
         |> expression
 
 
-  let concatenation_from_annotations ~get_variable annotations =
+  let concatenation_from_annotations ~variables annotations =
     let unpacked_element_index index = function
       | Parametric { name; _ }
         when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
@@ -1894,7 +1894,7 @@ module OrderedTypes = struct
             | Parametric { name; arguments = [Single (Primitive variable_name)] }
               when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names
               -> (
-                get_variable variable_name
+                variables variable_name
                 >>= function
                 | Record.Variable.TypeVarTupleVariable variadic ->
                     Some (Concatenation.create ~prefix ~suffix variadic)
@@ -4124,11 +4124,11 @@ let alternate_name_to_canonical_name_map =
   |> Identifier.Table.of_alist_exn
 
 
-let arguments_from_unpacked_annotation annotation ~get_variable =
+let arguments_from_unpacked_annotation annotation ~variables =
   let open Record.OrderedTypes.Concatenation in
   let unpacked_variadic_to_argument = function
     | Primitive variable_name -> (
-        match get_variable variable_name with
+        match variables variable_name with
         | Some (Record.Variable.TypeVarTupleVariable variadic) ->
             Some (Argument.Unpacked (Variadic variadic))
         | _ -> None)
@@ -4144,12 +4144,11 @@ let arguments_from_unpacked_annotation annotation ~get_variable =
   | _ -> None
 
 
-let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
-  let create_logic = create_logic ~resolve_aliases ~variable_aliases in
-  (* let get_variable identifier = variable_aliases identifier ~create_type:create_logic in *)
+let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } =
+  let create_logic = create_logic ~resolve_aliases ~variables in
   let substitute_parameter_variadic = function
     | Primitive name -> (
-        match variable_aliases name with
+        match variables name with
         | Some (Record.Variable.ParamSpecVariable variable) ->
             Some { Record.Callable.variable; head = [] }
         | _ -> None)
@@ -4214,9 +4213,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                     List.map tail ~f:(fun annotation ->
                         create_logic (Node.create_with_default_location annotation))
                   in
-                  OrderedTypes.concatenation_from_annotations
-                    ~get_variable:variable_aliases
-                    elements
+                  OrderedTypes.concatenation_from_annotations ~variables elements
                   >>| (fun concatenation -> CallableParamType.Concatenation concatenation)
                   |> Option.value
                        ~default:
@@ -4408,7 +4405,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 ]
             | element -> (
                 let parsed = create_logic element in
-                match arguments_from_unpacked_annotation ~get_variable:variable_aliases parsed with
+                match arguments_from_unpacked_annotation ~variables parsed with
                 | Some arguments -> arguments
                 | None -> (
                     match substitute_parameter_variadic parsed with
@@ -4468,11 +4465,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             create_parametric ~base ~subscript_index)
   in
   let resolve_variables_then_aliases alias_name =
-    match variable_aliases alias_name with
+    match variables alias_name with
     | Some (Record.Variable.TypeVarVariable variable) -> Variable variable
     | _ -> Primitive alias_name |> resolve_aliases
   in
-
   let result =
     match expression with
     | Subscript { base; index = subscript_index } ->
@@ -4552,7 +4548,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               |> Option.all
             in
             all_positional_only_parameters
-            >>= OrderedTypes.concatenation_from_annotations ~get_variable:variable_aliases
+            >>= OrderedTypes.concatenation_from_annotations ~variables
             >>| (fun concatenation ->
                   { overload with parameters = Defined [Variable (Concatenation concatenation)] })
             |> Option.value ~default:overload
@@ -4814,9 +4810,7 @@ let resolve_aliases ~aliases annotation =
   snd (ResolveAliasesTransform.visit () annotation)
 
 
-let create ~variables ~aliases =
-  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases:variables
-
+let create ~variables ~aliases = create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variables
 
 let namespace_insensitive_compare left right =
   compare
