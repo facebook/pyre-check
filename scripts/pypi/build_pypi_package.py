@@ -10,10 +10,10 @@ TODO(T132414938) Add a module-level docstring
 """
 
 
-import dataclasses
 import json
 import logging
 import os
+import dataclasses
 import platform
 import re
 import shutil
@@ -33,6 +33,23 @@ MODULE_NAME = "pyre_check"
 EXPECTED_LD_PATH = "/lib64/ld-linux-x86-64.so.2"
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclasses.dataclass(frozen=True)
+class BuildArtifacts:
+    wheel_path: Path
+    source_distribution_path: Path
+
+
+def get_source_distribution_and_wheel(artifact_directory: Path) -> BuildArtifacts:
+    wheel = list(artifact_directory.glob("**/*.whl"))
+    source_distribution = list(artifact_directory.glob("**/*.tar.gz"))
+    # make sure the appropriate numbers of files are present in the dist folder
+    if not len(wheel) == 1 and not len(source_distribution) == 1:
+        raise ValueError(f"Unexpected files found in {artifact_directory}.")
+    return BuildArtifacts(
+        source_distribution_path=source_distribution[0], wheel_path=wheel[0]
+    )
 
 
 def _distribution_platform() -> str:
@@ -272,42 +289,44 @@ def _run_setup_command(
     os.chdir(old_dir)
 
 
-@dataclasses.dataclass
-class BuildArtifacts:
-    wheel_path: Path
-    source_distribution_path: Path
-
-
-def _rename_and_get_artifacts(build_root: Path) -> BuildArtifacts:
+def _rename_and_move_artifacts(
+    build_root: Path, output_directory: Path
+) -> Tuple[Path, Path]:
     dist_directory = build_root / "dist"
-    wheel = list(dist_directory.glob("**/*.whl"))
-    source_distribution = list(dist_directory.glob("**/*.tar.gz"))
-    # make sure the appropriate numbers of files are present in the dist folder
-    if not len(wheel) == 1 and not len(source_distribution) == 1:
-        raise ValueError("Unexpected files found in {}/dist.".format(build_root))
-    source_distribution, wheel = source_distribution[0], wheel[0]
+    build_artifacts = get_source_distribution_and_wheel(dist_directory)
+    source_distribution = build_artifacts.source_distribution_path
+    wheel = build_artifacts.wheel_path
 
-    source_distribution_destination = Path(*source_distribution.parts[:-1]) / (
+    source_distribution_destination = output_directory / (
         source_distribution.name.split(".tar.gz")[0]
         + _distribution_platform()
         + ".tar.gz"
     )
-    wheel_destination = Path(*wheel.parts[:-1]) / wheel.name.replace(
+    wheel_destination = output_directory / wheel.name.replace(
         "-any", _distribution_platform()
     )
 
+    LOG.info(f"Moving wheel from {str(wheel)} to {str(wheel_destination)}")
     wheel.replace(wheel_destination)
+    LOG.info(
+        f"Moving source distribution from {str(source_distribution)} to {str(source_distribution_destination)}"
+    )
     source_distribution.replace(source_distribution_destination)
 
-    return BuildArtifacts(
-        wheel_path=wheel_destination,
-        source_distribution_path=source_distribution_destination,
-    )
+    return source_distribution_destination, wheel_destination
 
 
 def build_pypi_package(
-    pyre_directory: Path, typeshed_path: Path, version: str, nightly: bool
-) -> BuildArtifacts:
+    pyre_directory: Path,
+    typeshed_path: Path,
+    version: str,
+    nightly: bool,
+    output_directory: Optional[Path] = None,
+) -> None:
+    if output_directory is None:
+        output_directory = pyre_directory / "scripts" / "dist"
+    LOG.info(f"Output directory is {str(output_directory)}")
+
     _validate_typeshed(typeshed_path)
     _validate_version(version)
     _ensure_usable_binary_exists(pyre_directory)
@@ -318,48 +337,50 @@ def build_pypi_package(
         if len(line) > 0
     ]
 
-    build_path = Path(tempfile.mkdtemp(prefix="pyre_package_build_"))
+    with tempfile.TemporaryDirectory(prefix="pyre_package_build_") as build_path_str:
+        build_path = Path(build_path_str)
+        _add_init_files(build_path, version)
+        _create_setup_py(pyre_directory, version, build_path, dependencies, nightly)
 
-    _add_init_files(build_path, version)
-    _create_setup_py(pyre_directory, version, build_path, dependencies, nightly)
+        _sync_python_files(pyre_directory, build_path)
+        _sync_pysa_stubs(pyre_directory, build_path)
+        _sync_stubs(pyre_directory, build_path)
+        _sync_typeshed(build_path, typeshed_path)
+        _sync_sapp_filters(pyre_directory, build_path)
+        _sync_binary(pyre_directory, build_path)
+        _strip_binary(build_path)
+        _sync_documentation_files(pyre_directory, build_path)
 
-    _sync_python_files(pyre_directory, build_path)
-    _sync_pysa_stubs(pyre_directory, build_path)
-    _sync_stubs(pyre_directory, build_path)
-    _sync_typeshed(build_path, typeshed_path)
-    _sync_sapp_filters(pyre_directory, build_path)
-    _sync_binary(pyre_directory, build_path)
-    _strip_binary(build_path)
-    _sync_documentation_files(pyre_directory, build_path)
+        _patch_version(version, build_path)
 
-    _patch_version(version, build_path)
-
-    _run_setup_command(
-        pyre_directory,
-        build_path,
-        dependencies,
-        version,
-        "sdist",
-        nightly,
-    )
-    _create_setup_configuration(build_path)
-    twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
-
-    _run_setup_command(
-        pyre_directory,
-        build_path,
-        dependencies,
-        version,
-        "bdist_wheel",
-        nightly,
-    )
-    artifacts = _rename_and_get_artifacts(build_path)
-    LOG.info("All done.")
-    LOG.info("\n Build artifact available at:\n {}\n".format(str(artifacts.wheel_path)))
-    LOG.info(
-        "\n Source distribution available at:\n {}\n".format(
-            str(artifacts.source_distribution_path)
+        _run_setup_command(
+            pyre_directory,
+            build_path,
+            dependencies,
+            version,
+            "sdist",
+            nightly,
         )
-    )
+        _create_setup_configuration(build_path)
+        twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
 
-    return artifacts
+        _run_setup_command(
+            pyre_directory,
+            build_path,
+            dependencies,
+            version,
+            "bdist_wheel",
+            nightly,
+        )
+        source_distribution_destination, wheel_destination = _rename_and_move_artifacts(
+            build_path, output_directory
+        )
+        LOG.info("All done.")
+        LOG.info(
+            "\n Build artifact available at:\n {}\n".format(
+                str(source_distribution_destination)
+            )
+        )
+        LOG.info(
+            "\n Source distribution available at:\n {}\n".format(str(wheel_destination))
+        )
