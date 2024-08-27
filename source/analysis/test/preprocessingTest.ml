@@ -526,7 +526,7 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify "from builtins import b; b" "from builtins import b; b";
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_qualify "b; import a as b; b" "b; import a as b; a";
+      @@ assert_qualify "b; import a as b; b" "a; import a as b; a";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify "import builtins; builtins.b" "import builtins; b";
       (* Qualification in different places. *)
@@ -615,7 +615,7 @@ let test_qualify_source =
       b
     |}
            {|
-      b
+      a
       if True:
         import a as b
       a
@@ -629,7 +629,7 @@ let test_qualify_source =
       b
     |}
            {|
-      b
+      a
       if False:
         import a as b
       a
@@ -780,9 +780,9 @@ let test_qualify_source =
     |}
            {|
       from module import C
-      $local_qualifier$a = module.C
+      $local_qualifier$a = qualifier.C
       class qualifier.C: ...
-      $local_qualifier$b = module.C
+      $local_qualifier$b = qualifier.C
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1189,23 +1189,9 @@ let test_qualify_source =
            {|
       def qualifier.foo():
         from abc import bar
-        abc.bar()
+        $local_qualifier?foo$bar()
         def $local_qualifier?foo$bar(): pass
         $local_qualifier?foo$bar()
-    |};
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_qualify
-           {|
-      from abc import foo
-      foo();
-      def foo(): pass
-      foo()
-    |}
-           {|
-      from abc import foo
-      abc.foo();
-      def qualifier.foo(): pass
-      qualifier.foo()
     |};
       (* TODO(T47589601): We cannot correctly handle this case for now due to our current limited
          aliases recording mechanism. *)
@@ -1219,7 +1205,7 @@ let test_qualify_source =
       |}
            {|
       from abc import foo
-      def qualifier.bar(): abc.foo()
+      def qualifier.bar(): qualifier.foo()
       def qualifier.foo(): pass
       qualifier.foo()
     |};
@@ -1237,11 +1223,11 @@ let test_qualify_source =
     |}
            {|
       from abc import foo
-      abc.foo();
+      qualifier.foo();
       def qualifier.foo(): pass
       qualifier.foo()
       from abc import foo
-      abc.foo();
+      qualifier.foo();
       def qualifier.foo(): pass
       qualifier.foo()
     |};

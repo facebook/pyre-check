@@ -755,6 +755,7 @@ module Qualify (Context : QualifyContext) = struct
     let global_alias ~qualifier ~name =
       { name = Reference.combine qualifier (Reference.create name); qualifier }
     in
+    let local_alias ~qualifier ~name = { name; qualifier } in
     let explore_scope ({ qualifier; aliases; locals; is_in_function; _ } as scope) { Node.value; _ }
       =
       match value with
@@ -788,6 +789,33 @@ module Qualify (Context : QualifyContext) = struct
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
           explore_scope ~scope orelse
+      | Import { Import.from = Some { Node.value = from; _ }; imports }
+        when not (String.equal (Reference.show from) "builtins") ->
+          let import aliases { Node.value = { Import.name; alias }; _ } =
+            match alias with
+            | Some alias ->
+                (* Add `alias -> from.name`. *)
+                Map.set
+                  aliases
+                  ~key:alias
+                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
+            | None ->
+                (* Add `name -> from.name`. *)
+                Map.set
+                  aliases
+                  ~key:(Reference.show name)
+                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
+          in
+          { scope with aliases = List.fold imports ~init:aliases ~f:import }
+      | Import { Import.from = None; imports } ->
+          let import aliases { Node.value = { Import.name; alias }; _ } =
+            match alias with
+            | Some alias ->
+                (* Add `alias -> from.name`. *)
+                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
+            | None -> aliases
+          in
+          { scope with aliases = List.fold imports ~init:aliases ~f:import }
       | For { For.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
           explore_scope ~scope orelse
@@ -832,7 +860,7 @@ module Qualify (Context : QualifyContext) = struct
 
 
   and qualify_statement
-      ~scope:({ qualifier; aliases; is_top_level; is_class_toplevel; _ } as scope)
+      ~scope:({ qualifier; is_top_level; is_class_toplevel; _ } as scope)
       ({ Node.value; _ } as statement)
     =
     let scope, value =
@@ -1147,33 +1175,6 @@ module Qualify (Context : QualifyContext) = struct
                 body;
                 orelse;
               } )
-      | Import { Import.from = Some { Node.value = from; _ }; imports }
-        when not (String.equal (Reference.show from) "builtins") ->
-          let import aliases { Node.value = { Import.name; alias }; _ } =
-            match alias with
-            | Some alias ->
-                (* Add `alias -> from.name`. *)
-                Map.set
-                  aliases
-                  ~key:alias
-                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
-            | None ->
-                (* Add `name -> from.name`. *)
-                Map.set
-                  aliases
-                  ~key:(Reference.show name)
-                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
-          in
-          { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
-      | Import { Import.from = None; imports } ->
-          let import aliases { Node.value = { Import.name; alias }; _ } =
-            match alias with
-            | Some alias ->
-                (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
-            | None -> aliases
-          in
-          { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
       | Match { Match.subject; cases } ->
           let case_scopes, cases = List.map cases ~f:(qualify_match_case ~scope) |> List.unzip in
           ( List.fold case_scopes ~init:scope ~f:join_scopes,
