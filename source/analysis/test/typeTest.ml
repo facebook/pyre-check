@@ -52,7 +52,7 @@ let make_callable_from_arguments annotations =
 
 let make_variables ~aliases name =
   match aliases name with
-  | Some (TypeAliasEnvironment.RawAlias.VariableAlias variable) ->
+  | Some (TypeAliasEnvironment.RawAlias.VariableDeclaration variable) ->
       let type_variables =
         Type.Variable.of_declaration
           ~create_type:
@@ -448,7 +448,7 @@ let test_create_type_operator _ =
              ])));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     {|
       pyre_extensions.Compose[
@@ -558,7 +558,7 @@ let test_create_type_operator _ =
              ])));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     {|
       pyre_extensions.Compose[
@@ -597,7 +597,7 @@ let test_create_variadic_tuple _ =
   (* Parametric types. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "Foo[typing.Unpack[Ts]]"
     (Type.parametric
@@ -605,7 +605,7 @@ let test_create_variadic_tuple _ =
        [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable ts_variable)]);
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "Foo[int, typing.Unpack[Ts], str]"
     (Type.parametric
@@ -617,14 +617,14 @@ let test_create_variadic_tuple _ =
        ]);
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "Foo[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.parametric "Foo" [Single Type.integer; Single Type.string]);
   (* Nested unpacks get normalized. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "Foo[int, typing.Unpack[typing.Tuple[str, typing.Unpack[Ts]]]]"
     (Type.parametric
@@ -643,13 +643,13 @@ let test_create_variadic_tuple _ =
   (* Tuples. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts]]"
     (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create ts_variable)));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Tuple[int, typing.Unpack[Ts], str]"
     (Type.Tuple
@@ -660,20 +660,20 @@ let test_create_variadic_tuple _ =
              ts_variable)));
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[Ts], typing.Unpack[Ts]]"
     Type.Top;
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Tuple[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.tuple [Type.integer; Type.string]);
   (* Nested concrete unpacks get normalized. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Tuple[bool, typing.Unpack[typing.Tuple[int, typing.Unpack[typing.Tuple[int, str]]]]]"
     (Type.tuple [Type.bool; Type.integer; Type.integer; Type.string]);
@@ -681,7 +681,7 @@ let test_create_variadic_tuple _ =
   (* Callables. *)
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Callable[[int, typing.Unpack[Ts], str], int]"
     (Type.Callable.create
@@ -699,7 +699,7 @@ let test_create_variadic_tuple _ =
        ());
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
       | _ -> None)
     "typing.Callable[[int, typing.Unpack[typing.Tuple[bool, typing.Unpack[Ts], bool]], str], int]"
     (Type.Callable.create
@@ -717,8 +717,8 @@ let test_create_variadic_tuple _ =
        ());
   assert_create
     ~aliases:(function
-      | "Ts" -> Some (VariableAlias ts_declaration)
-      | "Ts2" -> Some (VariableAlias ts2_declaration)
+      | "Ts" -> Some (VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (VariableDeclaration ts2_declaration)
       | _ -> None)
     "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Callable[[Variable(int, \
      typing.Unpack[Ts2], str)], int]]"
@@ -865,7 +865,7 @@ let test_resolve_aliases _ =
   assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
   let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let aliases = function
-    | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
+    | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration tparams_declaration)
     | "FooParamSpec" ->
         Some
           (TypeAliasEnvironment.RawAlias.TypeAlias
@@ -893,7 +893,7 @@ let test_resolve_aliases _ =
     (Type.parametric "Bar" [CallableParameters Undefined]);
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let aliases = function
-    | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+    | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
     | "FloatTensor" ->
         Some
           (TypeAliasEnvironment.RawAlias.TypeAlias
@@ -2378,8 +2378,8 @@ let test_replace_all _ =
   let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_replaced ~replace annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2441,8 +2441,8 @@ let test_replace_all _ =
 
   let parse_string string =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2581,8 +2581,8 @@ let test_collect_all _ =
   let ts2_declaration, ts2_variable = type_var_tuple_declaration_and_variable "Ts2" in
   let assert_collected annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts2_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -2786,7 +2786,7 @@ let test_concatenation_from_unpack_expression _ =
   let assert_concatenation expression concatenation =
     let parse_annotation expression =
       let aliases ?replace_unbound_parameters_with_any:_ = function
-        | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+        | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
         | _ -> None
       in
       let variables = make_variables ~aliases in
@@ -2821,7 +2821,7 @@ let test_split_ordered_types _ =
   let ts_declaration, ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3084,7 +3084,7 @@ let test_coalesce_ordered_types _ =
   let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
   let assert_coalesce ordered_types expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3136,7 +3136,7 @@ let test_drop_prefix_ordered_type _ =
   let assert_drop_prefix ~length actual expected_tuple =
     let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3185,7 +3185,7 @@ let test_index_ordered_type _ =
   let assert_index ~python_index tuple expected =
     let ts_declaration, _ts_variable = type_var_tuple_declaration_and_variable "Ts" in
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3249,11 +3249,11 @@ let test_zip_variables_with_parameters _ =
   let tparams_declaration, tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~instantiation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t_declaration)
-      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t2_declaration)
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
-      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
+      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration t_declaration)
+      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration t2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts2_declaration)
+      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration tparams_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in
@@ -3587,11 +3587,11 @@ let test_zip_on_two_parameter_lists _ =
   let tparams_declaration, _tparams_variable = param_spec_declaration_and_variable "TParams" in
   let assert_zipped ~generic_class ~left ~right expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
-      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t_declaration)
-      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias t2_declaration)
-      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts_declaration)
-      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias ts2_declaration)
-      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableAlias tparams_declaration)
+      | "T" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration t_declaration)
+      | "T2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration t2_declaration)
+      | "Ts" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts_declaration)
+      | "Ts2" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration ts2_declaration)
+      | "TParams" -> Some (TypeAliasEnvironment.RawAlias.VariableDeclaration tparams_declaration)
       | _ -> None
     in
     let variables = make_variables ~aliases in

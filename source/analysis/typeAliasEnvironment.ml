@@ -29,7 +29,7 @@ module PreviousEnvironment = UnannotatedGlobalEnvironment
 module RawAlias = struct
   type t =
     | TypeAlias of Type.t
-    | VariableAlias of Type.Variable.Declaration.t
+    | VariableDeclaration of Type.Variable.Declaration.t
   [@@deriving equal, compare, sexp, show, hash]
 end
 
@@ -230,7 +230,7 @@ module IncomingDataComputation = struct
       else
         let visited = Set.add visited current in
         let resolve_after_resolving_dependencies = function
-          | ExtractedVariableDeclaration variable -> Some (RawAlias.VariableAlias variable)
+          | ExtractedVariableDeclaration variable -> Some (RawAlias.VariableDeclaration variable)
           | ExtractedAlias unresolved -> (
               match UnresolvedAlias.checked_resolve queries unresolved with
               | Resolved alias -> Some alias
@@ -255,7 +255,7 @@ module IncomingDataComputation = struct
 
                   let variable_aliases name =
                     match aliases name with
-                    | Some (RawAlias.VariableAlias variable) ->
+                    | Some (RawAlias.VariableDeclaration variable) ->
                         let type_variables =
                           Type.Variable.of_declaration
                             ~create_type:
@@ -412,7 +412,7 @@ module ReadOnly = struct
       get_type_alias environment ?dependency name
     in
     match get environment ?dependency name with
-    | Some (RawAlias.VariableAlias t) ->
+    | Some (RawAlias.VariableDeclaration t) ->
         let type_variables =
           Type.Variable.of_declaration
             ~create_type:(Type.create ~aliases ~variables:Type.resolved_empty_variables)

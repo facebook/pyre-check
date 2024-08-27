@@ -11,7 +11,7 @@ open SharedMemoryKeys
 module RawAlias : sig
   type t =
     | TypeAlias of Type.t
-    | VariableAlias of Type.Variable.Declaration.t
+    | VariableDeclaration of Type.Variable.Declaration.t
   [@@deriving equal, compare, sexp, show, hash]
 end
 
