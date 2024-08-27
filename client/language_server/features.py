@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Dict
+from typing import Callable, Dict
 
 
 class _Availability(enum.Enum):
@@ -61,6 +61,26 @@ class TypeCoverageAvailability(enum.Enum):
     DISABLED = "disabled"
     FUNCTION_LEVEL = "function_level"
     EXPRESSION_LEVEL = "expression_level"
+
+
+class CustomAvailability:
+    _check: Callable[[], bool]
+
+    def __init__(self, check: Callable[[], bool]) -> None:
+        self._check = check
+
+    @staticmethod
+    def from_enabled(enabled: bool) -> CustomAvailability:
+        return CustomAvailability(check=lambda: enabled)
+
+    def get_availability(self) -> _Availability:
+        return _Availability.from_enabled(self._check())
+
+    def is_enabled(self) -> bool:
+        return self._check()
+
+    def is_disabled(self) -> bool:
+        return not self._check()
 
 
 # User-facing features
