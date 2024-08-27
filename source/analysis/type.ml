@@ -1916,17 +1916,21 @@ module OrderedTypes = struct
     | _ -> None
 
 
-  let concatenation_from_unpack_expression ~parse_annotation = function
-    | { Node.value = Expression.Subscript { base; _ }; _ } as annotation
-      when List.exists ~f:(fun n -> name_is ~name:n base) Record.OrderedTypes.unpack_public_names
-      -> (
-        let location = Location.any in
-        let wrapped_in_tuple =
-          subscript ~location "typing.Tuple" [annotation] |> Node.create ~location
-        in
-        match parse_annotation wrapped_in_tuple with
-        | Tuple (Concatenation concatenation) -> Some concatenation
-        | _ -> None)
+  let concatenation_from_unpack_expression ~parse_annotation annotation =
+    let unpacked =
+      let location = Location.any in
+      let wrapped_in_tuple =
+        subscript ~location "typing.Tuple" [annotation] |> Node.create ~location
+      in
+      match parse_annotation wrapped_in_tuple with
+      | Tuple (Concatenation concatenation) -> Some concatenation
+      | _ -> None
+    in
+    match annotation with
+    | { Node.value = Expression.Starred (Once _); _ } -> unpacked
+    | { Node.value = Expression.Subscript { base; _ }; _ }
+      when List.exists ~f:(fun n -> name_is ~name:n base) Record.OrderedTypes.unpack_public_names ->
+        unpacked
     | _ -> None
 
 
@@ -4473,6 +4477,20 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
     match expression with
     | Subscript { base; index = subscript_index } ->
         create_from_subscript ~location:(Node.location base) ~base ~subscript_index
+    | Starred (Once expr) ->
+        let base =
+          Expression.Name
+            (Attribute
+               {
+                 base =
+                   Expression.Name (Identifier "typing_extensions")
+                   |> Node.create ~location:(Node.location expr);
+                 attribute = "Unpack";
+                 special = false;
+               })
+          |> Node.create ~location:(Node.location expr)
+        in
+        create_from_subscript ~location:(Node.location expr) ~base ~subscript_index:expr
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in

@@ -2409,6 +2409,56 @@ let test_check_union_shorthand =
     ]
 
 
+let test_check_unpack =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import Generic
+              from typing_extensions import TypeVarTuple, Unpack
+
+              Ts = TypeVarTuple("Ts")
+
+              class Array(Generic[*Ts]):
+                  pass
+
+              Ts2 = TypeVarTuple("Ts2")
+
+              class Array2(Generic[Unpack[Ts2]]):
+                  pass
+
+              class Array3(Generic[*tuple[int, ...]]):
+                  pass
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing_extensions import TypeVarTuple, Unpack
+
+              Ts = TypeVarTuple("Ts")
+
+              def foo(*args: Unpack[Ts]) -> None:
+                pass
+
+              Ts2 = TypeVarTuple("Ts2")
+
+              def foo2(*args: *Ts2) -> None:
+                pass
+
+              Ts3 = TypeVarTuple("Ts3")
+
+              def foo3(args: tuple[*Ts3]) -> None:
+                pass
+
+              def foo4(*args: *tuple[int, ...]) -> None:
+                pass
+            |}
+           [];
+    ]
+
+
 let test_check_compose =
   test_list
     [
@@ -2976,5 +3026,6 @@ let () =
          test_check_annotated;
          test_check_union_shorthand;
          test_check_compose;
+         test_check_unpack;
        ]
   |> Test.run

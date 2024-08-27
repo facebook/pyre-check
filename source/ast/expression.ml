@@ -2905,6 +2905,8 @@ let rec delocalize ({ Node.value; location } as expression) =
         Name (Name.Attribute { name with Name.Attribute.base = delocalize base })
     | List elements -> List (List.map elements ~f:delocalize)
     | Tuple elements -> Tuple (List.map elements ~f:delocalize)
+    | Starred (Starred.Once target) -> Starred (Starred.Once (delocalize target))
+    | Starred (Starred.Twice target) -> Starred (Starred.Twice (delocalize target))
     | Await _
     | BinaryOperator _
     | BooleanOperator _
@@ -2918,7 +2920,6 @@ let rec delocalize ({ Node.value; location } as expression) =
     | ListComprehension _
     | Set _
     | SetComprehension _
-    | Starred _
     | Ternary _
     | UnaryOperator _
     | WalrusOperator _
