@@ -33,8 +33,6 @@ module RawAlias = struct
   [@@deriving equal, compare, sexp, show, hash]
 end
 
-let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
-
 module IncomingDataComputation = struct
   module Queries = struct
     type t = {

@@ -15,11 +15,6 @@ module RawAlias : sig
   [@@deriving equal, compare, sexp, show, hash]
 end
 
-val empty_aliases
-  :  ?replace_unbound_parameters_with_any:bool ->
-  Type.Primitive.t ->
-  RawAlias.t option
-
 module AliasReadOnly : sig
   include Environment.ReadOnly
 

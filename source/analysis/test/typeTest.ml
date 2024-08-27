@@ -12,6 +12,8 @@ open Analysis
 open Pyre
 open Test
 
+let empty_lookup _ = None
+
 let type_var_declaration_and_variable
     ?(declaration_constraints = Type.Variable.Unconstrained)
     ?(type_constraints = Type.Variable.Unconstrained)
@@ -1729,16 +1731,10 @@ let test_dequalify _ =
 
 
 let test_from_overloads _ =
-  let assert_create ?(aliases = TypeAliasEnvironment.empty_aliases) sources expected =
-    let variables = make_variables ~aliases in
+  let assert_create ?(aliases = Type.resolved_empty_aliases) sources expected =
     let merged =
       let parse_callable source =
-        match
-          Type.create
-            ~variables
-            ~aliases:(resolved_aliases aliases)
-            (parse_single_expression source)
-        with
+        match Type.create ~aliases ~variables:empty_lookup (parse_single_expression source) with
         | Type.Callable callable -> callable
         | _ -> failwith ("Could not extract callable from " ^ source)
       in
@@ -1751,10 +1747,7 @@ let test_from_overloads _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (Type.create
-         ~variables
-         ~aliases:(resolved_aliases aliases)
-         (parse_single_expression expected))
+      (Type.create ~aliases ~variables:empty_lookup (parse_single_expression expected))
       merged
   in
   assert_create
@@ -1772,13 +1765,11 @@ let test_from_overloads _ =
 
 let test_with_return_annotation _ =
   let assert_with_return_annotation annotation callable expected =
-    let aliases = TypeAliasEnvironment.empty_aliases in
-    let variables = make_variables ~aliases in
     let callable =
       match
         Type.create
-          ~variables
-          ~aliases:(resolved_aliases aliases)
+          ~variables:empty_lookup
+          ~aliases:Type.resolved_empty_aliases
           (parse_single_expression callable)
       with
       | Type.Callable callable -> callable
@@ -1788,7 +1779,7 @@ let test_with_return_annotation _ =
       ~cmp:Type.equal
       ~printer:Type.show
       (Type.create
-         ~variables
+         ~variables:empty_lookup
          ~aliases:Type.resolved_empty_aliases
          (parse_single_expression expected))
       (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
@@ -1805,10 +1796,11 @@ let test_with_return_annotation _ =
 
 let test_overload_parameters _ =
   let assert_parameters callable expected =
-    let aliases = TypeAliasEnvironment.empty_aliases in
-    let variables = make_variables ~aliases in
     let { Type.Callable.overloads; _ } =
-      Type.create ~variables ~aliases:(resolved_aliases aliases) (parse_single_expression callable)
+      Type.create
+        ~variables:empty_lookup
+        ~aliases:Type.resolved_empty_aliases
+        (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
