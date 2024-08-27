@@ -238,16 +238,6 @@ module AttributeReadOnly : sig
     string ->
     AnnotatedAttribute.instantiated option
 
-  val attribute_names
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    transitive:bool ->
-    accessed_through_class:bool ->
-    include_generated_attributes:bool ->
-    ?special_method:bool ->
-    string ->
-    Identifier.t list option
-
   val attribute_details
     :  t ->
     ?dependency:DependencyKey.registered ->

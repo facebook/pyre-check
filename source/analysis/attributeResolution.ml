@@ -276,8 +276,6 @@ module UninstantiatedAttributeTable = struct
 
   let to_list { attributes; names } = List.rev_map !names ~f:(Stdlib.Hashtbl.find attributes)
 
-  let names { names; _ } = !names
-
   let compare ({ names = left_names; _ } as left) ({ names = right_names; _ } as right) =
     let left_names = !left_names in
     let right_names = !right_names in
@@ -3186,33 +3184,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       >>| fst
       >>| List.rev
 
-    method attribute_names
-        ~cycle_detections
-        ~transitive
-        ~accessed_through_class
-        ~include_generated_attributes
-        ?(special_method = false)
-        class_name =
-      let collect sofar table =
-        let add ((sofar_list, sofar_set) as sofar) name =
-          if Set.mem sofar_set name then
-            sofar
-          else
-            name :: sofar_list, Set.add sofar_set name
-        in
-        UninstantiatedAttributeTable.names table |> List.fold ~f:add ~init:sofar
-      in
-      self#uninstantiated_attribute_tables
-        ~cycle_detections
-        ~transitive
-        ~accessed_through_class
-        ~include_generated_attributes
-        ~special_method
-        class_name
-      >>| Sequence.fold ~f:collect ~init:([], Identifier.Set.empty)
-      >>| fst
-      >>| List.rev
-
     method attribute_details
         ~cycle_detections
         ~transitive
@@ -5418,8 +5389,6 @@ module ReadOnly = struct
   let uninstantiated_attributes =
     add_all_caches_and_empty_cycle_detections (fun o -> o#uninstantiated_attributes)
 
-
-  let attribute_names = add_all_caches_and_empty_cycle_detections (fun o -> o#attribute_names)
 
   let attribute_details = add_all_caches_and_empty_cycle_detections (fun o -> o#attribute_details)
 

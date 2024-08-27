@@ -171,15 +171,6 @@ val check_invalid_type_arguments
   Type.t ->
   AttributeResolution.type_parameters_mismatch list * Type.t
 
-val attribute_names
-  :  t ->
-  ?transitive:bool ->
-  ?accessed_through_class:bool ->
-  ?include_generated_attributes:bool ->
-  ?instantiated:Type.t ->
-  Type.Primitive.t ->
-  string list option
-
 val location_of_global : t -> Reference.t -> Location.WithModule.t option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
