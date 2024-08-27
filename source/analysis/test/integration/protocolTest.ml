@@ -8,11 +8,12 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_protocol context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_check_protocol =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -28,9 +29,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class Beta: pass
       class Chi(Beta): pass
@@ -49,9 +51,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -70,9 +73,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class FooProtocol(typing.Protocol):
         def foo(self) -> int: ...
@@ -95,12 +99,13 @@ let test_check_protocol context =
         takesFooBarProtocol(FooClass())
         takesFooBarProtocol(FooBarClass())
     |}
-    [
-      "Incompatible parameter type [6]: In call `takesFooBarProtocol`, for 1st positional \
-       argument, expected `FooBarProtocol` but got `FooClass`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `takesFooBarProtocol`, for 1st positional \
+              argument, expected `FooBarProtocol` but got `FooClass`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class ParentFoo():
         def foo(self) -> int:
@@ -119,9 +124,10 @@ let test_check_protocol context =
       def fun() -> int:
         return takesFooBar(Child())
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -140,9 +146,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class FooProtocol(typing.Protocol):
         def foo(self) -> int: ...
@@ -155,11 +162,11 @@ let test_check_protocol context =
         y = takesFoo(x)
         return x.bar() + y
     |}
-    [];
-
-  (* Collection -> Sized is special cased for now *)
-  assert_type_errors
-    {|
+           [];
+      (* Collection -> Sized is special cased for now *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       def foo(
         a: typing.Sequence[int],
@@ -169,9 +176,10 @@ let test_check_protocol context =
         ) -> int:
         return len(a) + len(b) + len(c) + len(d)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T")
       def foo(d: typing.Collection[T]) -> T: ...
@@ -179,9 +187,10 @@ let test_check_protocol context =
         reveal_type(foo(x))
         return foo(x)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class Alpha:
         def __hash__(self) -> int:
@@ -194,9 +203,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         foo: int
@@ -211,9 +221,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         foo: int
@@ -222,12 +233,13 @@ let test_check_protocol context =
         pass
 
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class `A` to \
-       have type `int` but is never initialized.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class \
+              `A` to have type `int` but is never initialized.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         foo: int
@@ -239,21 +251,23 @@ let test_check_protocol context =
         foo = 100
 
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class `A` to \
-       have type `int` but is never initialized.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class \
+              `A` to have type `int` but is never initialized.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         foo: int
         def __init__(self) -> None:
           pass
       |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from builtins import A
       import typing
       class P(typing.Protocol):
@@ -270,12 +284,13 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `P` \
-       but got `Alpha`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `P` but got `Alpha`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P1(typing.Protocol):
         def foo(self) -> P2: ...
@@ -296,9 +311,10 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self, param: int) -> int: ...
@@ -314,12 +330,13 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `P` \
-       but got `Alpha`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `P` but got `Alpha`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self, __dunder: int) -> int: ...
@@ -340,9 +357,10 @@ let test_check_protocol context =
         foo(b)
 
     |}
-    [];
-  assert_default_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -358,17 +376,19 @@ let test_check_protocol context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         pass
       P()
     |}
-    ["Invalid class instantiation [45]: Cannot instantiate protocol `P`."];
-  assert_type_errors
-    {|
+           ["Invalid class instantiation [45]: Cannot instantiate protocol `P`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -384,12 +404,13 @@ let test_check_protocol context =
         # should be allowed
         foo(Alpha)
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `P` \
-       but got `Alpha`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `P` but got `Alpha`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     from enum import Enum
     from typing import Iterable, TypeVar
     T = TypeVar("T")
@@ -404,9 +425,10 @@ let test_check_protocol context =
       x = foo(AlphaEnum)
       reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `AlphaEnum`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `x` is `AlphaEnum`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     from typing import Protocol, TypeVar, Union
     class Alpha:
       x: int = 9
@@ -429,26 +451,26 @@ let test_check_protocol context =
       z = foo(u)
       reveal_type(z)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Revealed type [-1]: Revealed type for `z` is `Union[int, str]`.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `x` is `int`.";
+             "Revealed type [-1]: Revealed type for `y` is `str`.";
+             "Revealed type [-1]: Revealed type for `z` is `Union[int, str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         __foo: int
         def __bar(self) -> int: ...
     |}
-    [
-      "Private protocol property [52]: Protocol `P` has private property `__bar`.";
-      "Private protocol property [52]: Protocol `P` has private property `__foo`.";
-    ];
-
-  assert_type_errors
-    {|
+           [
+             "Private protocol property [52]: Protocol `P` has private property `__bar`.";
+             "Private protocol property [52]: Protocol `P` has private property `__foo`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Protocol, Type, TypeVar
 
       T = TypeVar("T")
@@ -463,10 +485,10 @@ let test_check_protocol context =
 
       x: P = I()
     |}
-    [];
-
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Protocol, Type, TypeVar
 
       class P(Protocol):
@@ -480,14 +502,16 @@ let test_check_protocol context =
       # this is technically unsound since P().cm.__func__ =/= I().cm.__func__
       x: P = I()
     |}
-    [];
-  ()
+           [];
+    ]
 
 
-let test_check_generic_protocols context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_check_generic_protocols =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
@@ -504,9 +528,10 @@ let test_check_generic_protocols context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
@@ -523,12 +548,13 @@ let test_check_generic_protocols context =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
-       `P[str]` but got `Alpha`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `P[str]` but got `Alpha`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
@@ -548,9 +574,10 @@ let test_check_generic_protocols context =
         return v
 
     |}
-    ["Revealed type [-1]: Revealed type for `v` is `int`."];
-  assert_type_errors
-    {|
+           ["Revealed type [-1]: Revealed type for `v` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
@@ -568,9 +595,10 @@ let test_check_generic_protocols context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       X = typing.TypeVar("X")
       Y = typing.TypeVar("Y")
@@ -595,24 +623,27 @@ let test_check_generic_protocols context =
         b = yx(f)
         reveal_type(b)
     |}
+           [
+             "Revealed type [-1]: Revealed type for `a` is `PXY[int, str]`.";
+             "Revealed type [-1]: Revealed type for `b` is `PYX[str, int]`.";
+           ];
+    ]
+
+
+let test_check_generic_implementors =
+  test_list
     [
-      "Revealed type [-1]: Revealed type for `a` is `PXY[int, str]`.";
-      "Revealed type [-1]: Revealed type for `b` is `PYX[str, int]`.";
-    ];
-  ()
-
-
-let test_check_generic_implementors context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       def foo(l: typing.List[int]) -> int:
          return len(l)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> typing.Union[int, str]: ...
@@ -632,9 +663,10 @@ let test_check_generic_implementors context =
         foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
@@ -655,9 +687,10 @@ let test_check_generic_implementors context =
       foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
@@ -678,12 +711,13 @@ let test_check_generic_implementors context =
       foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
-       `P[bool]` but got `Alpha[int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `P[bool]` but got `Alpha[int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
     import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
@@ -705,9 +739,10 @@ let test_check_generic_implementors context =
       return foo(a)
 
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
@@ -727,14 +762,16 @@ let test_check_generic_implementors context =
         foo(a)
 
     |}
-    [];
-  ()
+           [];
+    ]
 
 
-let test_callback_protocols context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+let test_callback_protocols =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def __call__(self, x: int, y:str) -> bool: ...
@@ -748,12 +785,14 @@ let test_callback_protocols context =
         takesP(exactMatch)
         takesP(doesNotMatch)
     |}
-    [
-      "Incompatible parameter type [6]: In call `takesP`, for 1st positional argument, expected \
-       `P` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `takesP`, for 1st positional argument, \
+              expected `P` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], \
+              str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       class NotAProtocol():
         def __call__(self, x: int, y:str) -> bool: ...
       def exactMatch(x: int, y: str) -> bool:
@@ -761,12 +800,13 @@ let test_callback_protocols context =
       def foo() -> NotAProtocol:
         return exactMatch
     |}
-    [
-      "Incompatible return type [7]: Expected `NotAProtocol` but got "
-      ^ "`typing.Callable(exactMatch)[[Named(x, int), Named(y, str)], bool]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible return type [7]: Expected `NotAProtocol` but got "
+             ^ "`typing.Callable(exactMatch)[[Named(x, int), Named(y, str)], bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T")
       class P(typing.Protocol[T]):
@@ -781,12 +821,14 @@ let test_callback_protocols context =
         takesPInt(exactMatch)
         takesPInt(doesNotMatch)
     |}
-    [
-      "Incompatible parameter type [6]: In call `takesPInt`, for 1st positional argument, expected \
-       `P[int]` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Incompatible parameter type [6]: In call `takesPInt`, for 1st positional argument, \
+              expected `P[int]` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, \
+              str)], str]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       T = typing.TypeVar("T")
       class P(typing.Protocol[T]):
@@ -807,15 +849,16 @@ let test_callback_protocols context =
         reveal_type(v)
         takesPGeneric(doesNotMatch)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `v` is `int`.";
-      "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Incompatible parameter type [6]: In call `takesPGeneric`, for 1st positional argument, \
-       expected `P[Variable[T2]]` but got `typing.Callable(doesNotMatch)[[Named(x, str), Named(y, \
-       int)], int]`.";
-    ];
-  assert_type_errors
-    {|
+           [
+             "Revealed type [-1]: Revealed type for `v` is `int`.";
+             "Revealed type [-1]: Revealed type for `v` is `str`.";
+             "Incompatible parameter type [6]: In call `takesPGeneric`, for 1st positional \
+              argument, expected `P[Variable[T2]]` but got \
+              `typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       import typing
       class P(typing.Protocol):
         def __call__(self, __dunder: int) -> bool: ...
@@ -826,9 +869,10 @@ let test_callback_protocols context =
       def foo() -> None:
         takesP(parameterMismatch)
     |}
-    [];
-  assert_type_errors
-    {|
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Protocol
 
       class ShouldMatch(Protocol):
@@ -843,18 +887,18 @@ let test_callback_protocols context =
       x: ShouldMatch = H
       y: ShouldNotMatch = H
     |}
-    [
-      "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is used as \
-       type `Type[H]`.";
-    ];
+           [
+             "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is \
+              used as type `Type[H]`.";
+           ];
+      (* We should be able to pass a named callable type to a callable protocol that is generic in
+         the callable type.
 
-  (* We should be able to pass a named callable type to a callable protocol that is generic in the
-     callable type.
-
-     This example is adapted from
-     https://github.com/pytest-dev/pytest/blob/5.4.x/src/_pytest/outcomes.py#L91-L158. *)
-  assert_type_errors
-    {|
+         This example is adapted from
+         https://github.com/pytest-dev/pytest/blob/5.4.x/src/_pytest/outcomes.py#L91-L158. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Any, TypeVar, Callable, Type, Protocol, Optional, NoReturn, cast
 
       class Exit(BaseException): pass
@@ -876,22 +920,24 @@ let test_callback_protocols context =
       reveal_type(my_exit)
       my_exit(1)
     |}
+           [
+             "Invalid type variable [34]: The type variable `Variable[_F (bound to \
+              typing.Callable[..., object])]` isn't present in the function's parameters.";
+             "Revealed type [-1]: Revealed type for `test.my_exit` is \
+              `_WithException[typing.Callable(my_exit)[[Named(msg, str), Named(returncode, \
+              Optional[int], default)], NoReturn], Type[Exit]]`.";
+             "Incompatible parameter type [6]: In call `my_exit`, for 1st positional argument, \
+              expected `str` but got `int`.";
+           ];
+    ]
+
+
+let test_hash_protocol =
+  test_list
     [
-      "Invalid type variable [34]: The type variable `Variable[_F (bound to typing.Callable[..., \
-       object])]` isn't present in the function's parameters.";
-      "Revealed type [-1]: Revealed type for `test.my_exit` is \
-       `_WithException[typing.Callable(my_exit)[[Named(msg, str), Named(returncode, Optional[int], \
-       default)], NoReturn], Type[Exit]]`.";
-      "Incompatible parameter type [6]: In call `my_exit`, for 1st positional argument, expected \
-       `str` but got `int`.";
-    ];
-  ()
-
-
-let test_hash_protocol context =
-  let assert_type_errors source errors = assert_type_errors source errors context in
-  assert_type_errors
-    {|
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       from typing import Hashable
 
       def foo(h: Hashable) -> int:
@@ -899,17 +945,17 @@ let test_hash_protocol context =
 
       foo(None)
     |}
-    [];
-  ()
+           [];
+    ]
 
 
 let () =
   "protocol"
   >::: [
-         "check_protocols" >:: test_check_protocol;
-         "check_generic_implementors" >:: test_check_generic_implementors;
-         "check_generic_protocols" >:: test_check_generic_protocols;
-         "callback_protocols" >:: test_callback_protocols;
-         "hash_protocol" >:: test_hash_protocol;
+         test_check_protocol;
+         test_check_generic_implementors;
+         test_check_generic_protocols;
+         test_callback_protocols;
+         test_hash_protocol;
        ]
   |> Test.run
