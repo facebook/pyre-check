@@ -294,8 +294,7 @@ module Qualify (Context : QualifyContext) = struct
 
 
   let qualify_local_identifier_ignore_preexisting
-      ~scope:({ aliases; locals; _ } as scope)
-      ~qualifier
+      ~scope:({ qualifier; aliases; locals; _ } as scope)
       name
     =
     if is_qualified name then
@@ -310,11 +309,11 @@ module Qualify (Context : QualifyContext) = struct
         renamed )
 
 
-  let qualify_local_identifier ~scope:({ locals; _ } as scope) ~qualifier name =
+  let qualify_local_identifier ~scope:({ locals; _ } as scope) name =
     if Set.mem locals name then
       scope, name
     else
-      qualify_local_identifier_ignore_preexisting ~scope ~qualifier name
+      qualify_local_identifier_ignore_preexisting ~scope name
 
 
   let prefix_identifier ~scope:({ aliases; locals; _ } as scope) ~prefix name =
@@ -348,9 +347,7 @@ module Qualify (Context : QualifyContext) = struct
     if is_in_function then
       match Reference.as_list name with
       | [simple_name] ->
-          let scope, alias =
-            qualify_local_identifier_ignore_preexisting ~scope ~qualifier simple_name
-          in
+          let scope, alias = qualify_local_identifier_ignore_preexisting ~scope simple_name in
           scope, Reference.create alias
       | _ -> scope, qualify_reference ~scope name
     else
@@ -374,13 +371,13 @@ module Qualify (Context : QualifyContext) = struct
     | _ -> Name.Identifier identifier
 
 
-  let rec qualify_target ~scope ~qualifier target =
+  let rec qualify_target ~scope target =
     let rec renamed_scope scope target =
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
       | { Node.value = Name (Name.Identifier name); _ } ->
-          let scope, _ = qualify_local_identifier ~scope ~qualifier name in
+          let scope, _ = qualify_local_identifier ~scope name in
           scope
       | _ -> scope
     in
@@ -920,7 +917,7 @@ module Qualify (Context : QualifyContext) = struct
                 | Name (Name.Identifier name) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
-                      let scope, _ = qualify_local_identifier ~scope ~qualifier name in
+                      let scope, _ = qualify_local_identifier ~scope name in
                       scope
                     in
                     scope, Expression.Name (qualify_identifier_name ~location ~scope name)
@@ -1139,7 +1136,7 @@ module Qualify (Context : QualifyContext) = struct
       | Expression expression ->
           scope, Expression (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
-          let renamed_scope, target = qualify_target ~scope ~qualifier target in
+          let renamed_scope, target = qualify_target ~scope target in
           let body_scope, body = qualify_statements ~scope:renamed_scope body in
           let orelse_scope, orelse = qualify_statements ~scope:renamed_scope orelse in
           ( join_scopes body_scope orelse_scope,
@@ -1195,7 +1192,7 @@ module Qualify (Context : QualifyContext) = struct
                 match name with
                 | None -> scope, name
                 | Some { Node.value = target; location } ->
-                    let scope, renamed = qualify_local_identifier ~scope ~qualifier target in
+                    let scope, renamed = qualify_local_identifier ~scope target in
                     scope, Some { Node.value = renamed; location }
               in
               let kind = kind >>| qualify_expression ~qualify_strings:DoNotQualify ~scope in
@@ -1219,7 +1216,7 @@ module Qualify (Context : QualifyContext) = struct
                 let renamed_scope, alias =
                   match alias with
                   | Some alias ->
-                      let scope, alias = qualify_target ~scope ~qualifier alias in
+                      let scope, alias = qualify_target ~scope alias in
                       scope, Some alias
                   | _ -> scope, alias
                 in
