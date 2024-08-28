@@ -268,10 +268,7 @@ module type QualifyContext = sig
 end
 
 module Qualify (Context : QualifyContext) = struct
-  type alias = {
-    name: Reference.t;
-    qualifier: Reference.t;
-  }
+  type alias = { name: Reference.t }
 
   type qualify_strings =
     | Qualify
@@ -307,7 +304,7 @@ module Qualify (Context : QualifyContext) = struct
       let renamed = get_qualified_local_identifier name ~qualifier in
       ( {
           scope with
-          aliases = Map.set aliases ~key:name ~data:{ name = Reference.create renamed; qualifier };
+          aliases = Map.set aliases ~key:name ~data:{ name = Reference.create renamed };
           locals = Set.add locals name;
         },
         renamed )
@@ -329,11 +326,7 @@ module Qualify (Context : QualifyContext) = struct
       Some
         ( {
             scope with
-            aliases =
-              Map.set
-                aliases
-                ~key:name
-                ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
+            aliases = Map.set aliases ~key:name ~data:{ name = Reference.create renamed };
             locals = Set.add locals name;
           },
           stars ^ renamed )
@@ -369,10 +362,7 @@ module Qualify (Context : QualifyContext) = struct
           {
             scope with
             aliases =
-              Map.set
-                aliases
-                ~key:function_name
-                ~data:{ name = Reference.combine qualifier name; qualifier };
+              Map.set aliases ~key:function_name ~data:{ name = Reference.combine qualifier name };
           }
       in
       scope, qualify_reference ~scope name
@@ -753,9 +743,9 @@ module Qualify (Context : QualifyContext) = struct
 
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name =
-      { name = Reference.combine qualifier (Reference.create name); qualifier }
+      { name = Reference.combine qualifier (Reference.create name) }
     in
-    let local_alias ~qualifier ~name = { name; qualifier } in
+    let local_alias ~name = { name } in
     let explore_scope ({ qualifier; aliases; locals; is_in_function; _ } as scope) { Node.value; _ }
       =
       match value with
@@ -795,16 +785,13 @@ module Qualify (Context : QualifyContext) = struct
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set
-                  aliases
-                  ~key:alias
-                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
+                Map.set aliases ~key:alias ~data:(local_alias ~name:(Reference.combine from name))
             | None ->
                 (* Add `name -> from.name`. *)
                 Map.set
                   aliases
                   ~key:(Reference.show name)
-                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
+                  ~data:(local_alias ~name:(Reference.combine from name))
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }
       | Import { Import.from = None; imports } ->
@@ -812,7 +799,7 @@ module Qualify (Context : QualifyContext) = struct
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
+                Map.set aliases ~key:alias ~data:(local_alias ~name)
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }
@@ -864,7 +851,7 @@ module Qualify (Context : QualifyContext) = struct
       ({ Node.value; _ } as statement)
     =
     let scope, value =
-      let local_alias ~qualifier ~name = { name; qualifier } in
+      let local_alias ~name = { name } in
       let qualify_assign ~target ~annotation ~value =
         let qualify_value ~qualify_potential_alias_strings ~scope value =
           match value with
@@ -920,7 +907,7 @@ module Qualify (Context : QualifyContext) = struct
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None -> local_alias ~qualifier ~name:(name_to_reference_exn qualified)
+                          | None -> local_alias ~name:(name_to_reference_exn qualified)
                         in
                         Map.update aliases name ~f:update
                       in

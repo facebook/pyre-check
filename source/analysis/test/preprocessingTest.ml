@@ -2035,10 +2035,7 @@ let test_qualify_ast =
   let scope =
     {
       Qualify.qualifier = Reference.create "qualifier";
-      aliases =
-        String.Map.singleton
-          "a"
-          { Qualify.name = Reference.create "b"; qualifier = Reference.empty };
+      aliases = String.Map.singleton "a" { Qualify.name = Reference.create "b" };
       locals = String.Set.empty;
       is_top_level = true;
       is_in_function = false;

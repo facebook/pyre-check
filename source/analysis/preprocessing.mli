@@ -113,10 +113,7 @@ module type QualifyContext = sig
 end
 
 module Qualify (_ : QualifyContext) : sig
-  type alias = {
-    name: Reference.t;
-    qualifier: Reference.t;
-  }
+  type alias = { name: Reference.t }
 
   type scope = {
     qualifier: Reference.t;
