@@ -801,11 +801,13 @@ module State (Context : Context) = struct
         { callable; is_inverted_operator = false; arguments = (); selected_return_annotation = () }
   end
 
-  let type_of_signature ~resolution signature =
+  let type_of_signature ~module_name ~resolution signature =
     let global_resolution = Resolution.global_resolution resolution in
+    let callable_name = FunctionDefinition.qualified_name_of_signature ~module_name signature in
     match
       GlobalResolution.resolve_define
         global_resolution
+        ~callable_name:(Some callable_name)
         ~scoped_type_variables:None
         ~implementation:(Some signature)
         ~overloads:[]
@@ -5798,7 +5800,7 @@ module State (Context : Context) = struct
         let resolution =
           match nesting_define with
           | Some _ ->
-              type_of_signature ~resolution signature
+              type_of_signature ~module_name:Context.qualifier ~resolution signature
               |> Type.Variable.mark_all_variables_as_bound
                    ~specific:(Resolution.all_type_variables_in_scope resolution)
               |> TypeInfo.Unit.create_mutable
@@ -6151,12 +6153,12 @@ module State (Context : Context) = struct
           Define.signature =
             {
               name;
+              parent = nesting_context;
               legacy_parent;
               parameters;
               return_annotation;
               decorators;
               async;
-              nesting_define;
               generator;
               _;
             } as signature;
@@ -6480,7 +6482,7 @@ module State (Context : Context) = struct
       let process_signature ({ Define.Signature.nesting_define; _ } as signature) =
         match nesting_define with
         | Some _ ->
-            type_of_signature ~resolution signature
+            type_of_signature ~module_name:Context.qualifier ~resolution signature
             |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
             |> TypeInfo.Unit.create_mutable
             |> fun annotation ->
@@ -6502,7 +6504,7 @@ module State (Context : Context) = struct
           | Define.Capture.Kind.DefineSignature signature ->
               ( resolution,
                 errors,
-                type_of_signature ~resolution signature
+                type_of_signature ~module_name:Context.qualifier ~resolution signature
                 |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables )
           | Define.Capture.Kind.Self parent ->
               resolution, errors, type_of_parent ~global_resolution parent
@@ -7506,31 +7508,31 @@ module State (Context : Context) = struct
           let class_name = Option.value_exn legacy_parent in
           [], type_variables_of_class class_name
       | false ->
-          let define_variables = type_variables_of_define signature in
-          let nesting_define_variables =
-            let rec walk_nesting_define sofar = function
-              | None -> sofar
-              | Some define_name -> (
-                  (* TODO (T57339384): This operation should only depend on the signature, not the
-                     body *)
-                  match
-                    GlobalResolution.get_define_body_in_project global_resolution define_name
-                  with
-                  | None -> sofar
-                  | Some
-                      {
-                        Node.value =
-                          {
-                            Define.signature = { Define.Signature.nesting_define; _ } as signature;
-                            _;
-                          };
-                        _;
-                      } ->
-                      let sofar = List.rev_append (type_variables_of_define signature) sofar in
-                      walk_nesting_define sofar nesting_define)
-            in
-            walk_nesting_define [] nesting_define
+          let module_name = Context.qualifier in
+          let relative_name =
+            ModuleContext.to_qualifier ~module_name:Reference.empty nesting_context
           in
+          (* Recursively walk all containing functions of a nested function to find type
+             variables. *)
+          let rec walk_nesting_defines
+              (sofar : Type.Variable.t list)
+              (current_relative_name : Reference.t option)
+            =
+            match current_relative_name with
+            | None -> sofar
+            | Some current_relative_name -> begin
+                match
+                  let fully_qualified_name = Reference.combine module_name current_relative_name in
+                  GlobalResolution.get_define_body_in_project global_resolution fully_qualified_name
+                with
+                | None -> sofar
+                | Some { Node.value = { Define.signature; _ }; _ } ->
+                    let sofar = List.rev_append (type_variables_of_define signature) sofar in
+                    walk_nesting_defines sofar @@ Reference.prefix current_relative_name
+              end
+          in
+          let define_variables = type_variables_of_define signature in
+          let nesting_define_variables = walk_nesting_defines [] (Some relative_name) in
           nesting_define_variables, define_variables
     in
     let resolution, errors =

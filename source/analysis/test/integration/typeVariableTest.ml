@@ -1813,14 +1813,11 @@ let test_callable_parameter_variadics =
             |}
            [
              "Revealed type [-1]: Revealed type for `foo` is \
-              `typing.Callable($local_test?outer$foo)[typing.Concatenate[int, test.TParams], \
-              None]`.";
+              `typing.Callable(outer.foo)[typing.Concatenate[int, test.TParams], None]`.";
              "Revealed type [-1]: Revealed type for `bar` is \
-              `typing.Callable($local_test?outer$bar)[typing.Concatenate[int, test.TParams], \
-              None]`.";
+              `typing.Callable(outer.bar)[typing.Concatenate[int, test.TParams], None]`.";
              "Revealed type [-1]: Revealed type for `baz` is \
-              `typing.Callable($local_test?outer$baz)[typing.Concatenate[int, test.TParams], \
-              None]`.";
+              `typing.Callable(outer.baz)[typing.Concatenate[int, test.TParams], None]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1849,7 +1846,7 @@ let test_callable_parameter_variadics =
                   foo(x=1, *args, **kwargs) # Rejected
                 return bar
             |}
-           ["Unexpected keyword [28]: Unexpected keyword argument `x` to call `foo`."];
+           ["Unexpected keyword [28]: Unexpected keyword argument `x` to call `outer.foo`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1960,7 +1957,7 @@ let test_user_defined_parameter_specification_classes =
             |}
            [
              "Revealed type [-1]: Revealed type for `inner` is \
-              `typing.Callable($local_test?client$inner)[typing.Concatenate[int, test.TParams], \
+              `typing.Callable(client.inner)[typing.Concatenate[int, test.TParams], \
               Variable[TReturn]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__

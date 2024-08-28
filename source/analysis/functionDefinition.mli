@@ -30,6 +30,10 @@ type t = {
 }
 [@@deriving sexp, equal, compare]
 
+val qualified_name_of_signature : module_name:Reference.t -> Define.Signature.t -> Reference.t
+
+val qualified_name_of_define : module_name:Reference.t -> Define.t -> Reference.t
+
 val all_bodies : t -> Define.t Node.t list
 
 val collect_defines : Source.t -> (Reference.t * t) list

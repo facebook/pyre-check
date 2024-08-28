@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-$local_partial?NestedDefineDecorator?__get__$wrapper (fun) -> [dict.__setitem__ (method) partial.NestedDefineDecorator.__call__ (method)]
+partial.NestedDefineDecorator.__get__.wrapper (fun) -> [dict.__setitem__ (method) partial.NestedDefineDecorator.__call__ (method)]
 partial.dunder_call_nested_define_constructor (fun) -> []
 partial.partial_application_with_named_a (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
 partial.partial_application_with_named_b (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]

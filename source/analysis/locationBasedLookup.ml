@@ -258,9 +258,8 @@ module ExpressionTypes = struct
   let create_of_module type_environment qualifier =
     let coverage_data_lookup = Location.Table.create () in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-    let walk_define
-        ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
-      =
+    let walk_define ({ Node.value = define; _ } as define_node) =
+      let name = FunctionDefinition.qualified_name_of_define ~module_name:qualifier define in
       let coverage_data_lookup_map =
         TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
         |> function

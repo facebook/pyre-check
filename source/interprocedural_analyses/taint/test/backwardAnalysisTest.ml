@@ -27,7 +27,10 @@ let assert_taint ~context source expected =
   let initial_models = TestHelper.get_initial_models ~context in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let analyze_and_store_in_order models define =
-    let call_target = Target.create (Ast.Node.value define) in
+    let define_name =
+      FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Ast.Node.value define)
+    in
+    let call_target = Target.create define_name (Ast.Node.value define) in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       CallGraph.call_graph_of_define

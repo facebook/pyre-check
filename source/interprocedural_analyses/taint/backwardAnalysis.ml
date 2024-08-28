@@ -39,6 +39,8 @@ module PyrePysaApi = Analysis.PyrePysaApi
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
+  val define_name : Reference.t
+
   val definition : Statement.Define.t Node.t
 
   val callable : Interprocedural.Target.t
@@ -157,20 +159,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let is_constructor =
-    let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
-      FunctionContext.definition
-    in
-    match Reference.last name with
+    match Reference.last FunctionContext.define_name with
     | "__init__" -> true
     | _ -> false
 
 
-  let is_setitem =
-    let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
-      FunctionContext.definition
-    in
-    String.equal (Reference.last name) "__setitem__"
-
+  let is_setitem = String.equal (Reference.last FunctionContext.define_name) "__setitem__"
 
   let is_instance_or_class_method =
     let { Node.value = { Statement.Define.signature; _ }; _ } = FunctionContext.definition in
@@ -2586,6 +2580,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let pyre_in_context =
           PyrePysaApi.InContext.create_at_statement_key
             pyre_api
+            ~define_name:FunctionContext.define_name
             ~define:(Ast.Node.value FunctionContext.definition)
             ~statement_key
         in
@@ -2885,8 +2880,13 @@ let run
      function, the user-defined models of the function may no longer be applicable to the resultant
      function of the application (e.g., T132302522). *)
   let define = PyrePysaApi.ReadOnly.decorated_define pyre_api define in
+  let define_name =
+    Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Node.value define)
+  in
   let module FunctionContext = struct
     let qualifier = qualifier
+
+    let define_name = define_name
 
     let definition = define
 
@@ -2915,6 +2915,7 @@ let run
     let caller_class_interval =
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
         class_interval_graph
+        define_name
         (Node.value definition)
 
 

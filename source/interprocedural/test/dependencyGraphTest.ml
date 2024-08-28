@@ -30,14 +30,15 @@ let setup ?(other_sources = []) ~context ~handle source =
 
 
 let create_call_graph ?(other_sources = []) ~context source_text =
+  let module_name, handle = !&"test", "test.py" in
   let source, pyre_api, environment, configuration =
-    setup ~other_sources ~context ~handle:"test.py" source_text
+    setup ~other_sources ~context ~handle source_text
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph in
   let () =
-    let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in
+    let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
     if not (List.is_empty errors) then
       Format.asprintf
         "Type errors in %s\n%a"
@@ -329,9 +330,9 @@ let test_construction context =
     |}
     ~expected:
       [
-        `Function "$local_test?foo$bar", [`Method "str.lower"; `Method "str.format"];
         `Function "test.$toplevel", [];
-        `Function "test.foo", [`Function "$local_test?foo$bar"];
+        `Function "test.foo", [`Function "test.foo.bar"];
+        `Function "test.foo.bar", [`Method "str.lower"; `Method "str.format"];
       ];
   assert_call_graph
     {|
@@ -396,6 +397,7 @@ let test_construction_reverse context =
 
 let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
+    let module_name = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
     let source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
       let { ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
@@ -404,7 +406,7 @@ let test_type_collection context =
       let source =
         SourceCodeApi.source_of_qualifier
           (TypeEnvironment.ReadOnly.get_untracked_source_code_api environment)
-          (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
+          module_name
         |> fun option -> Option.value_exn option
       in
       source, environment
@@ -413,9 +415,10 @@ let test_type_collection context =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
-    let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
+    let ({ Define.body = statements; _ } as define) = List.nth_exn defines 2 in
+    let define_name = FunctionDefinition.qualified_name_of_define ~module_name define in
     let lookup =
-      TypeEnvironment.ReadOnly.get_local_annotations environment name
+      TypeEnvironment.ReadOnly.get_local_annotations environment define_name
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =

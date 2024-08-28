@@ -233,8 +233,8 @@ let test_reveal_type =
                   return x
             |}
            [
-             "Revealed type [-1]: Revealed type for `bar` is \
-              `typing.Callable($local_test?foo$bar)[[Named(x, int)], int]`.";
+             "Revealed type [-1]: Revealed type for `bar` is `typing.Callable(foo.bar)[[Named(x, \
+              int)], int]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

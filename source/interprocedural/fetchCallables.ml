@@ -91,6 +91,8 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
   let merge_callables callables_left callables_right =
     Target.Map.union
       (fun target define_left define_right ->
+        (* TODO(T199841372): Pysa code should not assume that the raw AST has fully qualified
+           names. *)
         Format.asprintf
           "Unexpected callable `%a` with multiple define names: `%a` and `%a`"
           Target.pp_internal

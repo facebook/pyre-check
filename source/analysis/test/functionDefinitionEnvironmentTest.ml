@@ -132,8 +132,8 @@ let test_updates =
                  [
                    !&"test.$toplevel";
                    !&"test.outer";
-                   !&"$local_test?outer$nested";
-                   !&"$local_test?outer?nested$nested2";
+                   !&"test.outer.nested";
+                   !&"test.outer.nested.nested2";
                  ] );
              ]
            ~expected_triggers:[dependency]
@@ -145,7 +145,7 @@ let test_updates =
                    !&"test.$toplevel";
                    !&"test.OuterClass.$class_toplevel";
                    !&"test.OuterClass.method";
-                   !&"$local_test?OuterClass?method$nested";
+                   !&"test.OuterClass.method.nested";
                    !&"test.OuterClass.InnerClass.$class_toplevel";
                  ] );
              ];

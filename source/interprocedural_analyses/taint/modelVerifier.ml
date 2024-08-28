@@ -67,6 +67,8 @@ let class_summaries ~pyre_api reference =
 (* Find a method definition matching the given predicate. *)
 let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
   let open Statement in
+  (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is fully
+     qualified. The `Reference.equal` here is relying on this. *)
   let get_matching_define = function
     | {
         Node.value =
@@ -146,9 +148,10 @@ let resolve_global ~pyre_api name =
         | Some ({ signature = { nesting_define = Some _; _ }; _ } as define) ->
             Some
               (PyrePysaApi.ReadOnly.resolve_define
-                 ~scoped_type_variables:None
+                 ~callable_name:(Some name)
                  ~implementation:(Some define.signature)
                  ~overloads:[]
+                 ~scoped_type_variables:None
                  pyre_api)
         | _ -> None
       else

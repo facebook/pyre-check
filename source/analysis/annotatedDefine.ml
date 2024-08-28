@@ -59,6 +59,7 @@ let decorate
       match
         GlobalResolution.resolve_define
           resolution
+          ~callable_name:None
           ~implementation:(Some signature)
           ~overloads:[]
           ~scoped_type_variables:None

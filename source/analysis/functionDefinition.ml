@@ -33,6 +33,24 @@ type t = {
 }
 [@@deriving sexp, equal, compare]
 
+(* Get a non-mangled, qualified name of a define under the assumption that the ModuleContext.t has
+   correct names but the actual name of the define might already qualified and mangled.
+
+   This function should return the same result whether run before or after qualification. *)
+let qualified_name_of_signature
+    ~module_name
+    { Define.Signature.name = mangled_name; parent = nesting_context; _ }
+  =
+  let unqualified_name = mangled_name |> Reference.sanitize_qualified |> Reference.last in
+  Reference.create
+    ~prefix:(ModuleContext.to_qualifier ~module_name nesting_context)
+    unqualified_name
+
+
+let qualified_name_of_define ~module_name { Define.signature; _ } =
+  qualified_name_of_signature ~module_name signature
+
+
 let all_bodies { body; siblings; _ } =
   let sibling_bodies = List.map siblings ~f:(fun { Sibling.body; _ } -> body) in
   match body with
@@ -159,7 +177,7 @@ let collect_defines ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as 
   let all_defines = collect_typecheck_units source in
   let table = Reference.Table.create () in
   let process_define ({ Node.value = define; _ } as define_node) =
-    let define_name = Define.name define in
+    let qualified_name = qualified_name_of_define ~module_name:qualifier define in
     let sibling =
       let open Sibling in
       if Define.is_overloaded_function define then
@@ -182,13 +200,13 @@ let collect_defines ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as 
                 Log.debug
                   "Dropping the body of function %a as it has duplicated name with other functions"
                   Reference.pp
-                  define_name;
+                  qualified_name;
                 (* Last definition wins -- collector returns functions in reverse order *)
                 body, siblings)
               else
                 Some define_node, siblings)
     in
-    Hashtbl.update table define_name ~f:update
+    Hashtbl.update table qualified_name ~f:update
   in
   let collect_definition ~key ~data:(body, overloads) collected =
     let siblings = List.sort overloads ~compare:Sibling.compare in

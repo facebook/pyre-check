@@ -130,6 +130,21 @@ let make_matched_argument ?index_into_starred_tuple argument =
   MatchedArgument { argument; index_into_starred_tuple }
 
 
+(* Given a publically-visible define (one not nested in another define - this includes module-level
+   functions, methods, and methods of nested classes), get its qualified name.
+
+   TODO(T199841372) This depends on qualification; we cannot use the new
+   `FunctionDefinition.qualified_name_of_signature` because Pyre currently looks up public globals
+   in a way that isn't aware of modules; we need to re-wire lookups on a module-aware key before we
+   can stop relying on qualification here. *)
+let callable_name_of_public ~implementation ~overloads =
+  match implementation, overloads with
+  | Some { Define.Signature.name; _ }, _
+  | _, { Define.Signature.name; _ } :: _ ->
+      Some name
+  | None, [] -> None
+
+
 type ranks = {
   arity: int;
   annotation: int;
@@ -3774,8 +3789,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 in
                 List.fold ~init:(None, []) ~f:to_signature overloads
               in
+              let callable_name = callable_name_of_public ~implementation ~overloads in
               let { decorated; undecorated_signature } =
                 self#resolve_define
+                  ~callable_name
                   ~implementation
                   ~overloads
                   ~cycle_detections
@@ -4086,9 +4103,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 |> fun (overloads, implementations) ->
                 self#resolve_define
                   ~cycle_detections
-                  ~scoped_type_variables
+                  ~callable_name:(Some reference)
                   ~implementation:(List.last implementations)
                   ~overloads
+                  ~scoped_type_variables
               in
               Result.ok decorated |> Option.value ~default:Type.Any
           | _ -> resolve_name expression)
@@ -4151,7 +4169,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
-    method resolve_define ~cycle_detections ~implementation ~overloads ~scoped_type_variables =
+    method resolve_define
+        ~cycle_detections
+        ~callable_name
+        ~implementation
+        ~overloads
+        ~scoped_type_variables =
       let Queries.
             {
               resolve_exports;
@@ -4473,13 +4496,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ~generic_parameters_as_variables
       in
       let kind =
-        match implementation, overloads with
-        | Some { Define.Signature.name; _ }, _
-        | _, { Define.Signature.name; _ } :: _ ->
-            Type.Callable.Named name
-        | None, [] ->
-            (* Should never happen, but not worth crashing over *)
-            Type.Callable.Anonymous
+        match callable_name with
+        | Some name -> Callable.Named name
+        | None -> Callable.Anonymous
       in
       let undefined_overload =
         { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
@@ -4747,8 +4766,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               List.map signatures ~f:(fun { signature; _ } -> signature)
               |> List.partition_tf ~f:Define.Signature.is_overloaded_function
               |> fun (overloads, implementations) ->
+              let implementation = List.last implementations in
+              let callable_name = callable_name_of_public ~implementation ~overloads in
               self#resolve_define
-                ~implementation:(List.last implementations)
+                ~callable_name
+                ~implementation
                 ~scoped_type_variables:None
                 ~overloads
                 ~cycle_detections

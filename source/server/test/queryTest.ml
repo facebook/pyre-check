@@ -197,9 +197,10 @@ let assert_queries_with_local_root
       assert_equal
         ~ctxt:context
         ~cmp:String.equal
-        ~printer:(fun x -> Yojson.Safe.pretty_to_string (Yojson.Safe.from_string x))
-        expected_response
-        actual_response;
+        ~pp_diff:(Test.diff ~print:String.pp)
+        ~printer:Fn.id
+        (Yojson.Safe.pretty_to_string @@ Yojson.Safe.from_string expected_response)
+        (Yojson.Safe.pretty_to_string @@ Yojson.Safe.from_string actual_response);
       Lwt.return_unit
     in
     Lwt_list.iter_s handle_one_query queries_and_responses
@@ -2024,7 +2025,13 @@ let test_handle_query_with_build_system context =
       |> Response.to_yojson
       |> Yojson.Safe.to_string
     in
-    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    assert_equal
+      ~ctxt:context
+      ~cmp:String.equal
+      ~pp_diff:(Test.diff ~print:String.pp)
+      ~printer:Fn.id
+      expected_response
+      actual_response;
     Client.send_request client (Request.Query "modules_of_path('original.py')")
     >>= fun actual_response ->
     let expected_response =
@@ -2032,7 +2039,13 @@ let test_handle_query_with_build_system context =
       |> Response.to_yojson
       |> Yojson.Safe.to_string
     in
-    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    assert_equal
+      ~ctxt:context
+      ~pp_diff:(Test.diff ~print:String.pp)
+      ~cmp:String.equal
+      ~printer:Fn.id
+      expected_response
+      actual_response;
     Lwt.return_unit
   in
   ScratchProject.setup
@@ -2896,7 +2909,7 @@ let test_dump_call_graph context =
                     }
                   ],
                   "kind": "function",
-                  "target": "$local_bar?bar2$inner"
+                  "target": "bar.bar2.inner"
                 }
               ],
               "bar.bar": []
@@ -3049,9 +3062,10 @@ let test_process_request context =
     in
     assert_equal
       ~ctxt:context
-      ~printer:(fun x -> Yojson.Safe.to_string (Query.Response.to_yojson x))
-      expected
-      result
+      ~pp_diff:(Test.diff ~print:String.pp)
+      ~printer:Fn.id
+      (Yojson.Safe.to_string (Query.Response.to_yojson expected))
+      (Yojson.Safe.to_string (Query.Response.to_yojson result))
   in
 
   assert_process_request

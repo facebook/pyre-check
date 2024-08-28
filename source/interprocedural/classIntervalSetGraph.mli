@@ -30,7 +30,7 @@ module SharedMemory : sig
 
   val of_type : t -> Type.t option -> ClassIntervalSet.t
 
-  val of_definition : t -> Ast.Statement.Define.t -> ClassIntervalSet.t
+  val of_definition : t -> Ast.Reference.t -> Ast.Statement.Define.t -> ClassIntervalSet.t
 
   val cleanup : t -> Heap.t -> unit
 end

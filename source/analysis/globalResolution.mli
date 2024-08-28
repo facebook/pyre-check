@@ -143,6 +143,7 @@ val resolve_mutable_literals
 
 val resolve_define
   :  t ->
+  callable_name:Reference.t option ->
   implementation:Define.Signature.t option ->
   overloads:Define.Signature.t list ->
   scoped_type_variables:Type.Variable.t Identifier.Map.t option ->

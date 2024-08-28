@@ -11,17 +11,12 @@ open Analysis
 open Test
 
 let run_check_module ~environment source =
+  let { Ast.Source.module_path = { Ast.ModulePath.qualifier; _ }; _ } = source in
   let type_environment = TypeEnvironment.read_only environment in
   source
   |> Preprocessing.defines ~include_toplevels:false ~include_nested:true
-  |> List.map
-       ~f:(fun
-            {
-              Ast.Node.value =
-                { Ast.Statement.Define.signature = { Ast.Statement.Define.Signature.name; _ }; _ };
-              _;
-            }
-          -> name)
+  |> List.map ~f:(fun { Ast.Node.value = define; _ } ->
+         Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier define)
   |> List.map ~f:(GlobalLeakCheck.check_qualifier ~type_environment)
   |> List.map ~f:Stdlib.Option.get
   |> List.concat

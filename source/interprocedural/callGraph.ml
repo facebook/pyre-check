@@ -2310,11 +2310,11 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
 module DefineCallGraphFixpoint (Context : sig
   val pyre_api : PyrePysaApi.ReadOnly.t
 
+  val define_name : Reference.t
+
   val define : Ast.Statement.Define.t
 
   val qualifier : Reference.t
-
-  val name : Reference.t
 
   val debug : bool
 
@@ -2485,7 +2485,7 @@ struct
 
     let global_targets =
       resolve_attribute_access_global_targets
-        ~define:Context.name
+        ~define:Context.define_name
         ~pyre_in_context
         ~base_type_info
         ~base
@@ -2592,7 +2592,11 @@ struct
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~define:Context.name ~pyre_in_context ~call_indexer ~identifier
+            resolve_identifier
+              ~define:Context.define_name
+              ~pyre_in_context
+              ~call_indexer
+              ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
@@ -2908,6 +2912,7 @@ struct
       let pyre_in_context =
         PyrePysaApi.InContext.create_at_statement_key
           Context.pyre_api
+          ~define_name:Context.define_name
           ~define:Context.define
           ~statement_key
       in
@@ -2924,18 +2929,19 @@ let call_graph_of_define
     ~override_graph
     ~attribute_targets
     ~qualifier
-    ~define:({ Define.signature = { Define.Signature.name; _ }; _ } as define)
+    ~define
   =
+  let name = Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier define in
   let timer = Timer.start () in
   let callees_at_location = Location.Table.create () in
   let module DefineFixpoint = DefineCallGraphFixpoint (struct
     let pyre_api = pyre_api
 
+    let define_name = name
+
     let define = define
 
     let qualifier = qualifier
-
-    let name = name
 
     let debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
 

@@ -2909,6 +2909,7 @@ module ParsedStatement : sig
     return_annotation:Ast.Expression.t option ->
     decorators:Ast.Expression.t list ->
     location:Location.t ->
+    define_name:Reference.t ->
     Define.t ->
     t
 
@@ -2987,26 +2988,6 @@ end = struct
     =
     let open Option.Monad_infix in
     let name = mangle_top_level_name name in
-    (* Convert delocalized signatures to localized form. Useful for nested functions. *)
-    let name =
-      if Option.is_some (PyrePysaApi.ReadOnly.global pyre_api name) then
-        name
-      else
-        name
-        |> Reference.all_parents
-        |> List.filter_map ~f:(PyrePysaApi.ReadOnly.get_define_body pyre_api)
-        |> List.map ~f:Node.value
-        |> List.concat_map ~f:(fun define -> define.Define.body)
-        |> List.find_map ~f:(fun statement ->
-               match statement with
-               | { Node.value = Statement.Define define; _ }
-                 when Reference.equal name (Reference.delocalize (Define.name define)) ->
-                   Some define
-               | _ -> None)
-        >>| (fun define -> define.Define.signature.name)
-        (* TODO(T182905478): Error when no nested function found *)
-        |> Option.value ~default:name
-    in
     let class_candidate =
       Reference.prefix name
       >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
@@ -3046,9 +3027,15 @@ end = struct
       }
 
 
-  let create_parsed_signature_for_define ~parameters ~return_annotation ~decorators ~location define
+  let create_parsed_signature_for_define
+      ~parameters
+      ~return_annotation
+      ~decorators
+      ~location
+      ~define_name
+      define
     =
-    let call_target = Target.create define in
+    let call_target = Target.create define_name define in
     let taint_decorators, _ = partition_taint_decorators decorators in
     ParsedSignature
       {
@@ -3864,7 +3851,12 @@ let rec parse_statement
                  match value with
                  | Statement.Define
                      ({
-                        Define.signature = { Define.Signature.parameters = method_parameters; _ };
+                        Define.signature =
+                          {
+                            Define.Signature.name = raw_method_name;
+                            Define.Signature.parameters = method_parameters;
+                            _;
+                          };
                         _;
                       } as method_define) ->
                      let signature ~extra_decorators ~source_annotation ~sink_annotation =
@@ -3890,6 +3882,7 @@ let rec parse_statement
                          ~return_annotation:source_annotation
                          ~decorators:extra_decorators
                          ~location
+                         ~define_name:raw_method_name
                          method_define
                      in
 

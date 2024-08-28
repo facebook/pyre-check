@@ -2459,7 +2459,7 @@ let test_closure_models context =
         def inner():
           pass
     |}
-    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
+    ~expect:[outcome ~kind:`Function "test.outer.inner"]
     ();
   assert_invalid_model
     ~context
@@ -2488,7 +2488,7 @@ let test_closure_models context =
         def inner():
           pass
     |}
-    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
+    ~expect:[outcome ~kind:`Function "test.outer.inner"]
     ();
   assert_invalid_model
     ~context
@@ -2550,7 +2550,7 @@ let test_closure_models context =
         def inner():
           pass
     |}
-    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
+    ~expect:[outcome ~kind:`Function "test.outer.inner"]
     ();
   ()
 

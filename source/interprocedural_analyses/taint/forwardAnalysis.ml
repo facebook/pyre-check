@@ -46,6 +46,8 @@ module PyrePysaApi = Analysis.PyrePysaApi
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
+  val define_name : Reference.t
+
   val definition : Statement.Define.t Node.t
 
   val callable : Interprocedural.Target.t
@@ -222,6 +224,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     Issue.Candidates.generate_issues
       candidates
       ~taint_configuration:FunctionContext.taint_configuration
+      ~define_name:FunctionContext.define_name
       ~define:FunctionContext.definition
 
 
@@ -720,7 +723,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | AccessPath.Root.CapturedVariable { name = variable } ->
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
             let define_reference =
-              Reference.delocalize FunctionContext.definition.value.signature.name
+              Analysis.FunctionDefinition.qualified_name_of_define
+                ~module_name:FunctionContext.qualifier
+                FunctionContext.definition.value
             in
             let is_prefix = Reference.is_prefix ~prefix:define_reference nonlocal_reference in
             (* Treat any function call, even those that wrap a closure write, as a closure write *)
@@ -3012,6 +3017,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let pyre_in_context =
           PyrePysaApi.InContext.create_at_statement_key
             pyre_api
+            ~define_name:FunctionContext.define_name
             ~define:(Ast.Node.value FunctionContext.definition)
             ~statement_key
         in
@@ -3137,8 +3143,13 @@ let run
     =
     define
   in
+  let define_name =
+    Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Node.value define)
+  in
   let module FunctionContext = struct
     let qualifier = qualifier
+
+    let define_name = define_name
 
     let definition = define
 
@@ -3167,6 +3178,7 @@ let run
     let caller_class_interval =
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
         class_interval_graph
+        define_name
         (Node.value definition)
 
 

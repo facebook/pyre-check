@@ -231,7 +231,7 @@ let test_reveal_locals =
     |}
            [
              {|Revealed locals [-2]: Revealed local types are:
-    bar: `typing.Callable($local_test?A?foo$bar)[[], None]`
+    bar: `typing.Callable(A.foo.bar)[[], None]`
     self: `A`|};
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -247,7 +247,7 @@ let test_reveal_locals =
     |}
            [
              {|Revealed locals [-2]: Revealed local types are:
-    bar: `typing.Callable($local_test?A?foo$bar)[[], None]`
+    bar: `typing.Callable(A.foo.bar)[[], None]`
     self: `A[Variable[T]]`|};
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -272,8 +272,8 @@ let test_reveal_locals =
     |}
            [
              {|Revealed locals [-2]: Revealed local types are:
-    bar: `typing.Callable($local_test?foo$bar)[[Named(x, int)], int]`
-    baz: `typing.Callable($local_test?foo$baz)[[], None]`|};
+    bar: `typing.Callable(foo.bar)[[Named(x, int)], int]`
+    baz: `typing.Callable(foo.baz)[[], None]`|};
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -286,7 +286,7 @@ let test_reveal_locals =
     |}
            [
              {|Revealed locals [-2]: Revealed local types are:
-    f: `typing.Callable($local_test?foo$f)[[], None]`
+    f: `typing.Callable(foo.f)[[], None]`
     x: `str`
     y: `int`
     args: `typing.Tuple[str, ...]`

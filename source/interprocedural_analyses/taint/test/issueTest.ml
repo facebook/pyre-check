@@ -43,6 +43,7 @@ let test_no_errors _ =
       Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
+    let define_name = Ast.Reference.create "$toplevel" in
     let candidates = Candidates.create () in
     let () =
       Candidates.check_flow
@@ -54,7 +55,7 @@ let test_no_errors _ =
     in
     let taint_configuration = TaintConfiguration.Heap.default in
     let errors =
-      Candidates.generate_issues candidates ~taint_configuration ~define
+      Candidates.generate_issues candidates ~taint_configuration ~define_name ~define
       |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
@@ -101,6 +102,7 @@ let test_errors _ =
       Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
+    let define_name = Ast.Reference.create "$toplevel" in
     let candidates = Candidates.create () in
     let () =
       Candidates.check_flow
@@ -112,7 +114,7 @@ let test_errors _ =
     in
     let taint_configuration = TaintConfiguration.Heap.default in
     let errors =
-      Candidates.generate_issues candidates ~taint_configuration ~define
+      Candidates.generate_issues candidates ~define_name ~taint_configuration ~define
       |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
@@ -135,6 +137,7 @@ let test_canonical_location _ =
       Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
       |> Node.create_with_default_location
     in
+    let define_name = Ast.Reference.create "$toplevel" in
     let locations =
       List.fold
         ~init:Issue.LocationSet.empty
@@ -147,7 +150,7 @@ let test_canonical_location _ =
         handle =
           {
             code = 1000;
-            callable = Interprocedural.Target.create (Node.value define);
+            callable = Interprocedural.Target.create define_name (Node.value define);
             sink = IssueHandle.Sink.Return;
           };
         locations;

@@ -1860,9 +1860,8 @@ let test_named_callable_against_decorator_factory =
             |}
            [
              "Incompatible return type [7]: Expected `MyDecorator` but got \
-              `typing.Callable($local_test?foo$decorator)[[Named(f, \
-              typing.Callable[typing.Concatenate[int, test.P], str])], \
-              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
+              `typing.Callable(foo.decorator)[[Named(f, typing.Callable[typing.Concatenate[int, \
+              test.P], str])], typing.Callable[typing.Concatenate[int, test.P], str]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1888,9 +1887,8 @@ let test_named_callable_against_decorator_factory =
             |}
            [
              "Incompatible return type [7]: Expected `MyDecorator` but got \
-              `typing.Callable($local_test?foo$decorator)[[Named(f, \
-              typing.Callable[typing.Concatenate[int, test.P], str])], \
-              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
+              `typing.Callable(foo.decorator)[[Named(f, typing.Callable[typing.Concatenate[int, \
+              test.P], str])], typing.Callable[typing.Concatenate[int, test.P], str]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1916,9 +1914,8 @@ let test_named_callable_against_decorator_factory =
             |}
            [
              "Incompatible return type [7]: Expected `MyDecorator` but got \
-              `typing.Callable($local_test?foo$decorator)[[Named(f, \
-              typing.Callable[typing.Concatenate[int, test.P], str])], \
-              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
+              `typing.Callable(foo.decorator)[[Named(f, typing.Callable[typing.Concatenate[int, \
+              test.P], str])], typing.Callable[typing.Concatenate[int, test.P], str]]`.";
            ];
     ]
 

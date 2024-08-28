@@ -44,10 +44,14 @@ let assert_call_graph_of_define
       ~f:(fun call_graph_of_define (location, callees) ->
         DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
   in
+  let test_qualifier = Reference.create "test" in
   let define, test_source, pyre_api, configuration =
     let find_define = function
       | { Node.value = define; _ }
-        when String.equal (Statement.Define.name define |> Reference.show) define_name ->
+        when String.equal
+               (FunctionDefinition.qualified_name_of_define ~module_name:test_qualifier define
+               |> Reference.show)
+               define_name ->
           Some define
       | _ -> None
     in
@@ -59,7 +63,7 @@ let assert_call_graph_of_define
       List.find_map_exn
         sources
         ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
-          Option.some_if (String.equal (Reference.show qualifier) "test") source)
+          Option.some_if (Reference.equal qualifier test_qualifier) source)
     in
     ( List.find_map_exn
         (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
@@ -2118,7 +2122,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create
-                               (Target.Function { name = "$local_test?outer$inner"; kind = Normal });
+                               (Target.Function { name = "test.outer.inner"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2144,8 +2148,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create
-                               (Target.Function
-                                  { name = "$local_test?Foo?outer$inner"; kind = Normal });
+                               (Target.Function { name = "test.Foo.outer.inner"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -4168,7 +4171,7 @@ let test_call_graph_of_define =
 
          return bar
       |}
-           ~define_name:"$local_test?foo$bar"
+           ~define_name:"test.foo.bar"
            ~expected:
              [
                ( "7:11-7:17",
@@ -4200,7 +4203,7 @@ let test_call_graph_of_define =
          else:
            return None
       |}
-           ~define_name:"$local_test?foo$bar"
+           ~define_name:"test.foo.bar"
            ~expected:
              [
                ( "8:13-8:19",
@@ -5406,7 +5409,7 @@ let test_call_graph_of_define =
           nonlocal x
           x = "str"
       |}
-           ~define_name:"$local_test?outer$inner"
+           ~define_name:"test.outer.inner"
            ~expected:
              [
                ( "6:4-6:5",
@@ -5428,7 +5431,7 @@ let test_call_graph_of_define =
         def inner():
           y = x
       |}
-           ~define_name:"$local_test?outer$inner"
+           ~define_name:"test.outer.inner"
            ~expected:
              [
                ( "5:8-5:9",

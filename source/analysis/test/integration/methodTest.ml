@@ -3769,9 +3769,9 @@ let test_nested_function_shows_function_name_in_errors =
                 non_async_inner("hello")
             |}
            [
-             "Incompatible parameter type [6]: In call `inner`, for 1st positional argument, \
+             "Incompatible parameter type [6]: In call `main.inner`, for 1st positional argument, \
               expected `int` but got `str`.";
-             "Incompatible parameter type [6]: In call `non_async_inner`, for 1st positional \
+             "Incompatible parameter type [6]: In call `main.non_async_inner`, for 1st positional \
               argument, expected `int` but got `str`.";
            ];
       (* When `factorial` is a nested function, `factorial` is stored as a local variable with a
@@ -3787,8 +3787,8 @@ let test_nested_function_shows_function_name_in_errors =
                   return n * factorial("wrong")
             |}
            [
-             "Incompatible parameter type [6]: In call `factorial`, for 1st positional argument, \
-              expected `int` but got `str`.";
+             "Incompatible parameter type [6]: In call `outer.factorial`, for 1st positional \
+              argument, expected `int` but got `str`.";
            ];
       (* `inner1` is a captured variable in `inner2`. Show its name in error messages. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -3801,8 +3801,8 @@ let test_nested_function_shows_function_name_in_errors =
                   inner1("wrong")
             |}
            [
-             "Incompatible parameter type [6]: In call `inner1`, for 1st positional argument, \
-              expected `int` but got `str`.";
+             "Incompatible parameter type [6]: In call `outer.inner1`, for 1st positional \
+              argument, expected `int` but got `str`.";
            ];
     ]
 

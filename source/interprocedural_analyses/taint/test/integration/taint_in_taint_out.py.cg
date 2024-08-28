@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-$local_taint_in_taint_out?ComplexEvaluator?evaluate_lazy_payload$_evaluate (fun) -> [isinstance (fun) taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field (method) taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload (method)]
+taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate (fun) -> [isinstance (fun) taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field (method) taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload (method)]
 taint_in_taint_out.issue_approximate_return_access_paths_common_prefix (fun) -> [_test_sink (fun) _test_source (fun) object.__init__ (method) object.__new__ (method) taint_in_taint_out.approximate_return_access_paths (fun)]
 taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix (fun) -> [_test_sink (fun) _test_source (fun) object.__init__ (method) object.__new__ (method) taint_in_taint_out.approximate_return_access_paths (fun)]
 taint_in_taint_out.adds_tito_with_indirect_sink (fun) -> [taint_in_taint_out.indirect_sink (fun)]
@@ -78,7 +78,7 @@ taint_in_taint_out.tito_with_sink (fun) -> [_test_sink (fun)]
 taint_in_taint_out.via_getattr (fun) -> [getattr (fun)]
 taint_in_taint_out.ComplexEvaluator.$class_toplevel (method) -> []
 taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field (method) -> [callable (fun)]
-taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload (method) -> [$local_taint_in_taint_out?ComplexEvaluator?evaluate_lazy_payload$_evaluate (fun)]
+taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload (method) -> [taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate (fun)]
 taint_in_taint_out.Data.$class_toplevel (method) -> []
 taint_in_taint_out.Data.__init__ (method) -> []
 taint_in_taint_out.FieldIsTITO.$class_toplevel (method) -> []

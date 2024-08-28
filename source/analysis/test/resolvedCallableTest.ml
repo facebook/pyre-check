@@ -17,6 +17,7 @@ let resolve_define resolution define =
   match
     GlobalResolution.resolve_define
       resolution
+      ~callable_name:None
       ~implementation:(Some define)
       ~overloads:[]
       ~scoped_type_variables:None

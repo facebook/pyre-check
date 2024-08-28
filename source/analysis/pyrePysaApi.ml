@@ -393,10 +393,12 @@ module InContext = struct
     { pyre_api; resolution = ReadOnly.contextless_resolution pyre_api }
 
 
-  let create_at_statement_key pyre_api ~define ~statement_key =
-    let { Ast.Statement.Define.signature = { name; legacy_parent; _ }; _ } = define in
+  let create_at_statement_key pyre_api ~define_name ~define ~statement_key =
+    let { Ast.Statement.Define.signature = { legacy_parent; _ }; _ } = define in
     let local_annotations =
-      TypeEnvironment.ReadOnly.get_local_annotations (ReadOnly.type_environment pyre_api) name
+      TypeEnvironment.ReadOnly.get_local_annotations
+        (ReadOnly.type_environment pyre_api)
+        define_name
     in
     let resolution =
       TypeCheck.resolution_at_key

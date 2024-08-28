@@ -635,20 +635,17 @@ let rec process_request_exn
     let open Response in
     let get_program_call_graph () =
       let get_callgraph callgraph_map module_qualifier =
-        let callees
-            callgraph_map
-            {
-              Node.value =
-                { Statement.Define.signature = { Statement.Define.Signature.name = caller; _ }; _ };
-              _;
-            }
-          =
-          TypeEnvironment.ReadOnly.get_callees type_environment caller
+        let callees callgraph_map { Node.value = caller_define; _ } =
+          let qualified_caller =
+            FunctionDefinition.qualified_name_of_define ~module_name:module_qualifier caller_define
+          in
+          TypeEnvironment.ReadOnly.get_callees type_environment qualified_caller
           |> Option.value ~default:[]
           |> fun callees ->
-          Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
+          Map.change callgraph_map qualified_caller ~f:(fun old_callees ->
               Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
         in
+
         SourceCodeApi.source_of_qualifier source_code_api module_qualifier
         >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false ~include_nested:true
         >>| List.fold_left ~init:callgraph_map ~f:callees

@@ -86,6 +86,7 @@ module ReadOnly : sig
 
   val resolve_define
     :  t ->
+    callable_name:Ast.Reference.t option ->
     implementation:Ast.Statement.Define.Signature.t option ->
     overloads:Ast.Statement.Define.Signature.t list ->
     scoped_type_variables:Type.Variable.t Ast.Identifier.Map.t option ->
@@ -159,6 +160,7 @@ module InContext : sig
 
   val create_at_statement_key
     :  ReadOnly.t ->
+    define_name:Ast.Reference.t ->
     define:Ast.Statement.Define.t ->
     statement_key:int ->
     t

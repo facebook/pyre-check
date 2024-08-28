@@ -477,7 +477,7 @@ let test_inferred_returns =
                   return bar
             |}
            ~target:"test.foo"
-           ~expected:{|"typing.Callable($local_test?foo$bar)[[int], str]"|};
+           ~expected:{|"typing.Callable(test.foo.bar)[[int], str]"|};
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
@@ -487,7 +487,7 @@ let test_inferred_returns =
                   return [bar]
             |}
            ~target:"test.foo"
-           ~expected:{|"typing.List[typing.Callable($local_test?foo$bar)[[int, str], bool]]"|};
+           ~expected:{|"typing.List[typing.Callable(test.foo.bar)[[int, str], bool]]"|};
       (* Self *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
