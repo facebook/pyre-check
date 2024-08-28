@@ -230,6 +230,45 @@ let rename_define ~new_name ({ Define.signature; _ } as define) =
   { define with Define.signature = { signature with name = new_name } }
 
 
+let rec set_parent
+    ~new_parent
+    ({ Define.signature = { name = define_name; _ } as signature; body; _ } as define)
+  =
+  let signature = { signature with parent = new_parent } in
+  (* We also need to recursively update the parent of nested defines. *)
+  let define_function_name = Reference.last (Reference.delocalize define_name) in
+  let transform_statement = function
+    | { Node.value = Statement.Define define; location } ->
+        define
+        |> set_parent
+             ~new_parent:(ModuleContext.create_function ~parent:new_parent define_function_name)
+        |> (fun define -> Statement.Define define)
+        |> Node.create ~location
+    | { Node.value = Statement.Class _; _ } as statement ->
+        (* TODO: We should also reparent defines nested within classes *)
+        statement
+    | statement -> statement
+  in
+  let module ReparentTransform = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = false
+
+    let expression _ = Fn.id
+
+    let transform_children _ _ = (), true
+
+    let statement _ statement = (), [transform_statement statement]
+  end)
+  in
+  let body =
+    ReparentTransform.transform () (Source.create body)
+    |> (fun { ReparentTransform.source; _ } -> source)
+    |> Source.statements
+  in
+  { define with Define.signature; body }
+
+
 let requalify_identifier ~old_qualifier ~new_qualifier identifier =
   let reference = Reference.create identifier in
   if Reference.is_local reference then
@@ -682,6 +721,7 @@ let replace_signature_if_always_passing_on_arguments
 let make_wrapper_define
     ~location
     ~qualifier
+    ~parent_for_inner_defines
     ~define:
       ({
          Define.signature =
@@ -741,6 +781,9 @@ let make_wrapper_define
     in
     sanitize_define ~strip_parent:true helper_define
     |> rename_define ~new_name:(Reference.create (Reference.last helper_function_reference))
+    |> set_parent
+         ~new_parent:
+           (ModuleContext.create_function ~parent:parent_for_inner_defines wrapper_function_name)
     |> requalify_define
          ~old_qualifier:helper_function_reference
          ~new_qualifier:new_helper_function_reference
@@ -757,6 +800,7 @@ let make_wrapper_define
       { wrapper_define with body = helper_define_statements @ wrapper_body }
     |> set_first_parameter_type ~original_define:define
     |> rename_define ~new_name:inlined_wrapper_define_name
+    |> set_parent ~new_parent:parent_for_inner_defines
     |> requalify_define
          ~old_qualifier:(Reference.delocalize wrapper_define_name)
          ~new_qualifier:(Reference.create ~prefix:qualifier wrapper_function_name)
@@ -785,14 +829,16 @@ let inline_decorators_at_same_scope
          _;
        } as head_decorator)
     ~tail_decorators
-    ({ Define.signature = { name; _ }; _ } as define)
+    ({ Define.signature = { name; parent; _ }; _ } as define)
   =
   let inlinable_decorators = head_decorator :: tail_decorators in
   let qualifier = Reference.delocalize name in
+  let parent_for_inner_defines = ModuleContext.create_function ~parent (Reference.last qualifier) in
   let ({ Define.signature = inlined_original_define_signature; _ } as inlined_original_define) =
     sanitize_define ~strip_parent:true define
     |> set_first_parameter_type ~original_define:define
     |> rename_define ~new_name:(Reference.create inlined_original_function_name)
+    |> set_parent ~new_parent:parent_for_inner_defines
     |> requalify_define
          ~old_qualifier:qualifier
          ~new_qualifier:(Reference.create ~prefix:qualifier inlined_original_function_name)
@@ -806,6 +852,7 @@ let inline_decorators_at_same_scope
         make_wrapper_define
           ~location
           ~qualifier
+          ~parent_for_inner_defines
           ~define
           ~function_to_call:(Reference.last (Reference.delocalize previous_inlined_wrapper))
           decorator_data
