@@ -664,6 +664,8 @@ module Variable : sig
     include Record.Variable
   end
 
+  val name : 'a record -> string
+
   module Namespace : sig
     include module type of struct
       include Record.Variable.Namespace

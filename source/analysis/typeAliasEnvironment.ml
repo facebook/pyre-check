@@ -46,6 +46,7 @@ module IncomingDataComputation = struct
     type t = {
       value: Expression.t;
       target: Reference.t;
+      variables: (string -> Type.Variable.t option) option;
     }
 
     let unchecked_resolve ~unparsed ~target ~variables ~aliases =
@@ -67,11 +68,15 @@ module IncomingDataComputation = struct
           dependencies: string list;
         }
 
-    let checked_resolve Queries.{ class_exists; module_exists; _ } { value; target } =
-      let aliases ?replace_unbound_parameters_with_any:_ _name = None in
-      let value_annotation =
-        unchecked_resolve ~unparsed:value ~target ~variables:Type.resolved_empty_variables ~aliases
+    let checked_resolve Queries.{ class_exists; module_exists; _ } { value; target; variables } =
+      let variables =
+        match variables with
+        | Some variables -> variables
+        | None -> Type.resolved_empty_variables
       in
+
+      let aliases ?replace_unbound_parameters_with_any:_ _name = None in
+      let value_annotation = unchecked_resolve ~unparsed:value ~target ~variables ~aliases in
       let dependencies = String.Hash_set.create () in
       let module TrackedTransform = Type.VisitWithTransform.Make (struct
         type state = unit
@@ -116,56 +121,59 @@ module IncomingDataComputation = struct
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
     let open Module.UnannotatedGlobal in
+    (* A helper function which we will use to extract type aliases from SimpleAssign and
+       TypeStatement *)
+    let process_aliases explicit_annotation value variables =
+      let variable_aliases _ = None in
+      let target_annotation =
+        Type.create
+          ~variables:variable_aliases
+          ~aliases:Type.resolved_empty_aliases
+          (from_reference ~location:Location.any name)
+      in
+      match Node.value value, explicit_annotation with
+      | Expression.Call _, None -> (
+          match Type.Variable.Declaration.parse (delocalize value) ~target:name with
+          | Some variable -> Some (ExtractedVariableDeclaration variable)
+          | None -> None)
+      | ( (BinaryOperator _ | Subscript _ | Name _ | Constant (Constant.String _)),
+          Some
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        { Node.value = Name (Name.Identifier ("typing_extensions" | "typing")); _ };
+                      attribute = "TypeAlias";
+                      _;
+                    });
+              _;
+            } )
+      | (BinaryOperator _ | Subscript _ | Name _), None ->
+          let value = Type.preprocess_alias_value value |> delocalize in
+          let value_annotation =
+            Type.create
+              ~variables:Type.resolved_empty_variables
+              ~aliases:Type.resolved_empty_aliases
+              value
+          in
+          if
+            not
+              (Type.contains_unknown target_annotation
+              || Type.contains_unknown value_annotation
+              || Type.equal value_annotation target_annotation)
+          then
+            Some (ExtractedAlias { target = name; value; variables })
+          else
+            None
+      | _ -> None
+    in
+
     let extract_alias = function
       | SimpleAssign { value = None; _ } -> None
-      | SimpleAssign { explicit_annotation; value = Some value; _ } -> (
-          let variable_aliases _ = None in
-          let target_annotation =
-            Type.create
-              ~variables:variable_aliases
-              ~aliases:Type.resolved_empty_aliases
-              (from_reference ~location:Location.any name)
-          in
-          match Node.value value, explicit_annotation with
-          | Call _, None -> (
-              match Type.Variable.Declaration.parse (delocalize value) ~target:name with
-              | Some variable -> Some (ExtractedVariableDeclaration variable)
-              | None -> None)
-          | ( (BinaryOperator _ | Subscript _ | Name _ | Constant (Constant.String _)),
-              Some
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            {
-                              Node.value = Name (Name.Identifier ("typing_extensions" | "typing"));
-                              _;
-                            };
-                          attribute = "TypeAlias";
-                          _;
-                        });
-                  _;
-                } )
-          | (BinaryOperator _ | Subscript _ | Name _), None ->
-              let value = Type.preprocess_alias_value value |> delocalize in
-              let value_annotation =
-                Type.create
-                  ~variables:Type.resolved_empty_variables
-                  ~aliases:Type.resolved_empty_aliases
-                  value
-              in
-              if
-                not
-                  (Type.contains_unknown target_annotation
-                  || Type.contains_unknown value_annotation
-                  || Type.equal value_annotation target_annotation)
-              then
-                Some (ExtractedAlias { target = name; value })
-              else
-                None
-          | _ -> None)
+      | SimpleAssign { explicit_annotation; value = Some value; _ } ->
+          process_aliases explicit_annotation value None
       | Imported import -> (
           if class_exists (Reference.show name) then
             None
@@ -191,13 +199,37 @@ module IncomingDataComputation = struct
                 None
             | _ ->
                 let value = from_reference ~location:Location.any original_name_of_alias in
-                Some (ExtractedAlias { target = name; value }))
+                Some (ExtractedAlias { target = name; value; variables = None }))
       | TupleAssign _
       | Class
       | Define _ ->
           None
-      (* TODO for migeedz: Populate this case *)
-      | TypeStatement _ -> None
+      | TypeStatement { value; type_params; _ } ->
+          (* convert a type parameter to a type variable *)
+          let collected_type_parameter parameter =
+            let parameter = Node.value parameter in
+            match parameter with
+            | TypeParam.TypeVar { TypeParam.name; _ } ->
+                Type.Variable.TypeVarVariable
+                  (Type.Variable.TypeVar.create ~constraints:Unconstrained ~variance:Invariant name)
+            | TypeParam.TypeVarTuple name ->
+                Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+            | TypeParam.ParamSpec name ->
+                Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name)
+          in
+          (* collect type parameters from type statement *)
+          let variables = List.map ~f:collected_type_parameter type_params in
+
+          (* create a mapping which looks up type variables based on their name *)
+          let variables variable_name =
+            match
+              List.find variables ~f:(fun tv -> String.equal (Type.Variable.name tv) variable_name)
+            with
+            | Some tv -> Some tv
+            | None -> None
+          in
+          (* pass the variable map to the TypeAlias *)
+          process_aliases None value (Some variables)
     in
     get_unannotated_global name >>= extract_alias
 

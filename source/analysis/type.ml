@@ -2408,6 +2408,13 @@ module Variable = struct
   open T
   include Record.Variable
 
+  let name type_variable =
+    match type_variable with
+    | TypeVarVariable { name; _ } -> name
+    | ParamSpecVariable { name; _ } -> name
+    | TypeVarTupleVariable { name; _ } -> name
+
+
   module Namespace = struct
     include Record.Variable.Namespace
 

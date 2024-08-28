@@ -2176,8 +2176,6 @@ let test_duplicate_type_variables =
 let test_generic_aliases =
   test_list
     [
-      (* TODO: T194670955 at minimum, test.func(x) should return the correct type, which is list[T]
-         | set[T] *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2197,12 +2195,56 @@ let test_generic_aliases =
              "Unbound name [10]: Name `ListOrSet` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `T` is used but not defined in the current scope.";
-             "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
-              function's parameters.";
-             "Undefined or invalid type [11]: Annotation `ListOrSet` is not defined as a type.";
-             "Invalid type variable [34]: The type variable `Variable[S]` isn't present in the \
-              function's parameters.";
-             "Revealed type [-1]: Revealed type for `test.func(x)` is `unknown`.";
+             "Revealed type [-1]: Revealed type for `test.func(x)` is \
+              `typing.Union[typing.List[int], typing.Set[int]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+
+            from typing import Callable
+
+            type Callback[S1, S2] = Callable[[S1], S2]
+
+            def apply_callback(callback: Callback[int, int]) -> Callback[int, int]:
+                return callback
+
+            reveal_type(apply_callback)
+
+            |}
+           [
+             "Unbound name [10]: Name `Callback` is used but not defined in the current scope.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `S1` is used but not defined in the current scope.";
+             "Unbound name [10]: Name `S2` is used but not defined in the current scope.";
+             "Revealed type [-1]: Revealed type for `test.apply_callback` is \
+              `typing.Callable(apply_callback)[[Named(callback, typing.Callable[[int], int])], \
+              typing.Callable[[int], int]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable
+
+            type Callback[S1, *S2] = Callable[[S1], tuple[*S2]]
+
+
+            def apply_callback(callback: Callback[int, tuple[int, str]]) -> Callback[int, tuple[int, str]]:
+                return callback
+
+            reveal_type(apply_callback)
+            |}
+           [
+             "Invalid type parameters [24]: Non-generic type `typing_extensions.Unpack` cannot \
+              take parameters.";
+             "Unbound name [10]: Name `Callback` is used but not defined in the current scope.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Unbound name [10]: Name `S1` is used but not defined in the current scope.";
+             "Unbound name [10]: Name `S2` is used but not defined in the current scope.";
+             "Revealed type [-1]: Revealed type for `test.apply_callback` is \
+              `typing.Callable(apply_callback)[[Named(callback, typing.Callable[[int], \
+              typing.Tuple[typing.Tuple[int, str]]])], typing.Callable[[int], \
+              typing.Tuple[typing.Tuple[int, str]]]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -4338,27 +4380,27 @@ let test_nested_generic_defines =
                 TypeVar,
                 Iterator,
             )
-      
+
             _TParams = ParamSpec("_TParams")
             _TReturn = TypeVar("_TReturn")
-      
-      
+
+
             @final
             class ProfiledDecorator(Protocol):
                 def __call__(
                     self, fn: Callable[_TParams, _TReturn]
                 ) -> Callable[_TParams, _TReturn]: ...
-      
-      
+
+
             _profiled_times: dict[Tuple[str, ...], float] = ...
             _current_stack: List[str] = []
-      
-      
+
+
             @contextmanager
             def profile(name: str) -> Generator[None, None, None]:
                 ...
-      
-      
+
+
             def profiled(name: str) -> ProfiledDecorator:
                 def _fn_profiled(
                     fn: Callable[_TParams, _TReturn]
@@ -4366,9 +4408,9 @@ let test_nested_generic_defines =
                     def _decorated(*args: _TParams.args, **vargs: _TParams.kwargs) -> _TReturn:
                         with profile(name):
                             return fn(*args, **vargs)
-      
+
                     return _decorated
-      
+
                 return _fn_profiled
             |}
            [];
