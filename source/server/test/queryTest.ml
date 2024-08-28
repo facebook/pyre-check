@@ -1195,7 +1195,7 @@ let test_handle_types_query context =
                    2, 7, 2, 12, Type.literal_string "Foo";
                    3, 0, 3, 3, Type.integer;
                    3, 6, 3, 8, Type.literal_integer 42;
-                   4, 0, 4, 28, Type.any_literal_string;
+                   4, 0, 4, 28, Type.literal_any_string;
                    4, 3, 4, 7, Type.string;
                    4, 13, 4, 16, Type.integer;
                  ]
@@ -2209,7 +2209,7 @@ let test_handle_query_callees_with_location context =
 
                    async def method(self):
                       await bar()
-              
+
                foo = Foo()
             |}
         );
