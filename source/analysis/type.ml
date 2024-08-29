@@ -1342,11 +1342,11 @@ module PrettyPrinting = struct
     | NoneType -> Format.fprintf format "None"
     | Parametric { name; arguments } ->
         let name = strip_qualification (Canonicalization.reverse_substitute name) in
-        Format.fprintf format "%s[%a]" name (pp_arguments ~pp_type:pp) arguments
+        Format.fprintf format "%s[%a]" name (pp_arguments ~pp_type:pp_concise) arguments
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
-    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
+    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp_concise type_
     | RecursiveType { name; _ } -> Format.fprintf format "%s" name
     | Top -> Format.fprintf format "unknown"
     | Tuple (Concatenation { middle = UnboundedElements argument; prefix = []; suffix = [] }) ->

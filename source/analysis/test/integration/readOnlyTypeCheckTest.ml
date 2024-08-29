@@ -133,9 +133,8 @@ let test_ignore_readonly =
               have an implementation.";
              "Incompatible overload [43]: The overloaded function `Bar.method_ro_rw` on line 12 \
               will never be matched. The signature `(self: \
-              pyre_extensions.ReadOnly[Variable[test._Self_test_Bar__ (bound to test.Bar)]]) -> \
-              pyre_extensions.ReadOnly[Variable[test._Self_test_Bar__ (bound to test.Bar)]]` is \
-              the same or broader.";
+              pyre_extensions.ReadOnly[_Self_test_Bar__]) -> \
+              pyre_extensions.ReadOnly[_Self_test_Bar__]` is the same or broader.";
              "Revealed type [-1]: Revealed type for `rw.method_ro_rw()` is \
               `pyre_extensions.ReadOnly[Bar]`.";
              "Revealed type [-1]: Revealed type for `ro.method_ro_rw()` is \
