@@ -4027,7 +4027,7 @@ let test_hover_info_for_position context =
    Test
    # ^- cursor
   |}
-    { value = Some "Type[test.Test]"; docstring = None };
+    { value = Some "type[Test]"; docstring = None };
   (* TODO(T139776639) move docstring into ast *)
   assert_hover_info_for_position
     {|

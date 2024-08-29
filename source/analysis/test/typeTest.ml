@@ -4072,7 +4072,7 @@ let test_show _ =
   assert_show
     (Type.ReadOnly (Type.list Type.integer))
     ~expected_full:"pyre_extensions.ReadOnly[typing.List[int]]"
-    ~expected_concise:"pyre_extensions.ReadOnly[List[int]]";
+    ~expected_concise:"pyre_extensions.ReadOnly[list[int]]";
   ()
 
 

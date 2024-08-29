@@ -1018,7 +1018,7 @@ module Predicates = struct
 end
 
 (* The Canonicalization module contains logic related to representing types. Pretty printing uses
-   the cannonicalizations, but so does some other logic like the `Type.t -> Expression.t`
+   the canonicalizations, but so does some other logic like the `Type.t -> Expression.t`
    conversion. *)
 module Canonicalization = struct
   open T
@@ -1032,6 +1032,24 @@ module Canonicalization = struct
     | "set" -> "typing.Set"
     | "type" -> "typing.Type"
     | _ -> name
+
+
+  let alternate_name_to_canonical_name_map =
+    [
+      "typing.ChainMap", "collections.ChainMap";
+      "typing.Counter", "collections.Counter";
+      "typing.DefaultDict", "collections.defaultdict";
+      "typing.Deque", "collections.deque";
+      "typing.Dict", "dict";
+      "typing.FrozenSet", "frozenset";
+      "typing.List", "list";
+      "typing.Set", "set";
+      "typing.Type", "type";
+      "typing_extensions.Protocol", "typing.Protocol";
+      "pyre_extensions.Generic", "typing.Generic";
+      "pyre_extensions.generic.Generic", "typing.Generic";
+    ]
+    |> Identifier.Table.of_alist_exn
 
 
   let parameter_variable_type_representation = function
@@ -1287,8 +1305,14 @@ module PrettyPrinting = struct
     let pp_pipe_separated =
       Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format " | ") pp_concise
     in
-    let strip_qualification identifier =
-      String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
+    let canonicalize_and_strip_qualification identifier =
+      let canonical_identifier =
+        Hashtbl.find Canonicalization.alternate_name_to_canonical_name_map identifier
+        |> Option.value ~default:identifier
+      in
+      String.split ~on:'.' canonical_identifier
+      |> List.last
+      |> Option.value ~default:canonical_identifier
     in
     let signature_to_string { Record.Callable.annotation; parameters; _ } =
       let parameters =
@@ -1341,11 +1365,11 @@ module PrettyPrinting = struct
         Format.fprintf format "Literal[%s.%s]" (show enumeration_type) member_name
     | NoneType -> Format.fprintf format "None"
     | Parametric { name; arguments } ->
-        let name = strip_qualification (Canonicalization.reverse_substitute name) in
+        let name = canonicalize_and_strip_qualification name in
         Format.fprintf format "%s[%a]" name (pp_arguments ~pp_type:pp_concise) arguments
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
-    | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
+    | Primitive name -> Format.fprintf format "%s" (canonicalize_and_strip_qualification name)
     | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp_concise type_
     | RecursiveType { name; _ } -> Format.fprintf format "%s" name
     | Top -> Format.fprintf format "unknown"
@@ -1363,7 +1387,7 @@ module PrettyPrinting = struct
     | Union [argument; NoneType] ->
         Format.fprintf format "%a | None" pp_concise argument
     | Union arguments -> Format.fprintf format "%a" pp_pipe_separated arguments
-    | Variable { name; _ } -> Format.fprintf format "%s" (strip_qualification name)
+    | Variable { name; _ } -> Format.fprintf format "%s" (canonicalize_and_strip_qualification name)
 
 
   and show_concise annotation = Format.asprintf "%a" pp_concise annotation
@@ -4122,24 +4146,6 @@ let resolved_empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 let resolved_empty_variables _ = None
 
-let alternate_name_to_canonical_name_map =
-  [
-    "typing.ChainMap", "collections.ChainMap";
-    "typing.Counter", "collections.Counter";
-    "typing.DefaultDict", "collections.defaultdict";
-    "typing.Deque", "collections.deque";
-    "typing.Dict", "dict";
-    "typing.FrozenSet", "frozenset";
-    "typing.List", "list";
-    "typing.Set", "set";
-    "typing.Type", "type";
-    "typing_extensions.Protocol", "typing.Protocol";
-    "pyre_extensions.Generic", "typing.Generic";
-    "pyre_extensions.generic.Generic", "typing.Generic";
-  ]
-  |> Identifier.Table.of_alist_exn
-
-
 let arguments_from_unpacked_annotation annotation ~variables =
   let open Record.OrderedTypes.Concatenation in
   let unpacked_variadic_to_argument = function
@@ -4563,7 +4569,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
             Constructors.read_only head
         | _ -> result
       in
-      match Hashtbl.find alternate_name_to_canonical_name_map name with
+      match Hashtbl.find Canonicalization.alternate_name_to_canonical_name_map name with
       | Some name -> Parametric { name; arguments }
       | None -> replace_with_special_form ~name arguments)
   | Union elements -> Constructors.union elements
