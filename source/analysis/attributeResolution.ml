@@ -2921,6 +2921,57 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           | NotFound { reason; _ } ->
                               make_error (ApplicationFailed { reason; callable })))))
       in
+      let scoped_type_variables =
+        (* collect our local type variables (which are really type parameters in terms of the source
+           code) *)
+        let local_type_parameters =
+          match implementation with
+          | Some implementation -> begin
+              let type_param_names =
+                List.map
+                  ~f:(fun tp ->
+                    match tp.Node.value with
+                    | Expression.TypeParam.TypeVar { name; _ } ->
+                        Type.Variable.TypeVarVariable
+                          (Type.Variable.TypeVar.create
+                             ~constraints:Unconstrained
+                             ~variance:Invariant
+                             name)
+                    | Expression.TypeParam.TypeVarTuple name ->
+                        Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+                    | Expression.TypeParam.ParamSpec name ->
+                        Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+                  implementation.type_params
+              in
+              type_param_names
+            end
+          | None -> []
+        in
+        (* define an empty map as our accumilator *)
+        let empty_string_map = Identifier.Map.empty in
+
+        (* define a function that adds elements to the map. For now, lets fail on duplicates *)
+        (* TODO migeedz: Verify that this is the correct runtime behavor *)
+        let update_map map key value =
+          match Map.add ~key ~data:value map with
+          | `Ok new_map -> new_map
+          | `Duplicate -> map
+        in
+        (* create an association list of key value pairs using our get_name funciton above*)
+        let named_values = List.map ~f:(fun x -> Type.Variable.name x, x) local_type_parameters in
+        (* create the mapping *)
+        let create_mapping_from_type_variable_assoc_list =
+          List.fold_left
+            ~f:(fun map (key, value) -> update_map map key value)
+            ~init:empty_string_map
+            named_values
+        in
+        (* If our mapping is empty, then we don't want to use scoped_type_vars and must set the
+           value to None.*)
+        match named_values with
+        | [] -> None
+        | _ -> Some create_mapping_from_type_variable_assoc_list
+      in
       let parse =
         let parser =
           {

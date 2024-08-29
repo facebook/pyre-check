@@ -58,8 +58,9 @@ let test_type_variable_scoping =
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `T` is used but not defined in the current scope.";
              "Revealed type [-1]: Revealed type for `test.func` is \
-              `typing.Callable(func)[[Named(a, unknown), Named(b, unknown)], unknown]`.";
-             "Revealed type [-1]: Revealed type for `test.func(x)` is `unknown`.";
+              `typing.Callable(func)[[Named(a, Variable[T]), Named(b, Variable[T])], \
+              Variable[T]]`.";
+             "Revealed type [-1]: Revealed type for `test.func(x)` is `int`.";
              "Missing argument [20]: Call `func` expects argument `b`.";
            ];
     ]
