@@ -1284,8 +1284,8 @@ module PrettyPrinting = struct
   and show annotation = Format.asprintf "%a" pp annotation
 
   and pp_concise format annotation =
-    let pp_comma_separated =
-      Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_concise
+    let pp_pipe_separated =
+      Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format " | ") pp_concise
     in
     let strip_qualification identifier =
       String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
@@ -1361,8 +1361,8 @@ module PrettyPrinting = struct
           ordered_type
     | Union [NoneType; argument]
     | Union [argument; NoneType] ->
-        Format.fprintf format "Optional[%a]" pp_concise argument
-    | Union arguments -> Format.fprintf format "Union[%a]" pp_comma_separated arguments
+        Format.fprintf format "%a | None" pp_concise argument
+    | Union arguments -> Format.fprintf format "%a" pp_pipe_separated arguments
     | Variable { name; _ } -> Format.fprintf format "%s" (strip_qualification name)
 
 

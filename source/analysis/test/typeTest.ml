@@ -1161,7 +1161,7 @@ let test_concise _ =
     "(callable: (x: int) -> float) -> int";
   assert_concise Type.Any "Any";
   assert_concise Type.NoneType "None";
-  assert_concise (Type.optional Type.integer) "Optional[int]";
+  assert_concise (Type.optional Type.integer) "int | None";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.float]) "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
@@ -1169,7 +1169,7 @@ let test_concise _ =
   assert_concise
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
     "tuple[int, ...]";
-  assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
+  assert_concise (Type.union [Type.integer; Type.string]) "int | str";
   assert_concise
     (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.Top]) "T")
     "T";

@@ -399,16 +399,16 @@ let test_invalid_models =
            ~model_source:"def test.function_with_overloads(unknownNamed): ..."
            ~expect:
              "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def function_with_overloads(str) -> Union[int, str]: ...`. Reason: \
+              implementation `def function_with_overloads(str) -> int | str: ...`. Reason: \
               unexpected named parameter: `unknownNamed`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
            ~expect:
              "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
-              unexpected named parameter: `secondNamed` in overload `(str) -> Union[int, str]`\n\
-              unexpected named parameter: `firstNamed` in overload `(str) -> Union[int, str]`\n\
+              implementation `def function_with_overloads(str) -> int | str: ...`. Reasons:\n\
+              unexpected named parameter: `secondNamed` in overload `(str) -> int | str`\n\
+              unexpected named parameter: `firstNamed` in overload `(str) -> int | str`\n\
               unexpected named parameter: `secondNamed` in overload `(str, firstNamed: int) -> int`\n\
               unexpected named parameter: `firstNamed` in overload `(str, secondNamed: str) -> str`";
       labeled_test_case __FUNCTION__ __LINE__
@@ -416,9 +416,9 @@ let test_invalid_models =
            ~model_source:"def test.function_with_multiple_positions(c): ..."
            ~expect:
              "Model signature parameters for `test.function_with_multiple_positions` do not match \
-              implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> \
-              Union[int, str]: ...`. Reason: invalid position 0 for named parameter `c` (valid \
-              options are {formal(c, position=1), formal(c, position=2)}).";
+              implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> int \
+              | str: ...`. Reason: invalid position 0 for named parameter `c` (valid options are \
+              {formal(c, position=1), formal(c, position=2)}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_positional_and_named(__x): ..."
