@@ -9,6 +9,23 @@ open Core
 open Ast
 
 module Record : sig
+  module Variance : sig
+    type t =
+      | Covariant
+      | Contravariant
+      | Invariant
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  module TypeVarConstraints : sig
+    type 'annotation t =
+      | Bound of 'annotation
+      | Explicit of 'annotation list
+      | Unconstrained
+      | LiteralIntegers
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   module Variable : sig
     type state [@@deriving compare, eq, sexp, show, hash]
 
@@ -16,24 +33,11 @@ module Record : sig
       type t [@@deriving compare, eq, sexp, show, hash]
     end
 
-    type 'annotation constraints =
-      | Bound of 'annotation
-      | Explicit of 'annotation list
-      | Unconstrained
-      | LiteralIntegers
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type variance =
-      | Covariant
-      | Contravariant
-      | Invariant
-    [@@deriving compare, eq, sexp, show, hash]
-
     module TypeVar : sig
       type 'annotation record = {
         name: Identifier.t;
-        constraints: 'annotation constraints;
-        variance: variance;
+        constraints: 'annotation TypeVarConstraints.t;
+        variance: Variance.t;
         state: state;
         namespace: Namespace.t;
       }
@@ -736,8 +740,8 @@ module Variable : sig
     include VariableKind with type t = unary_t and type domain = type_t
 
     val create
-      :  ?constraints:type_t Record.Variable.constraints ->
-      ?variance:Record.Variable.variance ->
+      :  ?constraints:type_t Record.TypeVarConstraints.t ->
+      ?variance:Record.Variance.t ->
       string ->
       t
 
@@ -820,8 +824,8 @@ module Variable : sig
     type t =
       | DTypeVar of {
           name: Identifier.t;
-          constraints: Expression.t constraints;
-          variance: variance;
+          constraints: Expression.t Record.TypeVarConstraints.t;
+          variance: Record.Variance.t;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
@@ -887,8 +891,8 @@ end
 val namespace_insensitive_compare : t -> t -> int
 
 val variable
-  :  ?constraints:type_t Variable.constraints ->
-  ?variance:Variable.variance ->
+  :  ?constraints:type_t Record.TypeVarConstraints.t ->
+  ?variance:Record.Variance.t ->
   string ->
   t
 

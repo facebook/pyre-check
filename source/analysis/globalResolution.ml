@@ -349,7 +349,7 @@ let is_invariance_mismatch resolution ~left ~right =
       in
       let due_to_invariant_variable (variance, left, right) =
         match variance, left, right with
-        | Type.Variable.Invariant, Type.Argument.Single left, Type.Argument.Single right ->
+        | Type.Record.Variance.Invariant, Type.Argument.Single left, Type.Argument.Single right ->
             less_or_equal resolution ~left ~right
         | _ -> false
       in

@@ -632,7 +632,9 @@ let test_less_or_equal_primitives =
 
 let test_less_or_equal =
   let float_string_variable =
-    Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"
+    Type.variable
+      ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.string])
+      "T"
   in
   (* Behavioral subtyping of callables. *)
   let parse_less_or_equal ?attributes ?is_protocol order ~left ~right =
@@ -642,7 +644,7 @@ let test_less_or_equal =
           Some
             (Type.variable
                "T_int_bool"
-               ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
+               ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
     let attributes annotation ~cycle_detections:_ =
@@ -997,27 +999,35 @@ let test_less_or_equal =
               order
               ~left:Type.integer
               ~right:
-                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"));
+                (Type.variable
+                   ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.integer])
+                   "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               order
               ~left:
-                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+                (Type.variable
+                   ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.string])
+                   "T")
               ~right:(Type.union [Type.float; Type.string]));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               order
               ~left:
-                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+                (Type.variable
+                   ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.string])
+                   "T")
               ~right:(Type.union [Type.float; Type.string; !!"A"]));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_false
            (less_or_equal
               order
               ~left:
-                (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
+                (Type.variable
+                   ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.string])
+                   "T")
               ~right:(Type.union [Type.float]));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
@@ -1025,7 +1035,8 @@ let test_less_or_equal =
               order
               ~left:
                 (Type.variable
-                   ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                   ~constraints:
+                     (Type.Record.TypeVarConstraints.Bound (Type.union [Type.float; Type.string]))
                    "T")
               ~right:(Type.union [Type.float; Type.string; !!"A"]));
       labeled_test_case __FUNCTION__ __LINE__
@@ -1033,7 +1044,8 @@ let test_less_or_equal =
            (less_or_equal
               order
               ~left:Type.string
-              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"));
+              ~right:
+                (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.string) "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
@@ -1044,57 +1056,76 @@ let test_less_or_equal =
       @@ assert_true
            (less_or_equal
               order
-              ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
+              ~left:(Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound !!"A") "T")
               ~right:
                 (Type.union
-                   [Type.variable ~constraints:(Type.Variable.Bound !!"A") "T"; Type.string]));
+                   [
+                     Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound !!"A") "T";
+                     Type.string;
+                   ]));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               order
-              ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
-              ~right:(Type.optional (Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_true
-           (less_or_equal
-              order
-              ~left:(Type.variable ~constraints:(Type.Variable.Bound (Type.optional !!"A")) "T")
-              ~right:(Type.optional !!"A"));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_true
-           (less_or_equal
-              order
-              ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
-              ~right:(Type.union [Type.float; Type.string]));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_true
-           (less_or_equal
-              order
-              ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
+              ~left:(Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound !!"A") "T")
               ~right:
-                (Type.union
-                   [Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"; Type.string]));
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_true
-           (less_or_equal
-              order
-              ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
-              ~right:Type.Top);
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_true
-           (less_or_equal
-              order
-              ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
-              ~right:
-                (Type.union
-                   [Type.variable ~constraints:Type.Variable.Unconstrained "T"; Type.string]));
+                (Type.optional
+                   (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound !!"A") "T")));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               order
               ~left:
                 (Type.variable
-                   ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                   ~constraints:(Type.Record.TypeVarConstraints.Bound (Type.optional !!"A"))
+                   "T")
+              ~right:(Type.optional !!"A"));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.integer) "T")
+              ~right:(Type.union [Type.float; Type.string]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.integer) "T")
+              ~right:
+                (Type.union
+                   [
+                     Type.variable
+                       ~constraints:(Type.Record.TypeVarConstraints.Bound Type.integer)
+                       "T";
+                     Type.string;
+                   ]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:Type.Record.TypeVarConstraints.Unconstrained "T")
+              ~right:Type.Top);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:(Type.variable ~constraints:Type.Record.TypeVarConstraints.Unconstrained "T")
+              ~right:
+                (Type.union
+                   [
+                     Type.variable ~constraints:Type.Record.TypeVarConstraints.Unconstrained "T";
+                     Type.string;
+                   ]));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_true
+           (less_or_equal
+              order
+              ~left:
+                (Type.variable
+                   ~constraints:
+                     (Type.Record.TypeVarConstraints.Bound (Type.union [Type.float; Type.string]))
                    "T")
               ~right:(Type.union [Type.float; Type.string]));
       labeled_test_case __FUNCTION__ __LINE__
@@ -1102,13 +1133,15 @@ let test_less_or_equal =
            (less_or_equal
               order
               ~left:Type.integer
-              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"));
+              ~right:
+                (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.float) "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_false
            (less_or_equal
               order
               ~left:Type.float
-              ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"));
+              ~right:
+                (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.integer) "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_false
            (less_or_equal
@@ -1116,25 +1149,29 @@ let test_less_or_equal =
               ~left:(Type.union [Type.string; Type.integer])
               ~right:
                 (Type.variable
-                   ~constraints:(Type.Variable.Explicit [Type.string; Type.integer])
+                   ~constraints:
+                     (Type.Record.TypeVarConstraints.Explicit [Type.string; Type.integer])
                    "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_false
            (less_or_equal
               order
               ~left:Type.integer
-              ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.string]) "T"));
+              ~right:
+                (Type.variable
+                   ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.string])
+                   "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_false
            (less_or_equal
               order
               ~left:Type.integer
-              ~right:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T"));
+              ~right:(Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               order
-              ~left:(Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
+              ~left:(Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T")
               ~right:Type.integer);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
@@ -2433,32 +2470,46 @@ let test_join =
       @@ assert_join_type_equal
            order
            Type.integer
-           (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T")
-           (Type.union
-              [Type.integer; Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"]);
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_join_type_equal
-           order
-           Type.string
-           (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T")
+           (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.string) "T")
            (Type.union
               [
-                Type.string;
-                Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T";
+                Type.integer;
+                Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.string) "T";
               ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join_type_equal
            order
            Type.string
-           (Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
-           (Type.union [Type.string; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
+           (Type.variable
+              ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.integer])
+              "T")
+           (Type.union
+              [
+                Type.string;
+                Type.variable
+                  ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.integer])
+                  "T";
+              ]);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_join_type_equal
+           order
+           Type.string
+           (Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T")
+           (Type.union
+              [
+                Type.string;
+                Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T";
+              ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join_type_equal
            order
            (Type.literal_integer 7)
-           (Type.variable ~constraints:Type.Variable.LiteralIntegers "T")
+           (Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T")
            (Type.union
-              [Type.literal_integer 7; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
+              [
+                Type.literal_integer 7;
+                Type.variable ~constraints:Type.Record.TypeVarConstraints.LiteralIntegers "T";
+              ]);
       (* Variance. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_join_type_equal
@@ -2947,14 +2998,16 @@ let test_meet =
            (meet
               default
               Type.integer
-              (Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"))
+              (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Bound Type.float) "T"))
            Type.Bottom;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_equal
            (meet
               default
               Type.string
-              (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"))
+              (Type.variable
+                 ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.float; Type.string])
+                 "T"))
            Type.Bottom;
       (* Variance. *)
       labeled_test_case __FUNCTION__ __LINE__

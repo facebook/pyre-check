@@ -1268,7 +1268,8 @@ module State (Context : Context) = struct
                   callable_from_type annotation
                   >>| fun callable -> known_callable_before_application callable)
               |> Option.all
-          | Type.Variable ({ constraints = Type.Variable.Explicit _; _ } as explicit) ->
+          | Type.Variable
+              ({ constraints = Type.Record.TypeVarConstraints.Explicit _; _ } as explicit) ->
               let upper_bound = Type.Variable.TypeVar.upper_bound explicit in
               let callee =
                 match callee with
@@ -1279,7 +1280,7 @@ module State (Context : Context) = struct
                     Callee.NonAttribute { callee with resolved = upper_bound }
               in
               get_callables callee
-          | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
+          | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound parent; _ } ->
               let callee =
                 match callee with
                 | Callee.Attribute { attribute; base; expression } ->
@@ -5944,10 +5945,10 @@ module State (Context : Context) = struct
               | ( Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ },
                   Type.Variable { Type.Record.Variable.TypeVar.variance = right; _ } ) -> (
                   match left, right with
-                  | Type.Variable.Covariant, Type.Variable.Invariant
-                  | Type.Variable.Contravariant, Type.Variable.Invariant
-                  | Type.Variable.Covariant, Type.Variable.Contravariant
-                  | Type.Variable.Contravariant, Type.Variable.Covariant ->
+                  | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
+                  | Type.Record.Variance.Contravariant, Type.Record.Variance.Invariant
+                  | Type.Record.Variance.Covariant, Type.Record.Variance.Contravariant
+                  | Type.Record.Variance.Contravariant, Type.Record.Variance.Covariant ->
                       emit_error
                         ~errors
                         ~location

@@ -182,7 +182,7 @@ let parents_and_generic_of_target (module Handler : Handler) target =
 
 let is_instantiated (module Handler : Handler) annotation =
   let is_invalid = function
-    | Type.Variable { constraints = Type.Variable.Unconstrained; _ } -> true
+    | Type.Variable { constraints = Type.Record.TypeVarConstraints.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
         not (Handler.contains name)

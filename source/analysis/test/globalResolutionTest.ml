@@ -1527,12 +1527,12 @@ let test_constraints =
   in
   let t_bound =
     Type.Variable.TypeVar.create
-      ~constraints:(Type.Variable.Bound (Type.Primitive "test.Bound"))
+      ~constraints:(Type.Record.TypeVarConstraints.Bound (Type.Primitive "test.Bound"))
       "test.T_Bound"
   in
   let t_explicit =
     Type.Variable.TypeVar.create
-      ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
+      ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.integer; Type.string])
       "test.T_Explicit"
   in
   test_list

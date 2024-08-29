@@ -43,23 +43,27 @@ module QualifiedParameterName = struct
 end
 
 module Record = struct
-  module Variable = struct
-    type state =
-      | Free of { escaped: bool }
-      | InFunction
+  module Variance = struct
+    type t =
+      | Covariant
+      | Contravariant
+      | Invariant
     [@@deriving compare, eq, sexp, show, hash]
+  end
 
-    type 'annotation constraints =
+  module TypeVarConstraints = struct
+    type 'annotation t =
       | Bound of 'annotation
       | Explicit of 'annotation list
       | Unconstrained
       | LiteralIntegers
     [@@deriving compare, eq, sexp, show, hash]
+  end
 
-    type variance =
-      | Covariant
-      | Contravariant
-      | Invariant
+  module Variable = struct
+    type state =
+      | Free of { escaped: bool }
+      | InFunction
     [@@deriving compare, eq, sexp, show, hash]
 
     module Namespace = struct
@@ -69,14 +73,18 @@ module Record = struct
     module TypeVar = struct
       type 'annotation record = {
         name: Identifier.t;
-        constraints: 'annotation constraints;
-        variance: variance;
+        constraints: 'annotation TypeVarConstraints.t;
+        variance: Variance.t;
         state: state;
         namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
+      let create
+          ?(constraints = TypeVarConstraints.Unconstrained)
+          ?(variance = Variance.Invariant)
+          name
+        =
         { name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
     end
 
@@ -583,7 +591,8 @@ module VisitWithTransform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Record.Variable.Bound bound -> Record.Variable.Bound (visit_annotation bound ~state)
+              | Record.TypeVarConstraints.Bound bound ->
+                  Record.TypeVarConstraints.Bound (visit_annotation bound ~state)
               | Explicit constraints -> Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained -> Unconstrained
               | LiteralIntegers -> LiteralIntegers
@@ -3022,8 +3031,8 @@ module Variable = struct
     type t =
       | DTypeVar of {
           name: Identifier.t;
-          constraints: Expression.t constraints;
-          variance: variance;
+          constraints: Expression.t Record.TypeVarConstraints.t;
+          variance: Record.Variance.t;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
@@ -3051,7 +3060,7 @@ module Variable = struct
               List.find_map ~f:bound arguments
             in
             if not (List.is_empty explicits) then
-              Record.Variable.Explicit explicits
+              Record.TypeVarConstraints.Explicit explicits
             else if Option.is_some bound then
               Bound (Option.value_exn bound)
             else
@@ -3064,17 +3073,17 @@ module Variable = struct
                   value = { Node.value = Constant Constant.True; _ };
                 }
                 when String.equal (Identifier.sanitized name) "covariant" ->
-                  Some Record.Variable.Covariant
+                  Some Record.Variance.Covariant
               | {
                   Call.Argument.name = Some { Node.value = name; _ };
                   value = { Node.value = Constant Constant.True; _ };
                 }
                 when String.equal (Identifier.sanitized name) "contravariant" ->
-                  Some Contravariant
+                  Some Record.Variance.Contravariant
               | _ -> None
             in
             List.find_map arguments ~f:variance_definition
-            |> Option.value ~default:Record.Variable.Invariant
+            |> Option.value ~default:Record.Variance.Invariant
           in
 
           Some (DTypeVar { name = Reference.show target; constraints; variance })
@@ -3094,7 +3103,7 @@ module Variable = struct
                {
                  name = Reference.show target;
                  constraints = LiteralIntegers;
-                 variance = Record.Variable.Invariant;
+                 variance = Record.Variance.Invariant;
                })
       | {
           Node.value =
@@ -3186,7 +3195,7 @@ module Variable = struct
     | Declaration.DTypeVar { name; constraints; variance } ->
         let constraints =
           match constraints with
-          | Bound expression -> Bound (create_type expression)
+          | Bound expression -> Record.TypeVarConstraints.Bound (create_type expression)
           | Explicit expressions -> Explicit (List.map ~f:create_type expressions)
           | Unconstrained -> Unconstrained
           | LiteralIntegers -> LiteralIntegers

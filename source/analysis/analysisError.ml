@@ -1083,7 +1083,7 @@ let weaken_literals kind =
       | Type.Variable
           {
             Type.Record.Variable.TypeVar.constraints =
-              Type.Record.Variable.Bound (Type.Primitive "int");
+              Type.Record.TypeVarConstraints.Bound (Type.Primitive "int");
             _;
           } ->
           Some Type.integer

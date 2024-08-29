@@ -147,7 +147,7 @@ let strip_optional annotation =
 
 (* Convert `TypeVar["X", bound="Y"]` to `Y` *)
 let unbind_type_variable = function
-  | Type.Variable { constraints = Type.Record.Variable.Bound bound; _ } -> bound
+  | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } -> bound
   | annotation -> annotation
 
 
