@@ -56,25 +56,23 @@ let test_type_variable_scoping =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            class A:
+            from typing import TypeVar, Generic
 
-                def func2[U](self, x:U) -> U:
+            T = TypeVar("T")
+            class A(Generic[T]):
+                def func2[U](self, x:T, y:U) -> T | U:
                     ...
 
-            a = A()
-            reveal_type(a)
+            a = A[int]()
             reveal_type(a.func2)
-            reveal_type(a.func2("42"))
+
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `U` is used but not defined in the current scope.";
-             "Revealed type [-1]: Revealed type for `a` is `A`.";
              "Revealed type [-1]: Revealed type for `a.func2` is \
-              `BoundMethod[typing.Callable(A.func2)[[Named(self, A), Named(x, Variable[U])], \
-              Variable[U]], A]`.";
-             "Revealed type [-1]: Revealed type for `a.func2(\"42\")` is \
-              `typing_extensions.Literal['42']`.";
+              `BoundMethod[typing.Callable(A.func2)[[Named(self, A[int]), Named(x, int), Named(y, \
+              Variable[U])], typing.Union[int, Variable[U]]], A[int]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

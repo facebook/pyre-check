@@ -1069,7 +1069,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let variables_before_modify =
         match scoped_type_variables with
         | None -> get_variable
-        | Some variable_map -> fun variable_name -> map_find variable_map variable_name
+        | Some variable_map -> (
+            fun variable_name ->
+              let local_scope_variable = map_find variable_map variable_name in
+
+              match local_scope_variable with
+              | None -> get_variable variable_name
+              | Some variable -> Some variable)
       in
       let modify_variables ?replace_unbound_parameters_with_any = function
         | Type.Variable.TypeVarVariable variable ->
