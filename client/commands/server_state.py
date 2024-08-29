@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import enum
+from asyncio import Lock
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -109,3 +110,5 @@ class ServerState:
     )
 
     client_register_event: Optional[asyncio.Event] = None
+
+    pyautotargets_lock: Lock = dataclasses.field(default_factory=asyncio.Lock)

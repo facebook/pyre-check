@@ -879,7 +879,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
             self.get_language_server_features().python_auto_targets.is_enabled()
             and document_path.suffix in PYAUTOTARGETS_ENABLED_SUFFIXES
         ):
-            auto_targets_metadata = await self._run_python_auto_targets(document_path)
+            async with self.server_state.pyautotargets_lock:
+                auto_targets_metadata = await self._run_python_auto_targets(
+                    document_path
+                )
         else:
             auto_targets_metadata = PythonAutoTargetsMetadata(
                 duration=None, error_message=None
