@@ -1351,9 +1351,9 @@ module PrettyPrinting = struct
     | RecursiveType { name; _ } -> Format.fprintf format "%s" name
     | Top -> Format.fprintf format "unknown"
     | Tuple (Concatenation { middle = UnboundedElements argument; prefix = []; suffix = [] }) ->
-        Format.fprintf format "Tuple[%a, ...]" pp_concise argument
+        Format.fprintf format "tuple[%a, ...]" pp_concise argument
     | Tuple ordered_type ->
-        Format.fprintf format "Tuple[%a]" (OrderedTypes.pp_concise ~pp_type:pp_concise) ordered_type
+        Format.fprintf format "tuple[%a]" (OrderedTypes.pp_concise ~pp_type:pp_concise) ordered_type
     | TypeOperation (Compose ordered_type) ->
         Format.fprintf
           format

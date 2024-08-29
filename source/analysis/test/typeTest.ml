@@ -1165,10 +1165,10 @@ let test_concise _ =
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.float]) "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
-  assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
+  assert_concise (Type.tuple [Type.integer; Type.Any]) "tuple[int, Any]";
   assert_concise
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
-    "Tuple[int, ...]";
+    "tuple[int, ...]";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
   assert_concise
     (Type.variable ~constraints:(Type.Record.TypeVarConstraints.Explicit [Type.Top]) "T")
