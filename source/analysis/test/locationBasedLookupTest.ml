@@ -3949,7 +3949,7 @@ let test_hover_info_for_position context =
       test = 5
       # ^- cursor
   |}
-    { value = Some "typing_extensions.Literal[5]"; docstring = None };
+    { value = Some "Literal[5]"; docstring = None };
   assert_hover_info_for_position
     {|
       def test() -> None:
@@ -4036,7 +4036,7 @@ let test_hover_info_for_position context =
    #      ^- cursor
       x = 5
   |}
-    { value = Some "typing_extensions.Literal['docstring']"; docstring = None };
+    { value = Some "Literal['docstring']"; docstring = None };
   assert_hover_info_for_position
     {|
       def test() -> None:

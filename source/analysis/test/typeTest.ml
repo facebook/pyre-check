@@ -1177,8 +1177,8 @@ let test_concise _ =
     (Type.Literal
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
-    "typing_extensions.Literal[test.MyEnum.ONE]";
-  assert_concise (Type.Literal (Type.String AnyLiteral)) "typing_extensions.LiteralString";
+    "Literal[test.MyEnum.ONE]";
+  assert_concise (Type.Literal (Type.String AnyLiteral)) "LiteralString";
   ()
 
 

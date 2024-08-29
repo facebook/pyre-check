@@ -1332,14 +1332,13 @@ module PrettyPrinting = struct
         Format.fprintf format "%s" (signature_to_string implementation)
     | Any -> Format.fprintf format "Any"
     | Literal (Boolean literal) ->
-        Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
-    | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
-    | Literal (String (LiteralValue literal)) ->
-        Format.fprintf format "typing_extensions.Literal['%s']" literal
-    | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
-    | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
+        Format.fprintf format "Literal[%s]" (if literal then "True" else "False")
+    | Literal (Integer literal) -> Format.fprintf format "Literal[%d]" literal
+    | Literal (String (LiteralValue literal)) -> Format.fprintf format "Literal['%s']" literal
+    | Literal (String AnyLiteral) -> Format.fprintf format "LiteralString"
+    | Literal (Bytes literal) -> Format.fprintf format "Literal[b'%s']" literal
     | Literal (EnumerationMember { enumeration_type; member_name }) ->
-        Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
+        Format.fprintf format "Literal[%s.%s]" (show enumeration_type) member_name
     | NoneType -> Format.fprintf format "None"
     | Parametric { name; arguments } ->
         let name = strip_qualification (Canonicalization.reverse_substitute name) in
