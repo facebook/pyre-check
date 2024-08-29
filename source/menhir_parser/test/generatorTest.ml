@@ -155,7 +155,6 @@ let test_lexer =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -707,7 +706,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -735,7 +733,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -764,7 +761,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -788,7 +784,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -812,7 +807,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -836,7 +830,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -860,7 +853,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -884,7 +876,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -917,7 +908,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -941,7 +931,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -979,7 +968,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1011,7 +999,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1039,7 +1026,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1071,7 +1057,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1102,7 +1087,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1126,7 +1110,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1154,7 +1137,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1183,7 +1165,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1202,7 +1183,6 @@ let test_define =
                                generator = false;
                                parent = ModuleContext.create_function ~parent "foo";
                                legacy_parent = None;
-                               nesting_define = None;
                                type_params = [];
                              };
                            captures = [];
@@ -1234,7 +1214,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1265,7 +1244,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1293,7 +1271,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1330,7 +1307,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1358,7 +1334,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1382,7 +1357,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1416,7 +1390,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1453,7 +1426,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1490,7 +1462,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1527,7 +1498,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1563,7 +1533,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1599,7 +1568,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1645,7 +1613,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1691,7 +1658,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1745,7 +1711,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1792,7 +1757,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1838,7 +1802,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1875,7 +1838,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1930,7 +1892,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -1985,7 +1946,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2041,7 +2001,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2082,7 +2041,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2120,7 +2078,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2179,7 +2136,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2228,7 +2184,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2270,7 +2225,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2309,7 +2263,6 @@ let test_define =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -2345,7 +2298,6 @@ let test_define =
                       generator = true;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -4134,7 +4086,6 @@ let test_class =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -4178,7 +4129,6 @@ let test_class =
                                 generator = false;
                                 parent;
                                 legacy_parent = Some !&"foo";
-                                nesting_define = None;
                                 type_params = [];
                               };
                             captures = [];
@@ -4215,7 +4165,6 @@ let test_class =
                                 generator = false;
                                 parent;
                                 legacy_parent = Some !&"foo";
-                                nesting_define = None;
                                 type_params = [];
                               };
                             captures = [];
@@ -4235,7 +4184,6 @@ let test_class =
                                           generator = false;
                                           parent;
                                           legacy_parent = None;
-                                          nesting_define = None;
                                           type_params = [];
                                         };
                                       captures = [];
@@ -4428,7 +4376,6 @@ let test_class =
                                generator = false;
                                parent = ModuleContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
-                               nesting_define = None;
                                type_params = [];
                              };
                            captures = [];
@@ -4465,7 +4412,6 @@ let test_class =
                                generator = false;
                                parent = ModuleContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
-                               nesting_define = None;
                                type_params = [];
                              };
                            captures = [];
@@ -4528,7 +4474,6 @@ let test_class =
                                         generator = false;
                                         parent = ModuleContext.create_class ~parent "foo";
                                         legacy_parent = Some !&"foo";
-                                        nesting_define = None;
                                         type_params = [];
                                       };
                                     captures = [];
@@ -5981,7 +5926,6 @@ let test_stubs =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -6005,7 +5949,6 @@ let test_stubs =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -6029,7 +5972,6 @@ let test_stubs =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -6060,7 +6002,6 @@ let test_stubs =
                       generator = false;
                       parent;
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];
@@ -6152,7 +6093,6 @@ let test_ellipsis =
                       generator = false;
                       parent = ModuleContext.create_toplevel ();
                       legacy_parent = None;
-                      nesting_define = None;
                       type_params = [];
                     };
                   captures = [];

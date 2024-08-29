@@ -1286,7 +1286,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1315,7 +1314,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1345,7 +1343,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1370,7 +1367,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1399,7 +1395,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1424,7 +1419,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1449,7 +1443,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1474,7 +1467,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1499,7 +1491,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1535,7 +1526,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1560,7 +1550,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1599,7 +1588,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1632,7 +1620,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1661,7 +1648,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1694,7 +1680,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1726,7 +1711,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1751,7 +1735,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1780,7 +1763,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1811,7 +1793,6 @@ let test_define =
                          generator = false;
                          parent;
                          legacy_parent = None;
-                         nesting_define = None;
                          type_params = [];
                        };
                      captures = [];
@@ -1831,7 +1812,6 @@ let test_define =
                                    generator = false;
                                    parent;
                                    legacy_parent = None;
-                                   nesting_define = None;
                                    type_params = [];
                                  };
                                captures = [];
@@ -1864,7 +1844,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1896,7 +1875,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1925,7 +1903,6 @@ let test_define =
                         generator = false;
                         parent = ModuleContext.create_toplevel ();
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];
@@ -1936,127 +1913,125 @@ let test_define =
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = []; decorators = []; return_annotation = Some !"str"; async = false;
-        generator = false; legacy_parent = None; nesting_define = None; type_params = []; };
-        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; *)
+        generator = false; legacy_parent = None; type_params = []; }; captures = []; unbound_names =
+        []; body = [ +Statement.Return { Return.expression = Some (+Expression.Constant
+        (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; *)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = []; decorators = []; return_annotation = Some !"str"; async = false;
-        generator = false; legacy_parent = None; nesting_define = None; type_params = []; };
-        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        generator = false; legacy_parent = None; type_params = []; }; captures = []; unbound_names =
+        []; body = [ +Statement.Return { Return.expression = Some (+Expression.Constant
+        (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"str" }];
         decorators = []; return_annotation = Some !"str"; async = false; generator = false;
-        legacy_parent = None; nesting_define = None; type_params = []; }; captures = [];
-        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        legacy_parent = None; type_params = []; }; captures = []; unbound_names = []; body = [
+        +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+        is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): #
         type: (str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name =
         !&"A"; base_arguments = []; decorators = []; top_level_unbound_names = []; type_params = [];
         body = [ +Statement.Define { Define.signature = { name = !&"foo"; parameters = [ +{
         Parameter.name = "self"; value = None; annotation = None }; +{ Parameter.name = "a"; value =
         None; annotation = Some !"str" }; ]; decorators = []; return_annotation = Some !"str"; async
-        = false; generator = false; legacy_parent = Some !&"A"; nesting_define = None; type_params =
-        []; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-        Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
+        = false; generator = false; legacy_parent = Some !&"A"; type_params = []; }; captures = [];
+        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
+        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): #
         type: (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name =
         !&"A"; base_arguments = []; decorators = []; top_level_unbound_names = []; type_params = [];
         body = [ +Statement.Define { Define.signature = { name = !&"foo"; parameters = [ +{
         Parameter.name = "self"; value = None; annotation = Some !"A" }; +{ Parameter.name = "a";
         value = None; annotation = Some !"str" }; ]; decorators = []; return_annotation = Some
-        !"str"; async = false; generator = false; legacy_parent = Some !&"A"; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-        Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false;
-        }; ]; }; ]; }; ];*)
+        !"str"; async = false; generator = false; legacy_parent = Some !&"A"; type_params = []; };
+        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
+        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b #
         type: bool ): pass |}) ~expected: [ +Statement.Define { Define.signature = {
         Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None;
         annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); };
         +{ Parameter.name = "b"; value = None; annotation = Some (+Expression.Constant
         (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation =
-        None; async = false; generator = false; legacy_parent = None; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+        None; async = false; generator = false; legacy_parent = None; type_params = []; }; captures
+        = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b
         # type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define {
         Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None;
         annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); };
         +{ Parameter.name = "b"; value = None; annotation = Some (+Expression.Constant
         (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation =
-        Some !"int"; async = true; generator = false; legacy_parent = None; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+        Some !"int"; async = true; generator = false; legacy_parent = None; type_params = []; };
+        captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): #
         type: ( *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { Define.signature =
         { Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "*args"; value = None;
         annotation = Some !"str" }; +{ Parameter.name = "**kwargs"; value = None; annotation = Some
         !"str" }; ]; decorators = []; return_annotation = Some !"str"; async = false; generator =
-        false; legacy_parent = None; nesting_define = None; type_params = []; }; captures = [];
-        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        false; legacy_parent = None; type_params = []; }; captures = []; unbound_names = []; body =
+        [ +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+        is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = []; decorators = []; return_annotation = Some !"str"; async = false;
-        generator = false; legacy_parent = None; nesting_define = None; type_params = []; };
-        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        generator = false; legacy_parent = None; type_params = []; }; captures = []; unbound_names =
+        []; body = [ +Statement.Return { Return.expression = Some (+Expression.Constant
+        (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = []; decorators = []; return_annotation = Some !"str"; async = false;
-        generator = false; legacy_parent = None; nesting_define = None; type_params = []; };
-        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        generator = false; legacy_parent = None; type_params = []; }; captures = []; unbound_names =
+        []; body = [ +Statement.Return { Return.expression = Some (+Expression.Constant
+        (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
         return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
         !&"foo"; parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"str" }];
         decorators = []; return_annotation = Some !"str"; async = false; generator = false;
-        legacy_parent = None; nesting_define = None; type_params = []; }; captures = [];
-        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        legacy_parent = None; type_params = []; }; captures = []; unbound_names = []; body = [
+        +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+        is_implicit = false; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): #
         type: (str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name =
         !&"A"; base_arguments = []; decorators = []; top_level_unbound_names = []; type_params = [];
         body = [ +Statement.Define { Define.signature = { name = !&"foo"; parameters = [ +{
         Parameter.name = "self"; value = None; annotation = None }; +{ Parameter.name = "a"; value =
         None; annotation = Some !"str" }; ]; decorators = []; return_annotation = Some !"str"; async
-        = false; generator = false; legacy_parent = Some !&"A"; nesting_define = None; type_params =
-        []; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-        Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
+        = false; generator = false; legacy_parent = Some !&"A"; type_params = []; }; captures = [];
+        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
+        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): #
         type: (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name =
         !&"A"; base_arguments = []; decorators = []; top_level_unbound_names = []; type_params = [];
         body = [ +Statement.Define { Define.signature = { name = !&"foo"; parameters = [ +{
         Parameter.name = "self"; value = None; annotation = Some !"A" }; +{ Parameter.name = "a";
         value = None; annotation = Some !"str" }; ]; decorators = []; return_annotation = Some
-        !"str"; async = false; generator = false; legacy_parent = Some !&"A"; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-        Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false;
-        }; ]; }; ]; }; ];*)
+        !"str"; async = false; generator = false; legacy_parent = Some !&"A"; type_params = []; };
+        captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression = Some
+        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b #
         type: bool ): pass |}) ~expected: [ +Statement.Define { Define.signature = {
         Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None;
         annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); };
         +{ Parameter.name = "b"; value = None; annotation = Some (+Expression.Constant
         (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation =
-        None; async = false; generator = false; legacy_parent = None; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+        None; async = false; generator = false; legacy_parent = None; type_params = []; }; captures
+        = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b
         # type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define {
         Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None;
         annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); };
         +{ Parameter.name = "b"; value = None; annotation = Some (+Expression.Constant
         (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation =
-        Some !"int"; async = true; generator = false; legacy_parent = None; nesting_define = None;
-        type_params = []; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+        Some !"int"; async = true; generator = false; legacy_parent = None; type_params = []; };
+        captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
       (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): #
         type: ( *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { Define.signature =
         { Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "*args"; value = None;
         annotation = Some !"str" }; +{ Parameter.name = "**kwargs"; value = None; annotation = Some
         !"str" }; ]; decorators = []; return_annotation = Some !"str"; async = false; generator =
-        false; legacy_parent = None; nesting_define = None; type_params = []; }; captures = [];
-        unbound_names = []; body = [ +Statement.Return { Return.expression = Some
-        (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+        false; legacy_parent = None; type_params = []; }; captures = []; unbound_names = []; body =
+        [ +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+        is_implicit = false; }; ]; }; ];*)
 
       (*TODO (T148669698): assert_not_parsed (trim_extra_indentation {| def foo(x): # type: (str,
         str) -> str return 4 |});*)
@@ -2125,7 +2100,6 @@ let test_class =
                                   generator = false;
                                   parent;
                                   legacy_parent = Some !&"foo";
-                                  nesting_define = None;
                                   type_params = [];
                                 };
                               captures = [];
@@ -2163,7 +2137,6 @@ let test_class =
                                   generator = false;
                                   parent;
                                   legacy_parent = Some !&"foo";
-                                  nesting_define = None;
                                   type_params = [];
                                 };
                               captures = [];
@@ -2183,7 +2156,6 @@ let test_class =
                                             generator = false;
                                             parent;
                                             legacy_parent = None;
-                                            nesting_define = None;
                                             type_params = [];
                                           };
                                         captures = [];
@@ -2299,7 +2271,6 @@ let test_class =
                                   generator = false;
                                   parent;
                                   legacy_parent = Some !&"foo";
-                                  nesting_define = None;
                                   type_params = [];
                                 };
                               captures = [];
@@ -2337,7 +2308,6 @@ let test_class =
                                   generator = false;
                                   parent;
                                   legacy_parent = Some !&"A";
-                                  nesting_define = None;
                                   type_params = [];
                                 };
                               captures = [];
@@ -2364,7 +2334,6 @@ let test_class =
                                             generator = false;
                                             parent;
                                             legacy_parent = Some !&"B";
-                                            nesting_define = None;
                                             type_params = [];
                                           };
                                         captures = [];
@@ -2399,7 +2368,6 @@ let test_class =
                         generator = false;
                         parent;
                         legacy_parent = None;
-                        nesting_define = None;
                         type_params = [];
                       };
                     captures = [];

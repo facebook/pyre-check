@@ -165,10 +165,6 @@ and Define : sig
       (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
          `parent` in all cases. *)
       legacy_parent: Reference.t option;
-      (* If the define is nested, this is the qualified name of the nesting define. *)
-      (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
-         `parent` in all cases. *)
-      nesting_define: Reference.t option;
       type_params: Expression.TypeParam.t list;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]

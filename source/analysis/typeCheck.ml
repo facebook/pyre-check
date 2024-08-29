@@ -5795,18 +5795,17 @@ module State (Context : Context) = struct
             return_type
         in
         Value resolution, validate_return expression ~resolution ~errors ~actual ~is_implicit
-    | Define
-        { signature = { Define.Signature.name; nesting_define; type_params; _ } as signature; _ } ->
+    | Define { signature = { Define.Signature.name; parent; type_params; _ } as signature; _ } ->
         let resolution =
-          match nesting_define with
-          | Some _ ->
+          match parent with
+          | ModuleContext.Function _ ->
               type_of_signature ~module_name:Context.qualifier ~resolution signature
               |> Type.Variable.mark_all_variables_as_bound
                    ~specific:(Resolution.all_type_variables_in_scope resolution)
               |> TypeInfo.Unit.create_mutable
               |> fun annotation ->
               Resolution.new_local resolution ~reference:name ~type_info:annotation
-          | None -> resolution
+          | _ -> resolution
         in
         (* TODO: remove after PEP 695 is supported *)
         let type_params_errors =
@@ -6479,15 +6478,15 @@ module State (Context : Context) = struct
           |> add_typeguard_error return_annotation return_type
     in
     let add_capture_annotations ~outer_scope_type_variables resolution errors =
-      let process_signature ({ Define.Signature.nesting_define; _ } as signature) =
-        match nesting_define with
-        | Some _ ->
+      let process_signature ({ Define.Signature.parent; _ } as signature) =
+        match parent with
+        | ModuleContext.Function _ ->
             type_of_signature ~module_name:Context.qualifier ~resolution signature
             |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
             |> TypeInfo.Unit.create_mutable
             |> fun annotation ->
             Resolution.new_local resolution ~reference:name ~type_info:annotation
-        | None -> resolution
+        | _ -> resolution
       in
       let process_capture (resolution, errors) { Define.Capture.name; kind } =
         let resolution, errors, type_ =

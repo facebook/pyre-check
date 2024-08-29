@@ -312,7 +312,6 @@ module Make (Transformer : Transformer) = struct
                   async;
                   parent;
                   legacy_parent;
-                  nesting_define;
                   generator;
                   type_params;
                 }
@@ -326,7 +325,6 @@ module Make (Transformer : Transformer) = struct
                 async;
                 parent;
                 legacy_parent;
-                nesting_define;
                 generator;
                 type_params =
                   transform_list type_params ~f:(transform_type_param ~transform_expression);

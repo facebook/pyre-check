@@ -578,7 +578,6 @@ let test_define_local_bindings _ =
               generator = false;
               parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
               legacy_parent = None;
-              nesting_define = None;
               type_params = [];
             }
           in
@@ -1096,9 +1095,7 @@ let assert_access ~actual ~expected name =
 
 let test_scope_stack_lookup _ =
   let assert_bindings ~expected ~site source_text =
-    let source =
-      Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_nesting_defines
-    in
+    let source = Test.parse ~handle:"test.py" source_text in
     let scope_stack = ScopeStack.create source in
     let scope_stack =
       match site with
@@ -1117,29 +1114,25 @@ let test_scope_stack_lookup _ =
                   Format.sprintf "Cannot find define with name %s" (Reference.show name)
                 in
                 failwith message
-            | Some define -> define
+            | Some { Node.value = define; _ } -> define
+          in
+          let parent_of { Statement.Define.signature = { Statement.Define.Signature.parent; _ }; _ }
+            =
+            parent
           in
           let defines =
             (* Collect all defines that (transitively) nest the define whose name is `name` *)
             let rec walk_nesting sofar = function
-              | None -> sofar
-              | Some name ->
-                  let {
-                    Node.value =
-                      {
-                        Statement.Define.signature =
-                          { Statement.Define.Signature.nesting_define; _ };
-                        _;
-                      } as define;
-                    _;
-                  }
-                    =
-                    find_define name
-                  in
+              | ModuleContext.TopLevel
+              | ModuleContext.Class _ ->
+                  sofar
+              | ModuleContext.Function { name; parent } ->
+                  let define = find_define (Reference.create name) in
                   (* Shallow nests come before deep nests *)
-                  walk_nesting (define :: sofar) nesting_define
+                  walk_nesting (define :: sofar) parent
             in
-            walk_nesting [] (Some name)
+            let initial_define = find_define name in
+            walk_nesting [initial_define] (parent_of initial_define)
           in
           List.fold defines ~init:scope_stack ~f:(fun scope_stack define ->
               let scope = Scope.of_define_exn define in

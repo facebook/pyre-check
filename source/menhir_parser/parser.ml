@@ -503,7 +503,6 @@ module ParserToAst = struct
               generator = Ast.Statement.is_generator body;
               parent;
               legacy_parent;
-              nesting_define = None;
               type_params = [];
             }
           in

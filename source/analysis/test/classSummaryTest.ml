@@ -212,7 +212,6 @@ let test_class_attributes =
                 generator = false;
                 parent = ModuleContext.create_toplevel ();
                 legacy_parent = None;
-                nesting_define = None;
                 type_params = [];
               }
             in

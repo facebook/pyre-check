@@ -980,7 +980,7 @@ module Qualify (Context : QualifyContext) = struct
           ({ qualifier; _ } as scope)
           ({
              Define.signature =
-               { name; parameters; decorators; return_annotation; legacy_parent; nesting_define; _ };
+               { name; parameters; decorators; return_annotation; legacy_parent; _ };
              body;
              _;
            } as define)
@@ -989,9 +989,6 @@ module Qualify (Context : QualifyContext) = struct
           return_annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
         in
         let legacy_parent = legacy_parent >>| fun parent -> qualify_reference ~scope parent in
-        let nesting_define =
-          nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
-        in
         let decorators =
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
@@ -1020,7 +1017,6 @@ module Qualify (Context : QualifyContext) = struct
             decorators;
             return_annotation;
             legacy_parent;
-            nesting_define;
           }
         in
         scope, { define with signature; body }
@@ -2672,7 +2668,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 generator = false;
                 parent;
                 legacy_parent = Some class_name;
-                nesting_define = None;
                 type_params = [];
               };
             captures = [];
@@ -2887,7 +2882,6 @@ let expand_new_types ({ Source.statements; _ } as source) =
               generator = false;
               parent = ModuleContext.create_class ~parent:class_parent (Reference.last name);
               legacy_parent = Some name;
-              nesting_define = None;
               type_params = [];
             };
           captures = [];
@@ -3032,65 +3026,6 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
     { statement with Node.value = expanded_declaration }
   in
   { source with Source.statements = List.map ~f:expand_declarative_base_instance statements }
-
-
-let populate_nesting_defines ({ Source.statements; _ } as source) =
-  let open Statement in
-  let rec transform_statement ~nesting_define statement =
-    match statement with
-    | {
-     Node.location;
-     value =
-       Define
-         {
-           Define.signature = { Define.Signature.name; _ } as signature;
-           captures;
-           unbound_names;
-           body;
-         };
-    } ->
-        let signature = { signature with Define.Signature.nesting_define } in
-        let body = transform_statements ~nesting_define:(Some name) body in
-        { Node.location; value = Define { signature; captures; unbound_names; body } }
-    | { Node.location; value = Class class_ } ->
-        let body = transform_statements ~nesting_define:None class_.body in
-        { Node.location; value = Class { class_ with body } }
-    | { Node.location; value = For for_ } ->
-        let body = transform_statements ~nesting_define for_.body in
-        let orelse = transform_statements ~nesting_define for_.orelse in
-        { Node.location; value = For { for_ with body; orelse } }
-    | { Node.location; value = If if_ } ->
-        let body = transform_statements ~nesting_define if_.body in
-        let orelse = transform_statements ~nesting_define if_.orelse in
-        { Node.location; value = If { if_ with body; orelse } }
-    | {
-     Node.location;
-     value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
-    } ->
-        let body = transform_statements ~nesting_define body in
-        let orelse = transform_statements ~nesting_define orelse in
-        let finally = transform_statements ~nesting_define finally in
-        let handlers =
-          List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
-              let body = transform_statements ~nesting_define body in
-              { handler with body })
-        in
-        {
-          Node.location;
-          value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
-        }
-    | { Node.location; value = With with_ } ->
-        let body = transform_statements ~nesting_define with_.body in
-        { Node.location; value = With { with_ with body } }
-    | { Node.location; value = While while_ } ->
-        let body = transform_statements ~nesting_define while_.body in
-        let orelse = transform_statements ~nesting_define while_.orelse in
-        { Node.location; value = While { while_ with body; orelse } }
-    | statement -> statement
-  and transform_statements ~nesting_define statements =
-    List.map statements ~f:(transform_statement ~nesting_define)
-  in
-  { source with Source.statements = transform_statements ~nesting_define:None statements }
 
 
 module NameAccessSet = Set.Make (Define.NameAccess)
@@ -4832,7 +4767,6 @@ let preprocess_after_wildcards source =
   |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
   |> expand_enum_functional_syntax
-  |> populate_nesting_defines
   |> populate_captures
 
 

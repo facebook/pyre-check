@@ -32,7 +32,6 @@ let test_is_method _ =
           generator = false;
           parent;
           legacy_parent;
-          nesting_define = None;
           type_params = [];
         };
       captures = [];
@@ -64,7 +63,6 @@ let test_is_classmethod _ =
           generator = false;
           parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "bar");
           legacy_parent = Some !&"bar";
-          nesting_define = None;
           type_params = [];
         };
       captures = [];
@@ -93,7 +91,6 @@ let test_is_class_property _ =
           generator = false;
           parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "bar");
           legacy_parent = Some !&"bar";
-          nesting_define = None;
           type_params = [];
         };
       captures = [];
@@ -120,7 +117,6 @@ let test_decorator _ =
           generator = false;
           parent = ModuleContext.create_toplevel ();
           legacy_parent = None;
-          nesting_define = None;
           type_params = [];
         };
       captures = [];
@@ -169,7 +165,6 @@ let test_is_constructor _ =
             generator = false;
             parent;
             legacy_parent;
-            nesting_define = None;
             type_params = [];
           };
         captures = [];

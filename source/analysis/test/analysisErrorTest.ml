@@ -24,7 +24,6 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     generator = false;
     parent = ModuleContext.create_toplevel ();
     legacy_parent = None;
-    nesting_define = None;
     type_params = [];
   }
 

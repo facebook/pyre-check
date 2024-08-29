@@ -110,7 +110,6 @@ let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
           generator = false;
           parent;
           legacy_parent = Some prefix;
-          nesting_define = None;
           type_params = [];
         };
       captures = [];
@@ -185,7 +184,6 @@ let generic_meta_body =
             generator = false;
             parent;
             legacy_parent = Some prefix;
-            nesting_define = None;
             type_params = [];
           };
         captures = [];

@@ -50,8 +50,6 @@ val expand_new_types : Source.t -> Source.t
 
 val expand_sqlalchemy_declarative_base : Source.t -> Source.t
 
-val populate_nesting_defines : Source.t -> Source.t
-
 val populate_captures : Source.t -> Source.t
 
 val populate_unbound_names : Source.t -> Source.t

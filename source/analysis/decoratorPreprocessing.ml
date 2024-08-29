@@ -919,7 +919,6 @@ let postprocess
   let statement = { Node.location; value = Statement.Define { decorated_define with signature } } in
   Source.create [statement]
   |> Preprocessing.qualify
-  |> Preprocessing.populate_nesting_defines
   |> Preprocessing.populate_captures
   |> Source.statements
   |> function

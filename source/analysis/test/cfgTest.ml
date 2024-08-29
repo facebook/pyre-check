@@ -26,7 +26,6 @@ let test_to_dot _ =
             generator = false;
             parent = Ast.ModuleContext.create_toplevel ();
             legacy_parent = None;
-            nesting_define = None;
             type_params = [];
           };
         captures = [];
@@ -113,7 +112,6 @@ let assert_cfg body expected =
           generator = false;
           parent = Ast.ModuleContext.create_toplevel ();
           legacy_parent = None;
-          nesting_define = None;
           type_params = [];
         };
       captures = [];

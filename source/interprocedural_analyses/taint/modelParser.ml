@@ -84,7 +84,6 @@ let create_dummy_signature ~decorators name =
     generator = false;
     parent = ModuleContext.create_toplevel ();
     legacy_parent = None;
-    nesting_define = None;
     type_params = [];
   }
 

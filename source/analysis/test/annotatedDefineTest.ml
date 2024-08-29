@@ -33,7 +33,6 @@ let test_parent_definition context =
           generator = false;
           parent;
           legacy_parent;
-          nesting_define = None;
           type_params = [];
         };
       captures = [];

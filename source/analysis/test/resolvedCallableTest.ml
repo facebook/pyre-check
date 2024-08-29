@@ -54,7 +54,6 @@ let create_define ~decorators ~parameters ~return_annotation =
     generator = false;
     parent = ModuleContext.create_toplevel ();
     legacy_parent = None;
-    nesting_define = None;
     type_params = [];
   }
 

@@ -3112,7 +3112,6 @@ let mock_signature =
     generator = false;
     parent = ModuleContext.create_toplevel ();
     legacy_parent = None;
-    nesting_define = None;
     type_params = [];
   }
 

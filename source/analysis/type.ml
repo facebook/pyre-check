@@ -4003,7 +4003,6 @@ module TypedDictionary = struct
               generator = false;
               parent = ModuleContext.create_toplevel ();
               legacy_parent = Some (Reference.create class_name);
-              nesting_define = None;
               type_params = [];
             };
           captures = [];
