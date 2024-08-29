@@ -4411,80 +4411,35 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
     else
       None
   in
-  let create_from_subscript
-      ~location
-      ~base
-      ~subscript_index:({ Node.value = index_value; _ } as subscript_index)
-    =
-    let create_parametric ~base ~subscript_index =
-      let parametric name =
-        let arguments =
-          let element_to_arguments = function
-            | { Node.value = Expression.List elements; _ } ->
-                [
-                  Record.Argument.CallableParameters
-                    (Defined (List.mapi ~f:extract_parameter elements));
-                ]
-            | element -> (
-                let parsed = create_logic element in
-                match arguments_from_unpacked_annotation ~variables parsed with
-                | Some arguments -> arguments
-                | None -> (
-                    match substitute_parameter_variadic parsed with
-                    | Some variable -> [Record.Argument.CallableParameters (FromParamSpec variable)]
-                    | _ -> [Record.Argument.Single parsed]))
-          in
-          match subscript_index with
-          | { Node.value = Expression.Tuple elements; _ } ->
-              List.concat_map elements ~f:element_to_arguments
-          | element -> element_to_arguments element
+  let create_from_subscript ~base ~subscript_index =
+    let create_parametric name =
+      let arguments =
+        let element_to_arguments = function
+          | { Node.value = Expression.List elements; _ } ->
+              [
+                Record.Argument.CallableParameters
+                  (Defined (List.mapi ~f:extract_parameter elements));
+              ]
+          | element -> (
+              let parsed = create_logic element in
+              match arguments_from_unpacked_annotation ~variables parsed with
+              | Some arguments -> arguments
+              | None -> (
+                  match substitute_parameter_variadic parsed with
+                  | Some variable -> [Record.Argument.CallableParameters (FromParamSpec variable)]
+                  | _ -> [Record.Argument.Single parsed]))
         in
-        Parametric { name; arguments } |> resolve_aliases
+        match subscript_index with
+        | { Node.value = Expression.Tuple elements; _ } ->
+            List.concat_map elements ~f:element_to_arguments
+        | element -> element_to_arguments element
       in
-      match create_logic base, Node.value base with
-      | Primitive name, _ -> parametric name
-      | _, Name _ -> parametric (Expression.show base)
-      | _ -> Top
+      Parametric { name; arguments } |> resolve_aliases
     in
-    match base, index_value with
-    | ( {
-          Node.value =
-            Expression.Name
-              (Name.Attribute
-                {
-                  base =
-                    {
-                      Node.value =
-                        Expression.Name
-                          (Name.Identifier "typing" | Name.Identifier "typing_extensions");
-                      _;
-                    };
-                  attribute = "Literal";
-                  _;
-                });
-          _;
-        },
-        _ ) ->
-        let arguments =
-          match index_value with
-          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
-          | argument -> Some [argument]
-        in
-        arguments
-        >>| List.map ~f:create_literal
-        >>= Option.all
-        >>| Constructors.union
-        |> Option.value ~default:Top
-    | _, _ -> (
-        match parse_callable_if_appropriate ~location ~base ~subscript_index with
-        | Some callable_type -> callable_type
-        | None ->
-            (* This is actually the case that almost all parametric type annotations eventually hit;
-               everything above is just special-casing some unusual scenarios where we customize
-               behavior.
-
-               TODO(T84854853): Add back support for `Length` and `Product`. *)
-            create_parametric ~base ~subscript_index)
+    match create_logic base, Node.value base with
+    | Primitive name, _ -> create_parametric name
+    | _, Name _ -> create_parametric (Expression.show base)
+    | _ -> Top
   in
   let resolve_variables_then_aliases alias_name =
     match variables alias_name with
@@ -4493,8 +4448,42 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
   in
   let result =
     match expression with
-    | Subscript { base; index = subscript_index } ->
-        create_from_subscript ~location:(Node.location base) ~base ~subscript_index
+    | Subscript
+        {
+          base =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Expression.Name (Name.Identifier ("typing" | "typing_extensions"));
+                          _;
+                        };
+                      attribute = "Literal";
+                      _;
+                    });
+              _;
+            };
+          index = subscript_index;
+        } ->
+        let arguments =
+          match Node.value subscript_index with
+          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
+          | argument -> Some [argument]
+        in
+        arguments
+        >>| List.map ~f:create_literal
+        >>= Option.all
+        >>| Constructors.union
+        |> Option.value ~default:Top
+    | Subscript { base; index = subscript_index } -> (
+        let location = Node.location base in
+        match parse_callable_if_appropriate ~location ~base ~subscript_index with
+        | Some callable_type -> callable_type
+        | None -> create_from_subscript ~base ~subscript_index)
     | Starred (Once expr) ->
         let base =
           Expression.Name
@@ -4508,7 +4497,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
                })
           |> Node.create ~location:(Node.location expr)
         in
-        create_from_subscript ~location:(Node.location expr) ~base ~subscript_index:expr
+        create_from_subscript ~base ~subscript_index:expr
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
