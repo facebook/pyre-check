@@ -153,7 +153,7 @@ val signature_select
   :  t ->
   resolve_with_locals:
     (locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.expression Node.t -> Type.t) ->
-  arguments:Type.t AttributeResolution.Argument.t list ->
+  arguments:Type.t SignatureSelection.Argument.t list ->
   location:Location.t ->
   callable:Type.Callable.t ->
   self_argument:Type.t option ->

@@ -49,6 +49,7 @@ module Resolution = Resolution
 module ResolvedReference = ResolvedReference
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
+module SignatureSelection = SignatureSelection
 module SignatureSelectionTypes = SignatureSelectionTypes
 module SourceCodeApi = SourceCodeApi
 module SourceCodeIncrementalApi = SourceCodeIncrementalApi

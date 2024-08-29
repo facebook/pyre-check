@@ -12,11 +12,9 @@ open Analysis
 open Test
 
 let test_prepare_arguments_for_signature_selection _ =
-  let open AttributeResolution in
+  let open SignatureSelection in
   let assert_prepared_arguments ~self_argument arguments expected =
-    let actual =
-      SignatureSelection.prepare_arguments_for_signature_selection ~self_argument arguments
-    in
+    let actual = prepare_arguments_for_signature_selection ~self_argument arguments in
     assert_equal
       ~printer:[%show: Type.t Argument.WithPosition.t list]
       ~cmp:[%compare.equal: Type.t Argument.WithPosition.t list]
@@ -101,7 +99,7 @@ let test_prepare_arguments_for_signature_selection _ =
 
 
 let test_get_parameter_argument_mapping context =
-  let open AttributeResolution in
+  let open SignatureSelection in
   let open Type.Callable in
   let resolution =
     ScratchProject.build_resolution (ScratchProject.setup ~context ["test.py", ""])
@@ -114,7 +112,7 @@ let test_get_parameter_argument_mapping context =
       | _ -> failwith "expected defined parameters"
     in
     let actual =
-      SignatureSelection.get_parameter_argument_mapping
+      get_parameter_argument_mapping
         ~all_parameters:(Defined parameters)
         ~parameters
         ~self_argument
@@ -816,7 +814,7 @@ let test_get_parameter_argument_mapping context =
 
 
 let test_check_arguments_against_parameters context =
-  let open AttributeResolution in
+  let open SignatureSelection in
   let open Type.Callable in
   let open Type.OrderedTypes in
   let assert_arguments_against_parameters
@@ -839,7 +837,7 @@ let test_check_arguments_against_parameters context =
       | _ -> failwith "expected defined parameters"
     in
     let { constraints_set = actual_constraints_set; reasons = actual_reasons; _ } =
-      SignatureSelection.check_arguments_against_parameters
+      check_arguments_against_parameters
         ~order
         ~resolve_mutable_literals:(fun ~resolve:_ ~expression:_ ~resolved ~expected:_ ->
           WeakenMutableLiterals.make_weakened_type resolved)
@@ -1560,7 +1558,7 @@ let test_check_arguments_against_parameters context =
 
 
 let test_most_important_error_reason _ =
-  let open AttributeResolution in
+  let open SignatureSelection in
   let open SignatureSelectionTypes in
   let assert_most_important_error_reason
       ~arity_mismatch_reasons
@@ -1571,9 +1569,7 @@ let test_most_important_error_reason _ =
       ~printer:[%show: reason option]
       ~cmp:[%compare.equal: reason option]
       expected
-      (SignatureSelection.most_important_error_reason
-         ~arity_mismatch_reasons
-         annotation_mismatch_reasons)
+      (most_important_error_reason ~arity_mismatch_reasons annotation_mismatch_reasons)
   in
   assert_most_important_error_reason ~arity_mismatch_reasons:[] ~annotation_mismatch_reasons:[] None;
   assert_most_important_error_reason

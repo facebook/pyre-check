@@ -96,7 +96,7 @@ let test_compose_list _ =
   let variable2 = Type.Variable.TypeVar.create "R" in
   let identity_select ~arguments ~callable ~self_argument =
     match arguments with
-    | [{ AttributeResolution.Argument.resolved; _ }] ->
+    | [{ SignatureSelection.Argument.resolved; _ }] ->
         SignatureSelectionTypes.Found { selected_return_annotation = resolved }
     | _ -> fail_select ~arguments ~callable ~self_argument
   in

@@ -216,7 +216,7 @@ let errors_from_not_found
                 | ( "__setitem__",
                     Some
                       ({
-                         AttributeResolution.Argument.expression =
+                         SignatureSelection.Argument.expression =
                            Some
                              {
                                Node.value = Constant (Constant.String { value = field_name; _ });
@@ -234,9 +234,7 @@ let errors_from_not_found
               Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true
             in
             let is_mutating_method_on_readonly self_argument_type =
-              Int.equal
-                position
-                AttributeResolution.SignatureSelection.reserved_position_for_self_argument
+              Int.equal position SignatureSelection.reserved_position_for_self_argument
               && Type.ReadOnly.is_readonly self_argument_type
             in
             let default_location_and_error =
@@ -1224,7 +1222,7 @@ module State (Context : Context) = struct
           ({ Callee.base = { expression; resolved_base }; attribute = { name; _ }; _ } as
           callee_attribute)
       = function
-      | [{ AttributeResolution.Argument.resolved; _ }] as arguments ->
+      | [{ SignatureSelection.Argument.resolved; _ }] as arguments ->
           let found_inverse_operator =
             inverse_operator name
             >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
@@ -1235,7 +1233,7 @@ module State (Context : Context) = struct
               let inverted_arguments =
                 [
                   {
-                    AttributeResolution.Argument.expression = Some expression;
+                    SignatureSelection.Argument.expression = Some expression;
                     resolved = resolved_base;
                     kind = Positional;
                   };
@@ -1308,7 +1306,7 @@ module State (Context : Context) = struct
           match callee, callable, arguments with
           | ( Callee.Attribute { base = { expression; resolved_base }; _ },
               { Type.Callable.kind = Type.Callable.Named name; _ },
-              [{ AttributeResolution.Argument.resolved; _ }] )
+              [{ SignatureSelection.Argument.resolved; _ }] )
             when not is_inverted_operator ->
               inverse_operator (Reference.last name)
               >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
@@ -1317,7 +1315,7 @@ module State (Context : Context) = struct
                     let arguments =
                       [
                         {
-                          AttributeResolution.Argument.expression = Some expression;
+                          SignatureSelection.Argument.expression = Some expression;
                           kind = Positional;
                           resolved = resolved_base;
                         };
@@ -1410,7 +1408,7 @@ module State (Context : Context) = struct
             match undefined_attributes, operator_name_to_symbol name with
             | ( [
                   UnknownCallableAttribute
-                    { arguments = [{ AttributeResolution.Argument.resolved; _ }]; _ };
+                    { arguments = [{ SignatureSelection.Argument.resolved; _ }]; _ };
                 ],
                 Some operator_name ) ->
                 Some
@@ -1558,7 +1556,7 @@ module State (Context : Context) = struct
     |> fun { resolution; errors = new_errors; resolved; _ } ->
     ( resolution,
       List.append new_errors errors,
-      { AttributeResolution.Argument.kind; expression = Some expression; resolved } )
+      { SignatureSelection.Argument.kind; expression = Some expression; resolved } )
 
 
   (* The `forward_call_with_arguments` function accepts arguments as *expressions* and will traverse
@@ -5359,7 +5357,7 @@ module State (Context : Context) = struct
           in
           let value_argument =
             {
-              AttributeResolution.Argument.kind = Call.Argument.Positional;
+              SignatureSelection.Argument.kind = Call.Argument.Positional;
               expression = value;
               resolved = guide_annotation_type;
             }

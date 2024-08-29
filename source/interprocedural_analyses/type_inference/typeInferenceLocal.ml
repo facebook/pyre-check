@@ -742,7 +742,7 @@ module State (Context : Context) = struct
     in
     let refine_argument ~resolution ~parameter_type argument =
       match argument with
-      | AttributeResolution.MatchedArgument { argument = { expression = Some expression; _ }; _ } ->
+      | SignatureSelection.MatchedArgument { argument = { expression = Some expression; _ }; _ } ->
           refine_names_in_argument ~resolution ~parameter_type expression
       | _ -> resolution
     in
@@ -766,12 +766,11 @@ module State (Context : Context) = struct
      For example, if we have `expect_str(x)`, then we know `type_x <: str`. *)
   let infer_argument_types_using_parameter_types ~state ~resolution statement =
     let parameter_argument_mapping ~arguments parameters =
-      let open AttributeResolution in
       let resolve_argument argument =
         let expression, kind = Ast.Expression.Call.Argument.unpack argument in
         forward_expression ~state expression
         |> fun resolved ->
-        { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+        { SignatureSelection.Argument.kind; expression = Some expression; resolved }
       in
       arguments
       |> List.map ~f:resolve_argument
@@ -783,7 +782,7 @@ module State (Context : Context) = struct
            ~order:(GlobalResolution.full_order (Resolution.global_resolution resolution))
            ~location:(Node.location statement)
            ~resolve:(Resolution.resolve_expression_to_type resolution)
-      |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
+      |> fun { SignatureSelection.ParameterArgumentMapping.parameter_argument_mapping; _ } ->
       parameter_argument_mapping
     in
     let callable_parameters { Type.Callable.implementation; _ } =

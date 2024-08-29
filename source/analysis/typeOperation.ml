@@ -34,7 +34,7 @@ module TypeOperation = struct
           ~arguments:
             [
               {
-                AttributeResolution.Argument.expression = None;
+                SignatureSelection.Argument.expression = None;
                 kind = Ast.Expression.Call.Argument.Positional;
                 resolved = input_annotation;
               };

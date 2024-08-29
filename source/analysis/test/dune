@@ -7,7 +7,6 @@
   annotatedGlobalEnvironmentTest
   annotatedSignatureTest
   astEnvironmentTest
-  attributeResolutionTest
   attrsTest
   callgraphTest
   cfgTest
@@ -37,6 +36,7 @@
   resolutionTest
   resolvedCallableTest
   scopeTest
+  signatureSelectionTest
   sqlAlchemyTest
   typeAliasEnvironmentTest
   typeCheckTest
