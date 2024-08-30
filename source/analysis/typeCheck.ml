@@ -5888,36 +5888,48 @@ module State (Context : Context) = struct
         (* The checks here run once per top-level class definition. Nested classes and functions are
            analyzed separately. *)
         let check_base_class (errors, base_types_and_locations) base =
-          let base_class_name = Expression.show base in
-          let frozen_arg_value =
-            Option.first_some
-              (dataclass_options_from_decorator base_class_name)
-              (get_dataclass_options_from_metaclass base_class_name)
-          in
-          let check_frozen_inheritance errors =
-            match is_class_frozen, frozen_arg_value with
-            | Some is_class_frozen, Some frozen_arg_value ->
-                if is_class_frozen && not frozen_arg_value then
-                  emit_error
-                    ~errors
-                    ~location
-                    ~kind:
-                      (Error.InvalidInheritance
-                         (FrozenDataclassInheritingFromNonFrozen
-                            { frozen_child = this_class_name; non_frozen_parent = base_class_name }))
-                else if (not is_class_frozen) && frozen_arg_value then
-                  emit_error
-                    ~errors
-                    ~location
-                    ~kind:
-                      (Error.InvalidInheritance
-                         (NonFrozenDataclassInheritingFromFrozen
-                            { non_frozen_child = this_class_name; frozen_parent = base_class_name }))
-                else
-                  errors
-            | _, _ -> errors
-          in
           let base_type = GlobalResolution.parse_annotation global_resolution base in
+          let check_frozen_inheritance errors =
+            match base_type with
+            | Type.Primitive base_class_name
+            | Type.Parametric { name = base_class_name; _ } -> begin
+                let frozen_arg_value =
+                  Option.first_some
+                    (dataclass_options_from_decorator base_class_name)
+                    (get_dataclass_options_from_metaclass base_class_name)
+                in
+                match is_class_frozen, frozen_arg_value with
+                | Some is_class_frozen, Some frozen_arg_value ->
+                    if is_class_frozen && not frozen_arg_value then
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.InvalidInheritance
+                             (FrozenDataclassInheritingFromNonFrozen
+                                {
+                                  frozen_child = this_class_name;
+                                  non_frozen_parent = base_class_name;
+                                }))
+                    else if (not is_class_frozen) && frozen_arg_value then
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.InvalidInheritance
+                             (NonFrozenDataclassInheritingFromFrozen
+                                {
+                                  non_frozen_child = this_class_name;
+                                  frozen_parent = base_class_name;
+                                }))
+                    else
+                      errors
+                | _, _ -> errors
+              end
+            | _ ->
+                (* If the base type isn't valid, we can't get dataclass inheritance errors. *)
+                errors
+          in
           (* Check that variance isn't widened on inheritence. *)
           let check_variance_inheritance errors =
             let check_pair errors extended actual =

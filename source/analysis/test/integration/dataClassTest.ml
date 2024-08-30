@@ -2717,7 +2717,10 @@ let test_check_dataclasses =
           class Foo(Base[int]):
             y: int
         |}
-           [];
+           [
+             "Invalid inheritance [39]: Non-frozen dataclass `Foo` cannot inherit from frozen \
+              dataclass `Base`.";
+           ];
     ]
 
 
