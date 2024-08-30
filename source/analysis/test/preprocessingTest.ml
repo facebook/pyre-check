@@ -1540,6 +1540,36 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
+      with item as (a, b):
+        foo(a, b)
+    |}
+           {|
+      with item as ($local_qualifier$a, $local_qualifier$b):
+        foo($local_qualifier$a, $local_qualifier$b)
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+      with item as [a, b]:
+        foo(a, b)
+    |}
+           {|
+      with item as [$local_qualifier$a, $local_qualifier$b]:
+        foo($local_qualifier$a, $local_qualifier$b)
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+      with item as (*a,):
+        foo(a)
+    |}
+           {|
+      with item as (*$local_qualifier$a,):
+        foo($local_qualifier$a,)
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
       try:
         variable = 1
       except:
@@ -1994,6 +2024,36 @@ let test_qualify_source =
       def qualifier.foo($parameter$x):
         for $parameter$x in [1]:
           $parameter$x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+        for (x, y) in []:
+           foo(x, y)
+    |}
+           {|
+        for ($local_qualifier$x, $local_qualifier$y) in []:
+           foo($local_qualifier$x, $local_qualifier$y)
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+        for [x, y] in []:
+           foo(x, y)
+    |}
+           {|
+        for [$local_qualifier$x, $local_qualifier$y] in []:
+           foo($local_qualifier$x, $local_qualifier$y)
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+        for (*x,) in []:
+           foo(x)
+    |}
+           {|
+        for (*$local_qualifier$x,) in []:
+           foo($local_qualifier$x)
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify

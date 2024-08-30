@@ -370,8 +370,10 @@ module Qualify (Context : QualifyContext) = struct
   let rec qualify_target ~scope target =
     let rec renamed_scope scope target =
       match target with
-      | { Node.value = Expression.Tuple elements; _ } ->
+      | { Node.value = Expression.Tuple elements; _ }
+      | { Node.value = Expression.List elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Expression.Starred (Starred.Once element); _ } -> renamed_scope scope element
       | { Node.value = Name (Name.Identifier name); _ } ->
           let scope, _ = qualify_local_identifier ~scope name in
           scope
