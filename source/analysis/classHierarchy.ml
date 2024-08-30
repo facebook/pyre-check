@@ -289,7 +289,8 @@ let parameters_to_variables parameters =
   List.map parameters ~f:Type.Argument.to_variable |> Option.all
 
 
-let generic_parameters_as_variables ?(default = None) (module Handler : Handler) = function
+let generic_parameters_as_variables ?(empty_for_nongeneric = false) (module Handler : Handler)
+  = function
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
@@ -306,7 +307,10 @@ let generic_parameters_as_variables ?(default = None) (module Handler : Handler)
       | None
       | Some GenericMetadata.NotGeneric ->
           (* Fall back to the default both for failed lookups and for non-generic classes*)
-          default
+          if empty_for_nongeneric then
+            Some []
+          else
+            None
       | Some GenericMetadata.InvalidGenericBase ->
           (* Don't fall back if there's an invalid generic base, return None igonoring `default` *)
           None

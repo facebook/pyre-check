@@ -229,8 +229,11 @@ module OutgoingDataComputation = struct
     end : ClassHierarchy.Handler)
 
 
-  let generic_parameters_as_variables queries ?(default = None) class_name =
-    ClassHierarchy.generic_parameters_as_variables ~default (class_hierarchy queries) class_name
+  let generic_parameters_as_variables queries ?(empty_for_nongeneric = false) class_name =
+    ClassHierarchy.generic_parameters_as_variables
+      ~empty_for_nongeneric
+      (class_hierarchy queries)
+      class_name
 end
 
 module EdgesValue = struct

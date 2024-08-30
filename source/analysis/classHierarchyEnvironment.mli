@@ -25,7 +25,7 @@ module HierarchyReadOnly : sig
   val generic_parameters_as_variables
     :  t ->
     ?dependency:DependencyKey.registered ->
-    ?default:Type.Variable.t list option ->
+    ?empty_for_nongeneric:bool ->
     Type.Primitive.t ->
     Type.Variable.t list option
 

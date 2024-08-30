@@ -73,11 +73,7 @@ val param_spec_from_vararg_annotations
 
 val immediate_parents : t -> Type.Primitive.t -> string list
 
-val generic_parameters_as_variables
-  :  ?default:Type.Variable.t list option ->
-  t ->
-  Type.Primitive.t ->
-  Type.Variable.t list option
+val generic_parameters_as_variables : t -> Type.Primitive.t -> Type.Variable.t list option
 
 val has_transitive_successor : t -> successor:Type.Primitive.t -> Type.Primitive.t -> bool
 

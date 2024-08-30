@@ -73,7 +73,7 @@ module Queries = struct
       Type.Variable.ParamSpec.t option;
     class_hierarchy: unit -> (module ClassHierarchy.Handler);
     generic_parameters_as_variables:
-      ?default:Type.Variable.t list option -> Type.Primitive.t -> Type.Variable.t list option;
+      ?empty_for_nongeneric:bool -> Type.Primitive.t -> Type.Variable.t list option;
     successors: Type.Primitive.t -> string list;
     get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
     is_typed_dictionary: Type.Primitive.t -> bool;
@@ -2463,7 +2463,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         class_type
         |> Queries.class_summary_for_outer_type queries
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
-        >>= generic_parameters_as_variables ~default:(Some [])
+        >>= generic_parameters_as_variables ~empty_for_nongeneric:true
         >>| List.is_empty
       in
       let fully_specified_type = function
