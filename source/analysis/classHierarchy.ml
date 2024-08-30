@@ -134,7 +134,7 @@ module GenericMetadata = struct
      TODO(T199653412): we should clean this up, which may involve nontrivial downstream changes *)
   type t =
     | NotGeneric
-    | GenericBase of Type.Variable.t list
+    | GenericBase of Type.GenericParameter.t list
     | InvalidGenericBase
   [@@deriving sexp, show, compare]
 end
@@ -159,8 +159,6 @@ let parents_of (module Handler : Handler) target =
   Handler.edges target >>| fun { parents; _ } -> parents
 
 
-let type_variables_to_arguments variables = List.map variables ~f:Type.Variable.to_argument
-
 let parents_and_generic_of_target (module Handler : Handler) target =
   Handler.edges target
   >>= fun { parents; generic_metadata; _ } ->
@@ -168,14 +166,18 @@ let parents_and_generic_of_target (module Handler : Handler) target =
   | GenericMetadata.NotGeneric
   | GenericMetadata.InvalidGenericBase ->
       Some parents
-  | GenericMetadata.GenericBase parameters_as_variables ->
+  | GenericMetadata.GenericBase parameters ->
       Some
         (List.append
            parents
            [
              {
                target = generic_primitive;
-               arguments = type_variables_to_arguments parameters_as_variables;
+               arguments =
+                 (let parameter_to_argument parameter =
+                    parameter |> Type.GenericParameter.to_variable |> Type.Variable.to_argument
+                  in
+                  List.map parameters ~f:parameter_to_argument);
              };
            ])
 
@@ -308,7 +310,9 @@ let generic_parameters_as_variables ?(default = None) (module Handler : Handler)
       | Some GenericMetadata.InvalidGenericBase ->
           (* Don't fall back if there's an invalid generic base, return None igonoring `default` *)
           None
-      | Some (GenericMetadata.GenericBase parameters_as_variables) -> Some parameters_as_variables)
+      | Some (GenericMetadata.GenericBase parameters) ->
+          let parameters_as_variables = List.map parameters ~f:Type.GenericParameter.to_variable in
+          Some parameters_as_variables)
 
 
 let get_generic_parameters ~generic_primitive edges =

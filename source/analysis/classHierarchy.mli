@@ -66,7 +66,7 @@ end
 module GenericMetadata : sig
   type t =
     | NotGeneric
-    | GenericBase of Type.Variable.t list
+    | GenericBase of Type.GenericParameter.t list
     | InvalidGenericBase
   [@@deriving sexp, show, compare]
 end

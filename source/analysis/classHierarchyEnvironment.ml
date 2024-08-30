@@ -206,7 +206,9 @@ module IncomingDataComputation = struct
           | Some arguments -> (
               match List.map arguments ~f:Type.Argument.to_variable |> Option.all with
               | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase
-              | Some variables -> ClassHierarchy.GenericMetadata.GenericBase variables)
+              | Some variables ->
+                  ClassHierarchy.GenericMetadata.GenericBase
+                    (List.map ~f:Type.GenericParameter.of_variable variables))
         in
         Some { ClassHierarchy.Edges.parents; generic_metadata }
 end

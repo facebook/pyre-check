@@ -3674,7 +3674,9 @@ module MockClassHierarchyHandler = struct
       | "typing.Generic"
       | "typing.Protocol" -> (
           match List.map ~f:Type.Argument.to_variable arguments |> Option.all with
-          | Some variables -> ClassHierarchy.GenericMetadata.GenericBase variables
+          | Some variables ->
+              ClassHierarchy.GenericMetadata.GenericBase
+                (List.map ~f:Type.GenericParameter.of_variable variables)
           | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase)
       | _ -> ClassHierarchy.GenericMetadata.NotGeneric
     in

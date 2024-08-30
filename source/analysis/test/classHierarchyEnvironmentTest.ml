@@ -103,7 +103,14 @@ let test_parents_and_inferred_generic_base context =
     ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
   assert_registers
     {|
        import typing
@@ -117,7 +124,14 @@ let test_parents_and_inferred_generic_base context =
     ~expected_parents:["typing.Generic", [Type.variable "test._T"]; "test.List", []]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
   assert_registers
     {|
        import typing
@@ -131,7 +145,14 @@ let test_parents_and_inferred_generic_base context =
     ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
   assert_registers
     {|
        import typing
@@ -146,7 +167,14 @@ let test_parents_and_inferred_generic_base context =
     ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -160,7 +188,14 @@ let test_parents_and_inferred_generic_base context =
       ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
 
   assert_registers
     {|
@@ -177,8 +212,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -196,8 +241,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -219,8 +274,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -238,8 +303,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -257,8 +332,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -281,8 +366,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -304,8 +399,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test.T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -320,7 +425,14 @@ let test_parents_and_inferred_generic_base context =
       ["typing.Protocol", [Type.variable "test.T"]; "test.Foo", [Type.variable "test.T"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test.T")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test.T";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
 
   assert_registers
     {|
@@ -335,8 +447,18 @@ let test_parents_and_inferred_generic_base context =
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
          [
-           TypeVarVariable (Type.Variable.TypeVar.create "test._T1");
-           TypeVarVariable (Type.Variable.TypeVar.create "test._T2");
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T2";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
          ]);
 
   assert_registers
@@ -351,7 +473,14 @@ let test_parents_and_inferred_generic_base context =
     ~expected_parents:["test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"]]
     ~expected_generic_metadata:
       (ClassHierarchy.GenericMetadata.GenericBase
-         [TypeVarVariable (Type.Variable.TypeVar.create "test._T1")]);
+         [
+           Type.GenericParameter.GpTypeVar
+             {
+               name = "test._T1";
+               variance = Type.Record.Variance.Invariant;
+               constraints = Type.Record.TypeVarConstraints.Unconstrained;
+             };
+         ]);
 
   ()
 
