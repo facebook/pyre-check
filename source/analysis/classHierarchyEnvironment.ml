@@ -229,6 +229,10 @@ module OutgoingDataComputation = struct
     end : ClassHierarchy.Handler)
 
 
+  let generic_parameters queries ?(empty_for_nongeneric = false) class_name =
+    ClassHierarchy.generic_parameters ~empty_for_nongeneric (class_hierarchy queries) class_name
+
+
   let generic_parameters_as_variables queries ?(empty_for_nongeneric = false) class_name =
     ClassHierarchy.generic_parameters_as_variables
       ~empty_for_nongeneric
@@ -324,6 +328,10 @@ module ReadOnly = struct
             ?dependency;
         get_edges = get_edges read_only ?dependency;
       }
+
+
+  let generic_parameters read_only ?dependency =
+    outgoing_queries ?dependency read_only |> OutgoingDataComputation.generic_parameters
 
 
   let generic_parameters_as_variables read_only ?dependency =

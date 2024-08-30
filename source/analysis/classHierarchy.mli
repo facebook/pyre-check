@@ -102,6 +102,12 @@ val method_resolution_order_linearize
 
 val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
+val generic_parameters
+  :  ?empty_for_nongeneric:bool ->
+  (module Handler) ->
+  Type.Primitive.t ->
+  Type.GenericParameter.t list option
+
 val generic_parameters_as_variables
   :  ?empty_for_nongeneric:bool ->
   (module Handler) ->

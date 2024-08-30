@@ -289,17 +289,22 @@ let parameters_to_variables parameters =
   List.map parameters ~f:Type.Argument.to_variable |> Option.all
 
 
-let generic_parameters_as_variables ?(empty_for_nongeneric = false) (module Handler : Handler)
-  = function
-  | "type" ->
-      (* Despite what typeshed says, typing.Type is covariant:
-         https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some
-        [Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
+let generic_parameters ?(empty_for_nongeneric = false) (module Handler : Handler) = function
+  | "type"
+    (* Despite what typeshed says, typing.Type is covariant:
+       https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
   | "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
-      Some [TypeVarVariable (Type.Variable.TypeVar.create ~variance:Covariant "_T_meta")]
+      Some
+        [
+          Type.GenericParameter.GpTypeVar
+            {
+              name = "_T_meta";
+              variance = Type.Record.Variance.Covariant;
+              constraints = Type.Record.TypeVarConstraints.Unconstrained;
+            };
+        ]
   | primitive_name -> (
       Handler.edges primitive_name
       >>| (fun { generic_metadata; _ } -> generic_metadata)
@@ -314,9 +319,17 @@ let generic_parameters_as_variables ?(empty_for_nongeneric = false) (module Hand
       | Some GenericMetadata.InvalidGenericBase ->
           (* Don't fall back if there's an invalid generic base, return None igonoring `default` *)
           None
-      | Some (GenericMetadata.GenericBase parameters) ->
-          let parameters_as_variables = List.map parameters ~f:Type.GenericParameter.to_variable in
-          Some parameters_as_variables)
+      | Some (GenericMetadata.GenericBase parameters) -> Some parameters)
+
+
+let generic_parameters_as_variables
+    ?(empty_for_nongeneric = false)
+    (module Handler : Handler)
+    type_name
+  =
+  match generic_parameters ~empty_for_nongeneric (module Handler) type_name with
+  | Some parameters -> Some (List.map ~f:Type.GenericParameter.to_variable parameters)
+  | None -> None
 
 
 let get_generic_parameters ~generic_primitive edges =

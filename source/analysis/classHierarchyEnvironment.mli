@@ -22,6 +22,13 @@ module HierarchyReadOnly : sig
 
   val class_hierarchy : ?dependency:DependencyKey.registered -> t -> (module ClassHierarchy.Handler)
 
+  val generic_parameters
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    ?empty_for_nongeneric:bool ->
+    Type.Primitive.t ->
+    Type.GenericParameter.t list option
+
   val generic_parameters_as_variables
     :  t ->
     ?dependency:DependencyKey.registered ->
