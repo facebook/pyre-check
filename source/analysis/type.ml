@@ -4451,30 +4451,42 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
     else
       None
   in
-  let create_from_subscript ~base ~subscript_index =
+  let create_from_subscript ~base ~subscript_index ~allows_unpacking =
     let create_parametric name =
       let arguments =
         let element_to_arguments = function
           | { Node.value = Expression.List elements; _ } ->
-              [
-                Record.Argument.CallableParameters
-                  (Defined (List.mapi ~f:extract_parameter elements));
-              ]
+              Some
+                [
+                  Record.Argument.CallableParameters
+                    (Defined (List.mapi ~f:extract_parameter elements));
+                ]
           | element -> (
               let parsed = create_logic element in
               match arguments_from_unpacked_annotation ~variables parsed with
-              | Some arguments -> arguments
-              | None -> (
+              | Some arguments ->
+                  if allows_unpacking then
+                    Some arguments
+                  else
+                    None
+              | _ -> (
                   match substitute_parameter_variadic parsed with
-                  | Some variable -> [Record.Argument.CallableParameters (FromParamSpec variable)]
-                  | _ -> [Record.Argument.Single parsed]))
+                  | Some variable ->
+                      Some [Record.Argument.CallableParameters (FromParamSpec variable)]
+                  | _ -> Some [Record.Argument.Single parsed]))
         in
         match subscript_index with
         | { Node.value = Expression.Tuple elements; _ } ->
-            List.concat_map elements ~f:element_to_arguments
+            let arguments_for_elements = List.map elements ~f:element_to_arguments in
+            if List.exists ~f:Option.is_none arguments_for_elements then
+              None
+            else
+              Some (List.filter_opt arguments_for_elements |> List.concat)
         | element -> element_to_arguments element
       in
-      Parametric { name; arguments } |> resolve_aliases
+      match arguments with
+      | Some arguments -> Parametric { name; arguments } |> resolve_aliases
+      | _ -> Top
     in
     match create_logic base, Node.value base with
     | Primitive name, _ -> create_parametric name
@@ -4556,11 +4568,34 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
             arguments = [Record.Argument.Single (create_logic element)];
           }
         |> resolve_aliases
+    | Subscript
+        {
+          base =
+            {
+              Node.value =
+                Expression.Name
+                  ( Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier "typing"); _ };
+                        attribute = "Tuple";
+                        _;
+                      }
+                  | Name.Identifier "tuple" );
+              _;
+            } as base;
+          index =
+            {
+              Node.value = Expression.Tuple [_; { Node.value = Expression.Constant Ellipsis; _ }];
+              _;
+            } as subscript_index;
+        } ->
+        (* Do not eagerly unpack types for unbounded tuples *)
+        create_from_subscript ~base ~subscript_index ~allows_unpacking:false
     | Subscript { base; index = subscript_index } -> (
         let location = Node.location base in
         match parse_callable_if_appropriate ~location ~base ~subscript_index with
         | Some callable_type -> callable_type
-        | None -> create_from_subscript ~base ~subscript_index)
+        | None -> create_from_subscript ~base ~subscript_index ~allows_unpacking:true)
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in

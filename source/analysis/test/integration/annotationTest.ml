@@ -1424,6 +1424,17 @@ let test_check_tuple_typeform =
               x: tuple[int, ..., int]
             |}
            ["Invalid type [31]: Expression `tuple[(int, ..., int)]` is not a valid type."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: tuple[*tuple[str], ...]
+              y: tuple[str, ...]
+              z: tuple[*tuple[str, ...], ...]
+            |}
+           [
+             "Invalid type [31]: Expression `tuple[(*tuple[str], ...)]` is not a valid type.";
+             "Invalid type [31]: Expression `tuple[(*tuple[(str, ...)], ...)]` is not a valid type.";
+           ];
     ]
 
 
