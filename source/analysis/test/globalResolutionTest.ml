@@ -2019,7 +2019,7 @@ let test_overrides =
     ]
 
 
-let test_extract_type_parameter =
+let test_extract_unary_type_arguments =
   let resolution context =
     ScratchProject.setup
       ~context
@@ -2059,7 +2059,7 @@ let test_extract_type_parameter =
   in
   let assert_extracted ~expected ~as_name parse_annotation context =
     let actual =
-      GlobalResolution.extract_type_arguments
+      GlobalResolution.extract_unary_type_arguments__unsafe
         (resolution context)
         ~source:(parse_annotation context)
         ~target:as_name
@@ -2359,7 +2359,7 @@ let () =
          test_metaclasses;
          test_superclasses;
          test_overrides;
-         test_extract_type_parameter;
+         test_extract_unary_type_arguments;
          test_type_of_iteration_value;
          test_type_of_generator_send_and_return;
          test_invalid_type_parameters;

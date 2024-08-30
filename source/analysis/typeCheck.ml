@@ -2004,13 +2004,8 @@ module State (Context : Context) = struct
               base = None;
             }
         | _ -> (
-            match
-              GlobalResolution.extract_type_arguments
-                global_resolution
-                ~target:"typing.Awaitable"
-                ~source:resolved
-            with
-            | Some [awaited_type] ->
+            match GlobalResolution.type_of_awaited_value global_resolution resolved with
+            | Some awaited_type ->
                 {
                   resolution;
                   resolved = awaited_type;
@@ -3036,12 +3031,9 @@ module State (Context : Context) = struct
                     None, resolution, errors
                 | _ -> (
                     match
-                      GlobalResolution.extract_type_arguments
-                        global_resolution
-                        ~source
-                        ~target:"typing.Mapping"
+                      GlobalResolution.type_of_mapping_key_and_value global_resolution source
                     with
-                    | Some [new_key; new_value] ->
+                    | Some (new_key, new_value) ->
                         ( Some
                             ( GlobalResolution.join global_resolution key new_key,
                               GlobalResolution.join global_resolution value new_value ),
@@ -4086,13 +4078,8 @@ module State (Context : Context) = struct
         | Some name -> (
             let reference = name_to_reference_exn name in
             let { Resolved.resolved; _ } = forward_expression ~resolution right in
-            match
-              GlobalResolution.extract_type_arguments
-                global_resolution
-                ~target:"typing.Iterable"
-                ~source:resolved
-            with
-            | Some [element_type] -> (
+            match GlobalResolution.type_of_iteration_value global_resolution resolved with
+            | Some element_type -> (
                 let { name = partitioned_name; attribute_path; _ } =
                   partition_name ~resolution name
                 in
@@ -4467,13 +4454,8 @@ module State (Context : Context) = struct
       match unbounded_annotation with
       | Some annotation -> annotation
       | None -> (
-          match
-            GlobalResolution.extract_type_arguments
-              global_resolution
-              ~target:"typing.Iterable"
-              ~source:annotation
-          with
-          | Some [element_type] -> element_type
+          match GlobalResolution.type_of_iteration_value global_resolution annotation with
+          | Some element_type -> element_type
           | _ -> Type.Any)
     in
     let nonuniform_sequence_arguments expected_size annotation =

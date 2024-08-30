@@ -210,10 +210,11 @@ val is_consistent_with
   expression:Ast.Expression.t option ->
   bool
 
-(* If the given type is a subtype of generic type `AsName[X]`, return X *)
-val extract_type_arguments : t -> source:Type.t -> target:string -> Type.t list option
-
 val type_of_iteration_value : t -> Type.t -> Type.t option
+
+val type_of_awaited_value : t -> Type.t -> Type.t option
+
+val type_of_mapping_key_and_value : t -> Type.t -> (Type.t * Type.t) option
 
 val type_of_generator_send_and_return : t -> Type.t -> Type.t * Type.t
 
@@ -224,3 +225,6 @@ val nonvalidating_annotation_parser : t -> AnnotatedCallable.annotation_parser
 val overrides : t -> Type.Primitive.t -> name:Identifier.t -> AnnotatedAttribute.instantiated option
 
 val refine : t -> TypeInfo.Unit.t -> Type.t -> TypeInfo.Unit.t
+
+(* Exposed in the API for testing only *)
+val extract_unary_type_arguments__unsafe : t -> source:Type.t -> target:string -> Type.t list option
