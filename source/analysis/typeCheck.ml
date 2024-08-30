@@ -5887,8 +5887,14 @@ module State (Context : Context) = struct
         in
         (* The checks here run once per top-level class definition. Nested classes and functions are
            analyzed separately. *)
-        let check_base_class (errors, base_types_and_locations) base =
-          let base_type = GlobalResolution.parse_annotation global_resolution base in
+        let base_types_and_locations =
+          let type_and_location base_expression =
+            ( GlobalResolution.parse_annotation global_resolution base_expression,
+              base_expression.Node.location )
+          in
+          Class.base_classes class_statement |> List.map ~f:type_and_location
+        in
+        let check_base_class errors (base_type, _) =
           let check_frozen_inheritance errors =
             match base_type with
             | Type.Primitive base_class_name
@@ -5992,7 +5998,7 @@ module State (Context : Context) = struct
             | _ -> errors
           in
           let errors = errors |> check_frozen_inheritance |> check_variance_inheritance in
-          errors, (base_type, Node.location base) :: base_types_and_locations
+          errors
         in
         let check_generic_protocols base_types_and_locations errors =
           let has_subscripted_protocol =
@@ -6029,11 +6035,9 @@ module State (Context : Context) = struct
           else
             errors
         in
-        let errors, base_types_and_locations =
-          List.fold (Class.base_classes class_statement) ~f:check_base_class ~init:([], [])
-        in
         let errors =
-          check_generic_protocols base_types_and_locations errors
+          List.fold ~f:check_base_class ~init:[] base_types_and_locations
+          |> check_generic_protocols base_types_and_locations
           |> check_protocol_bases base_types_and_locations
         in
         let type_params_errors =
