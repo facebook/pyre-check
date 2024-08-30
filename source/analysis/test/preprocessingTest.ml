@@ -2085,13 +2085,7 @@ let test_qualify_source =
 
 
 let test_qualify_ast =
-  let module Context = struct
-    let source_relative = "relative"
-
-    let source_qualifier = Reference.create "source_qualifier"
-  end
-  in
-  let module Qualify = Preprocessing.Qualify (Context) in
+  let module Qualify = Preprocessing.Qualify in
   let scope =
     {
       Qualify.module_name = Reference.create "qualifier";

@@ -261,13 +261,7 @@ let get_qualified_local_identifier ~qualifier name =
   Format.asprintf "$local_%s$%s" qualifier name
 
 
-module type QualifyContext = sig
-  val source_relative : string
-
-  val source_qualifier : Reference.t
-end
-
-module Qualify (Context : QualifyContext) = struct
+module Qualify = struct
   type alias = { name: Reference.t }
 
   type qualify_strings =
@@ -582,9 +576,7 @@ module Qualify (Context : QualifyContext) = struct
           match qualify_strings with
           | Qualify
           | OptionallyQualify -> (
-              match
-                PyreMenhirParser.Parser.parse [value ^ "\n"] ~relative:Context.source_relative
-              with
+              match PyreMenhirParser.Parser.parse [value ^ "\n"] with
               | Ok [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
@@ -593,10 +585,12 @@ module Qualify (Context : QualifyContext) = struct
               | Ok _
               | Error _
                 when error_on_qualification_failure ->
+                  let { module_name; _ } = scope in
                   Log.debug
-                    "Invalid string annotation `%s` at %s:%a"
+                    "Invalid string annotation `%s` at %a:%a"
                     value
-                    Context.source_relative
+                    Reference.pp
+                    module_name
                     Location.pp
                     location;
                   Constant (Constant.String { StringLiteral.value; kind })
@@ -1269,17 +1263,7 @@ end
 
 (* Qualification is a way to differentiate names between files/functions/etc. It currently renames the names making them unique.
  * TODO(T47589601) Rewrite qualification more correctly using scope. *)
-let qualify
-    ({ Source.module_path = { ModulePath.raw = { relative; _ }; qualifier; _ }; statements; _ } as
-    source)
-  =
-  let module Context = struct
-    let source_relative = relative
-
-    let source_qualifier = qualifier
-  end
-  in
-  let module Qualify = Qualify (Context) in
+let qualify ({ Source.module_path = { ModulePath.qualifier; _ }; statements; _ } as source) =
   let scope =
     {
       Qualify.module_name = qualifier;
