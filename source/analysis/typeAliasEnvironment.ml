@@ -318,9 +318,16 @@ module OutgoingDataComputation = struct
     type t = {
       class_exists: Type.Primitive.t -> bool;
       get_type_alias: Type.Primitive.t -> Type.t option;
-      get_variable: Type.Primitive.t -> Type.Variable.t option;
+      get_variable_declaration: Type.Primitive.t -> Type.Variable.Declaration.t option;
     }
   end
+
+  let get_variable Queries.{ get_variable_declaration; get_type_alias; _ } name =
+    let aliases ?replace_unbound_parameters_with_any:_ = get_type_alias in
+    get_variable_declaration name
+    >>| Type.Variable.of_declaration
+          ~create_type:(Type.create ~aliases ~variables:Type.resolved_empty_variables)
+
 
   let type_contains_untracked_name Queries.{ class_exists; _ } annotation =
     List.exists ~f:(fun class_name -> not (class_exists class_name)) (Type.collect_names annotation)
@@ -349,14 +356,9 @@ module OutgoingDataComputation = struct
       parsed
 
 
-  let param_spec_from_vararg_annotations
-      Queries.{ get_variable; _ }
-      ~args_annotation
-      ~kwargs_annotation
-      ()
-    =
+  let param_spec_from_vararg_annotations queries ~args_annotation ~kwargs_annotation () =
     let get_param_spec variable_name =
-      match get_variable variable_name with
+      match get_variable queries variable_name with
       | Some (Type.Variable.ParamSpecVariable name) -> Some name
       | _ -> None
     in
@@ -439,18 +441,9 @@ module ReadOnly = struct
     | _ -> None
 
 
-  let get_variable environment ?dependency name =
-    let aliases ?replace_unbound_parameters_with_any:_ name =
-      get_type_alias environment ?dependency name
-    in
+  let get_variable_declaration environment ?dependency name =
     match get environment ?dependency name with
-    | Some (RawAlias.VariableDeclaration t) ->
-        let type_variables =
-          Type.Variable.of_declaration
-            ~create_type:(Type.create ~aliases ~variables:Type.resolved_empty_variables)
-            t
-        in
-        Some type_variables
+    | Some (RawAlias.VariableDeclaration t) -> Some t
     | _ -> None
 
 
@@ -464,8 +457,12 @@ module ReadOnly = struct
             (unannotated_global_environment environment)
             ?dependency;
         get_type_alias = get_type_alias environment ?dependency;
-        get_variable = get_variable environment ?dependency;
+        get_variable_declaration = get_variable_declaration environment ?dependency;
       }
+
+
+  let get_variable environment ?dependency =
+    OutgoingDataComputation.get_variable (outgoing_queries ?dependency environment)
 
 
   let parse_annotation_without_validating_type_parameters environment ?dependency =

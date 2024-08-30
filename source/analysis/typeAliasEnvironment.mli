@@ -24,6 +24,12 @@ module AliasReadOnly : sig
     Type.Primitive.t ->
     Type.t option
 
+  val get_variable_declaration
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Type.Primitive.t ->
+    Type.Variable.Declaration.t option
+
   val get_variable
     :  t ->
     ?dependency:DependencyKey.registered ->
