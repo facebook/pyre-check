@@ -229,6 +229,22 @@ and t =
 
 type type_t = t [@@deriving compare, eq, sexp, show]
 
+module GenericParameter : sig
+  type t =
+    | GpTypeVar of {
+        name: Identifier.t;
+        variance: Record.Variance.t;
+        constraints: type_t Record.TypeVarConstraints.t;
+      }
+    | GpTypeVarTuple of { name: Identifier.t }
+    | GpParamSpec of { name: Identifier.t }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val to_variable : t -> type_t Record.Variable.record
+
+  val of_variable : type_t Record.Variable.record -> t
+end
+
 module Map : Map.S with type Key.t = t
 
 module Set : Set.S with type Elt.t = t

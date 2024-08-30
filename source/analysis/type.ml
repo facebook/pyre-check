@@ -348,6 +348,46 @@ module Containers = struct
   include Hashable.Make (T)
 end
 
+module GenericParameter = struct
+  type t =
+    | GpTypeVar of {
+        name: Identifier.t;
+        variance: Record.Variance.t;
+        constraints: T.t Record.TypeVarConstraints.t;
+      }
+    | GpTypeVarTuple of { name: Identifier.t }
+    | GpParamSpec of { name: Identifier.t }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  let to_variable = function
+    | GpTypeVar
+        {
+          name : Identifier.t;
+          variance : Record.Variance.t;
+          constraints : T.t Record.TypeVarConstraints.t;
+        } ->
+        Record.Variable.TypeVarVariable (Record.Variable.TypeVar.create ~variance ~constraints name)
+    | GpTypeVarTuple { name : Identifier.t } ->
+        Record.Variable.TypeVarTupleVariable (Record.Variable.TypeVarTuple.create name)
+    | GpParamSpec { name : Identifier.t } ->
+        Record.Variable.ParamSpecVariable (Record.Variable.ParamSpec.create name)
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+  let of_variable = function
+    | Record.Variable.TypeVarVariable { Record.Variable.TypeVar.name; variance; constraints; _ } ->
+        GpTypeVar
+          {
+            name : Identifier.t;
+            variance : Record.Variance.t;
+            constraints : T.t Record.TypeVarConstraints.t;
+          }
+    | Record.Variable.TypeVarTupleVariable { Record.Variable.TypeVarTuple.name; _ } ->
+        GpTypeVarTuple { name }
+    | Record.Variable.ParamSpecVariable { Record.Variable.ParamSpec.name; _ } ->
+        GpParamSpec { name }
+end
+
 module Constructors = struct
   open T
 
