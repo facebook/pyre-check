@@ -299,7 +299,7 @@ let requalify_name ~old_qualifier ~new_qualifier = function
   | name -> name
 
 
-let rec requalify_define ~old_qualifier ~new_qualifier define =
+let rec requalify_define ~old_qualifier ~new_qualifier ~relative_path define =
   let transform_expression = function
     | Expression.Name name -> Expression.Name (requalify_name ~old_qualifier ~new_qualifier name)
     | expression -> expression
@@ -317,6 +317,7 @@ let rec requalify_define ~old_qualifier ~new_qualifier define =
             |> requalify_define
                  ~old_qualifier:(Reference.delocalize define_name)
                  ~new_qualifier:(Reference.delocalize new_name)
+                 ~relative_path
             |> fun define -> Statement.Define define |> Node.create ~location
         | None -> statement)
     | statement -> statement
@@ -720,6 +721,7 @@ let replace_signature_if_always_passing_on_arguments
 
 let make_wrapper_define
     ~location
+    ~relative_path
     ~qualifier
     ~parent_for_inner_defines
     ~define:
@@ -787,8 +789,12 @@ let make_wrapper_define
     |> requalify_define
          ~old_qualifier:helper_function_reference
          ~new_qualifier:new_helper_function_reference
+         ~relative_path
     (* Requalify references to other nested functions within the decorator. *)
-    |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:wrapper_qualifier
+    |> requalify_define
+         ~old_qualifier:decorator_reference
+         ~new_qualifier:wrapper_qualifier
+         ~relative_path
   in
   let helper_defines = List.map helper_defines ~f:make_helper_define in
   let helper_define_statements =
@@ -804,8 +810,12 @@ let make_wrapper_define
     |> requalify_define
          ~old_qualifier:(Reference.delocalize wrapper_define_name)
          ~new_qualifier:(Reference.create ~prefix:qualifier wrapper_function_name)
+         ~relative_path
     (* Requalify references to other nested functions within the decorator. *)
-    |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:wrapper_qualifier
+    |> requalify_define
+         ~old_qualifier:decorator_reference
+         ~new_qualifier:wrapper_qualifier
+         ~relative_path
     |> rename_local_variable
          ~from:higher_order_function_parameter_name
          ~to_:(Preprocessing.get_qualified_local_identifier ~qualifier function_to_call)
@@ -829,6 +839,7 @@ let inline_decorators_at_same_scope
          _;
        } as head_decorator)
     ~tail_decorators
+    ~relative_path
     ({ Define.signature = { name; parent; _ }; _ } as define)
   =
   let inlinable_decorators = head_decorator :: tail_decorators in
@@ -842,6 +853,7 @@ let inline_decorators_at_same_scope
     |> requalify_define
          ~old_qualifier:qualifier
          ~new_qualifier:(Reference.create ~prefix:qualifier inlined_original_function_name)
+         ~relative_path
   in
   let wrapper_defines, outer_signature =
     let inline_wrapper_and_call_previous_wrapper
@@ -851,6 +863,7 @@ let inline_decorators_at_same_scope
       let wrapper_define, new_signature =
         make_wrapper_define
           ~location
+          ~relative_path
           ~qualifier
           ~parent_for_inner_defines
           ~define
@@ -894,6 +907,7 @@ let inline_decorators_at_same_scope
 
 
 let postprocess
+    ~relative_path
     ~define
     ~location
     ({ Define.signature = { decorators; _ } as signature; _ } as decorated_define)
@@ -917,7 +931,7 @@ let postprocess
       signature
   in
   let statement = { Node.location; value = Statement.Define { decorated_define with signature } } in
-  Source.create [statement]
+  Source.create ~relative:relative_path [statement]
   |> Preprocessing.qualify
   |> Preprocessing.populate_captures
   |> Source.statements
@@ -987,7 +1001,7 @@ let discard_decorators_for_define ~get_decorator_action define =
   { define with Define.signature = { define.signature with decorators } }
 
 
-let inline_decorators_for_define ~get_source ~get_decorator_action ~location define =
+let inline_decorators_for_define ~get_source ~get_decorator_action ~location ~relative_path define =
   let uniquify_decorator_data_list =
     uniquify_names
       ~get_reference:(fun { outer_decorator_reference; _ } -> outer_decorator_reference)
@@ -1019,14 +1033,26 @@ let inline_decorators_for_define ~get_source ~get_decorator_action ~location def
   match inlinable_decorators with
   | [] -> define
   | head_decorator :: tail_decorators ->
-      inline_decorators_at_same_scope ~location ~head_decorator ~tail_decorators define
-      |> postprocess ~define ~location
+      inline_decorators_at_same_scope
+        ~location
+        ~head_decorator
+        ~tail_decorators
+        ~relative_path
+        define
+      |> postprocess ~relative_path ~define ~location
       |> Option.value ~default:define
 
 
 let preprocess_source ~get_source source =
   let should_inline = OptionsSharedMemory.get "enable_inlining" |> Option.value ~default:false in
   let should_discard = OptionsSharedMemory.get "enable_discarding" |> Option.value ~default:false in
+  let {
+    Source.module_path = { ModulePath.raw = { ModulePath.Raw.relative = relative_path; _ }; _ };
+    _;
+  }
+    =
+    source
+  in
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -1054,6 +1080,7 @@ let preprocess_source ~get_source source =
                   ~get_source
                   ~get_decorator_action:DecoratorActionsSharedMemory.get
                   ~location
+                  ~relative_path
                   define
               else
                 define

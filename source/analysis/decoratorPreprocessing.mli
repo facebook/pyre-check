@@ -41,14 +41,6 @@ val original_decorators_from_preprocessed_signature : Define.Signature.t -> Expr
 (* This is called automatically by the AST environment during preprocessing. *)
 val preprocess_source : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t
 
-(* This is called by `pyre query` for debugging and testing purposes. *)
-val inline_decorators_for_define
-  :  get_source:(Reference.t -> Source.t option) ->
-  get_decorator_action:(Reference.t -> Action.t option) ->
-  location:Location.t ->
-  Define.t ->
-  Define.t
-
 (* exposed for testing purposes only. *)
 val uniquify_names
   :  get_reference:('a -> Reference.t) ->
