@@ -4519,25 +4519,48 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
         >>= Option.all
         >>| Constructors.union
         |> Option.value ~default:Top
+    | Subscript
+        {
+          base =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Expression.Name
+                              (Name.Identifier
+                                (("typing" | "typing_extensions" | "pyre_extensions") as
+                                import_module));
+                          _;
+                        };
+                      attribute = "Unpack";
+                      _;
+                    });
+              _;
+            };
+          index = element;
+        } ->
+        Parametric
+          {
+            name = import_module ^ ".Unpack";
+            arguments = [Record.Argument.Single (create_logic element)];
+          }
+        |> resolve_aliases
+    | Starred (Once element) ->
+        Parametric
+          {
+            name = "typing_extensions.Unpack";
+            arguments = [Record.Argument.Single (create_logic element)];
+          }
+        |> resolve_aliases
     | Subscript { base; index = subscript_index } -> (
         let location = Node.location base in
         match parse_callable_if_appropriate ~location ~base ~subscript_index with
         | Some callable_type -> callable_type
         | None -> create_from_subscript ~base ~subscript_index)
-    | Starred (Once expr) ->
-        let base =
-          Expression.Name
-            (Attribute
-               {
-                 base =
-                   Expression.Name (Identifier "typing_extensions")
-                   |> Node.create ~location:(Node.location expr);
-                 attribute = "Unpack";
-                 special = false;
-               })
-          |> Node.create ~location:(Node.location expr)
-        in
-        create_from_subscript ~base ~subscript_index:expr
     | Constant Constant.NoneLiteral -> Constructors.none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
