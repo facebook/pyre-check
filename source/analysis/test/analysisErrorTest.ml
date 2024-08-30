@@ -22,7 +22,7 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     return_annotation;
     async = false;
     generator = false;
-    parent = ModuleContext.create_toplevel ();
+    parent = NestingContext.create_toplevel ();
     legacy_parent = None;
     type_params = [];
   }

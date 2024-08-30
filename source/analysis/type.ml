@@ -4073,7 +4073,7 @@ module TypedDictionary = struct
               return_annotation;
               async = false;
               generator = false;
-              parent = ModuleContext.create_toplevel ();
+              parent = NestingContext.create_toplevel ();
               legacy_parent = Some (Reference.create class_name);
               type_params = [];
             };

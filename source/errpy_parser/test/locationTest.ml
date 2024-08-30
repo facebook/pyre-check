@@ -920,7 +920,7 @@ let test_call_locations =
 
 let test_class_locations =
   let assert_parsed = assert_parsed in
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -971,7 +971,7 @@ let test_class_locations =
                                      return_annotation = None;
                                      async = false;
                                      generator = false;
-                                     parent = ModuleContext.(create_class ~parent "foo");
+                                     parent = NestingContext.(create_class ~parent "foo");
                                      legacy_parent = Some !&"foo";
                                      type_params = [];
                                    };
@@ -1078,7 +1078,7 @@ let test_class_locations =
                                                 return_annotation = None;
                                                 async = false;
                                                 generator = false;
-                                                parent = ModuleContext.(create_class ~parent "foo");
+                                                parent = NestingContext.(create_class ~parent "foo");
                                                 legacy_parent = Some !&"foo";
                                                 type_params = [];
                                               };
@@ -1120,7 +1120,7 @@ let test_define_locations =
                           return_annotation = None;
                           async = true;
                           generator = false;
-                          parent = ModuleContext.create_toplevel ();
+                          parent = NestingContext.create_toplevel ();
                           legacy_parent = None;
                           type_params = [];
                         };
@@ -1151,7 +1151,7 @@ let test_define_locations =
       |})
            ~expected:
              [
-               (let parent = ModuleContext.create_toplevel () in
+               (let parent = NestingContext.create_toplevel () in
                 node
                   ~start:(2, 0)
                   ~stop:(5, 9)
@@ -1173,7 +1173,7 @@ let test_define_locations =
                        unbound_names = [];
                        body =
                          [
-                           (let parent = ModuleContext.create_function ~parent "foo" in
+                           (let parent = NestingContext.create_function ~parent "foo" in
                             node
                               ~start:(3, 4)
                               ~stop:(5, 9)
@@ -2931,7 +2931,7 @@ let test_stub_locations =
                     {
                       Class.name = !&"foo";
                       base_arguments = [];
-                      parent = ModuleContext.create_toplevel ();
+                      parent = NestingContext.create_toplevel ();
                       body =
                         [
                           node

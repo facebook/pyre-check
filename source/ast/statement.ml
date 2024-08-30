@@ -291,7 +291,7 @@ and Class : sig
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
-    parent: ModuleContext.t;
+    parent: NestingContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -324,7 +324,7 @@ end = struct
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
-    parent: ModuleContext.t;
+    parent: NestingContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -346,7 +346,7 @@ end = struct
         with
         | x when not (Int.equal x 0) -> x
         | _ -> (
-            match ModuleContext.compare left.parent right.parent with
+            match NestingContext.compare left.parent right.parent with
             | x when not (Int.equal x 0) -> x
             | _ -> (
                 match List.compare Statement.location_insensitive_compare left.body right.body with
@@ -378,7 +378,7 @@ end = struct
     Define.create_class_toplevel
       ~unbound_names:top_level_unbound_names
       ~module_name:qualifier
-      ~local_context:(ModuleContext.create_class ~parent (Reference.last name))
+      ~local_context:(NestingContext.create_class ~parent (Reference.last name))
       ~statements:body
 
 
@@ -477,7 +477,7 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: ModuleContext.t;
+      parent: NestingContext.t;
       (* The qualified name of the class owning the method. *)
       (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
          `parent` in all cases. *)
@@ -575,7 +575,7 @@ and Define : sig
   val create_class_toplevel
     :  unbound_names:NameAccess.t list ->
     module_name:Reference.t ->
-    local_context:ModuleContext.t ->
+    local_context:NestingContext.t ->
     statements:Statement.t list ->
     t
 
@@ -649,7 +649,7 @@ end = struct
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: ModuleContext.t;
+      parent: NestingContext.t;
       (* The class owning the method *)
       legacy_parent: Reference.t option;
       type_params: Expression.TypeParam.t list;
@@ -690,7 +690,7 @@ end = struct
                           match Bool.compare left.generator right.generator with
                           | x when not (Int.equal x 0) -> x
                           | _ -> (
-                              match ModuleContext.compare left.parent right.parent with
+                              match NestingContext.compare left.parent right.parent with
                               | x when not (Int.equal x 0) -> x
                               | _ -> (
                                   match
@@ -714,14 +714,14 @@ end = struct
         return_annotation = None;
         async = false;
         generator = false;
-        parent = ModuleContext.create_toplevel ();
+        parent = NestingContext.create_toplevel ();
         legacy_parent = None;
         type_params = [];
       }
 
 
     let create_class_toplevel ~module_name local_context =
-      let qualified_class_name = ModuleContext.to_qualifier ~module_name local_context in
+      let qualified_class_name = NestingContext.to_qualifier ~module_name local_context in
       {
         name = Reference.create ~prefix:qualified_class_name class_toplevel_define_name;
         parameters = [];

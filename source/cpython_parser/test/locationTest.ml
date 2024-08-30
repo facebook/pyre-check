@@ -942,7 +942,7 @@ let test_call_locations =
 
 
 let test_class_locations =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   let do_test context =
     let assert_parsed = assert_parsed ~context in
     test_list
@@ -998,7 +998,7 @@ let test_class_locations =
                                        async = false;
                                        generator = false;
                                        parent =
-                                         ModuleContext.(
+                                         NestingContext.(
                                            create_class ~parent:(create_toplevel ()) "foo");
                                        legacy_parent = Some !&"foo";
                                        type_params = [];
@@ -1107,7 +1107,7 @@ let test_class_locations =
                                                   async = false;
                                                   generator = false;
                                                   parent =
-                                                    ModuleContext.(
+                                                    NestingContext.(
                                                       create_class
                                                         ~parent:(create_toplevel ())
                                                         "foo");
@@ -1156,7 +1156,7 @@ let test_define_locations =
                             return_annotation = None;
                             async = true;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -1200,7 +1200,7 @@ let test_define_locations =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -1222,7 +1222,7 @@ let test_define_locations =
                                        async = false;
                                        generator = false;
                                        parent =
-                                         ModuleContext.(
+                                         NestingContext.(
                                            create_function ~parent:(create_toplevel ()) "foo");
                                        legacy_parent = None;
                                        type_params = [];
@@ -3111,7 +3111,7 @@ let test_stub_locations =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -3142,7 +3142,7 @@ let test_stub_locations =
                       {
                         Class.name = !&"foo";
                         base_arguments = [];
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         body =
                           [
                             node
@@ -3875,7 +3875,7 @@ let test_type_comments =
                                    (Expression.Constant Constant.NoneLiteral));
                             async = false;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -3922,7 +3922,7 @@ let test_type_comments =
                                    (Expression.Constant Constant.NoneLiteral));
                             async = true;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -3981,7 +3981,7 @@ let test_type_comments =
                                       }));
                             async = false;
                             generator = false;
-                            parent = ModuleContext.create_toplevel ();
+                            parent = NestingContext.create_toplevel ();
                             legacy_parent = None;
                             type_params = [];
                           };

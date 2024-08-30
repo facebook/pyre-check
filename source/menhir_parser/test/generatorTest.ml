@@ -56,7 +56,7 @@ let assert_not_parsed source _context =
 
 
 let test_lexer =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -687,7 +687,7 @@ let decorator ?arguments name =
 
 
 let test_define =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -1181,7 +1181,7 @@ let test_define =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = ModuleContext.create_function ~parent "foo";
+                               parent = NestingContext.create_function ~parent "foo";
                                legacy_parent = None;
                                type_params = [];
                              };
@@ -4010,7 +4010,7 @@ let test_string =
 
 
 let test_class =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -4058,7 +4058,7 @@ let test_class =
                          {
                            Class.name = !&"bar";
                            base_arguments = [];
-                           parent = ModuleContext.create_class ~parent "foo";
+                           parent = NestingContext.create_class ~parent "foo";
                            body = [+Statement.Pass];
                            decorators = [];
                            top_level_unbound_names = [];
@@ -4096,7 +4096,7 @@ let test_class =
                          {
                            Class.name = !&"bar";
                            base_arguments = [];
-                           parent = ModuleContext.create_function ~parent "foo";
+                           parent = NestingContext.create_function ~parent "foo";
                            body = [+Statement.Pass];
                            decorators = [];
                            top_level_unbound_names = [];
@@ -4116,7 +4116,7 @@ let test_class =
                   parent;
                   body =
                     [
-                      (let parent = ModuleContext.create_class ~parent "foo" in
+                      (let parent = NestingContext.create_class ~parent "foo" in
                        +Statement.Define
                           {
                             Define.signature =
@@ -4151,7 +4151,7 @@ let test_class =
                   base_arguments = [];
                   parent;
                   body =
-                    (let parent = ModuleContext.create_class ~parent "foo" in
+                    (let parent = NestingContext.create_class ~parent "foo" in
                      [
                        +Statement.Define
                           {
@@ -4171,7 +4171,7 @@ let test_class =
                             unbound_names = [];
                             body =
                               [
-                                (let parent = ModuleContext.create_function ~parent "bar" in
+                                (let parent = NestingContext.create_function ~parent "bar" in
                                  +Statement.Define
                                     {
                                       Define.signature =
@@ -4374,7 +4374,7 @@ let test_class =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = ModuleContext.create_class ~parent "foo";
+                               parent = NestingContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
                                type_params = [];
                              };
@@ -4410,7 +4410,7 @@ let test_class =
                                return_annotation = None;
                                async = false;
                                generator = false;
-                               parent = ModuleContext.create_class ~parent "foo";
+                               parent = NestingContext.create_class ~parent "foo";
                                legacy_parent = Some !&"foo";
                                type_params = [];
                              };
@@ -4472,7 +4472,7 @@ let test_class =
                                         return_annotation = None;
                                         async = false;
                                         generator = false;
-                                        parent = ModuleContext.create_class ~parent "foo";
+                                        parent = NestingContext.create_class ~parent "foo";
                                         legacy_parent = Some !&"foo";
                                         type_params = [];
                                       };
@@ -5809,7 +5809,7 @@ let test_tuple =
 
 
 let test_stubs =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -6091,7 +6091,7 @@ let test_ellipsis =
                       return_annotation = None;
                       async = false;
                       generator = false;
-                      parent = ModuleContext.create_toplevel ();
+                      parent = NestingContext.create_toplevel ();
                       legacy_parent = None;
                       type_params = [];
                     };

@@ -816,7 +816,7 @@ let test_call_locations _ =
 
 
 let test_class_locations _ =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   assert_source_locations
     "@bar\nclass foo():\n\tpass"
     [
@@ -861,7 +861,7 @@ let test_class_locations _ =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = ModuleContext.(create_class ~parent "foo");
+                            parent = NestingContext.(create_class ~parent "foo");
                             legacy_parent = Some !&"foo";
                             type_params = [];
                           };
@@ -952,7 +952,7 @@ let test_class_locations _ =
                                        return_annotation = None;
                                        async = false;
                                        generator = false;
-                                       parent = ModuleContext.(create_class ~parent "foo");
+                                       parent = NestingContext.(create_class ~parent "foo");
                                        legacy_parent = Some !&"foo";
                                        type_params = [];
                                      };
@@ -988,7 +988,7 @@ let test_define_locations _ =
                  return_annotation = None;
                  async = true;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };
@@ -1026,7 +1026,7 @@ let test_define_locations _ =
                  return_annotation = None;
                  async = false;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };
@@ -1048,7 +1048,7 @@ let test_define_locations _ =
                             async = false;
                             generator = false;
                             parent =
-                              ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+                              NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
                             legacy_parent = None;
                             type_params = [];
                           };
@@ -1123,7 +1123,7 @@ let test_define_locations _ =
                  return_annotation = None;
                  async = false;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };
@@ -1170,7 +1170,7 @@ let test_define_locations _ =
                         (Expression.Constant (Constant.String (StringLiteral.create "str"))));
                  async = false;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };
@@ -2683,7 +2683,7 @@ let test_string_locations _ =
 
 
 let test_stub_locations _ =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   assert_source_locations
     "a = ..."
     [
@@ -2737,7 +2737,7 @@ let test_stub_locations _ =
                  return_annotation = None;
                  async = false;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };
@@ -2790,7 +2790,7 @@ let test_stub_locations _ =
                  return_annotation = None;
                  async = false;
                  generator = false;
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  legacy_parent = None;
                  type_params = [];
                };

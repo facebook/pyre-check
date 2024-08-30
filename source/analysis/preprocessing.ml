@@ -271,7 +271,7 @@ module Qualify = struct
 
   type scope = {
     module_name: Reference.t;
-    parent: ModuleContext.t;
+    parent: NestingContext.t;
     aliases: alias String.Map.t;
     locals: String.Set.t;
   }
@@ -292,7 +292,7 @@ module Qualify = struct
     if is_qualified name then
       scope, name
     else
-      let qualifier = ModuleContext.to_qualifier ~module_name parent in
+      let qualifier = NestingContext.to_qualifier ~module_name parent in
       let renamed = get_qualified_local_identifier name ~qualifier in
       ( {
           scope with
@@ -335,16 +335,16 @@ module Qualify = struct
 
   let qualify_function_name ~scope:({ module_name; parent; aliases; _ } as scope) name =
     match parent with
-    | ModuleContext.Function _ -> (
+    | NestingContext.Function _ -> (
         match Reference.as_list name with
         | [simple_name] ->
             let scope, alias = qualify_local_identifier_ignore_preexisting ~scope simple_name in
             scope, Reference.create alias
         | _ -> scope, qualify_reference ~scope name)
-    | ModuleContext.Class _ -> scope, qualify_reference ~scope name
-    | ModuleContext.TopLevel ->
+    | NestingContext.Class _ -> scope, qualify_reference ~scope name
+    | NestingContext.TopLevel ->
         let scope =
-          let qualifier = ModuleContext.to_qualifier ~module_name parent in
+          let qualifier = NestingContext.to_qualifier ~module_name parent in
           let function_name = Reference.show name in
           {
             scope with
@@ -732,12 +732,12 @@ module Qualify = struct
 
   let rec explore_scope ~scope statements =
     let global_alias ~module_name ~parent ~name =
-      let qualifier = ModuleContext.to_qualifier ~module_name parent in
+      let qualifier = NestingContext.to_qualifier ~module_name parent in
       { name = Reference.combine qualifier (Reference.create name) }
     in
     let local_alias ~name = { name } in
     let explore_scope ({ module_name; parent; aliases; locals } as scope) { Node.value; _ } =
-      let is_in_function = ModuleContext.is_function parent in
+      let is_in_function = NestingContext.is_function parent in
       match value with
       | Statement.Assign
           {
@@ -885,7 +885,7 @@ module Qualify = struct
                   scope, List.rev reversed_elements
                 in
                 let location = Node.location target in
-                let is_class_toplevel = ModuleContext.is_class parent in
+                let is_class_toplevel = NestingContext.is_class parent in
                 match Node.value target with
                 | Expression.Tuple elements ->
                     let scope, elements = qualify_targets scope elements in
@@ -897,7 +897,7 @@ module Qualify = struct
                     let sanitized = Identifier.sanitized name in
                     let qualified =
                       let base =
-                        let qualifier = ModuleContext.to_qualifier ~module_name parent in
+                        let qualifier = NestingContext.to_qualifier ~module_name parent in
                         Node.create
                           ~location
                           (Expression.Name (create_name_from_reference ~location qualifier))
@@ -930,7 +930,7 @@ module Qualify = struct
                       if is_class_toplevel then
                         match name_to_reference name with
                         | Some reference ->
-                            let qualifier = ModuleContext.to_qualifier ~module_name parent in
+                            let qualifier = NestingContext.to_qualifier ~module_name parent in
                             qualify_if_needed ~qualifier reference
                             |> create_name_from_reference ~location
                             |> fun name -> Expression.Name name
@@ -975,7 +975,7 @@ module Qualify = struct
             let { parent; _ } = scope in
             match qualified_annotation >>| Expression.show, parent with
             | Some "typing_extensions.TypeAlias", _ -> Qualify
-            | None, ModuleContext.TopLevel -> OptionallyQualify
+            | None, NestingContext.TopLevel -> OptionallyQualify
             | _, _ -> DoNotQualify
           in
           value >>| qualify_value ~scope:target_scope ~qualify_potential_alias_strings
@@ -1001,7 +1001,7 @@ module Qualify = struct
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
         let scope, qualified_function_name = qualify_function_name ~scope name in
         let inner_scope =
-          let parent = ModuleContext.create_function ~parent (Reference.last name) in
+          let parent = NestingContext.create_function ~parent (Reference.last name) in
           { scope with parent }
         in
         let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
@@ -1034,7 +1034,7 @@ module Qualify = struct
         let { module_name; _ } = scope in
         let body =
           let original_scope =
-            { scope with parent = ModuleContext.create_class ~parent (Reference.last name) }
+            { scope with parent = NestingContext.create_class ~parent (Reference.last name) }
           in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
@@ -1084,7 +1084,7 @@ module Qualify = struct
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
           Class.name =
-            qualify_if_needed ~qualifier:(ModuleContext.to_qualifier ~module_name parent) name;
+            qualify_if_needed ~qualifier:(NestingContext.to_qualifier ~module_name parent) name;
           base_arguments = List.map base_arguments ~f:qualify_base;
           body;
           decorators;
@@ -1267,7 +1267,7 @@ let qualify ({ Source.module_path = { ModulePath.qualifier; _ }; statements; _ }
   let scope =
     {
       Qualify.module_name = qualifier;
-      parent = ModuleContext.create_toplevel ();
+      parent = NestingContext.create_toplevel ();
       aliases = String.Map.empty;
       locals = String.Set.empty;
     }
@@ -2348,7 +2348,7 @@ let expand_typed_dictionary_declarations
           >>= (fun name ->
                 typed_dictionary_class_declaration
                   ~name:(string_literal (Reference.show (Reference.create ~prefix:qualifier name)))
-                  ~parent:(ModuleContext.create_toplevel ())
+                  ~parent:(NestingContext.create_toplevel ())
                   ~fields:
                     (List.filter_map entries ~f:(fun entry ->
                          let open Dictionary.Entry in
@@ -2684,7 +2684,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               let constructors =
                 tuple_constructors
                   ~class_name:name
-                  ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                  ~parent:(NestingContext.create_class ~parent (Reference.last name))
                   ~location
                   attributes
               in
@@ -2751,7 +2751,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               List.map attributes ~f:Node.value
               |> tuple_constructors
                    ~class_name:name
-                   ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                   ~parent:(NestingContext.create_class ~parent (Reference.last name))
                    ~location
             in
             let tuple_attributes = tuple_attributes ~parent:name ~location attributes in
@@ -2778,7 +2778,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     else
                       tuple_constructors
                         ~class_name:name
-                        ~parent:(ModuleContext.create_class ~parent (Reference.last name))
+                        ~parent:(NestingContext.create_class ~parent (Reference.last name))
                         ~location
                         attributes
                   in
@@ -2801,7 +2801,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   @ List.map
                       ~f:
                         (expand_named_tuples
-                           ~parent:(ModuleContext.create_class ~parent (Reference.last name)))
+                           ~parent:(NestingContext.create_class ~parent (Reference.last name)))
                       body;
               }
       | Define ({ Define.signature = { Define.Signature.name; _ }; body; _ } as define) ->
@@ -2812,7 +2812,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 List.map
                   ~f:
                     (expand_named_tuples
-                       ~parent:(ModuleContext.create_function ~parent (Reference.last name)))
+                       ~parent:(NestingContext.create_function ~parent (Reference.last name)))
                   body;
             }
       | _ -> value
@@ -2822,7 +2822,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   {
     source with
     Source.statements =
-      List.map ~f:(expand_named_tuples ~parent:(ModuleContext.create_toplevel ())) statements;
+      List.map ~f:(expand_named_tuples ~parent:(NestingContext.create_toplevel ())) statements;
   }
 
 
@@ -2851,7 +2851,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
          } as base_argument)
       name
     =
-    let class_parent = ModuleContext.create_toplevel () in
+    let class_parent = NestingContext.create_toplevel () in
     let constructor =
       Statement.Define
         {
@@ -2868,7 +2868,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
                 Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
               async = false;
               generator = false;
-              parent = ModuleContext.create_class ~parent:class_parent (Reference.last name);
+              parent = NestingContext.create_class ~parent:class_parent (Reference.last name);
               legacy_parent = Some name;
               type_params = [];
             };
@@ -2988,7 +2988,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
             name = class_name_reference;
             base_arguments = [metaclass];
             decorators = [];
-            parent = ModuleContext.create_toplevel ();
+            parent = NestingContext.create_toplevel ();
             body = [Node.create ~location Statement.Pass];
             top_level_unbound_names = [];
             type_params = [];
@@ -3852,10 +3852,10 @@ let mangle_private_attributes source =
                  be mangled. *)
               match state, parent with
               | ( _ :: { mangling_prefix = parent_prefix; _ } :: _,
-                  ModuleContext.Class { name; parent } )
+                  NestingContext.Class { name; parent } )
                 when should_mangle name ->
                   let mangled_parent =
-                    ModuleContext.create_class ~parent (mangle_identifier parent_prefix name)
+                    NestingContext.create_class ~parent (mangle_identifier parent_prefix name)
                   in
                   let mangled_legacy_parent =
                     Option.map legacy_parent ~f:(mangle_reference parent_prefix)
@@ -4644,7 +4644,7 @@ let expand_enum_functional_syntax
           name = class_reference;
           base_arguments;
           decorators = [];
-          parent = ModuleContext.create_toplevel ();
+          parent = NestingContext.create_toplevel ();
           body = assignments;
           top_level_unbound_names = [];
           type_params = [];

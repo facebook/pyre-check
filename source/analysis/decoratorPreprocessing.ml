@@ -241,7 +241,7 @@ let rec set_parent
     | { Node.value = Statement.Define define; location } ->
         define
         |> set_parent
-             ~new_parent:(ModuleContext.create_function ~parent:new_parent define_function_name)
+             ~new_parent:(NestingContext.create_function ~parent:new_parent define_function_name)
         |> (fun define -> Statement.Define define)
         |> Node.create ~location
     | { Node.value = Statement.Class _; _ } as statement ->
@@ -785,7 +785,7 @@ let make_wrapper_define
     |> rename_define ~new_name:(Reference.create (Reference.last helper_function_reference))
     |> set_parent
          ~new_parent:
-           (ModuleContext.create_function ~parent:parent_for_inner_defines wrapper_function_name)
+           (NestingContext.create_function ~parent:parent_for_inner_defines wrapper_function_name)
     |> requalify_define
          ~old_qualifier:helper_function_reference
          ~new_qualifier:new_helper_function_reference
@@ -844,7 +844,9 @@ let inline_decorators_at_same_scope
   =
   let inlinable_decorators = head_decorator :: tail_decorators in
   let qualifier = Reference.delocalize name in
-  let parent_for_inner_defines = ModuleContext.create_function ~parent (Reference.last qualifier) in
+  let parent_for_inner_defines =
+    NestingContext.create_function ~parent (Reference.last qualifier)
+  in
   let ({ Define.signature = inlined_original_define_signature; _ } as inlined_original_define) =
     sanitize_define ~strip_parent:true define
     |> set_first_parameter_type ~original_define:define

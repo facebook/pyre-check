@@ -145,7 +145,7 @@ let resolve_global ~pyre_api name =
         |> PyrePysaApi.ReadOnly.get_define_body pyre_api
         >>| Node.value
         |> function
-        | Some ({ signature = { parent = ModuleContext.Function _; _ }; _ } as define) ->
+        | Some ({ signature = { parent = NestingContext.Function _; _ }; _ } as define) ->
             Some
               (PyrePysaApi.ReadOnly.resolve_define
                  ~callable_name:(Some name)

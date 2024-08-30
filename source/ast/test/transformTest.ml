@@ -724,7 +724,7 @@ let test_sanitize_statement _ =
                return_annotation = Some !"int";
                async = false;
                generator = false;
-               parent = ModuleContext.create_toplevel ();
+               parent = NestingContext.create_toplevel ();
                legacy_parent = None;
                type_params = [];
              };
@@ -788,7 +788,7 @@ let test_sanitize_statement _ =
                return_annotation = Some !"int";
                async = false;
                generator = false;
-               parent = ModuleContext.create_toplevel ();
+               parent = NestingContext.create_toplevel ();
                legacy_parent = None;
                type_params = [];
              };

@@ -24,7 +24,7 @@ let test_to_dot _ =
             return_annotation = None;
             async = false;
             generator = false;
-            parent = Ast.ModuleContext.create_toplevel ();
+            parent = Ast.NestingContext.create_toplevel ();
             legacy_parent = None;
             type_params = [];
           };
@@ -110,7 +110,7 @@ let assert_cfg body expected =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = Ast.ModuleContext.create_toplevel ();
+          parent = Ast.NestingContext.create_toplevel ();
           legacy_parent = None;
           type_params = [];
         };

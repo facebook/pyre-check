@@ -61,7 +61,7 @@ let translate_boolop = function
 
 
 module StatementContext = struct
-  type t = { parent: Ast.ModuleContext.t }
+  type t = { parent: Ast.NestingContext.t }
 end
 
 module SingleParameter = struct
@@ -618,7 +618,7 @@ and translate_statements
       let signature =
         let legacy_parent =
           match parent with
-          | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+          | Ast.NestingContext.Class { name; _ } -> Some (Ast.Reference.create name)
           | _ -> None
         in
         {
@@ -804,7 +804,7 @@ and translate_statements
           List.map assign.targets ~f:create_assign_for_target
       | Errpyast.FunctionDef function_def ->
           let name = function_def.name in
-          let parent = Ast.ModuleContext.create_function ~parent name in
+          let parent = Ast.NestingContext.create_function ~parent name in
           create_function_definition
             ~async:false
             ~name
@@ -815,7 +815,7 @@ and translate_statements
             ~_type_comment:function_def.type_comment
       | Errpyast.AsyncFunctionDef async_function_def ->
           let name = async_function_def.name in
-          let parent = Ast.ModuleContext.create_function ~parent name in
+          let parent = Ast.NestingContext.create_function ~parent name in
           create_function_definition
             ~async:true
             ~name:async_function_def.name
@@ -848,7 +848,7 @@ and translate_statements
           let name = class_def.name in
           let body =
             translate_statements
-              ~context:{ parent = Ast.ModuleContext.create_class ~parent name }
+              ~context:{ parent = Ast.NestingContext.create_class ~parent name }
               class_def.body
           in
           [
@@ -879,7 +879,7 @@ let translate_module errpy_module =
   | Errpyast.Module { body; _ } ->
       translate_statements
         body
-        ~context:{ StatementContext.parent = Ast.ModuleContext.create_toplevel () }
+        ~context:{ StatementContext.parent = Ast.NestingContext.create_toplevel () }
   | _ -> []
 
 

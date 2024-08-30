@@ -33,7 +33,7 @@ type t = {
 }
 [@@deriving sexp, equal, compare]
 
-(* Get a non-mangled, qualified name of a define under the assumption that the ModuleContext.t has
+(* Get a non-mangled, qualified name of a define under the assumption that the NestingContext.t has
    correct names but the actual name of the define might already qualified and mangled.
 
    This function should return the same result whether run before or after qualification. *)
@@ -43,7 +43,7 @@ let qualified_name_of_signature
   =
   let unqualified_name = mangled_name |> Reference.sanitize_qualified |> Reference.last in
   Reference.create
-    ~prefix:(ModuleContext.to_qualifier ~module_name nesting_context)
+    ~prefix:(NestingContext.to_qualifier ~module_name nesting_context)
     unqualified_name
 
 

@@ -1328,7 +1328,7 @@ let test_get_unannotated_global =
               return_annotation;
               async = false;
               generator = false;
-              parent = ModuleContext.create_toplevel ();
+              parent = NestingContext.create_toplevel ();
               legacy_parent = None;
               type_params = [];
             };

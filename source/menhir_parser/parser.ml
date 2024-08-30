@@ -460,7 +460,7 @@ module ParserToAst = struct
       | Break -> AstStatement.Statement.Break
       | Class { Class.name; base_arguments; body; decorators } ->
           let body =
-            let parent = ModuleContext.create_class ~parent (Reference.show name) in
+            let parent = NestingContext.create_class ~parent (Reference.show name) in
             List.map ~f:(convert_statement ~parent) body
           in
           AstStatement.Statement.Class
@@ -477,7 +477,7 @@ module ParserToAst = struct
       | Define { Define.signature; body } ->
           let body =
             let { ParserStatement.Define.Signature.name; _ } = signature in
-            let parent = ModuleContext.create_function ~parent (Reference.show name) in
+            let parent = NestingContext.create_function ~parent (Reference.show name) in
             List.map ~f:(convert_statement ~parent) body
           in
           let convert_signature
@@ -491,7 +491,7 @@ module ParserToAst = struct
             =
             let legacy_parent =
               match parent with
-              | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+              | Ast.NestingContext.Class { name; _ } -> Some (Ast.Reference.create name)
               | _ -> None
             in
             {
@@ -600,7 +600,7 @@ module ParserToAst = struct
 
 
   let convert_module statements =
-    let parent = ModuleContext.create_toplevel () in
+    let parent = NestingContext.create_toplevel () in
     List.map statements ~f:(convert_statement ~parent)
 end
 

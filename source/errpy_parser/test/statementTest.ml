@@ -1284,7 +1284,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1312,7 +1312,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1341,7 +1341,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1365,7 +1365,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1393,7 +1393,7 @@ let test_define =
                         return_annotation = Some !"c";
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1417,7 +1417,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1441,7 +1441,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1465,7 +1465,7 @@ let test_define =
                         return_annotation = None;
                         async = true;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1489,7 +1489,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1524,7 +1524,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1548,7 +1548,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1586,7 +1586,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1618,7 +1618,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1646,7 +1646,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1678,7 +1678,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1709,7 +1709,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1733,7 +1733,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1761,7 +1761,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1779,7 +1779,7 @@ let test_define =
       @@ assert_parsed
            "def foo():\n  def bar():\n    1\n    2\n3"
            ~expected:
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               [
                 +Statement.Define
                    {
@@ -1799,7 +1799,7 @@ let test_define =
                      unbound_names = [];
                      body =
                        [
-                         (let parent = ModuleContext.create_function ~parent "foo" in
+                         (let parent = NestingContext.create_function ~parent "foo" in
                           +Statement.Define
                              {
                                Define.signature =
@@ -1842,7 +1842,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1873,7 +1873,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -1901,7 +1901,7 @@ let test_define =
                         return_annotation = None;
                         async = false;
                         generator = false;
-                        parent = ModuleContext.create_toplevel ();
+                        parent = NestingContext.create_toplevel ();
                         legacy_parent = None;
                         type_params = [];
                       };
@@ -2039,7 +2039,7 @@ let test_define =
 
 
 let test_class =
-  let parent = ModuleContext.create_toplevel () in
+  let parent = NestingContext.create_toplevel () in
   let assert_parsed = assert_parsed in
   test_list
     [
@@ -2087,7 +2087,7 @@ let test_class =
                     parent;
                     body =
                       [
-                        (let parent = ModuleContext.create_class ~parent "foo" in
+                        (let parent = NestingContext.create_class ~parent "foo" in
                          +Statement.Define
                             {
                               Define.signature =
@@ -2124,7 +2124,7 @@ let test_class =
                     parent;
                     body =
                       [
-                        (let parent = ModuleContext.create_class ~parent "foo" in
+                        (let parent = NestingContext.create_class ~parent "foo" in
                          +Statement.Define
                             {
                               Define.signature =
@@ -2143,7 +2143,7 @@ let test_class =
                               unbound_names = [];
                               body =
                                 [
-                                  (let parent = ModuleContext.create_function ~parent "bar" in
+                                  (let parent = NestingContext.create_function ~parent "bar" in
                                    +Statement.Define
                                       {
                                         Define.signature =
@@ -2258,7 +2258,7 @@ let test_class =
                     parent;
                     body =
                       [
-                        (let parent = ModuleContext.create_class ~parent "foo" in
+                        (let parent = NestingContext.create_class ~parent "foo" in
                          +Statement.Define
                             {
                               Define.signature =
@@ -2294,7 +2294,7 @@ let test_class =
                     base_arguments = [];
                     parent;
                     body =
-                      (let parent = ModuleContext.create_class ~parent "A" in
+                      (let parent = NestingContext.create_class ~parent "A" in
                        [
                          +Statement.Define
                             {
@@ -2321,7 +2321,7 @@ let test_class =
                               parent;
                               body =
                                 [
-                                  (let parent = ModuleContext.create_class ~parent "B" in
+                                  (let parent = NestingContext.create_class ~parent "B" in
                                    +Statement.Define
                                       {
                                         Define.signature =
@@ -2378,7 +2378,7 @@ let test_class =
                            {
                              Class.name = !&"bar";
                              base_arguments = [];
-                             parent = ModuleContext.create_function ~parent "foo";
+                             parent = NestingContext.create_function ~parent "foo";
                              body = [+Statement.Pass];
                              decorators = [];
                              top_level_unbound_names = [];

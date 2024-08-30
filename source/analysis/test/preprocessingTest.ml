@@ -452,13 +452,13 @@ let test_qualify_source =
       type t = unit
 
       let rec dequalify_parent = function
-        | ModuleContext.TopLevel as top_level -> top_level
-        | ModuleContext.Function { name; parent } ->
-            ModuleContext.create_function
+        | NestingContext.TopLevel as top_level -> top_level
+        | NestingContext.Function { name; parent } ->
+            NestingContext.create_function
               ~parent:(dequalify_parent parent)
               (Identifier.sanitized name |> Reference.create |> Reference.last)
-        | ModuleContext.Class { name; parent } ->
-            ModuleContext.create_class
+        | NestingContext.Class { name; parent } ->
+            NestingContext.create_class
               ~parent:(dequalify_parent parent)
               (Identifier.sanitized name |> Reference.create |> Reference.last)
 
@@ -2089,7 +2089,7 @@ let test_qualify_ast =
   let scope =
     {
       Qualify.module_name = Reference.create "qualifier";
-      parent = ModuleContext.create_toplevel ();
+      parent = NestingContext.create_toplevel ();
       aliases = String.Map.singleton "a" { Qualify.name = Reference.create "b" };
       locals = String.Set.empty;
     }
@@ -2151,7 +2151,7 @@ let test_qualify_ast =
                  base_arguments = [];
                  top_level_unbound_names = [];
                  type_params = [];
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  body = [];
                  decorators = [];
                })
@@ -2161,7 +2161,7 @@ let test_qualify_ast =
                  base_arguments = [];
                  top_level_unbound_names = [];
                  type_params = [];
-                 parent = ModuleContext.create_toplevel ();
+                 parent = NestingContext.create_toplevel ();
                  body = [];
                  decorators = [];
                });
@@ -2383,7 +2383,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "Foo";
@@ -2392,7 +2392,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    type_params = [];
                    parent;
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -2440,7 +2440,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "Foo.Foo";
@@ -2449,7 +2449,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    type_params = [];
                    parent;
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -2519,7 +2519,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "Foo";
@@ -2528,7 +2528,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    top_level_unbound_names = [];
                    type_params = [];
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -2576,7 +2576,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "Foo.Foo";
@@ -2585,7 +2585,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    type_params = [];
                    parent;
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -2648,7 +2648,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "Foo";
@@ -2657,7 +2657,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    type_params = [];
                    parent;
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -2705,7 +2705,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
-             (let parent = ModuleContext.create_toplevel () in
+             (let parent = NestingContext.create_toplevel () in
               +Statement.Class
                  {
                    Class.name = Reference.create "NotFoo.Foo";
@@ -2714,7 +2714,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                    type_params = [];
                    parent;
                    body =
-                     (let parent = ModuleContext.create_class ~parent "Foo" in
+                     (let parent = NestingContext.create_class ~parent "Foo" in
                       [
                         +Statement.Define
                            {
@@ -3683,7 +3683,7 @@ let test_expand_implicit_returns =
                     return_annotation = None;
                     async = false;
                     generator = false;
-                    parent = ModuleContext.create_toplevel ();
+                    parent = NestingContext.create_toplevel ();
                     legacy_parent = None;
                     type_params = [];
                   };
@@ -3899,7 +3899,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.create_toplevel ();
+          parent = NestingContext.create_toplevel ();
           legacy_parent = None;
           type_params = [];
         };
@@ -3918,7 +3918,7 @@ let test_defines =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.create_class ~parent:(ModuleContext.create_toplevel ()) parent;
+          parent = NestingContext.create_class ~parent:(NestingContext.create_toplevel ()) parent;
           legacy_parent = Some (Reference.create parent);
           type_params = [];
         };
@@ -3929,7 +3929,7 @@ let test_defines =
   in
   test_list
     [
-      (let define = create_define ~parent:(ModuleContext.create_toplevel ()) "foo" in
+      (let define = create_define ~parent:(NestingContext.create_toplevel ()) "foo" in
        labeled_test_case __FUNCTION__ __LINE__
        @@ assert_defines
             [+Statement.Define define]
@@ -3944,7 +3944,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+               parent = NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
                legacy_parent = None;
                type_params = [];
              };
@@ -3963,7 +3963,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = ModuleContext.create_toplevel ();
+               parent = NestingContext.create_toplevel ();
                legacy_parent = None;
                type_params = [];
              };
@@ -3990,7 +3990,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+               parent = NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
                legacy_parent = None;
                type_params = [];
              };
@@ -4009,7 +4009,7 @@ let test_defines =
                return_annotation = None;
                async = false;
                generator = false;
-               parent = ModuleContext.create_toplevel ();
+               parent = NestingContext.create_toplevel ();
                legacy_parent = None;
                type_params = [];
              };
@@ -4034,7 +4034,7 @@ let test_defines =
             [+Statement.If if_define]
             [create_toplevel [+Statement.If if_define]; define]);
       ((* Note: Defines are returned in reverse order. *)
-       let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "Foo") in
+       let parent = NestingContext.(create_class ~parent:(create_toplevel ()) "Foo") in
        let define_foo = create_define ~parent "foo" in
        let define_bar = create_define ~parent "bar" in
        let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
@@ -4042,7 +4042,7 @@ let test_defines =
          {
            Class.name = !&"Foo";
            base_arguments = [];
-           parent = ModuleContext.create_toplevel ();
+           parent = NestingContext.create_toplevel ();
            body;
            decorators = [];
            top_level_unbound_names = [];
@@ -4071,13 +4071,13 @@ let test_classes =
   test_list
     [
       (let class_define =
-         let parent = ModuleContext.create_toplevel () in
+         let parent = NestingContext.create_toplevel () in
          {
            Class.name = !&"foo";
            base_arguments = [];
            parent;
            body =
-             (let parent = ModuleContext.create_class ~parent "foo" in
+             (let parent = NestingContext.create_class ~parent "foo" in
               [
                 +Statement.Define
                    {
@@ -4105,8 +4105,8 @@ let test_classes =
        in
        labeled_test_case __FUNCTION__ __LINE__
        @@ assert_classes [+Statement.Class class_define] [class_define]);
-      (let toplevel_context = ModuleContext.create_toplevel () in
-       let foo_context = ModuleContext.create_class ~parent:toplevel_context "foo" in
+      (let toplevel_context = NestingContext.create_toplevel () in
+       let foo_context = NestingContext.create_class ~parent:toplevel_context "foo" in
        let inner =
          {
            Class.name = !&"bar";
@@ -5289,7 +5289,8 @@ let test_populate_captures =
                          return_annotation = Some (int_annotation (3, 21) (3, 24));
                          async = false;
                          generator = false;
-                         parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+                         parent =
+                           NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
                          legacy_parent = None;
                          type_params = [];
                        } );
@@ -5994,7 +5995,8 @@ let test_populate_captures =
                          return_annotation = None;
                          async = false;
                          generator = false;
-                         parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+                         parent =
+                           NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
                          legacy_parent = None;
                          type_params = [];
                        } );

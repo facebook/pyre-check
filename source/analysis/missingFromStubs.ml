@@ -30,7 +30,7 @@ let make_class ?(bases = []) ?(metaclasses = []) ?(body = []) ~in_module name =
   {
     Class.name;
     base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
-    parent = ModuleContext.create_toplevel ();
+    parent = NestingContext.create_toplevel ();
     body;
     decorators = [];
     top_level_unbound_names = [];
@@ -79,7 +79,7 @@ let callable_body =
 
 
 let make_dunder_get ~in_module ~parent ~host ~host_type ~return =
-  let prefix = ModuleContext.to_qualifier ~module_name:in_module parent in
+  let prefix = NestingContext.to_qualifier ~module_name:in_module parent in
   Statement.Define
     {
       signature =
@@ -125,7 +125,7 @@ let classmethod_body =
    * class ClassMethod(Generic[_T]):
    *   def __get__(self, host: object, host_type: _S = None) -> BoundMethod[_T, _S]: ...
    *)
-  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "ClassMethod") in
+  let parent = NestingContext.(create_class ~parent:(create_toplevel ()) "ClassMethod") in
   [
     make_dunder_get
       ~in_module:(Reference.create "typing")
@@ -149,7 +149,7 @@ let staticmethod_body =
    * class StaticMethod(Generic[_T]):
    *   def __get__(self, host: object, host_type: object = None) -> _T: ...
    *)
-  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "StaticMethod") in
+  let parent = NestingContext.(create_class ~parent:(create_toplevel ()) "StaticMethod") in
   [
     make_dunder_get
       ~in_module:(Reference.create "typing")
@@ -163,8 +163,8 @@ let staticmethod_body =
 
 let generic_meta_body =
   let module_name = Reference.create "typing" in
-  let parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "GenericMeta") in
-  let prefix = ModuleContext.to_qualifier ~module_name parent in
+  let parent = NestingContext.(create_class ~parent:(create_toplevel ()) "GenericMeta") in
+  let prefix = NestingContext.to_qualifier ~module_name parent in
   [
     Statement.Define
       {

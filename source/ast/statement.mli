@@ -120,7 +120,7 @@ and Class : sig
   type t = {
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
-    parent: ModuleContext.t;
+    parent: NestingContext.t;
     body: Statement.t list;
     decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -160,7 +160,7 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: ModuleContext.t;
+      parent: NestingContext.t;
       (* The qualified name of the class owning the method. *)
       (* TODO: This is redundant now that we have the `parent` field. It should be replaced by
          `parent` in all cases. *)

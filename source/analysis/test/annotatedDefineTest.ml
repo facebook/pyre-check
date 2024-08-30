@@ -19,7 +19,7 @@ let test_parent_definition context =
   let parent_class_summary environment name parent =
     let legacy_parent =
       match parent with
-      | ModuleContext.Class _ -> Some (ModuleContext.to_qualifier ~module_name:!&"test" parent)
+      | NestingContext.Class _ -> Some (NestingContext.to_qualifier ~module_name:!&"test" parent)
       | _ -> None
     in
     {
@@ -57,7 +57,7 @@ let test_parent_definition context =
     in
     assert_equal ~cmp ~printer expected actual
   in
-  let foo_parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "foo") in
+  let foo_parent = NestingContext.(create_class ~parent:(create_toplevel ()) "foo") in
   assert_parent
     ~source:{|
       class foo():

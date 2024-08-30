@@ -497,7 +497,7 @@ module StatementContext = struct
     (* [parse_function_signature] takes function type comment as string and parse it into a
        [FunctionSignature.t]. *)
     parse_function_signature: string -> (FunctionSignature.t, Error.t) Result.t;
-    parent: Ast.ModuleContext.t;
+    parent: Ast.NestingContext.t;
   }
 end
 
@@ -666,7 +666,7 @@ let process_function_type_comment
                 (* For methods, it is allowed to have one extra `self` and `cls` parameter without
                    annotation. *)
                 if
-                  Ast.ModuleContext.is_class parent
+                  Ast.NestingContext.is_class parent
                   && Int.equal annotation_count (parameter_count - 1)
                 then
                   None :: annotations
@@ -737,7 +737,7 @@ let statement =
     let body =
       build_statements
         ~context:
-          { context with StatementContext.parent = Ast.ModuleContext.create_function ~parent name }
+          { context with StatementContext.parent = Ast.NestingContext.create_function ~parent name }
         body
     in
     let comment_location =
@@ -772,7 +772,7 @@ let statement =
         let signature =
           let legacy_parent =
             match parent with
-            | Ast.ModuleContext.Class { name; _ } -> Some (Ast.Reference.create name)
+            | Ast.NestingContext.Class { name; _ } -> Some (Ast.Reference.create name)
             | _ -> None
           in
           {
@@ -865,7 +865,7 @@ let statement =
     let body =
       build_statements
         ~context:
-          { context with StatementContext.parent = Ast.ModuleContext.create_class ~parent name }
+          { context with StatementContext.parent = Ast.NestingContext.create_class ~parent name }
         body
     in
     [
@@ -1176,7 +1176,7 @@ let parse_module ?enable_type_comment ~context text =
          ~context:
            {
              StatementContext.parse_function_signature;
-             parent = Ast.ModuleContext.create_toplevel ();
+             parent = Ast.NestingContext.create_toplevel ();
            })
   with
   | InternalError error -> Result.Error error

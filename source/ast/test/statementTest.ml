@@ -14,11 +14,11 @@ open Test
 
 let test_is_method _ =
   let define ~module_name ~parent =
-    let prefix = ModuleContext.to_qualifier ~module_name parent in
+    let prefix = NestingContext.to_qualifier ~module_name parent in
     let define_name = Reference.create ~prefix "test" in
     let legacy_parent =
       match parent with
-      | ModuleContext.Class _ -> Some prefix
+      | NestingContext.Class _ -> Some prefix
       | _ -> None
     in
     {
@@ -43,9 +43,9 @@ let test_is_method _ =
     (Define.is_method
        (define
           ~module_name:!&"path"
-          ~parent:ModuleContext.(create_class ~parent:(create_toplevel ()) "source")));
+          ~parent:NestingContext.(create_class ~parent:(create_toplevel ()) "source")));
   assert_false
-    (Define.is_method (define ~module_name:!&"foo" ~parent:(ModuleContext.create_toplevel ())))
+    (Define.is_method (define ~module_name:!&"foo" ~parent:(NestingContext.create_toplevel ())))
 
 
 let decorator ?arguments name = { Decorator.name = + !&name; arguments }
@@ -61,7 +61,7 @@ let test_is_classmethod _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "bar");
+          parent = NestingContext.(create_class ~parent:(create_toplevel ()) "bar");
           legacy_parent = Some !&"bar";
           type_params = [];
         };
@@ -89,7 +89,7 @@ let test_is_class_property _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "bar");
+          parent = NestingContext.(create_class ~parent:(create_toplevel ()) "bar");
           legacy_parent = Some !&"bar";
           type_params = [];
         };
@@ -115,7 +115,7 @@ let test_decorator _ =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.create_toplevel ();
+          parent = NestingContext.create_toplevel ();
           legacy_parent = None;
           type_params = [];
         };
@@ -146,11 +146,11 @@ let test_decorator _ =
 
 let test_is_constructor _ =
   let assert_is_constructor ?(in_test = false) ~method_name ~parent expected =
-    let prefix = ModuleContext.to_qualifier ~module_name:Reference.empty parent in
+    let prefix = NestingContext.to_qualifier ~module_name:Reference.empty parent in
     let define_name = Reference.create ~prefix method_name in
     let legacy_parent =
       match parent with
-      | ModuleContext.Class _ -> Some prefix
+      | NestingContext.Class _ -> Some prefix
       | _ -> None
     in
     let define =
@@ -174,7 +174,7 @@ let test_is_constructor _ =
     in
     assert_equal expected (Define.is_constructor ~in_test define)
   in
-  let foo_parent = ModuleContext.(create_class ~parent:(create_toplevel ()) "Foo") in
+  let foo_parent = NestingContext.(create_class ~parent:(create_toplevel ()) "Foo") in
   assert_is_constructor ~method_name:"__init__" ~parent:foo_parent true;
   assert_is_constructor ~method_name:"__init_subclass__" ~parent:foo_parent true;
   assert_is_constructor ~in_test:true ~method_name:"setUp" ~parent:foo_parent true;
@@ -185,7 +185,7 @@ let test_is_constructor _ =
   assert_is_constructor ~in_test:true ~method_name:"with_context" ~parent:foo_parent true;
   assert_is_constructor ~in_test:true ~method_name:"async_with_context" ~parent:foo_parent true;
   assert_is_constructor ~in_test:false ~method_name:"async_with_context" ~parent:foo_parent false;
-  assert_is_constructor ~method_name:"__init__" ~parent:(ModuleContext.create_toplevel ()) false;
+  assert_is_constructor ~method_name:"__init__" ~parent:(NestingContext.create_toplevel ()) false;
   assert_is_constructor ~method_name:"bar" ~parent:foo_parent false
 
 

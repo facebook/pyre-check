@@ -576,7 +576,7 @@ let test_define_local_bindings _ =
               return_annotation = None;
               async = false;
               generator = false;
-              parent = ModuleContext.(create_function ~parent:(create_toplevel ()) "foo");
+              parent = NestingContext.(create_function ~parent:(create_toplevel ()) "foo");
               legacy_parent = None;
               type_params = [];
             }
@@ -1123,10 +1123,10 @@ let test_scope_stack_lookup _ =
           let defines =
             (* Collect all defines that (transitively) nest the define whose name is `name` *)
             let rec walk_nesting sofar = function
-              | ModuleContext.TopLevel
-              | ModuleContext.Class _ ->
+              | NestingContext.TopLevel
+              | NestingContext.Class _ ->
                   sofar
-              | ModuleContext.Function { name; parent } ->
+              | NestingContext.Function { name; parent } ->
                   let define = find_define (Reference.create name) in
                   (* Shallow nests come before deep nests *)
                   walk_nesting (define :: sofar) parent

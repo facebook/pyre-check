@@ -109,7 +109,7 @@ module Qualify : sig
 
   type scope = {
     module_name: Reference.t;
-    parent: ModuleContext.t;
+    parent: NestingContext.t;
     aliases: alias Core.String.Map.t;
     locals: Core.String.Set.t;
   }

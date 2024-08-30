@@ -67,7 +67,7 @@ let assert_fixpoint body expected =
           return_annotation = None;
           async = false;
           generator = false;
-          parent = ModuleContext.create_toplevel ();
+          parent = NestingContext.create_toplevel ();
           legacy_parent = None;
           type_params = [];
         };

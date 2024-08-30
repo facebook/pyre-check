@@ -5779,7 +5779,7 @@ module State (Context : Context) = struct
     | Define { signature = { Define.Signature.name; parent; type_params; _ } as signature; _ } ->
         let resolution =
           match parent with
-          | ModuleContext.Function _ ->
+          | NestingContext.Function _ ->
               type_of_signature ~module_name:Context.qualifier ~resolution signature
               |> Type.Variable.mark_all_variables_as_bound
                    ~specific:(Resolution.all_type_variables_in_scope resolution)
@@ -6461,7 +6461,7 @@ module State (Context : Context) = struct
     let add_capture_annotations ~outer_scope_type_variables resolution errors =
       let process_signature ({ Define.Signature.parent; _ } as signature) =
         match parent with
-        | ModuleContext.Function _ ->
+        | NestingContext.Function _ ->
             type_of_signature ~module_name:Context.qualifier ~resolution signature
             |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
             |> TypeInfo.Unit.create_mutable
@@ -7490,7 +7490,7 @@ module State (Context : Context) = struct
       | false ->
           let module_name = Context.qualifier in
           let relative_name =
-            ModuleContext.to_qualifier ~module_name:Reference.empty nesting_context
+            NestingContext.to_qualifier ~module_name:Reference.empty nesting_context
           in
           (* Recursively walk all containing functions of a nested function to find type
              variables. *)
