@@ -2430,6 +2430,22 @@ let test_check_unpack =
               from typing_extensions import TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
+              Ts2 = TypeVarTuple("Ts2")
+
+              class Array(Generic[Unpack[Ts, Ts2]]):
+                  pass
+            |}
+           [
+             "Invalid type [31]: Expression `typing.Generic[typing_extensions.Unpack[(Ts, Ts2)]]` \
+              is not a valid type.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import Generic
+              from typing_extensions import TypeVarTuple, Unpack
+
+              Ts = TypeVarTuple("Ts")
 
               class Array(Generic[*Ts]):
                   pass

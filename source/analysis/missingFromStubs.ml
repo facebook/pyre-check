@@ -252,6 +252,7 @@ let missing_typing_classes =
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
     make_class ~in_module "TypeIs" ~bases:(Type.bool :: single_unary_generic);
     make_class ~in_module "TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "Unpack" ~bases:(Type.bool :: single_unary_generic);
   ]
 
 
@@ -268,4 +269,5 @@ let missing_typing_extensions_classes =
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
     make_class ~in_module "TypeIs" ~bases:(Type.bool :: single_unary_generic);
     make_class ~in_module "TypeGuard" ~bases:(Type.bool :: single_unary_generic);
+    make_class ~in_module "Unpack" ~bases:(Type.bool :: single_unary_generic);
   ]

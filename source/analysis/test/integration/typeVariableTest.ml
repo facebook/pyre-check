@@ -2263,8 +2263,6 @@ let test_generic_aliases =
             reveal_type(apply_callback)
             |}
            [
-             "Invalid type parameters [24]: Non-generic type `typing_extensions.Unpack` cannot \
-              take parameters.";
              "Unbound name [10]: Name `Callback` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `S1` is used but not defined in the current scope.";
