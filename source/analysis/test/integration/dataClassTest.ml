@@ -2700,6 +2700,24 @@ let test_check_dataclasses =
              "Incompatible overload [43]: This definition does not have the same decorators as the \
               preceding overload(s).";
            ];
+      (* TODO(@stroxler) Fix validation of frozen fields for parametric types. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+          from typing import Generic, TypeVar
+          from dataclasses import dataclass
+
+          T = TypeVar("T")
+
+          @dataclass(frozen=True)
+          class Base(Generic[T]):
+            x: T
+
+          @dataclass
+          class Foo(Base[int]):
+            y: int
+        |}
+           [];
     ]
 
 
