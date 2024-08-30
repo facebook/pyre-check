@@ -6,7 +6,7 @@
  *)
 
 (* TypeAliasEnvironment: component of the environment stack
- * - upstream: EmptyStubEnvironment
+ * - upstream: UnannotatedGlobalEnvironment
  * - downstream: ClassHierarchyEnvironment
  * - key: type name (as an Identifier.t)
  * - value: a RawAlias.t option: either a type alias or typevar alias

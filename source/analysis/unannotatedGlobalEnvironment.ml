@@ -7,7 +7,7 @@
 
 (* UnannotatedGlobalEnvironment(UGE): layer of the environment stack
  * - upstream: AstEnvironment
- * - downstream: EmptyStubEnvironment
+ * - downstream: TypeAliasEnvironment
  *
  * It is responsible for taking preprocessed Ast data, breaking it
  * into chunks, and storing it for use in later analysis stages.
