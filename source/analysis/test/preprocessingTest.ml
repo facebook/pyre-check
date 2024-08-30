@@ -2034,12 +2034,10 @@ let test_qualify_ast =
   let module Qualify = Preprocessing.Qualify (Context) in
   let scope =
     {
-      Qualify.qualifier = Reference.create "qualifier";
+      Qualify.module_name = Reference.create "qualifier";
+      parent = ModuleContext.create_toplevel ();
       aliases = String.Map.singleton "a" { Qualify.name = Reference.create "b" };
       locals = String.Set.empty;
-      is_top_level = true;
-      is_in_function = false;
-      is_class_toplevel = false;
     }
   in
   let assert_qualify_statement statement expected _ =

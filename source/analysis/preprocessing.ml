@@ -276,12 +276,10 @@ module Qualify (Context : QualifyContext) = struct
     | DoNotQualify
 
   type scope = {
-    qualifier: Reference.t;
+    module_name: Reference.t;
+    parent: ModuleContext.t;
     aliases: alias String.Map.t;
     locals: String.Set.t;
-    is_top_level: bool;
-    is_in_function: bool;
-    is_class_toplevel: bool;
   }
 
   let is_qualified = String.is_prefix ~prefix:"$"
@@ -294,12 +292,13 @@ module Qualify (Context : QualifyContext) = struct
 
 
   let qualify_local_identifier_ignore_preexisting
-      ~scope:({ qualifier; aliases; locals; _ } as scope)
+      ~scope:({ module_name; parent; aliases; locals; _ } as scope)
       name
     =
     if is_qualified name then
       scope, name
     else
+      let qualifier = ModuleContext.to_qualifier ~module_name parent in
       let renamed = get_qualified_local_identifier name ~qualifier in
       ( {
           scope with
@@ -340,29 +339,26 @@ module Qualify (Context : QualifyContext) = struct
         | _ -> reference)
 
 
-  let qualify_function_name
-      ~scope:({ aliases; is_in_function; is_class_toplevel; qualifier; _ } as scope)
-      name
-    =
-    if is_in_function then
-      match Reference.as_list name with
-      | [simple_name] ->
-          let scope, alias = qualify_local_identifier_ignore_preexisting ~scope simple_name in
-          scope, Reference.create alias
-      | _ -> scope, qualify_reference ~scope name
-    else
-      let scope =
-        if is_class_toplevel then
-          scope
-        else
+  let qualify_function_name ~scope:({ module_name; parent; aliases; _ } as scope) name =
+    match parent with
+    | ModuleContext.Function _ -> (
+        match Reference.as_list name with
+        | [simple_name] ->
+            let scope, alias = qualify_local_identifier_ignore_preexisting ~scope simple_name in
+            scope, Reference.create alias
+        | _ -> scope, qualify_reference ~scope name)
+    | ModuleContext.Class _ -> scope, qualify_reference ~scope name
+    | ModuleContext.TopLevel ->
+        let scope =
+          let qualifier = ModuleContext.to_qualifier ~module_name parent in
           let function_name = Reference.show name in
           {
             scope with
             aliases =
               Map.set aliases ~key:function_name ~data:{ name = Reference.combine qualifier name };
           }
-      in
-      scope, qualify_reference ~scope name
+        in
+        scope, qualify_reference ~scope name
 
 
   let qualify_identifier_name ~location ~scope:{ aliases; _ } identifier =
@@ -739,12 +735,13 @@ module Qualify (Context : QualifyContext) = struct
 
 
   let rec explore_scope ~scope statements =
-    let global_alias ~qualifier ~name =
+    let global_alias ~module_name ~parent ~name =
+      let qualifier = ModuleContext.to_qualifier ~module_name parent in
       { name = Reference.combine qualifier (Reference.create name) }
     in
     let local_alias ~name = { name } in
-    let explore_scope ({ qualifier; aliases; locals; is_in_function; _ } as scope) { Node.value; _ }
-      =
+    let explore_scope ({ module_name; parent; aliases; locals } as scope) { Node.value; _ } =
+      let is_in_function = ModuleContext.is_function parent in
       match value with
       | Statement.Assign
           {
@@ -755,14 +752,20 @@ module Qualify (Context : QualifyContext) = struct
           {
             scope with
             aliases =
-              Map.set aliases ~key:target_name ~data:(global_alias ~qualifier ~name:target_name);
+              Map.set
+                aliases
+                ~key:target_name
+                ~data:(global_alias ~module_name ~parent ~name:target_name);
           }
       | Class { Class.name; _ } ->
           let class_name = Reference.show name in
           {
             scope with
             aliases =
-              Map.set aliases ~key:class_name ~data:(global_alias ~qualifier ~name:class_name);
+              Map.set
+                aliases
+                ~key:class_name
+                ~data:(global_alias ~module_name ~parent ~name:class_name);
           }
       | Define { Define.signature = { name; _ }; _ } when is_in_function ->
           qualify_function_name ~scope name |> fst
@@ -771,7 +774,10 @@ module Qualify (Context : QualifyContext) = struct
           {
             scope with
             aliases =
-              Map.set aliases ~key:define_name ~data:(global_alias ~qualifier ~name:define_name);
+              Map.set
+                aliases
+                ~key:define_name
+                ~data:(global_alias ~module_name ~parent ~name:define_name);
           }
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
@@ -843,10 +849,7 @@ module Qualify (Context : QualifyContext) = struct
     scope, List.rev reversed_statements
 
 
-  and qualify_statement
-      ~scope:({ qualifier; is_top_level; is_class_toplevel; _ } as scope)
-      ({ Node.value; _ } as statement)
-    =
+  and qualify_statement ~scope ({ Node.value; _ } as statement) =
     let scope, value =
       let local_alias ~name = { name } in
       let qualify_assign ~target ~annotation ~value =
@@ -870,7 +873,10 @@ module Qualify (Context : QualifyContext) = struct
           if is_special_form_assignment then
             scope, target
           else
-            let rec qualify_assignment_target ~scope:({ aliases; _ } as scope) target =
+            let rec qualify_assignment_target
+                ~scope:({ module_name; parent; aliases; _ } as scope)
+                target
+              =
               let scope, value =
                 let qualify_targets scope elements =
                   let qualify_element (scope, reversed_elements) element =
@@ -883,6 +889,7 @@ module Qualify (Context : QualifyContext) = struct
                   scope, List.rev reversed_elements
                 in
                 let location = Node.location target in
+                let is_class_toplevel = ModuleContext.is_class parent in
                 match Node.value target with
                 | Expression.Tuple elements ->
                     let scope, elements = qualify_targets scope elements in
@@ -893,12 +900,13 @@ module Qualify (Context : QualifyContext) = struct
                 | Name (Name.Identifier name) when is_class_toplevel ->
                     let sanitized = Identifier.sanitized name in
                     let qualified =
-                      let qualifier =
+                      let base =
+                        let qualifier = ModuleContext.to_qualifier ~module_name parent in
                         Node.create
                           ~location
                           (Expression.Name (create_name_from_reference ~location qualifier))
                       in
-                      Name.Attribute { base = qualifier; attribute = sanitized; special = false }
+                      Name.Attribute { base; attribute = sanitized; special = false }
                     in
                     let scope =
                       let aliases =
@@ -926,6 +934,7 @@ module Qualify (Context : QualifyContext) = struct
                       if is_class_toplevel then
                         match name_to_reference name with
                         | Some reference ->
+                            let qualifier = ModuleContext.to_qualifier ~module_name parent in
                             qualify_if_needed ~qualifier reference
                             |> create_name_from_reference ~location
                             |> fun name -> Expression.Name name
@@ -967,20 +976,21 @@ module Qualify (Context : QualifyContext) = struct
         in
         let qualified_value =
           let qualify_potential_alias_strings =
-            match qualified_annotation >>| Expression.show with
-            | Some "typing_extensions.TypeAlias" -> Qualify
-            | None when is_top_level -> OptionallyQualify
-            | _ -> DoNotQualify
+            let { parent; _ } = scope in
+            match qualified_annotation >>| Expression.show, parent with
+            | Some "typing_extensions.TypeAlias", _ -> Qualify
+            | None, ModuleContext.TopLevel -> OptionallyQualify
+            | _, _ -> DoNotQualify
           in
           value >>| qualify_value ~scope:target_scope ~qualify_potential_alias_strings
         in
         target_scope, target, qualified_annotation, qualified_value
       in
       let qualify_define
-          ({ qualifier; _ } as scope)
+          scope
           ({
              Define.signature =
-               { name; parameters; decorators; return_annotation; legacy_parent; _ };
+               { name; parameters; decorators; return_annotation; parent; legacy_parent; _ };
              body;
              _;
            } as define)
@@ -995,14 +1005,8 @@ module Qualify (Context : QualifyContext) = struct
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
         let scope, qualified_function_name = qualify_function_name ~scope name in
         let inner_scope =
-          let qualifier = qualify_if_needed ~qualifier name in
-          {
-            scope with
-            qualifier;
-            is_in_function = true;
-            is_class_toplevel = false;
-            is_top_level = false;
-          }
+          let parent = ModuleContext.create_function ~parent (Reference.last name) in
+          { scope with parent }
         in
         let inner_scope, parameters = qualify_parameters ~scope:inner_scope parameters in
         let _, body =
@@ -1021,8 +1025,7 @@ module Qualify (Context : QualifyContext) = struct
         in
         scope, { define with signature; body }
       in
-      let qualify_class ({ Class.name; base_arguments; body; decorators; _ } as definition) =
-        let scope = { scope with is_top_level = false } in
+      let qualify_class ({ Class.name; base_arguments; parent; body; decorators; _ } as definition) =
         let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
             argument with
@@ -1032,10 +1035,10 @@ module Qualify (Context : QualifyContext) = struct
         let decorators =
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
+        let { module_name; _ } = scope in
         let body =
-          let qualifier = qualify_if_needed ~qualifier name in
           let original_scope =
-            { scope with qualifier; is_in_function = false; is_class_toplevel = true }
+            { scope with parent = ModuleContext.create_class ~parent (Reference.last name) }
           in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
@@ -1084,7 +1087,8 @@ module Qualify (Context : QualifyContext) = struct
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = qualify_if_needed ~qualifier:scope.qualifier name;
+          Class.name =
+            qualify_if_needed ~qualifier:(ModuleContext.to_qualifier ~module_name parent) name;
           base_arguments = List.map base_arguments ~f:qualify_base;
           body;
           decorators;
@@ -1276,12 +1280,10 @@ let qualify
   let module Qualify = Qualify (Context) in
   let scope =
     {
-      Qualify.qualifier;
+      Qualify.module_name = qualifier;
+      parent = ModuleContext.create_toplevel ();
       aliases = String.Map.empty;
       locals = String.Set.empty;
-      is_top_level = true;
-      is_in_function = false;
-      is_class_toplevel = false;
     }
   in
   let statements =

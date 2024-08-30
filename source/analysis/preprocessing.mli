@@ -114,12 +114,10 @@ module Qualify (_ : QualifyContext) : sig
   type alias = { name: Reference.t }
 
   type scope = {
-    qualifier: Reference.t;
+    module_name: Reference.t;
+    parent: ModuleContext.t;
     aliases: alias Core.String.Map.t;
     locals: Core.String.Set.t;
-    is_top_level: bool;
-    is_in_function: bool;
-    is_class_toplevel: bool;
   }
 
   val qualify_statement : scope:scope -> Statement.t -> scope * Statement.t
