@@ -973,8 +973,10 @@ let test_protocol_inheritance =
               class Foo: ...
               class Bar(Protocol[T], Foo): ...
            |}
-           (* TODO this is a bug, we missed the check because the Protocol is subscripted. *)
-           [];
+           [
+             "Invalid inheritance [39]: If Protocol is included as a base class, all other base \
+              classes must be protocols or Generic.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

@@ -6030,14 +6030,16 @@ module State (Context : Context) = struct
             base_types_with_location
             errors
           =
-          let has_unsubscripted_protocol =
+          let has_protocol_base =
             List.find generic_and_protocol_bases_with_location ~f:(fun (base, _) ->
                 match base with
-                | Type.Primitive "typing.Protocol" -> true
+                | Type.Primitive "typing.Protocol"
+                | Type.Parametric { name = "typing.Protocol"; _ } ->
+                    true
                 | _ -> false)
             |> Option.is_some
           in
-          if has_unsubscripted_protocol then
+          if has_protocol_base then
             List.fold ~init:errors base_types_with_location ~f:(fun errors (base, location) ->
                 match base with
                 | Type.Primitive "typing.Protocol" -> errors
