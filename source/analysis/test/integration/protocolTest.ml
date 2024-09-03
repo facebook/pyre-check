@@ -949,6 +949,44 @@ let test_hash_protocol =
     ]
 
 
+let test_protocol_inheritance =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Protocol
+
+              class Foo: ...
+              class Bar(Protocol, Foo): ...
+           |}
+           [
+             "Invalid inheritance [39]: If Protocol is included as a base class, all other base \
+              classes must be protocols or Generic.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Protocol, TypeVar
+
+              T = TypeVar("T")
+              class Foo: ...
+              class Bar(Protocol[T], Foo): ...
+           |}
+           (* TODO this is a bug, we missed the check because the Protocol is subscripted. *)
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Generic, Protocol, TypeVar
+
+              T = TypeVar("T")
+              class Bar(Protocol, Generic[T]): ...
+           |}
+           [];
+    ]
+
+
 let () =
   "protocol"
   >::: [
@@ -957,5 +995,6 @@ let () =
          test_check_generic_protocols;
          test_callback_protocols;
          test_hash_protocol;
+         test_protocol_inheritance;
        ]
   |> Test.run
