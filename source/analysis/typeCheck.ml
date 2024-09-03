@@ -6330,14 +6330,42 @@ module State (Context : Context) = struct
       List.fold unbound_names ~init:errors ~f:add_unbound_name_error
     in
     let check_duplicate_parameters errors =
+      let non_positional_parameter_names =
+        List.filter_map parameter_types ~f:(fun parameter ->
+            Type.Callable.CallableParamType.name parameter >>| Identifier.sanitized)
+        |> Identifier.Set.of_list
+      in
       let duplicate_parameters, _ =
         List.fold
           parameters
           ~init:([], Identifier.Set.empty)
-          ~f:(fun (duplicates, seen) { Node.value = { Parameter.name; _ }; location } ->
-            match Set.mem seen name with
-            | true -> (name, location) :: duplicates, seen
-            | false -> duplicates, Set.add seen name)
+          ~f:(fun (duplicates, seen) { Node.value = { Parameter.name; annotation; _ }; location } ->
+            if String.is_prefix ~prefix:"**" name then
+              match
+                annotation
+                >>| GlobalResolution.parse_annotation global_resolution
+                >>| Type.unpack_value
+                |> Option.value ~default:None
+                >>| GlobalResolution.get_typed_dictionary global_resolution
+                |> Option.value ~default:None
+              with
+              | Some { Type.TypedDictionary.fields; _ } ->
+                  (* It's OK for typed-dictionary fields in kwargs to collide with positional-only
+                     parameter names, but we should throw an error if there's a name collision with
+                     a keyword parameter *)
+                  List.fold
+                    fields
+                    ~init:(duplicates, seen)
+                    ~f:(fun (duplicates, seen) { Type.TypedDictionary.name; _ } ->
+                      match Set.mem seen name && Set.mem non_positional_parameter_names name with
+                      | true -> (name, location) :: duplicates, seen
+                      | false -> duplicates, Set.add seen name)
+              | _ -> duplicates, seen
+            else
+              let name = Identifier.sanitized name in
+              match Set.mem seen name with
+              | true -> (name, location) :: duplicates, seen
+              | false -> duplicates, Set.add seen name)
       in
       List.fold duplicate_parameters ~init:errors ~f:(fun errors (name, location) ->
           emit_error ~errors ~location ~kind:(Error.DuplicateParameter name))
@@ -6355,8 +6383,8 @@ module State (Context : Context) = struct
       List.fold
         parameters_to_check
         ~init:(errors, true)
-        ~f:(fun (errors, positional_only_allowed) param ->
-          match param with
+        ~f:(fun (errors, positional_only_allowed) parameter_type ->
+          match parameter_type with
           | Type.Callable.CallableParamType.PositionalOnly { index; _ }
             when not positional_only_allowed ->
               let location =

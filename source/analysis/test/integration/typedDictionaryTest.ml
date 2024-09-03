@@ -2393,6 +2393,30 @@ def foo(**kwargs: Unpack[str]) -> None:
              "Invalid type [31]: `Unpack` in kwargs may only be used with typed dictionaries. \
               `str` is not a typed dictionary.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(name: str, **kwargs: Unpack[Movie]) -> None:
+    pass
+            |}
+           ["Duplicate parameter [65]: Duplicate parameter name `name`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(name: str, /, **kwargs: Unpack[Movie]) -> None:
+    pass
+            |}
+           [];
     ]
 
 

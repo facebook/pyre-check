@@ -128,6 +128,8 @@ module Record : sig
       [@@deriving compare, eq, sexp, show, hash]
 
       val annotation : 'annotation t -> 'annotation option
+
+      val name : 'annotation t -> Identifier.t option
     end
 
     type kind =

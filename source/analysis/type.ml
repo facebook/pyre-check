@@ -220,6 +220,16 @@ module Record = struct
         | Variable (Concrete annotation) -> Some annotation
         | Keywords annotation -> Some annotation
         | _ -> None
+
+
+      let name = function
+        | Named { name; _ }
+        | KeywordOnly { name; _ } ->
+            Some name
+        | Variable _
+        | Keywords _
+        | PositionalOnly _ ->
+            None
     end
 
     type kind =

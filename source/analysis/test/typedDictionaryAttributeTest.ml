@@ -31,7 +31,9 @@ let assert_equivalent_typed_dictionary_attribute_types
         {
           name = "BoundMethod";
           arguments =
-            [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
+            [
+              Single (Callable ({ kind = Named method_name; _ } as callable)); Single left_bound_type;
+            ];
         } ->
         let open Type.Callable.CallableParamType in
         (* TypedDictionary methods have `self` annotation as `Top`, whereas the equivalent class has
@@ -72,7 +74,10 @@ let assert_equivalent_typed_dictionary_attribute_types
                        callable with
                        implementation = { annotation = Type.Top; parameters = Undefined };
                        kind =
-                         Named (Reference.create ~prefix:!&"TypedDictionary" (Reference.last name));
+                         Named
+                           (Reference.create
+                              ~prefix:!&"TypedDictionary"
+                              (Reference.last method_name));
                      });
                 Single left_bound_type;
               ];
