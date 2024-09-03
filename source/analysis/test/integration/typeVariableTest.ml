@@ -2232,9 +2232,9 @@ let test_generic_aliases =
 
             from typing import Callable
 
-            type Callback[S1, S2] = Callable[[S1], S2]
+            type Callback[**S1, S2] = Callable[S1, S2]
 
-            def apply_callback(callback: Callback[int, int]) -> Callback[int, int]:
+            def apply_callback(callback: Callback[[int], int]) -> Callback[[int], int]:
                 return callback
 
             reveal_type(apply_callback)

@@ -153,10 +153,13 @@ module IncomingDataComputation = struct
       | (BinaryOperator _ | Subscript _ | Name _), None ->
           let value = Type.preprocess_alias_value value |> delocalize in
           let value_annotation =
-            Type.create
-              ~variables:Type.resolved_empty_variables
-              ~aliases:Type.resolved_empty_aliases
-              value
+            (* before creating the value type, collect the local scope *)
+            let local_variables x =
+              match variables with
+              | Some f -> f x
+              | None -> None
+            in
+            Type.create ~variables:local_variables ~aliases:Type.resolved_empty_aliases value
           in
           if
             not
