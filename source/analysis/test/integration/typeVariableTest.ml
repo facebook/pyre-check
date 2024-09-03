@@ -77,21 +77,37 @@ let test_type_variable_scoping =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            def func[T](a: T, b: T) -> T:
+            def func[T](a: T) -> T:
                 ...
             reveal_type(func)
-            x: int = ...
+            x: int = 3
             reveal_type(func(x))
+
+
+            def func1[T](*a: T) -> T:
+                ...
+            reveal_type(func1)
+
+
+            def func2[T](**a: T) -> T:
+                ...
+
+            reveal_type(func2)
 
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `T` is used but not defined in the current scope.";
              "Revealed type [-1]: Revealed type for `test.func` is \
-              `typing.Callable(func)[[Named(a, Variable[T]), Named(b, Variable[T])], \
-              Variable[T]]`.";
-             "Revealed type [-1]: Revealed type for `test.func(x)` is `int`.";
-             "Missing argument [20]: Call `func` expects argument `b`.";
+              `typing.Callable(func)[[Named(a, Variable[T])], Variable[T]]`.";
+             "Revealed type [-1]: Revealed type for `test.func(x)` is \
+              `typing_extensions.Literal[3]`.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Revealed type [-1]: Revealed type for `test.func1` is \
+              `typing.Callable(func1)[[Variable(Variable[T])], Variable[T]]`.";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Revealed type [-1]: Revealed type for `test.func2` is \
+              `typing.Callable(func2)[[Keywords(Variable[T])], Variable[T]]`.";
            ];
     ]
 
