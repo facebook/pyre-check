@@ -211,6 +211,7 @@ and invalid_type_kind =
   | NestedTypeVariables of Type.Variable.t
   | SingleExplicit of Type.t
   | InvalidLiteral of Reference.t
+  | KwargsUnpack of Type.t
 
 and unawaited_awaitable = {
   references: Reference.t list;

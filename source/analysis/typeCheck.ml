@@ -6811,6 +6811,21 @@ module State (Context : Context) = struct
           let transform type_ =
             Type.Variable.mark_all_variables_as_bound type_ |> apply_starred_annotations
           in
+          let errors =
+            match
+              TypeInfo.Unit.annotation annotation
+              |> Type.Variable.mark_all_variables_as_bound
+              |> Type.unpack_value
+            with
+            | Some unpack_type
+              when String.is_prefix ~prefix:"**" name
+                   && not (GlobalResolution.is_typed_dictionary global_resolution unpack_type) ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:(Error.InvalidType (Error.KwargsUnpack unpack_type))
+            | _ -> errors
+          in
           errors, TypeInfo.Unit.transform_types ~f:transform annotation
         in
         let errors, annotation =

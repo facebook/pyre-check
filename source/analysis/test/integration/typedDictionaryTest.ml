@@ -2382,6 +2382,17 @@ foo(**kwargs)
              "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
               expected `Movie` but got `Movie2`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing_extensions import Unpack
+def foo(**kwargs: Unpack[str]) -> None:
+    pass
+            |}
+           [
+             "Invalid type [31]: `Unpack` in kwargs may only be used with typed dictionaries. \
+              `str` is not a typed dictionary.";
+           ];
     ]
 
 

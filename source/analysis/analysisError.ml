@@ -245,6 +245,7 @@ and invalid_type_kind =
   | NestedTypeVariables of Type.Variable.t
   | SingleExplicit of Type.t
   | InvalidLiteral of Reference.t
+  | KwargsUnpack of Type.t
 
 and unawaited_awaitable = {
   references: Reference.t list;
@@ -1911,6 +1912,14 @@ let rec messages ~concise ~signature location kind =
                 (show_sanitized_expression annotation);
               Format.asprintf "Expected %s." expected;
             ]
+      | KwargsUnpack type_ ->
+          [
+            Format.asprintf
+              "`Unpack` in kwargs may only be used with typed dictionaries. `%a` is not a typed \
+               dictionary."
+              pp_type
+              type_;
+          ]
       | NestedAlias name ->
           [
             Format.asprintf
@@ -3633,6 +3642,9 @@ let join ~resolution left right =
         InvalidType (InvalidTypeAnnotationExpression { annotation = right; _ }) )
       when Expression.equal left right ->
         InvalidType (InvalidTypeAnnotationExpression { annotation = left; expected })
+    | InvalidType (KwargsUnpack left), InvalidType (KwargsUnpack right) when Type.equal left right
+      ->
+        InvalidType (KwargsUnpack left)
     | ( InvalidTypeVariable { annotation = left; origin = left_origin },
         InvalidTypeVariable { annotation = right; origin = right_origin } )
       when Type.Variable.equal left right
@@ -4324,6 +4336,7 @@ let dequalify
         InvalidType (InvalidTypeAnnotation { annotation = dequalify annotation; expected })
     | InvalidType (InvalidTypeAnnotationExpression details) ->
         InvalidType (InvalidTypeAnnotationExpression details)
+    | InvalidType (KwargsUnpack annotation) -> InvalidType (KwargsUnpack (dequalify annotation))
     | InvalidType (FinalNested annotation) -> InvalidType (FinalNested (dequalify annotation))
     | InvalidType (FinalParameter name) -> InvalidType (FinalParameter name)
     | InvalidType (NestedAlias name) -> InvalidType (NestedAlias name)
