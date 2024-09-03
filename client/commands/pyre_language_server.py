@@ -42,8 +42,21 @@ from typing import (
 from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
 
-from .. import background_tasks, error, identifiers, json_rpc, log, timer
-from ..language_server import connections, daemon_connection, features, protocol as lsp
+from .. import (
+    background_tasks,
+    dataclasses_json_extensions as json_mixins,
+    error,
+    identifiers,
+    json_rpc,
+    log,
+    timer,
+)
+from ..language_server import (
+    connections,
+    daemon_connection,
+    features,
+    protocol as lsp,
+)
 from . import (
     commands,
     daemon_querier,
@@ -84,10 +97,24 @@ class PyreDaemonTypeErrors:
 
 
 @dataclasses.dataclass(frozen=True)
+class BuckTargetTypeErrors(json_mixins.CamlCaseAndExcludeJsonMixin):
+    errors: List[error.Error]
+
+
+@dataclasses.dataclass(frozen=True)
+class BuckTypeErrorsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    artifacts: Dict[str, List[str]]
+    root: str
+
+
+@dataclasses.dataclass(frozen=True)
 class PyreBuckTypeErrorMetadata:
     number_files_buck_checked: int
     preempted: Optional[bool]
     durations: Dict[str, float]
+    build_id: Optional[str]
+    type_errors: Optional[Set[error.Error]]
+    error_message: Optional[str]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -588,11 +615,15 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         if type_checked_files_query.returncode != 0:
             stderr = stderr_data.decode("utf-8")
-            LOG.error(f"Typing Query ended in error:\n{stderr}")
+            message = f"Typing query ended in error: {stderr}"
+            LOG.error(message)
             return PyreBuckTypeErrorMetadata(
                 durations=buck_query_durations,
                 preempted=None,
+                build_id=None,
                 number_files_buck_checked=0,
+                type_errors=None,
+                error_message=message,
             )
 
         stdout_decoded = stdout_data.decode("utf-8")
@@ -607,11 +638,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
         buck_query_timer.reset()
 
         if len(type_checkable_files) == 0:
-            LOG.debug(f"No type checkable files in {stdout_decoded}")
+            LOG.debug("No Buck type checkable files found")
             return PyreBuckTypeErrorMetadata(
                 durations=buck_query_durations,
                 preempted=None,
                 number_files_buck_checked=0,
+                build_id=None,
+                type_errors=None,
+                error_message=None,
             )
 
         type_check_parameters = [
@@ -646,7 +680,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
         return PyreBuckTypeErrorMetadata(
             durations=buck_query_durations,
             preempted=was_preempted,
+            build_id=None,
             number_files_buck_checked=len(type_checkable_files),
+            type_errors=None,
+            error_message=None,
         )
 
     async def _query_pyre_daemon_type_errors(
@@ -712,7 +749,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
             pyre_buck_metadata = PyreBuckTypeErrorMetadata(
                 durations={},
                 number_files_buck_checked=0,
+                build_id=None,
                 preempted=None,
+                type_errors=None,
+                error_message=None,
             )
 
         await self.write_telemetry(
