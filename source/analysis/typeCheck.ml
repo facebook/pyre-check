@@ -6795,9 +6795,14 @@ module State (Context : Context) = struct
                     ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
                       TypeInfo.Unit.create_mutable Type.Any ))
           in
+          (* TODO(T179087506): PEP 692 error when unpacked type is not a typed dictionary *)
           let apply_starred_annotations annotation =
             if String.is_prefix ~prefix:"**" name then
-              Type.dictionary ~key:Type.string ~value:annotation
+              match Type.unpack_value annotation with
+              | Some unpack_type
+                when GlobalResolution.is_typed_dictionary global_resolution unpack_type ->
+                  unpack_type
+              | _ -> Type.dictionary ~key:Type.string ~value:annotation
             else if String.is_prefix ~prefix:"*" name then
               Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation annotation)
             else

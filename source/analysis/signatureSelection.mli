@@ -103,6 +103,7 @@ val check_arguments_against_parameters
     expected:Type.t ->
     WeakenMutableLiterals.weakened_type) ->
   resolve_with_locals:(locals:(Reference.t * TypeInfo.Unit.t) list -> Expression.t -> Type.t) ->
+  get_typed_dictionary:(Type.t -> Type.TypedDictionary.t option) ->
   location:Location.t ->
   callable:Type.Callable.t ->
   Type.t ParameterArgumentMapping.t ->
@@ -135,6 +136,7 @@ val select_closest_signature_for_function_call
     resolved:Type.t ->
     expected:Type.t ->
     WeakenMutableLiterals.weakened_type) ->
+  get_typed_dictionary:(Type.t -> Type.TypedDictionary.t option) ->
   arguments:Type.t Argument.t list ->
   location:Location.t ->
   callable:Type.Callable.t ->

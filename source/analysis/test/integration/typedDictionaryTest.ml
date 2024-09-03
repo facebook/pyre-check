@@ -2340,6 +2340,51 @@ let test_extraneous_fields =
     ]
 
 
+let test_unpack =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    x = kwargs["name"]
+    reveal_type(x)
+    y = kwargs["year"]
+    reveal_type(y)
+kwargs: Movie = {"name": "Life of Brian", "year": 1979}
+foo(**kwargs)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `str`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+class Movie2(TypedDict):
+    name: str
+def foo(**kwargs: Unpack[Movie]) -> None:
+  pass
+kwargs: Movie2 = {"name": "Life of Brian"}
+foo(**kwargs)
+            |}
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, \
+              expected `Movie` but got `Movie2`.";
+           ];
+    ]
+
+
 let () =
   "typed_dictionary"
   >::: [
@@ -2350,5 +2395,6 @@ let () =
          test_check_optional_typed_dictionary;
          test_required_not_required_fields;
          test_extraneous_fields;
+         test_unpack;
        ]
   |> Test.run

@@ -3099,6 +3099,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~order
         ~resolve_with_locals
         ~resolve_mutable_literals:(self#resolve_mutable_literals ~cycle_detections)
+        ~get_typed_dictionary:(self#get_typed_dictionary ~cycle_detections)
         ~arguments
         ~location
         ~callable

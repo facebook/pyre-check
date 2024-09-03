@@ -624,6 +624,7 @@ let check_arguments_against_parameters
     ~order
     ~resolve_mutable_literals
     ~resolve_with_locals
+    ~get_typed_dictionary
     ~location
     ~callable
     { ParameterArgumentMapping.parameter_argument_mapping; reasons }
@@ -922,6 +923,76 @@ let check_arguments_against_parameters
         (* Parameter was not matched *)
         let reasons = { reasons with arity = MissingArgument (PositionalOnly index) :: arity } in
         { signature_match with reasons }
+    | Keywords parameter_annotation, arguments when Type.is_unpack parameter_annotation -> (
+        let unpacked_parameter_annotation = Type.unpack_value parameter_annotation in
+        match
+          unpacked_parameter_annotation, unpacked_parameter_annotation >>| get_typed_dictionary
+        with
+        | Some parameter_annotation, Some _ ->
+            let rec check ~arguments signature_match =
+              match arguments with
+              | [] -> signature_match
+              | Default :: tail -> check signature_match ~arguments:tail
+              | MatchedArgument { argument = { expression; position; kind; resolved }; _ } :: tail
+                -> (
+                  let argument_location = get_location ~expression ~default:location in
+                  let name =
+                    match kind with
+                    | Named name -> Some name
+                    | _ -> None
+                  in
+                  let check_argument ~position argument_annotation =
+                    check_argument_and_set_constraints_and_reasons
+                      ~position
+                      ~argument_location
+                      ~argument_annotation
+                      ~parameter_annotation
+                      ~name
+                      signature_match
+                  in
+                  let add_annotation_error
+                      ({ reasons = { annotation; _ }; _ } as signature_match)
+                      error
+                    =
+                    {
+                      signature_match with
+                      reasons = { reasons with annotation = error :: annotation };
+                    }
+                  in
+                  match kind with
+                  | DoubleStar -> (
+                      let argument_annotation, weakening_error =
+                        if Type.Variable.all_variables_are_resolved parameter_annotation then
+                          let { WeakenMutableLiterals.resolved; typed_dictionary_errors } =
+                            resolve_mutable_literals
+                              ~resolve:(resolve_with_locals ~locals:[])
+                              ~expression
+                              ~resolved
+                              ~expected:parameter_annotation
+                          in
+                          let weakening_error =
+                            if List.is_empty typed_dictionary_errors then
+                              None
+                            else
+                              Some (TypedDictionaryInitializationError typed_dictionary_errors)
+                          in
+                          resolved, weakening_error
+                        else
+                          resolved, None
+                      in
+                      match weakening_error with
+                      | Some weakening_error -> add_annotation_error signature_match weakening_error
+                      | None ->
+                          argument_annotation |> check_argument ~position |> check ~arguments:tail)
+                  | SingleStar
+                  | Named _
+                  | Positional ->
+                      (* TODO(T179087506): PEP 692 allow passing named arguments when kwargs is
+                         annotated with an unpacked typed dict *)
+                      check signature_match ~arguments:tail)
+            in
+            check ~arguments:(List.rev arguments) signature_match
+        | _, _ -> (* TODO(T179087506): PEP 692 *) signature_match)
     | PositionalOnly { annotation = parameter_annotation; _ }, arguments
     | KeywordOnly { annotation = parameter_annotation; _ }, arguments
     | Named { annotation = parameter_annotation; _ }, arguments
@@ -1183,6 +1254,7 @@ let rec check_arguments_against_signature
     ~order
     ~resolve_mutable_literals
     ~resolve_with_locals
+    ~get_typed_dictionary
     ~location
     ~callable
     ~self_argument
@@ -1208,6 +1280,8 @@ let rec check_arguments_against_signature
       ~order
       ~resolve_mutable_literals
       ~resolve_with_locals
+      ~get_typed_dictionary
+      ~callable
   in
   match all_parameters with
   | Defined parameters ->
@@ -1219,7 +1293,7 @@ let rec check_arguments_against_signature
         ~location
         ~resolve:(resolve_with_locals ~locals:[])
         arguments
-      |> check_arguments_against_parameters ~callable
+      |> check_arguments_against_parameters
       |> fun signature_match -> [signature_match]
   | Undefined -> [base_signature_match]
   | FromParamSpec { head; variable } when Type.Variable.ParamSpec.is_free variable -> (
@@ -1257,7 +1331,7 @@ let rec check_arguments_against_signature
           ~location
           ~resolve:(resolve_with_locals ~locals:[])
           front
-        |> check_arguments_against_parameters ~callable
+        |> check_arguments_against_parameters
       in
       let solve_back parameters =
         let constraints_set =
@@ -1271,6 +1345,7 @@ let rec check_arguments_against_signature
           ~order
           ~resolve_mutable_literals
           ~resolve_with_locals
+          ~get_typed_dictionary
           ~location
           ~callable
           ~self_argument
@@ -1318,7 +1393,7 @@ let rec check_arguments_against_signature
             ~location
             ~resolve:(resolve_with_locals ~locals:[])
             arguments
-          |> check_arguments_against_parameters ~callable
+          |> check_arguments_against_parameters
           |> fun signature_match -> [signature_match]
       | _ ->
           [
@@ -1517,6 +1592,7 @@ let select_closest_signature_for_function_call
     ~order
     ~resolve_with_locals
     ~resolve_mutable_literals
+    ~get_typed_dictionary
     ~arguments
     ~location
     ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
@@ -1528,6 +1604,7 @@ let select_closest_signature_for_function_call
         ~order
         ~resolve_with_locals
         ~resolve_mutable_literals
+        ~get_typed_dictionary
         ~location
         ~callable
         ~self_argument

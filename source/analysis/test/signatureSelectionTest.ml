@@ -823,13 +823,13 @@ let test_check_arguments_against_parameters context =
       ?(expected_reasons = empty_reasons)
       expected_constraints_set
     =
-    let order =
+    let global_resolution =
       ScratchProject.setup ~context ["test.py", ""]
       |> ScratchProject.build_global_environment
       |> (fun { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } -> global_environment)
       |> GlobalResolution.create
-      |> GlobalResolution.full_order
     in
+    let order = GlobalResolution.full_order global_resolution in
     let parse_callable_record callable =
       match parse_callable callable with
       | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
@@ -842,6 +842,8 @@ let test_check_arguments_against_parameters context =
         ~resolve_mutable_literals:(fun ~resolve:_ ~expression:_ ~resolved ~expected:_ ->
           WeakenMutableLiterals.make_weakened_type resolved)
         ~resolve_with_locals:(fun ~locals:_ _ -> failwith "don't care")
+        ~get_typed_dictionary:(fun type_ ->
+          GlobalResolution.get_typed_dictionary global_resolution type_)
         ~location:Location.any
         ~callable:(parse_callable_record callable)
         parameter_argument_mapping_with_reasons
