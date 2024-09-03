@@ -5850,52 +5850,45 @@ module State (Context : Context) = struct
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class ({ Class.type_params; _ } as class_statement) ->
         let this_class_name = Reference.show class_statement.name in
-        let dataclass_options_from_decorator class_name =
-          match GlobalResolution.get_class_summary global_resolution class_name with
-          | Some summary -> begin
-              let extracted_options =
-                DataclassOptions.dataclass_options
-                  ~first_matching_class_decorator:
-                    (GlobalResolution.first_matching_class_decorator global_resolution)
-                  summary
-              in
-              match extracted_options with
-              | Some option -> Some option.frozen
-              | None -> None
-            end
-          | None -> None
-        in
-        let get_dataclass_options_from_metaclass class_name =
-          let extract_options =
-            DataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
-              ~get_class_summary:(GlobalResolution.get_class_summary global_resolution)
-              ~successors:(GlobalResolution.successors global_resolution)
+        let check_dataclass_inheritance base_types_and_locations errors =
+          let dataclass_options_from_decorator class_name =
+            match GlobalResolution.get_class_summary global_resolution class_name with
+            | Some summary -> begin
+                let extracted_options =
+                  DataclassOptions.dataclass_options
+                    ~first_matching_class_decorator:
+                      (GlobalResolution.first_matching_class_decorator global_resolution)
+                    summary
+                in
+                match extracted_options with
+                | Some option -> Some option.frozen
+                | None -> None
+              end
+            | None -> None
           in
-          let optional_summary = GlobalResolution.get_class_summary global_resolution class_name in
-          match optional_summary with
-          | Some summary -> begin
-              match extract_options summary with
-              | Some option -> Some option.frozen
-              | None -> None
-            end
-          | None -> None
-        in
-        let is_class_frozen =
-          Option.first_some
-            (dataclass_options_from_decorator this_class_name)
-            (get_dataclass_options_from_metaclass this_class_name)
-        in
-        (* The checks here run once per top-level class definition. Nested classes and functions are
-           analyzed separately. *)
-        let base_types_and_locations =
-          let type_and_location base_expression =
-            ( GlobalResolution.parse_annotation global_resolution base_expression,
-              base_expression.Node.location )
+          let get_dataclass_options_from_metaclass class_name =
+            let extract_options =
+              DataclassOptions.options_from_custom_dataclass_transform_base_class_or_metaclass
+                ~get_class_summary:(GlobalResolution.get_class_summary global_resolution)
+                ~successors:(GlobalResolution.successors global_resolution)
+            in
+            let optional_summary =
+              GlobalResolution.get_class_summary global_resolution class_name
+            in
+            match optional_summary with
+            | Some summary -> begin
+                match extract_options summary with
+                | Some option -> Some option.frozen
+                | None -> None
+              end
+            | None -> None
           in
-          Class.base_classes class_statement |> List.map ~f:type_and_location
-        in
-        let check_base_class errors (base_type, _) =
-          let check_frozen_inheritance errors =
+          let is_class_frozen =
+            Option.first_some
+              (dataclass_options_from_decorator this_class_name)
+              (get_dataclass_options_from_metaclass this_class_name)
+          in
+          let check_frozen_inheritance errors (base_type, _) =
             match base_type with
             | Type.Primitive base_class_name
             | Type.Parametric { name = base_class_name; _ } -> begin
@@ -5936,8 +5929,11 @@ module State (Context : Context) = struct
                 (* If the base type isn't valid, we can't get dataclass inheritance errors. *)
                 errors
           in
+          List.fold ~init:errors ~f:check_frozen_inheritance base_types_and_locations
+        in
+        let check_variance_inheritance base_types_and_locations errors =
           (* Check that variance isn't widened on inheritence. *)
-          let check_variance_inheritance errors =
+          let check_variance_for_base errors (base_type, _) =
             let check_pair errors extended actual =
               match extended, actual with
               | ( Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ },
@@ -5997,8 +5993,7 @@ module State (Context : Context) = struct
                 |> Option.value ~default:errors
             | _ -> errors
           in
-          let errors = errors |> check_frozen_inheritance |> check_variance_inheritance in
-          errors
+          List.fold ~init:errors ~f:check_variance_for_base base_types_and_locations
         in
         let check_generic_protocols base_types_and_locations errors =
           let has_subscripted_protocol =
@@ -6036,7 +6031,19 @@ module State (Context : Context) = struct
             errors
         in
         let errors =
-          List.fold ~f:check_base_class ~init:[] base_types_and_locations
+          (* The checks here run once per top-level class definition. Nested classes and functions
+             are analyzed separately. *)
+          let base_types_and_locations =
+            let type_and_location base_expression =
+              ( GlobalResolution.parse_annotation global_resolution base_expression,
+                base_expression.Node.location )
+            in
+            Class.base_classes class_statement |> List.map ~f:type_and_location
+          in
+          let empty_errors = [] in
+          empty_errors
+          |> check_dataclass_inheritance base_types_and_locations
+          |> check_variance_inheritance base_types_and_locations
           |> check_generic_protocols base_types_and_locations
           |> check_protocol_bases base_types_and_locations
         in
