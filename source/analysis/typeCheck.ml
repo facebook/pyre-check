@@ -5850,7 +5850,7 @@ module State (Context : Context) = struct
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class ({ Class.type_params; _ } as class_statement) ->
         let this_class_name = Reference.show class_statement.name in
-        let check_dataclass_inheritance base_types_and_locations errors =
+        let check_dataclass_inheritance base_types_with_location errors =
           let dataclass_options_from_decorator class_name =
             match GlobalResolution.get_class_summary global_resolution class_name with
             | Some summary -> begin
@@ -5929,9 +5929,9 @@ module State (Context : Context) = struct
                 (* If the base type isn't valid, we can't get dataclass inheritance errors. *)
                 errors
           in
-          List.fold ~init:errors ~f:check_frozen_inheritance base_types_and_locations
+          List.fold ~init:errors ~f:check_frozen_inheritance base_types_with_location
         in
-        let check_variance_inheritance base_types_and_locations errors =
+        let check_variance_inheritance base_types_with_location errors =
           (* Check that variance isn't widened on inheritence. *)
           let check_variance_for_base errors (base_type, _) =
             let check_pair errors extended actual =
@@ -5952,31 +5952,8 @@ module State (Context : Context) = struct
                   | _ -> errors)
               | _, _ -> errors
             in
-            let check_duplicate_type_parameters errors parametric base =
-              let rec get_duplicate_typevars variables duplicates =
-                match variables with
-                | variable :: rest when List.exists ~f:(Type.Variable.equal variable) rest ->
-                    get_duplicate_typevars rest (variable :: duplicates)
-                | _ -> duplicates
-              in
-              let emit_duplicate_errors errors variable =
-                emit_error ~errors ~location ~kind:(Error.DuplicateTypeVariables { variable; base })
-              in
-              List.fold_left
-                ~f:emit_duplicate_errors
-                ~init:errors
-                (get_duplicate_typevars (Type.Variable.all_free_variables parametric) [])
-            in
             match base_type with
-            | Type.Parametric { name; _ } as parametric when String.equal name "typing.Generic" ->
-                check_duplicate_type_parameters errors parametric GenericBase
-            | Type.Parametric { name; arguments = extended_arguments } as parametric ->
-                let errors =
-                  if String.equal name "typing.Protocol" then
-                    check_duplicate_type_parameters errors parametric ProtocolBase
-                  else
-                    errors
-                in
+            | Type.Parametric { name; arguments = extended_arguments } ->
                 Type.Argument.all_singles extended_arguments
                 >>| (fun extended_arguments ->
                       let actual_arguments =
@@ -5993,18 +5970,54 @@ module State (Context : Context) = struct
                 |> Option.value ~default:errors
             | _ -> errors
           in
-          List.fold ~init:errors ~f:check_variance_for_base base_types_and_locations
+          List.fold ~init:errors ~f:check_variance_for_base base_types_with_location
         in
-        let check_generic_protocols base_types_and_locations errors =
+        let check_duplicate_type_parameters generic_and_protocol_bases_with_location errors =
+          let check_duplicates_in_base errors (base_type, _) =
+            match base_type with
+            | Type.Parametric { name; _ } as parametric ->
+                let base_kind =
+                  if String.equal name "typing.Protocol" then
+                    Error.ProtocolBase
+                  else
+                    Error.GenericBase
+                in
+                let rec get_duplicate_typevars variables duplicates =
+                  match variables with
+                  | variable :: rest when List.exists ~f:(Type.Variable.equal variable) rest ->
+                      get_duplicate_typevars rest (variable :: duplicates)
+                  | _ -> duplicates
+                in
+                let emit_duplicate_errors errors variable =
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:(Error.DuplicateTypeVariables { variable; base = base_kind })
+                in
+                List.fold_left
+                  ~f:emit_duplicate_errors
+                  ~init:errors
+                  (get_duplicate_typevars (Type.Variable.all_free_variables parametric) [])
+            | _ -> errors
+          in
+          List.fold
+            ~init:errors
+            ~f:check_duplicates_in_base
+            generic_and_protocol_bases_with_location
+        in
+        let check_generic_protocols generic_and_protocol_bases_with_location errors =
           let has_subscripted_protocol =
-            List.find base_types_and_locations ~f:(fun (base, _) ->
+            List.find generic_and_protocol_bases_with_location ~f:(fun (base, _) ->
                 match base with
                 | Type.Parametric { name = "typing.Protocol"; _ } -> true
                 | _ -> false)
             |> Option.is_some
           in
           if has_subscripted_protocol then
-            List.fold ~init:errors base_types_and_locations ~f:(fun errors (base, location) ->
+            List.fold
+              ~init:errors
+              generic_and_protocol_bases_with_location
+              ~f:(fun errors (base, location) ->
                 match base with
                 | Type.Parametric { name = "typing.Generic"; _ } ->
                     emit_error ~errors ~location ~kind:(InvalidInheritance GenericProtocol)
@@ -6012,16 +6025,20 @@ module State (Context : Context) = struct
           else
             errors
         in
-        let check_protocol_bases base_types_and_locations errors =
+        let check_protocol_bases
+            generic_and_protocol_bases_with_location
+            base_types_with_location
+            errors
+          =
           let has_unsubscripted_protocol =
-            List.find base_types_and_locations ~f:(fun (base, _) ->
+            List.find generic_and_protocol_bases_with_location ~f:(fun (base, _) ->
                 match base with
                 | Type.Primitive "typing.Protocol" -> true
                 | _ -> false)
             |> Option.is_some
           in
           if has_unsubscripted_protocol then
-            List.fold ~init:errors base_types_and_locations ~f:(fun errors (base, location) ->
+            List.fold ~init:errors base_types_with_location ~f:(fun errors (base, location) ->
                 match base with
                 | Type.Primitive "typing.Protocol" -> errors
                 | Type.Parametric { name = "typing.Generic"; _ } -> errors
@@ -6033,19 +6050,26 @@ module State (Context : Context) = struct
         let errors =
           (* The checks here run once per top-level class definition. Nested classes and functions
              are analyzed separately. *)
-          let base_types_and_locations =
+          let generic_and_protocol_bases_with_location, base_types_with_location =
             let type_and_location base_expression =
-              ( GlobalResolution.parse_annotation global_resolution base_expression,
-                base_expression.Node.location )
+              let base_type = GlobalResolution.parse_annotation global_resolution base_expression in
+              match base_type with
+              | Type.Primitive "typing.Protocol"
+              | Type.Parametric { name = "typing.Generic" | "typing.Protocol"; _ } ->
+                  Core.Either.first (base_type, base_expression.Node.location)
+              | _ -> Core.Either.second (base_type, base_expression.Node.location)
             in
-            Class.base_classes class_statement |> List.map ~f:type_and_location
+            List.partition_map ~f:type_and_location (Class.base_classes class_statement)
           in
+          (* TODO(T200263444) Several of the `generic_and_protocol_bases_with_location`-based checks
+             will almost certainly need updating when we support PEP 695-style classes. *)
           let empty_errors = [] in
           empty_errors
-          |> check_dataclass_inheritance base_types_and_locations
-          |> check_variance_inheritance base_types_and_locations
-          |> check_generic_protocols base_types_and_locations
-          |> check_protocol_bases base_types_and_locations
+          |> check_dataclass_inheritance base_types_with_location
+          |> check_variance_inheritance base_types_with_location
+          |> check_duplicate_type_parameters generic_and_protocol_bases_with_location
+          |> check_generic_protocols generic_and_protocol_bases_with_location
+          |> check_protocol_bases generic_and_protocol_bases_with_location base_types_with_location
         in
         let type_params_errors =
           match type_params with
