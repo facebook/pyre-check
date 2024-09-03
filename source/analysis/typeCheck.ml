@@ -5936,8 +5936,12 @@ module State (Context : Context) = struct
           let check_variance_for_base errors (base_type, _) =
             let check_pair errors argument parameter =
               match argument, parameter with
-              | ( Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ },
-                  Type.Variable { Type.Record.Variable.TypeVar.variance = right; _ } ) -> (
+              | ( Type.Argument.Single
+                    (Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ } as
+                    annotation),
+                  Type.Variable.TypeVarVariable
+                    ({ Type.Record.Variable.TypeVar.variance = right; _ } as parameter_variable) )
+                -> (
                   match left, right with
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Contravariant, Type.Record.Variance.Invariant
@@ -5948,26 +5952,23 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.InvalidTypeVariance
-                             { annotation = argument; origin = Error.Inheritance parameter })
+                             {
+                               annotation;
+                               origin = Error.Inheritance (Type.Variable parameter_variable);
+                             })
                   | _ -> errors)
               | _, _ -> errors
             in
             match base_type with
-            | Type.Parametric { name; arguments } ->
-                Type.Argument.all_singles arguments
-                >>| (fun unary_arguments ->
-                      let unary_parameters =
-                        GlobalResolution.generic_parameters_as_variables global_resolution name
-                        >>= Type.Variable.all_unary
-                        >>| List.map ~f:(fun unary -> Type.Variable unary)
-                        |> Option.value ~default:[]
-                      in
-                      match
-                        List.fold2 unary_arguments unary_parameters ~init:errors ~f:check_pair
-                      with
-                      | Ok errors -> errors
-                      | Unequal_lengths -> errors)
-                |> Option.value ~default:errors
+            | Type.Parametric { name; arguments } -> begin
+                let parameters =
+                  GlobalResolution.generic_parameters_as_variables global_resolution name
+                  |> Option.value ~default:[]
+                in
+                match List.fold2 arguments parameters ~init:errors ~f:check_pair with
+                | Ok errors -> errors
+                | Unequal_lengths -> errors
+              end
             | _ -> errors
           in
           List.fold ~init:errors ~f:check_variance_for_base base_types_with_location
