@@ -5934,8 +5934,8 @@ module State (Context : Context) = struct
         let check_variance_inheritance base_types_with_location errors =
           (* Check that variance isn't widened on inheritence. *)
           let check_variance_for_base errors (base_type, _) =
-            let check_pair errors extended actual =
-              match extended, actual with
+            let check_pair errors argument parameter =
+              match argument, parameter with
               | ( Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ },
                   Type.Variable { Type.Record.Variable.TypeVar.variance = right; _ } ) -> (
                   match left, right with
@@ -5948,22 +5948,22 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.InvalidTypeVariance
-                             { annotation = extended; origin = Error.Inheritance actual })
+                             { annotation = argument; origin = Error.Inheritance parameter })
                   | _ -> errors)
               | _, _ -> errors
             in
             match base_type with
-            | Type.Parametric { name; arguments = extended_arguments } ->
-                Type.Argument.all_singles extended_arguments
-                >>| (fun extended_arguments ->
-                      let actual_arguments =
+            | Type.Parametric { name; arguments } ->
+                Type.Argument.all_singles arguments
+                >>| (fun unary_arguments ->
+                      let unary_parameters =
                         GlobalResolution.generic_parameters_as_variables global_resolution name
                         >>= Type.Variable.all_unary
                         >>| List.map ~f:(fun unary -> Type.Variable unary)
                         |> Option.value ~default:[]
                       in
                       match
-                        List.fold2 extended_arguments actual_arguments ~init:errors ~f:check_pair
+                        List.fold2 unary_arguments unary_parameters ~init:errors ~f:check_pair
                       with
                       | Ok errors -> errors
                       | Unequal_lengths -> errors)
