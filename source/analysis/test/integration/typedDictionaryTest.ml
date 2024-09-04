@@ -2417,6 +2417,87 @@ def foo(name: str, /, **kwargs: Unpack[Movie]) -> None:
     pass
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo(**{"name": "Life of Brian", "year": 1979})
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo(name="Life of Brian", year=1979)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo(name=1979, year=1979)
+            |}
+           [
+             "Incompatible parameter type [6]: In call `foo`, for argument `name`, expected `str` \
+              but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo(name="Life of Brian")
+            |}
+           ["Missing argument [20]: Call `foo` expects argument `year`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo(name="Life of Brian", year=1979, other_name="foo")
+            |}
+           ["Unexpected keyword [28]: Unexpected keyword argument `other_name` to call `foo`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+    pass
+foo()
+            |}
+           ["Missing argument [20]: Call `foo` expects argument `year`."];
     ]
 
 
