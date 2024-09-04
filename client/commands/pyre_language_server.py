@@ -22,6 +22,7 @@ import json
 import logging
 import random
 import subprocess
+import tempfile
 import traceback
 from collections import defaultdict
 from pathlib import Path
@@ -699,33 +700,39 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 error_message=None,
             )
 
-        type_check_parameters = [
-            "buck2",
-            f"--isolation-dir={isolation_dir}",
-            "bxl",
-            "--reuse-current-config",
-            "--preemptible=ondifferentstate",
-            "--oncall=pyre",
-            "--client-metadata=client_id=pyre.ide",
-            "prelude//python/typecheck/batch_files.bxl:run",
-            "--",
-            *[
-                argument
-                for file in type_checkable_files
-                for argument in ["--source", file]
-            ],
-        ]
-        type_check = await asyncio.create_subprocess_exec(
-            *type_check_parameters,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout_data, stderr_data = await type_check.communicate()
-        stdout_text = stdout_data.decode("utf-8")
-        stderr_text = stderr_data.decode("utf-8")
-        LOG.debug(
-            f"Buck type check results:\n{stdout_data.decode('utf-8')}\n{stderr_data.decode('utf-8')}"
-        )
+        with tempfile.NamedTemporaryFile() as build_id_file:
+            type_check_parameters = [
+                "buck2",
+                f"--isolation-dir={isolation_dir}",
+                "bxl",
+                "--reuse-current-config",
+                "--preemptible=ondifferentstate",
+                "--oncall=pyre",
+                "--client-metadata=client_id=pyre.ide",
+                f"--write-build-id={build_id_file.name}",
+                "prelude//python/typecheck/batch_files.bxl:run",
+                "--",
+                *[
+                    argument
+                    for file in type_checkable_files
+                    for argument in ["--source", file]
+                ],
+            ]
+            type_check = await asyncio.create_subprocess_exec(
+                *type_check_parameters,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout_data, stderr_data = await type_check.communicate()
+            stdout_text = stdout_data.decode("utf-8")
+            stderr_text = stderr_data.decode("utf-8")
+            LOG.debug(f"Buck type check results:\n{stdout_text}\n{stderr_text}")
+
+            buck_query_durations["buck_type_check"] = (
+                buck_query_timer.stop_in_millisecond()
+            )
+            build_id = build_id_file.read().decode("utf-8").strip()
+            LOG.debug(f"Buck type check build ID: {build_id}")
 
         was_preempted = type_check.returncode == 5
 
@@ -748,7 +755,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         return PyreBuckTypeErrorMetadata(
             durations=buck_query_durations,
             preempted=was_preempted,
-            build_id=None,
+            build_id=build_id,
             number_files_buck_checked=len(type_checkable_files),
             type_errors=type_errors,
             error_message=error_message,
@@ -846,6 +853,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "isolation_dir": PTT_ISOLATION_DIR,
                     "buck_type_errors": pyre_buck_metadata.type_errors_to_json(),
                     "buck_error_message": pyre_buck_metadata.error_message,
+                    "buck_build_id": pyre_buck_metadata.build_id,
                     "daemon_type_errors_correct": pyre_buck_metadata.do_daemon_type_errors_match(
                         daemon_type_errors.type_errors
                     ),
