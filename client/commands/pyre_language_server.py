@@ -116,6 +116,30 @@ class PyreBuckTypeErrorMetadata:
     type_errors: Optional[Set[error.Error]]
     error_message: Optional[str]
 
+    def do_daemon_type_errors_match(
+        self, daemon_type_errors: Dict[Path, List[error.Error]]
+    ) -> bool:
+        if self.type_errors is None:
+            # don't fault GLTC if PTT fails to type check
+            return True
+
+        daemon_type_error_set = {
+            type_error
+            for file_errors in daemon_type_errors.values()
+            for type_error in file_errors
+        }
+        return daemon_type_error_set == self.type_errors
+
+    def type_errors_to_json(self) -> Optional[Dict[str, object]]:
+        type_errors = defaultdict(list)
+        if self.type_errors is None:
+            return None
+        for type_error in self.type_errors:
+            type_errors[str(type_error.path)].append(type_error.to_json())
+
+        # pyre-ignore[7]: incompatible return type due to covariance in optional return type
+        return dict(type_errors)
+
 
 @dataclasses.dataclass(frozen=True)
 class PythonAutoTargetsMetadata:
