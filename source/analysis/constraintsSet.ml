@@ -42,7 +42,7 @@ type class_hierarchy = {
   instantiate_successors_parameters:
     source:Type.t -> target:Type.Primitive.t -> Type.Argument.t list option;
   has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
-  generic_parameters_as_variables: Type.Primitive.t -> Type.Variable.t list option;
+  generic_parameters: Type.Primitive.t -> Type.GenericParameter.t list option;
   least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
 }
 
@@ -463,12 +463,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   and solve_less_or_equal
       ({
          class_hierarchy =
-           {
-             instantiate_successors_parameters;
-             generic_parameters_as_variables;
-             has_transitive_successor;
-             _;
-           };
+           { instantiate_successors_parameters; generic_parameters; has_transitive_successor; _ };
          is_protocol;
          cycle_detections;
          get_typed_dictionary;
@@ -738,7 +733,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           | _ -> impossible
         in
         let solve_arguments left_arguments right_arguments =
-          generic_parameters_as_variables right_name
+          generic_parameters right_name
+          >>| List.map ~f:Type.GenericParameter.to_variable
           >>= Type.Variable.zip_variables_with_two_argument_lists ~left_arguments ~right_arguments
           >>| List.fold ~f:solve_respecting_variance ~init:[constraints]
         in
@@ -996,7 +992,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       classes just follows from the class hierarchy. *)
   and instantiate_protocol_parameters_with_solve
       ({
-         class_hierarchy = { generic_parameters_as_variables; _ };
+         class_hierarchy = { generic_parameters; _ };
          cycle_detections = { assumed_protocol_instantiations; _ } as cycle_detections;
          _;
        } as order)
@@ -1006,8 +1002,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       : Type.Argument.t list option
     =
     match candidate with
-    | Type.Primitive candidate_name
-      when Option.is_some (generic_parameters_as_variables candidate_name) ->
+    | Type.Primitive candidate_name when Option.is_some (generic_parameters candidate_name) ->
         (* If we are given a "stripped" generic, we decline to do structural analysis, as these
            kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
         None
@@ -1023,7 +1018,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         match assumed_protocol_parameters with
         | Some result -> Some result
         | None ->
-            let protocol_generics = generic_parameters_as_variables protocol in
+            let protocol_generics =
+              generic_parameters protocol >>| List.map ~f:Type.GenericParameter.to_variable
+            in
             let protocol_generic_parameters =
               protocol_generics >>| List.map ~f:Type.Variable.to_argument
             in

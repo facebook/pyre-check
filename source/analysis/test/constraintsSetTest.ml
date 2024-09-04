@@ -67,8 +67,7 @@ let hierarchy global_environment =
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
     has_transitive_successor;
-    generic_parameters_as_variables =
-      ClassHierarchy.generic_parameters_as_variables class_hierarchy_handler;
+    generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler;
     least_upper_bound =
       ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound class_metadata_environment;
   }

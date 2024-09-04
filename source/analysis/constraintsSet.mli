@@ -9,7 +9,7 @@ type class_hierarchy = {
   instantiate_successors_parameters:
     source:Type.t -> target:Type.Primitive.t -> Type.Argument.t list option;
   has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
-  generic_parameters_as_variables: Type.Primitive.t -> Type.Variable.t list option;
+  generic_parameters: Type.Primitive.t -> Type.GenericParameter.t list option;
   least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
 }
 
