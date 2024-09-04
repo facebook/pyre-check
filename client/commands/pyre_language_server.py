@@ -734,6 +734,19 @@ class PyreLanguageServer(PyreLanguageServerApi):
             build_id = build_id_file.read().decode("utf-8").strip()
             LOG.debug(f"Buck type check build ID: {build_id}")
 
+        # return now if buck build was unsuccessful or not preempted
+        if type_check.returncode not in (0, 5):
+            message = f"Got error exit code from Buck type check: {stderr_text}"
+            LOG.error(message)
+            return PyreBuckTypeErrorMetadata(
+                durations=buck_query_durations,
+                preempted=None,
+                build_id=build_id,
+                number_files_buck_checked=len(type_checkable_files),
+                type_errors=None,
+                error_message=message,
+            )
+
         was_preempted = type_check.returncode == 5
 
         error_message = None
