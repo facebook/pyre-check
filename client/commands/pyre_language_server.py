@@ -610,6 +610,33 @@ class PyreLanguageServer(PyreLanguageServerApi):
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    @staticmethod
+    def _process_buck_target_type_errors(
+        buck_root: Path,
+        file_path: str,
+    ) -> Set[error.Error]:
+        error_result = BuckTargetTypeErrors.from_json(
+            (buck_root / file_path).read_text()
+        )
+        return {
+            type_error.with_path(buck_root / type_error.path)
+            for type_error in error_result.errors
+        }
+
+    def _process_buck_type_errors_from_stdout(
+        self,
+        stdout: str,
+    ) -> Set[error.Error]:
+        buck_result = BuckTypeErrorsResponse.from_json(stdout)
+        errors: Set[error.Error] = set()
+        buck_root = Path(buck_result.root)
+        for target_error_artifacts in buck_result.artifacts.values():
+            for target_errors in target_error_artifacts:
+                errors |= self._process_buck_target_type_errors(
+                    buck_root, target_errors
+                )
+        return errors
+
     async def _query_buck_type_errors(
         self, open_documents: List[Path], isolation_dir: str
     ) -> PyreBuckTypeErrorMetadata:
