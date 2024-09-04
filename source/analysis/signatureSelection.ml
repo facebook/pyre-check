@@ -194,6 +194,7 @@ let get_parameter_argument_mapping
     ~order
     ~location
     ~resolve
+    ~get_typed_dictionary
     arguments
   =
   let open Type.Callable in
@@ -401,7 +402,8 @@ let get_parameter_argument_mapping
                   ~arguments
                   ~parameters:parameters_tail
                   { parameter_argument_mapping_with_reasons with parameter_argument_mapping }))
-    | ({ kind = DoubleStar; resolved; expression; _ } as argument) :: arguments_tail, _ -> (
+    | ({ kind = DoubleStar; resolved; expression; _ } as argument) :: arguments_tail, parameters
+      -> (
         (* Double starred argument. Check if its type is assignable to Mapping[str, Any] *)
         let mapping_type = Type.parametric "typing.Mapping" [Single Type.string; Single Type.Any] in
         let parameter_argument_mapping_with_reasons =
@@ -413,8 +415,14 @@ let get_parameter_argument_mapping
             in
             add_annotation_error expression resolved error_factory
         in
-        (* Expand the double starred argument if it is a constant. *)
+        (* Expand the double starred argument if it is a constant, or if a typed dictionary is being
+           matched against a non-kwargs parameter *)
         let maybe_expanded_arguments =
+          let should_expand_typed_dictionary =
+            match parameters with
+            | CallableParamType.Keywords _ :: _ -> false
+            | _ -> true
+          in
           match expression with
           | Some { Node.value = Dictionary items; _ } ->
               let filtered_arguments =
@@ -450,6 +458,23 @@ let get_parameter_argument_mapping
                 Some filtered_arguments
               else
                 None
+          | Some expression when should_expand_typed_dictionary -> (
+              (* Expand typed dictionaries *)
+              match get_typed_dictionary resolved with
+              | Some { Type.TypedDictionary.fields; _ } ->
+                  let accumulate_argument { Type.TypedDictionary.name; annotation; _ } so_far =
+                    {
+                      Argument.WithPosition.kind =
+                        Named
+                          { Node.value = "$parameter$" ^ name; location = Node.location expression };
+                      expression = None;
+                      position = argument.position;
+                      resolved = annotation;
+                    }
+                    :: so_far
+                  in
+                  Some (List.fold_right ~init:[] ~f:accumulate_argument fields)
+              | _ -> None)
           | _ -> None
         in
         match maybe_expanded_arguments with
@@ -1363,6 +1388,7 @@ let rec check_arguments_against_signature
         ~order
         ~location
         ~resolve:(resolve_with_locals ~locals:[])
+        ~get_typed_dictionary
         arguments
       |> check_arguments_against_parameters
       |> fun signature_match -> [signature_match]
@@ -1401,6 +1427,7 @@ let rec check_arguments_against_signature
           ~order
           ~location
           ~resolve:(resolve_with_locals ~locals:[])
+          ~get_typed_dictionary
           front
         |> check_arguments_against_parameters
       in
@@ -1463,6 +1490,7 @@ let rec check_arguments_against_signature
             ~order
             ~location
             ~resolve:(resolve_with_locals ~locals:[])
+            ~get_typed_dictionary
             arguments
           |> check_arguments_against_parameters
           |> fun signature_match -> [signature_match]

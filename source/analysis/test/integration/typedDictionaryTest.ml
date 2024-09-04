@@ -2498,6 +2498,22 @@ def foo(**kwargs: Unpack[Movie]) -> None:
 foo()
             |}
            ["Missing argument [20]: Call `foo` expects argument `year`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+class Movie2(TypedDict):
+    name: str
+def foo(year: int, **kwargs: Unpack[Movie2]) -> None:
+  pass
+kwargs: Movie = {"name": "Life of Brian", "year": 1979}
+foo(**kwargs)
+            |}
+           [];
     ]
 
 

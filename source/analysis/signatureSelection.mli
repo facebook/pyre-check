@@ -91,6 +91,7 @@ val get_parameter_argument_mapping
   order:ConstraintsSet.order ->
   location:Location.t ->
   resolve:(Expression.t -> Type.t) ->
+  get_typed_dictionary:(Type.t -> Type.TypedDictionary.t option) ->
   Type.t Argument.WithPosition.t list ->
   Type.t ParameterArgumentMapping.t
 

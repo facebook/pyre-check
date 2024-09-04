@@ -104,7 +104,8 @@ let test_get_parameter_argument_mapping context =
   let resolution =
     ScratchProject.build_resolution (ScratchProject.setup ~context ["test.py", ""])
   in
-  let order = GlobalResolution.full_order (Resolution.global_resolution resolution) in
+  let global_resolution = Resolution.global_resolution resolution in
+  let order = GlobalResolution.full_order global_resolution in
   let assert_parameter_argument_mapping ~callable ~self_argument arguments expected =
     let parameters =
       match parse_callable callable with
@@ -119,6 +120,7 @@ let test_get_parameter_argument_mapping context =
         ~order
         ~location:Location.any
         ~resolve:(Resolution.resolve_expression_to_type resolution)
+        ~get_typed_dictionary:(GlobalResolution.get_typed_dictionary global_resolution)
         arguments
     in
     assert_equal

@@ -772,6 +772,7 @@ module State (Context : Context) = struct
         |> fun resolved ->
         { SignatureSelection.Argument.kind; expression = Some expression; resolved }
       in
+      let global_resolution = Resolution.global_resolution resolution in
       arguments
       |> List.map ~f:resolve_argument
       |> SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None
@@ -779,9 +780,10 @@ module State (Context : Context) = struct
            ~all_parameters:(Type.Callable.Defined parameters)
            ~parameters
            ~self_argument:None
-           ~order:(GlobalResolution.full_order (Resolution.global_resolution resolution))
+           ~order:(GlobalResolution.full_order global_resolution)
            ~location:(Node.location statement)
            ~resolve:(Resolution.resolve_expression_to_type resolution)
+           ~get_typed_dictionary:(GlobalResolution.get_typed_dictionary global_resolution)
       |> fun { SignatureSelection.ParameterArgumentMapping.parameter_argument_mapping; _ } ->
       parameter_argument_mapping
     in
