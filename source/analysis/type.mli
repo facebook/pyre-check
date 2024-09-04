@@ -247,6 +247,8 @@ module GenericParameter : sig
   val to_variable : t -> type_t Record.Variable.record
 
   val of_variable : type_t Record.Variable.record -> t
+
+  val look_up_variance : t list -> Identifier.t -> Record.Variance.t option
 end
 
 module Map : Map.S with type Key.t = t

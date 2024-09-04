@@ -401,6 +401,17 @@ module GenericParameter = struct
         GpTypeVarTuple { name }
     | Record.Variable.ParamSpecVariable { Record.Variable.ParamSpec.name; _ } ->
         GpParamSpec { name }
+
+
+  let look_up_variance parameters =
+    let variance_by_name =
+      let add_to_lookup so_far = function
+        | GpTypeVar { name; variance; _ } -> Map.set so_far ~key:name ~data:variance
+        | _ -> so_far
+      in
+      List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
+    in
+    fun variable_name -> Map.find variance_by_name variable_name
 end
 
 module Constructors = struct

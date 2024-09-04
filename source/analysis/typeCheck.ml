@@ -5934,11 +5934,25 @@ module State (Context : Context) = struct
         let check_variance_inheritance base_types_with_location errors =
           (* Check that variance isn't widened on inheritence. *)
           let check_variance_for_base errors (base_type, _) =
-            let check_pair errors argument parameter =
-              match argument, parameter with
-              | ( Type.Argument.Single
-                    (Type.Variable
-                      { Type.Record.Variable.TypeVar.name = this_name; variance = this_variance; _ }),
+            (* Given an argument to a base class, check whether it is a TypeVar and if so get the
+               matching GenericParameter.t for this class so we can check variance. *)
+            let maybe_this_class_parameter_name_and_variance =
+              let look_up_this_class_variance =
+                GlobalResolution.generic_parameters global_resolution this_class_name
+                |> Option.value ~default:[]
+                |> Type.GenericParameter.look_up_variance
+              in
+              fun base_class_argument ->
+                match base_class_argument with
+                | Type.Argument.Single (Type.Variable { Type.Record.Variable.TypeVar.name; _ }) ->
+                    look_up_this_class_variance name >>| fun variance -> name, variance
+                | _ -> None
+            in
+            let check_pair errors base_argument base_parameter =
+              (* If the argument to a base class is a type variable, find the corresponding type
+                 parameter for this class *)
+              match maybe_this_class_parameter_name_and_variance base_argument, base_parameter with
+              | ( Some (this_name, this_variance),
                   Type.GenericParameter.GpTypeVar { name = base_name; variance = base_variance; _ }
                 ) -> (
                   match this_variance, base_variance with
