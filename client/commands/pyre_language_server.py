@@ -721,20 +721,37 @@ class PyreLanguageServer(PyreLanguageServerApi):
             stderr=asyncio.subprocess.PIPE,
         )
         stdout_data, stderr_data = await type_check.communicate()
+        stdout_text = stdout_data.decode("utf-8")
+        stderr_text = stderr_data.decode("utf-8")
         LOG.debug(
             f"Buck type check results:\n{stdout_data.decode('utf-8')}\n{stderr_data.decode('utf-8')}"
         )
 
         was_preempted = type_check.returncode == 5
 
-        buck_query_durations["buck_type_check"] = buck_query_timer.stop_in_millisecond()
+        error_message = None
+        type_errors = None
+        if type_check.returncode == 5:
+            was_preempted = True
+        else:
+            was_preempted = False
+            try:
+                type_errors = self._process_buck_type_errors_from_stdout(stdout_text)
+            except (
+                json.JSONDecodeError,
+                AssertionError,
+                error.ErrorParsingFailure,
+            ) as buck_error:
+                error_message = f"Error parsing Buck type errors: {repr(buck_error)}"
+                LOG.error(error_message)
+
         return PyreBuckTypeErrorMetadata(
             durations=buck_query_durations,
             preempted=was_preempted,
             build_id=None,
             number_files_buck_checked=len(type_checkable_files),
-            type_errors=None,
-            error_message=None,
+            type_errors=type_errors,
+            error_message=error_message,
         )
 
     async def _query_pyre_daemon_type_errors(
