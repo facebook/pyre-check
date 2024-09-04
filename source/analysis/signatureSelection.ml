@@ -994,7 +994,12 @@ let check_arguments_against_parameters
                         | Named name -> Some name
                         | _ -> None
                       in
-                      let check_argument ~position ~parameter_annotation argument_annotation =
+                      let check_argument
+                          ~signature_match
+                          ~position
+                          ~parameter_annotation
+                          argument_annotation
+                        =
                         check_argument_and_set_constraints_and_reasons
                           ~position
                           ~argument_location
@@ -1033,19 +1038,44 @@ let check_arguments_against_parameters
                             else
                               resolved, None
                           in
+                          (* Check that unpacked typed dictionary does not collide with already
+                             bound kwargs fields *)
+                          let signature_match =
+                            match get_typed_dictionary argument_annotation with
+                            | None -> signature_match
+                            | Some { Type.TypedDictionary.fields; _ } -> (
+                                let extra_field_errors =
+                                  List.filter_map fields ~f:(fun { Type.TypedDictionary.name; _ } ->
+                                      if Map.find unmatched_fields name |> Option.is_some then
+                                        None
+                                      else
+                                        Some (UnexpectedKeyword name))
+                                in
+                                match extra_field_errors with
+                                | [] -> signature_match
+                                | _ ->
+                                    {
+                                      signature_match with
+                                      reasons = { reasons with arity = extra_field_errors @ arity };
+                                    })
+                          in
                           let unmatched_fields = Identifier.Map.empty in
                           match weakening_error with
                           | Some weakening_error ->
                               unmatched_fields, add_annotation_error signature_match weakening_error
                           | None ->
                               argument_annotation
-                              |> check_argument ~position ~parameter_annotation
+                              |> check_argument ~signature_match ~position ~parameter_annotation
                               |> check ~unmatched_fields ~arguments:tail)
                       | Named { Node.value = argument_name; _ } -> (
                           let argument_name = Identifier.sanitized argument_name in
                           match Map.find unmatched_fields argument_name with
                           | Some { Type.TypedDictionary.annotation; _ } ->
-                              check_argument ~position ~parameter_annotation:annotation resolved
+                              check_argument
+                                ~signature_match
+                                ~position
+                                ~parameter_annotation:annotation
+                                resolved
                               |> check
                                    ~unmatched_fields:(Map.remove unmatched_fields argument_name)
                                    ~arguments:tail

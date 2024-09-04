@@ -2514,6 +2514,20 @@ kwargs: Movie = {"name": "Life of Brian", "year": 1979}
 foo(**kwargs)
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict):
+    name: str
+    year: int
+def foo(**kwargs: Unpack[Movie]) -> None:
+  pass
+kwargs: Movie = {"name": "Life of Brian", "year": 1979}
+foo(name="foo", **kwargs)
+            |}
+           ["Unexpected keyword [28]: Unexpected keyword argument `name` to call `foo`."];
     ]
 
 
