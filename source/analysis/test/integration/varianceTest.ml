@@ -64,8 +64,8 @@ let test_check_variance context =
     |}
     [
       "Invalid type variance [46]: The type variable `Variable[CV](covariant)` is incompatible \
-       with parent class type variable `Variable[IV]` because subclasses cannot use more \
-       permissive type variables than their superclasses.";
+       with parent class type variable `Variable[IV](invariant)` because subclasses cannot use \
+       more permissive type variables than their superclasses.";
     ];
   assert_type_errors
     {|
@@ -77,8 +77,8 @@ let test_check_variance context =
     |}
     [
       "Invalid type variance [46]: The type variable `Variable[CV](contravariant)` is incompatible \
-       with parent class type variable `Variable[IV]` because subclasses cannot use more \
-       permissive type variables than their superclasses.";
+       with parent class type variable `Variable[IV](invariant)` because subclasses cannot use \
+       more permissive type variables than their superclasses.";
     ];
   assert_type_errors
     {|

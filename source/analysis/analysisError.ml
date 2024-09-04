@@ -175,10 +175,15 @@ and type_variable_origin =
   | Define
   | Toplevel
 
+and type_parameter_name_and_variance = {
+  parameter_name: string;
+  variance: Type.Record.Variance.t;
+}
+
 and type_variance_origin =
   | Parameter
   | Return
-  | Inheritance of Type.t
+  | Inheritance of type_parameter_name_and_variance
 
 and annotation_kind =
   | Annotation
@@ -779,7 +784,7 @@ and kind =
       origin: type_variable_origin;
     }
   | InvalidTypeVariance of {
-      annotation: Type.t;
+      parameter: type_parameter_name_and_variance;
       origin: type_variance_origin;
     }
   | InvalidInheritance of invalid_inheritance
@@ -2100,27 +2105,34 @@ let rec messages ~concise ~signature location kind =
       | Return -> ["Return type cannot be contravariant."]
       | Inheritance _ ->
           ["Subclasses cannot use more permissive type variables than their superclasses."])
-  | InvalidTypeVariance { annotation; origin } ->
+  | InvalidTypeVariance { parameter; origin } ->
+      let pp_type_parameter_name_and_variance formatter { parameter_name; variance } =
+        Format.fprintf
+          formatter
+          "Variable[%s](%s)"
+          parameter_name
+          (Type.Record.Variance.show_lowercase variance)
+      in
       let formatted =
         match origin with
         | Parameter ->
             Format.asprintf
               "The type variable `%a` is covariant and cannot be a parameter type."
-              pp_type
-              annotation
+              pp_type_parameter_name_and_variance
+              parameter
         | Return ->
             Format.asprintf
               "The type variable `%a` is contravariant and cannot be a return type."
-              pp_type
-              annotation
-        | Inheritance parent ->
+              pp_type_parameter_name_and_variance
+              parameter
+        | Inheritance base_parameter ->
             Format.asprintf
               "The type variable `%a` is incompatible with parent class type variable `%a` because \
                subclasses cannot use more permissive type variables than their superclasses."
-              pp_type
-              annotation
-              pp_type
-              parent
+              pp_type_parameter_name_and_variance
+              parameter
+              pp_type_parameter_name_and_variance
+              base_parameter
       in
       [formatted; "See `https://pyre-check.org/docs/errors#35-invalid-type-variance` for details."]
   | InvalidInheritance invalid_inheritance -> (
@@ -3650,11 +3662,11 @@ let join ~resolution left right =
       when Type.Variable.equal left right
            && [%compare.equal: type_variable_origin] left_origin right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
-    | ( InvalidTypeVariance { annotation = left; origin = left_origin },
-        InvalidTypeVariance { annotation = right; origin = right_origin } )
-      when Type.equal left right && [%compare.equal: type_variance_origin] left_origin right_origin
-      ->
-        InvalidTypeVariance { annotation = left; origin = left_origin }
+    | ( InvalidTypeVariance { parameter = left; origin = left_origin },
+        InvalidTypeVariance { parameter = right; origin = right_origin } )
+      when [%compare.equal: type_parameter_name_and_variance] left right
+           && [%compare.equal: type_variance_origin] left_origin right_origin ->
+        InvalidTypeVariance { parameter = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
       when Option.equal Reference.equal_sanitized left.callee right.callee
            && left.expected = right.expected
@@ -4252,10 +4264,14 @@ let dequalify
         ClassVariable { class_name = dequalify_identifier class_name; class_variable }
     | ReadOnly attribute -> ReadOnly (dequalify_reference attribute)
   in
+  let dequalify_type_parameter_name_and_variance { parameter_name; variance } =
+    { parameter_name = dequalify_identifier parameter_name; variance }
+  in
   let dequalify_type_variance_origin = function
     | Parameter -> Parameter
     | Return -> Return
-    | Inheritance annotation -> Inheritance (dequalify annotation)
+    | Inheritance base_parameter ->
+        Inheritance (dequalify_type_parameter_name_and_variance base_parameter)
   in
   let dequalify_incompatible_overload_kind = function
     | ReturnType { implementation_annotation; name; overload_annotation } ->
@@ -4358,9 +4374,12 @@ let dequalify
     | InvalidTypeVariable { annotation; origin } ->
         InvalidTypeVariable
           { annotation = Type.Variable.dequalify dequalify_map annotation; origin }
-    | InvalidTypeVariance { annotation; origin } ->
+    | InvalidTypeVariance { parameter; origin } ->
         InvalidTypeVariance
-          { annotation = dequalify annotation; origin = dequalify_type_variance_origin origin }
+          {
+            parameter = dequalify_type_parameter_name_and_variance parameter;
+            origin = dequalify_type_variance_origin origin;
+          }
     | InvalidInheritance name -> InvalidInheritance (dequalify_invalid_inheritance name)
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent = dequalify_identifier parent; decorator }

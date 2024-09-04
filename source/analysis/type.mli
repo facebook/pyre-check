@@ -15,6 +15,8 @@ module Record : sig
       | Contravariant
       | Invariant
     [@@deriving compare, eq, sexp, show, hash]
+
+    val show_lowercase : t -> string
   end
 
   module TypeVarConstraints : sig

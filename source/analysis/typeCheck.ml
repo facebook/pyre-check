@@ -5937,11 +5937,11 @@ module State (Context : Context) = struct
             let check_pair errors argument parameter =
               match argument, parameter with
               | ( Type.Argument.Single
-                    (Type.Variable { Type.Record.Variable.TypeVar.variance = argument_variance; _ }
-                    as annotation),
-                  Type.GenericParameter.GpTypeVar
-                    { name = parameter_name; variance = parameter_variance; _ } ) -> (
-                  match argument_variance, parameter_variance with
+                    (Type.Variable
+                      { Type.Record.Variable.TypeVar.name = this_name; variance = this_variance; _ }),
+                  Type.GenericParameter.GpTypeVar { name = base_name; variance = base_variance; _ }
+                ) -> (
+                  match this_variance, base_variance with
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Contravariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Contravariant
@@ -5952,13 +5952,10 @@ module State (Context : Context) = struct
                         ~kind:
                           (Error.InvalidTypeVariance
                              {
-                               annotation;
+                               parameter = { parameter_name = this_name; variance = this_variance };
                                origin =
                                  Error.Inheritance
-                                   (Type.Variable
-                                      (Type.Variable.TypeVar.create
-                                         parameter_name
-                                         ~variance:parameter_variance));
+                                   { parameter_name = base_name; variance = base_variance };
                              })
                   | _ -> errors)
               | _, _ -> errors
@@ -6439,11 +6436,18 @@ module State (Context : Context) = struct
       in
       let add_variance_error return_type errors =
         match return_type with
-        | Type.Variable variable when Type.Variable.TypeVar.is_contravariant variable ->
+        | Type.Variable
+            {
+              Type.Variable.TypeVar.name;
+              variance = Type.Record.Variance.Contravariant as variance;
+              _;
+            } ->
             emit_error
               ~errors
               ~location
-              ~kind:(Error.InvalidTypeVariance { annotation = return_type; origin = Error.Return })
+              ~kind:
+                (Error.InvalidTypeVariance
+                   { parameter = { parameter_name = name; variance }; origin = Error.Return })
         | _ -> errors
       in
       let add_async_generator_error return_type errors =
@@ -6671,13 +6675,19 @@ module State (Context : Context) = struct
         in
         let add_variance_error errors annotation =
           match annotation with
-          | Type.Variable variable
-            when (not (Define.is_constructor define)) && Type.Variable.TypeVar.is_covariant variable
-            ->
+          | Type.Variable
+              {
+                Type.Variable.TypeVar.name;
+                variance = Type.Record.Variance.Covariant as variance;
+                _;
+              }
+            when not (Define.is_constructor define) ->
               emit_error
                 ~errors
                 ~location
-                ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
+                ~kind:
+                  (Error.InvalidTypeVariance
+                     { parameter = { parameter_name = name; variance }; origin = Error.Parameter })
           | _ -> errors
         in
         let parse_as_type_var () =

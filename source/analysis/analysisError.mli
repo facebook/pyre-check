@@ -141,10 +141,15 @@ and type_variable_origin =
   | Define
   | Toplevel
 
+and type_parameter_name_and_variance = {
+  parameter_name: string;
+  variance: Type.Record.Variance.t;
+}
+
 and type_variance_origin =
   | Parameter
   | Return
-  | Inheritance of Type.t
+  | Inheritance of type_parameter_name_and_variance
 
 and illegal_action_on_incomplete_type =
   | Naming
@@ -433,7 +438,7 @@ and kind =
       origin: type_variable_origin;
     }
   | InvalidTypeVariance of {
-      annotation: Type.t;
+      parameter: type_parameter_name_and_variance;
       origin: type_variance_origin;
     }
   | InvalidInheritance of invalid_inheritance
