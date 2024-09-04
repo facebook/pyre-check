@@ -6453,13 +6453,14 @@ module State (Context : Context) = struct
           errors
       in
       let add_variance_error return_type errors =
-        match return_type with
-        | Type.Variable
-            {
-              Type.Variable.TypeVar.name;
-              variance = Type.Record.Variance.Contravariant as variance;
-              _;
-            } ->
+        match maybe_current_class_name, return_type with
+        | ( Some _,
+            Type.Variable
+              {
+                Type.Variable.TypeVar.name;
+                variance = Type.Record.Variance.Contravariant as variance;
+                _;
+              } ) ->
             emit_error
               ~errors
               ~location
@@ -6692,13 +6693,14 @@ module State (Context : Context) = struct
           emit_error ~errors ~location ~kind:(Error.InvalidType (FinalParameter name))
         in
         let add_variance_error errors annotation =
-          match annotation with
-          | Type.Variable
-              {
-                Type.Variable.TypeVar.name;
-                variance = Type.Record.Variance.Covariant as variance;
-                _;
-              }
+          match maybe_current_class_name, annotation with
+          | ( Some _,
+              Type.Variable
+                {
+                  Type.Variable.TypeVar.name;
+                  variance = Type.Record.Variance.Covariant as variance;
+                  _;
+                } )
             when not (Define.is_constructor define) ->
               emit_error
                 ~errors

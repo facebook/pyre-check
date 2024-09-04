@@ -1707,21 +1707,6 @@ let test_check_invalid_type_variables =
       @@ assert_type_errors
            {|
               import typing
-              T = typing.TypeVar("T", covariant=True)
-              def foo(x: T) -> T:
-                return x
-            |}
-           [
-             "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
-             ^ "and cannot be a parameter type.";
-           ];
-      (* TODO(@stroxler) Eliminate this bug: using TypeVar.t to directly get variance causes us to
-         not realize when a type var is scoped and behaves like a concrete type, leading to false
-         positive variance errors. *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-              import typing
 
               T = typing.TypeVar("T", contravariant=True)
 
@@ -1730,9 +1715,36 @@ let test_check_invalid_type_variables =
                     return y
                 print(inner(x))
             |}
+           [];
+      (* Pyre currently does not model functions as type constructors, and as a result does not care
+         about variance checks for generic functions or methods. For motivation see summary of
+         D62068860 *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              T = typing.TypeVar("T", covariant=True)
+              def foo(x: T) -> T:
+                return x
+            |}
+           [];
+      (* TODO(stroxler) Method checks are inconsistent with ^^ because we are still getting the
+         variance directly off of TypeVar.t. Fix the problem by cutting over to
+         GenericParameter.t. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+              T = typing.TypeVar("T", covariant=True)
+              S = typing.TypeVar("S")
+
+              class Foo(typing.Generic[S]):
+                def foo(self, x: T) -> T:
+                  return x
+            |}
            [
-             "Invalid type variance [46]: The type variable `Variable[T](contravariant)` is \
-              contravariant and cannot be a return type.";
+             "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant \
+              and cannot be a parameter type.";
            ];
     ]
 
