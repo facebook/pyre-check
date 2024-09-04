@@ -6199,7 +6199,10 @@ module State (Context : Context) = struct
             {
               name;
               parent = nesting_context;
-              legacy_parent;
+              (* Note: the `legacy_parent` field is marked as legacy because for many purposes
+                 `nesting_context` is better, but for now this is still the key used in class-based
+                 lookup tables. This will remain so until those tables are keyed differently. *)
+              legacy_parent = maybe_current_class_reference;
               parameters;
               return_annotation;
               decorators;
@@ -6215,6 +6218,7 @@ module State (Context : Context) = struct
       =
       Context.define
     in
+    let maybe_current_class_name = Option.map maybe_current_class_reference ~f:Reference.show in
     let parameter_types =
       let create_parameter { Node.value = { Parameter.name; value; annotation }; _ } =
         {
@@ -6240,12 +6244,12 @@ module State (Context : Context) = struct
       in
       let check_override_decorator errors =
         let is_override = Define.is_override_method define in
-        match define with
-        | { Ast.Statement.Define.signature = { legacy_parent = Some legacy_parent; _ }; _ } -> (
+        match maybe_current_class_name with
+        | Some current_class_name -> (
             let possibly_overridden_attribute =
               GlobalResolution.overrides
                 global_resolution
-                (Reference.show legacy_parent)
+                current_class_name
                 ~name:(Define.unqualified_name define)
             in
             match possibly_overridden_attribute, is_override with
@@ -6264,15 +6268,15 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.InvalidOverride
-                       { parent = Reference.show legacy_parent; decorator = MissingOverride })
+                       { parent = current_class_name; decorator = MissingOverride })
             | None, true ->
                 emit_error
                   ~errors
                   ~location
                   ~kind:
                     (Error.InvalidOverride
-                       { parent = Reference.show legacy_parent; decorator = NothingOverridden }))
-        | { Ast.Statement.Define.signature = { legacy_parent = None; _ }; _ } when is_override ->
+                       { parent = current_class_name; decorator = NothingOverridden }))
+        | None when is_override ->
             emit_error
               ~errors
               ~location
@@ -6706,8 +6710,8 @@ module State (Context : Context) = struct
         in
         let parse_as_type_var () =
           let errors, annotation =
-            match index, legacy_parent with
-            | 0, Some legacy_parent
+            match index, maybe_current_class_reference with
+            | 0, Some current_class_reference
             (* __new__ does not require an annotation for __cls__, even though it is a static
                method. *)
               when not
@@ -6715,7 +6719,9 @@ module State (Context : Context) = struct
                      || Define.is_static_method define
                         && not (String.equal (Define.unqualified_name define) "__new__")) -> (
                 let resolved, is_class_method =
-                  let parent_annotation = type_of_parent ~global_resolution legacy_parent in
+                  let parent_annotation =
+                    type_of_parent ~global_resolution current_class_reference
+                  in
                   if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
                     Type.meta parent_annotation, true
@@ -6983,9 +6989,8 @@ module State (Context : Context) = struct
     in
     (* Checks here will run once for each definition in the class. *)
     let check_base_classes resolution errors =
-      let current_class_name = legacy_parent >>| Reference.show in
       let is_current_class_typed_dictionary =
-        current_class_name
+        maybe_current_class_name
         >>| (fun class_name ->
               GlobalResolution.is_typed_dictionary global_resolution (Primitive class_name))
         |> Option.value ~default:false
@@ -7059,7 +7064,7 @@ module State (Context : Context) = struct
                        name, (successor_name, field))
               in
               let base_classes =
-                current_class_name
+                maybe_current_class_name
                 >>| GlobalResolution.immediate_parents global_resolution
                 |> Option.value ~default:[]
               in
@@ -7160,8 +7165,7 @@ module State (Context : Context) = struct
             attribute
           >>| AnnotatedAttribute.parent
         in
-        legacy_parent
-        >>| Reference.show
+        maybe_current_class_name
         >>| GlobalResolution.successors global_resolution
         >>= List.find_map ~f:find_init_subclass
       in
@@ -7582,12 +7586,12 @@ module State (Context : Context) = struct
           | ParamSpecVariable variable -> ParamSpecVariable variable
           | TypeVarTupleVariable variable -> TypeVarTupleVariable variable
         in
-        Reference.show class_name
+        class_name
         |> GlobalResolution.generic_parameters_as_variables global_resolution
         >>| List.map ~f:extract
         |> Option.value ~default:[]
       in
-      let type_variables_of_define signature =
+      let type_variables_of_define signature_of_nesting_function =
         let parser = GlobalResolution.nonvalidating_annotation_parser global_resolution in
         let generic_parameters_as_variables =
           GlobalResolution.generic_parameters_as_variables global_resolution
@@ -7596,23 +7600,31 @@ module State (Context : Context) = struct
           AnnotatedCallable.create_overload_without_applying_decorators
             ~parser
             ~generic_parameters_as_variables
-            signature
+            signature_of_nesting_function
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
           |> Type.Variable.all_free_variables
           |> List.dedup_and_sort ~compare:Type.Variable.compare
         in
-        let parent_variables =
-          let { Define.Signature.legacy_parent; _ } = signature in
+        let containing_class_variables =
           (* PEP484 specifies that scope of the type variables of the outer class doesn't cover the
              inner one. We are able to inspect only 1 level of nesting class as a result. *)
-          Option.value_map legacy_parent ~f:type_variables_of_class ~default:[]
+          let {
+            Define.Signature.legacy_parent = maybe_current_class_reference_from_nesting_function;
+            _;
+          }
+            =
+            signature_of_nesting_function
+          in
+          maybe_current_class_reference_from_nesting_function
+          |> Option.map ~f:Reference.show
+          |> Option.value_map ~f:type_variables_of_class ~default:[]
         in
-        List.append parent_variables define_variables
+        List.append containing_class_variables define_variables
       in
       match Define.is_class_toplevel define with
       | true ->
-          let class_name = Option.value_exn legacy_parent in
-          [], type_variables_of_class class_name
+          let current_class_name = Option.value_exn maybe_current_class_name in
+          [], type_variables_of_class current_class_name
       | false ->
           let module_name = Context.qualifier in
           let relative_name =
@@ -7647,7 +7659,7 @@ module State (Context : Context) = struct
         |> List.fold ~init:resolution ~f:(fun resolution variable ->
                Resolution.add_type_variable resolution ~variable)
       in
-      let resolution = Resolution.with_parent resolution ~parent:legacy_parent in
+      let resolution = Resolution.with_parent resolution ~parent:maybe_current_class_reference in
       let resolution, errors = add_capture_annotations ~outer_scope_type_variables resolution [] in
       let resolution, errors = check_parameter_annotations resolution errors in
       let errors =
