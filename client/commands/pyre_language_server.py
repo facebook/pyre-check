@@ -844,6 +844,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "preempted": pyre_buck_metadata.preempted,
                     "new_file_loaded": new_file_loaded,
                     "isolation_dir": PTT_ISOLATION_DIR,
+                    "buck_type_errors": pyre_buck_metadata.type_errors_to_json(),
+                    "buck_error_message": pyre_buck_metadata.error_message,
+                    "daemon_type_errors_correct": pyre_buck_metadata.do_daemon_type_errors_match(
+                        daemon_type_errors.type_errors
+                    ),
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
