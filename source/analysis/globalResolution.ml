@@ -181,6 +181,13 @@ let class_hierarchy ({ dependency; _ } as resolution) =
     (class_hierarchy_environment resolution)
 
 
+let generic_parameters ({ dependency; _ } as resolution) =
+  ClassHierarchyEnvironment.ReadOnly.generic_parameters
+    ~empty_for_nongeneric:false
+    ?dependency
+    (class_hierarchy_environment resolution)
+
+
 let generic_parameters_as_variables ({ dependency; _ } as resolution) =
   ClassHierarchyEnvironment.ReadOnly.generic_parameters_as_variables
     ~empty_for_nongeneric:false

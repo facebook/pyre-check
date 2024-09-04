@@ -5937,12 +5937,11 @@ module State (Context : Context) = struct
             let check_pair errors argument parameter =
               match argument, parameter with
               | ( Type.Argument.Single
-                    (Type.Variable { Type.Record.Variable.TypeVar.variance = left; _ } as
-                    annotation),
-                  Type.Variable.TypeVarVariable
-                    ({ Type.Record.Variable.TypeVar.variance = right; _ } as parameter_variable) )
-                -> (
-                  match left, right with
+                    (Type.Variable { Type.Record.Variable.TypeVar.variance = argument_variance; _ }
+                    as annotation),
+                  Type.GenericParameter.GpTypeVar
+                    { name = parameter_name; variance = parameter_variance; _ } ) -> (
+                  match argument_variance, parameter_variance with
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Contravariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Contravariant
@@ -5954,7 +5953,12 @@ module State (Context : Context) = struct
                           (Error.InvalidTypeVariance
                              {
                                annotation;
-                               origin = Error.Inheritance (Type.Variable parameter_variable);
+                               origin =
+                                 Error.Inheritance
+                                   (Type.Variable
+                                      (Type.Variable.TypeVar.create
+                                         parameter_name
+                                         ~variance:parameter_variance));
                              })
                   | _ -> errors)
               | _, _ -> errors
@@ -5962,7 +5966,7 @@ module State (Context : Context) = struct
             match base_type with
             | Type.Parametric { name; arguments } -> begin
                 let parameters =
-                  GlobalResolution.generic_parameters_as_variables global_resolution name
+                  GlobalResolution.generic_parameters global_resolution name
                   |> Option.value ~default:[]
                 in
                 match List.fold2 arguments parameters ~init:errors ~f:check_pair with
