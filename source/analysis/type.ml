@@ -2611,16 +2611,6 @@ module Variable = struct
 
     let pair variable value = TypeVarPair (variable, value)
 
-    let is_contravariant = function
-      | { variance = Contravariant; _ } -> true
-      | _ -> false
-
-
-    let is_covariant = function
-      | { variance = Covariant; _ } -> true
-      | _ -> false
-
-
     let is_free = function
       | { state = Free _; _ } -> true
       | _ -> false

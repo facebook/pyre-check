@@ -771,10 +771,6 @@ module Variable : sig
       string ->
       t
 
-    val is_contravariant : t -> bool
-
-    val is_covariant : t -> bool
-
     val upper_bound : t -> type_t
 
     val is_escaped_and_free : t -> bool
