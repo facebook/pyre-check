@@ -1715,6 +1715,25 @@ let test_check_invalid_type_variables =
              "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
              ^ "and cannot be a parameter type.";
            ];
+      (* TODO(@stroxler) Eliminate this bug: using TypeVar.t to directly get variance causes us to
+         not realize when a type var is scoped and behaves like a concrete type, leading to false
+         positive variance errors. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import typing
+
+              T = typing.TypeVar("T", contravariant=True)
+
+              def foo(x: T) -> None:
+                def inner(y: T) -> T:
+                    return y
+                print(inner(x))
+            |}
+           [
+             "Invalid type variance [46]: The type variable `Variable[T](contravariant)` is \
+              contravariant and cannot be a return type.";
+           ];
     ]
 
 
