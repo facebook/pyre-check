@@ -1728,9 +1728,6 @@ let test_check_invalid_type_variables =
                 return x
             |}
            [];
-      (* TODO(stroxler) Method checks are inconsistent with ^^ because we are still getting the
-         variance directly off of TypeVar.t. Fix the problem by cutting over to
-         GenericParameter.t. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1742,10 +1739,7 @@ let test_check_invalid_type_variables =
                 def foo(self, x: T) -> T:
                   return x
             |}
-           [
-             "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant \
-              and cannot be a parameter type.";
-           ];
+           [];
     ]
 
 

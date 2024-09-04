@@ -6219,6 +6219,14 @@ module State (Context : Context) = struct
       Context.define
     in
     let maybe_current_class_name = Option.map maybe_current_class_reference ~f:Reference.show in
+    let look_up_current_class_variance =
+      match maybe_current_class_name with
+      | Some current_class_name ->
+          GlobalResolution.generic_parameters global_resolution current_class_name
+          |> Option.value ~default:[]
+          |> Type.GenericParameter.look_up_variance
+      | None -> fun _ -> None
+    in
     let parameter_types =
       let create_parameter { Node.value = { Parameter.name; value; annotation }; _ } =
         {
@@ -6453,20 +6461,20 @@ module State (Context : Context) = struct
           errors
       in
       let add_variance_error return_type errors =
-        match maybe_current_class_name, return_type with
-        | ( Some _,
-            Type.Variable
-              {
-                Type.Variable.TypeVar.name;
-                variance = Type.Record.Variance.Contravariant as variance;
-                _;
-              } ) ->
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.InvalidTypeVariance
-                   { parameter = { parameter_name = name; variance }; origin = Error.Return })
+        match return_type with
+        | Type.Variable { Type.Variable.TypeVar.name = type_var_name; _ } -> (
+            match look_up_current_class_variance type_var_name with
+            | Some (Type.Record.Variance.Contravariant as variance) ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidTypeVariance
+                       {
+                         parameter = { parameter_name = type_var_name; variance };
+                         origin = Error.Return;
+                       })
+            | _ -> errors)
         | _ -> errors
       in
       let add_async_generator_error return_type errors =
@@ -6693,21 +6701,21 @@ module State (Context : Context) = struct
           emit_error ~errors ~location ~kind:(Error.InvalidType (FinalParameter name))
         in
         let add_variance_error errors annotation =
-          match maybe_current_class_name, annotation with
-          | ( Some _,
-              Type.Variable
-                {
-                  Type.Variable.TypeVar.name;
-                  variance = Type.Record.Variance.Covariant as variance;
-                  _;
-                } )
-            when not (Define.is_constructor define) ->
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (Error.InvalidTypeVariance
-                     { parameter = { parameter_name = name; variance }; origin = Error.Parameter })
+          match annotation with
+          | Type.Variable { Type.Variable.TypeVar.name = type_var_name; _ }
+            when not (Define.is_constructor define) -> (
+              match look_up_current_class_variance type_var_name with
+              | Some (Type.Record.Variance.Covariant as variance) ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.InvalidTypeVariance
+                         {
+                           parameter = { parameter_name = type_var_name; variance };
+                           origin = Error.Parameter;
+                         })
+              | _ -> errors)
           | _ -> errors
         in
         let parse_as_type_var () =
