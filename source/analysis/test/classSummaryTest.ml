@@ -594,6 +594,7 @@ let test_is_final _ =
       bases = { base_classes = []; metaclass = None; init_subclass_arguments = [] };
       decorators;
       class_attributes = ClassAttributes.empty ();
+      type_params = [];
     }
   in
   assert_false (ClassSummary.is_final (class_summary ~decorators:[]));

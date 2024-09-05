@@ -120,6 +120,7 @@ type t = {
   bases: bases;
   decorators: Expression.t list;
   class_attributes: ClassAttributes.t;
+  type_params: Expression.TypeParam.t list;
 }
 [@@deriving equal, compare, sexp, show, hash]
 

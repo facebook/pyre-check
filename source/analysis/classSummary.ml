@@ -909,10 +909,12 @@ type t = {
   bases: bases;
   decorators: Expression.t list;
   class_attributes: ClassAttributes.t;
+  type_params: Expression.TypeParam.t list;
 }
 [@@deriving equal, compare, sexp, show, hash]
 
-let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
+let create ~qualifier ({ Ast.Statement.Class.name; decorators; type_params; _ } as class_definition)
+  =
   (* Pyre currently makes `type` generic. This seems incorrect, and in fact leads to some odd
      behaviors, but it also enum metaclass nonsense, but it also causes some strange behaviors in
      type inference (for example we will infer `type[Union[X, Y]]` in some cases). *)
@@ -933,7 +935,14 @@ let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_defi
       init_subclass_arguments = Ast.Statement.Class.init_subclass_arguments class_definition;
     }
   in
-  { name; qualifier; bases; decorators; class_attributes = ClassAttributes.create class_definition }
+  {
+    name;
+    qualifier;
+    bases;
+    decorators;
+    type_params;
+    class_attributes = ClassAttributes.create class_definition;
+  }
 
 
 let is_protocol { bases = { base_classes; _ }; _ } =
