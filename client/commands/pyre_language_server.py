@@ -111,6 +111,7 @@ class BuckTypeErrorsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class PyreBuckTypeErrorMetadata:
     number_files_buck_checked: int
+    type_checked_files: Set[Path]
     preempted: Optional[bool]
     durations: Dict[str, float]
     build_id: Optional[str]
@@ -126,7 +127,8 @@ class PyreBuckTypeErrorMetadata:
 
         daemon_type_error_set = {
             type_error
-            for file_errors in daemon_type_errors.values()
+            for file, file_errors in daemon_type_errors.items()
+            if file in self.type_checked_files
             for type_error in file_errors
         }
         return daemon_type_error_set == self.type_errors
@@ -622,6 +624,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         return {
             type_error.with_path(buck_root / type_error.path)
             for type_error in error_result.errors
+            if type_error.code != 0
         }
 
     def _process_buck_type_errors_from_stdout(
@@ -671,6 +674,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.error(message)
             return PyreBuckTypeErrorMetadata(
                 durations=buck_query_durations,
+                type_checked_files=set(),
                 preempted=None,
                 build_id=None,
                 number_files_buck_checked=0,
@@ -680,9 +684,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         stdout_decoded = stdout_data.decode("utf-8")
         query_data = json.loads(stdout_decoded)
-        type_checkable_files = [
-            file for file, is_type_checkable in query_data.items() if is_type_checkable
-        ]
+        type_checkable_files = {
+            Path(file)
+            for file, is_type_checkable in query_data.items()
+            if is_type_checkable
+        }
 
         buck_query_durations["typing_query_duration"] = (
             buck_query_timer.stop_in_millisecond()
@@ -693,6 +699,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.debug("No Buck type checkable files found")
             return PyreBuckTypeErrorMetadata(
                 durations=buck_query_durations,
+                type_checked_files=type_checkable_files,
                 preempted=None,
                 number_files_buck_checked=0,
                 build_id=None,
@@ -715,7 +722,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 *[
                     argument
                     for file in type_checkable_files
-                    for argument in ["--source", file]
+                    for argument in ["--source", str(file)]
                 ],
             ]
             type_check = await asyncio.create_subprocess_exec(
@@ -740,6 +747,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.error(message)
             return PyreBuckTypeErrorMetadata(
                 durations=buck_query_durations,
+                type_checked_files=type_checkable_files,
                 preempted=None,
                 build_id=build_id,
                 number_files_buck_checked=len(type_checkable_files),
@@ -767,6 +775,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         return PyreBuckTypeErrorMetadata(
             durations=buck_query_durations,
+            type_checked_files=type_checkable_files,
             preempted=was_preempted,
             build_id=build_id,
             number_files_buck_checked=len(type_checkable_files),
@@ -836,6 +845,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             pyre_buck_metadata = PyreBuckTypeErrorMetadata(
                 durations={},
+                type_checked_files=set(),
                 number_files_buck_checked=0,
                 build_id=None,
                 preempted=None,
@@ -870,6 +880,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "daemon_type_errors_correct": pyre_buck_metadata.do_daemon_type_errors_match(
                         daemon_type_errors.type_errors
                     ),
+                    # increment when there's "incompatible" data you need to filter out in a query
+                    "telemetry_version": 1,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
