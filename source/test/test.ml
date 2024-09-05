@@ -3665,19 +3665,45 @@ module MockClassHierarchyHandler = struct
     end : ClassHierarchy.Handler)
 
 
-  let connect ?(arguments = []) order ~predecessor ~successor =
+  (* A special variation of `connect` for the handful of test cases that need non-invariant type
+     variables. It can only be used to connect to a generic base class (Generic or Protocol). *)
+  let connect_with_variance order ~arguments_with_variances ~predecessor ~successor =
     let edges = order.edges in
     (* Compute the new parent information and possible updated generic metadata *)
-    let new_target = { ClassHierarchy.Target.target = successor; arguments } in
+    let new_target =
+      {
+        ClassHierarchy.Target.target = successor;
+        arguments = List.map arguments_with_variances ~f:(fun (argument, _) -> argument);
+      }
+    in
     let generic_metadata_from_this_successor =
+      let convert_variable_to_parameter_invariantly (variable, variance) =
+        match variable with
+        | Type.Variable.TypeVarVariable
+            { Type.Variable.TypeVar.name; constraints; variance = variable_variance; _ } ->
+            (* Sanity check that all the legacy tests relying on this are okay. *)
+            if not @@ Type.Record.Variance.equal variable_variance variance then
+              failwith "A legacy unit test is passing the wrong variance";
+            Type.GenericParameter.GpTypeVar { name; constraints; variance }
+        | Type.Variable.TypeVarTupleVariable _ as variable ->
+            Type.GenericParameter.GpTypeVarTuple { name = Type.Variable.name variable }
+        | Type.Variable.ParamSpecVariable _ as variable ->
+            Type.GenericParameter.GpParamSpec { name = Type.Variable.name variable }
+      in
       match successor with
       | "typing.Generic"
       | "typing.Protocol" -> (
-          match List.map ~f:Type.Argument.to_variable arguments |> Option.all with
-          | Some variables ->
+          match
+            List.map arguments_with_variances ~f:(fun (argument, variance) ->
+                match Type.Argument.to_variable argument with
+                | Some variable -> Some (variable, variance)
+                | None -> None)
+            |> Option.all
+          with
+          | Some variables_and_variances ->
               ClassHierarchy.GenericMetadata.GenericBase
-                (List.map ~f:Type.GenericParameter.of_variable variables)
-          | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase)
+                (List.map ~f:convert_variable_to_parameter_invariantly variables_and_variances)
+          | None -> failwith "The connect_with_variance helper may not be used on empty arguments")
       | _ -> ClassHierarchy.GenericMetadata.NotGeneric
     in
     (* Fold the new information into what is already there. Note that this operation is messy
@@ -3701,6 +3727,13 @@ module MockClassHierarchyHandler = struct
           { parents; generic_metadata }
     in
     Hashtbl.set edges ~key:predecessor ~data:predecessor_edges
+
+
+  let connect ?(arguments = []) order ~predecessor ~successor =
+    let arguments_with_variances =
+      List.map arguments ~f:(fun argument -> argument, Type.Record.Variance.Invariant)
+    in
+    connect_with_variance ~arguments_with_variances order ~predecessor ~successor
 
 
   let insert order annotation =
