@@ -694,8 +694,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         List.append through_protocol_hierarchy through_meta_hierarchy
     | _, Type.Parametric { name = right_name; arguments = right_arguments } ->
         let solve_respecting_variance constraints = function
-          | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right) -> (
-              match left, right, unary with
+          | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarZipResult { variance; left; right; _ }
+            -> (
+              match left, right, variance with
               (* TODO kill these special cases *)
               | Type.Bottom, _, _ ->
                   (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
@@ -705,37 +706,39 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
                   constraints
               | Top, _, _ -> impossible
-              | left, right, { Type.Variable.TypeVar.variance = Covariant; _ } ->
+              | left, right, Type.Record.Variance.Covariant ->
                   constraints
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
-              | left, right, { variance = Contravariant; _ } ->
+              | left, right, Type.Record.Variance.Contravariant ->
                   constraints
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left:right ~right:left)
-              | left, right, { variance = Invariant; _ } ->
+              | left, right, Type.Record.Variance.Invariant ->
                   constraints
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left:right ~right:left))
-          | Type.Variable.ParamSpecPair (_, left), Type.Variable.ParamSpecPair (_, right) ->
-              let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
-              let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
-              List.concat_map constraints ~f:(fun constraints ->
-                  solve_less_or_equal order ~constraints ~left ~right)
-          | Type.Variable.TypeVarTuplePair (_, left), Type.Variable.TypeVarTuplePair (_, right) ->
+          | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarTupleZipResult { left; right; _ } ->
               (* We assume variadic classes are covariant by default since they represent the
                  immutable shape of a datatype. *)
               constraints
               |> List.concat_map ~f:(fun constraints ->
                      solve_ordered_types_less_or_equal order ~left ~right ~constraints)
-          | _ -> impossible
+          | Type.GenericParameter.ZipTwoArgumentsLists.ParamSpecZipResult { left; right; _ } ->
+              let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
+              let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
+              List.concat_map constraints ~f:(fun constraints ->
+                  solve_less_or_equal order ~constraints ~left ~right)
+          | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedKindsZipResult _
+          | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedLengthsZipResult _
+          | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedVariadicZipResult _ ->
+              impossible
         in
         let solve_arguments left_arguments right_arguments =
           generic_parameters right_name
-          >>| List.map ~f:Type.GenericParameter.to_variable
-          >>= Type.Variable.zip_variables_with_two_argument_lists ~left_arguments ~right_arguments
+          >>| Type.GenericParameter.ZipTwoArgumentsLists.zip ~left_arguments ~right_arguments
           >>| List.fold ~f:solve_respecting_variance ~init:[constraints]
         in
         let left_arguments =
