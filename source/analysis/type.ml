@@ -3560,6 +3560,21 @@ module GenericParameter = struct
     [@@deriving compare, eq, sexp, show, hash]
 
 
+  let of_declaration declaration ~create_type =
+    match declaration with
+    | Variable.Declaration.DTypeVar { name; constraints; variance } ->
+        let constraints =
+          match constraints with
+          | Bound expression -> Record.TypeVarConstraints.Bound (create_type expression)
+          | Explicit expressions -> Explicit (List.map ~f:create_type expressions)
+          | Unconstrained -> Unconstrained
+          | LiteralIntegers -> LiteralIntegers
+        in
+        GpTypeVar { name; variance; constraints }
+    | Variable.Declaration.DTypeVarTuple { name } -> GpTypeVarTuple { name }
+    | Variable.Declaration.DParamSpec { name } -> GpParamSpec { name }
+
+
   let of_variable = function
     | Record.Variable.TypeVarVariable { Record.Variable.TypeVar.name; variance; constraints; _ } ->
         GpTypeVar

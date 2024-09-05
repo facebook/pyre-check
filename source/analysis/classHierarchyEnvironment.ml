@@ -34,6 +34,7 @@ module IncomingDataComputation = struct
         ?allow_untracked:bool ->
         Ast.Expression.t ->
         Type.t;
+      get_variable_declaration: string -> Type.Variable.Declaration.t option;
       get_variable: string -> Type.Variable.t option;
     }
   end
@@ -83,6 +84,7 @@ module IncomingDataComputation = struct
           class_exists;
           get_class_summary;
           parse_annotation_without_validating_type_parameters;
+          get_variable_declaration;
           get_variable;
           _;
         }
@@ -206,9 +208,19 @@ module IncomingDataComputation = struct
           | Some arguments -> (
               match List.map arguments ~f:Type.Argument.to_variable |> Option.all with
               | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase
-              | Some variables ->
-                  ClassHierarchy.GenericMetadata.GenericBase
-                    (List.map ~f:Type.GenericParameter.of_variable variables))
+              | Some generic_base_arguments_as_variables ->
+                  let parameters =
+                    let parameter_of_variable variable =
+                      Type.Variable.name variable
+                      |> get_variable_declaration
+                      >>| Type.GenericParameter.of_declaration ~create_type:(fun expression ->
+                              parse_annotation_without_validating_type_parameters
+                                ~variables:get_variable
+                                expression)
+                    in
+                    List.filter_map generic_base_arguments_as_variables ~f:parameter_of_variable
+                  in
+                  ClassHierarchy.GenericMetadata.GenericBase parameters)
         in
         Some { ClassHierarchy.Edges.parents; generic_metadata }
 end
@@ -284,6 +296,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
             TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               alias_environment
               ?dependency;
+          get_variable_declaration =
+            alias_environment |> TypeAliasEnvironment.ReadOnly.get_variable_declaration ?dependency;
           get_variable = alias_environment |> TypeAliasEnvironment.ReadOnly.get_variable ?dependency;
         }
     in

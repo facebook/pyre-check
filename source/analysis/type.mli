@@ -903,6 +903,8 @@ module GenericParameter : sig
     | GpParamSpec of { name: Identifier.t }
   [@@deriving compare, eq, sexp, show, hash]
 
+  val of_declaration : Variable.Declaration.t -> create_type:(Expression.t -> type_t) -> t
+
   val to_variable : t -> type_t Record.Variable.record
 
   val of_variable : type_t Record.Variable.record -> t
