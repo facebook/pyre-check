@@ -133,6 +133,7 @@ if sys.version_info >= (3, 11):
         name: str
         clsname: str
         member: Enum | None
+
     _magic_enum_attr = property
 else:
     _magic_enum_attr = types.DynamicClassAttribute
@@ -219,6 +220,7 @@ if sys.version_info >= (3, 11):
         CONTINUOUS: str
         NAMED_FLAGS: str
         UNIQUE: str
+
     CONTINUOUS = EnumCheck.CONTINUOUS
     NAMED_FLAGS = EnumCheck.NAMED_FLAGS
     UNIQUE = EnumCheck.UNIQUE
@@ -232,6 +234,7 @@ if sys.version_info >= (3, 11):
         CONFORM: str
         EJECT: str
         KEEP: str
+
     STRICT = FlagBoundary.STRICT
     CONFORM = FlagBoundary.CONFORM
     EJECT = FlagBoundary.EJECT
