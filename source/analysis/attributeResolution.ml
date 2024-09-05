@@ -2938,10 +2938,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     match tp.Node.value with
                     | Expression.TypeParam.TypeVar { name; _ } ->
                         Type.Variable.TypeVarVariable
-                          (Type.Variable.TypeVar.create
-                             ~constraints:Unconstrained
-                             ~variance:Invariant
-                             name)
+                          (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
                     | Expression.TypeParam.TypeVarTuple name ->
                         Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
                     | Expression.TypeParam.ParamSpec name ->

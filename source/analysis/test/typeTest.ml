@@ -21,7 +21,7 @@ let type_var_declaration_and_variable
     name
   =
   ( Type.Variable.Declaration.DTypeVar { name; constraints = declaration_constraints; variance },
-    Type.Variable.TypeVar.create name ~constraints:type_constraints ~variance )
+    Type.Variable.TypeVar.create name ~constraints:type_constraints )
 
 
 let resolved_aliases aliases ?replace_unbound_parameters_with_any:_ name =

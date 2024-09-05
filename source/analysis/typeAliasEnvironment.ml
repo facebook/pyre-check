@@ -210,7 +210,7 @@ module IncomingDataComputation = struct
             match parameter with
             | TypeParam.TypeVar { TypeParam.name; _ } ->
                 Type.Variable.TypeVarVariable
-                  (Type.Variable.TypeVar.create ~constraints:Unconstrained ~variance:Invariant name)
+                  (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
             | TypeParam.TypeVarTuple name ->
                 Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
             | TypeParam.ParamSpec name ->

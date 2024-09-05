@@ -1039,10 +1039,9 @@ let test_attribute_from_annotation =
            ~parent:"typing.Type[typing.Tuple[int, str, bool]]"
            ~name:"__call__"
            (Some
-              "BoundMethod[typing.Callable(tuple.__init__)[[Named(self, \
-               tuple[Variable[_T_co](covariant)]), Named(a, \
-               typing.List[Variable[_T_co](covariant)])], typing.Tuple[Variable[_T_co](covariant), \
-               ...]], typing.Tuple[Variable[_T_co](covariant), ...]]");
+              "BoundMethod[typing.Callable(tuple.__init__)[[Named(self, tuple[Variable[_T_co]]), \
+               Named(a, typing.List[Variable[_T_co]])], typing.Tuple[Variable[_T_co], ...]], \
+               typing.Tuple[Variable[_T_co], ...]]");
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~source:{|

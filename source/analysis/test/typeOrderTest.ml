@@ -257,8 +257,8 @@ let variance_order =
   (* Variance examples borrowed from https://www.python.org/dev/peps/pep-0483 *)
   let variable_t = Type.variable "_T" in
   let variable_t_2 = Type.variable "_T_2" in
-  let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
-  let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
+  let variable_t_co = Type.variable "_T_co" in
+  let variable_t_contra = Type.variable "_T_contra" in
   insert order "LinkedList";
   insert order "Map";
   insert order "Box";
@@ -339,8 +339,8 @@ let multiplane_variance_order =
   insert order "bool";
   connect order ~predecessor:"int" ~successor:"float";
   insert order "typing.Generic";
-  let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
-  let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
+  let variable_t_co = Type.variable "_T_co" in
+  let variable_t_contra = Type.variable "_T_contra" in
   insert order "A";
   insert order "B";
   insert order "C";
@@ -400,8 +400,8 @@ let parallel_planes_variance_order =
   insert order "object";
   connect order ~predecessor:"int" ~successor:"float";
   insert order "typing.Generic";
-  let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
-  let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
+  let variable_t_co = Type.variable "_T_co" in
+  let variable_t_contra = Type.variable "_T_contra" in
   insert order "A";
   insert order "B";
   insert order "C";
@@ -462,7 +462,7 @@ let default =
     ~successor:typing_mapping;
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
-  let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+  let variable_covariant = Type.variable "_T_co" in
   insert order "typing.Sequence";
   concrete_connect
     order
@@ -832,8 +832,7 @@ let test_less_or_equal =
       ~successor:typing_mapping;
     concrete_connect_with_variance
       order
-      ~arguments_with_variances:
-        [Type.variable "_T", Invariant; Type.variable ~variance:Covariant "_TCov", Covariant]
+      ~arguments_with_variances:[Type.variable "_T", Invariant; Type.variable "_TCov", Covariant]
       ~predecessor:typing_mapping
       ~successor:"typing.Generic";
     insert order "dict";
@@ -2069,8 +2068,8 @@ let test_join =
     Identifier.Table.of_alist_exn
       [
         "_T", Type.variable "_T";
-        "_T_co", Type.variable "_T_co" ~variance:Covariant;
-        "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
+        "_T_co", Type.variable "_T_co";
+        "_T_contra", Type.variable "_T_contra";
       ]
     |> Hashtbl.find
   in

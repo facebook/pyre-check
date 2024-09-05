@@ -3679,11 +3679,7 @@ module MockClassHierarchyHandler = struct
     let generic_metadata_from_this_successor =
       let convert_variable_to_parameter_invariantly (variable, variance) =
         match variable with
-        | Type.Variable.TypeVarVariable
-            { Type.Variable.TypeVar.name; constraints; variance = variable_variance; _ } ->
-            (* Sanity check that all the legacy tests relying on this are okay. *)
-            if not @@ Type.Record.Variance.equal variable_variance variance then
-              failwith "A legacy unit test is passing the wrong variance";
+        | Type.Variable.TypeVarVariable { Type.Variable.TypeVar.name; constraints; _ } ->
             Type.GenericParameter.GpTypeVar { name; constraints; variance }
         | Type.Variable.TypeVarTupleVariable _ as variable ->
             Type.GenericParameter.GpTypeVarTuple { name = Type.Variable.name variable }

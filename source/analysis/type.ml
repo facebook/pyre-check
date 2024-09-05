@@ -79,18 +79,13 @@ module Record = struct
       type 'annotation record = {
         name: Identifier.t;
         constraints: 'annotation TypeVarConstraints.t;
-        variance: Variance.t;
         state: state;
         namespace: Namespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      let create
-          ?(constraints = TypeVarConstraints.Unconstrained)
-          ?(variance = Variance.Invariant)
-          name
-        =
-        { name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
+      let create ?(constraints = TypeVarConstraints.Unconstrained) name =
+        { name; constraints; state = Free { escaped = false }; namespace = 0 }
     end
 
     module ParamSpec = struct
@@ -485,9 +480,7 @@ module Constructors = struct
     | _ -> union [NoneType; argument]
 
 
-  let variable ?constraints ?variance name =
-    Variable (Record.Variable.TypeVar.create ?constraints ?variance name)
-
+  let variable ?constraints name = Variable (Record.Variable.TypeVar.create ?constraints name)
 
   let yield argument = Parametric { name = "Yield"; arguments = [Single argument] }
 
@@ -1105,7 +1098,7 @@ module PrettyPrinting = struct
     module TypeVar = struct
       open Record.Variable.TypeVar
 
-      let pp_concise format { name; constraints; variance; _ } ~pp_type =
+      let pp_concise format { name; constraints; _ } ~pp_type =
         let description =
           match constraints with
           | Bound _
@@ -1125,19 +1118,7 @@ module PrettyPrinting = struct
           | Unconstrained -> ""
           | LiteralIntegers -> ""
         in
-        let variance =
-          match variance with
-          | Covariant -> "(covariant)"
-          | Contravariant -> "(contravariant)"
-          | Invariant -> ""
-        in
-        Format.fprintf
-          format
-          "%s[%s%s]%s"
-          description
-          (Identifier.sanitized name)
-          constraints
-          variance
+        Format.fprintf format "%s[%s%s]" description (Identifier.sanitized name) constraints
     end
 
     module ParamSpec = struct
@@ -3240,7 +3221,7 @@ module Variable = struct
 
   let of_declaration declaration ~create_type =
     match declaration with
-    | Declaration.DTypeVar { name; constraints; variance } ->
+    | Declaration.DTypeVar { name; constraints; _ } ->
         let constraints =
           match constraints with
           | Bound expression -> Record.TypeVarConstraints.Bound (create_type expression)
@@ -3248,7 +3229,7 @@ module Variable = struct
           | Unconstrained -> Unconstrained
           | LiteralIntegers -> LiteralIntegers
         in
-        TypeVarVariable (TypeVar.create ~constraints ~variance name)
+        TypeVarVariable (TypeVar.create ~constraints name)
     | Declaration.DParamSpec { name } -> ParamSpecVariable (ParamSpec.create name)
     | Declaration.DTypeVarTuple { name } -> TypeVarTupleVariable (TypeVarTuple.create name)
 
@@ -3546,13 +3527,8 @@ module GenericParameter = struct
 
 
   let to_variable = function
-    | GpTypeVar
-        {
-          name : Identifier.t;
-          variance : Record.Variance.t;
-          constraints : T.t Record.TypeVarConstraints.t;
-        } ->
-        Record.Variable.TypeVarVariable (Record.Variable.TypeVar.create ~variance ~constraints name)
+    | GpTypeVar { name : Identifier.t; constraints : T.t Record.TypeVarConstraints.t; _ } ->
+        Record.Variable.TypeVarVariable (Record.Variable.TypeVar.create ~constraints name)
     | GpTypeVarTuple { name : Identifier.t } ->
         Record.Variable.TypeVarTupleVariable (Record.Variable.TypeVarTuple.create name)
     | GpParamSpec { name : Identifier.t } ->
@@ -3573,20 +3549,6 @@ module GenericParameter = struct
         GpTypeVar { name; variance; constraints }
     | Variable.Declaration.DTypeVarTuple { name } -> GpTypeVarTuple { name }
     | Variable.Declaration.DParamSpec { name } -> GpParamSpec { name }
-
-
-  let of_variable = function
-    | Record.Variable.TypeVarVariable { Record.Variable.TypeVar.name; variance; constraints; _ } ->
-        GpTypeVar
-          {
-            name : Identifier.t;
-            variance : Record.Variance.t;
-            constraints : T.t Record.TypeVarConstraints.t;
-          }
-    | Record.Variable.TypeVarTupleVariable { Record.Variable.TypeVarTuple.name; _ } ->
-        GpTypeVarTuple { name }
-    | Record.Variable.ParamSpecVariable { Record.Variable.ParamSpec.name; _ } ->
-        GpParamSpec { name }
 
 
   let look_up_variance parameters =

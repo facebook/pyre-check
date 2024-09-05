@@ -39,7 +39,6 @@ module Record : sig
       type 'annotation record = {
         name: Identifier.t;
         constraints: 'annotation TypeVarConstraints.t;
-        variance: Variance.t;
         state: state;
         namespace: Namespace.t;
       }
@@ -747,11 +746,7 @@ module Variable : sig
 
     include VariableKind with type t = unary_t and type domain = type_t
 
-    val create
-      :  ?constraints:type_t Record.TypeVarConstraints.t ->
-      ?variance:Record.Variance.t ->
-      string ->
-      t
+    val create : ?constraints:type_t Record.TypeVarConstraints.t -> string -> t
 
     val upper_bound : t -> type_t
 
@@ -907,8 +902,6 @@ module GenericParameter : sig
 
   val to_variable : t -> type_t Record.Variable.record
 
-  val of_variable : type_t Record.Variable.record -> t
-
   val look_up_variance : t list -> Identifier.t -> Record.Variance.t option
 
   module ZipTwoArgumentsLists : sig
@@ -956,11 +949,7 @@ end
 
 val namespace_insensitive_compare : t -> t -> int
 
-val variable
-  :  ?constraints:type_t Record.TypeVarConstraints.t ->
-  ?variance:Record.Variance.t ->
-  string ->
-  t
+val variable : ?constraints:type_t Record.TypeVarConstraints.t -> string -> t
 
 val is_concrete : t -> bool
 

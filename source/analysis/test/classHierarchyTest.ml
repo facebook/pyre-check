@@ -273,7 +273,7 @@ let parametric_order_base =
   let open MockClassHierarchyHandler in
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
-  let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+  let variable_covariant = Type.variable "_T_co" in
   insert order "typing.Generic";
   insert order "int";
   insert order "str";

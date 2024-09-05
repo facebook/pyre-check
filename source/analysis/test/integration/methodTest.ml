@@ -728,8 +728,8 @@ let test_check_method_parameters =
            [
              "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
              "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
-              positional argument, expected `Tuple[Type[Variable[_KT]], \
-              Type[Variable[_VT_co](covariant)]]` but got `Type[int]`.";
+              positional argument, expected `Tuple[Type[Variable[_KT]], Type[Variable[_VT_co]]]` \
+              but got `Type[int]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
@@ -2400,8 +2400,7 @@ let test_check_callable_protocols =
             |}
            [
              "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional \
-              argument, expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, \
-              None]`.";
+              argument, expected `List[Variable[_T_co]]` but got `Generator[int, None, None]`.";
            ];
       (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
          errors. *)
@@ -2413,8 +2412,7 @@ let test_check_callable_protocols =
             |}
            [
              "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional \
-              argument, expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, \
-              None]`.";
+              argument, expected `List[Variable[_T_co]]` but got `Generator[int, None, None]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
