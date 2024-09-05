@@ -7,7 +7,7 @@
 
 (* Main pyre entry point for Buck *)
 
-let commands () = [Buck_commands.Check.command ()]
+let commands () = [Buck_commands.Check.command (); Buck_commands.Glean.command ()]
 
 let run () =
   let open Cmdliner in

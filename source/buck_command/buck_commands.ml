@@ -6,6 +6,7 @@
  *)
 
 module Check = CheckCommand
+module Glean = GleanCommand
 
 module Testing = struct
   module Manifest = Manifest
