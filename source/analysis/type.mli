@@ -908,6 +908,48 @@ module GenericParameter : sig
   val of_variable : type_t Record.Variable.record -> t
 
   val look_up_variance : t list -> Identifier.t -> Record.Variance.t option
+
+  module ZipTwoArgumentsLists : sig
+    type result =
+      | TypeVarZipResult of {
+          name: Identifier.t;
+          variance: Record.Variance.t;
+          left: type_t;
+          right: type_t;
+        }
+      | TypeVarTupleZipResult of {
+          name: Identifier.t;
+          left: type_t Record.OrderedTypes.record;
+          right: type_t Record.OrderedTypes.record;
+        }
+      | ParamSpecZipResult of {
+          name: Identifier.t;
+          left: type_t Record.Callable.record_parameters;
+          right: type_t Record.Callable.record_parameters;
+        }
+      | MismatchedKindsZipResult of {
+          parameter: t;
+          left: type_t Record.Argument.record;
+          right: type_t Record.Argument.record;
+        }
+      | MismatchedLengthsZipResult of {
+          remaining_parameters: t list;
+          remaining_left: type_t Record.Argument.record list;
+          remaining_right: type_t Record.Argument.record list;
+        }
+      | MismatchedVariadicZipResult of {
+          parameter: t;
+          left: type_t Record.Argument.record list;
+          right: type_t Record.Argument.record list;
+        }
+    [@@deriving compare, sexp, show]
+
+    val zip
+      :  left_arguments:type_t Record.Argument.record list ->
+      right_arguments:type_t Record.Argument.record list ->
+      t list ->
+      result list
+  end
 end
 
 val namespace_insensitive_compare : t -> t -> int

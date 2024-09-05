@@ -3539,6 +3539,12 @@ module GenericParameter = struct
     | GpParamSpec of { name: Identifier.t }
   [@@deriving compare, eq, sexp, show, hash]
 
+  let parameter_name = function
+    | GpTypeVar { name; _ } -> name
+    | GpTypeVarTuple { name } -> name
+    | GpParamSpec { name } -> name
+
+
   let to_variable = function
     | GpTypeVar
         {
@@ -3577,6 +3583,167 @@ module GenericParameter = struct
       List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
     in
     fun variable_name -> Map.find variance_by_name variable_name
+
+
+  (* A zip function + result type used when we need to use type paramter information of a type
+   * constructor to compare two specializations of that type constructor: we want to zip the
+   * two argument lists * up with the parameters.
+   *
+   * All structural mismatches are represented directly a variants:
+   * - mismatched "kinds" i.e.  type_var vs type_var_tuple vs param_spec, which produces a
+   *   `MismatchedKindsZipResult` and keeps a record of what was mismatched
+   *   (invariant: at least two of the three entries failed to match)
+   * - mismatched lengths; we include the unmatched bits in the result
+   *   (invariant: at least one of the three lists is empty and at least one is nonempty)
+   * - a failure to match a type_var_tuple; in this case we stop trying to check lengths,
+   *   but produce a MismatchedVariadicZipResult.
+   *)
+  module ZipTwoArgumentsLists = struct
+    type result =
+      | TypeVarZipResult of {
+          name: Identifier.t;
+          variance: Record.Variance.t;
+          left: T.t;
+          right: T.t;
+        }
+      | TypeVarTupleZipResult of {
+          name: Identifier.t;
+          left: T.t Record.OrderedTypes.record;
+          right: T.t Record.OrderedTypes.record;
+        }
+      | ParamSpecZipResult of {
+          name: Identifier.t;
+          left: T.t Record.Callable.record_parameters;
+          right: T.t Record.Callable.record_parameters;
+        }
+      | MismatchedKindsZipResult of {
+          parameter: t;
+          left: T.t Record.Argument.record;
+          right: T.t Record.Argument.record;
+        }
+      | MismatchedLengthsZipResult of {
+          remaining_parameters: t list;
+          remaining_left: T.t Record.Argument.record list;
+          remaining_right: T.t Record.Argument.record list;
+        }
+      | MismatchedVariadicZipResult of {
+          parameter: t;
+          left: T.t Record.Argument.record list;
+          right: T.t Record.Argument.record list;
+        }
+    [@@deriving compare, sexp, show]
+
+    let all_singles_or_bad_argument arguments =
+      let single_or_bad_argument = function
+        | Record.Argument.Single ty -> Either.first ty
+        | (Record.Argument.Unpacked _ | Record.Argument.CallableParameters _) as argument ->
+            Either.Second argument
+      in
+      let good_arguments, bad_arguments = List.partition_map ~f:single_or_bad_argument arguments in
+      match bad_arguments with
+      | [] -> Result.Ok good_arguments
+      | non_single_arguments -> Result.Error non_single_arguments
+
+
+    (* A variadic parameter can match either an unpacked argument, or an arbitrary number of Single
+       arguments. There can never be more than one variadic parameter in a parameters list (this
+       invariant is not currently expressed in our ocaml datatypes but is known), so the number of
+       Single arguments to match can be determined by *)
+    let match_arguments_against_variadic_parameter arguments parameters_suffix_length =
+      let matching_arguments, remaining_arguments =
+        let n_arguments_to_match = List.length arguments - parameters_suffix_length in
+        List.split_n arguments n_arguments_to_match
+      in
+      match OrderedTypes.concatenation_from_arguments matching_arguments with
+      (* The matching arguments are a concatenation: there's one Unpack and possibly some suffix
+         and/or prefix of Singles *)
+      | Some ordered_type -> Result.Ok (ordered_type, remaining_arguments)
+      (* The matching arguments are either all single, or are a structural mismatch. Determine which
+         and return accordingly. *)
+      | None -> (
+          match all_singles_or_bad_argument matching_arguments with
+          | Result.Ok types -> Result.Ok (OrderedTypes.Concrete types, remaining_arguments)
+          | Result.Error non_single_arguments -> Result.Error non_single_arguments)
+
+
+    let zip ~left_arguments ~right_arguments parameters =
+      (* Consume a chunk of an arguments list matching a TypeVarTuple, producing: - a
+         `TypeVarTupleZipResult` with the remaining left and right arguments on success - a
+         `MismatchedVariadicZipResult` if the structural match fails. *)
+      let zip_type_var_tuple_parameter
+          ~parameter
+          ~parameters_remaining
+          ~left_arguments
+          ~right_arguments
+        =
+        let parameters_suffix_length = List.length parameters_remaining in
+        (* Note that we are passing `left_arguments` and `right_arguments` here, not
+           `left_remaining` and `right_remaining`: the current argument is included. *)
+        match
+          ( match_arguments_against_variadic_parameter left_arguments parameters_suffix_length,
+            match_arguments_against_variadic_parameter right_arguments parameters_suffix_length )
+        with
+        | Result.Ok (left, left_after_unpack), Result.Ok (right, right_after_unpack) ->
+            ( TypeVarTupleZipResult { name = parameter_name parameter; left; right },
+              left_after_unpack,
+              right_after_unpack )
+        | Result.Error left_mismatches, Result.Error right_mismatches ->
+            ( MismatchedVariadicZipResult
+                { parameter; left = left_mismatches; right = right_mismatches },
+              [],
+              [] )
+        | Result.Error left_mismatches, Result.Ok _ ->
+            MismatchedVariadicZipResult { parameter; left = left_mismatches; right = [] }, [], []
+        | Result.Ok _, Result.Error right_mismatches ->
+            MismatchedVariadicZipResult { parameter; left = []; right = right_mismatches }, [], []
+      in
+
+      let rec recur (so_far : result list) parameters left_arguments right_arguments =
+        match parameters, left_arguments, right_arguments with
+        (* Recursive case: drop structural mismatches then keep going *)
+        | ( parameter :: parameters_remaining,
+            left_argument :: left_remaining,
+            right_argument :: right_remaining ) ->
+            let so_far, left_remaining, right_remaining =
+              match parameter, left_argument, right_argument with
+              | ( GpTypeVar { name; variance; _ },
+                  Record.Argument.Single left,
+                  Record.Argument.Single right ) ->
+                  ( TypeVarZipResult { name; variance; left; right } :: so_far,
+                    left_remaining,
+                    right_remaining )
+              | (GpTypeVarTuple _ as parameter), _, _ ->
+                  let zip_item, left_after_unpack, right_after_unpack =
+                    zip_type_var_tuple_parameter
+                      ~parameter
+                      ~parameters_remaining
+                      ~left_arguments
+                      ~right_arguments
+                  in
+                  zip_item :: so_far, left_after_unpack, right_after_unpack
+              | ( GpParamSpec { name; _ },
+                  Record.Argument.CallableParameters left,
+                  Record.Argument.CallableParameters right ) ->
+                  ( ParamSpecZipResult { name; left; right } :: so_far,
+                    left_remaining,
+                    right_remaining )
+              | _, _, _ ->
+                  ( MismatchedKindsZipResult
+                      { parameter; left = left_argument; right = right_argument }
+                    :: so_far,
+                    left_remaining,
+                    right_remaining )
+            in
+            recur so_far parameters_remaining left_remaining right_remaining
+        (* Base case when lengths match *)
+        | [], [], [] -> so_far
+        (* Base case when lengths do not match *)
+        | remaining_parameters, remaining_left, remaining_right ->
+            MismatchedLengthsZipResult { remaining_parameters; remaining_left; remaining_right }
+            :: so_far
+      in
+      recur [] parameters left_arguments right_arguments |> List.rev
+  end
 end
 
 module ToExpression = struct
