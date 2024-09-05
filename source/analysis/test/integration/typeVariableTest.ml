@@ -4459,6 +4459,303 @@ let test_nested_generic_defines =
     ]
 
 
+(* Pyre currently allows importing type variables, with some subtle limitations and some surprising
+   implications for how data flows through TypeAliasEnvironment. These tests document the behavior
+   and provide a guard against unintended regressions (production code does rely on behaviors that
+   may never have been intended *)
+let test_importing_type_variables =
+  let other_sources =
+    [
+      {
+        Test.handle = "defines_variables.py";
+        source =
+          {|
+                from typing import TypeVar, TypeVarTuple, ParamSpec
+
+                T = TypeVar("T")
+                P = ParamSpec("P")
+                Ts = TypeVarTuple("Ts")
+            |};
+      };
+      {
+        Test.handle = "re_exports_variables.py";
+        source = {|
+                from defines_variables import T, P, Ts
+            |};
+      };
+      {
+        Test.handle = "re_re_exports_variables.py";
+        source = {|
+                from re_exports_variables import T, P, Ts
+            |};
+      };
+      {
+        Test.handle = "re_re_re_exports_variables.py";
+        source = {|
+                from re_exports_variables import T, P, Ts
+            |};
+      };
+    ]
+  in
+  test_list
+    [
+      (* Using an imported type variable in a function works, even for re-exports. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from defines_variables import T
+
+            def foo(x: T) -> T:
+                return x
+
+            x: int
+            reveal_type(foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from re_exports_variables import T
+
+            def foo(x: T) -> T:
+                return x
+
+            x: int
+            reveal_type(foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from re_re_re_exports_variables import T
+
+            def foo(x: T) -> T:
+                return x
+
+            x: int
+            reveal_type(foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
+      (* Using an imported type var tuple in a function works even for re-exports *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from defines_variables import Ts
+
+            def foo(x: tuple[int, *Ts]) -> tuple[bool, *Ts]: ...
+
+            x: tuple[int, str, bool]
+            reveal_type(foo(x))
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(x)` is `typing.Tuple[bool, str, \
+              bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from re_exports_variables import Ts
+
+            def foo(x: tuple[int, *Ts]) -> tuple[bool, *Ts]: ...
+
+            x: tuple[int, str, bool]
+            reveal_type(foo(x))
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(x)` is `typing.Tuple[bool, str, \
+              bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from re_re_re_exports_variables import Ts
+
+            def foo(x: tuple[int, *Ts]) -> tuple[bool, *Ts]: ...
+
+            x: tuple[int, str, bool]
+            reveal_type(foo(x))
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(x)` is `typing.Tuple[bool, str, \
+              bool]`.";
+           ];
+      (* Using an imported param spec in a function works even for re-exports *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Callable
+            from defines_variables import P
+
+            def foo(f: Callable[P, int]) -> Callable[P, list[int]]: ...
+
+            callback: Callable[[int, str], int]
+
+            reveal_type(foo(callback))
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(callback)` is `typing.Callable[[int, \
+              str], typing.List[int]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Callable
+            from re_exports_variables import P
+
+            def foo(f: Callable[P, int]) -> Callable[P, list[int]]: ...
+
+            callback: Callable[[int, str], int]
+
+            reveal_type(foo(callback))
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(callback)` is `typing.Callable[[int, \
+              str], typing.List[int]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+              from typing import Callable
+              from re_re_re_exports_variables import P
+  
+              def foo(f: Callable[P, int]) -> Callable[P, list[int]]: ...
+  
+              callback: Callable[[int, str], int]
+  
+              reveal_type(foo(callback))
+          |}
+           [
+             "Revealed type [-1]: Revealed type for `test.foo(callback)` is `typing.Callable[[int, \
+              str], typing.List[int]]`.";
+           ];
+      (* Using a type variable in a generic class should work even for re-exports *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic
+            from defines_variables import T
+
+            class Foo(Generic[T]):
+              def __init__(self, x: T) -> None:
+                self.x = x
+
+            x: int
+            reveal_type(Foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.Foo(x)` is `Foo[int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic
+            from re_exports_variables import T
+
+            class Foo(Generic[T]):
+              def __init__(self, x: T) -> None:
+                self.x = x
+
+            x: int
+            reveal_type(Foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.Foo(x)` is `Foo[int]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic
+            from re_re_re_exports_variables import T
+
+            class Foo(Generic[T]):
+              def __init__(self, x: T) -> None:
+                self.x = x
+
+            x: int
+            reveal_type(Foo(x))
+        |}
+           ["Revealed type [-1]: Revealed type for `test.Foo(x)` is `Foo[int]`."];
+      (* Using type var tuple and param spec should work even for re-exports *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic, Callable
+            from defines_variables import P, Ts
+
+            class Tensor(Generic[P, *Ts]):
+              def __init__(self, f: Callable[P, int], shape: tuple[*Ts]) -> None:
+                self.f = f
+                self.shape = shape
+
+
+            def bar() -> None:
+              tensor: Tensor[[int, str], int, str]
+              reveal_type(tensor.shape)
+              y = tensor.f(*tensor.shape)
+              reveal_type(y)
+        |}
+           [
+             "Revealed type [-1]: Revealed type for `tensor.shape` is `typing.Tuple[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic, Callable
+            from re_exports_variables import T, P, Ts
+
+            class Tensor(Generic[P, *Ts]):
+              def __init__(self, f: Callable[P, int], shape: tuple[*Ts]) -> None:
+                self.f = f
+                self.shape = shape
+
+
+            def bar() -> None:
+              tensor: Tensor[[int, str], int, str]
+              reveal_type(tensor.shape)
+              y = tensor.f(*tensor.shape)
+              reveal_type(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `tensor.shape` is `typing.Tuple[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources
+           {|
+            from typing import Generic, Callable
+            from re_re_re_exports_variables import T, P, Ts
+
+            class Tensor(Generic[P, *Ts]):
+              def __init__(self, f: Callable[P, int], shape: tuple[*Ts]) -> None:
+                self.f = f
+                self.shape = shape
+
+
+            def bar() -> None:
+              tensor: Tensor[[int, str], int, str]
+              reveal_type(tensor.shape)
+              y = tensor.f(*tensor.shape)
+              reveal_type(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `tensor.shape` is `typing.Tuple[int, str]`.";
+             "Revealed type [-1]: Revealed type for `y` is `int`.";
+           ];
+    ]
+
+
 let () =
   "typeVariable"
   >::: [
@@ -4484,5 +4781,6 @@ let () =
          test_variadic_callables;
          test_self_type;
          test_nested_generic_defines;
+         test_importing_type_variables;
        ]
   |> Test.run

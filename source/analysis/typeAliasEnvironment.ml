@@ -45,20 +45,16 @@ module IncomingDataComputation = struct
   module UnresolvedAlias = struct
     type t = {
       value: Expression.t;
-      target: Reference.t;
       variables: (string -> Type.Variable.t option) option;
     }
 
-    let unchecked_resolve ~unparsed ~target ~variables ~aliases =
+    let unchecked_resolve ~unparsed ~variables ~aliases =
       let resolved_aliases ?replace_unbound_parameters_with_any:_ name =
         match aliases name with
         | Some (RawAlias.TypeAlias t) -> Some t
         | _ -> None
       in
-
-      match Type.create ~variables ~aliases:resolved_aliases unparsed with
-      | Type.Variable variable -> Type.Variable { variable with name = Reference.show target }
-      | annotation -> annotation
+      Type.create ~variables ~aliases:resolved_aliases unparsed
 
 
     type check_result =
@@ -68,7 +64,7 @@ module IncomingDataComputation = struct
           dependencies: string list;
         }
 
-    let checked_resolve Queries.{ class_exists; module_exists; _ } { value; target; variables } =
+    let checked_resolve Queries.{ class_exists; module_exists; _ } { value; variables } =
       let variables =
         match variables with
         | Some variables -> variables
@@ -76,7 +72,7 @@ module IncomingDataComputation = struct
       in
 
       let aliases ?replace_unbound_parameters_with_any:_ _name = None in
-      let value_annotation = unchecked_resolve ~unparsed:value ~target ~variables ~aliases in
+      let value_annotation = unchecked_resolve ~unparsed:value ~variables ~aliases in
       let dependencies = String.Hash_set.create () in
       let module TrackedTransform = Type.VisitWithTransform.Make (struct
         type state = unit
@@ -167,7 +163,7 @@ module IncomingDataComputation = struct
               || Type.contains_unknown value_annotation
               || Type.equal value_annotation target_annotation)
           then
-            Some (ExtractedAlias { target = name; value; variables })
+            Some (ExtractedAlias { value; variables })
           else
             None
       | _ -> None
@@ -202,7 +198,7 @@ module IncomingDataComputation = struct
                 None
             | _ ->
                 let value = from_reference ~location:Location.any original_name_of_alias in
-                Some (ExtractedAlias { target = name; value; variables = None }))
+                Some (ExtractedAlias { value; variables = None }))
       | TupleAssign _
       | Class
       | Define _ ->
@@ -269,7 +265,7 @@ module IncomingDataComputation = struct
           | ExtractedAlias unresolved -> (
               match UnresolvedAlias.checked_resolve queries unresolved with
               | Resolved alias -> Some alias
-              | HasDependents { unparsed; dependencies } ->
+              | HasDependents { unparsed; dependencies } -> (
                   let solve_pair dependency =
                     get_aliased_type_for (Reference.create dependency) ~visited
                     >>| fun solution -> dependency, solution
@@ -302,12 +298,47 @@ module IncomingDataComputation = struct
                         Some type_variables
                     | _ -> None
                   in
-                  UnresolvedAlias.unchecked_resolve
-                    ~target:current
-                    ~unparsed
-                    ~variables:variable_aliases
-                    ~aliases
-                  |> fun alias -> RawAlias.TypeAlias alias)
+                  match
+                    UnresolvedAlias.unchecked_resolve ~unparsed ~variables:variable_aliases ~aliases
+                  with
+                  | Type.Variable { name; _ } as bare_variable -> (
+                      (* Because the raw extract_alias code cannot resolve multiple import hops at
+                         once, there's a case where we can have an `ExtractedAlias` that is
+                         ulitmately just a chain of imports of a variable declaration. In order for
+                         the rest of Pyre to predictably reason about the behavior of
+                         `get_declaration` and `get_variable`, it is important that we catch that
+                         case here rather than allowing the cache table to treat the import chain as
+                         a TypeAlias resolving to a bare Type.Variable. *)
+                      match aliases name with
+                      | Some (RawAlias.VariableDeclaration _ as declaration) -> declaration
+                      | Some non_variable_alias ->
+                          (* This case may not be possible (we know the None case is happening), but
+                             if we do encounter it we log an error and proceed. *)
+                          Log.error
+                            "TypeAliasEnvironment resolved type variable with name %s to an alias \
+                             %a that is not a declaration when resolving the symbol %a. This \
+                             should not occur and will cause downstream generic classes to be \
+                             poorly understood by Pyre."
+                            name
+                            RawAlias.pp
+                            non_variable_alias
+                            Reference.pp
+                            current;
+                          non_variable_alias
+                      | None ->
+                          (* This case is known to be possible because it happens in production,
+                             although we do not understand why yet. Log an error, which will help us
+                             track this problem down, and proceed. *)
+                          Log.error
+                            "TypeAliasEnvironment could not resolve type variable with name %s to \
+                             a declaration when resolving the symbol %a. This should not occur, \
+                             and may cause downstream generic classes to be poorly understood by \
+                             Pyre."
+                            name
+                            Reference.pp
+                            current;
+                          RawAlias.TypeAlias bare_variable)
+                  | resolved_alias -> RawAlias.TypeAlias resolved_alias))
         in
         extract_alias queries current
         >>= resolve_after_resolving_dependencies
