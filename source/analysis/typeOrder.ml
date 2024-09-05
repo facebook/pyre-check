@@ -233,25 +233,22 @@ module OrderImplementation = struct
               let handle_target target =
                 let left_arguments = instantiate_successors_parameters ~source:left ~target in
                 let right_arguments = instantiate_successors_parameters ~source:right ~target in
-                let variables =
-                  generic_parameters target >>| List.map ~f:Type.GenericParameter.to_variable
-                in
                 let join_arguments_respecting_variance = function
-                  | Type.Variable.TypeVarPair (unary, left), Type.Variable.TypeVarPair (_, right)
-                    -> (
-                      match left, right, unary with
+                  | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarZipResult
+                      { variance; left; right; _ } -> (
+                      match left, right, variance with
                       | Type.Bottom, other, _
                       | other, Type.Bottom, _ ->
                           Some other
                       | Type.Top, _, _
                       | _, Type.Top, _ ->
                           Some Type.Top
-                      | left, right, { variance = Covariant; _ } -> Some (join order left right)
-                      | left, right, { variance = Contravariant; _ } -> (
+                      | left, right, Type.Record.Variance.Covariant -> Some (join order left right)
+                      | left, right, Type.Record.Variance.Contravariant -> (
                           match meet order left right with
                           | Type.Bottom -> None
                           | not_bottom -> Some not_bottom)
-                      | left, right, { variance = Invariant; _ } ->
+                      | left, right, Type.Record.Variance.Invariant ->
                           if
                             always_less_or_equal order ~left ~right
                             && always_less_or_equal order ~left:right ~right:left
@@ -259,26 +256,29 @@ module OrderImplementation = struct
                             Some left
                           else
                             None)
-                  | Type.Variable.TypeVarTuplePair _, Type.Variable.TypeVarTuplePair _
-                  | Type.Variable.ParamSpecPair _, Type.Variable.ParamSpecPair _ ->
+                  | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarTupleZipResult _
+                  | Type.GenericParameter.ZipTwoArgumentsLists.ParamSpecZipResult _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
                       None
-                  | _ -> None
+                  | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedKindsZipResult _
+                  | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedLengthsZipResult _
+                  | Type.GenericParameter.ZipTwoArgumentsLists.MismatchedVariadicZipResult _ ->
+                      None
                 in
-                match left_arguments, right_arguments, variables with
-                | Some left_arguments, Some right_arguments, Some variables ->
+                match left_arguments, right_arguments, generic_parameters target with
+                | Some left_arguments, Some right_arguments, Some parameters ->
                     let replace_free_unary_variables_with_top =
                       let replace_if_free variable =
                         Option.some_if (Type.Variable.TypeVar.is_free variable) Type.Top
                       in
                       Type.Variable.GlobalTransforms.TypeVar.replace_all replace_if_free
                     in
-                    Type.Variable.zip_variables_with_two_argument_lists
+                    Type.GenericParameter.ZipTwoArgumentsLists.zip
                       ~left_arguments
                       ~right_arguments
-                      variables
-                    >>| List.map ~f:join_arguments_respecting_variance
-                    >>= Option.all
+                      parameters
+                    |> List.map ~f:join_arguments_respecting_variance
+                    |> Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top
                     >>| List.map ~f:(fun single -> Type.Argument.Single single)
                     >>| fun arguments -> Type.parametric target arguments
