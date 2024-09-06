@@ -152,9 +152,30 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~callable:({ Type.Callable.implementation; overloads; _ } as _callable)
       ~called_as
       ~constraints
+      ~get_typed_dictionary
     =
     let open Callable in
     let solve implementation ~initial_constraints =
+      let get_kwargs_type parameters =
+        let has_kwargs =
+          List.exists ~f:(fun parameter ->
+              match parameter with
+              | CallableParamType.Keywords _ -> true
+              | _ -> false)
+        in
+        let has_unpacked_kwargs =
+          List.exists ~f:(fun parameter ->
+              match parameter with
+              | CallableParamType.Keywords annotation -> Type.is_unpack annotation
+              | _ -> false)
+        in
+        if has_unpacked_kwargs parameters then
+          `UnpackedKwargs
+        else if has_kwargs parameters then
+          `RegularKwargs
+        else
+          `NoKwargs
+      in
       try
         let rec solve_parameters_against_tuple_variadic
             ~is_lower_bound
@@ -216,6 +237,10 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           >>| List.concat_map ~f:solve_remaining_parameters
           |> Option.value ~default:impossible
         and solve_parameters ~left_parameters ~right_parameters constraints =
+          let expand_typed_dictionary_parameters =
+            List.map ~f:(fun { Type.TypedDictionary.name; annotation; required } ->
+                CallableParamType.KeywordOnly { name; annotation; default = not required })
+          in
           match left_parameters, right_parameters with
           | CallableParamType.PositionalOnly _ :: _, CallableParamType.Named _ :: _ -> []
           | ( CallableParamType.PositionalOnly { annotation = left_annotation; _ } :: left_parameters,
@@ -226,10 +251,61 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               :: right_parameters ) ->
               solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
               |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-          | ( CallableParamType.Variable (Concrete left_annotation) :: left_parameters,
-              CallableParamType.Variable (Concrete right_annotation) :: right_parameters )
           | ( CallableParamType.Keywords left_annotation :: left_parameters,
-              CallableParamType.Keywords right_annotation :: right_parameters ) ->
+              CallableParamType.Keywords right_annotation :: right_parameters ) -> (
+              match Type.unpack_value left_annotation, Type.unpack_value right_annotation with
+              | Some left_annotation, Some right_annotation ->
+                  solve_less_or_equal
+                    order
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              | _, Some right_annotation -> (
+                  match get_typed_dictionary right_annotation with
+                  | None -> impossible
+                  | Some { Type.TypedDictionary.fields; _ } ->
+                      solve_parameters
+                        ~left_parameters
+                        ~right_parameters:
+                          (expand_typed_dictionary_parameters fields @ right_parameters)
+                        constraints)
+              | Some left_annotation, _ -> (
+                  match get_typed_dictionary left_annotation with
+                  | None -> impossible
+                  | Some { Type.TypedDictionary.fields; _ } ->
+                      solve_parameters
+                        ~left_parameters:
+                          (expand_typed_dictionary_parameters fields @ left_parameters)
+                        ~right_parameters
+                        constraints)
+              | None, None ->
+                  solve_less_or_equal
+                    order
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters))
+          | _, CallableParamType.Keywords right_annotation :: right_parameters
+            when Type.is_unpack right_annotation -> (
+              match Type.unpack_value right_annotation >>= get_typed_dictionary with
+              | None -> impossible
+              | Some { Type.TypedDictionary.fields; _ } ->
+                  solve_parameters
+                    ~left_parameters
+                    ~right_parameters:(expand_typed_dictionary_parameters fields @ right_parameters)
+                    constraints)
+          | CallableParamType.Keywords left_annotation :: left_parameters, _
+            when Type.is_unpack left_annotation -> (
+              match Type.unpack_value left_annotation >>= get_typed_dictionary with
+              | None -> impossible
+              | Some { Type.TypedDictionary.fields; _ } ->
+                  solve_parameters
+                    ~left_parameters:(expand_typed_dictionary_parameters fields @ left_parameters)
+                    ~right_parameters
+                    constraints)
+          | ( CallableParamType.Variable (Concrete left_annotation) :: left_parameters,
+              CallableParamType.Variable (Concrete right_annotation) :: right_parameters ) ->
               solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
               |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
           | ( CallableParamType.KeywordOnly ({ annotation = left_annotation; _ } as left)
@@ -320,11 +396,21 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         match implementation.parameters, called_as.parameters with
         | Undefined, Undefined -> [initial_constraints]
-        | Defined implementation, Defined called_as ->
-            solve_parameters
-              ~left_parameters:implementation
-              ~right_parameters:called_as
-              initial_constraints
+        | Defined implementation, Defined called_as -> (
+            match get_kwargs_type implementation, get_kwargs_type called_as with
+            (* Functions without kwargs cannot be called as if they had unpacked kwargs, because the
+               call may introduce additional unexpected parameters *)
+            | `NoKwargs, `UnpackedKwargs -> impossible
+            (* Functions functions with unpacked kwargs cannot be called as if they had regular
+               kwargs, since the names are not checked *)
+            | `UnpackedKwargs, `RegularKwargs -> impossible
+            (* In other cases, it should be safe to expand unpacked typed dictionary fields and
+               check them against each other or regular parameters. *)
+            | _ ->
+                solve_parameters
+                  ~left_parameters:implementation
+                  ~right_parameters:called_as
+                  initial_constraints)
         (* We exhibit unsound behavior when a concrete callable is passed into one expecting a
            Callable[..., T] - Callable[..., T] admits any parameters, which is not true when a
            callable that doesn't admit kwargs and varargs is passed in. We need this since there is
@@ -810,7 +896,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         Type.Callable { Callable.kind = Callable.Named right; _ } ) ->
         if Reference.equal left right then
           [constraints]
-        else
+        else (* TODO(T200727911): this is wrong, but Pysa needs it *)
           impossible
     | ( Type.Callable
           {
@@ -844,7 +930,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         let fold_overload sofar (called_as : Type.t Callable.overload) =
           let call_as_overload constraints =
-            simulate_signature_select order ~callable ~called_as ~constraints
+            simulate_signature_select order ~callable ~called_as ~constraints ~get_typed_dictionary
             |> List.concat_map ~f:(fun (left, constraints) ->
                    solve_less_or_equal order ~constraints ~left ~right:called_as.annotation)
           in
