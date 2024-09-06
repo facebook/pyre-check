@@ -462,7 +462,7 @@ let bracket_tmpfile ?suffix context =
   |> fun (filename, channel) -> CamlUnix.realpath filename, channel
 
 
-let typeshed_stubs ?(include_helper_builtins = true) () =
+let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions = true) () =
   let builtins =
     let helper_builtin_stubs =
       {|
@@ -996,7 +996,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __ge__(self, __s: AbstractSet[object]) -> bool: ...
           def __gt__(self, __s: AbstractSet[object]) -> bool: ...
 
-        def len(o: Sized) -> int: ...
+        def len(o: ReadOnly[Sized]) -> int: ...
         def isinstance(
           a: object,
           b: Union[type, Tuple[Union[type, Tuple], ...]]
@@ -1239,6 +1239,75 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
           def some_function(x: int) -> None: ...
 |}
+      );
+    ]
+  in
+  let pyre_extensions_stubs =
+    [
+      ( "pyre_extensions/__init__.pyi",
+        {|
+        from typing import List, Optional, Type, TypeVar, Callable
+        from .generic import Generic as Generic
+        import type_variable_operators
+
+        _T = TypeVar("_T")
+        _A = TypeVar("_A", bound=int)
+        _B = TypeVar("_B", bound=int)
+        _T1 = TypeVar("_T1")
+        _T2 = TypeVar("_T2")
+
+        class TypeVarTuple:
+          def __init__(
+              self,
+              name: str,
+              *constraints: Type[Any],
+              bound: Union[None, Type[Any], str] = ...,
+              covariant: bool = ...,
+              contravariant: bool = ...,
+          ) -> None: ...
+
+        def none_throws(optional: Optional[_T]) -> _T: ...
+        def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
+        def ParameterSpecification(__name: str) -> List[Type]: ...
+        def classproperty(f: Any) -> Any: ...
+        class Add(Generic[_A, _B], int): pass
+        class Multiply(Generic[_A, _B], int): pass
+        class Subtract(Generic[_A, _B], int): pass
+        class Divide(Generic[_A, _B], int): pass
+        _Ts = TypeVarTuple("_Ts")
+        class Length(Generic[_Ts], int): pass
+        class Product(Generic[_Ts], int): pass
+
+        class Unpack(Generic[_T]): ...
+        class Broadcast(Generic[_T1, _T2]): ...
+        class BroadcastError(Generic[_T1, _T2]): ...
+        class Compose(Generic[_Ts]): ...
+
+        T = TypeVar("T", bound=Callable[..., object])
+
+        def override(func: T) -> T:
+            return func
+
+        class ReadOnly(Generic[_T]): ...
+        |}
+      );
+      ( "pyre_extensions/generic.pyi",
+        {|
+        from typing import Any
+        class Generic:
+            def __class_getitem__(cls, *args: object) -> Any:
+                return cls
+        |}
+      );
+      ( "pyre_extensions/type_variable_operators.pyi",
+        {|
+        from typing import List, Optional, Type, TypeVar, _SpecialForm
+        Map: _SpecialForm
+        PositionalArgumentsOf: _SpecialForm
+        KeywordArgumentsOf: _SpecialForm
+        ArgumentsOf: _SpecialForm
+        Concatenate: _SpecialForm
+        |}
       );
     ]
   in
@@ -1937,71 +2006,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
               ...
             def assertFalse(self, x: Any, msg: Any = ...) -> Bool:
               ...
-        |}
-    );
-    ( "pyre_extensions/__init__.pyi",
-      {|
-        from typing import List, Optional, Type, TypeVar, Callable
-        from .generic import Generic as Generic
-        import type_variable_operators
-
-        _T = TypeVar("_T")
-        _A = TypeVar("_A", bound=int)
-        _B = TypeVar("_B", bound=int)
-        _T1 = TypeVar("_T1")
-        _T2 = TypeVar("_T2")
-
-        class TypeVarTuple:
-          def __init__(
-              self,
-              name: str,
-              *constraints: Type[Any],
-              bound: Union[None, Type[Any], str] = ...,
-              covariant: bool = ...,
-              contravariant: bool = ...,
-          ) -> None: ...
-
-        def none_throws(optional: Optional[_T]) -> _T: ...
-        def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
-        def ParameterSpecification(__name: str) -> List[Type]: ...
-        def classproperty(f: Any) -> Any: ...
-        class Add(Generic[_A, _B], int): pass
-        class Multiply(Generic[_A, _B], int): pass
-        class Subtract(Generic[_A, _B], int): pass
-        class Divide(Generic[_A, _B], int): pass
-        _Ts = TypeVarTuple("_Ts")
-        class Length(Generic[_Ts], int): pass
-        class Product(Generic[_Ts], int): pass
-
-        class Unpack(Generic[_T]): ...
-        class Broadcast(Generic[_T1, _T2]): ...
-        class BroadcastError(Generic[_T1, _T2]): ...
-        class Compose(Generic[_Ts]): ...
-
-        T = TypeVar("T", bound=Callable[..., object])
-
-        def override(func: T) -> T:
-            return func
-
-        class ReadOnly(Generic[_T]): ...
-        |}
-    );
-    ( "pyre_extensions/generic.pyi",
-      {|
-        from typing import Any
-        class Generic:
-            def __class_getitem__(cls, *args: object) -> Any:
-                return cls
-        |}
-    );
-    ( "pyre_extensions/type_variable_operators.pyi",
-      {|
-        from typing import List, Optional, Type, TypeVar, _SpecialForm
-        Map: _SpecialForm
-        PositionalArgumentsOf: _SpecialForm
-        KeywordArgumentsOf: _SpecialForm
-        ArgumentsOf: _SpecialForm
-        Concatenate: _SpecialForm
         |}
     );
     ( "numbers.pyi",
@@ -3100,6 +3104,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
   @ sqlalchemy_stubs
   @ torch_stubs
   @ readonly_stubs
+  @ if include_pyre_extensions then pyre_extensions_stubs else []
 
 
 let mock_signature =
@@ -3169,6 +3174,7 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?(include_pyre_extensions = true)
       ?(in_memory = true)
       ?(populate_call_graph = false)
       ?(use_lazy_module_tracking = false)
@@ -3200,7 +3206,7 @@ module ScratchProject = struct
     in
     let external_sources =
       if include_typeshed_stubs then
-        typeshed_stubs ~include_helper_builtins () @ external_sources
+        typeshed_stubs ~include_helper_builtins ~include_pyre_extensions () @ external_sources
       else
         external_sources
     in
@@ -3466,6 +3472,7 @@ let assert_errors
     ?enable_strict_override_check
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
+    ?include_pyre_extensions
     ~check
     source
     errors
@@ -3498,6 +3505,7 @@ let assert_errors
             ?enable_strict_override_check
             ?enable_unawaited_awaitable_analysis
             ?include_suppressed_errors
+            ?include_pyre_extensions
             [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; _ } =

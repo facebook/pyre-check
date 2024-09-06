@@ -1985,6 +1985,19 @@ let test_typing_PyreReadOnly =
     ]
 
 
+let test_no_pyre_extensions =
+  let assert_type_errors = assert_type_errors ~include_pyre_extensions:false in
+  test_list
+    [
+      (* TODO(T200918328): [len(x)] should be an error. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors {|
+        def f(x: int) -> int:
+          return len(x)
+      |} [];
+    ]
+
+
 let () =
   "readOnly"
   >::: [
@@ -2007,5 +2020,6 @@ let () =
          test_allowlisted_classes_are_not_readonly;
          test_allowlisted_generic_integer_classes;
          test_typing_PyreReadOnly;
+         test_no_pyre_extensions;
        ]
   |> Test.run
