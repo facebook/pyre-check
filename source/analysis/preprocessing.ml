@@ -905,14 +905,14 @@ module Qualify = struct
                       Name.Attribute { base; attribute = sanitized; special = false }
                     in
                     let scope =
-                      let aliases =
-                        let update = function
-                          | Some alias -> alias
-                          | None -> local_alias ~name:(name_to_reference_exn qualified)
-                        in
-                        Map.update aliases name ~f:update
-                      in
-                      { scope with aliases }
+                      {
+                        scope with
+                        aliases =
+                          Map.set
+                            aliases
+                            ~key:name
+                            ~data:(local_alias ~name:(name_to_reference_exn qualified));
+                      }
                     in
                     scope, Name qualified
                 | Starred (Starred.Once name) ->

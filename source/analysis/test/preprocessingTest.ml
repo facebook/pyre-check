@@ -1626,6 +1626,20 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
+      x: int = ...
+      class C:
+        x: int = ...
+        y = x
+    |}
+           {|
+      $local_qualifier$x: int = ...
+      class qualifier.C:
+        qualifier.C.x: int = ...
+        qualifier.C.y = qualifier.C.x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
       class slice:
         pass
       class C:
