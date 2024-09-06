@@ -341,7 +341,7 @@ module Qualify = struct
             let scope, alias = qualify_local_identifier_ignore_preexisting ~scope simple_name in
             scope, Reference.create alias
         | _ -> scope, qualify_reference ~scope name)
-    | NestingContext.Class _ -> scope, qualify_reference ~scope name
+    | NestingContext.Class _
     | NestingContext.TopLevel ->
         let scope =
           let qualifier = NestingContext.to_qualifier ~module_name parent in
@@ -737,7 +737,6 @@ module Qualify = struct
     in
     let local_alias ~name = { name } in
     let explore_scope ({ module_name; parent; aliases; locals } as scope) { Node.value; _ } =
-      let is_in_function = NestingContext.is_function parent in
       match value with
       | Statement.Assign
           {
@@ -763,18 +762,7 @@ module Qualify = struct
                 ~key:class_name
                 ~data:(global_alias ~module_name ~parent ~name:class_name);
           }
-      | Define { Define.signature = { name; _ }; _ } when is_in_function ->
-          qualify_function_name ~scope name |> fst
-      | Define { Define.signature = { name; _ }; _ } when not is_in_function ->
-          let define_name = Reference.show name in
-          {
-            scope with
-            aliases =
-              Map.set
-                aliases
-                ~key:define_name
-                ~data:(global_alias ~module_name ~parent ~name:define_name);
-          }
+      | Define { Define.signature = { name; _ }; _ } -> qualify_function_name ~scope name |> fst
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
           explore_scope ~scope orelse
@@ -999,7 +987,7 @@ module Qualify = struct
           List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
-        let scope, qualified_function_name = qualify_function_name ~scope name in
+        let _, qualified_function_name = qualify_function_name ~scope name in
         let inner_scope =
           let parent = NestingContext.create_function ~parent (Reference.last name) in
           { scope with parent }
