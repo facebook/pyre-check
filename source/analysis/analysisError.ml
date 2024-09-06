@@ -2341,6 +2341,12 @@ let rec messages ~concise ~signature location kind =
         match parameter with
         | PositionalOnly index -> Printf.sprintf "in position %d" index
         | Named name -> Format.asprintf "`%a`" pp_identifier name
+        | NotRequiredTypedDict name ->
+            Format.asprintf
+              "`%a` to be a required typed dictionary key, as the corresponding parameter has no \
+               default"
+              pp_identifier
+              name
       in
       [Format.asprintf "%s expects argument %s." callee parameter]
   | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->

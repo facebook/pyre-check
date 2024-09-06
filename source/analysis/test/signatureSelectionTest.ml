@@ -32,7 +32,9 @@ let test_prepare_arguments_for_signature_selection _ =
       };
       {
         Argument.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
+        kind =
+          Named
+            { name = Node.create_with_default_location "some_argument"; requires_default = false };
         expression = parse_single_expression "'hello'" |> Option.some;
       };
     ]
@@ -51,7 +53,9 @@ let test_prepare_arguments_for_signature_selection _ =
       };
       {
         Argument.WithPosition.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
+        kind =
+          Named
+            { name = Node.create_with_default_location "some_argument"; requires_default = false };
         expression = parse_single_expression "'hello'" |> Option.some;
         position = 2;
       };
@@ -71,7 +75,9 @@ let test_prepare_arguments_for_signature_selection _ =
       };
       {
         Argument.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
+        kind =
+          Named
+            { name = Node.create_with_default_location "some_argument"; requires_default = false };
         expression = parse_single_expression "'hello'" |> Option.some;
       };
     ]
@@ -90,7 +96,9 @@ let test_prepare_arguments_for_signature_selection _ =
       };
       {
         Argument.WithPosition.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
+        kind =
+          Named
+            { name = Node.create_with_default_location "some_argument"; requires_default = false };
         expression = parse_single_expression "'hello'" |> Option.some;
         position = 3;
       };
@@ -137,7 +145,9 @@ let test_get_parameter_argument_mapping context =
     [
       {
         Argument.WithPosition.resolved = Type.string;
-        kind = Named (Node.create_with_default_location "some_argument");
+        kind =
+          Named
+            { name = Node.create_with_default_location "some_argument"; requires_default = false };
         expression = parse_single_expression "'hello'" |> Option.some;
         position = 2;
       };
@@ -157,7 +167,12 @@ let test_get_parameter_argument_mapping context =
                 make_matched_argument
                   {
                     Argument.WithPosition.resolved = Type.string;
-                    kind = Named (Node.create_with_default_location "some_argument");
+                    kind =
+                      Named
+                        {
+                          name = Node.create_with_default_location "some_argument";
+                          requires_default = false;
+                        };
                     expression = parse_single_expression "'hello'" |> Option.some;
                     position = 2;
                   };

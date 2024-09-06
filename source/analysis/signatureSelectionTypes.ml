@@ -26,6 +26,7 @@ type invalid_argument = {
 
 type missing_argument =
   | Named of Identifier.t
+  | NotRequiredTypedDict of Identifier.t
   | PositionalOnly of int
 [@@deriving show, compare, sexp, hash]
 

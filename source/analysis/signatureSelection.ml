@@ -443,7 +443,14 @@ let get_parameter_argument_mapping
                         {
                           Argument.WithPosition.kind =
                             Named
-                              { Node.value = "$parameter$" ^ name; location = Node.location key };
+                              {
+                                name =
+                                  {
+                                    Node.value = "$parameter$" ^ name;
+                                    location = Node.location key;
+                                  };
+                                requires_default = false;
+                              };
                           expression = Some value;
                           position = argument.position;
                           resolved = resolve value;
@@ -462,11 +469,19 @@ let get_parameter_argument_mapping
               (* Expand typed dictionaries *)
               match get_typed_dictionary resolved with
               | Some { Type.TypedDictionary.fields; _ } ->
-                  let accumulate_argument { Type.TypedDictionary.name; annotation; _ } so_far =
+                  let accumulate_argument { Type.TypedDictionary.name; annotation; required } so_far
+                    =
                     {
                       Argument.WithPosition.kind =
                         Named
-                          { Node.value = "$parameter$" ^ name; location = Node.location expression };
+                          {
+                            name =
+                              {
+                                Node.value = "$parameter$" ^ name;
+                                location = Node.location expression;
+                              };
+                            requires_default = not required;
+                          };
                       expression = None;
                       position = argument.position;
                       resolved = annotation;
@@ -521,7 +536,7 @@ let get_parameter_argument_mapping
                   ~arguments
                   ~parameters:parameters_tail
                   { parameter_argument_mapping_with_reasons with parameter_argument_mapping }))
-    | ({ kind = Named name; _ } as argument) :: _, [] -> (
+    | ({ kind = Named { name; _ }; _ } as argument) :: _, [] -> (
         (* Named argument; parameters empty *)
         let matching_parameter, _ =
           extract_matching_parameter_name name.value all_parameters_list
@@ -586,7 +601,7 @@ let get_parameter_argument_mapping
           ~arguments:arguments_tail
           ~parameters
           { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-    | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
+    | ({ kind = Named { name; _ }; _ } as argument) :: arguments_tail, parameters ->
         (* Labeled argument *)
         let matching_parameter, remaining_parameters =
           extract_matching_parameter_name name.value parameters
@@ -875,7 +890,7 @@ let check_arguments_against_parameters
                 =
                 let name =
                   match kind with
-                  | Named name -> Some name
+                  | Named { name = name_node; _ } -> Some name_node
                   | _ -> None
                 in
                 let location =
@@ -991,7 +1006,7 @@ let check_arguments_against_parameters
                       let argument_location = get_location ~expression ~default:location in
                       let name =
                         match kind with
-                        | Named name -> Some name
+                        | Named { name = name_node; _ } -> Some name_node
                         | _ -> None
                       in
                       let check_argument
@@ -1067,9 +1082,17 @@ let check_arguments_against_parameters
                               argument_annotation
                               |> check_argument ~signature_match ~position ~parameter_annotation
                               |> check ~unmatched_fields ~arguments:tail)
-                      | Named { Node.value = argument_name; _ } -> (
+                      | Named { name = { Node.value = argument_name; _ }; requires_default } -> (
                           let argument_name = Identifier.sanitized argument_name in
                           match Map.find unmatched_fields argument_name with
+                          | Some { Type.TypedDictionary.annotation; required; _ }
+                            when requires_default && required ->
+                              check_argument
+                                ~signature_match
+                                ~position
+                                ~parameter_annotation:annotation
+                                resolved
+                              |> check ~unmatched_fields ~arguments:tail
                           | Some { Type.TypedDictionary.annotation; _ } ->
                               check_argument
                                 ~signature_match
@@ -1123,6 +1146,11 @@ let check_arguments_against_parameters
     | KeywordOnly { annotation = parameter_annotation; _ }, arguments
     | Named { annotation = parameter_annotation; _ }, arguments
     | Keywords parameter_annotation, arguments -> (
+        let has_default =
+          match parameter with
+          | Named { default; _ } -> default
+          | _ -> false
+        in
         let rec check ~arguments signature_match =
           match arguments with
           | [] -> signature_match
@@ -1135,7 +1163,7 @@ let check_arguments_against_parameters
               let argument_location = get_location ~expression ~default:location in
               let name =
                 match kind with
-                | Named name -> Some name
+                | Named { name = name_node; _ } -> Some name_node
                 | _ -> None
               in
               let check_argument ~position argument_annotation =
@@ -1207,29 +1235,41 @@ let check_arguments_against_parameters
                            ~position:(position + Option.value ~default:0 index_into_starred_tuple))
               | Named _
               | Positional -> (
-                  let argument_annotation, weakening_error =
-                    if Type.Variable.all_variables_are_resolved parameter_annotation then
-                      let { WeakenMutableLiterals.resolved; typed_dictionary_errors } =
-                        resolve_mutable_literals
-                          ~resolve:(resolve_with_locals ~locals:[])
-                          ~expression
-                          ~resolved
-                          ~expected:parameter_annotation
+                  match kind with
+                  | Named { requires_default = true; name = { Node.value = name; _ } }
+                    when not has_default ->
+                      let reasons =
+                        {
+                          reasons with
+                          arity = MissingArgument (NotRequiredTypedDict name) :: arity;
+                        }
                       in
-                      let weakening_error =
-                        if List.is_empty typed_dictionary_errors then
-                          None
+                      { signature_match with reasons }
+                  | _ -> (
+                      let argument_annotation, weakening_error =
+                        if Type.Variable.all_variables_are_resolved parameter_annotation then
+                          let { WeakenMutableLiterals.resolved; typed_dictionary_errors } =
+                            resolve_mutable_literals
+                              ~resolve:(resolve_with_locals ~locals:[])
+                              ~expression
+                              ~resolved
+                              ~expected:parameter_annotation
+                          in
+                          let weakening_error =
+                            if List.is_empty typed_dictionary_errors then
+                              None
+                            else
+                              Some (TypedDictionaryInitializationError typed_dictionary_errors)
+                          in
+                          resolved, weakening_error
                         else
-                          Some (TypedDictionaryInitializationError typed_dictionary_errors)
+                          resolved, None
                       in
-                      resolved, weakening_error
-                    else
-                      resolved, None
-                  in
-                  match weakening_error with
-                  | Some weakening_error -> add_annotation_error signature_match weakening_error
-                  | None -> argument_annotation |> check_argument ~position |> check ~arguments:tail
-                  ))
+                      match weakening_error with
+                      | Some weakening_error -> add_annotation_error signature_match weakening_error
+                      | None ->
+                          argument_annotation |> check_argument ~position |> check ~arguments:tail))
+              )
         in
         match is_generic_lambda parameter arguments with
         | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)

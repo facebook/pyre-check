@@ -2528,6 +2528,35 @@ kwargs: Movie = {"name": "Life of Brian", "year": 1979}
 foo(name="foo", **kwargs)
             |}
            ["Unexpected keyword [28]: Unexpected keyword argument `name` to call `foo`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict, total=False):
+    name: str
+def foo(name: str) -> None:
+  pass
+kwargs: Movie = {"name": "Life of Brian"}
+foo(**kwargs)
+            |}
+           [
+             "Missing argument [20]: Call `foo` expects argument `name` to be a required typed \
+              dictionary key, as the corresponding parameter has no default.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict, total=False):
+    name: str
+def foo(name: str = "") -> None:
+  pass
+kwargs: Movie = {"name": "Life of Brian"}
+foo(**kwargs)
+            |}
+           [];
     ]
 
 

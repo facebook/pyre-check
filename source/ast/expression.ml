@@ -182,7 +182,10 @@ and Call : sig
     type kind =
       | SingleStar
       | DoubleStar
-      | Named of string Node.t
+      | Named of {
+          name: string Node.t;
+          requires_default: bool;
+        }
       | Positional
     [@@deriving equal, compare, show]
 
@@ -209,7 +212,10 @@ end = struct
     type kind =
       | SingleStar
       | DoubleStar
-      | Named of string Node.t
+      | Named of {
+          name: string Node.t;
+          requires_default: bool;
+        }
       | Positional
     [@@deriving equal, compare, show]
 
@@ -229,7 +235,7 @@ end = struct
           expression, SingleStar
       | { value = { Node.value = Expression.Starred (Starred.Twice expression); _ }; _ } ->
           expression, DoubleStar
-      | { value; name = Some name } -> value, Named name
+      | { value; name = Some name } -> value, Named { name; requires_default = false }
       | { value; name = None } -> value, Positional
   end
 

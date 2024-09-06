@@ -71,7 +71,19 @@ and Call : sig
     type kind =
       | SingleStar
       | DoubleStar
-      | Named of string Node.t
+      | Named of {
+          name: string Node.t;
+          (* During signature selection when typed dictionaries are unpacked as kwargs, their fields
+             are expanded into named arguments. Fields in non-total dictionaries or those marked
+             with `NotRequired` may or may not be present.
+
+             When this flag is set, we want to check that the types are correct if the arguments are
+             present, but also require that they are only matched to parameters which do not require
+             an argument (such as named parameters with defaults, or kwargs).
+
+             Regular named arguments from other sources will have this value set to false. *)
+          requires_default: bool;
+        }
       | Positional
     [@@deriving equal, compare, show]
 
