@@ -2707,6 +2707,38 @@ dest = src
              "Incompatible variable type [9]: dest is declared to have type `Dest` but is used as \
               type `Src`.";
            ];
+      (* https://typing.readthedocs.io/en/latest/spec/callables.html#source-contains-traditionally-typed-kwargs-t *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict, Protocol
+from typing_extensions import Unpack
+
+class Vehicle:
+    ...
+
+class Car(Vehicle):
+    ...
+
+class Motorcycle(Vehicle):
+    ...
+
+class Vehicles(TypedDict):
+    car: Car
+    moto: Motorcycle
+
+class Dest(Protocol):
+  def __call__(self, **kwargs: Unpack[Vehicles]) -> None: ...
+
+class Src(Protocol):
+  def __call__(self, **kwargs: Vehicle) -> None: ...
+
+src: Src = ...
+dest: Dest = ...
+
+dest = src
+            |}
+           [];
     ]
 
 

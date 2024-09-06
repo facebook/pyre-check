@@ -1419,7 +1419,7 @@ let test_less_or_equal =
               ~right:"typing.Callable[[Keywords(int)], int]");
       (* Callables with keyword arguments. *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_false
+      @@ assert_true
            (parse_less_or_equal
               order
               ~left:"typing.Callable[[Keywords(int)], str]"

@@ -210,8 +210,6 @@ let test_check_implementation =
               arguments of overload defined on line `5`.";
              "Incompatible overload [43]: At least two overload signatures must be present.";
            ];
-      (* TODO(T65594835) Pyre should accept this, but does not recognize that a `**kwargs: Any` in
-         the implementation is compatible with any named-argument overload *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -223,11 +221,7 @@ let test_check_implementation =
       def f(**kwargs: Any) -> int:
           return 5
     |}
-           [
-             "Incompatible overload [43]: The implementation of `f` does not accept all possible \
-              arguments of overload defined on line `5`.";
-             "Incompatible overload [43]: At least two overload signatures must be present.";
-           ];
+           ["Incompatible overload [43]: At least two overload signatures must be present."];
     ]
 
 

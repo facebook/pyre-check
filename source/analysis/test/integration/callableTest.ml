@@ -735,6 +735,46 @@ let test_reexported_callable =
     ]
 
 
+let test_callable_subtyping =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import Protocol
+
+class Dest(Protocol):
+  def __call__(self, x: int, y: int) -> None: ...
+
+class Src(Protocol):
+  def __call__(self, **kwargs: int) -> None: ...
+
+src: Src = ...
+dest: Dest = ...
+
+dest = src
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import Protocol
+
+class Dest(Protocol):
+  def __call__(self, x: int, y: int, **kwargs: int) -> None: ...
+
+class Src(Protocol):
+  def __call__(self, **kwargs: int) -> None: ...
+
+src: Src = ...
+dest: Dest = ...
+
+dest = src
+            |}
+           [];
+    ]
+
+
 let () =
   "callable"
   >::: [
@@ -745,5 +785,6 @@ let () =
          test_bound_method;
          test_reexported_callable;
          test_callable_parameters;
+         test_callable_subtyping;
        ]
   |> Test.run
