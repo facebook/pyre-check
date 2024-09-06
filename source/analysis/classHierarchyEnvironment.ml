@@ -181,6 +181,22 @@ module IncomingDataComputation = struct
     match get_class_summary name with
     | None -> None
     | Some class_summary ->
+        (* Here, we are converting our type parameters from the AST to generic type parameters,
+           which we will later pick up in attributeResolution and put into a scope *)
+        let type_param_to_generic_param parameter =
+          match parameter.Node.value with
+          (* TODO: migeedz think about how to handle constraints/bounds. Probably we need to convert
+             bounds to constraints? this also needs to happen in type statements and top level
+             function definitions *)
+          | Ast.Expression.TypeParam.TypeVar { name; _ } ->
+              Type.GenericParameter.GpTypeVar
+                { name; variance = Invariant; constraints = Unconstrained }
+          | TypeParam.TypeVarTuple name -> GpTypeVarTuple { name }
+          | TypeParam.ParamSpec name -> GpParamSpec { name }
+        in
+        let class_type_parameters =
+          List.map ~f:type_param_to_generic_param class_summary.value.type_params
+        in
         let base_classes = bases class_summary in
         let parents =
           List.filter_map base_classes ~f:extract_supertype
@@ -204,7 +220,12 @@ module IncomingDataComputation = struct
             extract_supertype (Type.expression base) >>= fun (_, arguments) -> Some arguments
           in
           match maybe_generic_base_arguments with
-          | None -> ClassHierarchy.GenericMetadata.NotGeneric
+          | None -> (
+              (* Add PEP695 syntax parameters to the exsting list of generic base arguments, if the
+                 PEP695 syntax parameters exist *)
+              match class_type_parameters with
+              | [] -> ClassHierarchy.GenericMetadata.NotGeneric
+              | _ -> ClassHierarchy.GenericMetadata.GenericBase class_type_parameters)
           | Some arguments -> (
               match List.map arguments ~f:Type.Argument.to_variable |> Option.all with
               | None -> ClassHierarchy.GenericMetadata.InvalidGenericBase

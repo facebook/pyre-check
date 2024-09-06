@@ -43,6 +43,13 @@ module QualifiedParameterName = struct
 end
 
 module Record = struct
+  (* TODO migeedz: For variance inference, we must add another variation for the variance datatype
+     here. The reason we need two varitions is that one variation represents the before variance
+     inference and another represents the after. The new variance will include "undefined" and
+     "bivariant". Undefined can viewed as: For legacy syntax, the user did not specify variance or
+     for PEP695, our algorithm is still resolving variance. Bivariant is different as it means we
+     already ran our algorithm and did not conclude variance. Bivariance is not applicable to legacy
+     syntax as the user cannot not specify it. *)
   module Variance = struct
     type t =
       | Covariant

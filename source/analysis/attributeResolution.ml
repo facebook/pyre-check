@@ -49,6 +49,41 @@ open SignatureSelection
 
 let map_find = Map.find
 
+(* a helper function which converts type variables to a string -> type variable map *)
+let scoped_type_variables_as_map scoped_type_variables_list =
+  let empty_string_map = Identifier.Map.empty in
+  let update_map map key value =
+    match Map.add ~key ~data:value map with
+    | `Ok new_map -> new_map
+    | `Duplicate -> map
+  in
+  let named_values = List.map ~f:(fun x -> Type.Variable.name x, x) scoped_type_variables_list in
+  let create_mapping_from_type_variable_assoc_list =
+    List.fold_left
+      ~f:(fun map (key, value) -> update_map map key value)
+      ~init:empty_string_map
+      named_values
+  in
+  match named_values with
+  | [] -> None
+  | _ -> Some create_mapping_from_type_variable_assoc_list
+
+
+(* A helper function which merges two maps by flatten the inner and outer scope, shadowing outer
+   vars on collisions *)
+let merge_scoped_type_variables ~inner_scope_type_variables ~outer_scope_type_variables =
+  match inner_scope_type_variables, outer_scope_type_variables with
+  | Some m1, Some m2 ->
+      Some
+        (Map.merge m1 m2 ~f:(fun ~key:_ -> function
+           | `Left v1 -> Some v1
+           | `Right v2 -> Some v2
+           | `Both (v1, _) -> Some v1))
+  | None, Some m2 -> Some m2
+  | Some m1, _ -> Some m1
+  | None, None -> None
+
+
 module Queries = struct
   type t = {
     controls: EnvironmentControls.t;
@@ -1392,8 +1427,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
-      let Queries.{ get_class_summary; get_class_metadata; _ } = queries in
-
+      let Queries.{ get_class_summary; get_class_metadata; generic_parameters_as_variables; _ } =
+        queries
+      in
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
 
@@ -1407,12 +1443,18 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               false
           | _ -> true
         in
-
+        (* collect generic parameters (which we initially added in our class hierarchy environment)
+           for this class *)
+        let class_parameters =
+          match generic_parameters_as_variables class_name with
+          | Some parameter_list -> parameter_list
+          | _ -> []
+        in
         let add_actual () =
           let collect_attributes attribute =
             let created_attribute =
               self#create_attribute
-                ~scoped_type_variables:None
+                ~scoped_type_variables:(scoped_type_variables_as_map class_parameters)
                 (Node.value attribute)
                 ~cycle_detections
                 ~parent
@@ -1422,12 +1464,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             | true -> UninstantiatedAttributeTable.add table created_attribute
             | false -> ()
           in
-
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
-
         add_actual ();
         let () =
           if include_generated_attributes then
@@ -2617,7 +2657,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~callable_name
         ~implementation
         ~overloads
-        ~scoped_type_variables =
+        ~scoped_type_variables:outer_scope_type_variables =
       let Queries.
             {
               resolve_exports;
@@ -2861,7 +2901,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                             let resolved =
                               self#resolve_literal
                                 ~cycle_detections
-                                ~scoped_type_variables
+                                ~scoped_type_variables:outer_scope_type_variables
                                 expression
                             in
                             if Type.is_untyped resolved || Type.contains_unknown resolved then
@@ -2926,12 +2966,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           | NotFound { reason; _ } ->
                               make_error (ApplicationFailed { reason; callable })))))
       in
+      (* merge the parameters on top of the existing scope (ex. classes) *)
       let scoped_type_variables =
-        (* collect our local type variables (which are really type parameters in terms of the source
-           code) *)
+        (* collect our local type variables from our function defintion *)
         let local_type_parameters =
           match implementation with
-          | Some implementation -> begin
+          | Some implementation ->
               let type_param_names =
                 List.map
                   ~f:(fun tp ->
@@ -2946,33 +2986,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   implementation.type_params
               in
               type_param_names
-            end
           | None -> []
         in
-        (* define an empty map as our accumilator *)
-        let empty_string_map = Identifier.Map.empty in
-
-        (* define a function that adds elements to the map. For now, lets fail on duplicates *)
-        (* TODO migeedz: Verify that this is the correct runtime behavor *)
-        let update_map map key value =
-          match Map.add ~key ~data:value map with
-          | `Ok new_map -> new_map
-          | `Duplicate -> map
-        in
-        (* create an association list of key value pairs using our get_name funciton above*)
-        let named_values = List.map ~f:(fun x -> Type.Variable.name x, x) local_type_parameters in
-        (* create the mapping *)
-        let create_mapping_from_type_variable_assoc_list =
-          List.fold_left
-            ~f:(fun map (key, value) -> update_map map key value)
-            ~init:empty_string_map
-            named_values
-        in
-        (* If our mapping is empty, then we don't want to use scoped_type_vars and must set the
-           value to None.*)
-        match named_values with
-        | [] -> None
-        | _ -> Some create_mapping_from_type_variable_assoc_list
+        let local_scoped_type_variables = scoped_type_variables_as_map local_type_parameters in
+        merge_scoped_type_variables
+          ~inner_scope_type_variables:local_scoped_type_variables
+          ~outer_scope_type_variables
       in
       let parse =
         let parser =
