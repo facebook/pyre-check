@@ -847,6 +847,7 @@ and kind =
     }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
+  | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound of {
       typed_dictionary_name: Identifier.t;
       missing_key: string;
@@ -981,6 +982,7 @@ let code_of_kind = function
   | InvalidTypeGuard _ -> 68
   | InvalidPositionalOnlyParameter -> 69
   | AssertType _ -> 70
+  | TypedDictionaryIsInstance -> 71
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1053,6 +1055,7 @@ let name_of_kind = function
   | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
   | TypedDictionaryInitializationError _ -> "TypedDict initialization error"
   | TypedDictionaryInvalidOperation _ -> "Invalid TypedDict operation"
+  | TypedDictionaryIsInstance -> "TypedDict used in isinstance"
   | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
   | UnboundName _ -> "Unbound name"
@@ -2787,6 +2790,8 @@ let rec messages ~concise ~signature location kind =
           ""
       in
       [Format.asprintf "TypedDict key must be a string literal.%s" explanation]
+  | TypedDictionaryIsInstance ->
+      [Format.asprintf "TypedDict classes may not be used for instance checks."]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
       if String.equal typed_dictionary_name "$anonymous" then
         [Format.asprintf "TypedDict has no key `%s`." missing_key]
@@ -3344,6 +3349,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TooManyArguments _
   | TupleConcatenationError _
   | TypedDictionaryAccessWithNonLiteral _
+  | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound _
   | TypedDictionaryInitializationError _
   | Unpack _
@@ -3787,6 +3793,7 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
       when List.equal String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
+    | TypedDictionaryIsInstance, TypedDictionaryIsInstance -> TypedDictionaryIsInstance
     | TypedDictionaryInvalidOperation left, TypedDictionaryInvalidOperation right
       when Identifier.equal_sanitized left.typed_dictionary_name right.typed_dictionary_name
            && Identifier.equal_sanitized left.field_name right.field_name
@@ -3886,6 +3893,7 @@ let join ~resolution left right =
     | TupleConcatenationError _, _
     | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
+    | TypedDictionaryIsInstance, _
     | TypedDictionaryKeyNotFound _, _
     | TypedDictionaryInvalidOperation _, _
     | TypedDictionaryInitializationError _, _
@@ -4504,6 +4512,7 @@ let dequalify
         SuppressionCommentWithoutErrorCode error_codes
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
+    | TypedDictionaryIsInstance -> TypedDictionaryIsInstance
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
         TypedDictionaryKeyNotFound
           {

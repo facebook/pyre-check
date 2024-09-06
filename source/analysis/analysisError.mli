@@ -501,6 +501,7 @@ and kind =
     }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
+  | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound of {
       typed_dictionary_name: Identifier.t;
       missing_key: string;

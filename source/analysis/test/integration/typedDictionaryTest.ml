@@ -1177,6 +1177,18 @@ let test_check_typed_dictionaries =
               reveal_type(movie["bar"])
             |}
            ["Revealed type [-1]: Revealed type for `movie[\"bar\"]` is `str`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+              from mypy_extensions import TypedDict
+              class MyDict(TypedDict):
+                x: int
+              isinstance(None, MyDict)
+            |}
+           [
+             "TypedDict used in isinstance [71]: TypedDict classes may not be used for instance \
+              checks.";
+           ];
     ]
 
 

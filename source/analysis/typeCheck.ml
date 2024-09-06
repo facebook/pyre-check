@@ -2446,9 +2446,22 @@ module State (Context : Context) = struct
             | Type.Union annotations -> List.for_all annotations ~f:is_compatible
             | _ -> false
           in
+          let add_typed_dictionary_error errors (_, location) =
+            emit_error ~errors ~location ~kind:Error.TypedDictionaryIsInstance
+          in
           let errors =
             List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
             >>| add_incompatible_non_meta_error errors
+            |> Option.value ~default:errors
+          in
+          let errors =
+            List.find annotations ~f:(fun (annotation, _) ->
+                match annotation with
+                | Type.Parametric
+                    { name = "type"; arguments = [Type.Record.Argument.Single type_argument] } ->
+                    GlobalResolution.is_typed_dictionary global_resolution type_argument
+                | _ -> false)
+            >>| add_typed_dictionary_error errors
             |> Option.value ~default:errors
           in
           resolution, errors
