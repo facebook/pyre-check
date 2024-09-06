@@ -2,17 +2,17 @@
 
 # Unfortunately, we need to collapse for dict.__init__ since it accepts iterables, not just other dictionaries.
 @SkipObscure
-def dict.__init__(self, __map: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse]): ...
-def dict.__init__(self, __map: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse]): ...
+def dict.__init__(self, map: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse], /): ...
+def dict.__init__(self, map: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse], /): ...
 def dict.__init__(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
 def dict.__new__(): ...
 
 @SkipObscure
-def collections.defaultdict.__init__(self, __default_factory: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
-def collections.defaultdict.__init__(self, __default_factory, __map: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse]): ...
-def collections.defaultdict.__init__(self, __default_factory, __map: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse]): ...
+def collections.defaultdict.__init__(self, default_factory: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
+def collections.defaultdict.__init__(self, default_factory, map: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse], /): ...
+def collections.defaultdict.__init__(self, default_factory, map: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse], /): ...
 def collections.defaultdict.__init__(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
@@ -23,23 +23,26 @@ def typing.Mapping.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[
 @SkipObscure
 def dict.__setitem__(
     self,
-    __k: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
-    __v: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]
+    k: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
+    v: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableMapping.__setitem__(
     self,
-    __k: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
-    __v: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]
+    k: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
+    v: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def typing.MutableMapping.setdefault(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
-    __key: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
-    __default: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    key: TaintInTaintOut[Updates[self], UpdatePath[_.keys()], NoCollapse],
+    default: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
-def typing.MutableMapping.setdefault(self, __key, __default: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+def typing.MutableMapping.setdefault(self, key, default: TaintInTaintOut[LocalReturn, NoCollapse], /): ...
 @SkipObscure
 def collections.OrderedDict.setdefault(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
@@ -50,8 +53,8 @@ def collections.OrderedDict.setdefault(self, key, default: TaintInTaintOut[Local
 
 # Unfortunately, we need to collapse for dict.update since it accepts iterables, not just other dictionaries.
 @SkipObscure
-def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse]): ...
-def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse]): ...
+def typing.MutableMapping.update(self, m: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse], /): ...
+def typing.MutableMapping.update(self, m: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse], /): ...
 def typing.MutableMapping.update(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
@@ -99,9 +102,9 @@ def collections.OrderedDict.copy(self: TaintInTaintOut[LocalReturn, NoCollapse])
 def collections.defaultdict.copy(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
-def dict.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+def dict.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], /): ...
 @SkipObscure
-def typing.MutableMapping.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+def typing.MutableMapping.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
 def collections.OrderedDict.popitem(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
@@ -112,38 +115,39 @@ def dict.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], No
 # Sequence propagation
 
 @SkipObscure
-def list.__init__(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def list.__init__(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def list.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def list.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def collections.deque.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], maxlen): ...
 def collections.deque.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], maxlen): ...
 
 @SkipObscure
-def tuple.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]): ...
-def tuple.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse]): ...
+def tuple.__new__(cls, iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse], /): ...
+def tuple.__new__(cls, iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def list.append(self, __object: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+def list.append(self, object: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSequence.append(self, value: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 @SkipObscure
-def collections.deque.append(self, __x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+def collections.deque.append(self, x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def list.extend(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def list.extend(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def list.extend(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def list.extend(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSequence.extend(self, values: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
 def typing.MutableSequence.extend(self, values: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
 @SkipObscure
-def collections.deque.extend(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def collections.deque.extend(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def collections.deque.extend(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def collections.deque.extend(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
 def list.insert(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __index,
-    __object: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]
+    index,
+    object: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /
 ): ...
 @SkipObscure
 def typing.MutableSequence.insert(
@@ -154,45 +158,50 @@ def typing.MutableSequence.insert(
 @SkipObscure
 def collections.deque.insert(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __i,
-    __x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    i,
+    x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
-def list.__setitem__(self, __index, __element: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+def list.__setitem__(self, index, element: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSequence.__setitem__(self, index, value: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 @SkipObscure
-def collections.deque.__setitem__(self, __s, __o: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+def collections.deque.__setitem__(self, s, o: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
 def list.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __s): ...
 @SkipObscure
-def tuple.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __s): ...
+def tuple.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], s, /): ...
 @SkipObscure
 def typing.Sequence.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], index): ...
 @SkipObscure
-def collections.deque.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __s): ...
+def collections.deque.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], s, /): ...
 
 @SkipObscure
 def list.__add__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
+    x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def tuple.__add__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
+    x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def list.__iadd__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
+    x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def list.__iadd__(
     self,
-    __x: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]
+    x: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableSequence.__iadd__(
@@ -206,56 +215,66 @@ def typing.MutableSequence.__iadd__(
 @SkipObscure
 def collections.deque.__iadd__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
+    x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def collections.deque.__iadd__(
     self,
-    __x: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]
+    x: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def list.__mul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 @SkipObscure
 def tuple.__mul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 
 @SkipObscure
 def list.__rmul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 @SkipObscure
 def tuple.__rmul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 
 @SkipObscure
 def list.__imul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 def list.__imul__(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[Updates[self], Collapse],
+    n: TaintInTaintOut[Updates[self], Collapse],
+    /,
 ): ...
 @SkipObscure
 def collections.deque.__imul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[LocalReturn, Collapse],
+    n: TaintInTaintOut[LocalReturn, Collapse],
+    /,
 ): ...
 def collections.deque.__imul__(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __n: TaintInTaintOut[Updates[self], Collapse],
+    n: TaintInTaintOut[Updates[self], Collapse],
+    /,
 ): ...
 
 @SkipObscure
-def list.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+def list.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSequence.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
 @SkipObscure
@@ -266,11 +285,11 @@ def collections.deque.popleft(self: TaintInTaintOut[LocalReturn, ParameterPath[_
 def collections.deque.popleft(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
-def list.remove(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
+def list.remove(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSequence.remove(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
 @SkipObscure
-def collections.deque.remove(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
+def collections.deque.remove(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
 def list.sort(self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
@@ -281,13 +300,15 @@ def typing.MutableSequence.reverse(self: TaintInTaintOut[Updates[self], Paramete
 @SkipObscure
 def collections.deque.appendleft(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    x: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def collections.deque.extendleft(
     self: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
-    __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
@@ -303,57 +324,62 @@ def typing.Sequence.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.
 # Set propagation
 
 @SkipObscure
-def set.__init__(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def set.__init__(self, __iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def set.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def set.__init__(self, iterable: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def frozenset.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]): ...
-def frozenset.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse]): ...
+def frozenset.__new__(cls, iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse], /): ...
+def frozenset.__new__(cls, iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def set.add(self, __element: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+def set.add(self, element: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSet.add(self, value: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
-def set.update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def set.update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def set.update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def set.update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def set.difference_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def set.difference_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def set.difference_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def set.difference_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def set.intersection_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def set.intersection_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def set.intersection_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def set.intersection_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def set.symmetric_difference_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse]): ...
-def set.symmetric_difference_update(self, __s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse]): ...
+def set.symmetric_difference_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse], /): ...
+def set.symmetric_difference_update(self, s: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
 def set.intersection(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.intersection(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def frozenset.intersection(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def frozenset.intersection(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__and__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.AbstractSet.__and__(
@@ -363,17 +389,20 @@ def typing.AbstractSet.__and__(
 @SkipObscure
 def frozenset.__and__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__iand__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.__iand__(
     self,
-    __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableSet.__iand__(
@@ -388,26 +417,31 @@ def typing.MutableSet.__iand__(
 @SkipObscure
 def set.union(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.union(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def frozenset.union(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def frozenset.union(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__or__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.AbstractSet.__or__(
@@ -417,17 +451,20 @@ def typing.AbstractSet.__or__(
 @SkipObscure
 def frozenset.__or__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__ior__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.__ior__(
     self,
-    __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableSet.__ior__(
@@ -442,22 +479,26 @@ def typing.MutableSet.__ior__(
 @SkipObscure
 def set.__xor__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def frozenset.__xor__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__ixor__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.__ixor__(
     self,
-    __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableSet.__ixor__(
@@ -472,20 +513,24 @@ def typing.MutableSet.__ixor__(
 @SkipObscure
 def set.difference(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.difference(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def frozenset.difference(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def frozenset.difference(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
@@ -501,17 +546,20 @@ def typing.AbstractSet.__sub__(
 @SkipObscure
 def frozenset.__sub__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
 def set.__isub__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.__isub__(
     self,
-    __s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    s: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.MutableSet.__isub__(
@@ -526,20 +574,24 @@ def typing.MutableSet.__isub__(
 @SkipObscure
 def set.symmetric_difference(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def set.symmetric_difference(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def frozenset.symmetric_difference(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 def frozenset.symmetric_difference(
     self,
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 
 @SkipObscure
@@ -551,12 +603,12 @@ def set.copy(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 def frozenset.copy(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
-def set.remove(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+def set.remove(self: TaintInTaintOut[LocalReturn, NoCollapse], /): ...
 @SkipObscure
 def typing.MutableSet.remove(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
-def set.discard(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+def set.discard(self: TaintInTaintOut[LocalReturn, NoCollapse], /): ...
 
 @SkipObscure
 def set.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
