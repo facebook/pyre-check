@@ -384,5 +384,3 @@ class CodeGenerator:
             + f"{sink_code}"
         )
         return full_code
-
-
