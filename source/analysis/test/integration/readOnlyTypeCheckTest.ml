@@ -1989,12 +1989,16 @@ let test_no_pyre_extensions =
   let assert_type_errors = assert_type_errors ~include_pyre_extensions:false in
   test_list
     [
-      (* TODO(T200918328): [len(x)] should be an error. *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors {|
+      @@ assert_type_errors
+           {|
         def f(x: int) -> int:
           return len(x)
-      |} [];
+      |}
+           [
+             "Incompatible parameter type [6]: In call `len`, for 1st positional argument, \
+              expected `pyre_extensions.ReadOnly[Sized]` but got `int`.";
+           ];
     ]
 
 

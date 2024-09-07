@@ -9,9 +9,8 @@
 action = "add"
 position = "top"
 content = '''
-from pyre_extensions import ReadOnly
+from typing import _PyreReadOnly_, TypeVar
 
-from typing import TypeVar
 N1 = TypeVar("N1", bound=int)
 N2 = TypeVar("N2", bound=int)
 '''
@@ -23,7 +22,7 @@ action = "replace"
 parent = "object"
 name = "__eq__"
 content = '''
-def __eq__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -31,7 +30,7 @@ action = "replace"
 parent = "object"
 name = "__str__"
 content = '''
-def __str__(self: ReadOnly[Self]) -> str: ...  # noqa: Y029
+def __str__(self: _PyreReadOnly_[Self]) -> str: ...  # noqa: Y029
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -39,7 +38,7 @@ action = "replace"
 parent = "object"
 name = "__repr__"
 content = '''
-def __repr__(self: ReadOnly[Self]) -> str: ...  # noqa: Y029
+def __repr__(self: _PyreReadOnly_[Self]) -> str: ...  # noqa: Y029
 '''
 
 
@@ -50,7 +49,7 @@ action = "replace"
 parent = "int"
 name = "__eq__"
 content = '''
-def __eq__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -58,17 +57,17 @@ action = "replace"
 parent = "float"
 name = "__eq__"
 content = '''
-def __eq__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
 '''
 
-# Mark or override a variety of string methods as ReadOnly
+# Mark or override a variety of string methods as _PyreReadOnly_
 
 [["stdlib/builtins.pyi"]]
 action = "replace"
 parent = "str"
 name = "isdigit"
 content = '''
-def isdigit(self: ReadOnly[Self]) -> bool: ...
+def isdigit(self: _PyreReadOnly_[Self]) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -79,7 +78,7 @@ content = '''
 @overload
 def lower(self: LiteralString) -> LiteralString: ...
 @overload
-def lower(self: ReadOnly[Self]) -> str: ...  # type: ignore[misc]
+def lower(self: _PyreReadOnly_[Self]) -> str: ...  # type: ignore[misc]
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -87,7 +86,7 @@ action = "replace"
 parent = "str"
 name = "__eq__"
 content = '''
-def __eq__(self: ReadOnly[Self], __x: Readonly[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -95,7 +94,7 @@ action = "replace"
 parent = "str"
 name = "__getitem__"
 content = '''
-def __getitem__(self: ReadOnly[Self], __i: SupportsIndex | slice) -> str: ...
+def __getitem__(self: _PyreReadOnly_[Self], __i: SupportsIndex | slice) -> str: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -116,7 +115,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[_T]: ...
 @overload
-def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_T]]: ...
+def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[_PyreReadOnly_[_T]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -129,9 +128,9 @@ def __getitem__(self, __i: SupportsIndex) -> _T: ...
 @overload
 def __getitem__(self, __s: slice) -> list[_T]: ...
 @overload
-def __getitem__(self: ReadOnly[Self], __i: SupportsIndex) -> ReadOnly[_T]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __i: SupportsIndex) -> _PyreReadOnly_[_T]: ...
 @overload
-def __getitem__(self: ReadOnly[Self], __s: slice) -> list[ReadOnly[_T]]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __s: slice) -> list[_PyreReadOnly_[_T]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -139,7 +138,7 @@ action = "replace"
 parent = "list"
 name = "__contains__"
 content = '''
-def __contains__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 # Add read-only overloads for a handful of dict
@@ -152,7 +151,7 @@ content = '''
 @overload
 def keys(self) -> dict_keys[_KT, _VT]: ...
 @overload
-def keys(self: ReadOnly[Self]) -> ReadOnly[dict_keys[_KT, _VT]]: ...
+def keys(self: _PyreReadOnly_[Self]) -> _PyreReadOnly_[dict_keys[_KT, _VT]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -163,7 +162,7 @@ content = '''
 @overload
 def values(self) -> dict_values[_KT, _VT]: ...
 @overload
-def values(self: ReadOnly[Self]) -> ReadOnly[dict_values[_KT, _VT]]: ...
+def values(self: _PyreReadOnly_[Self]) -> _PyreReadOnly_[dict_values[_KT, _VT]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -174,7 +173,7 @@ content = '''
 @overload
 def items(self) -> dict_items[_KT, _VT]: ...
 @overload
-def items(self: ReadOnly[Self]) -> ReadOnly[dict_items[_KT, _VT]]: ...
+def items(self: _PyreReadOnly_[Self]) -> _PyreReadOnly_[dict_items[_KT, _VT]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -187,9 +186,9 @@ def get(self, __key: _KT) -> _VT | None: ...
 @overload
 def get(self, __key: _KT, __default: _VT | _T) -> _VT | _T: ...
 @overload
-def get(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT | None]: ...
+def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT | None]: ...
 @overload
-def get(self: ReadOnly[Self], __key: ReadOnly[_KT], __default: ReadOnly[_VT | _T]) -> ReadOnly[_VT | _T]: ...
+def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT], __default: _PyreReadOnly_[_VT | _T]) -> _PyreReadOnly_[_VT | _T]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -200,7 +199,7 @@ content = '''
 @overload
 def __getitem__(self, __key: _KT) -> _VT: ...
 @overload
-def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -211,7 +210,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[_KT]: ...
 @overload
-def __iter__(self: ReadOnly[dict[_KT, _VT]]) -> Iterator[ReadOnly[_KT]]: ...
+def __iter__(self: _PyreReadOnly_[dict[_KT, _VT]]) -> Iterator[_PyreReadOnly_[_KT]]: ...
 '''
 
 # Mark a couple of set methods as read-only
@@ -221,7 +220,7 @@ action = "replace"
 parent = "set"
 name = "__contains__"
 content = '''
-def __contains__(self, __o: ReadOnly[object]) -> bool: ...
+def __contains__(self, __o: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -230,9 +229,9 @@ parent = "set"
 name = "__sub__"
 content = '''
 @overload
-def __sub__(self, __s: ReadOnly[AbstractSet[_T | None]]) -> set[_T]: ...
+def __sub__(self, __s: _PyreReadOnly_[AbstractSet[_T | None]]) -> set[_T]: ...
 @overload
-def __sub__(self: ReadOnly[Self], __s: ReadOnly[AbstractSet[_T | None]]) -> ReadOnly[set[_T]]: ...
+def __sub__(self: _PyreReadOnly_[Self], __s: _PyreReadOnly_[AbstractSet[_T | None]]) -> _PyreReadOnly_[set[_T]]: ...
 '''
 
 # Mark a few of the builtin functions as read-only
@@ -241,14 +240,14 @@ def __sub__(self: ReadOnly[Self], __s: ReadOnly[AbstractSet[_T | None]]) -> Read
 action = "replace"
 name = "hasattr"
 content = '''
-def hasattr(__obj: ReadOnly[object], __name: str) -> bool: ...
+def hasattr(__obj: _PyreReadOnly_[object], __name: str) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
 action = "replace"
 name = "len"
 content = '''
-def len(__obj: ReadOnly[Sized]) -> int: ...
+def len(__obj: _PyreReadOnly_[Sized]) -> int: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -257,10 +256,10 @@ name = "sorted"
 content = '''
 @overload
 def sorted(
-    __iterable: ReadOnly[Iterable[SupportsRichComparisonT]], *, key: None = None, reverse: bool = False
+    __iterable: _PyreReadOnly_[Iterable[SupportsRichComparisonT]], *, key: None = None, reverse: bool = False
 ) -> list[SupportsRichComparisonT]: ...
 @overload
-def sorted(__iterable: ReadOnly[Iterable[_T]], *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
+def sorted(__iterable: _PyreReadOnly_[Iterable[_T]], *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
 '''
 
 # Explicitly define BaseException's __str__ and __repr__ so that Pysa can mark them as sources.
@@ -281,7 +280,6 @@ action = "add"
 position = "top"
 content = '''
 from typing_extensions import Self
-from pyre_extensions import ReadOnly
 '''
 
 # Avoid using a type alias for AsyncContextManager
@@ -306,7 +304,7 @@ parent = "Container"
 name = "__contains__"
 content = '''
 @abstractmethod
-def __contains__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
 '''
 
 
@@ -324,10 +322,10 @@ def __getitem__(self, index: int) -> _T_co: ...
 def __getitem__(self, index: slice) -> Sequence[_T_co]: ...
 @overload
 @abstractmethod
-def __getitem__(self: ReadOnly[Self], __i: int) -> ReadOnly[_T_co]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __i: int) -> _PyreReadOnly_[_T_co]: ...
 @overload
 @abstractmethod
-def __getitem__(self: ReadOnly[Self], __s: slice) -> ReadOnly[Self]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __s: slice) -> _PyreReadOnly_[Self]: ...
 '''
 
 # Add read-only overloads for Collection.__iter__
@@ -339,7 +337,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[_T_co]: ...
 @overload
-def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_T_co]]: ...
+def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[_PyreReadOnly_[_T_co]]: ...
 '''
 
 # Add read-only overloads for ItemsView.__iter__
@@ -351,7 +349,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[tuple[_KT_co, _VT_co]]: ...
 @overload
-def __iter__(self: ReadOnly[Self]) -> Iterator[tuple[ReadOnly[_KT_co], ReadOnly[_VT_co]]]: ...
+def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[tuple[_PyreReadOnly_[_KT_co], _PyreReadOnly_[_VT_co]]]: ...
 '''
 
 # Add read-only overloads for KeysView.__iter__
@@ -363,7 +361,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[_KT_co]: ...
 @overload
-def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_KT_co]]: ...
+def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[_PyreReadOnly_[_KT_co]]: ...
 '''
 
 # Add read-only overloads for ValuesView.__iter__
@@ -375,7 +373,7 @@ content = '''
 @overload
 def __iter__(self) -> Iterator[_VT_co]: ...
 @overload
-def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_VT_co]]: ...
+def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[_PyreReadOnly_[_VT_co]]: ...
 '''
 
 # Add read-only overloads to several Mapping methods, or mark as read-only
@@ -390,7 +388,7 @@ content = '''
 def __getitem__(self, __key: _KT) -> _VT_co: ...
 @overload
 @abstractmethod
-def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co]: ...
+def __getitem__(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT_co]: ...
 '''
 
 [["stdlib/typing.pyi"]]
@@ -403,9 +401,9 @@ def get(self, __key: _KT) -> _VT_co | None: ...
 @overload
 def get(self, __key: _KT, default: _VT_co | _T) -> _VT_co | _T: ...
 @overload
-def get(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co | None]: ...
+def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT_co | None]: ...
 @overload
-def get(self: ReadOnly[Self], __key: ReadOnly[_KT], default: ReadOnly[_VT_co | _T]) -> ReadOnly[_VT_co | _T]: ...
+def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT], default: _PyreReadOnly_[_VT_co | _T]) -> _PyreReadOnly_[_VT_co | _T]: ...
 '''
 
 [["stdlib/typing.pyi"]]
@@ -413,7 +411,15 @@ action = "replace"
 parent = "Mapping"
 name = "__contains__"
 content = '''
-def __contains__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
+'''
+
+
+[["stdlib/typing.pyi"]]
+action = "add"
+position = "bottom"
+content = '''
+class _PyreReadOnly_(Generic[_T]): ...
 '''
 
 
@@ -460,12 +466,18 @@ content = '''
 from . import path
 '''
 
+[["stdlib/urllib/parse.pyi"]]
+action = "add"
+position = "top"
+content = '''
+from typing import _PyreReadOnly_
+'''
 
 [["stdlib/urllib/parse.pyi"]]
 action = "replace"
 name = "unquote_plus"
 content='''
-def unquote_plus(string: ReadOnly[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
+def unquote_plus(string: _PyreReadOnly_[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
 '''
 
 

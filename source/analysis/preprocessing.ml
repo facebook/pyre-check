@@ -4374,13 +4374,21 @@ module SelfType = struct
                           base =
                             {
                               Node.value =
-                                Name
-                                  (Attribute
-                                    {
-                                      base = { Node.value = Name (Identifier "pyre_extensions"); _ };
-                                      attribute = "ReadOnly";
-                                      special = false;
-                                    });
+                                ( Name
+                                    (Attribute
+                                      {
+                                        base = { Node.value = Name (Identifier "typing"); _ };
+                                        attribute = "_PyreReadOnly_";
+                                        special = false;
+                                      })
+                                | Name
+                                    (Attribute
+                                      {
+                                        base =
+                                          { Node.value = Name (Identifier "pyre_extensions"); _ };
+                                        attribute = "ReadOnly";
+                                        special = false;
+                                      }) );
                               _;
                             };
                           index =

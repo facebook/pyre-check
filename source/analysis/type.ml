@@ -726,7 +726,7 @@ module Visitors = struct
           | Tuple _ -> "tuple" :: sofar, recursive_type_names
           | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
           | Union _ -> "typing.Union" :: sofar, recursive_type_names
-          | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
+          | ReadOnly _ -> "typing._PyreReadOnly_" :: sofar, recursive_type_names
           | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
           | ParamSpecComponent _
           | Bottom

@@ -533,7 +533,9 @@ let matches_annotation_constraint
         | "$unknown" ->
             None
         | "typing.Optional" -> extract_class_name (extract_optional t)
-        | "pyre_extensions.ReadOnly" -> extract_class_name (extract_readonly t)
+        | "typing._PyreReadOnly_"
+        | "pyre_extensions.ReadOnly" ->
+            extract_class_name (extract_readonly t)
         | extracted_class_name -> Some extracted_class_name
       in
       let parsed_type = PyrePysaApi.ReadOnly.parse_annotation pyre_api annotation_expression in

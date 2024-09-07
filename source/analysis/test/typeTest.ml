@@ -1338,7 +1338,7 @@ let test_elements _ =
     ["str"; "typing_extensions.Literal"]
     (Type.collect_names (Type.Literal (Type.String AnyLiteral)));
   assert_equal
-    ["int"; "list"; "pyre_extensions.ReadOnly"]
+    ["int"; "list"; "typing._PyreReadOnly_"]
     (Type.collect_names (Type.ReadOnly (Type.list Type.integer)));
   ()
 

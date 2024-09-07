@@ -5,6 +5,7 @@ from typing_extensions import TypeAlias
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
+from typing import _PyreReadOnly_
 
 __all__ = [
     "urlparse",
@@ -135,7 +136,7 @@ else:
     def unquote(string: str, encoding: str = "utf-8", errors: str = "replace") -> str: ...
 
 def unquote_to_bytes(string: str | bytes | bytearray) -> bytes: ...
-def unquote_plus(string: ReadOnly[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
+def unquote_plus(string: _PyreReadOnly_[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
 @overload
 def urldefrag(url: str) -> DefragResult: ...
 @overload
