@@ -261,20 +261,20 @@ class CodeGenerator:
 
         if valid_branch == 1:
             conditions = [
-                (f"if {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
-                (f"elif {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"if random.random() < 0.5:", f"{curr_var} = {non_tainted_var}"),
+                (f"elif random.random() < 0.5:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
                 (f"else:", f"{curr_var} = {non_tainted_var}")
             ]
         elif valid_branch == 2:
             conditions = [
-                (f"if {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
-                (f"elif {prev_var} == {prev_var}:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
+                (f"if random.random() < 0.5:", f"{curr_var} = {prev_var} + {non_tainted_var}"),
+                (f"elif random.random() < 0.5:", f"{curr_var} = {non_tainted_var}"),
                 (f"else:", f"{curr_var} = {non_tainted_var}")
             ]
         else:
             conditions = [
-                (f"if {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
-                (f"elif {prev_var} == 'invalid':", f"{curr_var} = {non_tainted_var}"),
+                (f"if random.random() < 0.5:", f"{curr_var} = {non_tainted_var}"),
+                (f"elif random.random() < 0.5:", f"{curr_var} = {non_tainted_var}"),
                 (f"else:", f"{curr_var} = {prev_var} + {non_tainted_var}")
             ]
 
@@ -285,6 +285,7 @@ class CodeGenerator:
             ]
         )
         return f"{non_tainted_initialization}\n{if_else_elif_statements}"
+
 
     def generate_nested_loops(self) -> str:
         prev_var = self.get_last_variable()
