@@ -7,9 +7,9 @@ import shutil
 import logging
 import random
 
-# Import both code generators, use a parameter to select the correct one
-from code_generator import CodeGenerator as CodeGenerator1
-from code_generator2 import CodeGenerator as CodeGenerator2
+# Import both code generators with the updated filenames
+from forward_code_generator import CodeGenerator as CodeGenerator1
+from mutation_based_code_generator import CodeGenerator as CodeGenerator2
 
 logging.basicConfig(level=logging.INFO)
 
