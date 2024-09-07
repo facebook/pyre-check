@@ -1420,6 +1420,20 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
+      constant = 0
+      def foo():
+        while True:
+          constant += 1
+    |}
+           {|
+      $local_qualifier$constant = 0
+      def qualifier.foo():
+        while True:
+          $local_qualifier?foo$constant += 1
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
       global_constant = 1
       def foo():
         nonlocal_constant = 2
