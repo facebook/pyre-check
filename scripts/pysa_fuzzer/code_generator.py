@@ -315,10 +315,4 @@ class CodeGenerator:
 
 
 
-generator = CodeGenerator()
-print(generator.generate_source())
-print(generator.generate_for_loop_with_if())
-print(generator.generate_for_loop_with_if())
-print(generator.generate_for_loop_with_if())
-print(generator.generate_sink())
-
+# hello
