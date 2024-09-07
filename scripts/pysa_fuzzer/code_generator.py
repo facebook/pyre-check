@@ -291,13 +291,14 @@ class CodeGenerator:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
         loop_body = f"{curr_var} += {prev_var}"
-        nested_loop = (
+        
+        return (
             f"{curr_var} = ''\n"
             + f"for _ in range({random.randint(2, 5)}):\n"
             + f"    for __ in range({random.randint(2, 5)}):\n"
             + f"        {textwrap.indent(loop_body, '        ')}"
         )
-        return nested_loop
+
 
     def generate_try_except(self) -> str:
         prev_var = self.get_last_variable()
