@@ -48,7 +48,6 @@ def generate_python_files(num_files, num_statements, generator_version, seed=Non
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
-    mutation_mapping = {}
 
     # Generate mutations based on seed
     if generator_version == 2 and seed is not None:
@@ -67,18 +66,11 @@ def generate_python_files(num_files, num_statements, generator_version, seed=Non
             file.write(generated_code)
         filenames.append(str(filename))
 
-        if generator_version == 2:
-            mutation_mapping[filename.name] = mutation_number
-
         logging.info(f"Generated {filename}")
 
-    # Save filenames and mutation mapping (if generator_version == 2) to temporary files
+    # Save filenames to temporary file
     with open('filenames.tmp', 'w') as tmp_file:
         json.dump(filenames, tmp_file)
-
-    if generator_version == 2:
-        with open('mutation_mapping.tmp', 'w') as tmp_file:
-            json.dump(mutation_mapping, tmp_file)
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -152,7 +144,7 @@ def find_undetected_files():
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp', 'mutation_mapping.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
