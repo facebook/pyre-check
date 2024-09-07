@@ -741,7 +741,7 @@ let test_check_typed_dictionaries =
                 movie.pop("name")
             |}
            ["Undefined attribute [16]: `Movie` has no attribute `pop`."];
-      (* TODO(T41338881) required keys may not be deleted from typeddicts. *)
+      (* Required keys may not be deleted from typeddicts. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
            {|
@@ -759,7 +759,10 @@ let test_check_typed_dictionaries =
               def f(movie: Movie) -> None:
                 del movie["name"]
             |}
-           [];
+           [
+             "Invalid TypedDict operation [54]: Cannot delete required field `name` from TypedDict \
+              `Movie`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
            {|

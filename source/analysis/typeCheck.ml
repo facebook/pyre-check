@@ -5719,14 +5719,50 @@ module State (Context : Context) = struct
         let resolution, errors = forward_assert ~resolution ~origin test in
         resolution, message_errors @ errors
     | Delete expressions ->
-        (* TODO(T41338881) required keys may not be deleted from typeddicts. *)
+        (* TODO(T200996923) unset_local will not work if the value is a global, such as a top-level
+           variable or function *)
         let process_expression (resolution, errors_sofar) expression =
           let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
-          let resolution =
+          let resolution, errors =
             match Node.value expression with
             | Name (Identifier identifier) ->
-                Resolution.unset_local resolution ~reference:(Reference.create identifier)
-            | _ -> resolution
+                Resolution.unset_local resolution ~reference:(Reference.create identifier), errors
+            | Subscript
+                {
+                  Subscript.base;
+                  index =
+                    { Node.value = Constant (String { kind = String; value = field_name }); _ };
+                } -> (
+                let { Resolved.resolved; _ } = forward_expression ~resolution base in
+                match GlobalResolution.get_typed_dictionary global_resolution resolved with
+                | Some { Type.TypedDictionary.fields; name = typed_dictionary_name } ->
+                    if
+                      List.exists fields ~f:(fun { Type.TypedDictionary.name; required; _ } ->
+                          required && String.equal name field_name)
+                    then
+                      let errors =
+                        emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.TypedDictionaryInvalidOperation
+                               {
+                                 typed_dictionary_name;
+                                 field_name;
+                                 method_name = "__delitem__";
+                                 mismatch =
+                                   {
+                                     actual = Type.Any;
+                                     expected = Type.Any;
+                                     due_to_invariance = false;
+                                   };
+                               })
+                      in
+                      resolution, errors
+                    else
+                      resolution, errors
+                | _ -> resolution, errors)
+            | _ -> resolution, errors
           in
           resolution, List.append errors errors_sofar
         in
