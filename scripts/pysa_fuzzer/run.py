@@ -2,10 +2,14 @@ import subprocess
 import os
 import json
 import argparse
-from code_generator import CodeGenerator
 from pathlib import Path
 import shutil
 import logging
+import random
+
+# Import both code generators, use a parameter to select the correct one
+from code_generator import CodeGenerator as CodeGenerator1
+from code_generator2 import CodeGenerator as CodeGenerator2
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,25 +22,56 @@ def run_command(command, output_file=None):
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
-def generate_python_files(num_files, num_statements):
-    generator = CodeGenerator()
-    output_dir = Path('generated_files')
+def generate_random_seed(num_files, num_mutations=48):
+    return [random.randint(1, num_mutations) for _ in range(num_files)]
 
+def apply_mutation(generator, mutation_number):
+    if 1 <= mutation_number <= 24:
+        # Apply source mutation
+        mutation_method = getattr(generator, f"source_mutation_{mutation_number}")
+        mutation_method()
+    elif 25 <= mutation_number <= 48:
+        # Apply sink mutation
+        mutation_method = getattr(generator, f"sink_mutation_{mutation_number - 24}")
+        mutation_method()
+
+def generate_python_files(num_files, num_statements, generator_version, seed=None):
+    if generator_version == 1:
+        generator = CodeGenerator1()
+    else:
+        generator = CodeGenerator2()
+
+    output_dir = Path('generated_files')
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
+    mutation_mapping = {}
+
     for i in range(1, num_files + 1):
-        generator = CodeGenerator()
-        generated_code = generator.generate_statements(num_statements)
+        if generator_version == 2 and seed:
+            mutation_number = seed[i-1]
+            apply_mutation(generator, mutation_number)
+        generated_code = generator.generate_statements(num_statements) if generator_version == 1 else generator.generate()
+
         filename = output_dir / f'test_{i}.py'
         with open(filename, 'w') as file:
+            if generator_version == 2:
+                file.write("import random\n")
             file.write(generated_code)
         filenames.append(str(filename))
+
+        if generator_version == 2:
+            mutation_mapping[filename.name] = mutation_number
+
         logging.info(f"Generated {filename}")
 
-    # Save the filenames to a temporary file
+    # Save filenames and mutation mapping (if generator_version == 2) to temporary files
     with open('filenames.tmp', 'w') as tmp_file:
         json.dump(filenames, tmp_file)
+
+    if generator_version == 2:
+        with open('mutation_mapping.tmp', 'w') as tmp_file:
+            json.dump(mutation_mapping, tmp_file)
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -79,46 +114,38 @@ def run_pyre():
     run_command(['pyre', '-n', 'analyze'], output_file='analysis_output.tmp')
 
 def find_undetected_files():
-    # Load the filenames from the temp file
     try:
-        with open('../filenames.tmp', 'r') as tmp_file:
+        with open('filenames.tmp', 'r') as tmp_file:
             filenames = json.load(tmp_file)
     except FileNotFoundError:
         logging.error("Temporary file with filenames not found.")
         return
 
-    # Load the analysis output from the file
     try:
-        with open('../analysis_output.tmp', 'r') as file:
+        with open('analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
         return
 
-    # Extract the list of files where the flow has been detected
     detected_files = set()
     for entry in analysis_output:
-        detected_files.add(os.path.basename(entry['path']))  # Normalize the path to get the filename only
+        detected_files.add(os.path.basename(entry['path']))
 
-    # Normalize filenames to get the filename only
     all_files = {os.path.basename(filename) for filename in filenames}
-
-    # Find the files where the flow has not been detected
     undetected_files = all_files - detected_files
 
-    # Output the list of undetected files
     logging.info("Files where the flow has not been detected:")
     for file in sorted(undetected_files, key=lambda x: int(x[len('test_'):-len('.py')])):
         logging.info(file)
 
-    # Calculate and print the percentage of undetected files
     total_files = len(all_files)
     undetected_count = len(undetected_files)
     undetected_percentage = (undetected_count / total_files) * 100
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp', 'mutation_mapping.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
@@ -134,11 +161,13 @@ def main():
     parser.add_argument('action', choices=['all', 'find-undetected', 'clean'], help="Action to perform")
     parser.add_argument('--num-files', type=int, default=100, help="Number of files to generate")
     parser.add_argument('--num-statements', type=int, default=20, help="Number of statements to generate in each file")
+    parser.add_argument('--generator-version', type=int, choices=[1, 2], default=1, help="Select code generator version")
 
     args = parser.parse_args()
 
     if args.action == 'all':
-        generate_python_files(args.num_files, args.num_statements)
+        seed = generate_random_seed(args.num_files) if args.generator_version == 2 else None
+        generate_python_files(args.num_files, args.num_statements, args.generator_version, seed)
         configure_and_analyze()
         run_pyre()
     elif args.action == "find-undetected":
