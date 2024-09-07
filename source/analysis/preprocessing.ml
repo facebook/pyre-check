@@ -770,8 +770,21 @@ module Qualify = struct
         locals = Set.add locals name;
       }
     in
-    let explore_single_target ~scope:({ locals; _ } as scope) name =
-      if Set.mem locals name then
+    let add_class_attribute_alias_to_scope
+        ~scope:({ module_name; parent; aliases; _ } as scope)
+        name
+      =
+      let qualified =
+        let qualifier = NestingContext.to_qualifier ~module_name parent in
+        let sanitized = Identifier.sanitized name in
+        Reference.create ~prefix:qualifier sanitized
+      in
+      { scope with aliases = Map.set aliases ~key:name ~data:(local_alias ~name:qualified) }
+    in
+    let explore_single_target ~scope:({ parent; locals; _ } as scope) name =
+      if NestingContext.is_class parent then
+        add_class_attribute_alias_to_scope ~scope name
+      else if Set.mem locals name then
         scope
       else
         add_local_alias_to_scope ~scope name

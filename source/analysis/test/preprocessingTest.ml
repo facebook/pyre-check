@@ -1943,6 +1943,30 @@ let test_qualify_source =
       $local_qualifier$hello: int = 1
       $local_qualifier$foo: typing.Annotated["int", qualifier.Foo("hello")]
     |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+      class A:
+         for x in []:
+           x
+    |}
+           {|
+      class qualifier.A:
+         for qualifier.A.x in []:
+           qualifier.A.x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+      class A:
+         with item as x:
+           x
+    |}
+           {|
+      class qualifier.A:
+         with item as qualifier.A.x:
+           qualifier.A.x
+    |};
       (* Don't qualify x within d["x"]. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
