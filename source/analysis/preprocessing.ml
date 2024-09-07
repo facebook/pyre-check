@@ -361,23 +361,7 @@ module Qualify = struct
     | _ -> Name.Identifier identifier
 
 
-  let rec qualify_target ~scope target =
-    let rec renamed_scope scope target =
-      match target with
-      | { Node.value = Expression.Tuple elements; _ }
-      | { Node.value = Expression.List elements; _ } ->
-          List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Expression.Starred (Starred.Once element); _ } -> renamed_scope scope element
-      | { Node.value = Name (Name.Identifier name); _ } ->
-          let scope, _ = qualify_local_identifier ~scope name in
-          scope
-      | _ -> scope
-    in
-    let scope = renamed_scope scope target in
-    scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
-
-
-  and qualify_comprehension_target ~scope target =
+  let rec qualify_comprehension_target ~scope target =
     let rec renamed_scope scope target =
       match target with
       | { Node.value = Expression.Tuple elements; _ } ->
@@ -772,6 +756,35 @@ module Qualify = struct
       { name = Reference.combine qualifier (Reference.create name) }
     in
     let local_alias ~name = { name } in
+    let add_local_alias_to_scope ~scope:({ module_name; parent; aliases; locals } as scope) name =
+      let renamed =
+        if is_qualified name then
+          name
+        else
+          let qualifier = NestingContext.to_qualifier ~module_name parent in
+          get_qualified_local_identifier name ~qualifier
+      in
+      {
+        scope with
+        aliases = Map.set aliases ~key:name ~data:{ name = Reference.create renamed };
+        locals = Set.add locals name;
+      }
+    in
+    let explore_single_target ~scope:({ locals; _ } as scope) name =
+      if Set.mem locals name then
+        scope
+      else
+        add_local_alias_to_scope ~scope name
+    in
+    let rec explore_target ~scope = function
+      | { Node.value = Expression.Tuple elements; _ }
+      | { Node.value = Expression.List elements; _ } ->
+          List.fold elements ~init:scope ~f:(fun scope target -> explore_target ~scope target)
+      | { Node.value = Expression.(Starred (Starred.Once element)); _ } ->
+          explore_target ~scope element
+      | { Node.value = Name (Name.Identifier name); _ } -> explore_single_target ~scope name
+      | _ -> scope
+    in
     let rec explore_aliases ({ module_name; parent; aliases; _ } as scope) { Node.value; _ } =
       match value with
       | Statement.Assign
@@ -827,7 +840,8 @@ module Qualify = struct
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }
-      | Statement.For { For.body; orelse; _ } ->
+      | Statement.For { For.target; body; orelse; _ } ->
+          let scope = explore_target ~scope target in
           let scope = List.fold body ~init:scope ~f:explore_aliases in
           List.fold orelse ~init:scope ~f:explore_aliases
       | Statement.Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
@@ -840,7 +854,14 @@ module Qualify = struct
           in
           let scope = List.fold orelse ~init:scope ~f:explore_aliases in
           List.fold finally ~init:scope ~f:explore_aliases
-      | Statement.With { With.body; _ } -> List.fold body ~init:scope ~f:explore_aliases
+      | Statement.With { With.items; body; _ } ->
+          let explore_with_item scope (_, alias) =
+            match alias with
+            | Some alias -> explore_target ~scope alias
+            | None -> scope
+          in
+          let scope = List.fold items ~init:scope ~f:explore_with_item in
+          List.fold body ~init:scope ~f:explore_aliases
       | Statement.While { While.body; orelse; _ } ->
           let scope = List.fold body ~init:scope ~f:explore_aliases in
           List.fold orelse ~init:scope ~f:explore_aliases
@@ -1148,9 +1169,9 @@ module Qualify = struct
       | Expression expression ->
           scope, Expression (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
-          let renamed_scope, target = qualify_target ~scope target in
-          let body_scope, body = qualify_statements ~scope:renamed_scope body in
-          let orelse_scope, orelse = qualify_statements ~scope:renamed_scope orelse in
+          let target = qualify_expression ~qualify_strings:DoNotQualify ~scope target in
+          let body_scope, body = qualify_statements ~scope body in
+          let orelse_scope, orelse = qualify_statements ~scope orelse in
           ( join_scopes body_scope orelse_scope,
             For
               {
@@ -1222,23 +1243,11 @@ module Qualify = struct
           in
           scope, Try { Try.body; handlers; orelse; finally; handles_exception_group }
       | With ({ With.items; body; _ } as block) ->
-          let scope, items =
-            let qualify_item (scope, reversed_items) (name, alias) =
-              let scope, item =
-                let renamed_scope, alias =
-                  match alias with
-                  | Some alias ->
-                      let scope, alias = qualify_target ~scope alias in
-                      scope, Some alias
-                  | _ -> scope, alias
-                in
-                renamed_scope, (qualify_expression ~qualify_strings:DoNotQualify ~scope name, alias)
-              in
-              scope, item :: reversed_items
-            in
-            let scope, reversed_items = List.fold items ~init:(scope, []) ~f:qualify_item in
-            scope, List.rev reversed_items
+          let qualify_item ~scope (name, alias) =
+            ( qualify_expression ~qualify_strings:DoNotQualify ~scope name,
+              Option.map alias ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope) )
           in
+          let items = List.map items ~f:(qualify_item ~scope) in
           let scope, body = qualify_statements ~scope body in
           scope, With { block with With.items; body }
       | While { While.test; body; orelse } ->
