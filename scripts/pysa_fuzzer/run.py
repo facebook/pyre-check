@@ -26,7 +26,7 @@ def generate_python_files(num_files, num_statements):
 
     filenames = []
     for i in range(1, num_files + 1):
-        generator.reset()
+        generator = CodeGenerator()
         generated_code = generator.generate_statements(num_statements)
         filename = output_dir / f'test_{i}.py'
         with open(filename, 'w') as file:
