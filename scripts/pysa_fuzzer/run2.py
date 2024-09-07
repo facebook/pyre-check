@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 import shutil
 import logging
+import random
 from code_generator2 import CodeGenerator
 
 logging.basicConfig(level=logging.INFO)
@@ -18,27 +19,46 @@ def run_command(command, output_file=None):
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
-def generate_python_files(num_files):
+def generate_random_seed(num_files, num_mutations=48):
+    return [random.randint(1, num_mutations) for _ in range(num_files)]
+
+def apply_mutation(generator, mutation_number):
+    if 1 <= mutation_number <= 24:
+        # Apply source mutation
+        mutation_method = getattr(generator, f"source_mutation_{mutation_number}")
+        mutation_method()
+    elif 25 <= mutation_number <= 48:
+        # Apply sink mutation
+        mutation_method = getattr(generator, f"sink_mutation_{mutation_number - 24}")
+        mutation_method()
+
+def generate_python_files(num_files, seed):
     generator = CodeGenerator()
     output_dir = Path('generated_files')
 
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
-    for i in range(1, num_files + 1):
-        mutation_function = generator.add_function_1 if i % 2 == 1 else generator.add_function_2
-        mutation_function()
+    mutation_mapping = {}
+    for i in range(num_files):
+        mutation_number = seed[i]
+        apply_mutation(generator, mutation_number)
         generated_code = generator.generate()
-        filename = output_dir / f'test_{i}.py'
+        filename = output_dir / f'test_{i+1}.py'
         with open(filename, 'w') as file:
             file.write("import random\n")
             file.write(generated_code)
         filenames.append(str(filename))
-        logging.info(f"Generated {filename}")
+        mutation_mapping[filename.name] = mutation_number  # Map the filename to its mutation
+        logging.info(f"Generated {filename} with mutation {mutation_number}")
 
     # Save the filenames to a temporary file
     with open('filenames.tmp', 'w') as tmp_file:
         json.dump(filenames, tmp_file)
+
+    # Save the mutation mapping to a temporary file
+    with open('mutation_mapping.tmp', 'w') as tmp_file:
+        json.dump(mutation_mapping, tmp_file)
 
 def configure_and_analyze():
     with open('.pyre_configuration', 'w') as config_file:
@@ -83,15 +103,23 @@ def run_pyre():
 def find_undetected_files():
     # Load the filenames from the temp file
     try:
-        with open('filenames.tmp', 'r') as tmp_file:
+        with open('../filenames.tmp', 'r') as tmp_file:
             filenames = json.load(tmp_file)
     except FileNotFoundError:
         logging.error("Temporary file with filenames not found.")
         return
 
+    # Load the mutation mapping from the temp file
+    try:
+        with open('../mutation_mapping.tmp', 'r') as tmp_file:
+            mutation_mapping = json.load(tmp_file)
+    except FileNotFoundError:
+        logging.error("Temporary file with mutation mapping not found.")
+        return
+
     # Load the analysis output from the file
     try:
-        with open('analysis_output.tmp', 'r') as file:
+        with open('../analysis_output.tmp', 'r') as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
@@ -119,8 +147,14 @@ def find_undetected_files():
     undetected_percentage = (undetected_count / total_files) * 100
     logging.info(f"Flow has not been detected in {undetected_percentage:.2f}% of the files")
 
+    # Print the first undetected file and its mutation
+    if undetected_files:
+        first_undetected_file = sorted(undetected_files, key=lambda x: int(x[len('test_'):-len('.py')]))[0]
+        mutation_number = mutation_mapping[first_undetected_file]
+        logging.info(f"First undetected file: {first_undetected_file} with mutation {mutation_number}")
+
 def clean_up():
-    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp']
+    files_to_remove = ['sources_sinks.pysa', 'taint.config', '.pyre_configuration', 'analysis_output.tmp', 'filenames.tmp', 'mutation_mapping.tmp']
     for file in files_to_remove:
         try:
             os.remove(file)
@@ -139,7 +173,9 @@ def main():
     args = parser.parse_args()
 
     if args.action == 'all':
-        generate_python_files(args.num_files)
+        seed = generate_random_seed(args.num_files)
+        print(f"Generated seed: {seed}")
+        generate_python_files(args.num_files, seed)
         configure_and_analyze()
         run_pyre()
     elif args.action == "find-undetected":
