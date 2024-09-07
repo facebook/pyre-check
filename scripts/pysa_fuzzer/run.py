@@ -22,7 +22,10 @@ def run_command(command, output_file=None):
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
-def generate_random_seed(num_files, num_mutations=48):
+def generate_mutations_from_seed(num_files, num_mutations=48, seed=None):
+    """Generate mutations for the files based on a seed."""
+    if seed is not None:
+        random.seed(seed)
     return [random.randint(1, num_mutations) for _ in range(num_files)]
 
 def apply_mutation(generator, mutation_number):
@@ -47,9 +50,13 @@ def generate_python_files(num_files, num_statements, generator_version, seed=Non
     filenames = []
     mutation_mapping = {}
 
+    # Generate mutations based on seed
+    if generator_version == 2 and seed is not None:
+        mutations = generate_mutations_from_seed(num_files, seed=seed)
+
     for i in range(1, num_files + 1):
         if generator_version == 2 and seed:
-            mutation_number = seed[i-1]
+            mutation_number = mutations[i-1]
             apply_mutation(generator, mutation_number)
         generated_code = generator.generate_statements(num_statements) if generator_version == 1 else generator.generate()
 
@@ -162,11 +169,12 @@ def main():
     parser.add_argument('--num-files', type=int, default=100, help="Number of files to generate")
     parser.add_argument('--num-statements', type=int, default=20, help="Number of statements to generate in each file")
     parser.add_argument('--generator-version', type=int, choices=[1, 2], default=1, help="Select code generator version")
+    parser.add_argument('--seed', type=int, help="Seed for random number generation")
 
     args = parser.parse_args()
 
     if args.action == 'all':
-        seed = generate_random_seed(args.num_files) if args.generator_version == 2 else None
+        seed = args.seed if args.generator_version == 2 else None
         generate_python_files(args.num_files, args.num_statements, args.generator_version, seed)
         configure_and_analyze()
         run_pyre()
