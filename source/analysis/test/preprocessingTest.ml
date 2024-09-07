@@ -589,13 +589,13 @@ let test_qualify_source =
            "\ntry:\n\tb\nexcept b as b:\n\tb\nelse:\n\tb\nfinally:\n\tb"
            "\n\
             try:\n\
-            \ta\n\
-            except a as $local_qualifier$b:\n\
+            \t$local_qualifier$b\n\
+            except $local_qualifier$b as $local_qualifier$b:\n\
             \t$local_qualifier$b\n\
             else:\n\
-            \ta\n\
+            \t$local_qualifier$b\n\
             finally:\n\
-            \ta";
+            \t$local_qualifier$b";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement
            "\nwith b as b: b"

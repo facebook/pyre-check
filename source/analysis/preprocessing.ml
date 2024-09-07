@@ -860,7 +860,12 @@ module Qualify = struct
       | Statement.Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let scope = List.fold body ~init:scope ~f:explore_aliases in
           let scope =
-            let explore_handler scope { Try.Handler.body; _ } =
+            let explore_handler scope { Try.Handler.name; body; _ } =
+              let scope =
+                match name with
+                | Some { Node.value = name; _ } -> explore_single_target ~scope name
+                | None -> scope
+              in
               List.fold body ~init:scope ~f:explore_aliases
             in
             List.fold handlers ~init:scope ~f:explore_handler
@@ -1233,16 +1238,21 @@ module Qualify = struct
       | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
-            let qualify_handler { Try.Handler.kind; name; body } =
-              let renamed_scope, name =
-                match name with
-                | None -> scope, name
-                | Some { Node.value = target; location } ->
-                    let scope, renamed = qualify_local_identifier ~scope target in
-                    scope, Some { Node.value = renamed; location }
+            let qualify_exception_name ~scope:{ aliases; _ } { Node.value; location } =
+              let value =
+                match Map.find aliases value with
+                | None -> value
+                | Some { name; _ } ->
+                    (* FIXME(grievejia): This assumes that `name` is always qualified as a local
+                       identifier. This may not be true when we are inside class toplevel. *)
+                    Reference.show name
               in
+              { Node.value; location }
+            in
+            let qualify_handler { Try.Handler.kind; name; body } =
+              let name = Option.map name ~f:(qualify_exception_name ~scope) in
               let kind = kind >>| qualify_expression ~qualify_strings:DoNotQualify ~scope in
-              let scope, body = qualify_statements ~scope:renamed_scope body in
+              let scope, body = qualify_statements ~scope body in
               scope, { Try.Handler.kind; name; body }
             in
             List.map handlers ~f:qualify_handler |> List.unzip

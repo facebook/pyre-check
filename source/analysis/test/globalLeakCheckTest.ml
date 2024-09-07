@@ -316,7 +316,6 @@ let test_global_exceptions context =
     context;
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
-    (* TODO (T142189949): de-duplicate errors on globals detected at the same location. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -327,9 +326,10 @@ let test_global_exceptions context =
           my_local = 2
     |}
     [
-      "Leak via method argument [3107]: Potential data leak to global `my_global` of type \
-       `typing.Any` via method arguments to method `isinstance`.";
-      "Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `isinstance`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
+       `int`.";
     ]
     context;
   assert_global_leak_errors
