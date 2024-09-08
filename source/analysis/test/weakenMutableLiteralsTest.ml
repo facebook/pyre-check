@@ -63,6 +63,14 @@ let test_weaken_mutable_literals context =
       actual_weakened_type
   in
   assert_weaken_mutable_literals
+    ~source:"list([test.D()])"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.C]";
+  assert_weaken_mutable_literals
+    ~source:"sorted([test.D()])"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.C]";
+  assert_weaken_mutable_literals
     ~source:"[test.D()]"
     ~against:"typing.List[test.C]"
     "typing.List[test.C]";
@@ -98,6 +106,14 @@ let test_weaken_mutable_literals context =
     ~source:"{ 's': y for y in [test.Q()] }"
     ~against:"typing.Dict[str, test.C]"
     "typing.Dict[str, test.Q]";
+  assert_weaken_mutable_literals
+    ~source:"set({ test.D() })"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.C]";
+  assert_weaken_mutable_literals
+    ~source:"set([test.D()])"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.C]";
   assert_weaken_mutable_literals
     ~source:"{ test.D() }"
     ~against:"typing.Set[test.C]"

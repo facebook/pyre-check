@@ -200,12 +200,27 @@ let rec weaken_mutable_literals
            expected
         else
           Type.parametric container_name [Single weakened_item_type])
-  | ( Some { Node.value = Expression.ListComprehension _; _ },
+  | ( Some
+        {
+          Node.value =
+            ( Expression.ListComprehension _
+            | Expression.Call
+                { callee = { Node.value = Expression.Name (Identifier ("list" | "sorted")); _ }; _ }
+              );
+          _;
+        },
       Type.Parametric { name = "list"; arguments = [Single actual] },
       Type.Parametric { name = "list"; arguments = [Single expected_argument] } )
     when comparator ~left:actual ~right:expected_argument ->
       make_weakened_type expected
-  | ( Some { Node.value = Expression.SetComprehension _; _ },
+  | ( Some
+        {
+          Node.value =
+            ( Expression.SetComprehension _
+            | Expression.Call { callee = { Node.value = Expression.Name (Identifier "set"); _ }; _ }
+              );
+          _;
+        },
       Type.Parametric { name = "set"; arguments = [Single actual] },
       Type.Parametric { name = "set"; arguments = [Single expected_argument] } )
     when comparator ~left:actual ~right:expected_argument ->
@@ -682,11 +697,26 @@ and weaken_against_readonly
       weakened_type
   in
   match expression, resolved, expected with
-  | ( Some { Node.value = Expression.ListComprehension _; _ },
+  | ( Some
+        {
+          Node.value =
+            ( Expression.ListComprehension _
+            | Expression.Call
+                { callee = { Node.value = Expression.Name (Identifier ("list" | "sorted")); _ }; _ }
+              );
+          _;
+        },
       Type.Parametric { name = "list" as parametric_name; arguments = [Single _] },
       Type.ReadOnly
         (Type.Parametric { name = "list"; arguments = [Single expected_argument_type]; _ }) )
-  | ( Some { Node.value = Expression.Set _ | SetComprehension _; _ },
+  | ( Some
+        {
+          Node.value =
+            ( Expression.Set _ | SetComprehension _
+            | Expression.Call { callee = { Node.value = Expression.Name (Identifier "set"); _ }; _ }
+              );
+          _;
+        },
       Type.Parametric { name = "set" as parametric_name; arguments = [Single _] },
       Type.ReadOnly
         (Type.Parametric { name = "set"; arguments = [Single expected_argument_type]; _ }) ) ->

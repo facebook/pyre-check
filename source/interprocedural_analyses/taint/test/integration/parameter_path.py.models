@@ -1081,7 +1081,7 @@
   "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
-    "callable_line": 614,
+    "callable_line": 617,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1106,7 +1106,7 @@
   "data": {
     "callable": "_test_source",
     "filename": "builtins.pyi",
-    "callable_line": 615,
+    "callable_line": 618,
     "sources": [
       {
         "port": "result",

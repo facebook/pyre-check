@@ -1123,6 +1123,8 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
 
         NotImplemented: _NotImplementedType
 
+        # simplified stub for sorted
+        def sorted(__iterable: Iterable[_T]) -> List[_T]: ...
       |}
     in
     if include_helper_builtins then
