@@ -12,10 +12,14 @@ import string
 
 
 class CodeGenerator:
-    def __init__(self) -> None:
+    def __init__(self, enable_known_false_negatives: bool) -> None:
         self.variables: List[str] = self.generate_variable_names()
         self.current_var: int = 0
         self.rng = Random()
+        self.enable_known_false_negatives: bool = enable_known_false_negatives
+
+    def reset(self) -> None:
+        self.current_var: int = 0
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)
@@ -325,7 +329,6 @@ class CodeGenerator:
         self,
         number_statements: int,
         rng: Random,
-        exclude_known_false_negatives: bool = False,
     ) -> str:
         if number_statements < 2:
             raise ValueError(
@@ -341,7 +344,6 @@ class CodeGenerator:
             lambda: self.generate_while_loop(rng.randint(1, 3)),
             lambda: self.generate_list(rng.randint(1, 3)),
             lambda: self.generate_dictionary(rng.randint(1, 3)),
-            lambda: self.generate_function_chain(rng.randint(1, 3)),
             self.generate_set,
             self.generate_string_concatenation,
             self.generate_string_slicing,
@@ -353,20 +355,13 @@ class CodeGenerator:
             self.generate_randomized_data_structures,
         ]
 
-        # List of functions known to cause issues (false negatives/positives)
-        known_false_negatives = [
-            self.generate_while_loop,
-            self.generate_nested_loops,
-            self.generate_function_chain,
-        ]
-
-        if exclude_known_false_negatives:
-            # Exclude known problematic functions
-            function_generators = [
-                func
-                for func in function_generators
-                if func not in known_false_negatives
-            ]
+        if self.enable_known_false_negatives:
+            # List of functions known to cause issues (false negatives/positives)
+            function_generators.extend(
+                [
+                    lambda: self.generate_function_chain(rng.randint(1, 3)),
+                ]
+            )
 
         # Generate import statements first
         import_statements = self.generate_import_statements()

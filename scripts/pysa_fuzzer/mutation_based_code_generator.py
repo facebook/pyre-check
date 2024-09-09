@@ -4,16 +4,17 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-from typing import List
+from random import Random
+from typing import List, Tuple, Callable
 import functools
+import inspect
 import itertools
 import os
-from random import Random
 import string
 
 
 class CodeGenerator:
-    def __init__(self) -> None:
+    def __init__(self, enable_known_false_negatives: bool) -> None:
         self.variables: List[str] = self.generate_variable_names()
         self.current_var: int = 0
         self.current_function_number: int = 0
@@ -21,6 +22,7 @@ class CodeGenerator:
         self.last_source: str = "input()"
         self.sink_statements: List[str] = []
         self.last_sink: str = "print"
+        self.enable_known_false_negatives: bool = enable_known_false_negatives
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)
@@ -48,15 +50,25 @@ class CodeGenerator:
         return f"{self.last_sink}({self.last_source})"
 
     def apply_mutation(self, rng: Random) -> None:
-        mutation_number = rng.randint(1, 48)
-        if 1 <= mutation_number <= 24:
-            # Apply source mutation
-            mutation_method = getattr(self, f"source_mutation_{mutation_number}")
-            mutation_method()
-        elif 25 <= mutation_number <= 48:
-            # Apply sink mutation
-            mutation_method = getattr(self, f"sink_mutation_{mutation_number - 24}")
-            mutation_method()
+        known_false_negatives = {
+            "source_mutation_43",  # T201163025: False negative with d[i] += s
+            "sink_mutation_5",  # T172546800: False negative when storing functions as values
+            "sink_mutation_6",  # T201159288: False negative with map(lambda x: sink(x), parameter)
+        }
+
+        mutations: List[Tuple[str, Callable[[], None]]] = []
+        for name, mutation in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not (
+                name.startswith("source_mutation_") or name.startswith("sink_mutation_")
+            ):
+                continue
+            if not self.enable_known_false_negatives and name in known_false_negatives:
+                continue
+            mutations.append((name, mutation))
+
+        mutations.sort(key=lambda m: m[0])
+        name, mutation = rng.choice(mutations)
+        mutation()
 
     def generate(self) -> str:
         headers = ["import random"]

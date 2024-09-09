@@ -42,11 +42,16 @@ def generate_python_files(
     num_statements: int,
     generator_version: int,
     seed: Optional[int] = None,
+    enable_known_false_negatives: bool = False,
 ) -> None:
     if generator_version == 1:
-        generator = ForwardCodeGenerator()
+        generator = ForwardCodeGenerator(
+            enable_known_false_negatives=enable_known_false_negatives
+        )
     elif generator_version == 2:
-        generator = MutationBasedCodeGenerator()
+        generator = MutationBasedCodeGenerator(
+            enable_known_false_negatives=enable_known_false_negatives
+        )
     else:
         raise AssertionError("invalid generator version")
 
@@ -62,7 +67,8 @@ def generate_python_files(
             generator.apply_mutation(rng)
             generated_code = generator.generate()
         elif isinstance(generator, ForwardCodeGenerator):
-            generated_code = ForwardCodeGenerator().generate_statements(
+            generator.reset()
+            generated_code = generator.generate_statements(
                 num_statements, rng
             )
         else:
@@ -215,8 +221,17 @@ def main() -> None:
         help="Select code generator version",
     )
     parser.add_argument("--seed", type=int, help="Seed for random number generation")
+    parser.add_argument(
+        "--enable-known-false-negatives",
+        action="store_true",
+        help="Enable the use of known false negatives",
+    )
 
     args = parser.parse_args()
+
+    if Path(os.getcwd()).name != 'pysa_fuzzer':
+        logging.error('This script must be ran from the pysa_fuzzer directory.')
+        sys.exit(1)
 
     output_dir = Path("generated_files")
     output_dir.mkdir(exist_ok=True)
@@ -228,6 +243,7 @@ def main() -> None:
             args.num_statements,
             args.generator_version,
             args.seed,
+            args.enable_known_false_negatives,
         )
         configure_and_analyze(output_dir)
         run_pysa(output_dir)
