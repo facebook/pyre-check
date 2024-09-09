@@ -36,22 +36,6 @@ def is_in_fbcode() -> bool:
     return False
 
 
-def generate_mutations_from_seed(num_files: int, num_mutations: int = 48) -> List[int]:
-    """Generate mutations for the files based on a seed."""
-    return [random.randint(1, num_mutations) for _ in range(num_files)]
-
-
-def apply_mutation(generator: MutationBasedCodeGenerator, mutation_number: int) -> None:
-    if 1 <= mutation_number <= 24:
-        # Apply source mutation
-        mutation_method = getattr(generator, f"source_mutation_{mutation_number}")
-        mutation_method()
-    elif 25 <= mutation_number <= 48:
-        # Apply sink mutation
-        mutation_method = getattr(generator, f"sink_mutation_{mutation_number - 24}")
-        mutation_method()
-
-
 def generate_python_files(
     output_dir: Path,
     num_files: int,
@@ -71,20 +55,16 @@ def generate_python_files(
 
     filenames = []
 
-    if seed is not None:
-        random.seed(seed)
-
-    # Generate mutations based on seed
-    if isinstance(generator, MutationBasedCodeGenerator):
-        mutations = generate_mutations_from_seed(num_files)
+    rng = random.Random(seed) if seed is not None else random.Random()
 
     for i in range(1, num_files + 1):
         if isinstance(generator, MutationBasedCodeGenerator):
-            mutation_number = mutations[i - 1]
-            apply_mutation(generator, mutation_number)
+            generator.apply_mutation(rng)
             generated_code = generator.generate()
         elif isinstance(generator, ForwardCodeGenerator):
-            generated_code = ForwardCodeGenerator().generate_statements(num_statements)
+            generated_code = ForwardCodeGenerator().generate_statements(
+                num_statements, rng
+            )
         else:
             raise AssertionError("unknown generator")
 

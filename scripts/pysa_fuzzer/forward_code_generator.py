@@ -5,7 +5,7 @@
 
 # pyre-strict
 from typing import List
-import random
+from random import Random
 import textwrap
 import itertools
 import string
@@ -15,6 +15,7 @@ class CodeGenerator:
     def __init__(self) -> None:
         self.variables: List[str] = self.generate_variable_names()
         self.current_var: int = 0
+        self.rng = Random()
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)
@@ -52,7 +53,7 @@ class CodeGenerator:
     def generate_addition(self, depth: int = 1) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
-        addition_code = f"{curr_var} = {prev_var} + '{random.randint(1, 9)}'"
+        addition_code = f"{curr_var} = {prev_var} + '{self.rng.randint(1, 9)}'"
 
         if depth > 1:
             nested_addition = self.generate_addition(depth - 1)
@@ -71,7 +72,7 @@ class CodeGenerator:
 
         return (
             f"{curr_var} = ''\n"
-            + f"for _ in range({random.randint(2, 5)}):\n"
+            + f"for _ in range({self.rng.randint(2, 5)}):\n"
             + f"{textwrap.indent(loop_body, '    ')}"
         )
 
@@ -88,7 +89,7 @@ class CodeGenerator:
         return (
             f"{curr_var} = ''\n"
             + f"counter{counter_name} = 0\n"
-            + f"while counter{counter_name} < {random.randint(2, 5)}:\n"
+            + f"while counter{counter_name} < {self.rng.randint(2, 5)}:\n"
             + f"{textwrap.indent(loop_body, '    ')}"
         )
 
@@ -96,14 +97,14 @@ class CodeGenerator:
         code_lines = []
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
-        list_length = random.randint(2, 10)
+        list_length = self.rng.randint(2, 10)
         list_creation = f"{curr_var}_list = [{prev_var} for _ in range({list_length})]"
         code_lines.append(list_creation)
 
         for _ in range(depth - 1):
             prev_var = f"{curr_var}_list"
             curr_var = self.generate_new_variable()
-            list_length = random.randint(2, 10)
+            list_length = self.rng.randint(2, 10)
             list_creation = (
                 f"{curr_var}_list = [{prev_var} for _ in range({list_length})]"
             )
@@ -126,15 +127,15 @@ class CodeGenerator:
         code_lines = []
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
-        dict_length = random.randint(2, 10)
-        dict_creation = f"{curr_var}_dict = {{{', '.join(f'{random.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
+        dict_length = self.rng.randint(2, 10)
+        dict_creation = f"{curr_var}_dict = {{{', '.join(f'{self.rng.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
         code_lines.append(dict_creation)
 
         for _ in range(depth - 1):
             prev_var = f"{curr_var}_dict"
             curr_var = self.generate_new_variable()
-            dict_length = random.randint(2, 10)
-            dict_creation = f"{curr_var}_dict = {{{', '.join(f'{random.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
+            dict_length = self.rng.randint(2, 10)
+            dict_creation = f"{curr_var}_dict = {{{', '.join(f'{self.rng.randint(1, 100)}: {prev_var}' for _ in range(dict_length))}}}"
             code_lines.append(dict_creation)
 
         last_var = f"{curr_var}_dict"
@@ -153,7 +154,7 @@ class CodeGenerator:
     def generate_set(self) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
-        set_length = random.randint(2, 10)
+        set_length = self.rng.randint(2, 10)
         set_creation = (
             f"{curr_var}_set = {{{', '.join(prev_var for _ in range(set_length))}}}"
         )
@@ -194,7 +195,7 @@ class CodeGenerator:
         curr_var = self.generate_new_variable()
         list_var = self.generate_new_variable()
         list_creation = (
-            f"{curr_var} = [{prev_var} for _ in range({random.randint(5, 10)})]"
+            f"{curr_var} = [{prev_var} for _ in range({self.rng.randint(5, 10)})]"
         )
         shuffle_operation = f"random.shuffle({curr_var})"
         access_operation = f"{list_var} = random.choice({curr_var})"
@@ -203,8 +204,8 @@ class CodeGenerator:
     def generate_loop_with_break_continue(self) -> str:
         prev_var = self.get_last_variable()
         curr_var = self.generate_new_variable()
-        loop_type = random.choice(["break", "continue"])
-        condition = random.randint(1, 5)
+        loop_type = self.rng.choice(["break", "continue"])
+        condition = self.rng.randint(1, 5)
 
         loop_body = (
             f"if _ == {condition}:\n"
@@ -214,7 +215,7 @@ class CodeGenerator:
 
         return (
             f"{curr_var} = ''\n"
-            + f"for _ in range({random.randint(5, 10)}):\n"
+            + f"for _ in range({self.rng.randint(5, 10)}):\n"
             + f"{textwrap.indent(loop_body, '    ')}"
         )
 
@@ -224,7 +225,7 @@ class CodeGenerator:
         curr_var = self.generate_new_variable()
 
         non_tainted_initialization = f'{non_tainted_var} = "non_tainted"'
-        valid_branch = random.randint(1, 3)
+        valid_branch = self.rng.randint(1, 3)
 
         if valid_branch == 1:
             conditions = [
@@ -266,8 +267,8 @@ class CodeGenerator:
 
         return (
             f"{curr_var} = ''\n"
-            + f"for _ in range({random.randint(2, 5)}):\n"
-            + f"    for __ in range({random.randint(2, 5)}):\n"
+            + f"for _ in range({self.rng.randint(2, 5)}):\n"
+            + f"    for __ in range({self.rng.randint(2, 5)}):\n"
             + f"        {textwrap.indent(loop_body, '        ')}"
         )
 
@@ -316,26 +317,31 @@ class CodeGenerator:
 
         return (
             f"{curr_var} = ''\n"
-            + f"for _ in range({random.randint(2, 5)}):\n"
+            + f"for _ in range({self.rng.randint(2, 5)}):\n"
             + loop_body
         )
 
     def generate_statements(
-        self, number_statements: int, exclude_known_false_negatives: bool = False
+        self,
+        number_statements: int,
+        rng: Random,
+        exclude_known_false_negatives: bool = False,
     ) -> str:
         if number_statements < 2:
             raise ValueError(
                 "number_statements should be at least 2 to include source and sink functions."
             )
 
+        self.rng = rng
+
         # Full list of function generators
         function_generators = [
-            lambda: self.generate_addition(random.randint(1, 3)),
-            lambda: self.generate_for_loop(random.randint(1, 3)),
-            lambda: self.generate_while_loop(random.randint(1, 3)),
-            lambda: self.generate_list(random.randint(1, 3)),
-            lambda: self.generate_dictionary(random.randint(1, 3)),
-            lambda: self.generate_function_chain(random.randint(1, 3)),
+            lambda: self.generate_addition(rng.randint(1, 3)),
+            lambda: self.generate_for_loop(rng.randint(1, 3)),
+            lambda: self.generate_while_loop(rng.randint(1, 3)),
+            lambda: self.generate_list(rng.randint(1, 3)),
+            lambda: self.generate_dictionary(rng.randint(1, 3)),
+            lambda: self.generate_function_chain(rng.randint(1, 3)),
             self.generate_set,
             self.generate_string_concatenation,
             self.generate_string_slicing,
@@ -369,7 +375,7 @@ class CodeGenerator:
         source_code = self.generate_source()
 
         # Select random functions, allowing for duplicates
-        selected_functions = random.choices(
+        selected_functions = self.rng.choices(
             function_generators, k=number_statements - 2
         )  # -2 to account for source and sink
         generated_code = "\n".join(func() for func in selected_functions)

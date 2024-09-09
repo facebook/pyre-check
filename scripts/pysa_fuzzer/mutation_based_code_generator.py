@@ -8,7 +8,7 @@ from typing import List
 import functools
 import itertools
 import os
-import random
+from random import Random
 import string
 
 
@@ -46,6 +46,17 @@ class CodeGenerator:
 
     def generate_sink(self) -> str:
         return f"{self.last_sink}({self.last_source})"
+
+    def apply_mutation(self, rng: Random) -> None:
+        mutation_number = rng.randint(1, 48)
+        if 1 <= mutation_number <= 24:
+            # Apply source mutation
+            mutation_method = getattr(self, f"source_mutation_{mutation_number}")
+            mutation_method()
+        elif 25 <= mutation_number <= 48:
+            # Apply sink mutation
+            mutation_method = getattr(self, f"sink_mutation_{mutation_number - 24}")
+            mutation_method()
 
     def generate(self) -> str:
         headers = ["import random"]
@@ -783,7 +794,6 @@ def {function_1}(x):
         self.sink_statements.append(
             f"""
 def {function_1}(x):
-    import random
     {temp_var} = list(str({self.last_sink}(x)))
     random.shuffle({temp_var})
     {shuffled_var} = ''.join({temp_var})
@@ -829,7 +839,6 @@ def {function_1}(x):
         self.source_statements.append(
             f"""
 def {shuffle_function_name}(x):
-    import random
     x_list = list(x)
     random.shuffle(x_list)
     return ''.join(x_list)
