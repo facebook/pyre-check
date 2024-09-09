@@ -2002,6 +2002,29 @@ let test_no_pyre_extensions =
     ]
 
 
+let test_pyre_extensions_PyreReadOnly =
+  (* To facilitate a rename of [pyre_extensions.ReadOnly] to [pyre_extensions.PyreReadOnly], we add
+     a temporary [PyreReadOnly] alias. Once [ReadOnly] has been renamed and the alias removed, this
+     test can be deleted. *)
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from pyre_extensions import PyreReadOnly
+      from typing import List
+
+      def f(x: PyreReadOnly[List[int]]) -> None:
+        x.append(1)
+    |}
+           [
+             "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+              `list.append` may modify its object. Cannot call it on readonly expression `x` of \
+              type `pyre_extensions.ReadOnly[List[int]]`.";
+           ];
+    ]
+
+
 let () =
   "readOnly"
   >::: [
@@ -2025,5 +2048,6 @@ let () =
          test_allowlisted_generic_integer_classes;
          test_typing_PyreReadOnly;
          test_no_pyre_extensions;
+         test_pyre_extensions_PyreReadOnly;
        ]
   |> Test.run

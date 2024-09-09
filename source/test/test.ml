@@ -1291,6 +1291,8 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
             return func
 
         class ReadOnly(Generic[_T]): ...
+
+        PyreReadOnly = ReadOnly
         |}
       );
       ( "pyre_extensions/generic.pyi",
