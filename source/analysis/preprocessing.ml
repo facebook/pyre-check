@@ -969,14 +969,6 @@ module Qualify = struct
         in
         do_qualify_assign_value ~qualify_potential_alias_strings ~scope value
       in
-      let qualify_assign ~scope ~target ~annotation ~value =
-        let target = qualify_assign_target ~scope ~annotation target in
-        let qualified_annotation = Option.map annotation ~f:(qualify_assign_annotation ~scope) in
-        let qualified_value =
-          Option.map value ~f:(qualify_assign_value ~scope ~qualified_annotation)
-        in
-        target, qualified_annotation, qualified_value
-      in
       let qualify_define
           scope
           ({
@@ -1109,13 +1101,16 @@ module Qualify = struct
       in
       match value with
       | Statement.Assign { Assign.target; annotation; value } ->
-          let target, annotation, value = qualify_assign ~scope ~target ~annotation ~value in
-          Statement.Assign { Assign.target; annotation; value }
-      | AugmentedAssign { AugmentedAssign.target; operator; value } ->
-          let target, _, value =
-            qualify_assign ~scope ~target ~annotation:None ~value:(Some value)
+          let target = qualify_assign_target ~scope ~annotation target in
+          let qualified_annotation = Option.map annotation ~f:(qualify_assign_annotation ~scope) in
+          let qualified_value =
+            Option.map value ~f:(qualify_assign_value ~scope ~qualified_annotation)
           in
-          let value = Option.value_exn value in
+          Statement.Assign
+            { Assign.target; annotation = qualified_annotation; value = qualified_value }
+      | AugmentedAssign { AugmentedAssign.target; operator; value } ->
+          let value = qualify_assign_value ~scope ~qualified_annotation:None value in
+          let target = qualify_assign_target ~scope ~annotation:None target in
           Statement.AugmentedAssign { AugmentedAssign.target; operator; value }
       | Assert { Assert.test; message; origin } ->
           Assert
@@ -1213,13 +1208,10 @@ module Qualify = struct
               body;
               orelse;
             }
-      | TypeAlias { TypeAlias.name; type_params; value } -> (
-          let target, _, value =
-            qualify_assign ~scope ~target:name ~annotation:None ~value:(Some value)
-          in
-          match value with
-          | Some value -> Statement.TypeAlias { TypeAlias.name = target; type_params; value }
-          | None -> failwith "ERROR: A type alias value is non-optional")
+      | TypeAlias { TypeAlias.name; type_params; value } ->
+          let value = qualify_assign_value ~scope ~qualified_annotation:None value in
+          let target = qualify_assign_target ~scope ~annotation:None name in
+          Statement.TypeAlias { TypeAlias.name = target; type_params; value }
       | Break
       | Continue
       | Import _
