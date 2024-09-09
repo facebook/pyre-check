@@ -53,3 +53,20 @@ def test_filter_lambda(i: int):
 
     # TODO(T137447924): This should be an issue, but it is NOT (false negative).
     elements = list(filter(lambda x: _test_sink(x), [_test_source()]))
+
+
+def lambda_source():
+    return list(map(lambda x: x[0], _test_source()))
+
+
+def test_lambda_source():
+    _test_sink(lambda_source())
+
+
+def lambda_sink(x):
+    # TODO(T201159288): False negative
+    list(map(lambda y: _test_sink(y), x))
+
+
+def test_lambda_sink():
+    lambda_sink(_test_source())
