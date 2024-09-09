@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
 from typing import List
 import random
 import textwrap
@@ -12,8 +13,8 @@ import string
 
 class CodeGenerator:
     def __init__(self) -> None:
-        self.variables = self.generate_variable_names()
-        self.current_var = 0
+        self.variables: List[str] = self.generate_variable_names()
+        self.current_var: int = 0
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)

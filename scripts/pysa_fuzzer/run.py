@@ -3,23 +3,25 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import subprocess
-import os
-import json
-import argparse
+# pyre-strict
 from pathlib import Path
-import shutil
+from typing import List, Optional
+import argparse
+import json
 import logging
+import os
 import random
+import shutil
+import subprocess
 
 # Import both code generators with the updated filenames
-from .forward_code_generator import CodeGenerator as CodeGenerator1
-from .mutation_based_code_generator import CodeGenerator as CodeGenerator2
+from .forward_code_generator import CodeGenerator as ForwardCodeGenerator
+from .mutation_based_code_generator import CodeGenerator as MutationBasedCodeGenerator
 
 logging.basicConfig(level=logging.INFO)
 
 
-def run_command(command, output_file=None):
+def run_command(command: List[str], output_file: Optional[str] = None) -> None:
     try:
         result = subprocess.run(
             command,
@@ -35,14 +37,12 @@ def run_command(command, output_file=None):
         logging.error(f"Command '{command}' failed with error: {e.stderr}")
 
 
-def generate_mutations_from_seed(num_files, num_mutations=48, seed=None):
+def generate_mutations_from_seed(num_files: int, num_mutations: int = 48) -> List[int]:
     """Generate mutations for the files based on a seed."""
-    if seed is not None:
-        random.seed(seed)
     return [random.randint(1, num_mutations) for _ in range(num_files)]
 
 
-def apply_mutation(generator, mutation_number):
+def apply_mutation(generator: MutationBasedCodeGenerator, mutation_number: int) -> None:
     if 1 <= mutation_number <= 24:
         # Apply source mutation
         mutation_method = getattr(generator, f"source_mutation_{mutation_number}")
@@ -53,30 +53,38 @@ def apply_mutation(generator, mutation_number):
         mutation_method()
 
 
-def generate_python_files(num_files, num_statements, generator_version, seed=None):
+def generate_python_files(
+    num_files: int,
+    num_statements: int,
+    generator_version: int,
+    seed: Optional[int] = None,
+) -> None:
     if generator_version == 1:
-        generator = CodeGenerator1()
+        generator = ForwardCodeGenerator()
     else:
-        generator = CodeGenerator2()
+        generator = MutationBasedCodeGenerator()
 
     output_dir = Path("generated_files")
     output_dir.mkdir(exist_ok=True)
 
     filenames = []
 
+    if seed is not None:
+        random.seed(seed)
+
     # Generate mutations based on seed
-    if generator_version == 2 and seed is not None:
-        mutations = generate_mutations_from_seed(num_files, seed=seed)
+    if isinstance(generator, MutationBasedCodeGenerator):
+        mutations = generate_mutations_from_seed(num_files)
 
     for i in range(1, num_files + 1):
-        if generator_version == 2 and seed:
+        if isinstance(generator, MutationBasedCodeGenerator):
             mutation_number = mutations[i - 1]
             apply_mutation(generator, mutation_number)
-        generated_code = (
-            generator.generate_statements(num_statements)
-            if generator_version == 1
-            else generator.generate()
-        )
+            generated_code = generator.generate()
+        elif isinstance(generator, ForwardCodeGenerator):
+            generated_code = ForwardCodeGenerator().generate_statements(num_statements)
+        else:
+            raise AssertionError("unknown generator")
 
         filename = output_dir / f"test_{i}.py"
         with open(filename, "w") as file:
@@ -92,7 +100,7 @@ def generate_python_files(num_files, num_statements, generator_version, seed=Non
         json.dump(filenames, tmp_file)
 
 
-def configure_and_analyze():
+def configure_and_analyze() -> None:
     with open(".pyre_configuration", "w") as config_file:
         config = {
             "site_package_search_strategy": "pep561",
@@ -137,12 +145,12 @@ def configure_and_analyze():
         json.dump(taint_config, taint_config_file, indent=2)
 
 
-def run_pyre():
+def run_pyre() -> None:
     logging.info("Please wait a minute or two for Pysa to Run!")
     run_command(["pyre", "-n", "analyze"], output_file="analysis_output.tmp")
 
 
-def find_undetected_files():
+def find_undetected_files() -> None:
     try:
         with open("filenames.tmp", "r") as tmp_file:
             filenames = json.load(tmp_file)
@@ -178,7 +186,7 @@ def find_undetected_files():
     )
 
 
-def clean_up():
+def clean_up() -> None:
     files_to_remove = [
         "sources_sinks.pysa",
         "taint.config",
@@ -197,7 +205,7 @@ def clean_up():
         shutil.rmtree(dir, ignore_errors=True)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build script with setup, analysis, and cleanup."
     )

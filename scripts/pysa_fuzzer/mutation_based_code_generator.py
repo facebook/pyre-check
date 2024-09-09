@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
 from typing import List
 import functools
 import itertools
@@ -13,13 +14,13 @@ import string
 
 class CodeGenerator:
     def __init__(self) -> None:
-        self.variables = self.generate_variable_names()
-        self.current_var = 0
-        self.current_function_number = 0
-        self.source_statements = []
-        self.last_source = "input()"
-        self.sink_statements = []
-        self.last_sink = "print"
+        self.variables: List[str] = self.generate_variable_names()
+        self.current_var: int = 0
+        self.current_function_number: int = 0
+        self.source_statements: List[str] = []
+        self.last_source: str = "input()"
+        self.sink_statements: List[str] = []
+        self.last_sink: str = "print"
 
     def generate_variable_names(self) -> List[str]:
         single_letter_names = list(string.ascii_lowercase)
