@@ -40,9 +40,6 @@ class CodeGenerator:
     def get_last_variable(self) -> str:
         return self.variables[self.current_var - 1]
 
-    def reset(self) -> None:
-        self.current_var = 0
-
     def generate_import_statements(self) -> str:
         return "import random\nimport math\n"
 
@@ -213,8 +210,8 @@ class CodeGenerator:
 
         loop_body = (
             f"if _ == {condition}:\n"
-            + f"    {loop_type}\n"
-            + f"    {curr_var} += {prev_var}"
+            + f"    {curr_var} += {prev_var}\n"
+            + f"    {loop_type}"
         )
 
         return (
