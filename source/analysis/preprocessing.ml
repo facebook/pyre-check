@@ -890,8 +890,69 @@ module Qualify = struct
 
   and qualify_statement ~scope ({ Node.value; _ } as statement) =
     let value =
-      let qualify_assign ~target ~annotation ~value =
-        let qualify_value ~qualify_potential_alias_strings ~scope value =
+      let qualify_assign_target
+          ~scope:({ module_name; parent; aliases; _ } as scope)
+          ~annotation
+          target
+        =
+        let is_special_form_assignment =
+          match target, annotation with
+          | ( { Node.value = Expression.Name (Name.Identifier _); _ },
+              Some { Node.value = Expression.Name (Name.Identifier "_SpecialForm"); _ } ) ->
+              true
+          | _ -> false
+        in
+        if is_special_form_assignment then
+          target
+        else
+          let location = Node.location target in
+          let is_class_toplevel = NestingContext.is_class parent in
+          match Node.value target with
+          | Expression.Name (Name.Identifier name) when is_class_toplevel -> (
+              match Map.find aliases name with
+              | None -> target
+              | Some { name } ->
+                  Node.create
+                    ~location
+                    (Expression.Name (create_name_from_reference ~location name)))
+          | Expression.Name (Attribute attribute as name) ->
+              let value =
+                if is_class_toplevel then
+                  match name_to_reference name with
+                  | Some reference ->
+                      let qualifier = NestingContext.to_qualifier ~module_name parent in
+                      qualify_if_needed ~qualifier reference
+                      |> create_name_from_reference ~location
+                      |> fun name -> Expression.Name name
+                  | None ->
+                      let { Name.Attribute.base; _ } = attribute in
+                      let qualified_base =
+                        qualify_expression ~qualify_strings:DoNotQualify ~scope base
+                      in
+                      Expression.Name (Name.Attribute { attribute with base = qualified_base })
+                else
+                  match qualify_attribute_name ~qualify_strings:DoNotQualify ~scope attribute with
+                  | Name.Identifier name ->
+                      Expression.Name (Name.Identifier (Identifier.sanitized name))
+                  | qualified -> Name qualified
+              in
+              Node.create ~location value
+          | Expression.Tuple _
+          | Expression.List _
+          | Expression.Starred _
+          | Expression.Name (Name.Identifier _)
+          | Expression.Subscript _ ->
+              qualify_expression ~qualify_strings:DoNotQualify ~scope target
+          | _ ->
+              (* This case is allowed in the type signatures, but should be prevented by the parser,
+                 because the python grammar has no additional valid target forms *)
+              target
+      in
+      let qualify_assign_annotation ~scope annotation =
+        qualify_expression ~qualify_strings:Qualify ~scope annotation
+      in
+      let qualify_assign_value ~scope:({ parent; _ } as scope) ~qualified_annotation value =
+        let do_qualify_assign_value ~qualify_potential_alias_strings ~scope value =
           match value with
           | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
@@ -900,80 +961,19 @@ module Qualify = struct
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | _ -> qualify_expression ~qualify_strings:DoNotQualify value ~scope
         in
-        let target =
-          let is_special_form_assignment =
-            match target, annotation with
-            | ( { Node.value = Expression.Name (Name.Identifier _); _ },
-                Some { Node.value = Expression.Name (Name.Identifier "_SpecialForm"); _ } ) ->
-                true
-            | _ -> false
-          in
-          if is_special_form_assignment then
-            target
-          else
-            let qualify_assignment_target
-                ~scope:({ module_name; parent; aliases; _ } as scope)
-                target
-              =
-              let location = Node.location target in
-              let is_class_toplevel = NestingContext.is_class parent in
-              match Node.value target with
-              | Expression.Name (Name.Identifier name) when is_class_toplevel -> (
-                  match Map.find aliases name with
-                  | None -> target
-                  | Some { name } ->
-                      Node.create
-                        ~location
-                        (Expression.Name (create_name_from_reference ~location name)))
-              | Expression.Name (Attribute attribute as name) ->
-                  let value =
-                    if is_class_toplevel then
-                      match name_to_reference name with
-                      | Some reference ->
-                          let qualifier = NestingContext.to_qualifier ~module_name parent in
-                          qualify_if_needed ~qualifier reference
-                          |> create_name_from_reference ~location
-                          |> fun name -> Expression.Name name
-                      | None ->
-                          let { Name.Attribute.base; _ } = attribute in
-                          let qualified_base =
-                            qualify_expression ~qualify_strings:DoNotQualify ~scope base
-                          in
-                          Expression.Name (Name.Attribute { attribute with base = qualified_base })
-                    else
-                      match
-                        qualify_attribute_name ~qualify_strings:DoNotQualify ~scope attribute
-                      with
-                      | Name.Identifier name ->
-                          Expression.Name (Name.Identifier (Identifier.sanitized name))
-                      | qualified -> Name qualified
-                  in
-                  Node.create ~location value
-              | Expression.Tuple _
-              | Expression.List _
-              | Expression.Starred _
-              | Expression.Name (Name.Identifier _)
-              | Expression.Subscript _ ->
-                  qualify_expression ~qualify_strings:DoNotQualify ~scope target
-              | _ ->
-                  (* This case is allowed in the type signatures, but should be prevented by the
-                     parser, because the python grammar has no additional valid target forms *)
-                  target
-            in
-            qualify_assignment_target ~scope target
+        let qualify_potential_alias_strings =
+          match qualified_annotation >>| Expression.show, parent with
+          | Some "typing_extensions.TypeAlias", _ -> Qualify
+          | None, NestingContext.TopLevel -> OptionallyQualify
+          | _, _ -> DoNotQualify
         in
-        let qualified_annotation =
-          annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
-        in
+        do_qualify_assign_value ~qualify_potential_alias_strings ~scope value
+      in
+      let qualify_assign ~scope ~target ~annotation ~value =
+        let target = qualify_assign_target ~scope ~annotation target in
+        let qualified_annotation = Option.map annotation ~f:(qualify_assign_annotation ~scope) in
         let qualified_value =
-          let qualify_potential_alias_strings =
-            let { parent; _ } = scope in
-            match qualified_annotation >>| Expression.show, parent with
-            | Some "typing_extensions.TypeAlias", _ -> Qualify
-            | None, NestingContext.TopLevel -> OptionallyQualify
-            | _, _ -> DoNotQualify
-          in
-          value >>| qualify_value ~scope ~qualify_potential_alias_strings
+          Option.map value ~f:(qualify_assign_value ~scope ~qualified_annotation)
         in
         target, qualified_annotation, qualified_value
       in
@@ -1084,10 +1084,12 @@ module Qualify = struct
       in
       match value with
       | Statement.Assign { Assign.target; annotation; value } ->
-          let target, annotation, value = qualify_assign ~target ~annotation ~value in
+          let target, annotation, value = qualify_assign ~scope ~target ~annotation ~value in
           Statement.Assign { Assign.target; annotation; value }
       | AugmentedAssign { AugmentedAssign.target; operator; value } ->
-          let target, _, value = qualify_assign ~target ~annotation:None ~value:(Some value) in
+          let target, _, value =
+            qualify_assign ~scope ~target ~annotation:None ~value:(Some value)
+          in
           let value = Option.value_exn value in
           Statement.AugmentedAssign { AugmentedAssign.target; operator; value }
       | Assert { Assert.test; message; origin } ->
@@ -1187,7 +1189,9 @@ module Qualify = struct
               orelse;
             }
       | TypeAlias { TypeAlias.name; type_params; value } -> (
-          let target, _, value = qualify_assign ~target:name ~annotation:None ~value:(Some value) in
+          let target, _, value =
+            qualify_assign ~scope ~target:name ~annotation:None ~value:(Some value)
+          in
           match value with
           | Some value -> Statement.TypeAlias { TypeAlias.name = target; type_params; value }
           | None -> failwith "ERROR: A type alias value is non-optional")
