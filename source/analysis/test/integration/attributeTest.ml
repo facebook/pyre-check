@@ -2086,8 +2086,8 @@ let test_class_with_same_name_as_local_variable =
                   x: Foo
             |}
            [
-             "Incompatible variable type [9]: Foo is declared to have type `Type[Foo]` but is used \
-              as type `None`.";
+             "Incompatible variable type [9]: Foo.Foo is declared to have type `Type[Foo]` but is \
+              used as type `None`.";
            ];
       (* TODO(T121169620): Pyre should recognize the `x` attribute. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -2103,9 +2103,8 @@ let test_class_with_same_name_as_local_variable =
                   print(self.x)
             |}
            [
-             "Incompatible variable type [9]: Foo is declared to have type `Type[Foo]` but is used \
-              as type `None`.";
-             "Undefined attribute [16]: `$local_Foo$Foo` has no attribute `x`.";
+             "Incompatible variable type [9]: Foo.Foo is declared to have type `Type[Foo]` but is \
+              used as type `None`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

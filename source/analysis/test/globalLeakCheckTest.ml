@@ -1933,10 +1933,7 @@ let test_global_statements context =
         if my_global := 3:
           my_global = 3
     |}
-    [
-      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
-       `int`.";
-    ]
+    []
     context;
   assert_global_leak_errors
     {|

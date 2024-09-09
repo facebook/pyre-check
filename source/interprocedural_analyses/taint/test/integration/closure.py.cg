@@ -2,7 +2,7 @@
 Call dependencies
 closure.async_nonlocal_closure_tito_with_decorator.inner._inlined_decorator (fun) -> [closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun) closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (object)]
 closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun) -> [closure.async_nonlocal_closure_tito_with_decorator.z (object)]
-closure.nonlocal_closure_define_before_variable_initialization.read (fun) -> [_test_sink (fun)]
+closure.nonlocal_closure_define_before_variable_initialization.read (fun) -> [_test_sink (fun) closure.nonlocal_closure_define_before_variable_initialization.x (object)]
 closure.async_nonlocal_closure_tito_ignore_decorator (fun) -> [_test_sink (fun) _test_source (fun) closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun) closure.async_tito (fun)]
 closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun) -> [closure.async_nonlocal_closure_tito_ignore_decorator.z (object)]
 closure.async_nonlocal_closure_tito_with_decorator (fun) -> [_test_sink (fun) _test_source (fun) closure.async_tito (fun)]

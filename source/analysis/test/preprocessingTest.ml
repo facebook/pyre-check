@@ -1307,7 +1307,7 @@ let test_qualify_source =
            {|
       $local_qualifier$x = 7
       def qualifier.foo():
-        print($local_qualifier$x)
+        print($local_qualifier?foo$x)
         $local_qualifier?foo$x = 9
     |};
       (* Nested defines. *)
@@ -1389,7 +1389,7 @@ let test_qualify_source =
     |}
            {|
       def qualifier.foo():
-        qualifier.foo()
+        $local_qualifier?foo$foo()
         $local_qualifier?foo$foo = 1
         $local_qualifier?foo$foo()
     |};
@@ -2223,13 +2223,13 @@ let test_qualify_ast =
                {
                  name = +Expression.Name (Name.Identifier "a");
                  type_params = [];
-                 value = +Expression.Name (Name.Identifier "b");
+                 value = +Expression.Name (Name.Identifier "c");
                })
            (+Statement.TypeAlias
                {
-                 name = +Expression.Name (Name.Identifier "$local_qualifier$a");
+                 name = +Expression.Name (Name.Identifier "b");
                  type_params = [];
-                 value = +Expression.Name (Name.Identifier "b");
+                 value = +Expression.Name (Name.Identifier "c");
                });
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement
@@ -2624,7 +2624,14 @@ let test_qualify_ast_class_with_same_name_as_local =
            [
              +Statement.Assign
                 {
-                  target = +Expression.Name (Name.Identifier "$local_Foo$Foo");
+                  target =
+                    +Expression.Name
+                       (Name.Attribute
+                          {
+                            base = +Expression.Name (Name.Identifier "Foo");
+                            attribute = "Foo";
+                            special = false;
+                          });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
@@ -2670,7 +2677,14 @@ let test_qualify_ast_class_with_same_name_as_local =
                                         +Expression.Name
                                            (Name.Identifier "$local_Foo?Foo?some_method$x");
                                       annotation =
-                                        Some (+Expression.Name (Name.Identifier "$local_Foo$Foo"));
+                                        Some
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base = +Expression.Name (Name.Identifier "Foo");
+                                                   attribute = "Foo";
+                                                   special = false;
+                                                 }));
                                       value =
                                         Some
                                           (+Expression.Name
@@ -2753,7 +2767,14 @@ let test_qualify_ast_class_with_same_name_as_local =
            [
              +Statement.Assign
                 {
-                  target = +Expression.Name (Name.Identifier "$local_NotFoo$Foo");
+                  target =
+                    +Expression.Name
+                       (Name.Attribute
+                          {
+                            base = +Expression.Name (Name.Identifier "NotFoo");
+                            attribute = "Foo";
+                            special = false;
+                          });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
                 };
@@ -2800,7 +2821,14 @@ let test_qualify_ast_class_with_same_name_as_local =
                                            (Name.Identifier "$local_NotFoo?Foo?some_method$x");
                                       annotation =
                                         Some
-                                          (+Expression.Name (Name.Identifier "$local_NotFoo$Foo"));
+                                          (+Expression.Name
+                                              (Name.Attribute
+                                                 {
+                                                   base =
+                                                     +Expression.Name (Name.Identifier "NotFoo");
+                                                   attribute = "Foo";
+                                                   special = false;
+                                                 }));
                                       value =
                                         Some
                                           (+Expression.Name
