@@ -536,7 +536,18 @@ def test_dict_multiple_targets() -> None:
 
     x["foo"], x["bar"] = _test_source(), _test_source()
 
-    _test_sink(x["foo"]), _test_sink(x["bar"]) # Issue, Issue
+    _test_sink(x["foo"]), _test_sink(x["bar"])  # Issue, Issue
 
     x["foo"], x["bar"] = "", ""
     _test_sink(x["foo"]), _test_sink(x["bar"])  # No Issue, No Issue
+
+
+def dict_getitem_mutate(x: str, j: int) -> str:
+    d: Dict[int, str] = {i: "" for i in range(10)}
+    # TODO(T201163025): False negative
+    d[j] += x
+    return d[j]
+
+
+def test_dict_getitem_mutate():
+    _test_sink(dict_getitem_mutate(_test_source(), 1))
