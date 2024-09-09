@@ -48,7 +48,8 @@ class CodeGenerator:
         return f"{self.last_sink}({self.last_source})"
 
     def generate(self) -> str:
-        code_lines = self.source_statements + self.sink_statements
+        headers = ["import random"]
+        code_lines = headers + self.source_statements + self.sink_statements
         code_lines.append(self.generate_sink())
         return "\n".join(code_lines)
 

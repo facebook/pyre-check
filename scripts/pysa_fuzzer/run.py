@@ -13,6 +13,7 @@ import os
 import random
 import shutil
 import subprocess
+import sys
 
 # Import both code generators with the updated filenames
 from .forward_code_generator import CodeGenerator as ForwardCodeGenerator
@@ -21,20 +22,18 @@ from .mutation_based_code_generator import CodeGenerator as MutationBasedCodeGen
 logging.basicConfig(level=logging.INFO)
 
 
-def run_command(command: List[str], output_file: Optional[str] = None) -> None:
-    try:
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True,
-        )
-        if output_file:
-            with open(output_file, "w") as file:
-                file.write(result.stdout)
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Command '{command}' failed with error: {e.stderr}")
+RULE_CODE: int = 9999
+
+
+def is_in_fbcode() -> bool:
+    path = Path(os.getcwd())
+
+    while path.parent != path:
+        if path.name == "fbcode":
+            return True
+        path = path.parent
+
+    return False
 
 
 def generate_mutations_from_seed(num_files: int, num_mutations: int = 48) -> List[int]:
@@ -54,6 +53,7 @@ def apply_mutation(generator: MutationBasedCodeGenerator, mutation_number: int) 
 
 
 def generate_python_files(
+    output_dir: Path,
     num_files: int,
     num_statements: int,
     generator_version: int,
@@ -61,11 +61,13 @@ def generate_python_files(
 ) -> None:
     if generator_version == 1:
         generator = ForwardCodeGenerator()
-    else:
+    elif generator_version == 2:
         generator = MutationBasedCodeGenerator()
+    else:
+        raise AssertionError("invalid generator version")
 
-    output_dir = Path("generated_files")
-    output_dir.mkdir(exist_ok=True)
+    test_dir = output_dir / "tests"
+    test_dir.mkdir(exist_ok=True)
 
     filenames = []
 
@@ -86,80 +88,99 @@ def generate_python_files(
         else:
             raise AssertionError("unknown generator")
 
-        filename = output_dir / f"test_{i}.py"
+        filename = test_dir / f"test_{i}.py"
         with open(filename, "w") as file:
-            if generator_version == 2:
-                file.write("import random\n")
             file.write(generated_code)
         filenames.append(str(filename))
 
         logging.info(f"Generated {filename}")
 
     # Save filenames to temporary file
-    with open("filenames.tmp", "w") as tmp_file:
+    with open(output_dir / "filenames.json", "w") as tmp_file:
         json.dump(filenames, tmp_file)
 
 
-def configure_and_analyze() -> None:
-    with open(".pyre_configuration", "w") as config_file:
+def configure_and_analyze(output_dir: Path) -> None:
+    with open(output_dir / ".pyre_configuration", "w") as config_file:
         config = {
             "site_package_search_strategy": "pep561",
-            "source_directories": ["./generated_files"],
-            "taint_models_path": ["."],
-            "search_path": ["../../stubs/"],
-            "exclude": [".*/integration_test/.*"],
+            "source_directories": ["./tests"],
+            "taint_models_path": [".", "../../../stubs/taint"],
+            "typeshed": "../../../stubs/typeshed/typeshed",
         }
+        if is_in_fbcode():
+            config.update(
+                {
+                    "stable_client": "../../../../../../tools/pyre/stable/pyre_client",
+                    "unstable_client": "../../../../../../tools/pyre/stable/pyre_client",
+                    "binary": ".overriden",
+                }
+            )
         json.dump(config, config_file, indent=2)
 
-    with open("sources_sinks.pysa", "w") as pysa_file:
-        pysa_file.write("def input() -> TaintSource[CustomUserControlled]: ...\n")
-        pysa_file.write(
-            "def print(*__args: TaintSink[CodeExecution], **__kwargs): ...\n"
-        )
+    with open(output_dir / "sources_sinks.pysa", "w") as pysa_file:
+        pysa_file.write("def input() -> TaintSource[TestSource]: ...\n")
+        pysa_file.write("def print(*__args: TaintSink[TestSink], **__kwargs): ...\n")
 
-    with open("taint.config", "w") as taint_config_file:
+    with open(output_dir / "taint.config", "w") as taint_config_file:
         taint_config = {
             "sources": [
                 {
-                    "name": "CustomUserControlled",
-                    "comment": "use to annotate user input",
+                    "name": "TestSource",
+                    "comment": "test source",
                 }
             ],
             "sinks": [
                 {
-                    "name": "CodeExecution",
-                    "comment": "use to annotate execution of python code",
+                    "name": "TestSink",
+                    "comment": "test sink",
                 }
             ],
             "features": [],
             "rules": [
                 {
-                    "name": "Possible RCE:",
-                    "code": 5001,
-                    "sources": ["CustomUserControlled"],
-                    "sinks": ["CodeExecution"],
-                    "message_format": "User specified data may reach a code execution sink",
+                    "name": "Test issue",
+                    "code": RULE_CODE,
+                    "sources": ["TestSource"],
+                    "sinks": ["TestSink"],
+                    "message_format": "test source flowing into test sink",
                 }
             ],
         }
         json.dump(taint_config, taint_config_file, indent=2)
 
 
-def run_pyre() -> None:
+def run_pysa(output_dir: Path) -> None:
+    if is_in_fbcode() and "PYRE_BINARY" not in os.environ:
+        logging.error("Required environment variable `PYRE_BINARY` is not set.")
+        sys.exit(1)
+
     logging.info("Please wait a minute or two for Pysa to Run!")
-    run_command(["pyre", "-n", "analyze"], output_file="analysis_output.tmp")
-
-
-def find_undetected_files() -> None:
     try:
-        with open("filenames.tmp", "r") as tmp_file:
+        result = subprocess.run(
+            ["pyre", "-n", "analyze", "--rule", str(RULE_CODE), "--no-verify"],
+            stdout=subprocess.PIPE,
+            text=True,
+            check=True,
+            cwd=output_dir,
+        )
+        with open(output_dir / "analysis_output.json", "w") as file:
+            file.write(result.stdout)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command 'pyre -n analyze' failed with error:\n{e.stdout}")
+        raise e
+
+
+def find_undetected_files(output_dir: Path) -> None:
+    try:
+        with open(output_dir / "filenames.json", "r") as tmp_file:
             filenames = json.load(tmp_file)
     except FileNotFoundError:
         logging.error("Temporary file with filenames not found.")
         return
 
     try:
-        with open("analysis_output.tmp", "r") as file:
+        with open(output_dir / "analysis_output.json", "r") as file:
             analysis_output = json.load(file)
     except FileNotFoundError:
         logging.error("Analysis output file not found.")
@@ -186,23 +207,8 @@ def find_undetected_files() -> None:
     )
 
 
-def clean_up() -> None:
-    files_to_remove = [
-        "sources_sinks.pysa",
-        "taint.config",
-        ".pyre_configuration",
-        "analysis_output.tmp",
-        "filenames.tmp",
-    ]
-    for file in files_to_remove:
-        try:
-            os.remove(file)
-        except FileNotFoundError:
-            logging.warning(f"{file} not found for cleanup.")
-
-    dirs_to_remove = ["generated_files", "__pycache__"]
-    for dir in dirs_to_remove:
-        shutil.rmtree(dir, ignore_errors=True)
+def clean_up(output_dir: Path) -> None:
+    shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def main() -> None:
@@ -232,17 +238,24 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    output_dir = Path("generated_files")
+    output_dir.mkdir(exist_ok=True)
+
     if args.action == "all":
-        seed = args.seed if args.generator_version == 2 else None
         generate_python_files(
-            args.num_files, args.num_statements, args.generator_version, seed
+            output_dir,
+            args.num_files,
+            args.num_statements,
+            args.generator_version,
+            args.seed,
         )
-        configure_and_analyze()
-        run_pyre()
+        configure_and_analyze(output_dir)
+        run_pysa(output_dir)
+        find_undetected_files(output_dir)
     elif args.action == "find-undetected":
-        find_undetected_files()
+        find_undetected_files(output_dir)
     elif args.action == "clean":
-        clean_up()
+        clean_up(output_dir)
 
 
 if __name__ == "__main__":
