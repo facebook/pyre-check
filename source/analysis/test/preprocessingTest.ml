@@ -1632,7 +1632,7 @@ let test_qualify_source =
     |}
            {|
       class qualifier.C:
-        def qualifier.C.f($parameter$parameter: qualifier.C.x):
+        def qualifier.C.f($parameter$parameter: x):
           ...
         def qualifier.C.x():
           ...
@@ -1657,13 +1657,13 @@ let test_qualify_source =
       class slice:
         pass
       class C:
-        slice: int = ...
+        slice: slice = ...
     |}
            {|
       class qualifier.slice:
         pass
       class qualifier.C:
-        qualifier.C.slice: int = ...
+        qualifier.C.slice: qualifier.slice = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify

@@ -1031,47 +1031,72 @@ module Qualify = struct
           let original_scope =
             { scope with parent = NestingContext.create_class ~parent (Reference.last name) }
           in
-          let scope = explore_scope body ~scope:original_scope in
-          let qualify ~scope ({ Node.location; value } as statement) =
-            match value with
-            | Statement.Define
-                ({ signature = { name; parameters; return_annotation; decorators; _ }; _ } as
-                define) ->
-                let define = qualify_define original_scope define in
-                let _, parameters = qualify_parameters ~scope parameters in
-                let return_annotation =
-                  return_annotation >>| qualify_expression ~scope ~qualify_strings:Qualify
-                in
-                let qualify_decorator decorator =
-                  let is_reserved name =
-                    match Reference.as_list name |> List.rev with
-                    | ["staticmethod"]
-                    | ["classmethod"]
-                    | ["property"]
-                    | "getter" :: _
-                    | "setter" :: _
-                    | "deleter" :: _ ->
-                        true
-                    | _ -> false
+          let qualify (scope, sofar) ({ Node.value; location } as statement) =
+            let new_scope = explore_scope ~scope [statement] in
+            let result =
+              match value with
+              | Statement.Define
+                  ({ signature = { name; parameters; return_annotation; decorators; _ }; _ } as
+                  define) ->
+                  let define = qualify_define original_scope define in
+                  let _, parameters = qualify_parameters ~scope parameters in
+                  let return_annotation =
+                    return_annotation >>| qualify_expression ~scope ~qualify_strings:Qualify
                   in
-                  match Decorator.from_expression decorator with
-                  | Some { Decorator.name = { Node.value = name; _ }; _ } when is_reserved name ->
-                      decorator
-                  | _ ->
-                      (* TODO (T41755857): Decorator qualification logic should be slightly more
-                         involved than this. *)
-                      qualify_expression ~qualify_strings:DoNotQualify ~scope decorator
-                in
-                let decorators = List.map decorators ~f:qualify_decorator in
-                let _, name = qualify_function_name ~scope name in
-                let signature =
-                  { define.signature with name; parameters; decorators; return_annotation }
-                in
-                { Node.location; value = Statement.Define { define with signature } }
-            | _ -> qualify_statement statement ~scope
+                  let qualify_decorator decorator =
+                    let is_reserved name =
+                      match Reference.as_list name |> List.rev with
+                      | ["staticmethod"]
+                      | ["classmethod"]
+                      | ["property"]
+                      | "getter" :: _
+                      | "setter" :: _
+                      | "deleter" :: _ ->
+                          true
+                      | _ -> false
+                    in
+                    match Decorator.from_expression decorator with
+                    | Some { Decorator.name = { Node.value = name; _ }; _ } when is_reserved name ->
+                        decorator
+                    | _ ->
+                        (* TODO (T41755857): Decorator qualification logic should be slightly more
+                           involved than this. *)
+                        qualify_expression ~qualify_strings:DoNotQualify ~scope decorator
+                  in
+                  let decorators = List.map decorators ~f:qualify_decorator in
+                  let _, name = qualify_function_name ~scope name in
+                  let signature =
+                    { define.signature with name; parameters; decorators; return_annotation }
+                  in
+                  { Node.value = Statement.Define { define with signature }; location }
+              | Statement.Assign { Assign.target; annotation; value } ->
+                  let qualified_annotation =
+                    Option.map annotation ~f:(qualify_assign_annotation ~scope)
+                  in
+                  let value =
+                    Option.map value ~f:(qualify_assign_value ~scope ~qualified_annotation)
+                  in
+                  let target = qualify_assign_target ~scope:new_scope ~annotation target in
+                  {
+                    Node.value =
+                      Statement.Assign { Assign.target; annotation = qualified_annotation; value };
+                    location;
+                  }
+              | AugmentedAssign { AugmentedAssign.target; operator; value } ->
+                  let value = qualify_assign_value ~scope ~qualified_annotation:None value in
+                  let target = qualify_assign_target ~scope:new_scope ~annotation:None target in
+                  {
+                    Node.value =
+                      Statement.AugmentedAssign { AugmentedAssign.target; operator; value };
+                    location;
+                  }
+              | _ -> qualify_statement statement ~scope:new_scope
+            in
+            new_scope, result :: sofar
           in
-          List.map body ~f:(qualify ~scope)
+          List.fold body ~init:(original_scope, []) ~f:qualify |> snd |> List.rev
         in
+
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
