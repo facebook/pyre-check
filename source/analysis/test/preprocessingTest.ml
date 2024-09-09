@@ -2148,7 +2148,7 @@ let test_qualify_ast =
   in
   let assert_qualify_statement statement expected _ =
     let qualify = Qualify.qualify_statement ~scope in
-    let _, processed = qualify statement in
+    let processed = qualify statement in
     assert_equal
       ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
       ~printer:Statement.show
@@ -2159,11 +2159,11 @@ let test_qualify_ast =
       ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
       ~printer:Statement.show
       expected
-      (qualify processed |> snd)
+      (qualify processed)
   in
   let assert_qualify_match_case match_case expected _ =
     let qualify = Qualify.qualify_match_case ~scope in
-    let _, processed = qualify match_case in
+    let processed = qualify match_case in
     assert_equal
       ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
       ~printer:Match.Case.show
@@ -2174,7 +2174,7 @@ let test_qualify_ast =
       ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
       ~printer:Match.Case.show
       expected
-      (qualify processed |> snd)
+      (qualify processed)
   in
   let assert_qualify_pattern pattern expected _ =
     let qualify = Qualify.qualify_pattern ~scope in

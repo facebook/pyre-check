@@ -114,9 +114,9 @@ module Qualify : sig
     locals: Core.String.Set.t;
   }
 
-  val qualify_statement : scope:scope -> Statement.t -> scope * Statement.t
+  val qualify_statement : scope:scope -> Statement.t -> Statement.t
 
-  val qualify_match_case : scope:scope -> Statement.Match.Case.t -> scope * Statement.Match.Case.t
+  val qualify_match_case : scope:scope -> Statement.Match.Case.t -> Statement.Match.Case.t
 
   val qualify_pattern : scope:scope -> Statement.Match.Pattern.t -> Statement.Match.Pattern.t
 end
