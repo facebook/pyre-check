@@ -713,7 +713,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"--isolation-dir={isolation_dir}",
                 "bxl",
                 "--reuse-current-config",
-                "--preemptible=ondifferentstate",
+                "--preemptible=never",
                 "--oncall=pyre",
                 "--client-metadata=client_id=pyre.ide",
                 f"--write-build-id={build_id_file.name}",
@@ -881,7 +881,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                         daemon_type_errors.type_errors
                     ),
                     # increment when there's "incompatible" data you need to filter out in a query
-                    "telemetry_version": 1,
+                    "telemetry_version": 2,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
