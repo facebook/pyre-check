@@ -199,6 +199,7 @@ let assert_query_and_response_json
         ~cmp:String.equal
         ~pp_diff:(Test.diff ~print:String.pp)
         ~printer:Fn.id
+        ~msg:(Format.asprintf "Mismatched response for query `%s`" query)
         (Yojson.Safe.pretty_to_string @@ Yojson.Safe.from_string expected_response)
         (Yojson.Safe.pretty_to_string @@ Yojson.Safe.from_string actual_response);
       Lwt.return_unit
