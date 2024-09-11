@@ -30,7 +30,7 @@ module DefaultContext = struct
 
   module Builder = Callgraph.NullBuilder
 
-  let record_expression_type _ _ = ()
+  let record_expression_type_info _ _ = ()
 end
 
 let create_type_info_store ?(immutables = []) type_info =
@@ -127,7 +127,7 @@ let test_initial =
 
       module Builder = Callgraph.NullBuilder
 
-      let record_expression_type _ _ = ()
+      let record_expression_type_info _ _ = ()
     end
     in
     let resolution =

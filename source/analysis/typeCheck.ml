@@ -74,7 +74,7 @@ module type Context = sig
 
   module Builder : Callgraph.Builder
 
-  val record_expression_type : Expression.t -> Type.t -> unit
+  val record_expression_type_info : Expression.t -> TypeInfo.Unit.t -> unit
 end
 
 module type Signature = sig
@@ -3617,7 +3617,9 @@ module State (Context : Context) = struct
             base = None;
           }
     in
-    Context.record_expression_type expression resolved.Resolved.resolved;
+    Option.iter
+      resolved.Resolved.resolved_annotation
+      ~f:(Context.record_expression_type_info expression);
     resolved
 
 
@@ -7851,7 +7853,7 @@ module DummyContext = struct
 
   module Builder = Callgraph.NullBuilder
 
-  let record_expression_type _ _ = ()
+  let record_expression_type_info _ _ = ()
 end
 
 let resolution
@@ -8694,7 +8696,7 @@ let compute_local_annotations
 
       module Builder = Callgraph.NullBuilder
 
-      let record_expression_type ({ Node.location; _ } as expression) ty =
+      let record_expression_type_info ({ Node.location; _ } as expression) ty =
         Hashtbl.set expressions_with_types ~key:location ~data:(expression, ty)
     end
     in
@@ -8766,7 +8768,7 @@ let check_define
 
         module Builder = Builder
 
-        let record_expression_type _ _ = ()
+        let record_expression_type_info _ _ = ()
       end
       in
       let { errors = type_errors; local_annotations; callees; _ } =

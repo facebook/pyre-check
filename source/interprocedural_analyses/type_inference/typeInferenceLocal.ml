@@ -109,7 +109,7 @@ module State (Context : Context) = struct
 
     module Builder = Callgraph.NullBuilder
 
-    let record_expression_type _ _ = ()
+    let record_expression_type_info _ _ = ()
   end
 
   module TypeCheckState = TypeCheck.State (TypeCheckContext)
