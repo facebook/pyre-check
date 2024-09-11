@@ -20,8 +20,11 @@ module Binding : sig
 
     module Import : sig
       type t =
-        | From of Reference.t
-        | Module
+        | From of {
+            module_name: Reference.t;
+            original_name: string option;
+          }
+        | Module of { original_name: Reference.t option }
       [@@deriving sexp, compare, hash]
     end
 

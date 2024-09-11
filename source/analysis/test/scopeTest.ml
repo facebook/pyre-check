@@ -641,12 +641,14 @@ let test_define_local_bindings _ =
       [
         ( "bar",
           Some
-            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 12)))
-        );
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = None }))
+               (location (3, 9) (3, 12))) );
         ( "_baz",
           Some
-            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (4, 9) (4, 13)))
-        );
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = None }))
+               (location (4, 9) (4, 13))) );
       ];
   assert_bindings
     {|
@@ -657,8 +659,9 @@ let test_define_local_bindings _ =
       [
         ( "bar",
           Some
-            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 16)))
-        );
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = None }))
+               (location (3, 9) (3, 16))) );
       ];
   assert_bindings
     {|
@@ -669,8 +672,23 @@ let test_define_local_bindings _ =
       [
         ( "b",
           Some
-            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 17)))
-        );
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = Some !&"bar" }))
+               (location (3, 9) (3, 17))) );
+        "bar", None;
+      ];
+  assert_bindings
+    {|
+    def foo(flag: bool):
+      import bar.baz as b
+  |}
+    ~expected:
+      [
+        ( "b",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = Some !&"bar.baz" }))
+               (location (3, 9) (3, 21))) );
         "bar", None;
       ];
   assert_bindings
@@ -684,12 +702,14 @@ let test_define_local_bindings _ =
         ( "b",
           Some
             (ExpectBinding.create
-               Binding.Kind.(ImportName (Import.From !&"bar"))
+               Binding.Kind.(
+                 ImportName (Import.From { module_name = !&"bar"; original_name = None }))
                (location (3, 18) (3, 19))) );
         ( "_c",
           Some
             (ExpectBinding.create
-               Binding.Kind.(ImportName (Import.From !&"bar"))
+               Binding.Kind.(
+                 ImportName (Import.From { module_name = !&"bar"; original_name = None }))
                (location (4, 18) (4, 20))) );
         "bar", None;
       ];
@@ -705,7 +725,8 @@ let test_define_local_bindings _ =
         ( "baz",
           Some
             (ExpectBinding.create
-               Binding.Kind.(ImportName (Import.From !&"bar"))
+               Binding.Kind.(
+                 ImportName (Import.From { module_name = !&"bar"; original_name = Some "b" }))
                (location (3, 18) (3, 26))) );
       ];
   assert_bindings
@@ -717,13 +738,14 @@ let test_define_local_bindings _ =
       [
         ( "b",
           Some
-            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 17)))
-        );
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.Module { original_name = Some !&"bar" }))
+               (location (3, 9) (3, 17))) );
         "bar", None;
         ( "baz",
           Some
             (ExpectBinding.create
-               Binding.Kind.(ImportName Import.Module)
+               Binding.Kind.(ImportName (Import.Module { original_name = None }))
                (location (3, 19) (3, 22))) );
       ];
   assert_bindings

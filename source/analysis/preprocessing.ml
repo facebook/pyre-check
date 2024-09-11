@@ -2805,10 +2805,11 @@ let expand_new_types ({ Source.statements; _ } as source) =
       match ScopeStack.lookup scopes "NewType" with
       | Some
           {
-            Access.binding = { Binding.kind = Binding.Kind.(ImportName (Import.From source)); _ };
+            Access.binding =
+              { Binding.kind = Binding.Kind.(ImportName (Import.From { module_name; _ })); _ };
             _;
           }
-        when Reference.equal source (Reference.create "typing") ->
+        when Reference.equal module_name (Reference.create "typing") ->
           true
       | _ -> false)
   in
