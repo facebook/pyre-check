@@ -1845,7 +1845,7 @@ module State (Context : Context) = struct
 
 
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
-  and forward_expression ~resolution { Node.location; value } =
+  and forward_expression ~resolution ({ Node.location; value } as expression) =
     let global_resolution = Resolution.global_resolution resolution in
     let forward_entry ~resolution ~errors ~entry:Dictionary.Entry.KeyValue.{ key; value } =
       let { Resolved.resolution; resolved = key_resolved; errors = key_errors; _ } =
@@ -1991,1595 +1991,1634 @@ module State (Context : Context) = struct
            })
       |> correct_bottom
     in
-    match value with
-    | Await expression -> (
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution expression
-        in
-        match resolved with
-        | Type.Any ->
-            {
-              Resolved.resolution;
-              resolved = Type.Any;
-              errors;
-              resolved_annotation = None;
-              base = None;
-            }
-        | _ -> (
-            match GlobalResolution.type_of_awaited_value global_resolution resolved with
-            | Some awaited_type ->
+    let resolved =
+      match value with
+      | Await expression -> (
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_expression ~resolution expression
+          in
+          match resolved with
+          | Type.Any ->
+              {
+                Resolved.resolution;
+                resolved = Type.Any;
+                errors;
+                resolved_annotation = None;
+                base = None;
+              }
+          | _ -> (
+              match GlobalResolution.type_of_awaited_value global_resolution resolved with
+              | Some awaited_type ->
+                  {
+                    resolution;
+                    resolved = awaited_type;
+                    errors;
+                    resolved_annotation = None;
+                    base = None;
+                  }
+              | _ ->
+                  let errors =
+                    emit_error ~errors ~location ~kind:(Error.IncompatibleAwaitableType resolved)
+                  in
+                  {
+                    resolution;
+                    resolved = Type.Any;
+                    errors;
+                    resolved_annotation = None;
+                    base = None;
+                  }))
+      | BinaryOperator operator ->
+          let resolved =
+            forward_expression ~resolution (BinaryOperator.override ~location operator)
+          in
+          { resolved with errors = resolved.errors }
+      | BooleanOperator { BooleanOperator.left; operator; right } -> (
+          let {
+            Resolved.resolution = resolution_left;
+            resolved = resolved_left;
+            errors = errors_left;
+            _;
+          }
+            =
+            forward_expression ~resolution left
+          in
+          let left_assume =
+            match operator with
+            | BooleanOperator.And -> left
+            | BooleanOperator.Or -> normalize (negate left)
+          in
+          match refine_resolution_for_assert ~resolution:resolution_left left_assume with
+          | Unreachable ->
+              {
+                Resolved.resolution = resolution_left;
+                resolved = resolved_left;
+                errors = errors_left;
+                resolved_annotation = None;
+                base = None;
+              }
+          | Value refined_resolution -> (
+              let forward_right resolved_left =
+                let {
+                  Resolved.resolution = resolution_right;
+                  resolved = resolved_right;
+                  errors = errors_right;
+                  _;
+                }
+                  =
+                  forward_expression ~resolution:refined_resolution right
+                in
+                let resolved =
+                  match resolved_left with
+                  | None -> resolved_right
+                  | Some resolved_left ->
+                      GlobalResolution.join global_resolution resolved_left resolved_right
+                in
+                {
+                  Resolved.resolution =
+                    Resolution.outer_join_refinements resolution_left resolution_right;
+                  errors = List.append errors_left errors_right;
+                  resolved;
+                  resolved_annotation = None;
+                  base = None;
+                }
+              in
+              match resolved_left, operator with
+              | resolved_left, BooleanOperator.And when Type.is_falsy resolved_left ->
+                  (* false_expression and b has the same type as false_expression *)
+                  {
+                    resolution = resolution_left;
+                    errors = errors_left;
+                    resolved = resolved_left;
+                    resolved_annotation = None;
+                    base = None;
+                  }
+              | resolved_left, BooleanOperator.Or when Type.is_truthy resolved_left ->
+                  (* true_expression or b has the same type as true_expression *)
+                  {
+                    resolution = resolution_left;
+                    errors = errors_left;
+                    resolved = resolved_left;
+                    resolved_annotation = None;
+                    base = None;
+                  }
+              | resolved_left, BooleanOperator.Or when Type.is_falsy resolved_left ->
+                  (* false_expression or b has the same type as b *)
+                  forward_right None
+              | resolved_left, BooleanOperator.And when Type.is_truthy resolved_left ->
+                  (* true_expression and b has the same type as b *)
+                  forward_right None
+              | Type.Union arguments, BooleanOperator.Or ->
+                  (* If type_of(a) = Union[A, None], then type_of(a or b) = Union[A, type_of(b)
+                     under assumption type_of(a) = None] *)
+                  let not_none_left =
+                    Type.union
+                      (List.filter arguments ~f:(fun parameter -> not (Type.is_none parameter)))
+                  in
+                  forward_right (Some not_none_left)
+              | _, _ -> forward_right (Some resolved_left)))
+      | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments }
+        -> (
+          let superclass { ClassSuccessorMetadataEnvironment.successors; _ } =
+            match successors with
+            | Some successors ->
+                List.find successors ~f:(GlobalResolution.class_exists global_resolution)
+            | _ -> None
+          in
+          let resolved_superclass =
+            Resolution.parent resolution
+            >>| Reference.show
+            >>= fun class_name ->
+            GlobalResolution.get_class_metadata global_resolution class_name >>= superclass
+          in
+          match resolved_superclass with
+          | Some superclass ->
+              let resolved = Type.Primitive superclass in
+              {
+                resolution;
+                errors = [];
+                resolved;
+                resolved_annotation = None;
+                base = Some (Super resolved);
+              }
+          | None ->
+              let { Resolved.resolved; _ } = forward_expression ~resolution callee in
+              forward_call_with_arguments
+                ~resolution
+                ~location
+                ~errors:[]
+                ~target:None
+                ~callee:(Callee.NonAttribute { expression = callee; resolved })
+                ~dynamic:false
+                ~arguments)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "type"); _ };
+            arguments = [{ Call.Argument.value; _ }];
+          } ->
+          (* Resolve `type()` calls. *)
+          let resolved = resolve_expression_type ~resolution value |> Type.meta in
+          { resolution; errors = []; resolved; resolved_annotation = None; base = None }
+      | Call { callee = { Node.location; value = Name (Name.Identifier "reveal_locals") }; _ } ->
+          (* Special case reveal_locals(). *)
+          let from_annotation (reference, unit) =
+            let name = reference in
+            let annotation =
+              Option.value
+                ~default:(TypeInfo.Unit.create_mutable Type.Any)
+                (TypeInfo.LocalOrGlobal.base unit)
+            in
+            { Error.name; annotation }
+          in
+          let type_info =
+            Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).type_info
+          in
+          let temporary_type_info =
+            Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).temporary_type_info
+          in
+          let revealed_locals = List.map ~f:from_annotation (temporary_type_info @ type_info) in
+          let errors =
+            emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals)
+          in
+          { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
+      | Call
+          {
+            callee =
+              {
+                Node.location;
+                value =
+                  Name
+                    ( Name.Identifier "reveal_type"
+                    | Name.Identifier "typing.reveal_type"
+                    | Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          attribute = "reveal_type";
+                          _;
+                        } );
+              };
+            arguments = [{ Call.Argument.value; _ }];
+          } ->
+          (* Special case reveal_type(). *)
+          let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
+            forward_expression ~resolution value
+          in
+          let annotation =
+            Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
+          in
+          let errors =
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.RevealedType { expression = value; annotation })
+          in
+          {
+            resolution;
+            errors;
+            resolved = TypeInfo.Unit.annotation annotation;
+            resolved_annotation = Some annotation;
+            base = None;
+          }
+      | Call
+          {
+            callee =
+              {
+                Node.location;
+                value =
+                  Name
+                    ( Name.Identifier "typing.assert_type"
+                    | Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          attribute = "assert_type";
+                          _;
+                        } );
+              };
+            arguments =
+              [{ Call.Argument.value; _ }; { Call.Argument.value = expected_annotation; _ }];
+          } ->
+          let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
+            forward_expression ~resolution value
+          in
+          let value_annotation =
+            Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
+          in
+          let value_type = TypeInfo.Unit.annotation value_annotation in
+          let expected_type_errors, expected_type =
+            parse_and_check_annotation ~resolution expected_annotation
+          in
+          let errors =
+            if Type.equivalent_for_assert_type value_type expected_type then
+              errors
+            else
+              emit_error
+                ~errors:(List.append expected_type_errors errors)
+                ~location
+                ~kind:(Error.AssertType { actual = value_type; expected = expected_type })
+          in
+          {
+            resolution;
+            errors;
+            resolved = value_type;
+            resolved_annotation = Some value_annotation;
+            base = None;
+          }
+      | Call
+          {
+            callee =
+              {
+                Node.location;
+                value =
+                  Name
+                    ( Name.Identifier "typing.cast"
+                    | Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          attribute = "cast";
+                          _;
+                        } );
+              };
+            arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
+          } ->
+          let resolution, cast_annotation_type, value_type, errors =
+            resolve_cast ~resolution ~cast_annotation value
+          in
+          let errors =
+            if Type.expression_contains_any cast_annotation then
+              emit_error
+                ~errors
+                ~location
+                ~kind:
+                  (Error.ProhibitedAny
+                     {
+                       missing_annotation =
+                         {
+                           Error.name = Reference.create "typing.cast";
+                           annotation = None;
+                           given_annotation = Some cast_annotation_type;
+                           thrown_at_source = true;
+                         };
+                       annotation_kind = Annotation;
+                     })
+            else if Type.equal cast_annotation_type value_type then
+              emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
+            else
+              errors
+          in
+          {
+            resolution;
+            errors;
+            resolved = cast_annotation_type;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Call
+          {
+            callee =
+              {
+                Node.location;
+                value =
+                  Name
+                    ( Name.Identifier "pyre_extensions.safe_cast"
+                    | Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                          attribute = "safe_cast";
+                          _;
+                        } );
+              };
+            arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
+          } ->
+          let resolution, cast_annotation_type, value_type, errors =
+            resolve_cast ~resolution ~cast_annotation value
+          in
+          let errors =
+            if Type.expression_contains_any cast_annotation then
+              emit_error
+                ~errors
+                ~location
+                ~kind:
+                  (Error.ProhibitedAny
+                     {
+                       missing_annotation =
+                         {
+                           Error.name = Reference.create "pyre_extensions.safe_cast";
+                           annotation = None;
+                           given_annotation = Some cast_annotation_type;
+                           thrown_at_source = true;
+                         };
+                       annotation_kind = Annotation;
+                     })
+            else if Type.equal cast_annotation_type value_type then
+              emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
+            else if
+              Type.is_top value_type
+              || GlobalResolution.less_or_equal
+                   global_resolution
+                   ~left:value_type
+                   ~right:cast_annotation_type
+            then
+              errors
+            else
+              emit_error
+                ~errors
+                ~location
+                ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation_type })
+          in
+          {
+            resolution;
+            errors;
+            resolved = cast_annotation_type;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
+            arguments =
+              [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
+          } ->
+          let { Resolved.resolved; _ } = forward_expression ~resolution callee in
+          let callables =
+            match resolved with
+            | Type.Callable callable -> [callable]
+            | _ -> []
+          in
+          Context.Builder.add_callee
+            ~global_resolution
+            ~target:None
+            ~callables
+            ~dynamic:false
+            ~qualifier:Context.qualifier
+            ~callee_type:resolved
+            ~callee;
+
+          (* Be angelic and compute errors using the typeshed annotation for isinstance. *)
+
+          (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
+             imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
+          let resolution, errors =
+            let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
+            let resolution, errors, annotations =
+              let rec collect_types (state, errors, collected) = function
+                | { Node.value = Expression.Tuple annotations; _ } ->
+                    List.fold annotations ~init:(state, errors, collected) ~f:collect_types
+                | expression ->
+                    let { Resolved.resolution; resolved; errors = expression_errors; _ } =
+                      forward_expression ~resolution expression
+                    in
+                    let new_annotations =
+                      match resolved with
+                      | Type.Tuple (Concrete annotations) ->
+                          List.map annotations ~f:(fun annotation ->
+                              annotation, Node.location expression)
+                      | Type.Tuple (Concatenation concatenation) ->
+                          Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                            concatenation
+                          >>| (fun element_annotation ->
+                                [element_annotation, Node.location expression])
+                          |> Option.value ~default:[resolved, Node.location expression]
+                      | annotation -> [annotation, Node.location expression]
+                    in
+                    resolution, List.append expression_errors errors, new_annotations @ collected
+              in
+              collect_types (resolution, errors, []) annotations
+            in
+            let add_incompatible_non_meta_error errors (non_meta, location) =
+              emit_error
+                ~errors
+                ~location
+                ~kind:
+                  (Error.IncompatibleParameterType
+                     {
+                       keyword_argument_name = None;
+                       position = 2;
+                       callee = Some (Reference.create "isinstance");
+                       mismatch =
+                         {
+                           Error.actual = non_meta;
+                           expected =
+                             Type.union
+                               [
+                                 Type.meta Type.Any;
+                                 Type.Tuple
+                                   (Type.OrderedTypes.create_unbounded_concatenation
+                                      (Type.meta Type.Any));
+                               ];
+                           due_to_invariance = false;
+                         };
+                     })
+            in
+            let rec is_compatible annotation =
+              match annotation with
+              | _ when Type.is_meta annotation || Type.is_untyped annotation -> true
+              | Type.Primitive "typing._Alias" -> true
+              | Type.Tuple (Concatenation concatenation) ->
+                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                  >>| (fun annotation -> Type.is_meta annotation)
+                  |> Option.value ~default:false
+              | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
+                  List.for_all ~f:Type.is_meta annotations
+              | Type.Union annotations -> List.for_all annotations ~f:is_compatible
+              | _ -> false
+            in
+            let add_typed_dictionary_error errors (_, location) =
+              emit_error ~errors ~location ~kind:Error.TypedDictionaryIsInstance
+            in
+            let errors =
+              List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
+              >>| add_incompatible_non_meta_error errors
+              |> Option.value ~default:errors
+            in
+            let errors =
+              List.find annotations ~f:(fun (annotation, _) ->
+                  match annotation with
+                  | Type.Parametric
+                      { name = "type"; arguments = [Type.Record.Argument.Single type_argument] } ->
+                      GlobalResolution.is_typed_dictionary global_resolution type_argument
+                  | _ -> false)
+              >>| add_typed_dictionary_error errors
+              |> Option.value ~default:errors
+            in
+            resolution, errors
+          in
+          { resolution; errors; resolved = Type.bool; resolved_annotation = None; base = None }
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      { attribute = ("assertIsNotNone" | "assertTrue") as attribute; base; _ });
+                _;
+              } as callee;
+            arguments =
+              ( [{ Call.Argument.value = expression; _ }]
+              | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
+          } ->
+          let resolution, resolved_callee, errors, resolved_base =
+            let resolution, assume_errors =
+              let post_resolution, errors = forward_assert ~resolution expression in
+              resolution_or_default post_resolution ~default:resolution, errors
+            in
+            let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
+              forward_expression ~resolution callee
+            in
+            resolution, resolved, List.append assume_errors callee_errors, resolved_base
+          in
+          forward_call_with_arguments
+            ~resolution
+            ~location
+            ~errors
+            ~target:None
+            ~dynamic:true
+            ~callee:
+              (Callee.Attribute
+                 {
+                   base =
+                     {
+                       expression = base;
+                       resolved_base =
+                         Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
+                     };
+                   attribute = { name = attribute; resolved = resolved_callee };
+                   expression = callee;
+                 })
+            ~arguments
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name (Name.Attribute { attribute = "assertFalse" as attribute; base; _ });
+                _;
+              } as callee;
+            arguments =
+              ( [{ Call.Argument.value = expression; _ }]
+              | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
+          } ->
+          let resolution, resolved_callee, errors, resolved_base =
+            let resolution, assume_errors =
+              let post_resolution, errors = forward_assert ~resolution (negate expression) in
+              resolution_or_default post_resolution ~default:resolution, errors
+            in
+            let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
+              forward_expression ~resolution callee
+            in
+            resolution, resolved, List.append assume_errors callee_errors, resolved_base
+          in
+          forward_call_with_arguments
+            ~resolution
+            ~location
+            ~errors
+            ~target:None
+            ~dynamic:true
+            ~callee:
+              (Callee.Attribute
+                 {
+                   base =
+                     {
+                       expression = base;
+                       resolved_base =
+                         Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
+                     };
+                   attribute = { name = attribute; resolved = resolved_callee };
+                   expression = callee;
+                 })
+            ~arguments
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "getattr"); _ };
+            arguments =
+              { Call.Argument.value = base; _ }
+              :: { Call.Argument.value = attribute_expression; _ }
+              :: (([] | [_]) as default_argument);
+          } -> (
+          let ({ Resolved.errors; resolution; _ } as base_resolved) =
+            forward_expression ~resolution base
+          in
+          let resolution, errors, attribute_resolved =
+            forward_expression ~resolution attribute_expression
+            |> fun { resolution; errors = attribute_errors; resolved = attribute_resolved; _ } ->
+            resolution, List.append attribute_errors errors, attribute_resolved
+          in
+          let resolution, errors, has_default =
+            match default_argument with
+            | [{ Call.Argument.value = default_expression; _ }] ->
+                forward_expression ~resolution default_expression
+                |> fun { resolution; errors = default_errors; _ } ->
+                resolution, List.append default_errors errors, true
+            | _ -> resolution, errors, false
+          in
+          match attribute_resolved with
+          | Type.Literal (String (LiteralValue attribute)) ->
+              resolve_attribute_access
+                ~base_resolved:{ base_resolved with Resolved.resolution; errors }
+                ~location
+                ~base
+                ~special:false
+                ~attribute
+                ~has_default
+          | _ ->
+              {
+                Resolved.resolution;
+                errors;
+                resolved = Type.Any;
+                base = None;
+                resolved_annotation = None;
+              })
+      | Call call ->
+          let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
+          let {
+            Resolved.errors = callee_errors;
+            resolved = resolved_callee;
+            base = resolved_base;
+            resolution = callee_resolution;
+            _;
+          }
+            =
+            forward_expression ~resolution callee
+          in
+          let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
+            let target_and_dynamic resolved_callee =
+              if Type.is_meta resolved_callee then
+                Some (Type.single_argument resolved_callee), false
+              else
+                match resolved_base with
+                | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
+                    Some resolved, true
+                | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
+                    Some resolved, false
+                | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
+                    Some resolved, false
+                | _ -> None, false
+            in
+            let create_callee resolved =
+              match Node.value callee with
+              | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+                  Callee.Attribute
+                    {
+                      base =
+                        {
+                          expression = base;
+                          resolved_base =
+                            Resolved.resolved_base_type resolved_base
+                            |> Option.value ~default:Type.Top;
+                        };
+                      attribute = { name = attribute; resolved = resolved_callee };
+                      expression = callee;
+                    }
+              | _ -> Callee.NonAttribute { expression = callee; resolved }
+            in
+            match resolved_callee with
+            | Type.Parametric { name = "type"; arguments = [Single (Type.Union resolved_callees)] }
+              ->
+                let forward_inner_callable (resolution, errors, annotations) inner_resolved_callee =
+                  let target, dynamic = target_and_dynamic inner_resolved_callee in
+                  forward_call_with_arguments
+                    ~resolution
+                    ~location
+                    ~errors:[]
+                    ~target
+                    ~dynamic
+                    ~callee:(create_callee inner_resolved_callee)
+                    ~arguments
+                  |> fun { resolution; resolved; errors = new_errors; _ } ->
+                  resolution, List.append new_errors errors, resolved :: annotations
+                in
+                let resolution, errors, return_annotations =
+                  List.fold_left
+                    ~f:forward_inner_callable
+                    ~init:(callee_resolution, callee_errors, [])
+                    (List.map ~f:Type.meta resolved_callees)
+                in
                 {
                   resolution;
-                  resolved = awaited_type;
                   errors;
+                  resolved = Type.union return_annotations;
                   resolved_annotation = None;
                   base = None;
                 }
             | _ ->
-                let errors =
-                  emit_error ~errors ~location ~kind:(Error.IncompatibleAwaitableType resolved)
-                in
-                { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
-            ))
-    | BinaryOperator operator ->
-        let resolved =
-          forward_expression ~resolution (BinaryOperator.override ~location operator)
-        in
-        { resolved with errors = resolved.errors }
-    | BooleanOperator { BooleanOperator.left; operator; right } -> (
-        let {
-          Resolved.resolution = resolution_left;
-          resolved = resolved_left;
-          errors = errors_left;
-          _;
-        }
-          =
-          forward_expression ~resolution left
-        in
-        let left_assume =
-          match operator with
-          | BooleanOperator.And -> left
-          | BooleanOperator.Or -> normalize (negate left)
-        in
-        match refine_resolution_for_assert ~resolution:resolution_left left_assume with
-        | Unreachable ->
-            {
-              Resolved.resolution = resolution_left;
-              resolved = resolved_left;
-              errors = errors_left;
-              resolved_annotation = None;
-              base = None;
-            }
-        | Value refined_resolution -> (
-            let forward_right resolved_left =
-              let {
-                Resolved.resolution = resolution_right;
-                resolved = resolved_right;
-                errors = errors_right;
-                _;
-              }
-                =
-                forward_expression ~resolution:refined_resolution right
-              in
-              let resolved =
-                match resolved_left with
-                | None -> resolved_right
-                | Some resolved_left ->
-                    GlobalResolution.join global_resolution resolved_left resolved_right
-              in
-              {
-                Resolved.resolution =
-                  Resolution.outer_join_refinements resolution_left resolution_right;
-                errors = List.append errors_left errors_right;
-                resolved;
-                resolved_annotation = None;
-                base = None;
-              }
-            in
-            match resolved_left, operator with
-            | resolved_left, BooleanOperator.And when Type.is_falsy resolved_left ->
-                (* false_expression and b has the same type as false_expression *)
-                {
-                  resolution = resolution_left;
-                  errors = errors_left;
-                  resolved = resolved_left;
-                  resolved_annotation = None;
-                  base = None;
-                }
-            | resolved_left, BooleanOperator.Or when Type.is_truthy resolved_left ->
-                (* true_expression or b has the same type as true_expression *)
-                {
-                  resolution = resolution_left;
-                  errors = errors_left;
-                  resolved = resolved_left;
-                  resolved_annotation = None;
-                  base = None;
-                }
-            | resolved_left, BooleanOperator.Or when Type.is_falsy resolved_left ->
-                (* false_expression or b has the same type as b *)
-                forward_right None
-            | resolved_left, BooleanOperator.And when Type.is_truthy resolved_left ->
-                (* true_expression and b has the same type as b *)
-                forward_right None
-            | Type.Union arguments, BooleanOperator.Or ->
-                (* If type_of(a) = Union[A, None], then type_of(a or b) = Union[A, type_of(b) under
-                   assumption type_of(a) = None] *)
-                let not_none_left =
-                  Type.union
-                    (List.filter arguments ~f:(fun parameter -> not (Type.is_none parameter)))
-                in
-                forward_right (Some not_none_left)
-            | _, _ -> forward_right (Some resolved_left)))
-    | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
-        let superclass { ClassSuccessorMetadataEnvironment.successors; _ } =
-          match successors with
-          | Some successors ->
-              List.find successors ~f:(GlobalResolution.class_exists global_resolution)
-          | _ -> None
-        in
-        let resolved_superclass =
-          Resolution.parent resolution
-          >>| Reference.show
-          >>= fun class_name ->
-          GlobalResolution.get_class_metadata global_resolution class_name >>= superclass
-        in
-        match resolved_superclass with
-        | Some superclass ->
-            let resolved = Type.Primitive superclass in
-            {
-              resolution;
-              errors = [];
-              resolved;
-              resolved_annotation = None;
-              base = Some (Super resolved);
-            }
-        | None ->
-            let { Resolved.resolved; _ } = forward_expression ~resolution callee in
-            forward_call_with_arguments
-              ~resolution
-              ~location
-              ~errors:[]
-              ~target:None
-              ~callee:(Callee.NonAttribute { expression = callee; resolved })
-              ~dynamic:false
-              ~arguments)
-    | Call
-        {
-          callee = { Node.value = Name (Name.Identifier "type"); _ };
-          arguments = [{ Call.Argument.value; _ }];
-        } ->
-        (* Resolve `type()` calls. *)
-        let resolved = resolve_expression_type ~resolution value |> Type.meta in
-        { resolution; errors = []; resolved; resolved_annotation = None; base = None }
-    | Call { callee = { Node.location; value = Name (Name.Identifier "reveal_locals") }; _ } ->
-        (* Special case reveal_locals(). *)
-        let from_annotation (reference, unit) =
-          let name = reference in
-          let annotation =
-            Option.value
-              ~default:(TypeInfo.Unit.create_mutable Type.Any)
-              (TypeInfo.LocalOrGlobal.base unit)
-          in
-          { Error.name; annotation }
-        in
-        let type_info =
-          Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).type_info
-        in
-        let temporary_type_info =
-          Reference.Map.Tree.to_alist (Resolution.type_info_store resolution).temporary_type_info
-        in
-        let revealed_locals = List.map ~f:from_annotation (temporary_type_info @ type_info) in
-        let errors = emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals) in
-        { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
-    | Call
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  ( Name.Identifier "reveal_type"
-                  | Name.Identifier "typing.reveal_type"
-                  | Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "reveal_type";
-                        _;
-                      } );
-            };
-          arguments = [{ Call.Argument.value; _ }];
-        } ->
-        (* Special case reveal_type(). *)
-        let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
-          forward_expression ~resolution value
-        in
-        let annotation =
-          Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
-        in
-        let errors =
-          emit_error ~errors ~location ~kind:(Error.RevealedType { expression = value; annotation })
-        in
-        {
-          resolution;
-          errors;
-          resolved = TypeInfo.Unit.annotation annotation;
-          resolved_annotation = Some annotation;
-          base = None;
-        }
-    | Call
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  ( Name.Identifier "typing.assert_type"
-                  | Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "assert_type";
-                        _;
-                      } );
-            };
-          arguments = [{ Call.Argument.value; _ }; { Call.Argument.value = expected_annotation; _ }];
-        } ->
-        let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
-          forward_expression ~resolution value
-        in
-        let value_annotation =
-          Option.value ~default:(TypeInfo.Unit.create_mutable resolved) resolved_annotation
-        in
-        let value_type = TypeInfo.Unit.annotation value_annotation in
-        let expected_type_errors, expected_type =
-          parse_and_check_annotation ~resolution expected_annotation
-        in
-        let errors =
-          if Type.equivalent_for_assert_type value_type expected_type then
-            errors
-          else
-            emit_error
-              ~errors:(List.append expected_type_errors errors)
-              ~location
-              ~kind:(Error.AssertType { actual = value_type; expected = expected_type })
-        in
-        {
-          resolution;
-          errors;
-          resolved = value_type;
-          resolved_annotation = Some value_annotation;
-          base = None;
-        }
-    | Call
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  ( Name.Identifier "typing.cast"
-                  | Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "cast";
-                        _;
-                      } );
-            };
-          arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
-        } ->
-        let resolution, cast_annotation_type, value_type, errors =
-          resolve_cast ~resolution ~cast_annotation value
-        in
-        let errors =
-          if Type.expression_contains_any cast_annotation then
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.ProhibitedAny
-                   {
-                     missing_annotation =
-                       {
-                         Error.name = Reference.create "typing.cast";
-                         annotation = None;
-                         given_annotation = Some cast_annotation_type;
-                         thrown_at_source = true;
-                       };
-                     annotation_kind = Annotation;
-                   })
-          else if Type.equal cast_annotation_type value_type then
-            emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
-          else
-            errors
-        in
-        {
-          resolution;
-          errors;
-          resolved = cast_annotation_type;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Call
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  ( Name.Identifier "pyre_extensions.safe_cast"
-                  | Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                        attribute = "safe_cast";
-                        _;
-                      } );
-            };
-          arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
-        } ->
-        let resolution, cast_annotation_type, value_type, errors =
-          resolve_cast ~resolution ~cast_annotation value
-        in
-        let errors =
-          if Type.expression_contains_any cast_annotation then
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.ProhibitedAny
-                   {
-                     missing_annotation =
-                       {
-                         Error.name = Reference.create "pyre_extensions.safe_cast";
-                         annotation = None;
-                         given_annotation = Some cast_annotation_type;
-                         thrown_at_source = true;
-                       };
-                     annotation_kind = Annotation;
-                   })
-          else if Type.equal cast_annotation_type value_type then
-            emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
-          else if
-            Type.is_top value_type
-            || GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:value_type
-                 ~right:cast_annotation_type
-          then
-            errors
-          else
-            emit_error
-              ~errors
-              ~location
-              ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation_type })
-        in
-        {
-          resolution;
-          errors;
-          resolved = cast_annotation_type;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Call
-        {
-          callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
-          arguments =
-            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
-        } ->
-        let { Resolved.resolved; _ } = forward_expression ~resolution callee in
-        let callables =
-          match resolved with
-          | Type.Callable callable -> [callable]
-          | _ -> []
-        in
-        Context.Builder.add_callee
-          ~global_resolution
-          ~target:None
-          ~callables
-          ~dynamic:false
-          ~qualifier:Context.qualifier
-          ~callee_type:resolved
-          ~callee;
-
-        (* Be angelic and compute errors using the typeshed annotation for isinstance. *)
-
-        (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
-           imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
-        let resolution, errors =
-          let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in
-          let resolution, errors, annotations =
-            let rec collect_types (state, errors, collected) = function
-              | { Node.value = Expression.Tuple annotations; _ } ->
-                  List.fold annotations ~init:(state, errors, collected) ~f:collect_types
-              | expression ->
-                  let { Resolved.resolution; resolved; errors = expression_errors; _ } =
-                    forward_expression ~resolution expression
+                let target, dynamic = target_and_dynamic resolved_callee in
+                let detect_broadcast_errors ({ Resolved.resolved; errors; _ } as input) =
+                  let is_broadcast_error = function
+                    | Type.Parametric
+                        {
+                          name = "pyre_extensions.BroadcastError";
+                          arguments = [Type.Argument.Single _; Type.Argument.Single _];
+                        } ->
+                        true
+                    | _ -> false
                   in
-                  let new_annotations =
-                    match resolved with
-                    | Type.Tuple (Concrete annotations) ->
-                        List.map annotations ~f:(fun annotation ->
-                            annotation, Node.location expression)
-                    | Type.Tuple (Concatenation concatenation) ->
-                        Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
-                          concatenation
-                        >>| (fun element_annotation ->
-                              [element_annotation, Node.location expression])
-                        |> Option.value ~default:[resolved, Node.location expression]
-                    | annotation -> [annotation, Node.location expression]
-                  in
-                  resolution, List.append expression_errors errors, new_annotations @ collected
-            in
-            collect_types (resolution, errors, []) annotations
-          in
-          let add_incompatible_non_meta_error errors (non_meta, location) =
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.IncompatibleParameterType
-                   {
-                     keyword_argument_name = None;
-                     position = 2;
-                     callee = Some (Reference.create "isinstance");
-                     mismatch =
-                       {
-                         Error.actual = non_meta;
-                         expected =
-                           Type.union
-                             [
-                               Type.meta Type.Any;
-                               Type.Tuple
-                                 (Type.OrderedTypes.create_unbounded_concatenation
-                                    (Type.meta Type.Any));
-                             ];
-                         due_to_invariance = false;
-                       };
-                   })
-          in
-          let rec is_compatible annotation =
-            match annotation with
-            | _ when Type.is_meta annotation || Type.is_untyped annotation -> true
-            | Type.Primitive "typing._Alias" -> true
-            | Type.Tuple (Concatenation concatenation) ->
-                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-                >>| (fun annotation -> Type.is_meta annotation)
-                |> Option.value ~default:false
-            | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-                List.for_all ~f:Type.is_meta annotations
-            | Type.Union annotations -> List.for_all annotations ~f:is_compatible
-            | _ -> false
-          in
-          let add_typed_dictionary_error errors (_, location) =
-            emit_error ~errors ~location ~kind:Error.TypedDictionaryIsInstance
-          in
-          let errors =
-            List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
-            >>| add_incompatible_non_meta_error errors
-            |> Option.value ~default:errors
-          in
-          let errors =
-            List.find annotations ~f:(fun (annotation, _) ->
-                match annotation with
-                | Type.Parametric
-                    { name = "type"; arguments = [Type.Record.Argument.Single type_argument] } ->
-                    GlobalResolution.is_typed_dictionary global_resolution type_argument
-                | _ -> false)
-            >>| add_typed_dictionary_error errors
-            |> Option.value ~default:errors
-          in
-          resolution, errors
-        in
-        { resolution; errors; resolved = Type.bool; resolved_annotation = None; base = None }
-    | Call
-        {
-          callee =
-            {
-              Node.value =
-                Name
-                  (Name.Attribute
-                    { attribute = ("assertIsNotNone" | "assertTrue") as attribute; base; _ });
-              _;
-            } as callee;
-          arguments =
-            ( [{ Call.Argument.value = expression; _ }]
-            | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
-        } ->
-        let resolution, resolved_callee, errors, resolved_base =
-          let resolution, assume_errors =
-            let post_resolution, errors = forward_assert ~resolution expression in
-            resolution_or_default post_resolution ~default:resolution, errors
-          in
-          let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
-            forward_expression ~resolution callee
-          in
-          resolution, resolved, List.append assume_errors callee_errors, resolved_base
-        in
-        forward_call_with_arguments
-          ~resolution
-          ~location
-          ~errors
-          ~target:None
-          ~dynamic:true
-          ~callee:
-            (Callee.Attribute
-               {
-                 base =
-                   {
-                     expression = base;
-                     resolved_base =
-                       Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
-                   };
-                 attribute = { name = attribute; resolved = resolved_callee };
-                 expression = callee;
-               })
-          ~arguments
-    | Call
-        {
-          callee =
-            {
-              Node.value = Name (Name.Attribute { attribute = "assertFalse" as attribute; base; _ });
-              _;
-            } as callee;
-          arguments =
-            ( [{ Call.Argument.value = expression; _ }]
-            | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
-        } ->
-        let resolution, resolved_callee, errors, resolved_base =
-          let resolution, assume_errors =
-            let post_resolution, errors = forward_assert ~resolution (negate expression) in
-            resolution_or_default post_resolution ~default:resolution, errors
-          in
-          let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
-            forward_expression ~resolution callee
-          in
-          resolution, resolved, List.append assume_errors callee_errors, resolved_base
-        in
-        forward_call_with_arguments
-          ~resolution
-          ~location
-          ~errors
-          ~target:None
-          ~dynamic:true
-          ~callee:
-            (Callee.Attribute
-               {
-                 base =
-                   {
-                     expression = base;
-                     resolved_base =
-                       Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
-                   };
-                 attribute = { name = attribute; resolved = resolved_callee };
-                 expression = callee;
-               })
-          ~arguments
-    | Call
-        {
-          callee = { Node.value = Name (Name.Identifier "getattr"); _ };
-          arguments =
-            { Call.Argument.value = base; _ }
-            :: { Call.Argument.value = attribute_expression; _ }
-            :: (([] | [_]) as default_argument);
-        } -> (
-        let ({ Resolved.errors; resolution; _ } as base_resolved) =
-          forward_expression ~resolution base
-        in
-        let resolution, errors, attribute_resolved =
-          forward_expression ~resolution attribute_expression
-          |> fun { resolution; errors = attribute_errors; resolved = attribute_resolved; _ } ->
-          resolution, List.append attribute_errors errors, attribute_resolved
-        in
-        let resolution, errors, has_default =
-          match default_argument with
-          | [{ Call.Argument.value = default_expression; _ }] ->
-              forward_expression ~resolution default_expression
-              |> fun { resolution; errors = default_errors; _ } ->
-              resolution, List.append default_errors errors, true
-          | _ -> resolution, errors, false
-        in
-        match attribute_resolved with
-        | Type.Literal (String (LiteralValue attribute)) ->
-            resolve_attribute_access
-              ~base_resolved:{ base_resolved with Resolved.resolution; errors }
-              ~location
-              ~base
-              ~special:false
-              ~attribute
-              ~has_default
-        | _ ->
-            {
-              Resolved.resolution;
-              errors;
-              resolved = Type.Any;
-              base = None;
-              resolved_annotation = None;
-            })
-    | Call call ->
-        let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
-        let {
-          Resolved.errors = callee_errors;
-          resolved = resolved_callee;
-          base = resolved_base;
-          resolution = callee_resolution;
-          _;
-        }
-          =
-          forward_expression ~resolution callee
-        in
-        let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
-          let target_and_dynamic resolved_callee =
-            if Type.is_meta resolved_callee then
-              Some (Type.single_argument resolved_callee), false
-            else
-              match resolved_base with
-              | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
-                  Some resolved, true
-              | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
-                  Some resolved, false
-              | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
-                  Some resolved, false
-              | _ -> None, false
-          in
-          let create_callee resolved =
-            match Node.value callee with
-            | Expression.Name (Name.Attribute { base; attribute; _ }) ->
-                Callee.Attribute
-                  {
-                    base =
-                      {
-                        expression = base;
-                        resolved_base =
-                          Resolved.resolved_base_type resolved_base
-                          |> Option.value ~default:Type.Top;
-                      };
-                    attribute = { name = attribute; resolved = resolved_callee };
-                    expression = callee;
-                  }
-            | _ -> Callee.NonAttribute { expression = callee; resolved }
-          in
-          match resolved_callee with
-          | Type.Parametric { name = "type"; arguments = [Single (Type.Union resolved_callees)] } ->
-              let forward_inner_callable (resolution, errors, annotations) inner_resolved_callee =
-                let target, dynamic = target_and_dynamic inner_resolved_callee in
+                  match Type.collect_types resolved ~predicate:is_broadcast_error with
+                  | [] -> input
+                  | broadcast_errors ->
+                      let new_errors =
+                        List.fold broadcast_errors ~init:errors ~f:(fun current_errors error_type ->
+                            match error_type with
+                            | Type.Parametric
+                                {
+                                  name = "pyre_extensions.BroadcastError";
+                                  arguments =
+                                    [
+                                      Type.Argument.Single left_type; Type.Argument.Single right_type;
+                                    ];
+                                } ->
+                                emit_error
+                                  ~errors:current_errors
+                                  ~location
+                                  ~kind:
+                                    (Error.BroadcastError
+                                       {
+                                         expression = { location; value };
+                                         left = left_type;
+                                         right = right_type;
+                                       })
+                            | _ -> current_errors)
+                      in
+                      { input with resolved = Type.Any; errors = new_errors }
+                in
                 forward_call_with_arguments
-                  ~resolution
+                  ~resolution:callee_resolution
                   ~location
-                  ~errors:[]
+                  ~errors:callee_errors
                   ~target
                   ~dynamic
-                  ~callee:(create_callee inner_resolved_callee)
+                  ~callee:(create_callee resolved_callee)
                   ~arguments
-                |> fun { resolution; resolved; errors = new_errors; _ } ->
-                resolution, List.append new_errors errors, resolved :: annotations
-              in
-              let resolution, errors, return_annotations =
-                List.fold_left
-                  ~f:forward_inner_callable
-                  ~init:(callee_resolution, callee_errors, [])
-                  (List.map ~f:Type.meta resolved_callees)
-              in
-              {
-                resolution;
-                errors;
-                resolved = Type.union return_annotations;
-                resolved_annotation = None;
-                base = None;
-              }
-          | _ ->
-              let target, dynamic = target_and_dynamic resolved_callee in
-              let detect_broadcast_errors ({ Resolved.resolved; errors; _ } as input) =
-                let is_broadcast_error = function
-                  | Type.Parametric
-                      {
-                        name = "pyre_extensions.BroadcastError";
-                        arguments = [Type.Argument.Single _; Type.Argument.Single _];
-                      } ->
-                      true
-                  | _ -> false
-                in
-                match Type.collect_types resolved ~predicate:is_broadcast_error with
-                | [] -> input
-                | broadcast_errors ->
-                    let new_errors =
-                      List.fold broadcast_errors ~init:errors ~f:(fun current_errors error_type ->
-                          match error_type with
-                          | Type.Parametric
-                              {
-                                name = "pyre_extensions.BroadcastError";
-                                arguments =
-                                  [Type.Argument.Single left_type; Type.Argument.Single right_type];
-                              } ->
-                              emit_error
-                                ~errors:current_errors
-                                ~location
-                                ~kind:
-                                  (Error.BroadcastError
-                                     {
-                                       expression = { location; value };
-                                       left = left_type;
-                                       right = right_type;
-                                     })
-                          | _ -> current_errors)
-                    in
-                    { input with resolved = Type.Any; errors = new_errors }
-              in
-              forward_call_with_arguments
-                ~resolution:callee_resolution
-                ~location
-                ~errors:callee_errors
-                ~target
-                ~dynamic
-                ~callee:(create_callee resolved_callee)
-                ~arguments
-              |> detect_broadcast_errors
-        in
-        {
-          resolution = Resolution.clear_temporary_type_info updated_resolution;
-          errors = updated_errors;
-          resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | ComparisonOperator
-        { ComparisonOperator.left; right; operator = ComparisonOperator.In as operator }
-    | ComparisonOperator
-        { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
-        let resolve_in_call
-            (resolution, errors, joined_annotation)
-            { Type.instantiated; class_name; accessed_through_class; _ }
-          =
-          let resolve_method
-              ?(accessed_through_class = false)
-              ?(special_method = false)
-              class_name
-              instantiated
-              name
-            =
-            GlobalResolution.attribute_from_class_name
-              global_resolution
-              ~transitive:true
-              ~accessed_through_class
-              class_name
-              ~special_method
-              ~name
-              ~instantiated
-            >>| AnnotatedAttribute.annotation
-            >>| TypeInfo.Unit.annotation
-            >>= function
-            | Type.Top -> None
-            | annotation -> Some annotation
+                |> detect_broadcast_errors
           in
-          let { Resolved.resolution; resolved; errors; _ } =
-            match
-              resolve_method
-                ~accessed_through_class
-                ~special_method:true
+          {
+            resolution = Resolution.clear_temporary_type_info updated_resolution;
+            errors = updated_errors;
+            resolved;
+            resolved_annotation = None;
+            base = None;
+          }
+      | ComparisonOperator
+          { ComparisonOperator.left; right; operator = ComparisonOperator.In as operator }
+      | ComparisonOperator
+          { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
+          let resolve_in_call
+              (resolution, errors, joined_annotation)
+              { Type.instantiated; class_name; accessed_through_class; _ }
+            =
+            let resolve_method
+                ?(accessed_through_class = false)
+                ?(special_method = false)
                 class_name
                 instantiated
-                "__contains__"
-            with
-            | Some resolved ->
-                let callee =
-                  let { Resolved.resolved = resolved_base; _ } =
-                    forward_expression ~resolution right
-                  in
-                  Callee.Attribute
-                    {
-                      base = { expression = right; resolved_base };
-                      attribute = { name = "__contains__"; resolved };
-                      expression =
-                        {
-                          Node.location;
-                          value =
-                            Expression.Name
-                              (Name.Attribute
-                                 { base = right; attribute = "__contains__"; special = true });
-                        };
-                    }
-                in
-                forward_call_with_arguments
-                  ~resolution
-                  ~location
-                  ~errors
-                  ~target:(Some instantiated)
-                  ~dynamic:true
-                  ~callee
-                  ~arguments:[{ Call.Argument.name = None; value = left }]
-            | None -> (
-                match
-                  resolve_method
-                    ~accessed_through_class
-                    ~special_method:true
-                    class_name
-                    instantiated
-                    "__iter__"
-                with
-                | Some iter_callable ->
-                    let create_callee resolved =
-                      Callee.NonAttribute
-                        {
-                          expression =
-                            {
-                              Node.location;
-                              value =
-                                Expression.Name
-                                  (Name.Attribute
-                                     { base = right; attribute = "__iter__"; special = true });
-                            };
-                          resolved;
-                        }
+                name
+              =
+              GlobalResolution.attribute_from_class_name
+                global_resolution
+                ~transitive:true
+                ~accessed_through_class
+                class_name
+                ~special_method
+                ~name
+                ~instantiated
+              >>| AnnotatedAttribute.annotation
+              >>| TypeInfo.Unit.annotation
+              >>= function
+              | Type.Top -> None
+              | annotation -> Some annotation
+            in
+            let { Resolved.resolution; resolved; errors; _ } =
+              match
+                resolve_method
+                  ~accessed_through_class
+                  ~special_method:true
+                  class_name
+                  instantiated
+                  "__contains__"
+              with
+              | Some resolved ->
+                  let callee =
+                    let { Resolved.resolved = resolved_base; _ } =
+                      forward_expression ~resolution right
                     in
-                    (* Since we can't call forward_expression with the general type (we don't have a
-                       good way of saying "synthetic expression with type T", simulate what happens
-                       ourselves. *)
-                    let forward_method
-                        ~method_name
-                        ~arguments
-                        { Resolved.resolution; resolved = parent; errors; _ }
-                      =
-                      Type.split parent
-                      |> fst
-                      |> Type.primitive_name
-                      >>= (fun class_name -> resolve_method class_name parent method_name)
-                      >>| fun callable ->
+                    Callee.Attribute
+                      {
+                        base = { expression = right; resolved_base };
+                        attribute = { name = "__contains__"; resolved };
+                        expression =
+                          {
+                            Node.location;
+                            value =
+                              Expression.Name
+                                (Name.Attribute
+                                   { base = right; attribute = "__contains__"; special = true });
+                          };
+                      }
+                  in
+                  forward_call_with_arguments
+                    ~resolution
+                    ~location
+                    ~errors
+                    ~target:(Some instantiated)
+                    ~dynamic:true
+                    ~callee
+                    ~arguments:[{ Call.Argument.name = None; value = left }]
+              | None -> (
+                  match
+                    resolve_method
+                      ~accessed_through_class
+                      ~special_method:true
+                      class_name
+                      instantiated
+                      "__iter__"
+                  with
+                  | Some iter_callable ->
+                      let create_callee resolved =
+                        Callee.NonAttribute
+                          {
+                            expression =
+                              {
+                                Node.location;
+                                value =
+                                  Expression.Name
+                                    (Name.Attribute
+                                       { base = right; attribute = "__iter__"; special = true });
+                              };
+                            resolved;
+                          }
+                      in
+                      (* Since we can't call forward_expression with the general type (we don't have
+                         a good way of saying "synthetic expression with type T", simulate what
+                         happens ourselves. *)
+                      let forward_method
+                          ~method_name
+                          ~arguments
+                          { Resolved.resolution; resolved = parent; errors; _ }
+                        =
+                        Type.split parent
+                        |> fst
+                        |> Type.primitive_name
+                        >>= (fun class_name -> resolve_method class_name parent method_name)
+                        >>| fun callable ->
+                        forward_call_with_arguments
+                          ~dynamic:true
+                          ~resolution
+                          ~location
+                          ~errors
+                          ~target:(Some parent)
+                          ~callee:(create_callee callable)
+                          ~arguments:
+                            (List.map arguments ~f:(fun value ->
+                                 { Call.Argument.name = None; value }))
+                      in
                       forward_call_with_arguments
                         ~dynamic:true
                         ~resolution
                         ~location
                         ~errors
-                        ~target:(Some parent)
-                        ~callee:(create_callee callable)
-                        ~arguments:
-                          (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
-                    in
-                    forward_call_with_arguments
-                      ~dynamic:true
-                      ~resolution
-                      ~location
-                      ~errors
-                      ~target:(Some instantiated)
-                      ~callee:(create_callee iter_callable)
-                      ~arguments:[]
-                    |> forward_method ~method_name:"__next__" ~arguments:[]
-                    >>= forward_method ~method_name:"__eq__" ~arguments:[left]
-                    |> Option.value
-                         ~default:
-                           {
-                             Resolved.resolution;
-                             errors;
-                             resolved = Type.Top;
-                             resolved_annotation = None;
-                             base = None;
-                           }
-                | None -> (
-                    let getitem_attribute =
-                      {
-                        Node.location;
-                        value =
-                          Expression.Name
-                            (Name.Attribute
-                               { base = right; attribute = "__getitem__"; special = true });
-                      }
-                    in
-                    let call =
-                      let getitem =
+                        ~target:(Some instantiated)
+                        ~callee:(create_callee iter_callable)
+                        ~arguments:[]
+                      |> forward_method ~method_name:"__next__" ~arguments:[]
+                      >>= forward_method ~method_name:"__eq__" ~arguments:[left]
+                      |> Option.value
+                           ~default:
+                             {
+                               Resolved.resolution;
+                               errors;
+                               resolved = Type.Top;
+                               resolved_annotation = None;
+                               base = None;
+                             }
+                  | None -> (
+                      let getitem_attribute =
+                        {
+                          Node.location;
+                          value =
+                            Expression.Name
+                              (Name.Attribute
+                                 { base = right; attribute = "__getitem__"; special = true });
+                        }
+                      in
+                      let call =
+                        let getitem =
+                          {
+                            Node.location;
+                            value =
+                              Expression.Call
+                                {
+                                  callee = getitem_attribute;
+                                  arguments =
+                                    [
+                                      {
+                                        Call.Argument.name = None;
+                                        value =
+                                          {
+                                            Node.location;
+                                            value = Expression.Constant (Constant.Integer 0);
+                                          };
+                                      };
+                                    ];
+                                };
+                          }
+                        in
                         {
                           Node.location;
                           value =
                             Expression.Call
                               {
-                                callee = getitem_attribute;
-                                arguments =
-                                  [
-                                    {
-                                      Call.Argument.name = None;
-                                      value =
-                                        {
-                                          Node.location;
-                                          value = Expression.Constant (Constant.Integer 0);
-                                        };
-                                    };
-                                  ];
+                                callee =
+                                  {
+                                    Node.location;
+                                    value =
+                                      Name
+                                        (Name.Attribute
+                                           { base = getitem; attribute = "__eq__"; special = true });
+                                  };
+                                arguments = [{ Call.Argument.name = None; value = left }];
                               };
                         }
                       in
-                      {
-                        Node.location;
-                        value =
-                          Expression.Call
+                      let ({ Resolved.resolved; _ } as getitem_resolution) =
+                        forward_expression ~resolution getitem_attribute
+                      in
+                      let is_valid_getitem = function
+                        | Type.Parametric
                             {
-                              callee =
-                                {
-                                  Node.location;
-                                  value =
-                                    Name
-                                      (Name.Attribute
-                                         { base = getitem; attribute = "__eq__"; special = true });
-                                };
-                              arguments = [{ Call.Argument.name = None; value = left }];
-                            };
-                      }
-                    in
-                    let ({ Resolved.resolved; _ } as getitem_resolution) =
-                      forward_expression ~resolution getitem_attribute
-                    in
-                    let is_valid_getitem = function
-                      | Type.Parametric
-                          {
-                            name = "BoundMethod";
-                            arguments =
-                              [
-                                Single
-                                  (Type.Callable
-                                    {
-                                      implementation =
-                                        { parameters = Defined (_ :: index_parameter :: _); _ };
-                                      _;
-                                    });
-                                _;
-                              ];
-                          }
-                      | Type.Callable
-                          {
-                            implementation = { parameters = Defined (_ :: index_parameter :: _); _ };
-                            _;
-                          }
-                        when GlobalResolution.less_or_equal
-                               global_resolution
-                               ~left:Type.integer
-                               ~right:
-                                 (Type.Callable.CallableParamType.annotation index_parameter
-                                 |> Option.value ~default:Type.Bottom) ->
-                          true
-                      | _ -> false
-                    in
-                    match resolved with
-                    | Type.Union elements when List.for_all ~f:is_valid_getitem elements ->
-                        forward_expression ~resolution call
-                    | _ when is_valid_getitem resolved -> forward_expression ~resolution call
-                    | _ ->
-                        let errors =
-                          let { Resolved.resolved; _ } = forward_expression ~resolution right in
-                          emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.UnsupportedOperand
-                                 (Unary
-                                    {
-                                      operator_name =
-                                        Format.asprintf
-                                          "%a"
-                                          ComparisonOperator.pp_comparison_operator
-                                          operator;
-                                      operand = resolved;
-                                    }))
-                        in
-                        { getitem_resolution with Resolved.resolved = Type.Any; errors }))
-          in
-          resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
-        in
-        let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
-        let resolution, errors, resolved =
-          (* We should really error here if class_data_for_attribute_lookup fails *)
-          Type.class_data_for_attribute_lookup resolved
-          >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
-          |> Option.value ~default:(resolution, errors, Type.Bottom)
-        in
-        let resolved = if Type.equal resolved Type.Bottom then Type.Top else resolved in
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) -> (
-        let operator = { operator with left } in
-        match ComparisonOperator.override ~location operator with
-        | Some expression ->
-            let resolved = forward_expression ~resolution expression in
-            { resolved with errors = resolved.errors }
-        | None ->
-            forward_expression ~resolution left
-            |> (fun { Resolved.resolution; errors = left_errors; _ } ->
-                 let { Resolved.resolution; errors = right_errors; _ } =
-                   forward_expression ~resolution right
-                 in
-                 resolution, List.append left_errors right_errors)
-            |> fun (resolution, errors) ->
-            {
-              Resolved.resolution;
-              errors;
-              resolved = Type.bool;
-              resolved_annotation = None;
-              base = None;
-            })
-    | Constant (Constant.Complex _) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.complex;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Dictionary entries ->
-        let keyvalue_entries, splatted_entries =
-          List.partition_map
-            ~f:(fun entry ->
-              match entry with
-              | KeyValue kv -> First kv
-              | Splat s -> Second s)
-            entries
-        in
-        let key, value, resolution, errors =
-          let forward_entry (key, value, resolution, errors) entry =
-            let new_key, new_value, resolution, errors = forward_entry ~resolution ~errors ~entry in
-            ( GlobalResolution.join global_resolution key new_key,
-              GlobalResolution.join global_resolution value new_value,
-              resolution,
-              errors )
-          in
-          List.fold
-            keyvalue_entries
-            ~f:forward_entry
-            ~init:(Type.Bottom, Type.Bottom, resolution, [])
-        in
-        let key =
-          if List.is_empty splatted_entries && Type.is_unbound key then
-            Type.variable "_KT" |> Type.Variable.mark_all_free_variables_as_escaped
-          else
-            key
-        in
-        let value =
-          if List.is_empty splatted_entries && Type.is_unbound value then
-            Type.variable "_VT" |> Type.Variable.mark_all_free_variables_as_escaped
-          else
-            value
-        in
-        let resolved_key_and_value, resolution, errors =
-          let forward_keyword (resolved, resolution, errors) keyword =
-            match resolved with
-            | None -> resolved, resolution, errors
-            | Some (key, value) -> (
-                let { Resolved.resolution; resolved = source; errors = new_errors; _ } =
-                  forward_expression ~resolution keyword
-                in
-                let errors = List.append new_errors errors in
-                match source with
-                | Top
-                | Bottom
-                | Any ->
-                    None, resolution, errors
-                | _ -> (
-                    match
-                      GlobalResolution.type_of_mapping_key_and_value global_resolution source
-                    with
-                    | Some (new_key, new_value) ->
-                        ( Some
-                            ( GlobalResolution.join global_resolution key new_key,
-                              GlobalResolution.join global_resolution value new_value ),
-                          resolution,
-                          errors )
-                    | _ ->
-                        let errors =
-                          emit_error
-                            ~errors
-                            ~location
-                            ~kind:
-                              (Error.InvalidArgument
-                                 (Error.Keyword
-                                    {
-                                      expression = Some keyword;
-                                      annotation = source;
-                                      require_string_keys = false;
-                                    }))
-                        in
-                        None, resolution, errors))
-          in
-          List.fold splatted_entries ~f:forward_keyword ~init:(Some (key, value), resolution, errors)
-        in
-        let resolved =
-          resolved_key_and_value
-          >>| (fun (key, value) -> Type.dictionary ~key ~value)
-          |> Option.value ~default:Type.Top
-        in
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | DictionaryComprehension { Comprehension.element; generators } ->
-        let key, value, _, errors =
-          List.fold
-            generators
-            ~f:(fun (resolution, errors) generator ->
-              forward_generator ~resolution ~errors ~generator)
-            ~init:(resolution, [])
-          |> fun (resolution, errors) -> forward_entry ~resolution ~errors ~entry:element
-        in
-        (* Discard generator-local variables. *)
-        {
-          resolution;
-          errors;
-          resolved = Type.dictionary ~key ~value;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant Constant.Ellipsis ->
-        { resolution; errors = []; resolved = Type.Any; resolved_annotation = None; base = None }
-    | Constant Constant.False ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.Literal (Type.Boolean false);
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.Float _) ->
-        { resolution; errors = []; resolved = Type.float; resolved_annotation = None; base = None }
-    | Constant (Constant.Integer literal) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_integer literal;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.BigInteger _) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.integer;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_bytes value;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_string value;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant Constant.True ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.Literal (Type.Boolean true);
-          resolved_annotation = None;
-          base = None;
-        }
-    | FormatString substrings ->
-        let forward_substring ((resolution, has_non_literal, errors) as sofar) = function
-          | Substring.Literal _ -> sofar
-          | Substring.Format { value; format_spec } -> (
-              let format_substring_resolved
-                  Resolved.{ resolution; errors = new_errors; resolved; _ }
-                =
-                let has_non_literal =
-                  match resolved with
-                  | Type.Literal _ -> has_non_literal
-                  | _ -> true
-                in
-                resolution, has_non_literal, new_errors
-              in
-              let value_resolution, value_has_non_literal, value_errors =
-                forward_expression ~resolution value |> format_substring_resolved
-              in
-              match format_spec with
-              | Some format_spec ->
-                  let format_spec_resolution, format_spec_has_non_literal, format_spec_errors =
-                    forward_expression ~resolution format_spec |> format_substring_resolved
-                  in
-                  ( format_spec_resolution,
-                    format_spec_has_non_literal || value_has_non_literal,
-                    value_errors @ format_spec_errors @ errors )
-              | None -> value_resolution, value_has_non_literal, value_errors @ errors)
-        in
-        let resolution, has_non_literal, errors =
-          List.fold substrings ~f:forward_substring ~init:(resolution, false, [])
-        in
-        let resolved = if has_non_literal then Type.string else Type.literal_any_string in
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | Generator { Comprehension.element; generators } ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
-        in
-        let folder =
-          let fold_await ~folder:_ ~state:_ _ = true in
-          Folder.create_with_uniform_location_fold ~fold_await ()
-        in
-        let has_await expression = Folder.fold ~folder ~state:false expression in
-        (* We infer AsyncGenerator if any generator uses `async for`, or if any expression contains
-           an `await` except for the leftmost sequence expression *)
-        let is_async_generator =
-          List.find_mapi
-            ~f:(fun idx { Comprehension.Generator.async; iterator; conditions; _ } ->
-              if
-                async
-                || List.exists ~f:(fun condition -> has_await condition) conditions
-                || (idx <> 0 && has_await iterator)
-              then
-                Some ()
-              else
-                None)
-            generators
-          |> Option.is_some
-          || has_await element
-        in
-        let generator =
-          if is_async_generator then
-            Type.async_generator ~yield_type:resolved ()
-          else
-            Type.generator_expression resolved
-        in
-        { resolution; errors; resolved = generator; resolved_annotation = None; base = None }
-    | Lambda { Lambda.body; parameters } ->
-        let resolution_with_parameters =
-          let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
-            let name = String.chop_prefix name ~prefix:"*" |> Option.value ~default:name in
-            Resolution.new_local
-              resolution
-              ~reference:(Reference.create name)
-              ~type_info:(TypeInfo.Unit.create_mutable Type.Any)
-          in
-          List.fold ~f:add_parameter ~init:resolution parameters
-        in
-        let { Resolved.resolved; errors; _ } =
-          forward_expression ~resolution:resolution_with_parameters body
-        in
-        (* Judgement call, many more people want to pass in `lambda: 0` to `defaultdict` than want
-           to write a function that take in callables with literal return types. If you really want
-           that behavior you can always write a real inner function with a literal return type *)
-        let resolved = Type.weaken_literals resolved in
-        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
-          {
-            Type.Callable.CallableParamType.name;
-            annotation = Type.Any;
-            default = Option.is_some value;
-          }
-        in
-        let parameters =
-          List.map parameters ~f:create_parameter
-          |> Type.Callable.CallableParamType.create
-          |> fun parameters -> Type.Callable.Defined parameters
-        in
-        {
-          resolution;
-          errors;
-          resolved = Type.Callable.create ~parameters ~annotation:resolved ();
-          resolved_annotation = None;
-          base = None;
-        }
-    | List elements ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_elements ~resolution ~errors:[] ~elements
-        in
-        {
-          resolution;
-          errors;
-          resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | ListComprehension { Comprehension.element; generators } ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
-        in
-        {
-          resolution;
-          errors;
-          resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Name (Name.Identifier "__debug__") ->
-        (* `__debug__` is a special unassignable builtin boolean, see
-           https://docs.python.org/3/library/constants.html *)
-        let resolved = Type.bool in
-        {
-          resolution;
-          errors = [];
-          resolved;
-          resolved_annotation = Some (TypeInfo.Unit.create_immutable resolved);
-          base = None;
-        }
-    | Name (Name.Identifier identifier) ->
-        forward_reference ~resolution ~location ~errors:[] (Reference.create identifier)
-    | Name (Name.Attribute { base; attribute; special } as name) -> (
-        (*
-         * Attribute accesses are recursively resolved by stripping mames off
-         * of the end and then trying
-         * to resolve the prefix. For example, `foo().bar` will be stripped to
-         * `foo()` first, then once that type is resolved we'll look up the
-         * `bar` attribute.
-         *
-         * But to handle lazy module tracking, which requires us to only
-         * support limited cases of implicit namespace modules, we also want
-         * to check whether the reference can be directly resolved to a type
-         * (for example `pandas.core.DataFrame`) and short-circuit the
-         * recursion in that case.
-         *
-         * Our method for doing this is to decide whether a name can be
-         * directly looked up, short ciruiting the recursion, by using
-         * - `name_to_reference`, which produces a reference when a `Name`
-         *    corresponds to a plain reference (for example `foo().bar` does
-         *    not but `pandas.core.DataFrame` does, and
-         * - `resolve_exports`, which does a principled syntax-based lookup
-         *    to see if a name makes sense as a module top-level name
-         *)
-        match name_to_reference name with
-        | Some module_reference
-          when is_toplevel_module_reference ~global_resolution module_reference ->
-            (* TODO(T125828725) Use the resolved name coming from resolve_exports, rather than
-               throwing away that name and falling back to legacy_resolve_exports.
-
-               This requires either using better qualification architecture or refactors of existing
-               python code that relies on the legacy behaviror in the presence of ambiguous
-               fully-qualified names. *)
-            forward_reference ~resolution ~location ~errors:[] module_reference
-        | _ ->
-            let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
-              forward_expression ~resolution base
+                              name = "BoundMethod";
+                              arguments =
+                                [
+                                  Single
+                                    (Type.Callable
+                                      {
+                                        implementation =
+                                          { parameters = Defined (_ :: index_parameter :: _); _ };
+                                        _;
+                                      });
+                                  _;
+                                ];
+                            }
+                        | Type.Callable
+                            {
+                              implementation =
+                                { parameters = Defined (_ :: index_parameter :: _); _ };
+                              _;
+                            }
+                          when GlobalResolution.less_or_equal
+                                 global_resolution
+                                 ~left:Type.integer
+                                 ~right:
+                                   (Type.Callable.CallableParamType.annotation index_parameter
+                                   |> Option.value ~default:Type.Bottom) ->
+                            true
+                        | _ -> false
+                      in
+                      match resolved with
+                      | Type.Union elements when List.for_all ~f:is_valid_getitem elements ->
+                          forward_expression ~resolution call
+                      | _ when is_valid_getitem resolved -> forward_expression ~resolution call
+                      | _ ->
+                          let errors =
+                            let { Resolved.resolved; _ } = forward_expression ~resolution right in
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.UnsupportedOperand
+                                   (Unary
+                                      {
+                                        operator_name =
+                                          Format.asprintf
+                                            "%a"
+                                            ComparisonOperator.pp_comparison_operator
+                                            operator;
+                                        operand = resolved;
+                                      }))
+                          in
+                          { getitem_resolution with Resolved.resolved = Type.Any; errors }))
             in
-            let errors, resolved_base =
-              if Type.Variable.contains_escaped_free_variable resolved_base then
-                let errors =
+            resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
+          in
+          let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
+          let resolution, errors, resolved =
+            (* We should really error here if class_data_for_attribute_lookup fails *)
+            Type.class_data_for_attribute_lookup resolved
+            >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
+            |> Option.value ~default:(resolution, errors, Type.Bottom)
+          in
+          let resolved = if Type.equal resolved Type.Bottom then Type.Top else resolved in
+          { resolution; errors; resolved; resolved_annotation = None; base = None }
+      | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) -> (
+          let operator = { operator with left } in
+          match ComparisonOperator.override ~location operator with
+          | Some expression ->
+              let resolved = forward_expression ~resolution expression in
+              { resolved with errors = resolved.errors }
+          | None ->
+              forward_expression ~resolution left
+              |> (fun { Resolved.resolution; errors = left_errors; _ } ->
+                   let { Resolved.resolution; errors = right_errors; _ } =
+                     forward_expression ~resolution right
+                   in
+                   resolution, List.append left_errors right_errors)
+              |> fun (resolution, errors) ->
+              {
+                Resolved.resolution;
+                errors;
+                resolved = Type.bool;
+                resolved_annotation = None;
+                base = None;
+              })
+      | Constant (Constant.Complex _) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.complex;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Dictionary entries ->
+          let keyvalue_entries, splatted_entries =
+            List.partition_map
+              ~f:(fun entry ->
+                match entry with
+                | KeyValue kv -> First kv
+                | Splat s -> Second s)
+              entries
+          in
+          let key, value, resolution, errors =
+            let forward_entry (key, value, resolution, errors) entry =
+              let new_key, new_value, resolution, errors =
+                forward_entry ~resolution ~errors ~entry
+              in
+              ( GlobalResolution.join global_resolution key new_key,
+                GlobalResolution.join global_resolution value new_value,
+                resolution,
+                errors )
+            in
+            List.fold
+              keyvalue_entries
+              ~f:forward_entry
+              ~init:(Type.Bottom, Type.Bottom, resolution, [])
+          in
+          let key =
+            if List.is_empty splatted_entries && Type.is_unbound key then
+              Type.variable "_KT" |> Type.Variable.mark_all_free_variables_as_escaped
+            else
+              key
+          in
+          let value =
+            if List.is_empty splatted_entries && Type.is_unbound value then
+              Type.variable "_VT" |> Type.Variable.mark_all_free_variables_as_escaped
+            else
+              value
+          in
+          let resolved_key_and_value, resolution, errors =
+            let forward_keyword (resolved, resolution, errors) keyword =
+              match resolved with
+              | None -> resolved, resolution, errors
+              | Some (key, value) -> (
+                  let { Resolved.resolution; resolved = source; errors = new_errors; _ } =
+                    forward_expression ~resolution keyword
+                  in
+                  let errors = List.append new_errors errors in
+                  match source with
+                  | Top
+                  | Bottom
+                  | Any ->
+                      None, resolution, errors
+                  | _ -> (
+                      match
+                        GlobalResolution.type_of_mapping_key_and_value global_resolution source
+                      with
+                      | Some (new_key, new_value) ->
+                          ( Some
+                              ( GlobalResolution.join global_resolution key new_key,
+                                GlobalResolution.join global_resolution value new_value ),
+                            resolution,
+                            errors )
+                      | _ ->
+                          let errors =
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.InvalidArgument
+                                   (Error.Keyword
+                                      {
+                                        expression = Some keyword;
+                                        annotation = source;
+                                        require_string_keys = false;
+                                      }))
+                          in
+                          None, resolution, errors))
+            in
+            List.fold
+              splatted_entries
+              ~f:forward_keyword
+              ~init:(Some (key, value), resolution, errors)
+          in
+          let resolved =
+            resolved_key_and_value
+            >>| (fun (key, value) -> Type.dictionary ~key ~value)
+            |> Option.value ~default:Type.Top
+          in
+          { resolution; errors; resolved; resolved_annotation = None; base = None }
+      | DictionaryComprehension { Comprehension.element; generators } ->
+          let key, value, _, errors =
+            List.fold
+              generators
+              ~f:(fun (resolution, errors) generator ->
+                forward_generator ~resolution ~errors ~generator)
+              ~init:(resolution, [])
+            |> fun (resolution, errors) -> forward_entry ~resolution ~errors ~entry:element
+          in
+          (* Discard generator-local variables. *)
+          {
+            resolution;
+            errors;
+            resolved = Type.dictionary ~key ~value;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant Constant.Ellipsis ->
+          { resolution; errors = []; resolved = Type.Any; resolved_annotation = None; base = None }
+      | Constant Constant.False ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.Literal (Type.Boolean false);
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant (Constant.Float _) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.float;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant (Constant.Integer literal) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.literal_integer literal;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant (Constant.BigInteger _) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.integer;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.literal_bytes value;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.literal_string value;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Constant Constant.True ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.Literal (Type.Boolean true);
+            resolved_annotation = None;
+            base = None;
+          }
+      | FormatString substrings ->
+          let forward_substring ((resolution, has_non_literal, errors) as sofar) = function
+            | Substring.Literal _ -> sofar
+            | Substring.Format { value; format_spec } -> (
+                let format_substring_resolved
+                    Resolved.{ resolution; errors = new_errors; resolved; _ }
+                  =
+                  let has_non_literal =
+                    match resolved with
+                    | Type.Literal _ -> has_non_literal
+                    | _ -> true
+                  in
+                  resolution, has_non_literal, new_errors
+                in
+                let value_resolution, value_has_non_literal, value_errors =
+                  forward_expression ~resolution value |> format_substring_resolved
+                in
+                match format_spec with
+                | Some format_spec ->
+                    let format_spec_resolution, format_spec_has_non_literal, format_spec_errors =
+                      forward_expression ~resolution format_spec |> format_substring_resolved
+                    in
+                    ( format_spec_resolution,
+                      format_spec_has_non_literal || value_has_non_literal,
+                      value_errors @ format_spec_errors @ errors )
+                | None -> value_resolution, value_has_non_literal, value_errors @ errors)
+          in
+          let resolution, has_non_literal, errors =
+            List.fold substrings ~f:forward_substring ~init:(resolution, false, [])
+          in
+          let resolved = if has_non_literal then Type.string else Type.literal_any_string in
+          { resolution; errors; resolved; resolved_annotation = None; base = None }
+      | Generator { Comprehension.element; generators } ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_comprehension ~resolution ~errors:[] ~element ~generators
+          in
+          let folder =
+            let fold_await ~folder:_ ~state:_ _ = true in
+            Folder.create_with_uniform_location_fold ~fold_await ()
+          in
+          let has_await expression = Folder.fold ~folder ~state:false expression in
+          (* We infer AsyncGenerator if any generator uses `async for`, or if any expression
+             contains an `await` except for the leftmost sequence expression *)
+          let is_async_generator =
+            List.find_mapi
+              ~f:(fun idx { Comprehension.Generator.async; iterator; conditions; _ } ->
+                if
+                  async
+                  || List.exists ~f:(fun condition -> has_await condition) conditions
+                  || (idx <> 0 && has_await iterator)
+                then
+                  Some ()
+                else
+                  None)
+              generators
+            |> Option.is_some
+            || has_await element
+          in
+          let generator =
+            if is_async_generator then
+              Type.async_generator ~yield_type:resolved ()
+            else
+              Type.generator_expression resolved
+          in
+          { resolution; errors; resolved = generator; resolved_annotation = None; base = None }
+      | Lambda { Lambda.body; parameters } ->
+          let resolution_with_parameters =
+            let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
+              let name = String.chop_prefix name ~prefix:"*" |> Option.value ~default:name in
+              Resolution.new_local
+                resolution
+                ~reference:(Reference.create name)
+                ~type_info:(TypeInfo.Unit.create_mutable Type.Any)
+            in
+            List.fold ~f:add_parameter ~init:resolution parameters
+          in
+          let { Resolved.resolved; errors; _ } =
+            forward_expression ~resolution:resolution_with_parameters body
+          in
+          (* Judgement call, many more people want to pass in `lambda: 0` to `defaultdict` than want
+             to write a function that take in callables with literal return types. If you really
+             want that behavior you can always write a real inner function with a literal return
+             type *)
+          let resolved = Type.weaken_literals resolved in
+          let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+            {
+              Type.Callable.CallableParamType.name;
+              annotation = Type.Any;
+              default = Option.is_some value;
+            }
+          in
+          let parameters =
+            List.map parameters ~f:create_parameter
+            |> Type.Callable.CallableParamType.create
+            |> fun parameters -> Type.Callable.Defined parameters
+          in
+          {
+            resolution;
+            errors;
+            resolved = Type.Callable.create ~parameters ~annotation:resolved ();
+            resolved_annotation = None;
+            base = None;
+          }
+      | List elements ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_elements ~resolution ~errors:[] ~elements
+          in
+          {
+            resolution;
+            errors;
+            resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
+            resolved_annotation = None;
+            base = None;
+          }
+      | ListComprehension { Comprehension.element; generators } ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_comprehension ~resolution ~errors:[] ~element ~generators
+          in
+          {
+            resolution;
+            errors;
+            resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Name (Name.Identifier "__debug__") ->
+          (* `__debug__` is a special unassignable builtin boolean, see
+             https://docs.python.org/3/library/constants.html *)
+          let resolved = Type.bool in
+          {
+            resolution;
+            errors = [];
+            resolved;
+            resolved_annotation = Some (TypeInfo.Unit.create_immutable resolved);
+            base = None;
+          }
+      | Name (Name.Identifier identifier) ->
+          forward_reference ~resolution ~location ~errors:[] (Reference.create identifier)
+      | Name (Name.Attribute { base; attribute; special } as name) -> (
+          (*
+           * Attribute accesses are recursively resolved by stripping mames off
+           * of the end and then trying
+           * to resolve the prefix. For example, `foo().bar` will be stripped to
+           * `foo()` first, then once that type is resolved we'll look up the
+           * `bar` attribute.
+           *
+           * But to handle lazy module tracking, which requires us to only
+           * support limited cases of implicit namespace modules, we also want
+           * to check whether the reference can be directly resolved to a type
+           * (for example `pandas.core.DataFrame`) and short-circuit the
+           * recursion in that case.
+           *
+           * Our method for doing this is to decide whether a name can be
+           * directly looked up, short ciruiting the recursion, by using
+           * - `name_to_reference`, which produces a reference when a `Name`
+           *    corresponds to a plain reference (for example `foo().bar` does
+           *    not but `pandas.core.DataFrame` does, and
+           * - `resolve_exports`, which does a principled syntax-based lookup
+           *    to see if a name makes sense as a module top-level name
+           *)
+          match name_to_reference name with
+          | Some module_reference
+            when is_toplevel_module_reference ~global_resolution module_reference ->
+              (* TODO(T125828725) Use the resolved name coming from resolve_exports, rather than
+                 throwing away that name and falling back to legacy_resolve_exports.
+
+                 This requires either using better qualification architecture or refactors of
+                 existing python code that relies on the legacy behaviror in the presence of
+                 ambiguous fully-qualified names. *)
+              forward_reference ~resolution ~location ~errors:[] module_reference
+          | _ ->
+              let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
+                forward_expression ~resolution base
+              in
+              let errors, resolved_base =
+                if Type.Variable.contains_escaped_free_variable resolved_base then
+                  let errors =
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:
+                        (Error.IncompleteType
+                           {
+                             target = base;
+                             annotation = resolved_base;
+                             attempted_action = Error.AttributeAccess attribute;
+                           })
+                  in
+                  errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
+                else
+                  errors, resolved_base
+              in
+              resolve_attribute_access
+                ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
+                ~location
+                ~base
+                ~special
+                ~attribute
+                ~has_default:false)
+      | Constant Constant.NoneLiteral ->
+          {
+            resolution;
+            errors = [];
+            resolved = Type.NoneType;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Set elements ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_elements ~resolution ~errors:[] ~elements
+          in
+          {
+            resolution;
+            errors;
+            resolved = Type.set resolved;
+            resolved_annotation = None;
+            base = None;
+          }
+      | SetComprehension { Comprehension.element; generators } ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_comprehension ~resolution ~errors:[] ~element ~generators
+          in
+          {
+            resolution;
+            errors;
+            resolved = Type.set resolved;
+            resolved_annotation = None;
+            base = None;
+          }
+      | Starred starred ->
+          let resolved =
+            match starred with
+            | Starred.Once expression
+            | Starred.Twice expression ->
+                forward_expression ~resolution expression
+          in
+          { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
+      | Slice slice -> forward_expression ~resolution (Slice.lowered ~location slice)
+      | Subscript { Subscript.base; index } ->
+          (* The python runtime will treat `base[index]` (when not inside an assignment target) as
+             `base.__getitem__(index)`. *)
+          let synthetic_getitem_call =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                    location = Node.location base;
+                  };
+                arguments = [{ Call.Argument.value = index; name = None }];
+              }
+          in
+          forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+      | Ternary { Ternary.target; test; alternative } ->
+          let test_errors =
+            let { Resolved.errors; _ } = forward_expression ~resolution test in
+            errors
+          in
+          let target_resolved, target_errors =
+            let post_resolution = refine_resolution_for_assert ~resolution test in
+            let resolution = resolution_or_default post_resolution ~default:resolution in
+            let { Resolved.resolved; errors; _ } = forward_expression ~resolution target in
+            resolved, errors
+          in
+          let alternative_resolved, alternative_errors =
+            let post_resolution =
+              refine_resolution_for_assert ~resolution (normalize (negate test))
+            in
+            let resolution = resolution_or_default post_resolution ~default:resolution in
+            let { Resolved.resolved; errors; _ } = forward_expression ~resolution alternative in
+            resolved, errors
+          in
+          let resolved =
+            (* Joining Literals as their union is currently too expensive, so we do it only for
+               ternary expressions. *)
+            match target_resolved, alternative_resolved with
+            | Type.Literal (Type.String Type.AnyLiteral), Type.Literal (Type.String _)
+            | Type.Literal (Type.String _), Type.Literal (Type.String Type.AnyLiteral) ->
+                Type.Literal (Type.String Type.AnyLiteral)
+            | Type.Literal (Type.Boolean _), Type.Literal (Type.Boolean _)
+            | Type.Literal (Type.Integer _), Type.Literal (Type.Integer _)
+            | Type.Literal (Type.String _), Type.Literal (Type.String _)
+            | Type.Literal (Type.EnumerationMember _), Type.Literal (Type.EnumerationMember _) ->
+                Type.union [target_resolved; alternative_resolved]
+            | _ -> GlobalResolution.join global_resolution target_resolved alternative_resolved
+          in
+          let errors = List.concat [test_errors; target_errors; alternative_errors] in
+          (* The resolution is local to the ternary expression and should not be propagated out. *)
+          { resolution; errors; resolved; resolved_annotation = None; base = None }
+      | Tuple elements ->
+          let resolution, errors, resolved_elements =
+            let forward_element (resolution, errors, resolved) expression =
+              let resolution, new_errors, resolved_element =
+                match expression with
+                | { Node.value = Expression.Starred (Starred.Once expression); _ } ->
+                    let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ }
+                      =
+                      forward_expression ~resolution expression
+                    in
+                    let new_errors, ordered_type =
+                      match resolved_element with
+                      | Type.Tuple ordered_type -> new_errors, ordered_type
+                      | Type.Any ->
+                          new_errors, Type.OrderedTypes.create_unbounded_concatenation Type.Any
+                      | _ -> (
+                          match
+                            GlobalResolution.type_of_iteration_value
+                              global_resolution
+                              resolved_element
+                          with
+                          | Some element_type ->
+                              ( new_errors,
+                                Type.OrderedTypes.create_unbounded_concatenation element_type )
+                          | None ->
+                              ( emit_error
+                                  ~errors:new_errors
+                                  ~location
+                                  ~kind:
+                                    (Error.TupleConcatenationError
+                                       (UnpackingNonIterable { annotation = resolved_element })),
+                                Type.OrderedTypes.create_unbounded_concatenation Type.Any ))
+                    in
+                    resolution, new_errors, ordered_type
+                | _ ->
+                    let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ }
+                      =
+                      forward_expression ~resolution expression
+                    in
+                    resolution, new_errors, Type.OrderedTypes.Concrete [resolved_element]
+              in
+              resolution, List.append new_errors errors, resolved_element :: resolved
+            in
+            List.fold elements ~f:forward_element ~init:(resolution, [], [])
+          in
+          let resolved, errors =
+            let resolved_elements = List.rev resolved_elements in
+            let concatenated_elements =
+              let concatenate sofar next =
+                sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
+              in
+              List.fold
+                resolved_elements
+                ~f:concatenate
+                ~init:(Some (Type.OrderedTypes.Concrete []))
+            in
+            match concatenated_elements with
+            | Some concatenated_elements -> Type.Tuple concatenated_elements, errors
+            | None ->
+                let variadic_expressions =
+                  match List.zip elements resolved_elements with
+                  | Ok pairs ->
+                      List.filter_map pairs ~f:(function
+                          | expression, Type.OrderedTypes.Concatenation _ -> Some expression
+                          | _ -> None)
+                  | Unequal_lengths -> elements
+                in
+                ( Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any),
                   emit_error
                     ~errors
                     ~location
                     ~kind:
-                      (Error.IncompleteType
-                         {
-                           target = base;
-                           annotation = resolved_base;
-                           attempted_action = Error.AttributeAccess attribute;
-                         })
+                      (Error.TupleConcatenationError (MultipleVariadics { variadic_expressions })) )
+          in
+          { resolution; errors; resolved; resolved_annotation = None; base = None }
+      | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
+          match UnaryOperator.override operator with
+          | Some expression -> forward_expression ~resolution expression
+          | None ->
+              let resolved = forward_expression ~resolution operand in
+              { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
+      | WalrusOperator { value; target } ->
+          let resolution, errors =
+            let post_resolution, errors =
+              forward_assignment ~resolution ~location ~target ~value:(Some value) ~annotation:None
+            in
+            resolution_or_default post_resolution ~default:resolution, errors
+          in
+          let resolved = forward_expression ~resolution value in
+          { resolved with errors = List.append errors resolved.errors }
+      | Expression.Yield yielded ->
+          let { Resolved.resolution; resolved = yield_type; errors; _ } =
+            match yielded with
+            | Some expression ->
+                let { Resolved.resolution; resolved; errors; _ } =
+                  forward_expression ~resolution expression
                 in
-                errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
-              else
-                errors, resolved_base
-            in
-            resolve_attribute_access
-              ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
-              ~location
-              ~base
-              ~special
-              ~attribute
-              ~has_default:false)
-    | Constant Constant.NoneLiteral ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.NoneType;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Set elements ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_elements ~resolution ~errors:[] ~elements
-        in
-        {
-          resolution;
-          errors;
-          resolved = Type.set resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | SetComprehension { Comprehension.element; generators } ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_comprehension ~resolution ~errors:[] ~element ~generators
-        in
-        {
-          resolution;
-          errors;
-          resolved = Type.set resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Starred starred ->
-        let resolved =
-          match starred with
-          | Starred.Once expression
-          | Starred.Twice expression ->
-              forward_expression ~resolution expression
-        in
-        { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-    | Slice slice -> forward_expression ~resolution (Slice.lowered ~location slice)
-    | Subscript { Subscript.base; index } ->
-        (* The python runtime will treat `base[index]` (when not inside an assignment target) as
-           `base.__getitem__(index)`. *)
-        let synthetic_getitem_call =
-          Expression.Call
-            {
-              callee =
+                { resolution; errors; resolved; resolved_annotation = None; base = None }
+            | None ->
                 {
-                  Node.value =
-                    Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
-                  location = Node.location base;
-                };
-              arguments = [{ Call.Argument.value = index; name = None }];
-            }
-        in
-        forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
-    | Ternary { Ternary.target; test; alternative } ->
-        let test_errors =
-          let { Resolved.errors; _ } = forward_expression ~resolution test in
-          errors
-        in
-        let target_resolved, target_errors =
-          let post_resolution = refine_resolution_for_assert ~resolution test in
-          let resolution = resolution_or_default post_resolution ~default:resolution in
-          let { Resolved.resolved; errors; _ } = forward_expression ~resolution target in
-          resolved, errors
-        in
-        let alternative_resolved, alternative_errors =
-          let post_resolution =
-            refine_resolution_for_assert ~resolution (normalize (negate test))
+                  resolution;
+                  errors = [];
+                  resolved = Type.none;
+                  resolved_annotation = None;
+                  base = None;
+                }
           in
-          let resolution = resolution_or_default post_resolution ~default:resolution in
-          let { Resolved.resolved; errors; _ } = forward_expression ~resolution alternative in
-          resolved, errors
-        in
-        let resolved =
-          (* Joining Literals as their union is currently too expensive, so we do it only for
-             ternary expressions. *)
-          match target_resolved, alternative_resolved with
-          | Type.Literal (Type.String Type.AnyLiteral), Type.Literal (Type.String _)
-          | Type.Literal (Type.String _), Type.Literal (Type.String Type.AnyLiteral) ->
-              Type.Literal (Type.String Type.AnyLiteral)
-          | Type.Literal (Type.Boolean _), Type.Literal (Type.Boolean _)
-          | Type.Literal (Type.Integer _), Type.Literal (Type.Integer _)
-          | Type.Literal (Type.String _), Type.Literal (Type.String _)
-          | Type.Literal (Type.EnumerationMember _), Type.Literal (Type.EnumerationMember _) ->
-              Type.union [target_resolved; alternative_resolved]
-          | _ -> GlobalResolution.join global_resolution target_resolved alternative_resolved
-        in
-        let errors = List.concat [test_errors; target_errors; alternative_errors] in
-        (* The resolution is local to the ternary expression and should not be propagated out. *)
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | Tuple elements ->
-        let resolution, errors, resolved_elements =
-          let forward_element (resolution, errors, resolved) expression =
-            let resolution, new_errors, resolved_element =
-              match expression with
-              | { Node.value = Expression.Starred (Starred.Once expression); _ } ->
-                  let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
-                    forward_expression ~resolution expression
-                  in
-                  let new_errors, ordered_type =
-                    match resolved_element with
-                    | Type.Tuple ordered_type -> new_errors, ordered_type
-                    | Type.Any ->
-                        new_errors, Type.OrderedTypes.create_unbounded_concatenation Type.Any
-                    | _ -> (
-                        match
-                          GlobalResolution.type_of_iteration_value
-                            global_resolution
-                            resolved_element
-                        with
-                        | Some element_type ->
-                            ( new_errors,
-                              Type.OrderedTypes.create_unbounded_concatenation element_type )
-                        | None ->
-                            ( emit_error
-                                ~errors:new_errors
-                                ~location
-                                ~kind:
-                                  (Error.TupleConcatenationError
-                                     (UnpackingNonIterable { annotation = resolved_element })),
-                              Type.OrderedTypes.create_unbounded_concatenation Type.Any ))
-                  in
-                  resolution, new_errors, ordered_type
-              | _ ->
-                  let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
-                    forward_expression ~resolution expression
-                  in
-                  resolution, new_errors, Type.OrderedTypes.Concrete [resolved_element]
-            in
-            resolution, List.append new_errors errors, resolved_element :: resolved
+          let actual =
+            if define_signature.async then
+              Type.async_generator ~yield_type ()
+            else
+              Type.generator ~yield_type ()
           in
-          List.fold elements ~f:forward_element ~init:(resolution, [], [])
-        in
-        let resolved, errors =
-          let resolved_elements = List.rev resolved_elements in
-          let concatenated_elements =
-            let concatenate sofar next =
-              sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
-            in
-            List.fold resolved_elements ~f:concatenate ~init:(Some (Type.OrderedTypes.Concrete []))
+          let errors =
+            validate_return ~location None ~resolution ~errors ~actual ~is_implicit:false
           in
-          match concatenated_elements with
-          | Some concatenated_elements -> Type.Tuple concatenated_elements, errors
-          | None ->
-              let variadic_expressions =
-                match List.zip elements resolved_elements with
-                | Ok pairs ->
-                    List.filter_map pairs ~f:(function
-                        | expression, Type.OrderedTypes.Concatenation _ -> Some expression
-                        | _ -> None)
-                | Unequal_lengths -> elements
-              in
-              ( Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any),
-                emit_error
-                  ~errors
-                  ~location
-                  ~kind:(Error.TupleConcatenationError (MultipleVariadics { variadic_expressions }))
-              )
-        in
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
-        match UnaryOperator.override operator with
-        | Some expression -> forward_expression ~resolution expression
-        | None ->
-            let resolved = forward_expression ~resolution operand in
-            { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
-    | WalrusOperator { value; target } ->
-        let resolution, errors =
-          let post_resolution, errors =
-            forward_assignment ~resolution ~location ~target ~value:(Some value) ~annotation:None
+          let send_type, _ =
+            parse_return_annotation ~global_resolution
+            |> GlobalResolution.type_of_generator_send_and_return global_resolution
           in
-          resolution_or_default post_resolution ~default:resolution, errors
-        in
-        let resolved = forward_expression ~resolution value in
-        { resolved with errors = List.append errors resolved.errors }
-    | Expression.Yield yielded ->
-        let { Resolved.resolution; resolved = yield_type; errors; _ } =
-          match yielded with
-          | Some expression ->
-              let { Resolved.resolution; resolved; errors; _ } =
-                forward_expression ~resolution expression
-              in
-              { resolution; errors; resolved; resolved_annotation = None; base = None }
-          | None ->
-              {
-                resolution;
-                errors = [];
-                resolved = Type.none;
-                resolved_annotation = None;
-                base = None;
-              }
-        in
-        let actual =
-          if define_signature.async then
-            Type.async_generator ~yield_type ()
-          else
-            Type.generator ~yield_type ()
-        in
-        let errors =
-          validate_return ~location None ~resolution ~errors ~actual ~is_implicit:false
-        in
-        let send_type, _ =
-          parse_return_annotation ~global_resolution
-          |> GlobalResolution.type_of_generator_send_and_return global_resolution
-        in
-        { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
-    | Expression.YieldFrom yielded_from ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution yielded_from
-        in
-        let yield_type =
-          resolved
-          |> GlobalResolution.type_of_iteration_value global_resolution
-          |> Option.value ~default:Type.Any
-        in
-        let send_type, subgenerator_return_type =
-          GlobalResolution.type_of_generator_send_and_return global_resolution resolved
-        in
-        let actual =
-          if define_signature.async then
-            Type.async_generator ~yield_type ~send_type ()
-          else
-            Type.generator ~yield_type ~send_type ()
-        in
-        let errors =
-          validate_return ~location None ~resolution ~errors ~actual ~is_implicit:false
-        in
-        {
-          resolution;
-          errors;
-          resolved = subgenerator_return_type;
-          resolved_annotation = None;
-          base = None;
-        }
+          { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
+      | Expression.YieldFrom yielded_from ->
+          let { Resolved.resolution; resolved; errors; _ } =
+            forward_expression ~resolution yielded_from
+          in
+          let yield_type =
+            resolved
+            |> GlobalResolution.type_of_iteration_value global_resolution
+            |> Option.value ~default:Type.Any
+          in
+          let send_type, subgenerator_return_type =
+            GlobalResolution.type_of_generator_send_and_return global_resolution resolved
+          in
+          let actual =
+            if define_signature.async then
+              Type.async_generator ~yield_type ~send_type ()
+            else
+              Type.generator ~yield_type ~send_type ()
+          in
+          let errors =
+            validate_return ~location None ~resolution ~errors ~actual ~is_implicit:false
+          in
+          {
+            resolution;
+            errors;
+            resolved = subgenerator_return_type;
+            resolved_annotation = None;
+            base = None;
+          }
+    in
+    Context.record_expression_type expression resolved.Resolved.resolved;
+    resolved
 
 
   (* Since the control flow graph has already preprocessed assert statements (see
