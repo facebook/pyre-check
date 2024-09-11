@@ -50,6 +50,54 @@ let expand_relative_imports
   Transform.transform qualifier source |> Transform.source
 
 
+let extract_reference_from_callee_name ~scopes value =
+  let rec collect ~sofar = function
+    | Name.Identifier name -> (
+        let open Scope in
+        match ScopeStack.lookup (Lazy.force scopes) name with
+        | Some
+            {
+              Access.binding =
+                {
+                  Binding.kind =
+                    Binding.Kind.(ImportName (Import.From { module_name; original_name }));
+                  _;
+                };
+              _;
+            } ->
+            let original_name = Option.value original_name ~default:name in
+            Some
+              (List.append (Reference.as_list module_name) (original_name :: sofar)
+              |> Reference.create_from_list)
+        | Some
+            {
+              Access.binding =
+                { Binding.kind = Binding.Kind.(ImportName (Import.Module { original_name })); _ };
+              _;
+            } ->
+            let original_names =
+              Option.value_map original_name ~f:Reference.as_list ~default:[name]
+            in
+            Some (List.append original_names sofar |> Reference.create_from_list)
+        | _ -> Some (Reference.create_from_list (name :: sofar)))
+    | Name.Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ } ->
+        collect ~sofar:(attribute :: sofar) base_name
+    | _ -> None
+  in
+  collect ~sofar:[] value
+
+
+let create_callee_name_matcher ~scopes reference_should_match name =
+  match extract_reference_from_callee_name ~scopes name with
+  | Some reference when reference_should_match reference -> true
+  | _ -> false
+
+
+let create_callee_name_matcher_from_references ~scopes references_to_match =
+  let reference_set = Reference.Set.of_list references_to_match in
+  create_callee_name_matcher ~scopes (Set.mem reference_set)
+
+
 let is_type_variable_definition callee =
   name_is ~name:"typing.TypeVar" callee
   || name_is ~name:"$local_typing$TypeVar" callee
@@ -1965,48 +2013,8 @@ let default_is_lazy_import reference =
 
 
 let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
-  let extract_reference_from_callee_name ~scopes value =
-    let rec collect ~sofar = function
-      | Name.Identifier name -> (
-          let open Scope in
-          match ScopeStack.lookup (Lazy.force scopes) name with
-          | Some
-              {
-                Access.binding =
-                  {
-                    Binding.kind =
-                      Binding.Kind.(ImportName (Import.From { module_name; original_name }));
-                    _;
-                  };
-                _;
-              } ->
-              let original_name = Option.value original_name ~default:name in
-              Some
-                (List.append (Reference.as_list module_name) (original_name :: sofar)
-                |> Reference.create_from_list)
-          | Some
-              {
-                Access.binding =
-                  { Binding.kind = Binding.Kind.(ImportName (Import.Module { original_name })); _ };
-                _;
-              } ->
-              let original_names =
-                Option.value_map original_name ~f:Reference.as_list ~default:[name]
-              in
-              Some (List.append original_names sofar |> Reference.create_from_list)
-          | _ -> Some (Reference.create_from_list (name :: sofar)))
-      | Name.Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ } ->
-          collect ~sofar:(attribute :: sofar) base_name
-      | _ -> None
-    in
-    collect ~sofar:[] value
-  in
   let scopes = lazy (Scope.ScopeStack.create source) in
-  let is_callee_name_lazy_import name =
-    match extract_reference_from_callee_name ~scopes name with
-    | Some reference when is_lazy_import reference -> true
-    | _ -> false
-  in
+  let is_callee_name_lazy_import = create_callee_name_matcher ~scopes is_lazy_import in
   let module LazyImportTransformer = Transform.MakeStatementTransformer (struct
     type t = unit
 
@@ -2834,20 +2842,9 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
 
 
 let expand_new_types ({ Source.statements; _ } as source) =
-  let imported_newtype_from_typing =
-    lazy
-      (let open Scope in
-      let scopes = ScopeStack.create source in
-      match ScopeStack.lookup scopes "NewType" with
-      | Some
-          {
-            Access.binding =
-              { Binding.kind = Binding.Kind.(ImportName (Import.From { module_name; _ })); _ };
-            _;
-          }
-        when Reference.equal module_name (Reference.create "typing") ->
-          true
-      | _ -> false)
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_newtype =
+    create_callee_name_matcher_from_references ~scopes [Reference.create "typing.NewType"]
   in
   let create_class_for_newtype
       ~location
@@ -2908,46 +2905,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
                   Node.value =
                     Call
                       {
-                        callee =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Attribute
-                                  {
-                                    base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                    attribute = "NewType";
-                                    _;
-                                  });
-                            _;
-                          };
-                        arguments =
-                          [
-                            {
-                              Call.Argument.value =
-                                {
-                                  Node.value =
-                                    Constant (Constant.String { StringLiteral.value = name; _ });
-                                  _;
-                                };
-                              _;
-                            };
-                            base_argument;
-                          ];
-                      };
-                  _;
-                };
-            _;
-          } ->
-          create_class_for_newtype ~location ~base_argument (Reference.create name)
-      | Statement.Assign
-          {
-            Assign.value =
-              Some
-                {
-                  Node.value =
-                    Call
-                      {
-                        callee = { Node.value = Name (Name.Identifier "NewType"); _ };
+                        callee = { Node.value = Expression.Name callee_name; _ };
                         arguments =
                           [
                             {
@@ -2966,7 +2924,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
                 };
             _;
           }
-        when Lazy.force imported_newtype_from_typing ->
+        when is_newtype callee_name ->
           create_class_for_newtype ~location ~base_argument (Reference.create name)
       | _ -> value
     in
