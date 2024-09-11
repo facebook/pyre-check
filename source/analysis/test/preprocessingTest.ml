@@ -4342,14 +4342,8 @@ let test_toplevel_assigns =
 
 
 let test_replace_lazy_import =
-  let is_lazy_import { Node.value; _ } =
-    match value with
-    | Expression.Name name -> (
-        match name_to_reference name with
-        | Some reference when Reference.equal reference (Reference.create "lazy_import") -> true
-        | _ -> false)
-    | _ -> false
-  in
+  let my_lazy_import = !&"my.own.lazy_import" in
+  let is_lazy_import = Reference.equal my_lazy_import in
   let assert_replaced source expected _ =
     let parse = parse ~handle:"test.py" in
     assert_source_equal
@@ -4363,36 +4357,44 @@ let test_replace_lazy_import =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
-       x = lazy_import("a.b.c")
+       import my
+       x = my.own.lazy_import("a.b.c")
     |}
            {|
+       import my
        import a.b.c as x
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
-       x: Any = lazy_import("a.b.c")
+       import my
+       x: Any = my.own.lazy_import("a.b.c")
     |}
            {|
+       import my
        import a.b.c as x
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
-       x = lazy_import("a.b", "c")
+       import my
+       x = my.own.lazy_import("a.b", "c")
     |}
            {|
+       import my
        from a.b import c as x
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       import my
        if derp:
-         x = lazy_import("a.b.c")
+         x = my.own.lazy_import("a.b.c")
        else:
-         y = lazy_import("a.b", "c")
+         y = my.own.lazy_import("a.b", "c")
     |}
            {|
+       import my
        if derp:
          import a.b.c as x
        else:
@@ -4401,12 +4403,14 @@ let test_replace_lazy_import =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       import my
        while derp:
-         x = lazy_import("a.b.c")
+         x = my.own.lazy_import("a.b.c")
        else:
-         y = lazy_import("a.b", "c")
+         y = my.own.lazy_import("a.b", "c")
     |}
            {|
+       import my
        while derp:
          import a.b.c as x
        else:
@@ -4415,24 +4419,28 @@ let test_replace_lazy_import =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       import my
        with derp as d:
-         x = lazy_import("a.b.c")
+         x = my.own.lazy_import("a.b.c")
     |}
            {|
+       import my
        with derp as d:
          import a.b.c as x
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       import my
        try:
-         x = lazy_import("a.b.c")
+         x = my.own.lazy_import("a.b.c")
        except:
-         y = lazy_import("a.b", "c")
+         y = my.own.lazy_import("a.b", "c")
        finally:
-         z: Any = lazy_import("a", "b")
+         z: Any = my.own.lazy_import("a", "b")
     |}
            {|
+       import my
        try:
          import a.b.c as x
        except:
@@ -4443,12 +4451,14 @@ let test_replace_lazy_import =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       import my
        def foo():
-         x = lazy_import("a.b.c")
+         x = my.own.lazy_import("a.b.c")
        class Foo:
-         y = lazy_import("a.b", "c")
+         y = my.own.lazy_import("a.b", "c")
     |}
            {|
+       import my
        def foo():
          import a.b.c as x
        class Foo:

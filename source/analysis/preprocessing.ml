@@ -1960,17 +1960,16 @@ let dequalify_map ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as so
   ImportDequalifier.transform map source |> fun { ImportDequalifier.state; _ } -> state
 
 
-let is_lazy_import { Node.value; _ } =
-  match value with
-  | Expression.Name name -> (
-      match name_to_reference name with
-      | Some reference when Set.mem Recognized.lazy_import_functions (Reference.show reference) ->
-          true
-      | _ -> false)
-  | _ -> false
+let default_is_lazy_import reference =
+  Set.mem Recognized.lazy_import_functions (Reference.show reference)
 
 
-let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
+let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
+  let is_callee_name_lazy_import name =
+    match name_to_reference name with
+    | Some reference when is_lazy_import reference -> true
+    | _ -> false
+  in
   let module LazyImportTransformer = Transform.MakeStatementTransformer (struct
     type t = unit
 
@@ -1985,7 +1984,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                   Node.value =
                     Expression.Call
                       {
-                        callee;
+                        callee = { Node.value = Expression.Name callee_name; _ };
                         arguments =
                           [
                             {
@@ -2005,7 +2004,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                 };
             _;
           }
-        when is_lazy_import callee ->
+        when is_callee_name_lazy_import callee_name ->
           ( (),
             [
               Statement.Import
@@ -2034,7 +2033,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                   Node.value =
                     Expression.Call
                       {
-                        callee;
+                        callee = { Node.value = Expression.Name callee_name; _ };
                         arguments =
                           [
                             {
@@ -2065,7 +2064,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                 };
             _;
           }
-        when is_lazy_import callee ->
+        when is_callee_name_lazy_import callee_name ->
           ( (),
             [
               Statement.Import

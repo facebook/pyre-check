@@ -38,7 +38,7 @@ val expand_type_checking_imports : Source.t -> Source.t
 (* Add implicit returns when a function doesn't have one. *)
 val expand_implicit_returns : Source.t -> Source.t
 
-val replace_lazy_import : ?is_lazy_import:(Expression.t -> bool) -> Source.t -> Source.t
+val replace_lazy_import : ?is_lazy_import:(Reference.t -> bool) -> Source.t -> Source.t
 
 val replace_mypy_extensions_stub : Source.t -> Source.t
 
