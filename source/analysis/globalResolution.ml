@@ -326,6 +326,15 @@ let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or
 
 let join resolution = full_order resolution |> TypeOrder.join
 
+let join_for_branch_merge resolution left right =
+  match left, right with
+  | Type.Literal (String AnyLiteral), Type.Literal (String _)
+  | Type.Literal (String _), Type.Literal (String AnyLiteral) ->
+      Type.Literal (String AnyLiteral)
+  | Type.Literal _, Type.Literal _ -> Type.union [left; right]
+  | _ -> TypeOrder.join (full_order resolution) left right
+
+
 let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen

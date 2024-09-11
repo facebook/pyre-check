@@ -583,7 +583,10 @@ let test_check_while =
         reveal_type(x)
         return x
     |}
-           ["Revealed type [-1]: Revealed type for `x` is `int`."];
+           [
+             "Revealed type [-1]: Revealed type for `x` is \
+              `typing.Union[typing_extensions.Literal[1], typing_extensions.Literal[2]]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

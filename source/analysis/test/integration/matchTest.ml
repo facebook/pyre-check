@@ -23,7 +23,11 @@ let test_simple =
             y = "Hello"
         reveal_type(y)
     |}
-           ["Revealed type [-1]: Revealed type for `y` is `typing.Union[None, int, str]`."];
+           [
+             "Revealed type [-1]: Revealed type for `y` is \
+              `typing.Union[typing_extensions.Literal[5], typing_extensions.Literal['Hello'], \
+              None]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -36,7 +40,10 @@ let test_simple =
             y = "Hello"
         reveal_type(y)
     |}
-           ["Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`."];
+           [
+             "Revealed type [-1]: Revealed type for `y` is \
+              `typing.Union[typing_extensions.Literal[5], typing_extensions.Literal['Hello']]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

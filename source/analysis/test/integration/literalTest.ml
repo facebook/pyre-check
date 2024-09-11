@@ -465,9 +465,9 @@ let test_string_literal =
             reveal_type(x)
         |}
            [
-             (* TODO(T48477564): We don't join literals to be their unions because it is too
-                expensive. *)
-             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.LiteralString`.";
+             "Revealed type [-1]: Revealed type for `x` is \
+              `typing.Union[typing_extensions.Literal['hello'], \
+              typing_extensions.Literal['world']]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

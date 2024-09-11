@@ -3453,18 +3453,10 @@ module State (Context : Context) = struct
             resolved, errors
           in
           let resolved =
-            (* Joining Literals as their union is currently too expensive, so we do it only for
-               ternary expressions. *)
-            match target_resolved, alternative_resolved with
-            | Type.Literal (Type.String Type.AnyLiteral), Type.Literal (Type.String _)
-            | Type.Literal (Type.String _), Type.Literal (Type.String Type.AnyLiteral) ->
-                Type.Literal (Type.String Type.AnyLiteral)
-            | Type.Literal (Type.Boolean _), Type.Literal (Type.Boolean _)
-            | Type.Literal (Type.Integer _), Type.Literal (Type.Integer _)
-            | Type.Literal (Type.String _), Type.Literal (Type.String _)
-            | Type.Literal (Type.EnumerationMember _), Type.Literal (Type.EnumerationMember _) ->
-                Type.union [target_resolved; alternative_resolved]
-            | _ -> GlobalResolution.join global_resolution target_resolved alternative_resolved
+            GlobalResolution.join_for_branch_merge
+              global_resolution
+              target_resolved
+              alternative_resolved
           in
           let errors = List.concat [test_errors; target_errors; alternative_errors] in
           (* The resolution is local to the ternary expression and should not be propagated out. *)

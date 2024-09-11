@@ -279,7 +279,7 @@ let outer_widen_refinements ~iteration ~widening_threshold left right =
     left with
     type_info_store =
       TypeInfo.Store.outer_widen
-        ~type_join:(GlobalResolution.join global_resolution)
+        ~type_join:(GlobalResolution.join_for_branch_merge global_resolution)
         ~iteration
         ~widening_threshold
         left.type_info_store

@@ -172,6 +172,13 @@ val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
 val join : t -> Type.t -> Type.t -> Type.t
 
+(** A variant of [join] used to join types when control flow merges. For performance reasons, [join]
+    joins types into a non-union type whenever possible. In particular, it weakens literals - for
+    example, joining [Literal\[1\]] and [Literal\[2\]] into [int]. This is undesirable in cases
+    where we want to preserve literal type information, like when different literal values are
+    assigned to the same name in if/else branches. *)
+val join_for_branch_merge : t -> Type.t -> Type.t -> Type.t
+
 val meet : t -> Type.t -> Type.t -> Type.t
 
 val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
