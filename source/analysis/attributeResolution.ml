@@ -1676,14 +1676,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let make_annotation_readonly = function
         | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
-            AnnotatedAttribute.UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
+            AnnotatedAttribute.UninstantiatedAnnotation.Attribute
+              (Type.PyreReadOnly.create annotation)
         | Property { getter; setter } ->
             let make_property_annotation_readonly
                 { AnnotatedAttribute.UninstantiatedAnnotation.self; value }
               =
               {
-                AnnotatedAttribute.UninstantiatedAnnotation.self = self >>| Type.ReadOnly.create;
-                value = value >>| Type.ReadOnly.create;
+                AnnotatedAttribute.UninstantiatedAnnotation.self = self >>| Type.PyreReadOnly.create;
+                value = value >>| Type.PyreReadOnly.create;
               }
             in
             Property
@@ -1998,13 +1999,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     || (is_dataclass_attribute && not (has_self_or_cls_param callable))
                   then
                     if accessed_through_readonly then
-                      Type.ReadOnly.create (Type.Callable callable)
+                      Type.PyreReadOnly.create (Type.Callable callable)
                     else
                       Type.Callable callable
                   else
                     let bound_self_type =
                       if accessed_through_readonly then
-                        Type.ReadOnly.create instantiated
+                        Type.PyreReadOnly.create instantiated
                       else
                         instantiated
                     in

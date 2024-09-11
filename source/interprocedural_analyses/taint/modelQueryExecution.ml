@@ -516,7 +516,7 @@ let matches_annotation_constraint
       annotation_expression ) -> (
       let extract_readonly t =
         match t with
-        | Type.ReadOnly t -> t
+        | Type.PyreReadOnly t -> t
         | t -> t
       in
       let extract_optional t =

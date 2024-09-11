@@ -1696,7 +1696,7 @@ let test_most_important_error_reason _ =
             Mismatch
               (Node.create_with_default_location
                  {
-                   actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                   actual = Type.PyreReadOnly.create (Type.Primitive "Foo");
                    expected = Type.Primitive "Foo";
                    name = Some "self";
                    position = 0;
@@ -1710,7 +1710,7 @@ let test_most_important_error_reason _ =
             Mismatch
               (Node.create_with_default_location
                  {
-                   actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                   actual = Type.PyreReadOnly.create (Type.Primitive "Foo");
                    expected = Type.Primitive "Foo";
                    name = Some "self";
                    position = 0;

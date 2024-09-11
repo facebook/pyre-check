@@ -356,7 +356,7 @@ module Inference = struct
     || Type.contains_undefined sanitized_type
     || Type.contains_prohibited_any sanitized_type
     || (is_parameter && Type.equal sanitized_type NoneType)
-    || Type.ReadOnly.is_readonly sanitized_type
+    || Type.PyreReadOnly.is_readonly sanitized_type
 
 
   let create { type_ = raw_type; target } =

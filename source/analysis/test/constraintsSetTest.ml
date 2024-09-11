@@ -1108,12 +1108,12 @@ let test_add_constraint_recursive_type context =
       ~body:
         (Type.union
            [
-             Type.ReadOnly.create Type.string;
+             Type.PyreReadOnly.create Type.string;
              Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
            ])
   in
   assert_less_or_equal_direct
-    ~left:(Type.ReadOnly.create Type.string)
+    ~left:(Type.PyreReadOnly.create Type.string)
     ~right:readonly_tree_annotation
     ~expected_solutions:[[]]
     ();
@@ -1406,17 +1406,17 @@ let test_add_constraint_readonly context =
     ();
   assert_less_or_equal_direct
     ~left:Type.Bottom
-    ~right:(Type.ReadOnly.create (Type.Primitive "Base"))
+    ~right:(Type.PyreReadOnly.create (Type.Primitive "Base"))
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal_direct
-    ~left:(Type.ReadOnly.create (Type.Primitive "Base"))
+    ~left:(Type.PyreReadOnly.create (Type.Primitive "Base"))
     ~right:Type.Bottom
     ~expected_solutions:[]
     ();
   assert_less_or_equal_direct
     ~left:Type.Top
-    ~right:(Type.ReadOnly.create Type.object_primitive)
+    ~right:(Type.PyreReadOnly.create Type.object_primitive)
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal

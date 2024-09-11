@@ -588,9 +588,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     in
     match left, right with
     | _, _ when Type.equal left right -> [constraints]
-    | Type.ReadOnly _, Type.Primitive "object" -> impossible
-    | Type.Union items, Type.Primitive "object" when List.exists items ~f:Type.ReadOnly.is_readonly
-      ->
+    | Type.PyreReadOnly _, Type.Primitive "object" -> impossible
+    | Type.Union items, Type.Primitive "object"
+      when List.exists items ~f:Type.PyreReadOnly.is_readonly ->
         impossible
     | _, Type.Primitive "object" -> [constraints]
     | other, Type.Any -> [add_fallbacks other]
@@ -633,7 +633,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | bound, Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
         let pair = Type.Variable.TypeVarPair (variable, bound) in
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
-    | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
+    | Type.PyreReadOnly left, Type.PyreReadOnly right ->
+        solve_less_or_equal order ~constraints ~left ~right
     | _, Type.Bottom -> impossible
     | Type.Bottom, _ -> [constraints]
     | _, Type.NoneType -> impossible
@@ -672,7 +673,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Concrete lefts)
           ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
           ~constraints
-    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
+    | _, Type.PyreReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | Type.Top, _ -> impossible
     | Type.NoneType, Type.Union rights when List.exists rights ~f:Type.is_none ->
         (* Technically speaking, removing this special-case still leads to correct, but somewhat
@@ -736,7 +737,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         else
           List.concat_map rights ~f:(fun right ->
               solve_less_or_equal order ~constraints ~left ~right)
-    | Type.ReadOnly _, _ -> impossible
+    | Type.PyreReadOnly _, _ -> impossible
     | ( Type.Parametric
           { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; arguments = [Single left] },
         Type.Parametric

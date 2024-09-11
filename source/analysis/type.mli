@@ -221,7 +221,7 @@ and t =
     }
   | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
   | Primitive of Primitive.t
-  | ReadOnly of t
+  | PyreReadOnly of t
   | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of t Record.OrderedTypes.record
@@ -1014,7 +1014,7 @@ module TypedDictionary : sig
   val is_builtin_typed_dictionary_class : Primitive.t -> bool
 end
 
-module ReadOnly : sig
+module PyreReadOnly : sig
   val create : t -> t
 
   val unpack_readonly : t -> t option

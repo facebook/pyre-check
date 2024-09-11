@@ -43,7 +43,7 @@ let test_create =
     "ignore ReadOnly annotation"
     >:: assert_ignore
           ~target:(Inference.Parameter { name = !&"foo.bar" })
-          ~type_:(Type.ReadOnly.create (Type.Primitive "Foo"))
+          ~type_:(Type.PyreReadOnly.create (Type.Primitive "Foo"))
           true;
   ]
 

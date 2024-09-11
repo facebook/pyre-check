@@ -152,8 +152,8 @@ module OrderImplementation = struct
         | Type.NoneType, _
         | _, Type.NoneType ->
             union
-        | Type.ReadOnly left, _ -> Type.ReadOnly.create (join order left right)
-        | _, Type.ReadOnly right -> Type.ReadOnly.create (join order left right)
+        | Type.PyreReadOnly left, _ -> Type.PyreReadOnly.create (join order left right)
+        | _, Type.PyreReadOnly right -> Type.PyreReadOnly.create (join order left right)
         | Type.RecursiveType left_recursive_type, Type.RecursiveType right_recursive_type ->
             let new_name = Type.RecursiveType.Namespace.create_fresh_name () in
             (* Based on https://cstheory.stackexchange.com/a/38415. *)
@@ -463,9 +463,9 @@ module OrderImplementation = struct
         | Type.ParamSpecComponent _, _
         | _, Type.ParamSpecComponent _ ->
             Type.Bottom
-        | ReadOnly left, ReadOnly right -> Type.ReadOnly.create (meet order left right)
-        | ReadOnly left, _ -> meet order left right
-        | _, ReadOnly right -> meet order left right
+        | PyreReadOnly left, PyreReadOnly right -> Type.PyreReadOnly.create (meet order left right)
+        | PyreReadOnly left, _ -> meet order left right
+        | _, PyreReadOnly right -> meet order left right
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
             if always_less_or_equal order ~left:variable ~right:other then

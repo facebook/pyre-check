@@ -153,8 +153,8 @@ let unbind_type_variable = function
 
 (* Convert `ReadOnly[X]` back to just `X` *)
 let strip_readonly annotation =
-  if Type.ReadOnly.is_readonly annotation then
-    Type.ReadOnly.strip_readonly annotation
+  if Type.PyreReadOnly.is_readonly annotation then
+    Type.PyreReadOnly.strip_readonly annotation
   else
     annotation
 

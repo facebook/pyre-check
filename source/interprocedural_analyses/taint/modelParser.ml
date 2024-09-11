@@ -971,7 +971,7 @@ let rec class_names_from_annotation = function
         ~init:[]
         ~f:(fun sofar annotation -> List.rev_append (class_names_from_annotation annotation) sofar)
         members
-  | Type.ReadOnly annotation -> class_names_from_annotation annotation
+  | Type.PyreReadOnly annotation -> class_names_from_annotation annotation
 
 
 let get_class_attributes ~pyre_api = function

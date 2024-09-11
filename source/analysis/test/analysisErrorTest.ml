@@ -943,7 +943,7 @@ let test_description _ =
             callee = Some !&"my_callee";
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                Error.actual = Type.PyreReadOnly.create (Type.Primitive "Foo");
                 expected = Type.Primitive "Foo";
                 due_to_invariance = false;
               };
@@ -959,7 +959,7 @@ let test_description _ =
             callee = None;
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                Error.actual = Type.PyreReadOnly.create (Type.Primitive "Foo");
                 expected = Type.Primitive "Foo";
                 due_to_invariance = false;
               };
@@ -974,7 +974,7 @@ let test_description _ =
              "$local_test$my_object"
              |> Reference.create
              |> Expression.from_reference ~location:Location.any;
-           self_argument_type = Type.ReadOnly.create (Type.Primitive "test.Foo");
+           self_argument_type = Type.PyreReadOnly.create (Type.Primitive "test.Foo");
            method_name = !&"test.Foo.my_method";
          })
   in
@@ -994,7 +994,7 @@ let test_description _ =
           {
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create (Type.Primitive "test.Foo");
+                Error.actual = Type.PyreReadOnly.create (Type.Primitive "test.Foo");
                 expected = Type.Primitive "test.Foo";
                 due_to_invariance = false;
               };

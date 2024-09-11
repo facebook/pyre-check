@@ -853,20 +853,20 @@ let test_less_or_equal =
       @@ assert_false
            (less_or_equal
               default
-              ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
+              ~left:(Type.PyreReadOnly.create (Type.Primitive "Child"))
               ~right:(Type.Primitive "Base"));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               default
               ~left:(Type.Primitive "Child")
-              ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
+              ~right:(Type.PyreReadOnly.create (Type.Primitive "Base")));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true
            (less_or_equal
               default
-              ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
-              ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
+              ~left:(Type.PyreReadOnly.create (Type.Primitive "Child"))
+              ~right:(Type.PyreReadOnly.create (Type.Primitive "Base")));
       (* Parametric types. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_true

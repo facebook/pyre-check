@@ -349,7 +349,7 @@ module T = struct
       }
     | ParamSpecComponent of Record.Variable.ParamSpec.Components.t
     | Primitive of Primitive.t
-    | ReadOnly of t
+    | PyreReadOnly of t
     | RecursiveType of t Record.RecursiveType.record
     | Top
     | Tuple of t Record.OrderedTypes.record
@@ -491,19 +491,19 @@ module Constructors = struct
 
   let yield argument = Parametric { name = "Yield"; arguments = [Single argument] }
 
-  let rec read_only = function
-    | ReadOnly _ as type_ -> type_
+  let rec pyre_read_only = function
+    | PyreReadOnly _ as type_ -> type_
     | NoneType -> NoneType
-    | Union elements -> Union (List.map ~f:read_only elements)
+    | Union elements -> Union (List.map ~f:pyre_read_only elements)
     | (Primitive class_name as type_)
     | (Parametric { name = class_name; _ } as type_)
       when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
-        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
-           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
-           users. *)
+        (* We trust that it is safe to ignore the `PyreReadOnly` wrapper on these classes. This
+           helps reduce noisy errors on classes that are never mutated and reduces the adoption
+           burden on users. *)
         type_
     | Any -> Any
-    | type_ -> ReadOnly type_
+    | type_ -> PyreReadOnly type_
 end
 
 module VisitWithTransform = struct
@@ -595,7 +595,7 @@ module VisitWithTransform = struct
                   Unpacked (UnboundedElements (visit_annotation annotation ~state))
             in
             Parametric { name; arguments = List.map arguments ~f:visit }
-        | ReadOnly type_ -> Constructors.read_only (visit_annotation type_ ~state)
+        | PyreReadOnly type_ -> Constructors.pyre_read_only (visit_annotation type_ ~state)
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
@@ -726,7 +726,7 @@ module Visitors = struct
           | Tuple _ -> "tuple" :: sofar, recursive_type_names
           | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
           | Union _ -> "typing.Union" :: sofar, recursive_type_names
-          | ReadOnly _ -> "typing._PyreReadOnly_" :: sofar, recursive_type_names
+          | PyreReadOnly _ -> "typing._PyreReadOnly_" :: sofar, recursive_type_names
           | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
           | ParamSpecComponent _
           | Bottom
@@ -944,7 +944,7 @@ module Predicates = struct
     | Literal (String (LiteralValue ""))
     | Literal (Bytes "") ->
         true
-    | ReadOnly annotated -> is_falsy annotated
+    | PyreReadOnly annotated -> is_falsy annotated
     | Union types -> List.for_all types ~f:is_falsy
     | _ -> false
 
@@ -957,7 +957,7 @@ module Predicates = struct
     | Literal (String (LiteralValue value))
     | Literal (Bytes value) ->
         not (String.is_empty value)
-    | ReadOnly annotated -> is_truthy annotated
+    | PyreReadOnly annotated -> is_truthy annotated
     | Union types -> List.for_all types ~f:is_truthy
     | _ -> false
 
@@ -1305,7 +1305,7 @@ module PrettyPrinting = struct
         Format.fprintf format "%s[%a]" name (pp_arguments ~pp_type:pp) arguments
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive name -> Format.fprintf format "%s" name
-    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
+    | PyreReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
     | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
     | Top -> Format.fprintf format "unknown"
     | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
@@ -1393,7 +1393,7 @@ module PrettyPrinting = struct
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (canonicalize_and_strip_qualification name)
-    | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp_concise type_
+    | PyreReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp_concise type_
     | RecursiveType { name; _ } -> Format.fprintf format "%s" name
     | Top -> Format.fprintf format "unknown"
     | Tuple (Concatenation { middle = UnboundedElements argument; prefix = []; suffix = [] }) ->
@@ -2434,13 +2434,13 @@ module TypeOperation = struct
   type t = T.t Record.TypeOperation.record
 end
 
-module ReadOnly = struct
+module PyreReadOnly = struct
   open T
 
-  let create = Constructors.read_only
+  let create = Constructors.pyre_read_only
 
   let unpack_readonly = function
-    | ReadOnly type_ -> Some type_
+    | PyreReadOnly type_ -> Some type_
     | _ -> None
 
 
@@ -2450,9 +2450,9 @@ module ReadOnly = struct
 
   let contains_readonly type_ = Visitors.exists type_ ~predicate:is_readonly
 
-  (* Lift `ReadOnly` from `element_type` to the overall container.
+  (* Lift `PyreReadOnly` from `element_type` to the overall container.
 
-     i.e., turn `make_container ReadOnly[Foo]` to `ReadOnly[make_container Foo]`. *)
+     i.e., turn `make_container PyreReadOnly[Foo]` to `PyreReadOnly[make_container Foo]`. *)
   let lift_readonly_if_possible ~make_container element_type =
     unpack_readonly element_type
     >>| (fun inner_type -> create (make_container inner_type))
@@ -3890,7 +3890,7 @@ module ToExpression = struct
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
-    | ReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
+    | PyreReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
     | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Concrete []) -> subscript "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
@@ -4840,7 +4840,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
            `pyre_extensions` is part of a project. *)
         | "typing._PyreReadOnly_", Some [head]
         | "pyre_extensions.ReadOnly", Some [head] ->
-            Constructors.read_only head
+            Constructors.pyre_read_only head
         | _ -> result
       in
       match Hashtbl.find Canonicalization.alternate_name_to_canonical_name_map name with
@@ -5277,8 +5277,8 @@ type class_data_for_attribute_lookup = {
    any generic attributes or methods, e.g., `my_list[0]` needs to be of type `Bar`.
 
    A complication is that we need to track whether the class was wrapped by `Type[...]` or
-   `ReadOnly[...]`, since they affect the type of the attribute looked up, by making it `Type[X]` or
-   `ReadOnly[X]`, respectively. *)
+   `PyreReadOnly[...]`, since they affect the type of the attribute looked up, by making it
+   `Type[X]` or `PyreReadOnly[X]`, respectively. *)
 let class_data_for_attribute_lookup type_ =
   let rec extract_class_data ~meta ~accessed_through_readonly original_type =
     let type_ =
@@ -5335,7 +5335,7 @@ let class_data_for_attribute_lookup type_ =
                       ~recursive_type
                       instantiated;
                 })
-    | ReadOnly type_ -> extract_class_data ~meta ~accessed_through_readonly:true type_
+    | PyreReadOnly type_ -> extract_class_data ~meta ~accessed_through_readonly:true type_
     | type_ when Predicates.is_meta type_ ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)

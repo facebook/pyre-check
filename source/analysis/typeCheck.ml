@@ -135,11 +135,11 @@ let incompatible_annotation_with_attribute_error
 
    We check this by stripping any `ReadOnly` types in both and checking if they are compatible. *)
 let is_readonlyness_mismatch ~global_resolution ~actual ~expected =
-  (Type.ReadOnly.contains_readonly actual || Type.ReadOnly.contains_readonly expected)
+  (Type.PyreReadOnly.contains_readonly actual || Type.PyreReadOnly.contains_readonly expected)
   && GlobalResolution.less_or_equal
        global_resolution
-       ~left:(Type.ReadOnly.strip_readonly actual)
-       ~right:(Type.ReadOnly.strip_readonly expected)
+       ~left:(Type.PyreReadOnly.strip_readonly actual)
+       ~right:(Type.PyreReadOnly.strip_readonly expected)
 
 
 let errors_from_not_found
@@ -237,7 +237,7 @@ let errors_from_not_found
             in
             let is_mutating_method_on_readonly self_argument_type =
               Int.equal position SignatureSelection.reserved_position_for_self_argument
-              && Type.ReadOnly.is_readonly self_argument_type
+              && Type.PyreReadOnly.is_readonly self_argument_type
             in
             let default_location_and_error =
               match callee, self_argument, callee_base_expression with
@@ -3287,7 +3287,8 @@ module State (Context : Context) = struct
           {
             resolution;
             errors;
-            resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
+            resolved =
+              Type.PyreReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
             resolved_annotation = None;
             base = None;
           }
@@ -3298,7 +3299,8 @@ module State (Context : Context) = struct
           {
             resolution;
             errors;
-            resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
+            resolved =
+              Type.PyreReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
             resolved_annotation = None;
             base = None;
           }
@@ -3680,7 +3682,7 @@ module State (Context : Context) = struct
         in
         extract_union_members unfolded_annotation
         |> List.partition_tf ~f:(fun left ->
-               Type.ReadOnly.unpack_readonly left
+               Type.PyreReadOnly.unpack_readonly left
                |> Option.value ~default:left
                |> fun left ->
                Resolution.is_consistent_with resolution left boundary ~expression:None)
@@ -3903,12 +3905,12 @@ module State (Context : Context) = struct
                       (not (Type.is_top existing_type))
                       && GlobalResolution.less_or_equal
                            global_resolution
-                           ~left:(Type.ReadOnly.create parsed_annotation)
+                           ~left:(Type.PyreReadOnly.create parsed_annotation)
                            ~right:existing_type
                     then
                       (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
                          `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
-                      Type.ReadOnly.create parsed_annotation
+                      Type.PyreReadOnly.create parsed_annotation
                     else
                       parsed_annotation
                   in
@@ -4214,7 +4216,7 @@ module State (Context : Context) = struct
             let refined_annotation =
               List.filter arguments ~f:(fun parameter ->
                   let unpacked_readonly_type =
-                    Type.ReadOnly.unpack_readonly parameter |> Option.value ~default:parameter
+                    Type.PyreReadOnly.unpack_readonly parameter |> Option.value ~default:parameter
                   in
                   not (Type.is_none unpacked_readonly_type))
             in
@@ -4599,7 +4601,7 @@ module State (Context : Context) = struct
             | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
                 let name = attribute in
                 let parent, accessed_through_class, accessed_through_readonly =
-                  match Type.ReadOnly.unpack_readonly resolved, Type.is_meta resolved with
+                  match Type.PyreReadOnly.unpack_readonly resolved, Type.is_meta resolved with
                   | Some resolved, _ -> resolved, false, true
                   | None, true -> Type.single_argument resolved, true, false
                   | _ -> resolved, false, false
@@ -4898,12 +4900,12 @@ module State (Context : Context) = struct
             in
             let check_assignment_to_readonly_type errors =
               let is_readonly_attribute =
-                target_annotation |> TypeInfo.Unit.annotation |> Type.ReadOnly.is_readonly
+                target_annotation |> TypeInfo.Unit.annotation |> Type.PyreReadOnly.is_readonly
               in
               match attribute, resolved_base with
               | Some (_, attribute_name), `Attribute (_, resolved_base_type)
                 when is_readonly_attribute
-                     && Type.ReadOnly.is_readonly resolved_base_type
+                     && Type.PyreReadOnly.is_readonly resolved_base_type
                      && not (Define.is_class_toplevel define) ->
                   emit_error
                     ~errors
@@ -6706,7 +6708,7 @@ module State (Context : Context) = struct
             |> not
           in
           if is_readonly_entrypoint_function then
-            type_ |> Type.ReadOnly.create |> TypeInfo.Unit.create_immutable
+            type_ |> Type.PyreReadOnly.create |> TypeInfo.Unit.create_immutable
           else
             TypeInfo.Unit.create_immutable type_
         in

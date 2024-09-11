@@ -752,24 +752,24 @@ let test_create_variadic_tuple _ =
 
 
 let test_create_readonly _ =
-  assert_create "pyre_extensions.ReadOnly[Foo]" (Type.ReadOnly.create (Type.Primitive "Foo"));
+  assert_create "pyre_extensions.ReadOnly[Foo]" (Type.PyreReadOnly.create (Type.Primitive "Foo"));
   assert_create
     "pyre_extensions.ReadOnly[pyre_extensions.ReadOnly[Foo]]"
-    (Type.ReadOnly.create (Type.Primitive "Foo"));
+    (Type.PyreReadOnly.create (Type.Primitive "Foo"));
   assert_create
     "typing.List[pyre_extensions.ReadOnly[Foo]]"
-    (Type.list (Type.ReadOnly.create (Type.Primitive "Foo")));
+    (Type.list (Type.PyreReadOnly.create (Type.Primitive "Foo")));
   assert_create "pyre_extensions.ReadOnly[None]" Type.none;
   assert_create
     "pyre_extensions.ReadOnly[typing.Optional[Foo]]"
-    (Type.Union [Type.none; Type.ReadOnly (Type.Primitive "Foo")]);
+    (Type.Union [Type.none; Type.PyreReadOnly (Type.Primitive "Foo")]);
   assert_create
     "pyre_extensions.ReadOnly[typing.Union[Foo, str, pyre_extensions.ReadOnly[Bar]]]"
     (Type.Union
        [
-         Type.ReadOnly (Type.Primitive "Foo");
-         Type.ReadOnly Type.string;
-         Type.ReadOnly (Type.Primitive "Bar");
+         Type.PyreReadOnly (Type.Primitive "Foo");
+         Type.PyreReadOnly Type.string;
+         Type.PyreReadOnly (Type.Primitive "Bar");
        ]);
   assert_create "pyre_extensions.ReadOnly[typing.Any]" Type.Any;
   assert_create "pyre_extensions.ReadOnly[float]" Type.float;
@@ -939,12 +939,12 @@ let test_apply_type_map _ =
     ~expected:(Type.optional Type.integer);
   assert_apply_type_map
     [Type.variable "_T", Type.integer]
-    ~generic:(Type.ReadOnly.create (Type.variable "_T"))
+    ~generic:(Type.PyreReadOnly.create (Type.variable "_T"))
     ~expected:Type.integer;
   assert_apply_type_map
     [Type.variable "_T", Type.Primitive "Foo"]
-    ~generic:(Type.ReadOnly.create (Type.variable "_T"))
-    ~expected:(Type.ReadOnly.create (Type.Primitive "Foo"));
+    ~generic:(Type.PyreReadOnly.create (Type.variable "_T"))
+    ~expected:(Type.PyreReadOnly.create (Type.Primitive "Foo"));
   ()
 
 
@@ -1076,7 +1076,7 @@ let test_expression _ =
     "pyre_extensions.Compose[(typing.Callable[([PositionalOnly(int)], str)], \
      typing.Callable[([PositionalOnly(str)], bool)])]";
   assert_expression
-    (Type.ReadOnly (Type.list Type.integer))
+    (Type.PyreReadOnly (Type.list Type.integer))
     "pyre_extensions.ReadOnly[typing.List[int]]";
   ()
 
@@ -1339,7 +1339,7 @@ let test_elements _ =
     (Type.collect_names (Type.Literal (Type.String AnyLiteral)));
   assert_equal
     ["int"; "list"; "typing._PyreReadOnly_"]
-    (Type.collect_names (Type.ReadOnly (Type.list Type.integer)));
+    (Type.collect_names (Type.PyreReadOnly (Type.list Type.integer)));
   ()
 
 
@@ -3976,7 +3976,7 @@ let test_class_data_for_attribute_lookup _ =
        ]);
   (* ReadOnly types. *)
   assert_class_data
-    (Type.ReadOnly.create (Type.Primitive "Foo"))
+    (Type.PyreReadOnly.create (Type.Primitive "Foo"))
     (Some
        [
          {
@@ -3987,7 +3987,7 @@ let test_class_data_for_attribute_lookup _ =
          };
        ]);
   assert_class_data
-    (Type.union [Type.ReadOnly.create (Type.Primitive "Foo"); Type.list (Type.Primitive "Foo")])
+    (Type.union [Type.PyreReadOnly.create (Type.Primitive "Foo"); Type.list (Type.Primitive "Foo")])
     (Some
        [
          {
@@ -4004,7 +4004,7 @@ let test_class_data_for_attribute_lookup _ =
          };
        ]);
   assert_class_data
-    (Type.meta (Type.ReadOnly.create (Type.Primitive "Foo")))
+    (Type.meta (Type.PyreReadOnly.create (Type.Primitive "Foo")))
     (Some
        [
          {
@@ -4015,7 +4015,7 @@ let test_class_data_for_attribute_lookup _ =
          };
        ]);
   assert_class_data
-    (Type.ReadOnly.create (Type.meta (Type.Primitive "Foo")))
+    (Type.PyreReadOnly.create (Type.meta (Type.Primitive "Foo")))
     (Some
        [
          {
@@ -4070,7 +4070,7 @@ let test_show _ =
        ...]]"
     ~expected_concise:"Compose[(int) -> str, *Tuple[(str) -> bool, ...]]";
   assert_show
-    (Type.ReadOnly (Type.list Type.integer))
+    (Type.PyreReadOnly (Type.list Type.integer))
     ~expected_full:"pyre_extensions.ReadOnly[typing.List[int]]"
     ~expected_concise:"pyre_extensions.ReadOnly[list[int]]";
   ()
@@ -4135,11 +4135,11 @@ let test_lift_readonly_if_possible _ =
     element_type
     |> parse_single_expression
     |> Type.create ~variables:(fun _ -> None) ~aliases:Type.resolved_empty_aliases
-    |> Type.ReadOnly.lift_readonly_if_possible ~make_container
+    |> Type.PyreReadOnly.lift_readonly_if_possible ~make_container
     |> assert_equal ~printer:Type.show ~cmp:Type.equal expected
   in
   assert_lifted
-    ~expected:(Type.ReadOnly (Type.list (Type.Primitive "Foo")))
+    ~expected:(Type.PyreReadOnly (Type.list (Type.Primitive "Foo")))
     ~make_container:Type.list
     "pyre_extensions.ReadOnly[Foo]";
   assert_lifted ~expected:(Type.list (Type.Primitive "Foo")) ~make_container:Type.list "Foo";

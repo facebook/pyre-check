@@ -533,7 +533,7 @@ let rec weaken_mutable_literals
           weakened_fallback_type
       in
       { weakened_type with resolved }
-  | _, _, Type.ReadOnly _ ->
+  | _, _, Type.PyreReadOnly _ ->
       weaken_against_readonly
         ~get_typed_dictionary
         ~resolve
@@ -670,8 +670,8 @@ and weaken_against_readonly
   let comparator_ignoring_readonly_without_override ~get_typed_dictionary_override ~left ~right =
     comparator
       ~get_typed_dictionary_override
-      ~left:(Type.ReadOnly.strip_readonly left)
-      ~right:(Type.ReadOnly.strip_readonly right)
+      ~left:(Type.PyreReadOnly.strip_readonly left)
+      ~right:(Type.PyreReadOnly.strip_readonly right)
   in
   let comparator_ignoring_readonly =
     comparator_ignoring_readonly_without_override ~get_typed_dictionary_override:(fun _ -> None)
@@ -680,7 +680,7 @@ and weaken_against_readonly
     let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
       let expected =
         expected_parameter_types
-        |> List.map ~f:(fun type_ -> Type.Argument.Single (Type.ReadOnly.create type_))
+        |> List.map ~f:(fun type_ -> Type.Argument.Single (Type.PyreReadOnly.create type_))
         |> Type.parametric parametric_name
       in
       weaken_mutable_literals
@@ -707,7 +707,7 @@ and weaken_against_readonly
           _;
         },
       Type.Parametric { name = "list" as parametric_name; arguments = [Single _] },
-      Type.ReadOnly
+      Type.PyreReadOnly
         (Type.Parametric { name = "list"; arguments = [Single expected_argument_type]; _ }) )
   | ( Some
         {
@@ -718,23 +718,23 @@ and weaken_against_readonly
           _;
         },
       Type.Parametric { name = "set" as parametric_name; arguments = [Single _] },
-      Type.ReadOnly
+      Type.PyreReadOnly
         (Type.Parametric { name = "set"; arguments = [Single expected_argument_type]; _ }) ) ->
       weaken_parametric_type ~parametric_name [expected_argument_type]
   | ( Some { Node.value = Expression.Dictionary _ | DictionaryComprehension _; _ },
       Type.Parametric { name = "dict" as parametric_name; arguments = _ },
-      Type.ReadOnly
+      Type.PyreReadOnly
         (Type.Parametric
           { name = "dict"; arguments = [Single expected_key_type; Single expected_value_type] }) )
     ->
       weaken_parametric_type ~parametric_name [expected_key_type; expected_value_type]
   | ( Some { Node.value = Expression.List _; _ },
-      Type.ReadOnly
+      Type.PyreReadOnly
         (Type.Parametric { name = "list" as parametric_name; arguments = [Single argument_type] }),
-      Type.ReadOnly
+      Type.PyreReadOnly
         (Type.Parametric { name = "list"; arguments = [Single expected_argument_type]; _ }) ) ->
       weaken_parametric_type
-        ~resolved:(Type.list (Type.ReadOnly.create argument_type))
+        ~resolved:(Type.list (Type.PyreReadOnly.create argument_type))
         ~parametric_name
         [expected_argument_type]
   | _ -> make_weakened_type resolved

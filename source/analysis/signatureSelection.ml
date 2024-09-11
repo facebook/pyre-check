@@ -1593,7 +1593,7 @@ let most_important_error_reason ~arity_mismatch_reasons annotation_mismatch_reas
                        However, we preserve mismatches when the `self` argument is `ReadOnly`. This
                        indicates that a mutating method was called on a readonly object, which
                        should be surfaced at the method call site. *)
-                    Type.ReadOnly.is_readonly actual
+                    Type.PyreReadOnly.is_readonly actual
                 | _ -> true)
           in
           Mismatches mismatches |> Option.some
