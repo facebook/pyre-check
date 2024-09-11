@@ -8676,6 +8676,7 @@ let compute_local_annotations
     ~global_resolution
     name
   =
+  let expressions_with_types = Location.Table.create () in
   let exit_state_of_define define_node =
     let module Context = struct
       (* Doesn't matter what the qualifier is since we won't be using it *)
@@ -8693,7 +8694,8 @@ let compute_local_annotations
 
       module Builder = Callgraph.NullBuilder
 
-      let record_expression_type _ _ = ()
+      let record_expression_type ({ Node.location; _ } as expression) ty =
+        Hashtbl.set expressions_with_types ~key:location ~data:(expression, ty)
     end
     in
     let resolution = resolution global_resolution (module Context) in
@@ -8703,6 +8705,7 @@ let compute_local_annotations
   >>| exit_state_of_define
   >>= (fun { local_annotations; _ } -> local_annotations)
   >>| TypeInfo.ForFunctionBody.read_only
+  >>| fun local_annotation_map -> local_annotation_map, expressions_with_types
 
 
 let errors_from_other_analyses

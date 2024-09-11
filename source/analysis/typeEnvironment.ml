@@ -255,6 +255,7 @@ module ReadOnly = struct
           get_environment_controls environment |> EnvironmentControls.type_check_controls
         in
         TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution name
+        >>| fun (local_annotations, _expression_types) -> local_annotations
 end
 
 module AssumeAstEnvironment = struct
