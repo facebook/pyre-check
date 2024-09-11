@@ -29,6 +29,8 @@ module DefaultContext = struct
   let error_map = None
 
   module Builder = Callgraph.NullBuilder
+
+  let record_expression_type _ _ = ()
 end
 
 let create_type_info_store ?(immutables = []) type_info =
@@ -124,6 +126,8 @@ let test_initial =
       let error_map = Some (LocalErrorMap.empty ())
 
       module Builder = Callgraph.NullBuilder
+
+      let record_expression_type _ _ = ()
     end
     in
     let resolution =

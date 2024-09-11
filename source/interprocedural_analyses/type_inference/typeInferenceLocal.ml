@@ -108,6 +108,8 @@ module State (Context : Context) = struct
     let error_map = Context.error_map
 
     module Builder = Callgraph.NullBuilder
+
+    let record_expression_type _ _ = ()
   end
 
   module TypeCheckState = TypeCheck.State (TypeCheckContext)

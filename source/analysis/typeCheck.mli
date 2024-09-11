@@ -33,6 +33,8 @@ module type Context = sig
   val error_map : LocalErrorMap.t option
 
   module Builder : Callgraph.Builder
+
+  val record_expression_type : Expression.t -> Type.t -> unit
 end
 
 module type Signature = sig

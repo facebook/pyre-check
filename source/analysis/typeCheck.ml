@@ -73,6 +73,8 @@ module type Context = sig
   val error_map : LocalErrorMap.t option
 
   module Builder : Callgraph.Builder
+
+  val record_expression_type : Expression.t -> Type.t -> unit
 end
 
 module type Signature = sig
@@ -7809,6 +7811,8 @@ module DummyContext = struct
   let error_map = None
 
   module Builder = Callgraph.NullBuilder
+
+  let record_expression_type _ _ = ()
 end
 
 let resolution
@@ -8649,6 +8653,8 @@ let compute_local_annotations
       let error_map = Some (LocalErrorMap.empty ())
 
       module Builder = Callgraph.NullBuilder
+
+      let record_expression_type _ _ = ()
     end
     in
     let resolution = resolution global_resolution (module Context) in
@@ -8717,6 +8723,8 @@ let check_define
         let error_map = Some (LocalErrorMap.empty ())
 
         module Builder = Builder
+
+        let record_expression_type _ _ = ()
       end
       in
       let { errors = type_errors; local_annotations; callees; _ } =
