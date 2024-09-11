@@ -104,7 +104,7 @@ let is_type_variable_definition callee =
   || name_is ~name:"typing_extensions.IntVar" callee
 
 
-let transform_string_annotation_expression ~relative =
+let transform_string_annotation_expression_after_qualification ~relative =
   let rec transform_expression
       {
         Node.location =
@@ -177,7 +177,93 @@ let transform_string_annotation_expression ~relative =
   transform_expression
 
 
-let transform_annotations ~transform_annotation_expression source =
+let transform_string_annotation_expression_before_qualification ~scopes ~relative =
+  let is_literal =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "typing.Literal"; Reference.create "typing_extensions.Literal"]
+  in
+  let is_type_variable_definition =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "typing.TypeVar"; Reference.create "typing_extensions.TypeVar"]
+  in
+  let rec transform_expression
+      {
+        Node.location =
+          { Location.start = { Location.line = start_line; column = start_column }; _ } as location;
+        value;
+      }
+    =
+    let transform_argument ({ Call.Argument.value; _ } as argument) =
+      { argument with Call.Argument.value = transform_expression value }
+    in
+    let value =
+      match value with
+      | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
+          Expression.Name (Name.Attribute { name with base = transform_expression base })
+      | Expression.Subscript { Subscript.base; index } -> (
+          match base with
+          | { Node.value = Expression.Name name; _ } when is_literal name ->
+              (* Don't transform arguments in Literals. *)
+              value
+          | _ -> Expression.Subscript { base; index = transform_expression index })
+      | Expression.Call
+          {
+            callee = { Node.value = Expression.Name name; _ } as callee;
+            arguments = variable_name :: remaining_arguments;
+          }
+        when is_type_variable_definition name ->
+          Expression.Call
+            {
+              callee;
+              arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
+            }
+      | List elements -> List (List.map elements ~f:transform_expression)
+      | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
+          (* Start at column + 1 since parsing begins after the opening quote of the string
+             literal. *)
+          match
+            PyreMenhirParser.Parser.parse
+              ~start_line
+              ~start_column:(start_column + 1)
+              [string_value ^ "\n"]
+              ~relative
+          with
+          | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
+          | Ok [{ Node.value = Expression ({ Node.value = Subscript _; _ } as expression); _ }]
+          | Ok [{ Node.value = Expression ({ Node.value = BinaryOperator _; _ } as expression); _ }]
+          | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
+              Transform.map_location expression ~transform_location:(fun _ -> location)
+              |> Node.value
+          | Ok _
+          | Error _ ->
+              (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
+              value)
+      | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
+      | _ -> value
+    in
+    { Node.value; location }
+  in
+  transform_expression
+
+
+let transform_annotations ~scopes ~transform_annotation_expression source =
+  let is_type_alias =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "typing.TypeAlias"; Reference.create "typing_extensions.TypeAlias"]
+  in
+  let is_type_variable_definition =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "typing.TypeVar"; Reference.create "typing_extensions.TypeVar"]
+  in
+  let is_cast =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "pyre_extensions.safe_cast"; Reference.create "typing.cast"]
+  in
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -187,27 +273,12 @@ let transform_annotations ~transform_annotation_expression source =
 
     let transform_assign ~assign:({ Assign.annotation; value = assign_value; _ } as assign) =
       match annotation with
-      | Some
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute
-                  {
-                    base =
-                      {
-                        Node.value =
-                          Expression.Name (Name.Identifier ("typing" | "typing_extensions"));
-                        _;
-                      };
-                    attribute = "TypeAlias";
-                    _;
-                  });
-            _;
-          } ->
+      | Some { Node.value = Expression.Name name; _ } when is_type_alias name ->
           { assign with Assign.value = assign_value >>| transform_annotation_expression }
       | _ -> (
           match assign_value >>| Node.value with
-          | Some (Expression.Call { callee; _ }) when is_type_variable_definition callee ->
+          | Some (Expression.Call { callee = { Node.value = Expression.Name name; _ }; _ })
+            when is_type_variable_definition name ->
               {
                 assign with
                 Assign.annotation = annotation >>| transform_annotation_expression;
@@ -279,11 +350,8 @@ let transform_annotations ~transform_annotation_expression source =
       in
       let value =
         match Node.value expression with
-        | Expression.Call { callee; arguments }
-          when name_is ~name:"pyre_extensions.safe_cast" callee
-               || name_is ~name:"typing.cast" callee
-               || name_is ~name:"cast" callee
-               || name_is ~name:"safe_cast" callee ->
+        | Expression.Call { callee = { Node.value = Expression.Name name; _ } as callee; arguments }
+          when is_cast name ->
             Expression.Call { callee; arguments = transform_arguments arguments }
         | value -> value
       in
@@ -294,14 +362,19 @@ let transform_annotations ~transform_annotation_expression source =
 
 
 let expand_string_annotations ({ Source.module_path; _ } as source) =
+  let scopes = lazy (Scope.ScopeStack.create source) in
   transform_annotations
+    ~scopes
     ~transform_annotation_expression:
-      (transform_string_annotation_expression ~relative:(ModulePath.relative module_path))
+      (transform_string_annotation_expression_before_qualification
+         ~scopes
+         ~relative:(ModulePath.relative module_path))
     source
 
 
 let expand_strings_in_annotation_expression =
-  transform_string_annotation_expression ~relative:"$path_placeholder_for_alias_string_annotations"
+  transform_string_annotation_expression_after_qualification
+    ~relative:"$path_placeholder_for_alias_string_annotations"
 
 
 let get_qualified_local_identifier ~qualifier name =
@@ -4718,8 +4791,8 @@ let preprocess_after_wildcards source =
   |> replace_union_shorthand
   |> mangle_private_attributes
   |> replace_lazy_import
-  |> qualify
   |> expand_string_annotations
+  |> qualify
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
