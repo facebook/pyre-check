@@ -1965,8 +1965,45 @@ let default_is_lazy_import reference =
 
 
 let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
+  let extract_reference_from_callee_name ~scopes value =
+    let rec collect ~sofar = function
+      | Name.Identifier name -> (
+          let open Scope in
+          match ScopeStack.lookup (Lazy.force scopes) name with
+          | Some
+              {
+                Access.binding =
+                  {
+                    Binding.kind =
+                      Binding.Kind.(ImportName (Import.From { module_name; original_name }));
+                    _;
+                  };
+                _;
+              } ->
+              let original_name = Option.value original_name ~default:name in
+              Some
+                (List.append (Reference.as_list module_name) (original_name :: sofar)
+                |> Reference.create_from_list)
+          | Some
+              {
+                Access.binding =
+                  { Binding.kind = Binding.Kind.(ImportName (Import.Module { original_name })); _ };
+                _;
+              } ->
+              let original_names =
+                Option.value_map original_name ~f:Reference.as_list ~default:[name]
+              in
+              Some (List.append original_names sofar |> Reference.create_from_list)
+          | _ -> Some (Reference.create_from_list (name :: sofar)))
+      | Name.Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ } ->
+          collect ~sofar:(attribute :: sofar) base_name
+      | _ -> None
+    in
+    collect ~sofar:[] value
+  in
+  let scopes = lazy (Scope.ScopeStack.create source) in
   let is_callee_name_lazy_import name =
-    match name_to_reference name with
+    match extract_reference_from_callee_name ~scopes name with
     | Some reference when is_lazy_import reference -> true
     | _ -> false
   in
@@ -4722,8 +4759,8 @@ let preprocess_after_wildcards source =
   |> populate_unbound_names
   |> replace_union_shorthand
   |> mangle_private_attributes
-  |> qualify
   |> replace_lazy_import
+  |> qualify
   |> expand_string_annotations
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations

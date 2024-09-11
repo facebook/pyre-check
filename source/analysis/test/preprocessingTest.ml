@@ -4367,6 +4367,86 @@ let test_replace_lazy_import =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_replaced
            {|
+       from my import own
+       x = own.lazy_import("a.b.c")
+    |}
+           {|
+       from my import own
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       from my.own import lazy_import
+       x = lazy_import("a.b.c")
+    |}
+           {|
+       from my.own import lazy_import
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       import not_my
+       x = not_my.own.lazy_import("a.b.c")
+    |}
+           {|
+       import not_my
+       x = not_my.own.lazy_import("a.b.c")
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       from not_my.own import lazy_import
+       x = lazy_import("a.b.c")
+    |}
+           {|
+       from not_my.own import lazy_import
+       x = lazy_import("a.b.c")
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       import my as derp
+       x = derp.own.lazy_import("a.b.c")
+    |}
+           {|
+       import my as derp
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       import my.own as derp
+       x = derp.lazy_import("a.b.c")
+    |}
+           {|
+       import my.own as derp
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       from my import own as derp
+       x = derp.lazy_import("a.b.c")
+    |}
+           {|
+       from my import own as derp
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
+       from my.own import lazy_import as derp
+       x = derp("a.b.c")
+    |}
+           {|
+       from my.own import lazy_import as derp
+       import a.b.c as x
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_replaced
+           {|
        import my
        x: Any = my.own.lazy_import("a.b.c")
     |}
