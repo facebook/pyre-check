@@ -3192,6 +3192,19 @@ module AccessCollector = struct
 
 
   and from_statement collected { Node.value; _ } =
+    (* remove type parameters from the name access set for the parameters and return types *)
+    let type_param_names_set type_params =
+      List.map type_params ~f:(fun { Node.value; _ } ->
+          match value with
+          | Ast.Expression.TypeParam.TypeVar { name; _ } -> name
+          | Ast.Expression.TypeParam.TypeVarTuple name -> name
+          | Ast.Expression.TypeParam.ParamSpec name -> name)
+      |> Identifier.Set.of_list
+    in
+    let remove_bound_names type_param_names_set =
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Set.mem type_param_names_set name))
+    in
+
     let from_optional_expression collected =
       Option.value_map ~default:collected ~f:(from_expression collected)
     in
@@ -3214,8 +3227,13 @@ module AccessCollector = struct
         in
         List.fold ~init:collected ~f:from_expression decorators
     | Define
-        { Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ }; _ }
-      ->
+        {
+          Define.signature =
+            { Define.Signature.decorators; parameters; return_annotation; type_params; _ };
+          _;
+        } ->
+        let type_param_names_set = type_param_names_set type_params in
+        let remove_bound_names = remove_bound_names type_param_names_set in
         let collected = List.fold ~init:collected ~f:from_expression decorators in
         let collected =
           List.fold
@@ -3223,9 +3241,17 @@ module AccessCollector = struct
             ~init:collected
             ~f:(fun sofar { Node.value = { Parameter.annotation; value; _ }; _ } ->
               let sofar = from_optional_expression sofar annotation in
+              let sofar = sofar |> remove_bound_names in
               from_optional_expression sofar value)
         in
-        from_optional_expression collected return_annotation
+        let collected_from_return_annotataion =
+          from_optional_expression collected return_annotation
+        in
+        let collected_from_return_annotataion =
+          collected_from_return_annotataion |> remove_bound_names
+        in
+        let collected = Set.union collected_from_return_annotataion collected in
+        collected
     | Delete expressions -> List.fold expressions ~init:collected ~f:from_expression
     | Expression expression -> from_expression collected expression
     | For { For.target; iterator; body; orelse; _ } ->
@@ -3301,11 +3327,12 @@ module AccessCollector = struct
               from_optional_expression collected target)
         in
         from_statements collected body
-    | TypeAlias { TypeAlias.name; value; _ } ->
-        (* TODO migeedz: verify that this is the correct way to handle TypeAliases in this
-           function *)
+    | TypeAlias { TypeAlias.name; value; type_params; _ } ->
+        (* remove type prarams from the accesses *)
+        let type_param_names_set = type_param_names_set type_params in
+        let remove_bound_names = remove_bound_names type_param_names_set in
         let collected = from_expression collected name in
-        from_optional_expression collected (Some value)
+        from_optional_expression collected (Some value) |> remove_bound_names
     | Break
     | Continue
     | Global _
