@@ -217,23 +217,19 @@ module Binding = struct
         of_statements sofar orelse
     | Statement.Import { Import.imports; from } ->
         let binding_of_import sofar { Node.value = { Import.alias; name }; location } =
-          let import_status =
-            match from with
-            | Some { Node.value = from; _ } -> Kind.Import.From from
-            | None -> Kind.Import.Module
-          in
-          match alias with
-          | Some alias -> { kind = Kind.ImportName import_status; name = alias; location } :: sofar
-          | None -> (
-              match from with
-              | Some _ ->
-                  (* `name` must be a simple name *)
-                  { kind = Kind.ImportName import_status; name = Reference.show name; location }
-                  :: sofar
-              | None ->
-                  (* `import a.b` actually binds name a *)
-                  let name = Reference.as_list name |> List.hd_exn in
-                  { kind = Kind.ImportName import_status; name; location } :: sofar)
+          match from, alias with
+          | None, None ->
+              (* `import a.b` actually binds name a *)
+              let name = Reference.as_list name |> List.hd_exn in
+              { kind = Kind.(ImportName Import.Module); name; location } :: sofar
+          | None, Some alias ->
+              { kind = Kind.(ImportName Import.Module); name = alias; location } :: sofar
+          | Some { Node.value = from; _ }, None ->
+              (* `name` must be a simple name *)
+              { kind = Kind.(ImportName (Import.From from)); name = Reference.show name; location }
+              :: sofar
+          | Some { Node.value = from; _ }, Some alias ->
+              { kind = Kind.(ImportName (Import.From from)); name = alias; location } :: sofar
         in
         List.fold imports ~init:sofar ~f:binding_of_import
     | Match { Match.subject; cases } ->
