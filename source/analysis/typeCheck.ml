@@ -3611,9 +3611,12 @@ module State (Context : Context) = struct
             base = None;
           }
     in
-    Option.iter
+    (* Record the type info of the expression. If there is no type info (for historical reasons it
+       is often missing), create one from the `resolved` type. *)
+    Option.value
       resolved.Resolved.resolved_annotation
-      ~f:(Context.record_expression_type_info expression);
+      ~default:(TypeInfo.Unit.create_mutable resolved.Resolved.resolved)
+    |> Context.record_expression_type_info expression;
     resolved
 
 

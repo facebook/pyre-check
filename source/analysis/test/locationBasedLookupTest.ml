@@ -2390,7 +2390,7 @@ let test_lookup_comprehensions =
              "2:13-2:17/typing.Type[None]";
              "3:2-3:3/typing.List[typing.Tuple[float, int]]";
              "3:6-3:50/typing.List[typing.Tuple[float, int]]";
-             "3:7-3:13/typing.Tuple[unknown, unknown]";
+             "3:7-3:13/typing.Tuple[float, int]";
              "3:8-3:9/float";
              "3:11-3:12/int";
              "3:18-3:19/float";
