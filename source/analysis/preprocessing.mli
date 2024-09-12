@@ -40,8 +40,6 @@ val expand_implicit_returns : Source.t -> Source.t
 
 val replace_lazy_import : ?is_lazy_import:(Reference.t -> bool) -> Source.t -> Source.t
 
-val replace_mypy_extensions_stub : Source.t -> Source.t
-
 val expand_typed_dictionary_declarations : Source.t -> Source.t
 
 val expand_named_tuples : Source.t -> Source.t

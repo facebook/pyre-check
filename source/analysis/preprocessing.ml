@@ -2208,38 +2208,6 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
   LazyImportTransformer.transform () source |> LazyImportTransformer.source
 
 
-let replace_mypy_extensions_stub ({ Source.module_path; statements; _ } as source) =
-  if String.is_suffix (ModulePath.relative module_path) ~suffix:"mypy_extensions.pyi" then
-    let typed_dictionary_stub ~location =
-      let node value = Node.create ~location value in
-      Statement.Assign
-        {
-          target = node (Expression.Name (Name.Identifier "TypedDict"));
-          annotation =
-            Some
-              (node
-                 (Expression.Name
-                    (Name.Attribute
-                       {
-                         base = { Node.value = Name (Name.Identifier "typing"); location };
-                         attribute = "_SpecialForm";
-                         special = false;
-                       })));
-          value = Some (node (Expression.Constant Constant.Ellipsis));
-        }
-      |> node
-    in
-    let replace_typed_dictionary_define = function
-      | { Node.location; value = Statement.Define { signature = { name; _ }; _ } }
-        when String.equal (Reference.show name) "TypedDict" ->
-          typed_dictionary_stub ~location
-      | statement -> statement
-    in
-    { source with statements = List.map ~f:replace_typed_dictionary_define statements }
-  else
-    source
-
-
 let expand_typed_dictionary_declarations
     ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
@@ -4820,7 +4788,6 @@ let preprocess_after_wildcards source =
   |> replace_lazy_import
   |> expand_string_annotations
   |> qualify
-  |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
