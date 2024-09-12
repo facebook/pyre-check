@@ -2208,9 +2208,17 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
   LazyImportTransformer.transform () source |> LazyImportTransformer.source
 
 
-let expand_typed_dictionary_declarations
-    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
-  =
+let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_typed_dictionatry =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [
+        Reference.create "mypy_extensions.TypedDict";
+        Reference.create "typing_extensions.TypedDict";
+        Reference.create "typing.TypedDict";
+      ]
+  in
   let rec expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let string_literal identifier =
@@ -2225,46 +2233,23 @@ let expand_typed_dictionary_declarations
         | _ -> None
       in
       let base_is_typed_dictionary = function
-        | {
-            Call.Argument.name = None;
-            value =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Identifier
-                                  ("mypy_extensions" | "typing_extensions" | "typing"));
-                            _;
-                          };
-                        attribute = "TypedDict";
-                        _;
-                      });
-                _;
-              };
-          } ->
+        | { Call.Argument.name = None; value = { Node.value = Expression.Name name; _ } }
+          when is_typed_dictionatry name ->
             true
         | _ -> false
       in
       let bases_include_typed_dictionary bases = List.exists bases ~f:base_is_typed_dictionary in
       let extract_totality_from_base base =
-        let is_total ~total = String.equal (Identifier.sanitized total) "total" in
         match base with
         | {
-         Call.Argument.name = Some { value = total; _ };
+         Call.Argument.name = Some { value = "total"; _ };
          value = { Node.value = Expression.Constant Constant.True; _ };
-        }
-          when is_total ~total ->
+        } ->
             Some true
         | {
-         Call.Argument.name = Some { value = total; _ };
+         Call.Argument.name = Some { value = "total"; _ };
          value = { Node.value = Expression.Constant Constant.False; _ };
-        }
-          when is_total ~total ->
+        } ->
             Some false
         | _ -> None
       in
@@ -2289,13 +2274,7 @@ let expand_typed_dictionary_declarations
                       (Statement.Assign
                          {
                            target =
-                             Expression.Name
-                               (Name.Attribute
-                                  {
-                                    base = from_reference ~location class_reference;
-                                    attribute = attribute_name;
-                                    special = false;
-                                  })
+                             Expression.Name (Name.Identifier attribute_name)
                              |> Node.create ~location;
                            annotation = Some value;
                            value =
@@ -2368,25 +2347,7 @@ let expand_typed_dictionary_declarations
                   Node.value =
                     Call
                       {
-                        callee =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Attribute
-                                  {
-                                    base =
-                                      {
-                                        Node.value =
-                                          Name
-                                            (Name.Identifier
-                                              ("mypy_extensions" | "typing_extensions" | "typing"));
-                                        _;
-                                      };
-                                    attribute = "TypedDict";
-                                    _;
-                                  });
-                            _;
-                          };
+                        callee = { Node.value = Expression.Name callee_name; _ };
                         arguments =
                           { Call.Argument.name = None; value = name }
                           :: {
@@ -2399,11 +2360,12 @@ let expand_typed_dictionary_declarations
                   _;
                 };
             _;
-          } ->
+          }
+        when is_typed_dictionatry callee_name ->
           extract_string_literal name
           >>= (fun name ->
                 typed_dictionary_class_declaration
-                  ~name:(string_literal (Reference.show (Reference.create ~prefix:qualifier name)))
+                  ~name:(string_literal name)
                   ~parent:(NestingContext.create_toplevel ())
                   ~fields:
                     (List.filter_map entries ~f:(fun entry ->
@@ -2430,12 +2392,14 @@ let expand_typed_dictionary_declarations
               | {
                   Node.value =
                     Statement.Assign
-                      { target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+                      {
+                        target = { Node.value = Name (Name.Identifier name); _ };
+                        annotation = Some annotation;
+                        _;
+                      };
                   _;
                 } ->
-                  Reference.drop_prefix ~prefix:class_name (name_to_reference_exn name)
-                  |> Reference.single
-                  >>| fun name -> string_literal name, annotation
+                  Some (string_literal name, annotation)
               | _ -> None
             in
             List.filter_map body ~f:extract
@@ -4787,8 +4751,8 @@ let preprocess_after_wildcards source =
   |> mangle_private_attributes
   |> replace_lazy_import
   |> expand_string_annotations
-  |> qualify
   |> expand_typed_dictionary_declarations
+  |> qualify
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
   |> inline_six_metaclass

@@ -4549,12 +4549,8 @@ let test_replace_lazy_import =
 
 let test_expand_typed_dictionaries =
   let assert_expand ?(handle = "") source expected _ =
-    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source
-      |> Preprocessing.qualify
-      |> Preprocessing.expand_typed_dictionary_declarations
-    in
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.expand_typed_dictionary_declarations in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list
@@ -4851,12 +4847,8 @@ let test_expand_typed_dictionaries =
 
 let test_expand_typed_dictionaries__required_not_required =
   let assert_expand ?(handle = "") source expected _ =
-    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source
-      |> Preprocessing.qualify
-      |> Preprocessing.expand_typed_dictionary_declarations
-    in
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.expand_typed_dictionary_declarations in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list

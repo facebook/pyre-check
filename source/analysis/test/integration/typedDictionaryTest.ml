@@ -373,7 +373,7 @@ let test_check_typed_dictionaries =
                 return movie['year']
             |}
            [
-             "Revealed type [-1]: Revealed type for `Movie.__init__` is \
+             "Revealed type [-1]: Revealed type for `test.Movie.__init__` is \
               `typing.Callable(Movie.__init__)[..., unknown][[[Named(self, Movie), \
               KeywordOnly(name, str), KeywordOnly(year, int)], None][[Movie, Movie], None]]`.";
            ];
