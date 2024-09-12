@@ -8691,7 +8691,11 @@ let compute_local_annotations
       module Builder = Callgraph.NullBuilder
 
       let record_expression_type_info ({ Node.location; _ } as expression) ty =
-        Hashtbl.set expressions_with_types ~key:location ~data:(expression, ty)
+        let add_expression_and_type_info = function
+          | Some existing_pairs -> (expression, ty) :: existing_pairs
+          | None -> [expression, ty]
+        in
+        Hashtbl.update expressions_with_types location ~f:add_expression_and_type_info
     end
     in
     let resolution = resolution global_resolution (module Context) in

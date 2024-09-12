@@ -89,7 +89,8 @@ val compute_local_annotations
   :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
   global_resolution:GlobalResolution.t ->
   Reference.t ->
-  (TypeInfo.ForFunctionBody.ReadOnly.t * (Expression.t * TypeInfo.Unit.t) Location.Table.t) option
+  (TypeInfo.ForFunctionBody.ReadOnly.t * (Expression.t * TypeInfo.Unit.t) list Location.Table.t)
+  option
 
 module CheckResult : sig
   type t = {

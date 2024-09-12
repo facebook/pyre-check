@@ -32,7 +32,7 @@ module ExpressionTypes = struct
     type t = {
       pre_resolution: Resolution.t;
       post_resolution: Resolution.t;
-      expressions_with_types: (Expression.t * TypeInfo.Unit.t) Location.Table.t;
+      expressions_with_types: (Expression.t * TypeInfo.Unit.t) list Location.Table.t;
       coverage_data_lookup: coverage_data_lookup;
     }
 
@@ -71,29 +71,38 @@ module ExpressionTypes = struct
         >>| store_coverage_data ~location ~expression:(Some expression)
         |> ignore
       in
-      let store_coverage_data_for_expression ({ Node.location; _ } as expression) =
+      let look_up_type_info ~location ~expression =
+        let type_info_if_expression_matches (saved_expression, type_info) =
+          if Int.equal (Expression.location_insensitive_compare saved_expression expression) 0 then
+            Some type_info
+          else
+            None
+        in
         match Hashtbl.find expressions_with_types location with
-        | Some (saved_expression, type_info) -> begin
-            if Expression.equal saved_expression expression then
-              store_coverage_data ~location ~expression:(Some expression) type_info
-            else begin
-              (* Any mismatch here is probably due to synthestized AST nodes, either from
-                 preprocessing or CFG construction, creating conflicting locations. All such
-                 conflicts are potential sources of bugs in the `types(...)` query but for now we
-                 assume it is okay, which is needed because so many expressions lower into dunder
-                 method calls. This debug log can be useful for investigating problems. *)
-              Log.debug
-                "At location %a, found saved expression %a vs traversal expression %a. Ignoring \
-                 the saved type info."
-                Location.pp
-                location
-                Expression.pp
-                saved_expression
-                Expression.pp
-                expression;
-              store_naively_resolved_coverage_data ~location ~expression
-            end
-          end
+        | Some expression_type_info_pairs -> (
+            match List.find_map expression_type_info_pairs ~f:type_info_if_expression_matches with
+            | Some type_info -> Some type_info
+            | None ->
+                (* Any mismatch here is probably due to synthestized AST nodes, either from
+                   preprocessing or CFG construction, creating conflicting locations. All such
+                   conflicts are potential sources of bugs in the `types(...)` query but for now we
+                   assume it is okay, which is needed because so many expressions lower into dunder
+                   method calls. This debug log can be useful for investigating problems. *)
+                Log.debug
+                  "At location %a, found saved expressions %s vs traversal expression %a. Ignoring \
+                   the saved type info."
+                  Location.pp
+                  location
+                  (List.map expression_type_info_pairs ~f:(fun (e, _) -> e)
+                  |> [%show: Expression.t list])
+                  Expression.pp
+                  expression;
+                None)
+        | None -> None
+      in
+      let store_coverage_data_for_expression ({ Node.location; _ } as expression) =
+        match look_up_type_info ~location ~expression with
+        | Some type_info -> store_coverage_data ~location ~expression:(Some expression) type_info
         | None ->
             store_naively_resolved_coverage_data ~location ~expression;
             ()
