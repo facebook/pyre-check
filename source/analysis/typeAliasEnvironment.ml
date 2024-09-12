@@ -384,7 +384,7 @@ module OutgoingDataComputation = struct
       in
       Type.create ~variables ~aliases expression
     in
-    if type_contains_untracked_name queries parsed && not allow_untracked then
+    if (not allow_untracked) && type_contains_untracked_name queries parsed then
       Type.Top
     else
       parsed
