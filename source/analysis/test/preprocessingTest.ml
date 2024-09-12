@@ -4895,12 +4895,8 @@ let test_expand_typed_dictionaries__required_not_required =
 
 let test_sqlalchemy_declarative_base =
   let assert_expand ?(handle = "") source expected _ =
-    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source
-      |> Preprocessing.qualify
-      |> Preprocessing.expand_sqlalchemy_declarative_base
-    in
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.expand_sqlalchemy_declarative_base in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list

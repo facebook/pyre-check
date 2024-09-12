@@ -2941,7 +2941,7 @@ let expand_new_types ({ Source.statements; _ } as source) =
 let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
   let expand_declarative_base_instance ({ Node.location; value } as statement) =
     let expanded_declaration =
-      let declarative_base_class_declaration ~base_module class_name_reference =
+      let declarative_base_class_declaration class_name =
         let metaclass =
           {
             Call.Argument.name = Some (Node.create ~location "metaclass");
@@ -2949,14 +2949,12 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
               Node.create
                 ~location
                 (Expression.Name
-                   (create_name
-                      ~location
-                      (Format.asprintf "%s.ext.declarative.DeclarativeMeta" base_module)));
+                   (create_name ~location "sqlalchemy.ext.declarative.DeclarativeMeta"));
           }
         in
         Statement.Class
           {
-            name = class_name_reference;
+            name = Reference.create class_name;
             base_arguments = [metaclass];
             decorators = [];
             parent = NestingContext.create_toplevel ();
@@ -2965,21 +2963,22 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
             type_params = [];
           }
       in
+      let scopes = lazy (Scope.ScopeStack.create source) in
+      let is_declarative_base =
+        create_callee_name_matcher_from_references
+          ~scopes
+          [Reference.create "sqlalchemy.ext.declarative.declarative_base"]
+      in
       match value with
       | Statement.Assign
           {
-            target = { Node.value = Name name; _ };
+            target = { Node.value = Name (Name.Identifier target); _ };
             value =
-              Some { Node.value = Call { callee = { Node.value = Name function_name; _ }; _ }; _ };
+              Some { Node.value = Call { callee = { Node.value = Name callee_name; _ }; _ }; _ };
             _;
-          } -> (
-          match
-            ( name_to_reference function_name >>| Reference.show,
-              name_to_reference name >>| Reference.delocalize )
-          with
-          | Some "sqlalchemy.ext.declarative.declarative_base", Some class_name_reference ->
-              declarative_base_class_declaration ~base_module:"sqlalchemy" class_name_reference
-          | _ -> value)
+          }
+        when is_declarative_base callee_name ->
+          declarative_base_class_declaration target
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }
@@ -4752,8 +4751,8 @@ let preprocess_after_wildcards source =
   |> replace_lazy_import
   |> expand_string_annotations
   |> expand_typed_dictionary_declarations
-  |> qualify
   |> expand_sqlalchemy_declarative_base
+  |> qualify
   |> expand_named_tuples
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
