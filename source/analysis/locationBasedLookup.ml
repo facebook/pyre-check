@@ -32,106 +32,114 @@ module ExpressionTypes = struct
     type t = {
       pre_resolution: Resolution.t;
       post_resolution: Resolution.t;
+      expressions_with_types: (Expression.t * TypeInfo.Unit.t) Location.Table.t;
       coverage_data_lookup: coverage_data_lookup;
     }
 
     let node_base
         ~postcondition
-        ({ pre_resolution; post_resolution; coverage_data_lookup; _ } as state)
+        ({ pre_resolution; post_resolution; coverage_data_lookup; expressions_with_types } as state)
         node
       =
-      let resolve ~resolution ~expression =
-        try
-          let type_info = Resolution.resolve_expression_to_type_info resolution expression in
-          let original = TypeInfo.Unit.original type_info in
-          if Type.is_top original || Type.is_unbound original then
-            let annotation = TypeInfo.Unit.annotation type_info in
-            if Type.is_top annotation || Type.is_unbound annotation then
-              None
+      let resolution = if postcondition then post_resolution else pre_resolution in
+      let store_coverage_data ~expression ~location type_info =
+        if not (Location.equal location Location.any) then
+          let maybe_type =
+            let original = TypeInfo.Unit.original type_info in
+            if Type.is_top original || Type.is_unbound original then
+              let annotation = TypeInfo.Unit.annotation type_info in
+              if Type.is_top annotation || Type.is_unbound annotation then
+                None
+              else
+                Some annotation
             else
-              Some annotation
-          else
-            Some original
-        with
+              Some original
+          in
+          match maybe_type with
+          | Some ty ->
+              Hashtbl.set coverage_data_lookup ~key:location ~data:{ expression; type_ = ty }
+              |> ignore
+          | None -> ()
+      in
+      let naively_resolve_type_info ?custom_resolution expression =
+        let resolution = Option.value custom_resolution ~default:resolution in
+        try Some (Resolution.resolve_expression_to_type_info resolution expression) with
         | ClassHierarchy.Untracked _ -> None
       in
-      let store_coverage_data_for_expression ({ Node.location; value } as expression) =
-        let make_coverage_data ~expression type_ = { expression; type_ } in
-        let store_lookup ~table ~location ~expression data =
-          if not (Location.equal location Location.any) then
-            Hashtbl.set table ~key:location ~data:(make_coverage_data ~expression data) |> ignore
-        in
-        let store_coverage_data ~expression =
-          store_lookup ~table:coverage_data_lookup ~expression
-        in
-        let store_generator_and_compute_resolution
+      let store_naively_resolved_coverage_data ~location ~expression =
+        naively_resolve_type_info expression
+        >>| store_coverage_data ~location ~expression:(Some expression)
+        |> ignore
+      in
+      let store_coverage_data_for_expression ({ Node.location; _ } as expression) =
+        match Hashtbl.find expressions_with_types location with
+        | Some (saved_expression, type_info) -> begin
+            if Expression.equal saved_expression expression then
+              store_coverage_data ~location ~expression:(Some expression) type_info
+            else begin
+              (* Any mismatch here is probably due to synthestized AST nodes, either from
+                 preprocessing or CFG construction, creating conflicting locations. All such
+                 conflicts are potential sources of bugs in the `types(...)` query but for now we
+                 assume it is okay, which is needed because so many expressions lower into dunder
+                 method calls. This debug log can be useful for investigating problems. *)
+              Log.debug
+                "At location %a, found saved expression %a vs traversal expression %a. Ignoring \
+                 the saved type info."
+                Location.pp
+                location
+                Expression.pp
+                saved_expression
+                Expression.pp
+                expression;
+              store_naively_resolved_coverage_data ~location ~expression
+            end
+          end
+        | None ->
+            store_naively_resolved_coverage_data ~location ~expression;
+            ()
+      in
+      (* Some special expressions get additional type information that typeCheck.ml doesn't produce,
+         for example names bound in comprehensions get typed because the extra types are useful in
+         IDE even though they are not used for type errors, and callable argument names get the
+         argument types for similar reasons. *)
+      let add_special_case_type_information { Node.value; _ } =
+        let store_generator_target_type
             resolution
-            ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
+            ({ Comprehension.Generator.target; _ } as generator)
           =
-          (* The basic idea here is to simulate element for x in generator if cond as the following:
-             x = generator.__iter__().__next__() assert cond element *)
-          let annotate_expression resolution ({ Node.location; _ } as expression) =
-            resolve ~resolution ~expression
+          let annotate_expression custom_resolution ({ Node.location; _ } as expression) =
+            naively_resolve_type_info ~custom_resolution expression
             >>| store_coverage_data ~location ~expression:(Some expression)
             |> ignore
           in
-          annotate_expression resolution iterator;
-          let resolution =
+          let resolution_with_target =
             let target_assignment = Statement.generator_assignment generator in
             Resolution.resolve_assignment resolution target_assignment
           in
-          let store_condition_and_refine resolution condition =
-            annotate_expression resolution condition;
-            Resolution.resolve_assertion resolution ~asserted_expression:condition
-            |> Option.value ~default:resolution
-          in
-          let resolution = List.fold conditions ~f:store_condition_and_refine ~init:resolution in
-          annotate_expression resolution target;
-          resolution
+          annotate_expression resolution_with_target target;
+          resolution_with_target
         in
-        let resolution = if postcondition then post_resolution else pre_resolution in
-        resolve ~resolution ~expression
-        >>| store_coverage_data ~location ~expression:(Some expression)
-        |> ignore;
         match value with
-        | Call { arguments; _ } ->
+        | Expression.Call { arguments; _ } ->
             let annotate_argument_name { Call.Argument.name; value } =
-              match name, resolve ~resolution ~expression:value with
-              | Some { Node.location; _ }, Some annotation ->
-                  store_coverage_data ~location ~expression:(Some value) annotation
+              match name, naively_resolve_type_info value with
+              | Some { Node.location; _ }, Some type_info ->
+                  store_coverage_data ~location ~expression:(Some value) type_info
               | _ -> ()
             in
             List.iter ~f:annotate_argument_name arguments
-        | DictionaryComprehension
-            { element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ } ->
-            let resolution =
-              List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
-            in
-            let annotate_expression ({ Node.location; _ } as expression) =
-              store_coverage_data
-                ~location
-                ~expression:(Some expression)
-                (Resolution.resolve_expression_to_type resolution expression)
-            in
-            annotate_expression key;
-            annotate_expression value
-        | Generator { element; generators }
-        | ListComprehension { element; generators; _ }
-        | SetComprehension { element; generators; _ } ->
-            let annotate resolution ({ Node.location; _ } as expression) =
-              resolve ~resolution ~expression
-              >>| store_coverage_data ~location ~expression:(Some expression)
-              |> ignore
-            in
-            let resolution =
-              List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
-            in
-            annotate resolution element
+        | Expression.DictionaryComprehension { generators; _ } ->
+            List.fold generators ~f:store_generator_target_type ~init:resolution |> ignore
+        | Expression.Generator { generators; _ }
+        | Expression.ListComprehension { generators; _ }
+        | Expression.SetComprehension { generators; _ } ->
+            List.fold generators ~f:store_generator_target_type ~init:resolution |> ignore
         | _ -> ()
       in
       match node with
       | Visit.Expression expression ->
           store_coverage_data_for_expression expression;
+          add_special_case_type_information expression;
           state
       | Visit.Reference { Node.value = reference; location } ->
           store_coverage_data_for_expression (Ast.Expression.from_reference ~location reference);
@@ -256,68 +264,72 @@ module ExpressionTypes = struct
   end
 
   let create_of_module type_environment qualifier =
-    let coverage_data_lookup = Location.Table.create () in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-    let walk_define ({ Node.value = define; _ } as define_node) =
-      let name = FunctionDefinition.qualified_name_of_define ~module_name:qualifier define in
-      let coverage_data_lookup_map =
-        TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
-        |> function
-        | Some coverage_data_lookup_map -> coverage_data_lookup_map
-        | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only
-      in
-      let cfg = Cfg.create define in
-      let walk_statement node_id statement_index statement =
-        let pre_annotations, post_annotations =
-          let statement_key = [%hash: int * int] (node_id, statement_index) in
-          ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition
-              coverage_data_lookup_map
-              ~statement_key
-            |> Option.value ~default:TypeInfo.Store.empty,
-            TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
-              coverage_data_lookup_map
-              ~statement_key
-            |> Option.value ~default:TypeInfo.Store.empty )
-        in
-        let pre_resolution =
-          (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-          TypeCheck.resolution
-            global_resolution
-            ~type_info_store:pre_annotations
-            (module TypeCheck.DummyContext)
-        in
-        let post_resolution =
-          (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-          TypeCheck.resolution
-            global_resolution
-            ~type_info_store:post_annotations
-            (module TypeCheck.DummyContext)
-        in
-        CreateLookupsIncludingTypeAnnotationsVisitor.visit
-          {
-            CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
-            post_resolution;
-            coverage_data_lookup;
-          }
-          (Source.create [statement])
-        |> ignore
-      in
-      let walk_cfg_node ~key:node_id ~data:cfg_node =
-        let statements = Cfg.Node.statements cfg_node in
-        List.iteri statements ~f:(walk_statement node_id)
-      in
-      Hashtbl.iteri cfg ~f:walk_cfg_node;
-
-      (* Special-case define signature processing, since this is not included in the define's
-         cfg. *)
-      let define_signature =
-        { define_node with value = Statement.Define { define with Define.body = [] } }
-      in
-      walk_statement Cfg.entry_index 0 define_signature
+    let type_check_controls =
+      TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.type_check_controls
+    in
+    let coverage_data_lookup = Location.Table.create () in
+    let walk_define define_name =
+      match
+        ( GlobalResolution.get_define_body_in_project global_resolution define_name,
+          TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution define_name )
+      with
+      | None, _
+      | _, None ->
+          ()
+      | ( Some ({ Node.value = define; _ } as define_node),
+          Some (local_annotation_map, expressions_with_types) ) ->
+          let cfg = Cfg.create define in
+          let walk_statement node_id statement_index statement =
+            let pre_annotations, post_annotations =
+              let statement_key = [%hash: int * int] (node_id, statement_index) in
+              ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition
+                  local_annotation_map
+                  ~statement_key
+                |> Option.value ~default:TypeInfo.Store.empty,
+                TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
+                  local_annotation_map
+                  ~statement_key
+                |> Option.value ~default:TypeInfo.Store.empty )
+            in
+            let pre_resolution =
+              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+              TypeCheck.resolution
+                global_resolution
+                ~type_info_store:pre_annotations
+                (module TypeCheck.DummyContext)
+            in
+            let post_resolution =
+              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+              TypeCheck.resolution
+                global_resolution
+                ~type_info_store:post_annotations
+                (module TypeCheck.DummyContext)
+            in
+            CreateLookupsIncludingTypeAnnotationsVisitor.visit
+              {
+                CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
+                post_resolution;
+                coverage_data_lookup;
+                expressions_with_types;
+              }
+              (Source.create [statement])
+            |> ignore
+          in
+          let walk_cfg_node ~key:node_id ~data:cfg_node =
+            let statements = Cfg.Node.statements cfg_node in
+            List.iteri statements ~f:(walk_statement node_id)
+          in
+          Hashtbl.iteri cfg ~f:walk_cfg_node;
+          (* Special-case define signature processing, since this is not included in the define's
+             cfg. *)
+          let define_signature =
+            { define_node with value = Statement.Define { define with Define.body = [] } }
+          in
+          walk_statement Cfg.entry_index 0 define_signature
     in
     let define_names =
       GlobalResolution.get_define_names_for_qualifier_in_project global_resolution qualifier
-      |> List.filter_map ~f:(GlobalResolution.get_define_body_in_project global_resolution)
     in
     List.iter define_names ~f:walk_define;
     coverage_data_lookup

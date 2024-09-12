@@ -739,7 +739,6 @@ let test_handle_types_query context =
                        } );
                    2, 16, 2, 19, Type.meta Type.integer;
                    2, 24, 2, 27, Type.meta Type.integer;
-                   2, 29, 2, 32, Type.Any;
                  ]
                  |> QueryTestTypes.create_types_at_locations;
              };
@@ -1218,10 +1217,11 @@ let test_handle_types_query context =
                  [
                    1, 0, 1, 24, Type.list Type.integer;
                    1, 1, 1, 2, Type.literal_integer 0;
-                   1, 7, 1, 8, Type.literal_integer 0;
+                   1, 7, 1, 8, Type.integer;
                    1, 12, 1, 15, Type.list Type.integer;
                    1, 13, 1, 14, Type.literal_integer 0;
-                   1, 19, 1, 23, Type.bool;
+                   1, 19, 1, 20, Type.integer;
+                   1, 19, 1, 23, Type.Any;
                    1, 22, 1, 23, Type.literal_integer 0;
                  ]
                  |> QueryTestTypes.create_types_at_locations;
@@ -1411,7 +1411,6 @@ let test_handle_references_used_by_file_query context =
                      } );
                  2, 16, 2, 19, Type.meta Type.integer;
                  2, 24, 2, 27, Type.meta Type.integer;
-                 2, 29, 2, 32, Type.Any;
                ]
                |> QueryTestTypes.create_types_at_locations;
            }))

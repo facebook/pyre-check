@@ -2337,7 +2337,7 @@ let test_lookup_comprehensions =
              "7:6-7:27/typing.List[test.Foo]";
              "7:7-7:10/typing.Type[test.Foo]";
              "7:7-7:13/test.Foo";
-             (* TODO(T60237096): "7:11-7:12/int" should be a valid lookup. *)
+             "7:11-7:12/int";
              "7:18-7:19/int";
              "7:23-7:26/typing.List[int]";
              "7:24-7:25/typing_extensions.Literal[1]";
@@ -2373,7 +2373,7 @@ let test_lookup_comprehensions =
              "3:2-3:3/typing.List[float]";
              "3:6-3:35/typing.List[float]";
              "3:7-3:8/float";
-             "3:13-3:14/float";
+             "3:13-3:14/typing.Optional[float]";
              "3:18-3:29/typing.List[typing.Optional[float]]";
              "3:19-3:23/None";
              "3:25-3:28/float";
@@ -2390,7 +2390,9 @@ let test_lookup_comprehensions =
              "2:13-2:17/typing.Type[None]";
              "3:2-3:3/typing.List[typing.Tuple[float, int]]";
              "3:6-3:50/typing.List[typing.Tuple[float, int]]";
-             "3:7-3:13/typing.Tuple[float, int]";
+             "3:7-3:13/typing.Tuple[unknown, unknown]";
+             "3:8-3:9/float";
+             "3:11-3:12/int";
              "3:18-3:19/float";
              "3:23-3:33/typing.List[float]";
              "3:24-3:27/float";
