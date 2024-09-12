@@ -637,3 +637,61 @@ def test_multi_inheritance_parent_call(b: B20):
 
 def test_multi_inheritance_parent_issue():
     test_multi_inheritance_parent_call(D20())  # TODO(T183494356): False negative.
+
+
+def transformX(arg):
+    pass
+
+
+def sink_d(arg):
+    pass
+
+
+class A21:
+    @classmethod
+    def m0(cls, arg):
+        return cls.m1(arg)
+
+    @classmethod
+    def m1(cls, arg):
+        pass
+    
+
+class B21(A21):
+    @classmethod
+    def m1(cls, arg):
+        return transformX(arg)
+
+
+class C21(A21):
+    @classmethod
+    def m1(cls, arg):
+        return arg
+
+
+def no_issue_taint_transform_with_class_interval_for_classmethods():
+    # Should not see an issue, due to not going through the taint transform
+    sink_d(C21.m0(_test_source()))
+
+
+class A22:
+    def m0(self, arg):
+        return self.m1(arg)
+
+    def m1(self, arg):
+        pass
+    
+
+class B22(A22):
+    def m1(self, arg):
+        return transformX(arg)
+
+
+class C22(A22):
+    def m1(self, arg):
+        return arg
+
+
+def no_issue_taint_transform_with_class_interval(c: C22):
+    # Should not see an issue, due to not going through the taint transform
+    sink_d(c.m0(_test_source()))
