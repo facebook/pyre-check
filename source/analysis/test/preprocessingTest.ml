@@ -7320,12 +7320,8 @@ let test_expand_self_type =
 
 let test_inline_keyword_only_attribute =
   let assert_expand ?(handle = "test.py") source expected _ =
-    let expected = parse ~handle expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source
-      |> Preprocessing.qualify
-      |> Preprocessing.add_dataclass_keyword_only_specifiers
-    in
+    let expected = parse ~handle expected in
+    let actual = parse ~handle source |> Preprocessing.add_dataclass_keyword_only_specifiers in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list
@@ -7457,8 +7453,8 @@ let test_inline_keyword_only_attribute =
     @dataclass
     class A:
       x: int = field(kw_only=True)
-      y: int = field(kw_only=True, default = ...)
-      z: int = field(kw_only=True, default = ...)
+      y: int = dataclasses.field(kw_only=True, default = ...)
+      z: int = dataclasses.field(kw_only=True, default = ...)
   |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -7511,7 +7507,7 @@ let test_inline_keyword_only_attribute =
     @dataclass
     class A:
       x: int = 5
-      y: int = field(kw_only=True, default=5)
+      y: int = dataclasses.field(kw_only=True, default=5)
   |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -7528,7 +7524,7 @@ let test_inline_keyword_only_attribute =
 
     @dataclass
     class A:
-      x: List[int] = dataclasses.field(kw_only = True, default = [1], default_factory = list, init = False, repr = False, hash = True, compare = False, metadata = { "stuff":0 })
+      x: List[int] = field(kw_only = True, default = [1], default_factory = list, init = False, repr = False, hash = True, compare = False, metadata = { "stuff":0 })
   |};
     ]
 

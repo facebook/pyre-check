@@ -4092,47 +4092,42 @@ let expand_pytorch_register_buffer source =
 
 (* Inline the KW_ONLY pseudo-field into field(kw_only) for all subsequent attributes. *)
 let add_dataclass_keyword_only_specifiers source =
-  let is_dataclass_decorator expression =
-    match Decorator.from_expression expression with
-    | Some { Decorator.name = { Node.value = name; _ }; _ } ->
-        Reference.equal name (Reference.create_from_list ["dataclasses"; "dataclass"])
-    | None -> false
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_dataclass =
+    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.dataclass"]
+  in
+  let is_dataclass_keyword_only =
+    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.KW_ONLY"]
+  in
+  let is_dataclass_field =
+    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.field"]
+  in
+  let is_dataclass_decorator { Node.value; _ } =
+    match value with
+    | Expression.Name name
+    | Expression.Call { callee = { Node.value = Expression.Name name; _ }; _ } ->
+        is_dataclass name
+    | _ -> false
   in
   let is_keyword_only_pseudo_field statement =
     match statement with
     | {
      Node.value =
        Statement.Assign
-         {
-           target = _;
-           annotation =
-             Some
-               {
-                 Node.value =
-                   Expression.Name
-                     (Name.Attribute
-                       {
-                         base = { Node.location = _; value = Name (Name.Identifier "dataclasses") };
-                         attribute = "KW_ONLY";
-                         special = false;
-                       });
-                 _;
-               };
-           _;
-         };
+         { target = _; annotation = Some { Node.value = Expression.Name name; _ }; _ };
      _;
     } ->
-        true
+        is_dataclass_keyword_only name
     | _ -> false
   in
   let is_not_keyword_only_pseudo_field statement = not (is_keyword_only_pseudo_field statement) in
   let is_keyword_only_argument = function
-    | { Call.Argument.name = Some { value = "$parameter$kw_only"; _ }; _ } -> true
+    | { Call.Argument.name = Some { value = "kw_only"; _ }; _ } -> true
     | _ -> false
   in
   let keyword_only_argument =
     {
-      Call.Argument.name = Some ("$parameter$kw_only" |> Node.create_with_default_location);
+      Call.Argument.name = Some ("kw_only" |> Node.create_with_default_location);
       value = Expression.Constant Constant.True |> Node.create_with_default_location;
     }
   in
@@ -4150,23 +4145,10 @@ let add_dataclass_keyword_only_specifiers source =
           | {
            value =
              Expression.Call
-               {
-                 callee =
-                   {
-                     value =
-                       Expression.Name
-                         (Name.Attribute
-                           {
-                             base = { value = Expression.Name (Name.Identifier "dataclasses"); _ };
-                             attribute = "field";
-                             special = false;
-                           });
-                     _;
-                   } as callee;
-                 arguments;
-               };
+               { callee = { value = Expression.Name callee_name; _ } as callee; arguments };
            _;
-          } ->
+          }
+            when is_dataclass_field callee_name ->
               let arguments =
                 if List.exists arguments ~f:is_keyword_only_argument then
                   arguments
@@ -4180,8 +4162,7 @@ let add_dataclass_keyword_only_specifiers source =
                 [
                   keyword_only_argument;
                   {
-                    Call.Argument.name =
-                      Some ("$parameter$default" |> Node.create_with_default_location);
+                    Call.Argument.name = Some (Node.create_with_default_location "default");
                     value = value |> Node.create_with_default_location;
                   };
                 ]
@@ -4722,8 +4703,8 @@ let preprocess_after_wildcards source =
   |> expand_named_tuples
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
-  |> qualify
   |> add_dataclass_keyword_only_specifiers
+  |> qualify
   |> SelfType.expand_self_type
   |> expand_enum_functional_syntax
   |> populate_captures
