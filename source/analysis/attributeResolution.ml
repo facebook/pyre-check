@@ -2967,34 +2967,31 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           | NotFound { reason; _ } ->
                               make_error (ApplicationFailed { reason; callable })))))
       in
-      (* merge the parameters on top of the existing scope (ex. classes) *)
-      let scoped_type_variables =
-        (* collect our local type variables from our function defintion *)
-        let local_type_parameters =
-          match implementation with
-          | Some implementation ->
-              let type_param_names =
-                List.map
-                  ~f:(fun tp ->
-                    match tp.Node.value with
-                    | Expression.TypeParam.TypeVar { name; _ } ->
-                        Type.Variable.TypeVarVariable
-                          (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-                    | Expression.TypeParam.TypeVarTuple name ->
-                        Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-                    | Expression.TypeParam.ParamSpec name ->
-                        Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
-                  implementation.type_params
-              in
-              type_param_names
-          | None -> []
+      let parse (signature : Define.Signature.t) =
+        (* merge the parameters on top of the existing scope (ex. classes) *)
+        let scoped_type_variables =
+          (* collect our local type variables from our function defintion *)
+          let local_type_parameters =
+            let type_param_names =
+              List.map
+                ~f:(fun tp ->
+                  match tp.Node.value with
+                  | Expression.TypeParam.TypeVar { name; _ } ->
+                      Type.Variable.TypeVarVariable
+                        (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
+                  | Expression.TypeParam.TypeVarTuple name ->
+                      Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+                  | Expression.TypeParam.ParamSpec name ->
+                      Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+                signature.type_params
+            in
+            type_param_names
+          in
+          let local_scoped_type_variables = scoped_type_variables_as_map local_type_parameters in
+          merge_scoped_type_variables
+            ~inner_scope_type_variables:local_scoped_type_variables
+            ~outer_scope_type_variables
         in
-        let local_scoped_type_variables = scoped_type_variables_as_map local_type_parameters in
-        merge_scoped_type_variables
-          ~inner_scope_type_variables:local_scoped_type_variables
-          ~outer_scope_type_variables
-      in
-      let parse =
         let parser =
           {
             AnnotatedCallable.parse_annotation =
@@ -3005,6 +3002,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         AnnotatedCallable.create_overload_without_applying_decorators
           ~parser
           ~generic_parameters_as_variables
+          signature
       in
       let kind =
         match callable_name with

@@ -135,12 +135,7 @@ let test_type_variable_scoping =
              x1: int = foo.f([42])
              x2: str = foo.f("foo")
            |}
-           [
-             "Incompatible variable type [9]: x1 is declared to have type `int` but is used as \
-              type `unknown`.";
-             "Incompatible variable type [9]: x2 is declared to have type `str` but is used as \
-              type `unknown`.";
-           ];
+           [];
     ]
 
 
