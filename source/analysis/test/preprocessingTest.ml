@@ -7548,10 +7548,8 @@ let test_inline_keyword_only_attribute =
 
 let test_expand_enum_functional_syntax =
   let assert_expand ?(handle = "test.py") source expected _ =
-    let expected = parse ~handle expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source |> Preprocessing.qualify |> Preprocessing.expand_enum_functional_syntax
-    in
+    let expected = parse ~handle expected in
+    let actual = parse ~handle source |> Preprocessing.expand_enum_functional_syntax in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list

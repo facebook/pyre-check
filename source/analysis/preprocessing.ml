@@ -4560,11 +4560,15 @@ end
 let expand_enum_functional_syntax
     ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_enum =
+    create_callee_name_matcher_from_references ~qualifier ~scopes [Reference.create "enum.Enum"]
+  in
   let expand_enum_functional_declaration
       needs_enum_import_so_far
       ({ Node.location; value } as statement)
     =
-    let enum_class_declaration ~class_reference members =
+    let enum_class_declaration ~class_name members =
       let assignments =
         let field_for_member = function
           | {
@@ -4575,14 +4579,7 @@ let expand_enum_functional_syntax
               _;
             } ->
               let target =
-                Expression.Name
-                  (Name.Attribute
-                     {
-                       base = from_reference ~location class_reference;
-                       attribute = attribute_name;
-                       special = false;
-                     })
-                |> Node.create ~location
+                Expression.Name (Name.Identifier attribute_name) |> Node.create ~location
               in
               let value =
                 Expression.Call
@@ -4611,7 +4608,7 @@ let expand_enum_functional_syntax
       in
       Statement.Class
         {
-          name = class_reference;
+          name = class_name;
           base_arguments;
           decorators = [];
           parent = NestingContext.create_toplevel ();
@@ -4629,18 +4626,7 @@ let expand_enum_functional_syntax
                 Node.value =
                   Call
                     {
-                      callee =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base = { Node.value = Name (Name.Identifier "enum"); _ };
-                                  attribute = "Enum";
-                                  _;
-                                });
-                          _;
-                        };
+                      callee = { Node.value = Expression.Name callee_name; _ };
                       arguments =
                         [
                           {
@@ -4667,11 +4653,10 @@ let expand_enum_functional_syntax
                 _;
               };
           _;
-        } ->
+        }
+      when is_enum callee_name ->
         let expanded_declaration =
-          enum_class_declaration
-            ~class_reference:(Reference.create ~prefix:qualifier class_name)
-            members
+          enum_class_declaration ~class_name:(Reference.create class_name) members
         in
         true, { statement with Node.value = expanded_declaration }
     | _ -> needs_enum_import_so_far, statement
@@ -4722,8 +4707,8 @@ let preprocess_after_wildcards source =
   |> expand_pytorch_register_buffer
   |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
-  |> qualify
   |> expand_enum_functional_syntax
+  |> qualify
   |> populate_captures
 
 
