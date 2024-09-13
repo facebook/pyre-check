@@ -1648,7 +1648,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1695,7 +1695,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1742,7 +1742,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1766,7 +1766,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1780,7 +1780,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1842,7 +1842,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 35, "start": 23, "end": 27 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1871,7 +1874,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 30, "start": 23, "end": 27 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1900,7 +1906,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 27, "start": 23, "end": 27 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

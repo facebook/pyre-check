@@ -1721,7 +1721,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1748,7 +1748,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 17, "start": 19, "end": 21 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2403,7 +2406,7 @@
                 "kind": "NotSink[TestA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2430,7 +2433,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2457,7 +2460,7 @@
                 "kind": "NotSource[TestB]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2492,7 +2495,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformT@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

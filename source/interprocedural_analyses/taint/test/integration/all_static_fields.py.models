@@ -69,7 +69,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -96,7 +96,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -117,7 +117,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 107, "start": 25, "end": 26 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -144,7 +147,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -165,7 +168,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 115, "start": 25, "end": 26 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 7, "upper": 8 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -187,7 +193,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -201,7 +207,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -225,7 +231,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -242,7 +248,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

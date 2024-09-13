@@ -189,7 +189,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -209,7 +209,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -252,7 +252,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -282,7 +282,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 85, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -301,7 +301,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 85, "start": 21, "end": 24 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -576,7 +576,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 36, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -665,7 +665,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 44, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -754,7 +754,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 40, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -831,7 +831,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 48, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1022,7 +1022,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

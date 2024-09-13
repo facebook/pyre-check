@@ -629,7 +629,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -690,7 +690,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -719,7 +719,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 42, "start": 30, "end": 33 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

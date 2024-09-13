@@ -204,7 +204,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -213,7 +213,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -256,7 +256,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -621,7 +621,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 19, "start": 25, "end": 29 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -640,7 +640,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 19, "start": 14, "end": 18 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -673,7 +673,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -688,7 +688,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

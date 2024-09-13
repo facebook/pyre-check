@@ -482,7 +482,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -511,7 +511,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -520,7 +520,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -549,7 +549,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -558,7 +558,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -584,7 +584,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -593,7 +593,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -618,7 +618,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -644,7 +644,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -653,7 +653,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -381,7 +381,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -396,7 +396,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -411,7 +411,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

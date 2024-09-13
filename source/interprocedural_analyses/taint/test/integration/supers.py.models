@@ -584,7 +584,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -593,7 +593,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -636,7 +636,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -690,7 +690,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -705,7 +705,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -925,7 +925,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 37, "start": 26, "end": 27 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 6 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

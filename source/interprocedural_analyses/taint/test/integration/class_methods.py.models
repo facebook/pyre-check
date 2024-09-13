@@ -932,7 +932,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -956,7 +956,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -980,7 +980,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1032,7 +1032,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 14, "start": 26, "end": 27 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

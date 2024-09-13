@@ -746,7 +746,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -755,7 +755,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -798,7 +798,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -852,7 +852,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -867,7 +867,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1058,7 +1058,7 @@
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 59, "end": 71 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1079,7 +1079,7 @@
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 56, "end": 57 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1145,7 +1145,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 34, "start": 30, "end": 42 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1168,7 +1168,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 34, "start": 25, "end": 28 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1236,7 +1236,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1296,7 +1296,7 @@
               { "line": 79, "start": 11, "end": 20 },
               { "line": 79, "start": 16, "end": 19 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1513,7 +1513,7 @@
               { "line": 105, "start": 15, "end": 25 },
               { "line": 106, "start": 25, "end": 35 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -1536,7 +1536,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1547,7 +1547,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 129, "start": 24, "end": 32 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1558,7 +1558,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 129, "start": 17, "end": 22 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1577,7 +1577,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1597,7 +1597,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

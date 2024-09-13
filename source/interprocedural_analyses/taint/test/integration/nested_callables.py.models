@@ -596,7 +596,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -605,7 +605,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -648,7 +648,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -702,7 +702,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -717,7 +717,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -817,7 +817,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 110, "start": 11, "end": 18 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -837,7 +837,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -924,7 +924,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -983,7 +983,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 70, "start": 26, "end": 27 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1010,7 +1010,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 68, "start": 19, "end": 20 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1027,7 +1027,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 68, "start": 15, "end": 16 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1212,7 +1212,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 50, "start": 28, "end": 29 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1239,7 +1239,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 48, "start": 23, "end": 24 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1256,7 +1256,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 48, "start": 19, "end": 20 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

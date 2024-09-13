@@ -772,7 +772,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           },
           {
             "kinds": [
@@ -783,7 +783,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -825,7 +828,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           },
           {
             "kinds": [
@@ -836,7 +839,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -853,7 +859,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           },
           {
             "kinds": [
@@ -866,7 +872,10 @@
             "local_features": [
               { "via": "feature_c" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
           },
           {
             "kinds": [
@@ -879,7 +888,10 @@
             "local_features": [
               { "via": "feature_d" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
           },
           {
             "kinds": [
@@ -892,7 +904,10 @@
             "local_features": [
               { "via": "feature_e" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1149,7 +1164,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1198,7 +1216,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1545,7 +1566,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1562,7 +1583,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1588,7 +1609,10 @@
             "local_features": [
               { "via": "feature_c" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1802,7 +1826,10 @@
             "local_features": [
               { "via": "feature_d" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1892,7 +1919,10 @@
             "local_features": [
               { "via": "feature_e" }, { "always-via": "tito" }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2072,7 +2102,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2531,7 +2561,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 653, "start": 22, "end": 25 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 86, "upper": 91 } ],
+              "is_self_call": false
+            }
           },
           {
             "kinds": [
@@ -2543,7 +2576,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 653, "start": 22, "end": 25 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2593,7 +2629,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 679, "start": 23, "end": 26 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 92, "upper": 97 } ],
+              "is_self_call": false
+            }
           },
           {
             "kinds": [
@@ -2605,7 +2644,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 679, "start": 23, "end": 26 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2637,7 +2679,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 714, "start": 23, "end": 24 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 98, "upper": 107 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2656,7 +2701,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2714,7 +2759,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2881,7 +2926,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3010,7 +3055,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3235,7 +3280,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 663, "start": 26, "end": 29 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -3287,7 +3335,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 687, "start": 26, "end": 29 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -3801,7 +3852,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3820,7 +3871,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3849,7 +3900,10 @@
               { "via": "feature_c" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 726, "start": 29, "end": 30 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -4078,7 +4132,10 @@
               { "via": "feature_d" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 731, "start": 29, "end": 30 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -4175,7 +4232,10 @@
               { "via": "feature_e" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 736, "start": 29, "end": 30 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -4234,7 +4294,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4259,7 +4319,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4284,7 +4344,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4398,7 +4458,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -565,7 +565,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -580,7 +580,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -610,7 +610,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 10, "start": 11, "end": 17 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -639,7 +639,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 14, "start": 17, "end": 23 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -738,7 +738,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 59, "start": 25, "end": 26 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

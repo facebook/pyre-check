@@ -625,7 +625,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -634,7 +634,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -667,7 +667,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 231, "start": 47, "end": 48 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -686,7 +686,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 231, "start": 44, "end": 45 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

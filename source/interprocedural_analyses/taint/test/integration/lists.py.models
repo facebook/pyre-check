@@ -447,7 +447,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -583,7 +583,7 @@
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 104, "start": 13, "end": 14 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -608,7 +608,7 @@
                 "kind": "ParameterUpdate[formal(l, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

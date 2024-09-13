@@ -1140,7 +1140,7 @@
             "kinds": [
               { "return_paths": { "[foo]": 0 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1406,7 +1406,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1427,7 +1427,7 @@
             "kinds": [
               { "return_paths": { "[a]": 0 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1446,7 +1446,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1467,7 +1467,7 @@
             "kinds": [
               { "return_paths": { "[1]": 0 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1486,7 +1486,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

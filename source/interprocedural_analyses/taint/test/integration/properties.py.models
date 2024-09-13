@@ -711,7 +711,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -848,7 +848,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -989,7 +989,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1044,7 +1044,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 31, "start": 19, "end": 24 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 7 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1204,7 +1207,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 27, "start": 15, "end": 19 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 7 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1341,7 +1347,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 43, "start": 15, "end": 19 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1491,7 +1500,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1629,7 +1638,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1656,7 +1665,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 148, "start": 17, "end": 18 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 18, "upper": 19 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1675,7 +1687,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1699,7 +1711,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1718,7 +1730,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1742,7 +1754,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2050,7 +2062,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2069,7 +2081,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2093,7 +2105,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2184,7 +2196,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2519,7 +2531,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 142, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

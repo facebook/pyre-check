@@ -1855,7 +1855,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 154, "start": 34, "end": 37 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2000,7 +2000,7 @@
               { "line": 264, "start": 35, "end": 38 },
               { "line": 265, "start": 23, "end": 28 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2098,7 +2098,7 @@
               { "line": 271, "start": 34, "end": 39 },
               { "line": 272, "start": 24, "end": 28 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2156,7 +2156,7 @@
               { "line": 345, "start": 35, "end": 38 },
               { "line": 346, "start": 23, "end": 28 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2229,7 +2229,7 @@
               { "line": 441, "start": 33, "end": 36 },
               { "line": 442, "start": 23, "end": 28 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2253,7 +2253,7 @@
                 "kind": "NotSink[SinkB]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2280,7 +2280,7 @@
                 "kind": "NotSink[SinkD]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2307,7 +2307,7 @@
                 "kind": "NotSource[SourceA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2334,7 +2334,7 @@
                 "kind": "NotSource[SourceC]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3151,7 +3151,7 @@
               { "line": 552, "start": 40, "end": 43 },
               { "line": 553, "start": 32, "end": 37 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3211,7 +3211,7 @@
               { "line": 558, "start": 33, "end": 36 },
               { "line": 559, "start": 39, "end": 44 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3263,7 +3263,7 @@
               { "line": 564, "start": 40, "end": 43 },
               { "line": 565, "start": 32, "end": 37 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3317,7 +3317,7 @@
               { "line": 570, "start": 33, "end": 36 },
               { "line": 571, "start": 39, "end": 44 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3375,7 +3375,7 @@
               { "line": 528, "start": 40, "end": 43 },
               { "line": 529, "start": 34, "end": 39 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3435,7 +3435,7 @@
               { "line": 534, "start": 35, "end": 38 },
               { "line": 535, "start": 39, "end": 44 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3487,7 +3487,7 @@
               { "line": 540, "start": 40, "end": 43 },
               { "line": 541, "start": 34, "end": 39 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3541,7 +3541,7 @@
               { "line": 546, "start": 35, "end": 38 },
               { "line": 547, "start": 39, "end": 44 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3644,7 +3644,7 @@
               { "line": 584, "start": 33, "end": 37 },
               { "line": 585, "start": 40, "end": 45 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3697,7 +3697,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 143, "start": 24, "end": 27 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3785,7 +3785,7 @@
               { "line": 148, "start": 24, "end": 27 },
               { "line": 149, "start": 23, "end": 28 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3817,7 +3817,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3849,7 +3849,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3953,7 +3953,7 @@
               { "line": 296, "start": 24, "end": 27 },
               { "line": 297, "start": 34, "end": 39 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4009,7 +4009,7 @@
               { "line": 399, "start": 24, "end": 27 },
               { "line": 400, "start": 32, "end": 37 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4041,7 +4041,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4095,7 +4095,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 505, "start": 23, "end": 24 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4149,7 +4149,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 485, "start": 23, "end": 24 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4205,7 +4205,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 495, "start": 23, "end": 24 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4278,7 +4278,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformY@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4334,7 +4334,7 @@
               { "line": 576, "start": 24, "end": 27 },
               { "line": 577, "start": 32, "end": 37 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4366,7 +4366,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformZ@LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

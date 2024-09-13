@@ -509,7 +509,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 22, "start": 29, "end": 32 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -531,7 +534,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 22, "start": 15, "end": 24 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

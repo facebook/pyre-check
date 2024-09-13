@@ -922,7 +922,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1045,7 +1045,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1086,7 +1086,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1162,7 +1162,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1239,7 +1239,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 32, "start": 35, "end": 38 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 11, "upper": 12 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1332,7 +1335,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 42, "start": 35, "end": 38 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 13, "upper": 20 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1422,7 +1428,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1463,7 +1469,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 56, "start": 32, "end": 35 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 14, "upper": 19 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1490,7 +1499,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 68, "start": 32, "end": 35 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 15, "upper": 18 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -1621,7 +1633,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1640,7 +1652,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -1960,7 +1960,7 @@
               { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1972,7 +1972,7 @@
               { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -1984,7 +1984,7 @@
               { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2004,7 +2004,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2058,7 +2058,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2069,7 +2069,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 363, "start": 37, "end": 45 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2080,7 +2080,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 363, "start": 30, "end": 35 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2103,7 +2103,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2114,7 +2114,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 369, "start": 37, "end": 45 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2125,7 +2125,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 369, "start": 30, "end": 35 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3006,7 +3006,7 @@
               { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -3017,7 +3017,7 @@
             "kinds": [
               { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3037,7 +3037,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3551,7 +3551,7 @@
               { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -3563,7 +3563,7 @@
               { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -3575,7 +3575,7 @@
               { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3893,7 +3893,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3954,7 +3954,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -294,7 +294,7 @@
             "kinds": [
               { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -303,7 +303,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -374,7 +374,10 @@
               { "via": "split" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 58, "start": 28, "end": 32 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -671,7 +674,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -740,7 +743,7 @@
               { "via": "split" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 46, "start": 17, "end": 18 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -73,7 +73,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -290,7 +290,7 @@
               { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

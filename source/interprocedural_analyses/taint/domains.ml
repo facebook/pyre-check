@@ -292,7 +292,7 @@ module CallInfo = struct
     in
     match trace with
     | Declaration _ -> ["declaration", `Null]
-    | Tito _ -> ["tito", `Null]
+    | Tito { class_intervals } -> ["tito", `Assoc (class_intervals_to_json class_intervals)]
     | Origin { location; class_intervals; call_site = _ } ->
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in

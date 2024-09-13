@@ -137,7 +137,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -146,7 +146,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -189,7 +189,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -243,7 +243,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -258,7 +258,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -283,7 +283,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -297,7 +297,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -315,7 +315,7 @@
               { "has": "first-index" }, { "first-index": "app_id" }
             ],
             "tito_positions": [ { "line": 16, "start": 22, "end": 28 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -333,7 +333,7 @@
               { "has": "first-index" }, { "first-index": "timestamp" }
             ],
             "tito_positions": [ { "line": 15, "start": 25, "end": 31 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -350,7 +350,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -377,7 +377,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 31, "start": 37, "end": 44 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -411,7 +414,10 @@
               { "line": 31, "start": 31, "end": 35 },
               { "line": 31, "start": 37, "end": 44 }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -432,7 +438,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 31, "start": 19, "end": 21 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

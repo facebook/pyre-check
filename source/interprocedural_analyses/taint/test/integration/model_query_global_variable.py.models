@@ -362,7 +362,7 @@
               { "line": 49, "start": 15, "end": 21 },
               { "line": 49, "start": 19, "end": 20 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -384,7 +384,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 49, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

@@ -2397,7 +2397,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2423,7 +2423,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2434,7 +2434,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2465,7 +2465,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2500,7 +2500,10 @@
               { "line": 305, "start": 16, "end": 58 },
               { "line": 305, "start": 52, "end": 57 }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2521,7 +2524,7 @@
             "kinds": [
               { "return_paths": { ".**keys": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           },
           {
             "kinds": [
@@ -2535,7 +2538,10 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 302, "start": 30, "end": 33 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2571,7 +2577,10 @@
               { "line": 308, "start": 22, "end": 64 },
               { "line": 308, "start": 58, "end": 63 }
             ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -2684,7 +2693,7 @@
             "kinds": [
               { "return_paths": { "[index]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2773,7 +2782,7 @@
               { "has": "first-index" }, { "first-index": "foo" }
             ],
             "tito_positions": [ { "line": 516, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2793,7 +2802,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito_positions": [ { "line": 520, "start": 24, "end": 31 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2806,7 +2815,7 @@
               { "has": "first-index" }, { "first-index": "foo" }
             ],
             "tito_positions": [ { "line": 520, "start": 11, "end": 12 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2916,7 +2925,7 @@
             "kinds": [
               { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3208,7 +3217,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 510, "start": 25, "end": 28 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3331,7 +3340,7 @@
             "kinds": [
               { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3352,7 +3361,7 @@
             "kinds": [
               { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3529,7 +3538,7 @@
             "kinds": [
               { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3582,7 +3591,7 @@
             "kinds": [
               { "return_paths": { "[index]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3608,7 +3617,7 @@
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 415, "start": 14, "end": 15 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -3619,7 +3628,7 @@
             "kinds": [
               { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3668,7 +3677,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3994,7 +4003,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4013,7 +4022,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4196,7 +4205,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4217,7 +4226,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4243,7 +4252,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4254,7 +4263,7 @@
             "kinds": [
               { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4283,7 +4292,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4297,7 +4306,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4311,7 +4320,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

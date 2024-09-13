@@ -182,7 +182,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 61, "start": 15, "end": 16 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -204,7 +204,7 @@
               { "line": 57, "start": 15, "end": 23 },
               { "line": 59, "start": 15, "end": 23 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

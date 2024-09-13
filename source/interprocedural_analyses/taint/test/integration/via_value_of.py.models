@@ -589,7 +589,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 68, "start": 16, "end": 25 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1546,7 +1546,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

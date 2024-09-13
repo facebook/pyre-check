@@ -1789,7 +1789,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1813,7 +1813,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1837,7 +1837,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1861,7 +1861,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1934,7 +1934,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1958,7 +1958,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -1982,7 +1982,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2006,7 +2006,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2358,7 +2358,7 @@
               { "line": 246, "start": 31, "end": 32 },
               { "line": 247, "start": 29, "end": 30 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2899,7 +2899,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 199, "start": 34, "end": 35 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -2958,7 +2958,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 669, "start": 42, "end": 43 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -2975,7 +2975,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 669, "start": 45, "end": 46 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3087,7 +3087,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 633, "start": 54, "end": 55 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -3104,7 +3104,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 633, "start": 57, "end": 58 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3195,7 +3195,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 710, "start": 34, "end": 35 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3505,7 +3505,7 @@
                 "kind": "NotSink[TestA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3530,7 +3530,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3576,7 +3576,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3769,7 +3769,7 @@
                 "kind": "NotSource[Cookies]:NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3817,7 +3817,7 @@
                 "kind": "NotSink[RemoteCodeExecution]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3863,7 +3863,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3888,7 +3888,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3934,7 +3934,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3959,7 +3959,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -3990,7 +3990,7 @@
                 "kind": "NotSink[Test]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4103,7 +4103,7 @@
                 "kind": "NotSink[TestB]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4128,7 +4128,7 @@
                 "kind": "NotSource[TestB]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4236,7 +4236,7 @@
               { "line": 561, "start": 33, "end": 52 },
               { "line": 561, "start": 50, "end": 51 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4370,7 +4370,7 @@
               { "line": 567, "start": 33, "end": 52 },
               { "line": 567, "start": 50, "end": 51 }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4421,7 +4421,7 @@
                 "kind": "NotSink[RemoteCodeExecution]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4469,7 +4469,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4489,7 +4489,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4503,7 +4503,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4565,7 +4565,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4579,7 +4579,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4601,7 +4601,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4615,7 +4615,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4765,7 +4765,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4811,7 +4811,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4857,7 +4857,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -4871,7 +4871,7 @@
                 "kind": "NotSink[Test]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4927,7 +4927,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 113, "start": 28, "end": 29 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -4976,7 +4976,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 108, "start": 28, "end": 29 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -5067,7 +5067,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 375, "start": 29, "end": 30 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -5123,7 +5123,7 @@
                 "kind": "NotSource[Test]@LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -5441,7 +5441,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }

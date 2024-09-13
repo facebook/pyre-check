@@ -353,7 +353,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -362,7 +362,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -405,7 +405,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -459,7 +459,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -474,7 +474,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -499,7 +499,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -513,7 +513,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -534,7 +534,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 82, "start": 43, "end": 51 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -545,7 +545,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 82, "start": 26, "end": 34 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -556,7 +556,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 82, "start": 36, "end": 41 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -566,7 +566,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -597,7 +597,10 @@
               { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 76, "start": 19, "end": 23 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -618,7 +621,10 @@
               { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -638,7 +644,10 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -658,7 +667,10 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 76, "start": 33, "end": 38 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -682,7 +694,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -706,7 +718,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -720,7 +732,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -741,7 +753,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 54, "start": 43, "end": 51 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -752,7 +764,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 54, "start": 26, "end": 34 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -763,7 +775,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 54, "start": 36, "end": 41 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -773,7 +785,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -803,7 +815,10 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 50, "start": 57, "end": 65 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       },
@@ -823,7 +838,10 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 50, "start": 33, "end": 37 } ],
-            "tito": null
+            "tito": {
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -847,7 +865,7 @@
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -898,7 +916,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 93, "start": 38, "end": 39 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -909,7 +927,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 93, "start": 35, "end": 36 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
@@ -938,7 +956,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 66, "start": 33, "end": 34 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       },
@@ -957,7 +975,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 66, "start": 30, "end": 31 } ],
-            "tito": null
+            "tito": {}
           }
         ]
       }
