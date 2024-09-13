@@ -4337,7 +4337,11 @@ module SelfType = struct
       create_callee_name_matcher_from_references
         ~qualifier
         ~scopes
-        [Reference.create "typing._PyreReadOnly_"; Reference.create "pyre_extensions.ReadOnly"]
+        [
+          Reference.create "typing._PyreReadOnly_";
+          Reference.create "pyre_extensions.ReadOnly";
+          Reference.create "pyre_extensions.PyreReadOnly";
+        ]
     in
     let is_type =
       create_callee_name_matcher_from_references

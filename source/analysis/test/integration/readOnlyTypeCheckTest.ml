@@ -2022,6 +2022,17 @@ let test_pyre_extensions_PyreReadOnly =
               `list.append` may modify its object. Cannot call it on readonly expression `x` of \
               type `pyre_extensions.ReadOnly[List[int]]`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from pyre_extensions import PyreReadOnly
+        from typing_extensions import Self
+
+        class C:
+          def f(self: PyreReadOnly[Self]) -> None:
+            pass
+      |}
+           [];
     ]
 
 
