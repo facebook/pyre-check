@@ -12,10 +12,6 @@
  * Unlike most other layers, attribute resolution combines business
  * logic and caching, and it actually internally has 4 different layers
  * with their own cache tables. In upstream -> downstream order they are
- * - ParseAnnotationCache
- *   - key: Combination of an Expression.t and a validation enum
- *   - value: Type.t, a type parsed from the Expression (which should be a valid
- *     annotation)
  * - MetaclassCache
  *   - key: type name as a string
  *   - value: Type.t option, the metaclass of a class (if any)
@@ -3544,98 +3540,9 @@ let create_queries ~class_metadata_environment ~dependency =
     }
 
 
-module ParseAnnotationCache = struct
-  module Cache = ManagedCache.Make (struct
-    module PreviousEnvironment = ClassSuccessorMetadataEnvironment
-    module Key = SharedMemoryKeys.ParseAnnotationKey
-
-    module Value = struct
-      type t = Type.t [@@deriving eq]
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = "parse annotation"
-    end
-
-    module KeySet = SharedMemoryKeys.ParseAnnotationKey.Set
-    module HashableKey = SharedMemoryKeys.ParseAnnotationKey
-
-    let lazy_incremental = false
-
-    let produce_value
-        class_metadata_environment
-        { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
-        ~dependency
-      =
-      let implementation =
-        new base ~queries:(create_queries ~class_metadata_environment ~dependency)
-      in
-      implementation#parse_annotation
-        ~cycle_detections:empty_cycle_detections
-        ~validation
-        ~scoped_type_variables:None
-        expression
-
-
-    let filter_upstream_dependency = function
-      | SharedMemoryKeys.ParseAnnotation key -> Some key
-      | _ -> None
-
-
-    let trigger_to_dependency key = SharedMemoryKeys.ParseAnnotation key
-
-    (* It is difficult to set fine-grained ownership for fine-grained annotations, so for now the
-       overlay will own all annotations. Our hope is that lazy evaluation plus the limited fanout on
-       other environments will prevent this from becoming too big a problem *)
-    let overlay_owns_key _ _ = true
-  end)
-
-  include Cache
-
-  module ReadOnly = struct
-    include Cache.ReadOnly
-
-    (* The cache here is only sometimes used: PEP 695 scoped type variables aren't really very
-       friendly to caching the `Expression.t -> Type.t` conversion at this granularity, because the
-       scoped type variables are passed down. In principle we could add them to the cache key, but
-       that would make the hash lookups expensive and largely defeat the point of caching.
-
-       The solution we settled on to keep working on PEP 695 syntax is to turn off the caching when
-       scoped type variables are present, but keep it of only legacy-style type variables are
-       present. This allows us to keep working on support for scoped type variables while we
-       determine how to remove this cache without major perf issues. *)
-    class with_cached_parse_annotation dependency read_only =
-      let queries =
-        create_queries ~class_metadata_environment:(upstream_environment read_only) ~dependency
-      in
-      let without_cache = new base ~queries in
-      object
-        inherit base ~queries
-
-        method! parse_annotation
-            ~cycle_detections
-            ?(validation = controls read_only |> ParsingValidation.parse_annotation_validation_kind)
-            ~scoped_type_variables
-            expression =
-          match scoped_type_variables with
-          | Some _ ->
-              without_cache#parse_annotation
-                ~cycle_detections
-                ~validation
-                ~scoped_type_variables
-                expression
-          | None ->
-              get
-                read_only
-                ?dependency
-                { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
-      end
-  end
-end
-
 module MetaclassCache = struct
   module Cache = ManagedCache.Make (struct
-    module PreviousEnvironment = ParseAnnotationCache
+    module PreviousEnvironment = ClassSuccessorMetadataEnvironment
 
     module Key = struct
       type t = string [@@deriving compare, show, sexp, hash]
@@ -3658,15 +3565,10 @@ module MetaclassCache = struct
 
     let lazy_incremental = false
 
-    let produce_value parse_annotation_cache key ~dependency =
-      let implementation_with_cached_parse_annotation =
-        new ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
-          dependency
-          parse_annotation_cache
-      in
-      implementation_with_cached_parse_annotation#metaclass
-        key
-        ~cycle_detections:empty_cycle_detections
+    let produce_value class_metadata_environment key ~dependency =
+      let queries = create_queries ~class_metadata_environment ~dependency in
+      let implementation = new base ~queries in
+      implementation#metaclass key ~cycle_detections:empty_cycle_detections
 
 
     let filter_upstream_dependency = function
@@ -3688,9 +3590,11 @@ module MetaclassCache = struct
     class with_parse_annotation_and_metaclass_caches dependency read_only =
       object
         inherit
-          ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
-            dependency
-            (upstream_environment read_only)
+          base
+            ~queries:
+              (create_queries
+                 ~class_metadata_environment:(upstream_environment read_only)
+                 ~dependency)
 
         method! metaclass ~cycle_detections:_ key = get read_only ?dependency key
       end
@@ -3869,12 +3773,8 @@ module ReadOnly = struct
     attribute_cache read_only |> AttributeCache.ReadOnly.upstream_environment
 
 
-  let parse_annotation_cache read_only =
-    metaclass_cache read_only |> MetaclassCache.ReadOnly.upstream_environment
-
-
   let class_metadata_environment read_only =
-    ParseAnnotationCache.ReadOnly.upstream_environment (parse_annotation_cache read_only)
+    metaclass_cache read_only |> MetaclassCache.ReadOnly.upstream_environment
 
 
   class with_uninstantiated_attributes_cache dependency read_only =
@@ -3974,7 +3874,6 @@ module AssumeDownstreamNeverNeedsUpdates = struct
     GlobalAnnotationCache.AssumeDownstreamNeverNeedsUpdates.upstream environment
     |> AttributeCache.AssumeDownstreamNeverNeedsUpdates.upstream
     |> MetaclassCache.AssumeDownstreamNeverNeedsUpdates.upstream
-    |> ParseAnnotationCache.AssumeDownstreamNeverNeedsUpdates.upstream
 end
 
 module Testing = struct
@@ -3983,7 +3882,6 @@ module Testing = struct
       GlobalAnnotationCache.Testing.ReadOnly.upstream environment
       |> AttributeCache.Testing.ReadOnly.upstream
       |> MetaclassCache.Testing.ReadOnly.upstream
-      |> ParseAnnotationCache.Testing.ReadOnly.upstream
   end
 
   module UpdateResult = struct
@@ -3991,6 +3889,5 @@ module Testing = struct
       GlobalAnnotationCache.Testing.UpdateResult.upstream update_result
       |> AttributeCache.Testing.UpdateResult.upstream
       |> MetaclassCache.Testing.UpdateResult.upstream
-      |> ParseAnnotationCache.Testing.UpdateResult.upstream
   end
 end
