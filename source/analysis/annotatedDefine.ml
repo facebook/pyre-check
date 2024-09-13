@@ -64,11 +64,7 @@ let decorate
           ~overloads:[]
           ~scoped_type_variables:None
       with
-      | {
-       decorated =
-         Ok (Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ });
-       _;
-      } ->
+      | Ok (Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ }) ->
           let parameters =
             match parameters with
             | Defined parameters ->

@@ -92,6 +92,14 @@ module ReadOnly : sig
     scoped_type_variables:Type.Variable.t Ast.Identifier.Map.t option ->
     AttributeResolution.resolved_define
 
+  val resolve_define_undecorated
+    :  t ->
+    callable_name:Ast.Reference.t option ->
+    implementation:Ast.Statement.Define.Signature.t option ->
+    overloads:Ast.Statement.Define.Signature.t list ->
+    scoped_type_variables:Type.Variable.t Ast.Identifier.Map.t option ->
+    AnnotatedAttribute.decorated_method
+
   val global : t -> Ast.Reference.t -> AttributeResolution.Global.t option
 
   val overrides : t -> string -> name:string -> AnnotatedAttribute.instantiated option

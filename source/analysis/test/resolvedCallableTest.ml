@@ -22,7 +22,7 @@ let resolve_define resolution define =
       ~overloads:[]
       ~scoped_type_variables:None
   with
-  | { decorated = Ok (Callable { implementation; _ }); _ } -> implementation
+  | Ok (Callable { implementation; _ }) -> implementation
   | _ -> failwith "impossible"
 
 

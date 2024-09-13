@@ -19,55 +19,6 @@
 open Core
 open Ast
 
-module UninstantiatedAnnotation = struct
-  type property_annotation = {
-    self: Type.t option;
-    value: Type.t option;
-  }
-  [@@deriving compare, sexp]
-
-  type kind =
-    | Attribute of Type.t
-    | Property of {
-        getter: property_annotation;
-        setter: property_annotation option;
-      }
-  [@@deriving compare, sexp]
-
-  type t = {
-    accessed_via_metaclass: bool;
-    kind: kind;
-  }
-  [@@deriving compare, sexp]
-end
-
-module InstantiatedAnnotation = struct
-  type t = {
-    annotation: Type.t;
-    original_annotation: Type.t;
-    uninstantiated_annotation: Type.t option;
-  }
-  [@@deriving eq, show, compare, sexp]
-end
-
-(* Note: the read_only and visibility flags here are related to `Final` attributes, they are not
-   directly related to `ReadOnly` types (although the two do interact) *)
-type read_only =
-  | Refinable of { overridable: bool }
-  | Unrefinable
-[@@deriving eq, show, compare, sexp]
-
-type visibility =
-  | ReadOnly of read_only
-  | ReadWrite
-[@@deriving eq, show, compare, sexp]
-
-type initialized =
-  | OnClass
-  | OnlyOnInstance
-  | NotInitialized
-[@@deriving eq, show, compare, sexp]
-
 type invalid_decorator_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of { argument_index: int }
@@ -91,6 +42,63 @@ type problem =
     }
 [@@deriving eq, show, compare, sexp]
 
+type decorated_method = {
+  undecorated_signature: Type.Callable.t;
+  decorators: (Expression.t list, problem) Result.t;
+}
+[@@deriving compare, sexp]
+
+module UninstantiatedAnnotation = struct
+  type property_annotation = {
+    self: Type.t option;
+    value: Type.t option;
+  }
+  [@@deriving compare, sexp]
+
+  type kind =
+    | Attribute of Type.t
+    | DecoratedMethod of decorated_method
+    | Property of {
+        getter: property_annotation;
+        setter: property_annotation option;
+      }
+  [@@deriving compare, sexp]
+
+  type t = {
+    accessed_via_metaclass: bool;
+    kind: kind;
+  }
+  [@@deriving compare, sexp]
+end
+
+module InstantiatedAnnotation = struct
+  type t = {
+    annotation: Type.t;
+    original_annotation: Type.t;
+    uninstantiated_annotation: Type.t option;
+    problem: problem option;
+  }
+  [@@deriving eq, show, compare, sexp]
+end
+
+(* Note: the read_only and visibility flags here are related to `Final` attributes, they are not
+   directly related to `ReadOnly` types (although the two do interact) *)
+type read_only =
+  | Refinable of { overridable: bool }
+  | Unrefinable
+[@@deriving eq, show, compare, sexp]
+
+type visibility =
+  | ReadOnly of read_only
+  | ReadWrite
+[@@deriving eq, show, compare, sexp]
+
+type initialized =
+  | OnClass
+  | OnlyOnInstance
+  | NotInitialized
+[@@deriving eq, show, compare, sexp]
+
 type 'a t = {
   payload: 'a;
   abstract: bool;
@@ -103,7 +111,6 @@ type 'a t = {
   visibility: visibility;
   property: bool;
   undecorated_signature: Type.Callable.t option;
-  problem: problem option;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -125,10 +132,11 @@ let create
     ~property
     ~uninstantiated_annotation
     ~undecorated_signature
-    ~problem
   =
   {
-    payload = InstantiatedAnnotation.{ annotation; original_annotation; uninstantiated_annotation };
+    payload =
+      InstantiatedAnnotation.
+        { annotation; original_annotation; uninstantiated_annotation; problem = None };
     abstract;
     async_property;
     class_variable;
@@ -139,7 +147,6 @@ let create
     visibility;
     property;
     undecorated_signature;
-    problem;
   }
 
 
@@ -155,7 +162,6 @@ let create_uninstantiated
     ~visibility
     ~property
     ~undecorated_signature
-    ~problem
   =
   {
     payload = uninstantiated_annotation;
@@ -169,7 +175,6 @@ let create_uninstantiated
     visibility;
     property;
     undecorated_signature;
-    problem;
   }
 
 
@@ -249,7 +254,7 @@ let property { property; _ } = property
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
-let problem { problem; _ } = problem
+let problem { payload = InstantiatedAnnotation.{ problem; _ }; _ } = problem
 
 let is_private ({ name; _ } as attribute) =
   let parent_prefix = parent_prefix attribute in
@@ -270,10 +275,11 @@ let is_final { visibility; _ } =
   | _ -> false
 
 
-let instantiate attribute ~annotation ~original_annotation ~uninstantiated_annotation =
+let instantiate attribute ~annotation ~original_annotation ~uninstantiated_annotation ~problem =
   {
     attribute with
-    payload = InstantiatedAnnotation.{ annotation; original_annotation; uninstantiated_annotation };
+    payload =
+      InstantiatedAnnotation.{ annotation; original_annotation; uninstantiated_annotation; problem };
   }
 
 

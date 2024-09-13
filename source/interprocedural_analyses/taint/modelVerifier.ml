@@ -147,7 +147,7 @@ let resolve_global ~pyre_api name =
         |> function
         | Some ({ signature = { parent = NestingContext.Function _; _ }; _ } as define) ->
             Some
-              (PyrePysaApi.ReadOnly.resolve_define
+              (PyrePysaApi.ReadOnly.resolve_define_undecorated
                  ~callable_name:(Some name)
                  ~implementation:(Some define.signature)
                  ~overloads:[]
@@ -159,7 +159,7 @@ let resolve_global ~pyre_api name =
     in
     match resolved_global, resolved_local with
     | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
-    | _, Some { Analysis.AttributeResolution.undecorated_signature = signature; _ } ->
+    | _, Some { Analysis.AnnotatedAttribute.undecorated_signature = signature; _ } ->
         Some (Global.Attribute (Type.Callable signature))
     | _ -> (
         (* Resolve undecorated methods. *)

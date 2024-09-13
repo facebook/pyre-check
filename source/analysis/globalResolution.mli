@@ -147,6 +147,14 @@ val resolve_define
   scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
   AttributeResolution.resolved_define
 
+val resolve_define_undecorated
+  :  t ->
+  callable_name:Reference.t option ->
+  implementation:Define.Signature.t option ->
+  overloads:Define.Signature.t list ->
+  scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
+  AnnotatedAttribute.decorated_method
+
 val signature_select
   :  t ->
   resolve_with_locals:

@@ -131,10 +131,7 @@ module Global = struct
   [@@deriving show, compare, sexp]
 end
 
-type resolved_define = {
-  undecorated_signature: Type.Callable.t;
-  decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
-}
+type resolved_define = (Type.t, AnnotatedAttribute.problem) Result.t
 
 (* Given a publically-visible define (one not nested in another define - this includes module-level
    functions, methods, and methods of nested classes), get its qualified name.
@@ -297,7 +294,6 @@ let apply_dataclass_transforms_to_table
         ~visibility:ReadWrite
         ~property:false
         ~undecorated_signature:None
-        ~problem:None
     in
     let make_method ~parameters ~annotation ~attribute_name =
       let parameters =
@@ -332,7 +328,6 @@ let apply_dataclass_transforms_to_table
         ~visibility:ReadWrite
         ~property:false
         ~undecorated_signature:(Some callable)
-        ~problem:None
     in
     match options definition with
     | None -> []
@@ -1254,7 +1249,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ~visibility:ReadWrite
           ~property:false
           ~undecorated_signature:(Some constructor)
-          ~problem:None
         |> UninstantiatedAttributeTable.add table
       in
       let add_special_attribute ~name ~annotation table =
@@ -1274,7 +1268,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ~visibility:ReadWrite
           ~property:false
           ~undecorated_signature:None
-          ~problem:None
         |> UninstantiatedAttributeTable.add table
       in
       let table = UninstantiatedAttributeTable.create () in
@@ -1366,8 +1359,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         let overload_method (attribute, _) =
           match AnnotatedAttribute.uninstantiated_annotation attribute with
-          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute (Callable callable); _ }
-            as uninstantiated_annotation ->
+          | {
+              AnnotatedAttribute.UninstantiatedAnnotation.kind =
+                ( Attribute (Callable callable)
+                | DecoratedMethod { undecorated_signature = callable; decorators = _ } );
+              _;
+            } as uninstantiated_annotation ->
               let overloaded_callable overloads =
                 {
                   callable with
@@ -1409,7 +1406,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             ~visibility:ReadWrite
             ~property:false
             ~undecorated_signature:(Some constructor)
-            ~problem:None
         in
         let all_special_methods =
           constructor
@@ -1610,7 +1606,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             ~parent:"typing.Callable"
             ~property:false
             ~undecorated_signature:None
-            ~problem:None
           |> Option.some
       | None ->
           self#uninstantiated_attribute_tables
@@ -1675,10 +1670,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         queries
       in
       let make_annotation_readonly = function
-        | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
-            AnnotatedAttribute.UninstantiatedAnnotation.Attribute
-              (Type.PyreReadOnly.create annotation)
-        | Property { getter; setter } ->
+        | `Attribute annotation -> `Attribute (Type.PyreReadOnly.create annotation)
+        | `Property (getter, setter) ->
             let make_property_annotation_readonly
                 { AnnotatedAttribute.UninstantiatedAnnotation.self; value }
               =
@@ -1687,11 +1680,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 value = value >>| Type.PyreReadOnly.create;
               }
             in
-            Property
-              {
-                getter = make_property_annotation_readonly getter;
-                setter = setter >>| make_property_annotation_readonly;
-              }
+            `Property
+              ( make_property_annotation_readonly getter,
+                setter >>| make_property_annotation_readonly )
       in
       let get_attribute = self#attribute in
       let class_name = AnnotatedAttribute.parent attribute in
@@ -1700,10 +1691,39 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         AnnotatedAttribute.uninstantiated_annotation attribute
       in
       let accessed_through_class = accessed_through_class && not accessed_via_metaclass in
-      let uninstantiated_annotation =
+      let annotation, uninstantiated_annotation, problem =
         match annotation with
-        | Attribute annotation -> Some annotation
-        | Property _ -> None
+        | DecoratedMethod { undecorated_signature; decorators } ->
+            let annotation, problem =
+              match decorators with
+              | Error problem -> Type.Any, Some problem
+              | Ok decorators -> (
+                  match
+                    self#apply_decorators
+                      ~cycle_detections
+                      ~scoped_type_variables:None
+                      undecorated_signature
+                      decorators
+                  with
+                  | Error problem -> Type.Any, Some problem
+                  | Ok resolved ->
+                      let annotation =
+                        match attribute_name, resolved with
+                        (* these names are only magic-ed into being ClassMethods/StaticMethods if
+                           they're "plain functions". We can't capture that in the type system, so
+                           we approximate with Callable *)
+                        | "__new__", Type.Callable _ ->
+                            Type.parametric "typing.StaticMethod" [Single resolved]
+                        | "__init_subclass__", Callable _
+                        | "__class_getitem__", Callable _ ->
+                            Type.parametric "typing.ClassMethod" [Single resolved]
+                        | _ -> resolved
+                      in
+                      annotation, None)
+            in
+            `Attribute annotation, Some annotation, problem
+        | Attribute annotation -> `Attribute annotation, Some annotation, None
+        | Property { getter; setter } -> `Property (getter, setter), None, None
       in
       let annotation =
         if accessed_through_readonly then make_annotation_readonly annotation else annotation
@@ -1715,9 +1735,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             let solution = self#constraints ~target:class_name ~instantiated ~cycle_detections () in
             let instantiate annotation = TypeConstraints.Solution.instantiate solution annotation in
             match annotation with
-            | Attribute annotation ->
-                AnnotatedAttribute.UninstantiatedAnnotation.Attribute (instantiate annotation)
-            | Property { getter; setter } ->
+            | `Attribute annotation -> `Attribute (instantiate annotation)
+            | `Property (getter, setter) ->
                 let instantiate_property_annotation
                     { AnnotatedAttribute.UninstantiatedAnnotation.self; value }
                   =
@@ -1726,11 +1745,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     value = value >>| instantiate;
                   }
                 in
-                Property
-                  {
-                    getter = instantiate_property_annotation getter;
-                    setter = setter >>| instantiate_property_annotation;
-                  })
+                `Property
+                  ( instantiate_property_annotation getter,
+                    setter >>| instantiate_property_annotation ))
       in
       let annotation, original =
         let instantiated =
@@ -1869,7 +1886,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | _ -> Type.Callable callable
         in
         match annotation with
-        | Property { getter = getter_annotation; setter = setter_annotation } -> (
+        | `Property (getter_annotation, setter_annotation) -> (
             (* Special case properties with type variables. *)
             let solve_property
                 {
@@ -1900,7 +1917,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             | None ->
                 let annotation = solve_property getter_annotation in
                 annotation, annotation)
-        | Attribute annotation -> (
+        | `Attribute annotation -> (
             let annotation =
               match annotation with
               | Type.Callable callable -> special_case_methods callable
@@ -2126,6 +2143,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~annotation
         ~original_annotation:original
         ~uninstantiated_annotation
+        ~problem
 
     method create_attribute
         ~scoped_type_variables
@@ -2154,7 +2172,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
         && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
       in
-      let annotation, class_variable, visibility, undecorated_signature, problem =
+      let annotation, class_variable, visibility, undecorated_signature =
         match kind with
         | Simple { annotation; values; toplevel; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
@@ -2247,7 +2265,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
               class_variable,
               visibility,
-              None,
               None )
         | Method { signatures; final; _ } ->
             (* Handle Callables *)
@@ -2257,7 +2274,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               else
                 ReadWrite
             in
-            let callable, undecorated_signature, problem =
+            let callable, undecorated_signature =
               let overloads =
                 let create_overload define =
                   Define.Signature.is_overloaded_function define, define
@@ -2274,32 +2291,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 List.fold ~init:(None, []) ~f:to_signature overloads
               in
               let callable_name = callable_name_of_public ~implementation ~overloads in
-              let { decorated; undecorated_signature } =
-                self#resolve_define
+              let { AnnotatedAttribute.undecorated_signature; decorators } =
+                self#resolve_define_undecorated
                   ~callable_name
                   ~implementation
                   ~overloads
                   ~cycle_detections
                   ~scoped_type_variables
               in
-              let annotation =
-                match decorated with
-                | Ok resolved -> (
-                    match attribute_name, resolved with
-                    (* these names are only magic-ed into being ClassMethods/StaticMethods if
-                       they're "plain functions". We can't capture that in the type system, so we
-                       approximate with Callable *)
-                    | "__new__", Callable _ ->
-                        Type.parametric "typing.StaticMethod" [Single resolved]
-                    | "__init_subclass__", Callable _
-                    | "__class_getitem__", Callable _ ->
-                        Type.parametric "typing.ClassMethod" [Single resolved]
-                    | _ -> resolved)
-                | Error _ -> Any
-              in
-              ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
-                undecorated_signature,
-                Result.error decorated )
+              ( AnnotatedAttribute.UninstantiatedAnnotation.DecoratedMethod
+                  { undecorated_signature; decorators },
+                undecorated_signature )
             in
             (* If the method is decorated with @enum.member, it's an enum member so we should infer
                a literal type *)
@@ -2313,7 +2315,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               else
                 callable, visibility
             in
-            callable, false, visibility, Some undecorated_signature, problem
+            callable, false, visibility, Some undecorated_signature
         | Property { kind; _ } -> (
             let parse_annotation_option annotation =
               annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
@@ -2342,7 +2344,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     },
                   false,
                   ReadWrite,
-                  None,
                   None )
             | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
                 let annotation = parse_annotation_option getter_annotation in
@@ -2354,7 +2355,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     },
                   false,
                   ReadOnly Unrefinable,
-                  None,
                   None ))
       in
       let initialized =
@@ -2399,7 +2399,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | Property _ -> true
           | _ -> false)
         ~undecorated_signature
-        ~problem
 
     method metaclass ~cycle_detections target =
       let Queries.{ get_class_summary; _ } = queries in
@@ -2581,7 +2580,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let reference = name_to_reference_exn name in
           match get_unannotated_global reference with
           | Some (Module.UnannotatedGlobal.Define signatures) ->
-              let { decorated; _ } =
+              let decorated =
                 List.map signatures ~f:(fun { signature; _ } -> signature)
                 |> List.partition_tf ~f:Define.Signature.is_overloaded_function
                 |> fun (overloads, implementations) ->
@@ -2653,22 +2652,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
-    method resolve_define
+    method apply_decorators
         ~cycle_detections
-        ~callable_name
-        ~implementation
-        ~overloads
-        ~scoped_type_variables:outer_scope_type_variables =
-      let Queries.
-            {
-              resolve_exports;
-              param_spec_from_vararg_annotations;
-              generic_parameters_as_variables;
-              _;
-            }
-        =
-        queries
-      in
+        ~scoped_type_variables:outer_scope_type_variables
+        undecorated_signature
+        decorators =
+      let Queries.{ resolve_exports; _ } = queries in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -2967,6 +2956,73 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           | NotFound { reason; _ } ->
                               make_error (ApplicationFailed { reason; callable })))))
       in
+      let kind = undecorated_signature.Type.Callable.kind in
+      let applied =
+        List.mapi decorators ~f:(fun index decorator -> index, decorator)
+        |> List.rev
+        |> List.fold_result ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
+      in
+      (* If the decorator preserves the function's type signature, preserve the function name. This
+         leads to better error messages, since we can print the function's name instead of
+         considering it an "anonymous call". *)
+      let should_preserve_function_name ~undecorated_signature ~kind callable =
+        (* Some decorators expect and return `Callable[P, Awaitable[T]]`. But the return type for
+           `async def` is `Coroutine[_, _, X]`, which means that the signatures are slightly
+           different before and after decorating. Ignore the difference. *)
+        let replace_coroutine_with_awaitable return_type =
+          Type.coroutine_value return_type >>| Type.awaitable |> Option.value ~default:return_type
+        in
+        let signature_with_awaitable_return_type =
+          Type.Callable.map_annotation undecorated_signature ~f:replace_coroutine_with_awaitable
+        in
+        Type.Callable.equal { callable with kind } undecorated_signature
+        || Type.Callable.equal { callable with kind } signature_with_awaitable_return_type
+      in
+      match applied with
+      | Result.Ok (Type.Callable callable)
+        when should_preserve_function_name ~undecorated_signature ~kind callable ->
+          Ok (Type.Callable { callable with kind })
+      | Result.Ok
+          (Type.Parametric
+            {
+              name = ("typing.ClassMethod" | "typing.StaticMethod") as parametric_name;
+              arguments = [Single (Type.Callable callable)];
+            })
+        when should_preserve_function_name ~undecorated_signature ~kind callable ->
+          Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
+      | other -> other
+
+    method resolve_define
+        ~cycle_detections
+        ~callable_name
+        ~implementation
+        ~overloads
+        ~scoped_type_variables:outer_scope_type_variables =
+      let { AnnotatedAttribute.undecorated_signature; decorators } =
+        self#resolve_define_undecorated
+          ~cycle_detections
+          ~callable_name
+          ~implementation
+          ~overloads
+          ~scoped_type_variables:outer_scope_type_variables
+      in
+      let apply_decorators =
+        self#apply_decorators
+          ~cycle_detections
+          ~scoped_type_variables:outer_scope_type_variables
+          undecorated_signature
+      in
+      Result.bind decorators ~f:apply_decorators
+
+    method resolve_define_undecorated
+        ~cycle_detections
+        ~callable_name
+        ~implementation
+        ~overloads
+        ~scoped_type_variables:outer_scope_type_variables =
+      let Queries.{ param_spec_from_vararg_annotations; generic_parameters_as_variables; _ } =
+        queries
+      in
       let parse (signature : Define.Signature.t) =
         (* merge the parameters on top of the existing scope (ex. classes) *)
         let scoped_type_variables =
@@ -3062,43 +3118,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           kind;
         }
       in
-      let apply_decorators decorators =
-        let applied =
-          List.mapi decorators ~f:(fun index decorator -> index, decorator)
-          |> List.rev
-          |> List.fold_result ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
-        in
-        (* If the decorator preserves the function's type signature, preserve the function name.
-           This leads to better error messages, since we can print the function's name instead of
-           considering it an "anonymous call". *)
-        let should_preserve_function_name ~undecorated_signature ~kind callable =
-          (* Some decorators expect and return `Callable[P, Awaitable[T]]`. But the return type for
-             `async def` is `Coroutine[_, _, X]`, which means that the signatures are slightly
-             different before and after decorating. Ignore the difference. *)
-          let replace_coroutine_with_awaitable return_type =
-            Type.coroutine_value return_type >>| Type.awaitable |> Option.value ~default:return_type
-          in
-          let signature_with_awaitable_return_type =
-            Type.Callable.map_annotation undecorated_signature ~f:replace_coroutine_with_awaitable
-          in
-          Type.Callable.equal { callable with kind } undecorated_signature
-          || Type.Callable.equal { callable with kind } signature_with_awaitable_return_type
-        in
-        match applied with
-        | Result.Ok (Type.Callable callable)
-          when should_preserve_function_name ~undecorated_signature ~kind callable ->
-            Ok (Type.Callable { callable with kind })
-        | Result.Ok
-            (Type.Parametric
-              {
-                name = ("typing.ClassMethod" | "typing.StaticMethod") as parametric_name;
-                arguments = [Single (Type.Callable callable)];
-              })
-          when should_preserve_function_name ~undecorated_signature ~kind callable ->
-            Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
-        | other -> other
-      in
-      { undecorated_signature; decorated = Result.bind decorators ~f:apply_decorators }
+      { undecorated_signature; decorators }
 
     method signature_select
         ~cycle_detections
@@ -3272,18 +3292,28 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         match global with
         | Module.UnannotatedGlobal.Define signatures ->
-            let { undecorated_signature; decorated } =
+            let overloads, implementation =
               List.map signatures ~f:(fun { signature; _ } -> signature)
               |> List.partition_tf ~f:Define.Signature.is_overloaded_function
-              |> fun (overloads, implementations) ->
-              let implementation = List.last implementations in
-              let callable_name = callable_name_of_public ~implementation ~overloads in
-              self#resolve_define
+              |> fun (overloads, implementations) -> overloads, List.last implementations
+            in
+            let callable_name = callable_name_of_public ~implementation ~overloads in
+            let { AnnotatedAttribute.undecorated_signature; decorators } =
+              self#resolve_define_undecorated
                 ~callable_name
                 ~implementation
                 ~scoped_type_variables:None
                 ~overloads
                 ~cycle_detections
+            in
+            let decorated =
+              Result.bind
+                decorators
+                ~f:
+                  (self#apply_decorators
+                     ~scoped_type_variables:None
+                     ~cycle_detections
+                     undecorated_signature)
             in
             let type_info =
               Result.ok decorated
@@ -3900,6 +3930,10 @@ module ReadOnly = struct
   let constraints = add_all_caches_and_empty_cycle_detections (fun o -> o#constraints)
 
   let resolve_define = add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_define)
+
+  let resolve_define_undecorated =
+    add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_define_undecorated)
+
 
   let resolve_mutable_literals =
     add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_mutable_literals)

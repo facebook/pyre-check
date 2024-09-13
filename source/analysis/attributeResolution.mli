@@ -20,10 +20,7 @@ module Global : sig
   [@@deriving show, compare, sexp]
 end
 
-type resolved_define = {
-  undecorated_signature: Type.Callable.t;
-  decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
-}
+type resolved_define = (Type.t, AnnotatedAttribute.problem) Result.t
 
 type generic_type_problems =
   | IncorrectNumberOfParameters of {
@@ -116,6 +113,15 @@ module AttributeReadOnly : sig
     overloads:Define.Signature.t list ->
     scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
     resolved_define
+
+  val resolve_define_undecorated
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    callable_name:Reference.t option ->
+    implementation:Define.Signature.t option ->
+    overloads:Define.Signature.t list ->
+    scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
+    AnnotatedAttribute.decorated_method
 
   val signature_select
     :  t ->

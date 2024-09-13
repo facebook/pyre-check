@@ -834,8 +834,8 @@ module State (Context : Context) = struct
         ~implementation:(Some signature)
         ~overloads:[]
     with
-    | { decorated = Ok other; _ } -> other
-    | { decorated = Error _; _ } -> Any
+    | Ok other -> other
+    | Error _ -> Any
 
 
   let type_of_parent ~global_resolution parent =

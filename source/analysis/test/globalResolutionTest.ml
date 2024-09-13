@@ -596,7 +596,6 @@ let test_all_attributes =
       ~visibility:ReadWrite
       ~property:false
       ~undecorated_signature
-      ~problem:None
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes context =
@@ -792,8 +791,7 @@ let test_attribute_from_class_name =
          ~parent
          ~property
          ~visibility
-         ~undecorated_signature
-         ~problem:None)
+         ~undecorated_signature)
   in
   test_list
     [
@@ -1916,7 +1914,6 @@ let test_overrides =
       ~visibility:ReadWrite
       ~property:false
       ~undecorated_signature:(Some signature)
-      ~problem:None
   in
   let create_callable ~name ~parameters ~annotation ~overloads =
     {

@@ -252,6 +252,10 @@ module ReadOnly = struct
 
   let resolve_define api = global_resolution api |> GlobalResolution.resolve_define
 
+  let resolve_define_undecorated api =
+    global_resolution api |> GlobalResolution.resolve_define_undecorated
+
+
   let global api = global_resolution api |> GlobalResolution.global
 
   let get_variable api = GlobalResolution.get_variable (global_resolution api)

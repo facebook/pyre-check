@@ -432,8 +432,7 @@ let fallback_attribute
                  ~parent:(Reference.show class_name_reference)
                  ~visibility:ReadWrite
                  ~property:false
-                 ~undecorated_signature:None
-                 ~problem:None)
+                 ~undecorated_signature:None)
         | _ -> None)
     | _ -> None
   in

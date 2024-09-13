@@ -296,6 +296,12 @@ let resolve_define ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
 
 
+let resolve_define_undecorated ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.resolve_define_undecorated
+    ?dependency
+    (attribute_resolution resolution)
+
+
 let signature_select ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
@@ -403,7 +409,6 @@ let attribute_from_class_name
               ~visibility:ReadWrite
               ~property:false
               ~undecorated_signature:None
-              ~problem:None
             |> Option.some
         | None -> None)
   in

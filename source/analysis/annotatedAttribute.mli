@@ -7,6 +7,35 @@
 
 open Ast
 
+type invalid_decorator_reason =
+  | CouldNotResolve
+  | CouldNotResolveArgument of { argument_index: int }
+  | NonCallableDecoratorFactory of Type.t
+  | NonCallableDecorator of Type.t
+  | FactorySignatureSelectionFailed of {
+      reason: SignatureSelectionTypes.reason option;
+      callable: Type.Callable.t;
+    }
+  | ApplicationFailed of {
+      callable: Type.Callable.t;
+      reason: SignatureSelectionTypes.reason option;
+    }
+[@@deriving eq, show, compare, sexp]
+
+type problem =
+  | DifferingDecorators of { offender: Type.t Type.Callable.overload }
+  | InvalidDecorator of {
+      index: int;
+      reason: invalid_decorator_reason;
+    }
+[@@deriving eq, show, compare, sexp]
+
+type decorated_method = {
+  undecorated_signature: Type.Callable.t;
+  decorators: (Expression.t list, problem) Result.t;
+}
+[@@deriving compare, sexp]
+
 module UninstantiatedAnnotation : sig
   type property_annotation = {
     self: Type.t option;
@@ -16,6 +45,7 @@ module UninstantiatedAnnotation : sig
 
   type kind =
     | Attribute of Type.t
+    | DecoratedMethod of decorated_method
     | Property of {
         getter: property_annotation;
         setter: property_annotation option;
@@ -49,29 +79,6 @@ type initialized =
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 
-type invalid_decorator_reason =
-  | CouldNotResolve
-  | CouldNotResolveArgument of { argument_index: int }
-  | NonCallableDecoratorFactory of Type.t
-  | NonCallableDecorator of Type.t
-  | FactorySignatureSelectionFailed of {
-      reason: SignatureSelectionTypes.reason option;
-      callable: Type.Callable.t;
-    }
-  | ApplicationFailed of {
-      callable: Type.Callable.t;
-      reason: SignatureSelectionTypes.reason option;
-    }
-[@@deriving eq, show, compare, sexp]
-
-type problem =
-  | DifferingDecorators of { offender: Type.t Type.Callable.overload }
-  | InvalidDecorator of {
-      index: int;
-      reason: invalid_decorator_reason;
-    }
-[@@deriving eq, show, compare, sexp]
-
 type 'a t [@@deriving eq, show, compare, sexp]
 
 type uninstantiated = UninstantiatedAnnotation.t t [@@deriving compare, sexp]
@@ -92,7 +99,6 @@ val create
   property:bool ->
   uninstantiated_annotation:Type.t option ->
   undecorated_signature:Type.Callable.t option ->
-  problem:problem option ->
   instantiated
 
 val create_uninstantiated
@@ -107,7 +113,6 @@ val create_uninstantiated
   visibility:visibility ->
   property:bool ->
   undecorated_signature:Type.Callable.t option ->
-  problem:problem option ->
   'a t
 
 val annotation : instantiated -> TypeInfo.Unit.t
@@ -152,11 +157,12 @@ val with_visibility : 'a t -> visibility:visibility -> 'a t
 
 val undecorated_signature : 'a t -> Type.Callable.t option
 
-val problem : 'a t -> problem option
+val problem : instantiated -> problem option
 
 val instantiate
   :  'a t ->
   annotation:Type.t ->
   original_annotation:Type.t ->
   uninstantiated_annotation:Type.t option ->
+  problem:problem option ->
   instantiated
