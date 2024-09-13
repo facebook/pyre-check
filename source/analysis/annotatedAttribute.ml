@@ -24,7 +24,7 @@ module UninstantiatedAnnotation = struct
     self: Type.t option;
     value: Type.t option;
   }
-  [@@deriving compare, show, sexp]
+  [@@deriving compare, sexp]
 
   type kind =
     | Attribute of Type.t
@@ -32,13 +32,13 @@ module UninstantiatedAnnotation = struct
         getter: property_annotation;
         setter: property_annotation option;
       }
-  [@@deriving compare, show, sexp]
+  [@@deriving compare, sexp]
 
   type t = {
     accessed_via_metaclass: bool;
     kind: kind;
   }
-  [@@deriving compare, show, sexp]
+  [@@deriving compare, sexp]
 end
 
 module InstantiatedAnnotation = struct
@@ -107,7 +107,7 @@ type 'a t = {
 }
 [@@deriving eq, show, compare, sexp]
 
-type uninstantiated = UninstantiatedAnnotation.t t [@@deriving show, compare, sexp]
+type uninstantiated = UninstantiatedAnnotation.t t [@@deriving compare, sexp]
 
 type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
 
