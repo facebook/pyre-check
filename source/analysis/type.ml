@@ -4710,12 +4710,24 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
         } ->
         let arguments =
           match Node.value subscript_index with
-          | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
-          | argument -> Some [argument]
+          | Expression.Tuple arguments -> List.map arguments ~f:Node.value
+          | argument -> [argument]
+        in
+        let argument_to_literals argument =
+          let rec flatten_literal_unions = function
+            | Literal _ as literal_type -> [Some literal_type]
+            | Union members -> List.map ~f:flatten_literal_unions members |> List.concat
+            | _ -> [None]
+          in
+          match create_literal argument with
+          | Some literal_type -> [Some literal_type]
+          | None ->
+              create_logic (Node.create_with_default_location argument) |> flatten_literal_unions
         in
         arguments
-        >>| List.map ~f:create_literal
-        >>= Option.all
+        |> List.map ~f:argument_to_literals
+        |> List.concat
+        |> Option.all
         >>| Constructors.union
         |> Option.value ~default:Top
     | Subscript

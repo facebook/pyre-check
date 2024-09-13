@@ -384,6 +384,17 @@ let test_string_literal =
            {|
           from typing import Literal
 
+          a: Literal["a", "b"]
+          b: Literal[Literal["a"], "b"]
+          c: Literal[Literal["a"]]
+          d: Literal[Literal["a", "b"], "c"]
+        |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+          from typing import Literal
+
           def expect_literal_string(s: Literal[str]) -> None: ...
 
           def bar() -> None:
