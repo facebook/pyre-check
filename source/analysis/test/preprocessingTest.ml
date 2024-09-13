@@ -7103,7 +7103,7 @@ let test_expand_self_type =
           return self
   |}
            {|
-      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound="Shape")
+      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound=Shape)
 
       from typing_extensions import Self
 
@@ -7147,7 +7147,7 @@ let test_expand_self_type =
           def set_scale(self, scale: float) -> Self: ...
   |}
            {|
-      _Self_test_Outer_Inner__ = typing.TypeVar("_Self_test_Outer_Inner__", bound="Outer.Inner")
+      _Self_test_Outer_Inner__ = typing.TypeVar("_Self_test_Outer_Inner__", bound=Outer.Inner)
 
       from typing_extensions import Self
 
@@ -7167,8 +7167,8 @@ let test_expand_self_type =
         def set_radius(self, scale: float) -> Self: ...
   |}
            {|
-      _Self_test_Base__ = typing.TypeVar("_Self_test_Base__", bound="Base")
-      _Self_test_Circle__ = typing.TypeVar("_Self_test_Circle__", bound="Circle")
+      _Self_test_Base__ = typing.TypeVar("_Self_test_Base__", bound=Base)
+      _Self_test_Circle__ = typing.TypeVar("_Self_test_Circle__", bound=Circle)
 
       from typing_extensions import Self
 
@@ -7191,7 +7191,7 @@ let test_expand_self_type =
           return cls(config["scale"])
   |}
            {|
-      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound="Shape")
+      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound=Shape)
 
       from typing_extensions import Self
 
@@ -7221,7 +7221,7 @@ let test_expand_self_type =
           return self
      |}
            {|
-      _Self_test_Merger__ = typing.TypeVar("_Self_test_Merger__", bound="Merger")
+      _Self_test_Merger__ = typing.TypeVar("_Self_test_Merger__", bound=Merger)
 
       from typing_extensions import Self
 
@@ -7246,7 +7246,7 @@ let test_expand_self_type =
         def readonly_method(self: ReadOnly[Self]) -> None: ...
       |}
            {|
-      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound=Foo)
 
       from typing_extensions import Self
       from pyre_extensions import ReadOnly
@@ -7265,7 +7265,7 @@ let test_expand_self_type =
         def readonly_method(self: ReadOnly[Self]) -> None: ...
       |}
            {|
-      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound=Foo)
 
       from typing import Self
       from pyre_extensions import ReadOnly
@@ -7284,7 +7284,7 @@ let test_expand_self_type =
         def readonly_method(self: _PyreReadOnly_[Self]) -> None: ...
       |}
            {|
-      _Self_typing_Foo__ = typing.TypeVar("_Self_typing_Foo__", bound="Foo")
+      _Self_typing_Foo__ = typing.TypeVar("_Self_typing_Foo__", bound=Foo)
 
       Self: _SpecialForm
       class _PyreReadOnly_: pass
@@ -7322,7 +7322,7 @@ let test_expand_self_type =
         def readonly_classmethod(cls: ReadOnly[Type[Self]]) -> None: ...
       |}
            {|
-      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound=Foo)
 
       from typing import Type
       from typing_extensions import Self

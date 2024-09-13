@@ -4511,17 +4511,11 @@ module SelfType = struct
                      {
                        Call.Argument.name = Some (Node.create_with_default_location "bound");
                        value =
-                         Expression.Constant
-                           (Constant.String
-                              {
-                                StringLiteral.kind = String;
-                                value =
-                                  Reference.show
-                                    (NestingContext.to_qualifier
-                                       ~module_name:Reference.empty
-                                       nesting_context);
-                              })
-                         |> Node.create_with_default_location;
+                         from_reference
+                           ~location:Location.any
+                           (NestingContext.to_qualifier
+                              ~module_name:Reference.empty
+                              nesting_context);
                      };
                    ];
                }
