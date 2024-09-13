@@ -4915,9 +4915,7 @@ let test_sqlalchemy_declarative_base =
 
 let test_transform_ast =
   let assert_expand ?(handle = "qualifier.py") source expected _ =
-    let parse source =
-      parse source ~handle |> Preprocessing.qualify |> Preprocessing.expand_implicit_returns
-    in
+    let parse source = parse source ~handle |> Preprocessing.expand_implicit_returns in
     assert_source_equal
       ~location_insensitive:true
       (parse expected)
@@ -5106,13 +5104,13 @@ let test_transform_ast =
       State = TypeVar("State")
 
       class LoopState(Generic[State], NamedTuple):
-        def __new__(cls, blah: int, state: State) -> NamedTuple: ...
+        def __new__(cls, blah: int, state: State) -> typing.NamedTuple: ...
         def __init__(self, blah: int, state: State) -> None:
           self.blah = blah
           self.state = state
-        _fields: typing.ClassVar[Tuple[str, str]] = ('blah', 'state')
-        blah: Final[int] = ...
-        state: Final[State] = ...
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('blah', 'state')
+        blah: typing.Final[int] = ...
+        state: typing.Final[State] = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5131,13 +5129,13 @@ let test_transform_ast =
       State = TypeVar("State")
 
       class LoopState(NamedTuple, Generic[State]):
-        def __new__(cls, blah: int, state: State) -> NamedTuple: ...
+        def __new__(cls, blah: int, state: State) -> typing.NamedTuple: ...
         def __init__(self, blah: int, state: State) -> None:
           self.blah = blah
           self.state = state
-        _fields: typing.ClassVar[Tuple[str, str]] = ('blah', 'state')
-        blah: Final[int] = ...
-        state: Final[State] = ...
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('blah', 'state')
+        blah: typing.Final[int] = ...
+        state: typing.Final[State] = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand

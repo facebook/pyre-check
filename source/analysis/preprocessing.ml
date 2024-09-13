@@ -2452,49 +2452,20 @@ let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
 
 
 let expand_named_tuples ({ Source.statements; _ } as source) =
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_named_tuple =
+    create_callee_name_matcher_from_references
+      ~scopes
+      [Reference.create "typing.NamedTuple"; Reference.create "collections.namedtuple"]
+  in
   let rec expand_named_tuples ~parent ({ Node.location; value } as statement) =
     let extract_attributes expression =
       match expression with
       | {
-          Node.location;
-          value =
-            Expression.Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          {
-                            base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "NamedTuple";
-                            _;
-                          });
-                    _;
-                  };
-                arguments;
-              };
-        }
-      | {
-          Node.location;
-          value =
-            Call
-              {
-                callee =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          {
-                            base = { Node.value = Name (Name.Identifier "collections"); _ };
-                            attribute = "namedtuple";
-                            _;
-                          });
-                    _;
-                  };
-                arguments;
-              };
-        } ->
+       Node.location;
+       value = Expression.Call { callee = { Node.value = Name callee_name; _ }; arguments };
+      }
+        when is_named_tuple callee_name ->
           let any_annotation =
             Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
           in
@@ -2533,14 +2504,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 List.filter_map arguments ~f:(fun argument ->
                     match argument with
                     | { Call.Argument.name = Some { Node.value = name; _ }; value } ->
-                        Some (Identifier.sanitized name, value, None)
+                        Some (name, value, None)
                     | _ -> None)
             | _ -> []
           in
           Some attributes
       | _ -> None
     in
-    let fields_attribute ~parent ~location attributes =
+    let fields_attribute ~location attributes =
       let node = Node.create ~location in
       let value =
         attributes
@@ -2561,16 +2532,16 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       in
       Statement.Assign
         {
-          Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
+          Assign.target = Node.create ~location (Expression.Name (Name.Identifier "_fields"));
           annotation = Some fields_annotation;
           value = Some value;
         }
       |> Node.create ~location
     in
-    let tuple_attributes ~parent ~location attributes =
+    let tuple_attributes ~location attributes =
       let attribute_statements =
         let attribute { Node.value = name, annotation, _value; location } =
-          let target = Reference.create ~prefix:parent name |> from_reference ~location in
+          let target = Node.create ~location (Expression.Name (Name.Identifier name)) in
           let annotation =
             let location = Node.location annotation in
             {
@@ -2594,9 +2565,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         in
         List.map attributes ~f:attribute
       in
-      let fields_attribute =
-        List.map attributes ~f:Node.value |> fields_attribute ~parent ~location
-      in
+      let fields_attribute = List.map attributes ~f:Node.value |> fields_attribute ~location in
       fields_attribute :: attribute_statements
     in
     let tuple_constructors ~class_name ~parent ~location attributes =
@@ -2607,7 +2576,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> None
             | _ -> value
           in
-          Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
+          Parameter.create ?value ~location ~annotation ~name ()
         in
         List.map attributes ~f:to_parameter
       in
@@ -2624,11 +2593,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                         attribute = "NamedTuple";
                         special = false;
                       })),
-              Parameter.create ~location ~name:"$parameter$cls" () )
+              Parameter.create ~location ~name:"cls" () )
           else
             ( "__init__",
               Node.create ~location (Expression.Constant Constant.NoneLiteral),
-              Parameter.create ~location ~name:"$parameter$self" () )
+              Parameter.create ~location ~name:"self" () )
         in
         let assignments =
           if is_new || List.is_empty parameters then
@@ -2649,11 +2618,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                          (Expression.Name
                             (Attribute
                                {
-                                 base =
-                                   Node.create
-                                     (Expression.Name (Identifier "$parameter$self"))
-                                     ~location;
-                                 attribute = name |> Identifier.sanitized;
+                                 base = Node.create (Expression.Name (Identifier "self")) ~location;
+                                 attribute = name;
                                  special = false;
                                }));
                      annotation = None;
@@ -2668,7 +2634,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           {
             signature =
               {
-                name = Reference.create ~prefix:class_name name;
+                name = Reference.create name;
                 parameters = self_parameter :: parameters;
                 decorators = [];
                 return_annotation = Some return_annotation;
@@ -2694,27 +2660,26 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let value =
       match value with
-      | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
+      | Statement.Assign
+          { Assign.target = { Node.value = Name (Name.Identifier name); _ }; value = expression; _ }
         -> (
-          let name = name_to_reference name >>| Reference.delocalize in
-          match Option.map expression ~f:extract_attributes |> Option.join, name with
-          | Some attributes, Some name
+          match Option.map expression ~f:extract_attributes |> Option.join with
+          | Some attributes
           (* TODO (T42893621): properly handle the excluded case *)
-            when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
+            when not (String.is_prefix ~prefix:"cls" name) ->
               let constructors =
                 tuple_constructors
-                  ~class_name:name
-                  ~parent:(NestingContext.create_class ~parent (Reference.last name))
+                  ~class_name:(Reference.create name)
+                  ~parent:(NestingContext.create_class ~parent name)
                   ~location
                   attributes
               in
               let attributes =
-                List.map attributes ~f:(Node.create ~location)
-                |> tuple_attributes ~parent:name ~location
+                List.map attributes ~f:(Node.create ~location) |> tuple_attributes ~location
               in
               Statement.Class
                 {
-                  Class.name;
+                  Class.name = Reference.create name;
                   base_arguments = [tuple_base ~location];
                   parent;
                   body = constructors @ attributes;
@@ -2725,23 +2690,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           | _ -> value)
       | Class ({ Class.name; base_arguments; parent; body; _ } as original) ->
           let is_named_tuple_primitive = function
-            | {
-                Call.Argument.value =
-                  {
-                    Node.value =
-                      Name
-                        ( Name.Identifier "typing.NamedTuple"
-                        | Name.Attribute
-                            {
-                              base = { Node.value = Name (Name.Identifier "typing"); _ };
-                              attribute = "NamedTuple";
-                              _;
-                            } );
-                    _;
-                  };
-                _;
-              } ->
-                true
+            | { Call.Argument.value = { Node.value = Name callee_name; _ }; _ } ->
+                is_named_tuple callee_name
             | _ -> false
           in
           if List.exists ~f:is_named_tuple_primitive base_arguments then
@@ -2774,7 +2724,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                    ~parent:(NestingContext.create_class ~parent (Reference.last name))
                    ~location
             in
-            let tuple_attributes = tuple_attributes ~parent:name ~location attributes in
+            let tuple_attributes = tuple_attributes ~location attributes in
             Class { original with Class.body = constructors @ tuple_attributes @ other }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base) =
@@ -2803,8 +2753,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                         attributes
                   in
                   let attributes =
-                    List.map attributes ~f:(Node.create ~location)
-                    |> tuple_attributes ~parent:name ~location
+                    List.map attributes ~f:(Node.create ~location) |> tuple_attributes ~location
                   in
                   tuple_base ~location :: bases, attributes_sofar @ constructors @ attributes
               | None -> base :: bases, attributes_sofar
@@ -4752,8 +4701,8 @@ let preprocess_after_wildcards source =
   |> expand_string_annotations
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
-  |> qualify
   |> expand_named_tuples
+  |> qualify
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
   |> add_dataclass_keyword_only_specifiers
