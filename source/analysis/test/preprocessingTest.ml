@@ -7083,10 +7083,8 @@ let test_expand_pytorch_register_buffer =
 
 let test_expand_self_type =
   let assert_expand ?(handle = "test.py") source expected _ =
-    let expected = parse ~handle expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source |> Preprocessing.qualify |> Preprocessing.SelfType.expand_self_type
-    in
+    let expected = parse ~handle expected in
+    let actual = parse ~handle source |> Preprocessing.SelfType.expand_self_type in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list
@@ -7254,7 +7252,7 @@ let test_expand_self_type =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def readonly_method(self: ReadOnly[_Self_test_Foo__]) -> None: ...
+        def readonly_method(self: pyre_extensions.ReadOnly[_Self_test_Foo__]) -> None: ...
       |};
       (* ReadOnly method with `typing.Self`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -7273,7 +7271,26 @@ let test_expand_self_type =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def readonly_method(self: ReadOnly[_Self_test_Foo__]) -> None: ...
+        def readonly_method(self: pyre_extensions.ReadOnly[_Self_test_Foo__]) -> None: ...
+      |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           ~handle:"typing.pyi"
+           {|
+      Self: _SpecialForm
+      class _PyreReadOnly_: pass
+
+      class Foo:
+        def readonly_method(self: _PyreReadOnly_[Self]) -> None: ...
+      |}
+           {|
+      _Self_typing_Foo__ = typing.TypeVar("_Self_typing_Foo__", bound="Foo")
+
+      Self: _SpecialForm
+      class _PyreReadOnly_: pass
+
+      class Foo:
+        def readonly_method(self: pyre_extensions.ReadOnly[_Self_typing_Foo__]) -> None: ...
       |};
       (* ReadOnly method that does not use `typing_extensions.Self`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -7313,7 +7330,7 @@ let test_expand_self_type =
 
       class Foo:
         @classmethod
-        def readonly_classmethod(cls: ReadOnly[typing.Type[_Self_test_Foo__]]) -> None: ...
+        def readonly_classmethod(cls: pyre_extensions.ReadOnly[typing.Type[_Self_test_Foo__]]) -> None: ...
       |};
     ]
 

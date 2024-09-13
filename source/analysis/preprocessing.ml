@@ -4278,16 +4278,19 @@ module SelfType = struct
     Format.asprintf "_Self_%s__" (Reference.as_list class_reference |> String.concat ~sep:"_")
 
 
-  let replace_self_type_with ~synthetic_type_variable =
-    let map_name ~mapper:_ = function
-      | Name.Attribute
-          {
-            base = { Node.value = Name (Identifier ("typing_extensions" | "typing")); location };
-            attribute = "Self";
-            _;
-          } ->
-          create_name_from_reference ~location synthetic_type_variable
-      | name -> name
+  let is_self ~qualifier ~scopes =
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "typing.Self"; Reference.create "typing_extensions.Self"]
+
+
+  let replace_self_type_with ~qualifier ~scopes ~synthetic_type_variable =
+    let map_name ~mapper:_ name =
+      if is_self ~qualifier ~scopes name then
+        create_name_from_reference ~location:Location.any synthetic_type_variable
+      else
+        name
     in
     Mapper.map ~mapper:(Mapper.create_transformer ~map_name ())
 
@@ -4296,18 +4299,14 @@ module SelfType = struct
      whether it was changed. But our current `Visit.Transformer` or `Expression.Mapper` APIs aren't
      powerful enough to express such a use. So, we do a separate check to decide whether we want to
      replace Self types in a signature. *)
-  let signature_uses_self_type { Define.Signature.return_annotation; parameters; _ } =
+  let signature_uses_self_type
+      ~qualifier
+      ~scopes
+      { Define.Signature.return_annotation; parameters; _ }
+    =
     let expression_uses_self_type expression =
-      let fold_name ~folder:_ ~state = function
-        | Name.Attribute
-            {
-              base = { Node.value = Name (Identifier ("typing_extensions" | "typing")); _ };
-              attribute = "Self";
-              _;
-            } ->
-            true
-        | _ -> state
-      in
+      let fold_name ~folder:_ ~state name = is_self ~qualifier ~scopes name || state in
+
       let folder = Folder.create_with_uniform_location_fold ~fold_name () in
       Folder.fold ~folder ~state:false expression
     in
@@ -4332,131 +4331,98 @@ module SelfType = struct
 
      Otherwise, if we have a concrete annotation, such as `self: Foo`, then we cannot bind it using
      a synthesized TypeVar. *)
-  let can_bind_self_parameter_using_self_type_variable = function
+  let can_bind_self_parameter_using_self_type_variable ~qualifier ~scopes parameter =
+    let is_readonly =
+      create_callee_name_matcher_from_references
+        ~qualifier
+        ~scopes
+        [Reference.create "typing._PyreReadOnly_"; Reference.create "pyre_extensions.ReadOnly"]
+    in
+    let is_type =
+      create_callee_name_matcher_from_references
+        ~qualifier
+        ~scopes
+        [Reference.create "typing.Type"; Reference.create "typing_extensions.Type"]
+    in
+    let is_self = is_self ~qualifier ~scopes in
+    match parameter with
+    | { Node.value = { Parameter.annotation = None; _ }; _ } :: _ -> true
     | {
         Node.value =
           {
             Parameter.annotation =
-              ( None
-              | Some
-                  {
-                    Node.value =
-                      Subscript
-                        {
-                          base =
-                            {
-                              Node.value =
-                                ( Name
-                                    (Attribute
-                                      {
-                                        base = { Node.value = Name (Identifier "typing"); _ };
-                                        attribute = "_PyreReadOnly_";
-                                        special = false;
-                                      })
-                                | Name
-                                    (Attribute
-                                      {
-                                        base =
-                                          { Node.value = Name (Identifier "pyre_extensions"); _ };
-                                        attribute = "ReadOnly";
-                                        special = false;
-                                      }) );
-                              _;
-                            };
-                          index =
-                            {
-                              Node.value =
-                                ( Name
-                                    (Attribute
-                                      {
-                                        base =
-                                          {
-                                            Node.value =
-                                              Name (Identifier ("typing_extensions" | "typing"));
-                                            _;
-                                          };
-                                        attribute = "Self";
-                                        special = false;
-                                      })
-                                | Subscript
-                                    {
-                                      base =
-                                        {
-                                          Node.value =
-                                            Name
-                                              (Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.value =
-                                                        Name
-                                                          (Identifier
-                                                            ("typing_extensions" | "typing"));
-                                                      _;
-                                                    };
-                                                  attribute = "Type";
-                                                  special = false;
-                                                });
-                                          _;
-                                        };
-                                      index =
-                                        {
-                                          Node.value =
-                                            Name
-                                              (Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.value =
-                                                        Name
-                                                          (Identifier
-                                                            ("typing_extensions" | "typing"));
-                                                      _;
-                                                    };
-                                                  attribute = "Self";
-                                                  special = false;
-                                                });
-                                          _;
-                                        };
-                                    } );
-                              _;
-                            };
-                        };
-                    _;
-                  } );
+              Some
+                {
+                  Node.value =
+                    Subscript
+                      {
+                        base = { Node.value = Expression.Name base_name; _ };
+                        index = { Node.value = Expression.Name index_name; _ };
+                      };
+                  _;
+                };
             _;
           };
         _;
       }
       :: _ ->
-        true
+        is_readonly base_name && is_self index_name
+    | {
+        Node.value =
+          {
+            Parameter.annotation =
+              Some
+                {
+                  Node.value =
+                    Subscript
+                      {
+                        base = { Node.value = Expression.Name base_name; _ };
+                        index =
+                          {
+                            Node.value =
+                              Subscript
+                                {
+                                  base = { Node.value = Expression.Name inner_base_name; _ };
+                                  index = { Node.value = Expression.Name inner_index_name; _ };
+                                };
+                            _;
+                          };
+                      };
+                  _;
+                };
+            _;
+          };
+        _;
+      }
+      :: _ ->
+        is_readonly base_name && is_type inner_base_name && is_self inner_index_name
     | _ -> false
 
 
   let replace_self_type_in_signature
       ~qualifier
-      ({ Define.Signature.parameters; return_annotation; legacy_parent; _ } as signature)
+      ~scopes
+      ({ Define.Signature.parameters; return_annotation; parent; _ } as signature)
     =
     match
-      ( legacy_parent,
-        can_bind_self_parameter_using_self_type_variable parameters,
+      ( parent,
+        can_bind_self_parameter_using_self_type_variable ~qualifier ~scopes parameters,
         parameters,
         return_annotation )
     with
-    | ( Some parent,
+    | ( NestingContext.Class _,
         true,
         ({ Node.value = self_or_class_parameter_value; location } as self_or_class_parameter)
         :: rest_parameters,
         return_annotation )
-      when signature_uses_self_type signature ->
-        let mangled_self_type_variable_reference =
-          self_variable_name parent |> get_qualified_local_identifier ~qualifier |> Reference.create
+      when signature_uses_self_type ~qualifier ~scopes signature ->
+        let qualified_parent_name = NestingContext.to_qualifier ~module_name:qualifier parent in
+        let self_type_variable_reference =
+          self_variable_name qualified_parent_name |> Reference.create
         in
         let self_or_class_parameter =
           let annotation =
-            let variable_annotation =
-              from_reference ~location mangled_self_type_variable_reference
-            in
+            let variable_annotation = from_reference ~location self_type_variable_reference in
             if Define.Signature.is_class_method signature then
               subscript ~location "typing.Type" [variable_annotation] |> Node.create ~location
             else
@@ -4485,7 +4451,9 @@ module SelfType = struct
               let annotation =
                 replace_self_type_with
                   annotation
-                  ~synthetic_type_variable:mangled_self_type_variable_reference
+                  ~qualifier
+                  ~scopes
+                  ~synthetic_type_variable:self_type_variable_reference
               in
               { parameter with value = { parameter_value with annotation = Some annotation } }
           | parameter -> parameter
@@ -4499,28 +4467,37 @@ module SelfType = struct
             return_annotation =
               return_annotation
               >>| replace_self_type_with
-                    ~synthetic_type_variable:mangled_self_type_variable_reference;
+                    ~qualifier
+                    ~scopes
+                    ~synthetic_type_variable:self_type_variable_reference;
           },
           parent )
         |> Option.some
     | _ -> None
 
 
-  let make_type_variable_definition ~qualifier class_reference =
+  let make_type_variable_definition ~qualifier nesting_context =
     let location = Location.any in
-    let self_variable_reference =
-      self_variable_name class_reference
-      |> get_qualified_local_identifier ~qualifier
-      |> Reference.create
-    in
+    let qualified_class_name = NestingContext.to_qualifier ~module_name:qualifier nesting_context in
+    let self_variable_name = self_variable_name qualified_class_name in
     Statement.Assign
       {
-        target = from_reference ~location self_variable_reference;
+        target = Node.create ~location (Expression.Name (Name.Identifier self_variable_name));
         value =
           Some
             (Expression.Call
                {
-                 callee = Reference.create "typing.TypeVar" |> from_reference ~location;
+                 callee =
+                   Node.create
+                     ~location
+                     (Expression.Name
+                        (Name.Attribute
+                           {
+                             base =
+                               Node.create ~location (Expression.Name (Name.Identifier "typing"));
+                             attribute = "TypeVar";
+                             special = false;
+                           }));
                  arguments =
                    [
                      {
@@ -4528,21 +4505,21 @@ module SelfType = struct
                        value =
                          Expression.Constant
                            (Constant.String
-                              {
-                                StringLiteral.kind = String;
-                                value = self_variable_name class_reference;
-                              })
+                              { StringLiteral.kind = String; value = self_variable_name })
                          |> Node.create_with_default_location;
                      };
                      {
-                       Call.Argument.name =
-                         Some (Node.create_with_default_location "$parameter$bound");
+                       Call.Argument.name = Some (Node.create_with_default_location "bound");
                        value =
                          Expression.Constant
                            (Constant.String
                               {
                                 StringLiteral.kind = String;
-                                value = Reference.show class_reference;
+                                value =
+                                  Reference.show
+                                    (NestingContext.to_qualifier
+                                       ~module_name:Reference.empty
+                                       nesting_context);
                               })
                          |> Node.create_with_default_location;
                      };
@@ -4554,9 +4531,12 @@ module SelfType = struct
     |> Node.create_with_default_location
 
 
+  module NestingContextSet = Set.Make (NestingContext)
+
   let expand_self_type ({ Source.module_path = { qualifier; _ }; _ } as source) =
+    let scopes = lazy (Scope.ScopeStack.create source) in
     let module Transform = Transform.MakeStatementTransformer (struct
-      type classes_with_self = Reference.Set.t
+      type classes_with_self = NestingContextSet.t
 
       type t = classes_with_self
 
@@ -4564,7 +4544,7 @@ module SelfType = struct
         let classes_with_self, value =
           match value with
           | Statement.Define ({ signature; _ } as define) -> (
-              match replace_self_type_in_signature ~qualifier signature with
+              match replace_self_type_in_signature ~qualifier ~scopes signature with
               | Some (signature, class_with_self) ->
                   Set.add sofar class_with_self, Statement.Define { define with signature }
               | None -> sofar, value)
@@ -4574,7 +4554,7 @@ module SelfType = struct
     end)
     in
     let { Transform.source; state = classes_with_self } =
-      Transform.transform Reference.Set.empty source
+      Transform.transform NestingContextSet.empty source
     in
     let type_variable_definitions =
       Set.to_list classes_with_self |> List.map ~f:(make_type_variable_definition ~qualifier)
@@ -4747,8 +4727,8 @@ let preprocess_after_wildcards source =
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
   |> add_dataclass_keyword_only_specifiers
-  |> qualify
   |> SelfType.expand_self_type
+  |> qualify
   |> expand_enum_functional_syntax
   |> populate_captures
 
