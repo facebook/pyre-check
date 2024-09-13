@@ -318,12 +318,14 @@ module Binding = struct
         in
         let sofar = List.fold items ~init:sofar ~f:bindings_of_item in
         of_statements sofar body
+    | TypeAlias { name; value; _ } ->
+        let sofar = of_optional_expression sofar (Some value) in
+        of_unannotated_target ~kind:(Kind.AssignTarget None) sofar name
     | Break
     | Continue
     | Delete _
     | Global _
     | Nonlocal _
-    | TypeAlias _ (* TODO(T196994965): handle TypeAlias *)
     | Pass ->
         sofar
 

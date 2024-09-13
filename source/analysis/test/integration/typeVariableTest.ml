@@ -2245,7 +2245,6 @@ let test_generic_aliases =
             |}
            [
              "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
-             "Unbound name [10]: Name `ListOrSet` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `test.func(x)` is \
               `typing.Union[typing.List[int], typing.Set[int]]`.";
@@ -2265,7 +2264,6 @@ let test_generic_aliases =
 
             |}
            [
-             "Unbound name [10]: Name `Callback` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `test.apply_callback` is \
               `typing.Callable(apply_callback)[[Named(callback, typing.Callable[[int], int])], \
@@ -2287,7 +2285,6 @@ let test_generic_aliases =
            [
              "Undefined or invalid type [11]: Annotation `S1` is not defined as a type.";
              "Undefined or invalid type [11]: Annotation `S2` is not defined as a type.";
-             "Unbound name [10]: Name `Callback` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `test.apply_callback` is \
               `typing.Callable(apply_callback)[[Named(callback, typing.Callable[[int], \
