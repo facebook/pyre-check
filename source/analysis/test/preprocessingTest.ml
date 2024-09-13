@@ -6852,10 +6852,8 @@ let test_mangle_private_attributes =
 
 let test_six_metaclass_decorator =
   let assert_replace ?(handle = "test.py") source expected _ =
-    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source |> Preprocessing.qualify |> Preprocessing.inline_six_metaclass
-    in
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.inline_six_metaclass in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list

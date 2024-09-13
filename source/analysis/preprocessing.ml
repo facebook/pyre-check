@@ -4702,8 +4702,8 @@ let preprocess_after_wildcards source =
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
-  |> qualify
   |> inline_six_metaclass
+  |> qualify
   |> expand_pytorch_register_buffer
   |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
