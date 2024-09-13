@@ -473,7 +473,8 @@ module State (Context : Context) = struct
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
 
-  let get_untracked_annotation_errors ~resolution ~location annotation =
+  let get_untracked_annotation_errors ~location annotation ~local_resolution =
+    let global_resolution = Resolution.global_resolution local_resolution in
     match Context.no_validation_on_class_lookup_failure with
     | true -> []
     | false ->
@@ -481,7 +482,9 @@ module State (Context : Context) = struct
           match class_name with
           | "..." -> false
           | _ -> (
-              match GlobalResolution.resolve_exports resolution (Reference.create class_name) with
+              match
+                GlobalResolution.resolve_exports global_resolution (Reference.create class_name)
+              with
               | None -> true
               | Some (ResolvedReference.Module _) ->
                   (* `name` refers to a module, which is usually not valid type *)
@@ -496,15 +499,34 @@ module State (Context : Context) = struct
                     Reference.combine from (Reference.create_from_list (name :: remaining))
                     |> Reference.show
                   in
-                  not (GlobalResolution.class_exists resolution full_name))
+                  not (GlobalResolution.class_exists global_resolution full_name))
         in
+        (* For untracked errors, we need to consider PEP695 parameters, and if a name exists in
+           scope, we do not consider it an undefined annotation. *)
         let add_untracked_errors errors =
           Type.collect_names annotation
           |> List.dedup_and_sort ~compare:String.compare
           |> List.filter ~f:is_untracked_name
           |> List.fold ~init:errors ~f:(fun errors name ->
-                 emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
+                 let variable = Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create name) in
+                 let type_var_tuple_variable =
+                   Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+                 in
+                 let param_spec_variable =
+                   Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name)
+                 in
+                 if
+                   Resolution.type_variable_exists local_resolution ~variable
+                   || Resolution.type_variable_exists
+                        local_resolution
+                        ~variable:type_var_tuple_variable
+                   || Resolution.type_variable_exists local_resolution ~variable:param_spec_variable
+                 then
+                   errors
+                 else
+                   emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
         in
+
         let add_literal_value_errors errors =
           (* Literal enum class names will later be parsed as types, so we must validate them when
              checking for untracked annotations. In error messaging, assume these are arbitrary
@@ -557,7 +579,7 @@ module State (Context : Context) = struct
           None
       in
       let untracked_annotation_errors =
-        get_untracked_annotation_errors ~resolution:global_resolution ~location annotation
+        get_untracked_annotation_errors ~local_resolution:resolution ~location annotation
       in
       let untracked_annotation_and_invalid_variable_errors =
         Type.Variable.all_free_variables annotation
@@ -975,11 +997,13 @@ module State (Context : Context) = struct
     base_type_info: TypeInfo.Unit.t option;
   }
 
-  let add_annotation_errors errors resolution location parsed =
-    add_invalid_type_parameters_errors ~resolution ~location ~errors parsed
+  let add_annotation_errors errors local_resolution location parsed =
+    let global_resolution = Resolution.global_resolution local_resolution in
+
+    add_invalid_type_parameters_errors ~resolution:global_resolution ~location ~errors parsed
     |> fun (errors, _) ->
     let errors =
-      List.append errors (get_untracked_annotation_errors ~resolution ~location parsed)
+      List.append errors (get_untracked_annotation_errors ~local_resolution ~location parsed)
     in
     errors
 
@@ -4410,9 +4434,7 @@ module State (Context : Context) = struct
         let errors =
           match parsed with
           | Type.Variable.TypeVarVariable variable ->
-              let errors =
-                add_annotation_errors errors global_resolution location (Variable variable)
-              in
+              let errors = add_annotation_errors errors resolution location (Variable variable) in
               (* TODO T197102558: Understand if we should filter errors with fake locations here or
                  not *)
               let errors =
@@ -4443,11 +4465,9 @@ module State (Context : Context) = struct
     let parsed =
       GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
     in
-
-    let errors = add_annotation_errors errors global_resolution location parsed in
+    let errors = add_annotation_errors errors resolution location parsed in
     let errors = add_type_variable_errors errors parsed location in
     let errors = add_prohibited_any_errors errors target parsed value location in
-
     Value resolution, errors
 
 
@@ -6279,7 +6299,6 @@ module State (Context : Context) = struct
 
 
   let initial ~resolution =
-    let global_resolution = Resolution.global_resolution resolution in
     let {
       Node.location;
       value =
@@ -6297,6 +6316,7 @@ module State (Context : Context) = struct
               decorators;
               async;
               generator;
+              type_params;
               _;
             } as signature;
           captures;
@@ -6307,6 +6327,25 @@ module State (Context : Context) = struct
       =
       Context.define
     in
+    (* collect type parameters for functions *)
+    let type_param_names =
+      List.map type_params ~f:(fun { Node.value; _ } ->
+          match value with
+          | Ast.Expression.TypeParam.TypeVar { name; _ } ->
+              Type.Variable.TypeVarVariable
+                (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
+          | Ast.Expression.TypeParam.TypeVarTuple name ->
+              Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+          | Ast.Expression.TypeParam.ParamSpec name ->
+              Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+    in
+    (* Add them to the resolution *)
+    let resolution =
+      type_param_names
+      |> List.fold ~init:resolution ~f:(fun resolution variable ->
+             Resolution.add_type_variable resolution ~variable)
+    in
+    let global_resolution = Resolution.global_resolution resolution in
     let maybe_current_class_name = Option.map maybe_current_class_reference ~f:Reference.show in
     let look_up_current_class_variance =
       match maybe_current_class_name with

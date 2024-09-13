@@ -53,7 +53,6 @@ let test_type_variable_scoping =
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Unbound name [10]: Name `T` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Undefined or invalid type [11]: Annotation `U` is not defined as a type.";
              "Undefined attribute [16]: `A` has no attribute `__getitem__`.";
              "Revealed type [-1]: Revealed type for `a` is `A[int]`.";
              "Revealed type [-1]: Revealed type for `a.func(42)` is `int`.";
@@ -77,7 +76,6 @@ let test_type_variable_scoping =
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Undefined or invalid type [11]: Annotation `U` is not defined as a type.";
              "Revealed type [-1]: Revealed type for `a.func2` is \
               `BoundMethod[typing.Callable(A.func2)[[Named(self, A[int]), Named(x, int), Named(y, \
               Variable[U])], typing.Union[int, Variable[U]]], A[int]]`.";
@@ -105,7 +103,6 @@ let test_type_variable_scoping =
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
              "Revealed type [-1]: Revealed type for `test.func` is \
               `typing.Callable(func)[[Named(a, Variable[T])], Variable[T]]`.";
              "Revealed type [-1]: Revealed type for `test.func(x)` is \
