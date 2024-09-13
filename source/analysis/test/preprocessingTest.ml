@@ -6981,10 +6981,8 @@ let test_expand_import_python_calls =
 
 let test_expand_pytorch_register_buffer =
   let assert_expand ?(handle = "test.py") source expected _ =
-    let expected = parse ~handle expected |> Preprocessing.qualify in
-    let actual =
-      parse ~handle source |> Preprocessing.qualify |> Preprocessing.expand_pytorch_register_buffer
-    in
+    let expected = parse ~handle expected in
+    let actual = parse ~handle source |> Preprocessing.expand_pytorch_register_buffer in
     assert_source_equal ~location_insensitive:true expected actual
   in
   test_list

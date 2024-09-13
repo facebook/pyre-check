@@ -4005,6 +4005,10 @@ let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _
    Preprocess this into `self.foo: Tensor = tensor` to add the attribute and avoid spurious "missing
    attribute" errors. *)
 let expand_pytorch_register_buffer source =
+  let scopes = lazy (Scope.ScopeStack.create source) in
+  let is_register_buffer =
+    create_callee_name_matcher_from_references ~scopes [Reference.create "self.register_buffer"]
+  in
   let module TransformRegisterBuffer = Transform.MakeStatementTransformer (struct
     type t = unit
 
@@ -4015,7 +4019,7 @@ let expand_pytorch_register_buffer source =
             Node.value =
               Expression.Call
                 {
-                  callee;
+                  callee = { Node.value = Expression.Name callee_name; _ };
                   arguments =
                     {
                       name = None;
@@ -4027,14 +4031,21 @@ let expand_pytorch_register_buffer source =
                         };
                     }
                     :: { value = initial_value; _ }
-                    :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);
+                    :: ([] | [{ name = Some { Node.value = "persistent"; _ }; _ }]);
                 };
             location;
           }
-        when sanitized callee |> name_is ~name:"self.register_buffer" ->
+        when is_register_buffer callee_name ->
           let annotation =
-            Reference.create "torch.Tensor"
-            |> from_reference ~location
+            Node.create
+              ~location
+              (Expression.Name
+                 (Name.Attribute
+                    {
+                      base = Node.create ~location (Expression.Name (Name.Identifier "torch"));
+                      attribute = "Tensor";
+                      special = false;
+                    }))
             |> Option.some_if (not (is_none initial_value))
           in
           ( (),
@@ -4042,9 +4053,16 @@ let expand_pytorch_register_buffer source =
               Statement.Assign
                 {
                   target =
-                    Format.asprintf "$parameter$self.%s" attribute_name
-                    |> Reference.create
-                    |> from_reference ~location;
+                    Node.create
+                      ~location
+                      (Expression.Name
+                         (Name.Attribute
+                            {
+                              base =
+                                Node.create ~location (Expression.Name (Name.Identifier "self"));
+                              attribute = attribute_name;
+                              special = false;
+                            }));
                   annotation;
                   value = Some initial_value;
                 }
@@ -4703,8 +4721,8 @@ let preprocess_after_wildcards source =
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
   |> inline_six_metaclass
-  |> qualify
   |> expand_pytorch_register_buffer
+  |> qualify
   |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
   |> expand_enum_functional_syntax
