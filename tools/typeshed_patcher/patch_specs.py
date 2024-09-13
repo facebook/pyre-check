@@ -62,7 +62,9 @@ class QualifiedName:
 
 
 class AddPosition(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     TOP_OF_SCOPE: str = "top"
+    # pyre-fixme[35]: Target cannot be annotated.
     BOTTOM_OF_SCOPE: str = "bottom"
 
     @staticmethod

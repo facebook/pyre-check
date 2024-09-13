@@ -20,6 +20,7 @@ class TestModel(Model):
     def __eq__(self, other: "TestModel") -> int:
         return self.index == other.index
 
+    # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
     def __hash__(self) -> int:
         # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
         pass

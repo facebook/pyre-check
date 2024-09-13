@@ -34,6 +34,7 @@ class DynamicGraphQLFormattableSpecification():
 class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
+        # pyre-fixme[11]: Annotation `GraphQLSchema` is not defined as a type.
         graphql_schema: GraphQLSchema,
         graphql_object_type: GraphQLObjectType,
         annotations: AnnotationSpecification,
