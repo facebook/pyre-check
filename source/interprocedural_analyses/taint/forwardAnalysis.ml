@@ -445,6 +445,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              Add
              ~f:argument.Node.location
         |> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
+        |> ForwardState.Tree.apply_class_intervals_for_tito
+             ~is_class_method
+             ~is_static_method
+             ~call_info_intervals
+             ~tito_intervals:(CallModel.tito_intervals tito_taint)
+             ~callee:call_target.CallGraph.CallTarget.target
       in
       let taint_to_propagate =
         match kind with

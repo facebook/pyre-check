@@ -74,6 +74,8 @@ val return_paths_and_collapse_depths
   tito_taint:BackwardTaint.t ->
   (AccessPath.Path.t * Features.CollapseDepth.t) list
 
+val tito_intervals : BackwardTaint.t -> ClassIntervalSet.t
+
 val sink_trees_of_argument
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->

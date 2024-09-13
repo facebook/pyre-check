@@ -86,7 +86,9 @@ let location_with_module_to_json ~resolve_module_path location_with_module
  * Class intervals are associated with every call site. *)
 module ClassIntervals = struct
   type t = {
-    (* The interval of the class that literally contains this call site *)
+    (* The interval of the class that literally contains this call site. The method containing this
+       call site generates / propagates a taint only if called on a object / class that falls within
+       this interval. *)
     caller_interval: ClassIntervalSet.t;
     (* The interval of the receiver object for this call site *)
     receiver_interval: ClassIntervalSet.t;
@@ -186,7 +188,7 @@ module CallInfo = struct
         leaf_name_provided: bool;
       }
     (* Special key to store taint-in-taint-out info (e.g, Sinks.LocalReturn) *)
-    | Tito
+    | Tito of { class_intervals: ClassIntervals.t }
     (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
     | Origin of {
         location: Location.WithModule.t;
@@ -207,13 +209,13 @@ module CallInfo = struct
   let at_same_call_site left right =
     match left, right with
     | Declaration _, Declaration _
-    | Tito, Tito ->
+    | Tito _, Tito _ ->
         true
     | Origin { call_site = left_call_site; _ }, Origin { call_site = right_call_site; _ }
     | CallSite { call_site = left_call_site; _ }, CallSite { call_site = right_call_site; _ } ->
         CallSite.equal left_call_site right_call_site
     | Declaration _, _
-    | Tito, _
+    | Tito _, _
     | Origin _, _
     | CallSite _, _ ->
         false
@@ -225,9 +227,12 @@ module CallInfo = struct
     Origin { location; class_intervals; call_site }
 
 
+  let tito ?(class_intervals = ClassIntervals.top) () = Tito { class_intervals }
+
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
-    | Tito -> Format.fprintf formatter "Tito"
+    | Tito { class_intervals } ->
+        Format.fprintf formatter "Tito(class_intervals=%a)" ClassIntervals.pp class_intervals
     | Origin { location; class_intervals; call_site } ->
         Format.fprintf
           formatter
@@ -261,7 +266,7 @@ module CallInfo = struct
     | CallSite _ ->
         true (* These are actual call sites *)
     | Declaration _
-    | Tito ->
+    | Tito _ ->
         false
 
 
@@ -287,7 +292,7 @@ module CallInfo = struct
     in
     match trace with
     | Declaration _ -> ["declaration", `Null]
-    | Tito -> ["tito", `Null]
+    | Tito _ -> ["tito", `Null]
     | Origin { location; class_intervals; call_site = _ } ->
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
@@ -312,7 +317,7 @@ module CallInfo = struct
 
   let replace_location ~location call_info =
     match call_info with
-    | Tito
+    | Tito _
     | Declaration _ ->
         call_info
     | Origin origin -> Origin { origin with location }
@@ -321,11 +326,17 @@ module CallInfo = struct
 
   let class_intervals = function
     | Origin { class_intervals; _ }
-    | CallSite { class_intervals; _ } ->
+    | CallSite { class_intervals; _ }
+    | Tito { class_intervals } ->
         class_intervals
-    | Declaration _
-    | Tito ->
-        ClassIntervals.top
+    | Declaration _ -> ClassIntervals.top
+
+
+  let with_class_intervals ~class_intervals = function
+    | Declaration _ as call_info -> call_info
+    | Tito _ -> Tito { class_intervals }
+    | Origin origin -> Origin { origin with class_intervals }
+    | CallSite call_site -> CallSite { call_site with class_intervals }
 end
 
 module TraceLength = struct
@@ -617,6 +628,15 @@ module type TAINT_DOMAIN = sig
     t ->
     t
 
+  val apply_class_intervals_for_tito
+    :  is_static_method:bool ->
+    is_class_method:bool ->
+    call_info_intervals:ClassIntervals.t ->
+    tito_intervals:ClassIntervalSet.t ->
+    callee:Target.t ->
+    t ->
+    t
+
   val for_override_model
     :  callable:Target.t ->
     port:AccessPath.Root.t ->
@@ -645,11 +665,9 @@ module type TAINT_DOMAIN = sig
      specified kind. *)
   val join_every_frame_with : frame_kind:kind -> t -> t
 
-  (* Apply a transform operation for all parts under the given call info.
-   * This is an optimization to avoid iterating over the whole taint. *)
-  val transform_call_info
-    :  CallInfo.t ->
-    'a Abstract.Domain.part ->
+  (* Apply a transform operation for all parts under `CallInfo.Tito` *)
+  val transform_tito
+    :  'a Abstract.Domain.part ->
     ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
     f:'f ->
     t ->
@@ -973,19 +991,21 @@ end = struct
     `List elements
 
 
-  let transform_call_info
+  let transform_tito
       : type a b f.
-        CallInfo.t ->
         a Abstract.Domain.part ->
         ([ `Transform ], a, f, b) Abstract.Domain.operation ->
         f:f ->
         t ->
         t
     =
-   fun call_info part op ~f taint ->
-    Map.update taint call_info ~f:(function
-        | None -> LocalTaintDomain.bottom
-        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
+   fun part op ~f taint ->
+    let apply (call_info, local_taint) =
+      match call_info with
+      | CallInfo.Tito _ -> call_info, LocalTaintDomain.transform part op ~f local_taint
+      | _ -> call_info, local_taint
+    in
+    Map.transform Map.KeyValue Map ~f:apply taint
 
 
   let transform_non_tito
@@ -999,7 +1019,7 @@ end = struct
    fun part op ~f taint ->
     let apply (call_info, local_taint) =
       match call_info with
-      | CallInfo.Tito -> call_info, local_taint
+      | CallInfo.Tito _ -> call_info, local_taint
       | _ -> call_info, LocalTaintDomain.transform part op ~f local_taint
     in
     Map.transform KeyValue Map ~f:apply taint
@@ -1130,11 +1150,7 @@ end = struct
     in
     taint
     |> add_local_breadcrumbs broadening
-    |> transform_call_info
-         CallInfo.Tito
-         Features.CollapseDepth.Self
-         Map
-         ~f:Features.CollapseDepth.approximate
+    |> transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
 
 
   let prune_maximum_length maximum_length =
@@ -1199,7 +1215,6 @@ end = struct
       ~call_info_intervals:
         ({ ClassIntervals.is_self_call; is_cls_call; caller_interval; receiver_interval } as
         call_info_intervals)
-      local_taint
     =
     let intersect left right =
       let new_interval = ClassIntervalSet.meet left right in
@@ -1216,14 +1231,14 @@ end = struct
     if is_static_method then
       (* Case A: Call static methods. The taint is unconditionally propagated from the call, which
          is the same treatment as a function call. *)
-      call_info_intervals, local_taint
+      Some call_info_intervals
     else (* Case B: Call non-static methods. *)
       let new_interval, should_propagate =
         (* Decide if the taint can be propagated from the call. *)
         intersect callee_class_interval receiver_interval
       in
       if not should_propagate then
-        ClassIntervals.top, LocalTaintDomain.bottom
+        None
       else if is_self_call || (is_cls_call && is_class_method) then
         (* Case B.1: Call instance methods via `self`, or class methods via `cls`. *)
         let new_interval, should_propagate =
@@ -1232,13 +1247,13 @@ end = struct
           intersect new_interval caller_interval
         in
         if not should_propagate then
-          ClassIntervals.top, LocalTaintDomain.bottom
+          None
         else
-          { call_info_intervals with caller_interval = new_interval }, local_taint
+          Some { call_info_intervals with caller_interval = new_interval }
       else
         (* Case B.2: Call instance methods on any other objects. *)
         (* Reset the interval to be the caller's interval. *)
-        call_info_intervals, local_taint
+        Some call_info_intervals
 
 
   let apply_call
@@ -1314,11 +1329,11 @@ end = struct
              ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
-      let class_intervals, local_taint =
+      let class_intervals =
         match callee with
         | Target.Object _
         | Target.Function _ ->
-            call_info_intervals, local_taint
+            Some call_info_intervals
         | Target.Method _
         | Target.Override _ ->
             let class_intervals = CallInfo.class_intervals call_info in
@@ -1327,38 +1342,93 @@ end = struct
               ~is_static_method
               ~is_class_method
               ~call_info_intervals
-              local_taint
       in
-      match call_info with
-      | CallInfo.Origin _
-      | CallInfo.CallSite _ ->
-          let call_info =
-            CallInfo.CallSite
-              { location; callees = [callee]; port; path; class_intervals; call_site }
-          in
-          let local_taint =
-            local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
-          in
-          call_info, local_taint
-      | CallInfo.Declaration { leaf_name_provided } ->
-          let call_info = CallInfo.Origin { location; class_intervals; call_site } in
-          let new_leaf_names =
-            if leaf_name_provided then
-              Features.LeafNameSet.bottom
-            else
-              let open Features in
-              let port = LeafPort.from_access_path ~root:port ~path in
-              LeafName.{ leaf = Target.external_name callee; port }
-              |> LeafNameInterned.intern
-              |> Features.LeafNameSet.singleton
-          in
-          let local_taint =
-            LocalTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names local_taint
-          in
-          call_info, local_taint
-      | CallInfo.Tito -> failwith "cannot apply call on tito taint"
+      match class_intervals with
+      | None -> call_info, LocalTaintDomain.bottom
+      | Some class_intervals -> (
+          match call_info with
+          | CallInfo.Origin _
+          | CallInfo.CallSite _ ->
+              let call_info =
+                CallInfo.CallSite
+                  { location; callees = [callee]; port; path; class_intervals; call_site }
+              in
+              let local_taint =
+                local_taint
+                |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
+              in
+              call_info, local_taint
+          | CallInfo.Declaration { leaf_name_provided } ->
+              let call_info = CallInfo.Origin { location; class_intervals; call_site } in
+              let new_leaf_names =
+                if leaf_name_provided then
+                  Features.LeafNameSet.bottom
+                else
+                  let open Features in
+                  let port = LeafPort.from_access_path ~root:port ~path in
+                  LeafName.{ leaf = Target.external_name callee; port }
+                  |> LeafNameInterned.intern
+                  |> Features.LeafNameSet.singleton
+              in
+              let local_taint =
+                LocalTaintDomain.transform
+                  Features.LeafNameSet.Self
+                  Add
+                  ~f:new_leaf_names
+                  local_taint
+              in
+              call_info, local_taint
+          | CallInfo.Tito _ -> failwith "cannot apply call on tito taint")
     in
     Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  let apply_class_intervals_for_tito
+      ~is_static_method
+      ~is_class_method
+      ~call_info_intervals
+      ~tito_intervals
+      ~callee
+      taint_to_propagate
+    =
+    let apply (call_info, local_taint) =
+      let class_intervals =
+        match callee with
+        | Target.Object _
+        | Target.Function _ ->
+            Some call_info_intervals
+        | Target.Method _
+        | Target.Override _ ->
+            (* Find a tito interval that lets through the taint. *)
+            apply_class_interval
+              ~callee_class_interval:tito_intervals
+              ~is_static_method
+              ~is_class_method
+              ~call_info_intervals
+      in
+      match class_intervals with
+      | None -> call_info, LocalTaintDomain.bottom
+      | Some { ClassIntervals.caller_interval = tito_caller_intervals; _ } ->
+          let ({ ClassIntervals.caller_interval = existing_caller_interval; _ } as
+              existing_class_interval)
+            =
+            CallInfo.class_intervals call_info
+          in
+          let caller_interval =
+            (* Since the successful propagation of the taint is conditioned on the additional
+               interval, we should impose it onto the existing interval from
+               `taint_to_propagate`. *)
+            ClassIntervalSet.meet existing_caller_interval tito_caller_intervals
+          in
+          if ClassIntervalSet.is_empty caller_interval then
+            call_info, LocalTaintDomain.bottom
+          else
+            ( CallInfo.with_class_intervals
+                ~class_intervals:{ existing_class_interval with caller_interval }
+                call_info,
+              local_taint )
+    in
+    Map.transform Map.KeyValue Map ~f:apply taint_to_propagate
 
 
   let for_override_model ~callable ~port ~path taint =
@@ -1407,7 +1477,7 @@ end = struct
           in
           let call_info = CallInfo.Declaration { leaf_name_provided = true } in
           call_info, local_taint
-      | Tito -> call_info, local_taint
+      | Tito { class_intervals } -> Tito { class_intervals }, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 
@@ -1519,6 +1589,27 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     transform Path Map ~f:transform_path taint_tree
 
 
+  let apply_class_intervals_for_tito
+      ~is_static_method
+      ~is_class_method
+      ~call_info_intervals
+      ~tito_intervals
+      ~callee
+      taint_tree
+    =
+    transform
+      Taint.Self
+      Map
+      ~f:
+        (Taint.apply_class_intervals_for_tito
+           ~is_static_method
+           ~is_class_method
+           ~call_info_intervals
+           ~tito_intervals
+           ~callee)
+      taint_tree
+
+
   let for_override_model ~callable ~port taint_tree =
     let transform_path (path, tip) = path, Taint.for_override_model ~callable ~port ~path tip in
     transform Path Map ~f:transform_path taint_tree
@@ -1536,11 +1627,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform taint =
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
-      |> Taint.transform_call_info
-           CallInfo.Tito
-           Features.CollapseDepth.Self
-           Map
-           ~f:Features.CollapseDepth.approximate
+      |> Taint.transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
     in
     let shape_partitioned_tree tree =
       T.shape
@@ -1660,11 +1747,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform taint =
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
-      |> Taint.transform_call_info
-           CallInfo.Tito
-           Features.CollapseDepth.Self
-           Map
-           ~f:Features.CollapseDepth.approximate
+      |> Taint.transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
     in
     T.collapse ~transform taint
 
@@ -1673,11 +1756,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform taint =
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
-      |> Taint.transform_call_info
-           CallInfo.Tito
-           Features.CollapseDepth.Self
-           Map
-           ~f:Features.CollapseDepth.approximate
+      |> Taint.transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
     in
     T.collapse_to ~transform ~depth taint
 
@@ -1686,26 +1765,20 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform taint =
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
-      |> Taint.transform_call_info
-           CallInfo.Tito
-           Features.CollapseDepth.Self
-           Map
-           ~f:Features.CollapseDepth.approximate
+      |> Taint.transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
     in
     T.limit_to ~transform ~width taint
 
 
-  let transform_call_info
+  let transform_tito
       : type a b f.
-        CallInfo.t ->
         a Abstract.Domain.part ->
         ([ `Transform ], a, f, b) Abstract.Domain.operation ->
         f:f ->
         t ->
         t
     =
-   fun call_info part op ~f taint ->
-    transform Taint.Self Map ~f:(Taint.transform_call_info call_info part op ~f) taint
+   fun part op ~f taint -> transform Taint.Self Map ~f:(Taint.transform_tito part op ~f) taint
 
 
   let transform_non_tito
@@ -1946,7 +2019,7 @@ let local_return_frame ~output_path ~collapse_depth =
 (* Special sink as it needs the return access path *)
 let local_return_taint ~output_path ~collapse_depth =
   BackwardTaint.singleton
-    CallInfo.Tito
+    (CallInfo.tito ())
     Sinks.LocalReturn
     (local_return_frame ~output_path ~collapse_depth)
 

@@ -1519,12 +1519,22 @@
           {
             "kinds": [
               {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": null
+          },
+          {
+            "kinds": [
+              {
                 "return_paths": { "": 0 },
+                "length": 1,
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 181, "start": 8, "end": 15 } ],
             "tito": null
@@ -1585,12 +1595,22 @@
           {
             "kinds": [
               {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": null
+          },
+          {
+            "kinds": [
+              {
                 "return_paths": { "": 0 },
+                "length": 1,
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 167, "start": 8, "end": 15 } ],
             "tito": null

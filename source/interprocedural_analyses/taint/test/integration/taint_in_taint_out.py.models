@@ -2077,15 +2077,27 @@
         "taint": [
           {
             "kinds": [
+              { "return_paths": { ".**keys": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": null
+          },
+          {
+            "kinds": [
               {
-                "return_paths": { ".**keys": 0, "[*]": 0 },
+                "return_paths": { "[*]": 0 },
+                "length": 2,
                 "kind": "LocalReturn"
               }
             ],
             "local_features": [
               { "via": "model-shaping" },
               { "always-via": "tito-broadening" },
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" },
               { "always-via": "obscure:unknown-callee" }
@@ -2237,20 +2249,33 @@
           {
             "kinds": [
               {
-                "return_paths": {
-                  "[related][related][related][related]": 0,
-                  "[related][related][related][init_list]": 0,
-                  "[related][related][init_list][*]": 0,
-                  "[related][init_list][*]": 0,
-                  "[init_list][*]": 0
-                },
+                "return_paths": { "[init_list][*]": 0 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
+            "tito": null
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[related][related][related][related]": 0,
+                  "[related][related][related][init_list]": 0,
+                  "[related][related][init_list][*]": 0,
+                  "[related][init_list][*]": 0
+                },
+                "length": 2,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
               { "via": "broadening" },
               { "via": "widen-broadening" }
             ],

@@ -246,15 +246,18 @@
         "port": "formal(arg, position=1)",
         "taint": [
           {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          },
+          {
             "kinds": [
-              { "return_paths": { "": 4 }, "kind": "LocalReturn" },
               {
                 "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformX@LocalReturn"
               }
             ],
-            "local_features": [ { "via": "tito" } ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": null
           }
         ]

@@ -241,6 +241,12 @@ let taint_in_taint_out_mapping_for_argument
     ~tito_matches
     ~sanitize_matches
   =
+  let create_tito_tree obscure_breadcrumbs output_kind =
+    Domains.local_return_frame ~output_path:[] ~collapse_depth:0
+    |> Frame.update Frame.Slots.PropagatedBreadcrumb obscure_breadcrumbs
+    |> BackwardTaint.singleton (CallInfo.tito ()) output_kind
+    |> BackwardState.Tree.create_leaf
+  in
   let combine_tito sofar { AccessPath.root; actual_path; formal_path } =
     let mapping_for_path =
       BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
@@ -291,12 +297,7 @@ let taint_in_taint_out_mapping_for_argument
       if SanitizeTransformSet.is_all obscure_sanitize then
         mapping
       else if SanitizeTransformSet.is_empty obscure_sanitize then
-        let tito =
-          Domains.local_return_frame ~output_path:[] ~collapse_depth:0
-          |> Frame.update Frame.Slots.PropagatedBreadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton CallInfo.declaration output_kind
-          |> BackwardState.Tree.create_leaf
-        in
+        let tito = create_tito_tree obscure_breadcrumbs output_kind in
         TaintInTaintOutMap.set_tree mapping ~kind:output_kind ~tito_tree:tito
       else
         let output_kind =
@@ -307,12 +308,7 @@ let taint_in_taint_out_mapping_for_argument
                TaintTransformOperation.InsertLocation.Front
                output_kind)
         in
-        let tito =
-          Domains.local_return_frame ~output_path:[] ~collapse_depth:0
-          |> Frame.update Frame.Slots.PropagatedBreadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton CallInfo.Tito output_kind
-          |> BackwardState.Tree.create_leaf
-        in
+        let tito = create_tito_tree obscure_breadcrumbs output_kind in
         TaintInTaintOutMap.set_tree mapping ~kind:output_kind ~tito_tree:tito
     else
       mapping
@@ -333,6 +329,20 @@ let return_paths_and_collapse_depths ~kind ~tito_taint =
       in
       paths
   | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
+
+
+let tito_intervals tito_taint =
+  let collect_intervals call_info so_far =
+    match call_info with
+    | CallInfo.Tito { class_intervals } ->
+        ClassIntervalSet.join class_intervals.ClassIntervals.caller_interval so_far
+    | _ -> so_far
+  in
+  BackwardTaint.fold
+    BackwardTaint.call_info
+    ~f:collect_intervals
+    ~init:ClassIntervalSet.empty
+    tito_taint
 
 
 let sink_trees_of_argument

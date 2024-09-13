@@ -2519,13 +2519,20 @@
         "taint": [
           {
             "kinds": [
+              { "return_paths": { ".**keys": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          },
+          {
+            "kinds": [
               {
-                "return_paths": { ".**keys": 3, "[*]": 0 },
+                "return_paths": { "[*]": 0 },
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 302, "start": 30, "end": 33 } ],
             "tito": null

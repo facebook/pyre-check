@@ -655,7 +655,7 @@ class A21:
     @classmethod
     def m1(cls, arg):
         pass
-    
+
 
 class B21(A21):
     @classmethod
@@ -680,7 +680,7 @@ class A22:
 
     def m1(self, arg):
         pass
-    
+
 
 class B22(A22):
     def m1(self, arg):
@@ -695,3 +695,73 @@ class C22(A22):
 def no_issue_taint_transform_with_class_interval(c: C22):
     # Should not see an issue, due to not going through the taint transform
     sink_d(c.m0(_test_source()))
+
+
+def add_feature_c(arg):
+    return arg
+
+
+def add_feature_d(arg):
+    return arg
+
+
+def add_feature_e(arg):
+    return arg
+
+
+class A23:
+    def m0(self, a):
+        return self.m1(a)
+
+    def m1(self, a):
+        return a
+
+
+class B23(A23):
+    pass
+
+
+class C23(B23):
+    def m1(self, a):
+        return add_feature_c(a)
+
+
+class D23(B23):
+    def m1(self, a):
+        return add_feature_d(a)
+
+
+class E23(A23):
+    def m1(self, a):
+        return add_feature_e(a)
+
+
+def issue_precise_tito_intervals(b: B23):
+    # False positive: Should see feature_c and feature_d but not feature_e, due to distinguishing
+    # the breadcrumbs from different tito intervals
+    _test_sink(b.m0(_test_source()))
+
+
+class A24:
+    def m0(self):
+        return A24.tito(self.m1())
+
+    def m1(self):
+        return 0
+
+    @staticmethod
+    def tito(a):
+        return a
+
+
+class B24(A24):
+    def m1(self):
+        return _test_source()
+
+
+class C24(A24):
+    pass
+
+
+def no_issue_source_through_staticmethod_tito(c: C24):
+    _test_sink(c.m0())  # Should NOT find an issue

@@ -211,7 +211,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let make_tito_leaf kind =
       BackwardState.Tree.create_leaf
         (Domains.BackwardTaint.singleton
-           CallInfo.Tito
+           (CallInfo.tito ())
            kind
            (Domains.local_return_frame ~output_path:[] ~collapse_depth:maximum_tito_collapse_depth))
     in
@@ -279,8 +279,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> limit_depth
       | _ -> paths
     in
-    BackwardTaint.transform_call_info
-      CallInfo.Tito
+    BackwardTaint.transform_tito
       Features.ReturnAccessPathTree.Self
       (Context (BackwardTaint.kind, Map))
       ~f:infer_output_path
@@ -461,6 +460,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                ~argument:actual_argument
              |> BackwardState.Tree.join sofar)
     in
+    let call_info_intervals =
+      {
+        Domains.ClassIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
+        is_cls_call = Ast.Expression.is_cls_call ~callee;
+        caller_interval = FunctionContext.caller_class_interval;
+        receiver_interval =
+          receiver_class
+          >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
+          |> Option.value ~default:Interprocedural.ClassIntervalSet.top;
+      }
+    in
     let convert_tito_path_to_taint
         ~sink_trees
         ~tito_roots
@@ -468,19 +478,28 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (tito_path, tito_taint)
         argument_taint
       =
+      (* TODO(T201555212): Distinguish `LocalTaint` (e.g., breadcrumbs) from different tito
+         intervals. One example false positive is function `issue_precise_tito_intervals` in
+         `class_interval.py`. *)
       let breadcrumbs = BackwardTaint.joined_breadcrumbs tito_taint in
       let tito_depth =
         BackwardTaint.fold TraceLength.Self tito_taint ~f:TraceLength.join ~init:TraceLength.bottom
       in
       let taint_to_propagate =
-        match Sinks.discard_transforms kind with
+        (match Sinks.discard_transforms kind with
         | Sinks.LocalReturn -> call_taint
         | Sinks.ParameterUpdate root ->
             get_taint_of_formal_argument ~pyre_in_context ~formal_argument:root
         | Sinks.Attach ->
             (* Attach nodes shouldn't affect analysis. *)
             BackwardState.Tree.empty
-        | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
+        | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith)
+        |> BackwardState.Tree.apply_class_intervals_for_tito
+             ~is_class_method
+             ~is_static_method
+             ~call_info_intervals
+             ~tito_intervals:(CallModel.tito_intervals tito_taint)
+             ~callee:call_target.CallGraph.CallTarget.target
       in
       let taint_to_propagate =
         match kind with
@@ -537,8 +556,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              else
                taint_to_propagate)
              |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
-             |> BackwardState.Tree.transform_call_info
-                  CallInfo.Tito
+             |> BackwardState.Tree.transform_tito
                   Frame.Self
                   (Context (BackwardTaint.kind, Map))
                   ~f:(transform_existing_tito ~callee_collapse_depth:collapse_depth)
@@ -561,17 +579,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
       |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
-    in
-    let call_info_intervals =
-      {
-        Domains.ClassIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
-        is_cls_call = Ast.Expression.is_cls_call ~callee;
-        caller_interval = FunctionContext.caller_class_interval;
-        receiver_interval =
-          receiver_class
-          >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
-          |> Option.value ~default:Interprocedural.ClassIntervalSet.top;
-      }
     in
     let call_site = CallSite.create call_location in
     let analyze_argument
@@ -696,8 +703,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if apply_tito then
         BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ()) call_taint
         |> BackwardTaint.add_local_breadcrumb (Features.obscure_unknown_callee ())
-        |> BackwardTaint.transform_call_info
-             CallInfo.Tito
+        |> BackwardTaint.transform_tito
              Features.CollapseDepth.Self
              Map
              ~f:Features.CollapseDepth.approximate
@@ -2086,8 +2092,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       { CallModel.StringFormatCall.nested_expressions; string_literal; call_target; location }
     =
     let taint =
-      BackwardState.Tree.transform_call_info (* Treat as a call site for tito taint. *)
-        CallInfo.Tito
+      BackwardState.Tree.transform_tito (* Treat as a call site for tito taint. *)
         Domains.TraceLength.Self
         Map
         ~f:TraceLength.increase
@@ -2651,8 +2656,7 @@ let extract_tito_and_sink_models
       |> BackwardState.Tree.limit_to
            ~breadcrumbs:limit_breadcrumbs
            ~width:maximum_model_sink_tree_width
-      |> BackwardState.Tree.transform_call_info
-           CallInfo.Tito
+      |> BackwardState.Tree.transform_tito
            Features.ReturnAccessPathTree.Self
            Map
            ~f:Features.ReturnAccessPathTree.limit_width
@@ -2702,7 +2706,7 @@ let extract_tito_and_sink_models
                   Domains.local_return_frame
                     ~output_path:[]
                     ~collapse_depth:maximum_tito_collapse_depth
-                  |> BackwardTaint.singleton CallInfo.Tito (Sinks.ParameterUpdate parameter)
+                  |> BackwardTaint.singleton (CallInfo.tito ()) (Sinks.ParameterUpdate parameter)
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.essential ~preserve_return_access_paths:true
                 in

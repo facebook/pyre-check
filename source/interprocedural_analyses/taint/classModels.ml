@@ -113,7 +113,7 @@ let infer ~pyre_api ~user_models =
       existing_state
     =
     let leaf =
-      BackwardTaint.singleton CallInfo.Tito output_root Frame.initial
+      BackwardTaint.singleton (CallInfo.tito ()) output_root Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathTree.create
