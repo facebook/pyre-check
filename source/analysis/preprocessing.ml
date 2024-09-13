@@ -93,8 +93,12 @@ let create_callee_name_matcher ~scopes reference_should_match name =
   | _ -> false
 
 
-let create_callee_name_matcher_from_references ~scopes references_to_match =
-  let reference_set = Reference.Set.of_list references_to_match in
+let create_callee_name_matcher_from_references ~qualifier ~scopes references_to_match =
+  let reference_set =
+    references_to_match
+    |> List.map ~f:(Reference.drop_prefix ~prefix:qualifier)
+    |> Reference.Set.of_list
+  in
   create_callee_name_matcher ~scopes (Set.mem reference_set)
 
 
@@ -177,14 +181,16 @@ let transform_string_annotation_expression_after_qualification ~relative =
   transform_expression
 
 
-let transform_string_annotation_expression_before_qualification ~scopes ~relative =
+let transform_string_annotation_expression_before_qualification ~qualifier ~scopes ~relative =
   let is_literal =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "typing.Literal"; Reference.create "typing_extensions.Literal"]
   in
   let is_type_variable_definition =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "typing.TypeVar"; Reference.create "typing_extensions.TypeVar"]
   in
@@ -248,19 +254,26 @@ let transform_string_annotation_expression_before_qualification ~scopes ~relativ
   transform_expression
 
 
-let transform_annotations ~scopes ~transform_annotation_expression source =
+let transform_annotations
+    ~scopes
+    ~transform_annotation_expression
+    ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let is_type_alias =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "typing.TypeAlias"; Reference.create "typing_extensions.TypeAlias"]
   in
   let is_type_variable_definition =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "typing.TypeVar"; Reference.create "typing_extensions.TypeVar"]
   in
   let is_cast =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "pyre_extensions.safe_cast"; Reference.create "typing.cast"]
   in
@@ -367,6 +380,7 @@ let expand_string_annotations ({ Source.module_path; _ } as source) =
     ~scopes
     ~transform_annotation_expression:
       (transform_string_annotation_expression_before_qualification
+         ~qualifier:(ModulePath.qualifier module_path)
          ~scopes
          ~relative:(ModulePath.relative module_path))
     source
@@ -2208,10 +2222,13 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
   LazyImportTransformer.transform () source |> LazyImportTransformer.source
 
 
-let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
+let expand_typed_dictionary_declarations
+    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_typed_dictionatry =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [
         Reference.create "mypy_extensions.TypedDict";
@@ -2451,10 +2468,13 @@ let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:expand_typed_dictionaries statements }
 
 
-let expand_named_tuples ({ Source.statements; _ } as source) =
+let expand_named_tuples
+    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_named_tuple =
     create_callee_name_matcher_from_references
+      ~qualifier
       ~scopes
       [Reference.create "typing.NamedTuple"; Reference.create "collections.namedtuple"]
   in
@@ -2795,10 +2815,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   }
 
 
-let expand_new_types ({ Source.statements; _ } as source) =
+let expand_new_types ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_newtype =
-    create_callee_name_matcher_from_references ~scopes [Reference.create "typing.NewType"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "typing.NewType"]
   in
   let create_class_for_newtype
       ~location
@@ -2887,7 +2911,9 @@ let expand_new_types ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map statements ~f:expand_new_type }
 
 
-let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
+let expand_sqlalchemy_declarative_base
+    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let expand_declarative_base_instance ({ Node.location; value } as statement) =
     let expanded_declaration =
       let declarative_base_class_declaration class_name =
@@ -2915,6 +2941,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
       let scopes = lazy (Scope.ScopeStack.create source) in
       let is_declarative_base =
         create_callee_name_matcher_from_references
+          ~qualifier
           ~scopes
           [Reference.create "sqlalchemy.ext.declarative.declarative_base"]
       in
@@ -4004,10 +4031,15 @@ let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _
 
    Preprocess this into `self.foo: Tensor = tensor` to add the attribute and avoid spurious "missing
    attribute" errors. *)
-let expand_pytorch_register_buffer source =
+let expand_pytorch_register_buffer
+    ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_register_buffer =
-    create_callee_name_matcher_from_references ~scopes [Reference.create "self.register_buffer"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "self.register_buffer"]
   in
   let module TransformRegisterBuffer = Transform.MakeStatementTransformer (struct
     type t = unit
@@ -4091,16 +4123,27 @@ let expand_pytorch_register_buffer source =
 
 
 (* Inline the KW_ONLY pseudo-field into field(kw_only) for all subsequent attributes. *)
-let add_dataclass_keyword_only_specifiers source =
+let add_dataclass_keyword_only_specifiers
+    ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_dataclass =
-    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.dataclass"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "dataclasses.dataclass"]
   in
   let is_dataclass_keyword_only =
-    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.KW_ONLY"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "dataclasses.KW_ONLY"]
   in
   let is_dataclass_field =
-    create_callee_name_matcher_from_references ~scopes [Reference.create "dataclasses.field"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [Reference.create "dataclasses.field"]
   in
   let is_dataclass_decorator { Node.value; _ } =
     match value with
