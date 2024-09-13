@@ -51,7 +51,6 @@ let test_type_variable_scoping =
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Unbound name [10]: Name `T` is used but not defined in the current scope.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Undefined attribute [16]: `A` has no attribute `__getitem__`.";
              "Revealed type [-1]: Revealed type for `a` is `A[int]`.";

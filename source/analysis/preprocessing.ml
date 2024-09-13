@@ -2956,6 +2956,19 @@ let expand_sqlalchemy_declarative_base
   { source with Source.statements = List.map ~f:expand_declarative_base_instance statements }
 
 
+let type_param_names_set type_params =
+  List.map type_params ~f:(fun { Node.value; _ } ->
+      match value with
+      | Ast.Expression.TypeParam.TypeVar { name; _ } -> name
+      | Ast.Expression.TypeParam.TypeVarTuple name -> name
+      | Ast.Expression.TypeParam.ParamSpec name -> name)
+  |> Identifier.Set.of_list
+
+
+let remove_bound_names type_param_names_set =
+  Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Set.mem type_param_names_set name))
+
+
 module NameAccessSet = Set.Make (Define.NameAccess)
 module CaptureSet = Set.Make (Define.Capture)
 
@@ -3093,19 +3106,6 @@ module AccessCollector = struct
 
 
   and from_statement collected { Node.value; _ } =
-    (* remove type parameters from the name access set for the parameters and return types *)
-    let type_param_names_set type_params =
-      List.map type_params ~f:(fun { Node.value; _ } ->
-          match value with
-          | Ast.Expression.TypeParam.TypeVar { name; _ } -> name
-          | Ast.Expression.TypeParam.TypeVarTuple name -> name
-          | Ast.Expression.TypeParam.ParamSpec name -> name)
-      |> Identifier.Set.of_list
-    in
-    let remove_bound_names type_param_names_set =
-      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Set.mem type_param_names_set name))
-    in
-
     let from_optional_expression collected =
       Option.value_map ~default:collected ~f:(from_expression collected)
     in
@@ -3541,7 +3541,7 @@ let populate_unbound_names ({ Source.module_path = { ModulePath.qualifier; _ }; 
         let unbound_names = AccessCollector.from_define define |> compute_unbound_names ~scopes in
         let body = transform_statements ~scopes body in
         { Node.location; value = Statement.Define { define with body; unbound_names } }
-    | { Node.location; value = Class ({ Class.body; _ } as class_) } ->
+    | { Node.location; value = Class ({ Class.body; type_params; _ } as class_) } ->
         let top_level_unbound_names =
           let scopes =
             ScopeStack.extend
@@ -3553,6 +3553,14 @@ let populate_unbound_names ({ Source.module_path = { ModulePath.qualifier; _ }; 
         (* Use parent scope here as classes do not open up new scopes for the methods defined in
            it. *)
         let body = transform_statements ~scopes body in
+
+        (* collect class type parameters and remove them from the access set *)
+        let type_param_names_set = type_param_names_set type_params in
+        let remove_bound_names = remove_bound_names type_param_names_set in
+        let top_level_unbound_names =
+          Set.to_list (NameAccessSet.of_list top_level_unbound_names |> remove_bound_names)
+        in
+
         { Node.location; value = Class { class_ with body; top_level_unbound_names } }
     (* The rest is just boilerplates to make sure every nested define gets visited *)
     | { Node.location; value = For for_ } ->
