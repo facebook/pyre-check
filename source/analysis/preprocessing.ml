@@ -2146,10 +2146,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                     [
                       {
                         Node.value =
-                          {
-                            Import.name = Reference.create literal;
-                            alias = Some (Identifier.sanitized identifier);
-                          };
+                          { Import.name = Reference.create literal; alias = Some identifier };
                         location;
                       };
                     ];
@@ -2206,10 +2203,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                     [
                       {
                         Node.value =
-                          {
-                            Import.name = Reference.create import_literal;
-                            alias = Some (Identifier.sanitized identifier);
-                          };
+                          { Import.name = Reference.create import_literal; alias = Some identifier };
                         location;
                       };
                     ];
@@ -3770,7 +3764,6 @@ let mangle_private_attributes source =
 
     let should_mangle identifier =
       (* Ensure there are at least two leading underscores and at most one trailing underscore. *)
-      let identifier = Identifier.sanitized identifier in
       let thrift_typing_import_special_case =
         (* TODO(T97954725): Remove special casing *)
         String.equal identifier "__T"
