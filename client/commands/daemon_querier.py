@@ -40,7 +40,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class DaemonQuerierSource(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     PYRE_DAEMON: str = "PYRE_DAEMON"
+    # pyre-fixme[35]: Target cannot be annotated.
     GLEAN_INDEXER: str = "GLEAN_INDEXER"
 
 

@@ -29,8 +29,11 @@ STUBS_SUFFIX: str = "-stubs"
 
 
 class SearchStrategy(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     NONE: str = "none"
+    # pyre-fixme[35]: Target cannot be annotated.
     ALL: str = "all"
+    # pyre-fixme[35]: Target cannot be annotated.
     PEP561: str = "pep561"
 
     def __str__(self) -> str:
@@ -45,8 +48,11 @@ class SearchStrategy(str, enum.Enum):
 
 
 class PackageStatus(enum.IntEnum):
+    # pyre-fixme[35]: Target cannot be annotated.
     UNTYPED: int = 0
+    # pyre-fixme[35]: Target cannot be annotated.
     PARTIALLY_TYPED: int = 1
+    # pyre-fixme[35]: Target cannot be annotated.
     TYPED: int = 2
 
 

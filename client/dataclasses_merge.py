@@ -103,8 +103,11 @@ T = TypeVar("T")
 
 
 class Policy(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     OVERWRITE: str = "overwrite"
+    # pyre-fixme[35]: Target cannot be annotated.
     PREPEND: str = "prepend"
+    # pyre-fixme[35]: Target cannot be annotated.
     RAISE_WHEN_OVERWRITTEN: str = "raise_when_overwritten"
 
 

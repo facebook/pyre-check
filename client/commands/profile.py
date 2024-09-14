@@ -47,6 +47,7 @@ class EventMetadata:
 @dataclasses.dataclass(frozen=True)
 # pyre-fixme[13]: Attribute `metadata` is never initialized.
 class Event:
+    # pyre-fixme[13]: Attribute `metadata` is never initialized.
     metadata: EventMetadata
 
     def __init__(self, metadata: EventMetadata) -> None:

@@ -232,7 +232,9 @@ class SymbolKind(enum.IntEnum):
 
 
 class PyreCallHierarchyRelationDirection(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     PARENT: str = "PARENT"
+    # pyre-fixme[35]: Target cannot be annotated.
     CHILD: str = "CHILD"
 
     def is_parent(self) -> bool:

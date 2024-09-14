@@ -37,12 +37,19 @@ SARIF: str = "sarif"
 
 
 class ProfileOutput(enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     TRACE_EVENT: str = "trace_event"
+    # pyre-fixme[35]: Target cannot be annotated.
     COLD_START_PHASES: str = "cold_start_phases"
+    # pyre-fixme[35]: Target cannot be annotated.
     INCREMENTAL_UPDATES: str = "incremental_updates"
+    # pyre-fixme[35]: Target cannot be annotated.
     TAINT: str = "taint"
+    # pyre-fixme[35]: Target cannot be annotated.
     INDIVIDUAL_TABLE_SIZES: str = "individual_table_sizes"
+    # pyre-fixme[35]: Target cannot be annotated.
     TOTAL_SHARED_MEMORY_SIZE_OVER_TIME: str = "total_shared_memory_size_over_time"
+    # pyre-fixme[35]: Target cannot be annotated.
     TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH: str = (
         "total_shared_memory_size_over_time_graph"  # noqa B950
     )
@@ -52,18 +59,25 @@ class ProfileOutput(enum.Enum):
 
 
 class VersionKind(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     NONE: str = "none"
+    # pyre-fixme[35]: Target cannot be annotated.
     CLIENT: str = "client"
+    # pyre-fixme[35]: Target cannot be annotated.
     CLIENT_AND_BINARY: str = "client_and_binary"
 
 
 class MissingFlowsKind(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     OBSCURE: str = "obscure"
+    # pyre-fixme[35]: Target cannot be annotated.
     TYPE: str = "type"
 
 
 class TaintOutputFormat(str, enum.Enum):
+    # pyre-fixme[35]: Target cannot be annotated.
     JSON: str = "json"
+    # pyre-fixme[35]: Target cannot be annotated.
     SHARDED_JSON: str = "sharded-json"
 
 
