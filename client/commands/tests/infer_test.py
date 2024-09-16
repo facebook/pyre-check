@@ -936,7 +936,7 @@ class StubGenerationTest(testslide.TestCase):
                     }
                 ]
             },
-            "def with_params(y=7, x: int = 5) -> int: ...",
+            "def with_params(y=..., x: int = ...) -> int: ...",
         )
 
         self._assert_stubs(
@@ -997,7 +997,7 @@ class StubGenerationTest(testslide.TestCase):
                     }
                 ]
             },
-            "def missing_param_test(x: int = 5): ...",
+            "def missing_param_test(x: int = ...): ...",
         )
 
         self._assert_stubs(
@@ -1381,7 +1381,7 @@ class StubGenerationTest(testslide.TestCase):
                 ]
             },
             """\
-            def with_params(y=7, x: typing.List[int] = [5]) -> Union[int, str]: ...
+            def with_params(y=..., x: typing.List[int] = ...) -> Union[int, str]: ...
             """,
         )
 
@@ -1410,7 +1410,7 @@ class StubGenerationTest(testslide.TestCase):
                 ]
             },
             """\
-            def with_params(y=7, x: "typing.List[int]" = [5]) -> "Union[int, str]": ...
+            def with_params(y=..., x: "typing.List[int]" = ...) -> "Union[int, str]": ...
             """,
             quote_annotations=True,
         )

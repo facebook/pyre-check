@@ -412,11 +412,11 @@ class TypeAnnotation:
 class Parameter:
     name: str
     annotation: TypeAnnotation
-    value: Optional[str]
+    has_default: bool
 
     def to_stub(self) -> str:
         delimiter = "=" if self.annotation.missing else " = "
-        value = f"{delimiter}{self.value}" if self.value else ""
+        value = f"{delimiter}..." if self.has_default else ""
         return f"{self.name}{self.annotation.to_stub(prefix=': ')}{value}"
 
 
@@ -521,7 +521,7 @@ class ModuleAnnotations:
                         Parameter(
                             name=parameter.name,
                             annotation=type_annotation(parameter.annotation),
-                            value=parameter.value,
+                            has_default=parameter.value is not None,
                         )
                         for parameter in define.parameters
                     ],
@@ -541,7 +541,7 @@ class ModuleAnnotations:
                             annotation=type_annotation(
                                 parameter.annotation, define.parent
                             ),
-                            value=parameter.value,
+                            has_default=parameter.value is not None,
                         )
                         for parameter in define.parameters
                     ],
