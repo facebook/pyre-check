@@ -807,7 +807,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> None
 
     method full_order ~cycle_detections =
-      let Queries.{ is_protocol; class_hierarchy; has_transitive_successor; least_upper_bound; _ } =
+      let Queries.
+            {
+              is_protocol;
+              class_hierarchy;
+              has_transitive_successor;
+              least_upper_bound;
+              get_class_summary;
+              successors;
+              _;
+            }
+        =
         queries
       in
       let resolve class_type =
@@ -857,6 +867,24 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let class_hierarchy_handler = class_hierarchy () in
       let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
+      let get_named_tuple_fields class_type =
+        resolve class_type
+        >>= fun { class_name; _ } ->
+        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
+           get_class_summary class_name
+           >>| Node.value
+           >>| fun summary ->
+           ClassSummary.fields_tuple_value summary
+           >>| List.map ~f:(fun name ->
+                   attribute class_type ~cycle_detections ~name
+                   >>| AnnotatedAttribute.annotation
+                   >>| TypeInfo.Unit.annotation)
+           >>| Option.all
+           |> Option.value ~default:None
+        else
+          None)
+        |> Option.value ~default:None
+      in
       {
         ConstraintsSet.class_hierarchy =
           {
@@ -871,6 +899,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         is_protocol;
         cycle_detections;
         get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
+        get_named_tuple_fields;
         metaclass;
       }
 

@@ -43,6 +43,8 @@ let parse_attributes ~class_name ~parse_annotation attributes =
 
 let get_typed_dictionary _ = None
 
+let get_named_tuple_fields _ = None
+
 let environment ?source context =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     let sources = Option.value_map source ~f:(fun source -> ["test.py", source]) ~default:[] in
@@ -232,6 +234,7 @@ let make_assert_functions context =
               decorators_being_resolved = DecoratorsBeingResolved.empty;
             };
           get_typed_dictionary;
+          get_named_tuple_fields;
           metaclass;
         }
       in
@@ -1548,6 +1551,7 @@ let test_instantiate_protocol_parameters context =
             decorators_being_resolved = DecoratorsBeingResolved.empty;
           };
         get_typed_dictionary;
+        get_named_tuple_fields;
         metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
       }
     in
@@ -1721,6 +1725,7 @@ let test_mark_escaped_as_escaped context =
             decorators_being_resolved = DecoratorsBeingResolved.empty;
           };
         get_typed_dictionary;
+        get_named_tuple_fields;
         metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
       }
     in

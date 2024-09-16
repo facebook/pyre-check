@@ -57,6 +57,7 @@ type order = {
     AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
+  get_named_tuple_fields: Type.t -> Type.t list option;
   metaclass: Type.Primitive.t -> cycle_detections:CycleDetection.t -> Type.t option;
   cycle_detections: CycleDetection.t;
 }
@@ -561,6 +562,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
          is_protocol;
          cycle_detections;
          get_typed_dictionary;
+         get_named_tuple_fields;
          metaclass;
          _;
        } as order)
@@ -896,8 +898,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~constraints
           ~left:(Type.parametric "tuple" [Single (Type.union members)])
           ~right
-    | Type.Primitive name, Type.Tuple _ ->
-        if Type.Primitive.equal name "tuple" then [constraints] else impossible
+    | Type.Primitive name, Type.Tuple right -> (
+        if Type.Primitive.equal name "tuple" then
+          [constraints]
+        else
+          match get_named_tuple_fields (Type.Primitive name) with
+          | Some fields ->
+              solve_ordered_types_less_or_equal order ~left:(Concrete fields) ~right ~constraints
+          | _ -> impossible)
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
         impossible

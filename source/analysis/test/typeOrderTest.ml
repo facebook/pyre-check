@@ -75,6 +75,8 @@ let parse_attributes ~class_name ~parse_annotation attributes =
 
 let get_typed_dictionary _ = None
 
+let get_named_tuple_fields _ = None
+
 let hierarchy class_hierarchy_handler =
   let has_transitive_successor ~successor predecessor =
     match
@@ -157,6 +159,7 @@ let less_or_equal
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
+      get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 
@@ -175,6 +178,7 @@ let join ?(attributes = fun _ ~cycle_detections:_ -> None) handler =
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
+      get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 
@@ -193,6 +197,7 @@ let meet handler =
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
       get_typed_dictionary;
+      get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
     }
 

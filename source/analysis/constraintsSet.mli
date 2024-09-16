@@ -24,6 +24,7 @@ type order = {
     AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> bool;
   get_typed_dictionary: Type.t -> Type.TypedDictionary.t option;
+  get_named_tuple_fields: Type.t -> Type.t list option;
   metaclass: Type.Primitive.t -> cycle_detections:CycleDetection.t -> Type.t option;
   cycle_detections: CycleDetection.t;
 }
