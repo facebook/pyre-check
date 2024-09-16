@@ -2500,6 +2500,18 @@ let expand_named_tuples
           let any_annotation =
             Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
           in
+          let attribute_default_values =
+            let extract_default_values argument =
+              match argument with
+              | {
+               Call.Argument.name = Some { value = "defaults"; _ };
+               value = { Node.value = Expression.Tuple items; _ };
+              } ->
+                  Some items
+              | _ -> None
+            in
+            List.find_map arguments ~f:extract_default_values |> Option.value ~default:[]
+          in
           let attributes =
             match arguments with
             | _
@@ -2536,7 +2548,11 @@ let expand_named_tuples
             | _ :: arguments ->
                 List.filter_map arguments ~f:(fun argument ->
                     match argument with
-                    | { Call.Argument.name = Some { Node.value = "rename" | "defaults"; _ }; _ } ->
+                    | {
+                     Call.Argument.name =
+                       Some { Node.value = "$parameter$rename" | "$parameter$defaults"; _ };
+                     _;
+                    } ->
                         None
                     | { Call.Argument.name = Some { Node.value = name; _ }; value } ->
                         Some (name, value, None)
@@ -2546,7 +2562,7 @@ let expand_named_tuples
           (* https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields
              if rename=True is set, invalid or duplicate field names are renamed to their index with
              an underscore prefix *)
-          let renamed_attributes, _ =
+          let rename_attributes attributes =
             Core.List.foldi
               ~f:(fun idx (attributes, seen) ((name, annotation, value) as attribute) ->
                 if
@@ -2558,9 +2574,26 @@ let expand_named_tuples
                   attribute :: attributes, Set.add seen name)
               ~init:([], Identifier.Set.empty)
               attributes
+            |> fst
           in
-          let attributes = List.rev renamed_attributes in
-          Some attributes
+          let rec assign_attribute_defaults defaults attributes =
+            match attributes, defaults with
+            | _, []
+            | [], _ ->
+                attributes
+            | (name, annotation, None) :: attributes, default :: defaults ->
+                (name, annotation, Some default) :: assign_attribute_defaults defaults attributes
+            | attribute :: attributes, defaults ->
+                attribute :: assign_attribute_defaults defaults attributes
+          in
+          (* rename_attributes reverses the list of attributes, but that's OK since we want to
+             assign default values starting from the end. After default values are assigned, we
+             reverse the attributes so they are ordered correctly. *)
+          Some
+            (attributes
+            |> rename_attributes
+            |> assign_attribute_defaults (List.rev attribute_default_values)
+            |> List.rev)
       | _ -> None
     in
     let fields_attribute ~location attributes =

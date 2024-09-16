@@ -4941,6 +4941,21 @@ let test_transform_ast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
            {|
+      T = typing.NamedTuple('T', [('one', int), ('two', str)], defaults=(1, 2))
+    |}
+           {|
+      class T(typing.NamedTuple):
+        def __new__(cls, one: int = 1, two: str = 2) -> typing.NamedTuple: ...
+        def __init__(self, one: int = 1, two: str = 2) -> None:
+         self.one = one
+         self.two = two
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
+        one: typing.Final[int] = ...
+        two: typing.Final[str] = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
       T = typing.NamedTuple('T', [('abc', int), ('def', str), ('abc', int)], rename=True)
     |}
            {|
