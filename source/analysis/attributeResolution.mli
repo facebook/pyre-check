@@ -49,14 +49,6 @@ module AttributeReadOnly : sig
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
-  val get_typed_dictionary
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Type.t ->
-    Type.TypedDictionary.t option
-
-  val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
-
   val check_invalid_type_arguments
     :  t ->
     ?dependency:DependencyKey.registered ->
@@ -70,6 +62,14 @@ module AttributeReadOnly : sig
     ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     Expression.expression Node.t ->
     Type.t
+
+  val get_typed_dictionary
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Type.t ->
+    Type.TypedDictionary.t option
+
+  val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
   val attribute
     :  t ->

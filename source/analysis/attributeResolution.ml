@@ -782,127 +782,6 @@ let callable_call_special_cases
 
 class base ~queries:(Queries.{ controls; _ } as queries) =
   object (self)
-    method get_typed_dictionary ~cycle_detections annotation =
-      let Queries.{ is_typed_dictionary; _ } = queries in
-      match annotation with
-      | Type.Primitive class_name when is_typed_dictionary class_name ->
-          let fields =
-            self#attribute
-              ~cycle_detections
-              ~transitive:false
-              ~accessed_through_class:true
-              ~accessed_through_readonly:false
-              ~include_generated_attributes:true
-              ~instantiated:(Type.meta annotation)
-              ~special_method:false
-              ~attribute_name:"__init__"
-              class_name
-            >>| AnnotatedAttribute.annotation
-            >>| TypeInfo.Unit.annotation
-            >>= function
-            | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
-            | _ -> None
-          in
-          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
-      | _ -> None
-
-    method full_order ~cycle_detections =
-      let Queries.
-            {
-              is_protocol;
-              class_hierarchy;
-              has_transitive_successor;
-              least_upper_bound;
-              get_class_summary;
-              successors;
-              _;
-            }
-        =
-        queries
-      in
-      let resolve class_type =
-        match Type.class_data_for_attribute_lookup class_type with
-        | None -> None
-        | Some [] -> None
-        | Some [resolved] -> Some resolved
-        | Some (_ :: _) ->
-            (* These come from calling attributes on Unions, which are handled by
-               solve_less_or_equal indirectly by breaking apart the union before doing the
-               instantiate_protocol_parameters. Therefore, there is no reason to deal with joining
-               the attributes together here *)
-            None
-      in
-      let attribute class_type ~cycle_detections ~name =
-        resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
-        self#attribute
-          ~cycle_detections
-          ~transitive:true
-          ~accessed_through_class
-          ~accessed_through_readonly
-          ~include_generated_attributes:true
-          ?special_method:None
-          ~attribute_name:name
-          ~instantiated
-          class_name
-      in
-      let instantiated_attributes class_type ~cycle_detections =
-        resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
-        self#uninstantiated_attributes
-          ~cycle_detections
-          ~transitive:true
-          ~accessed_through_class
-          ~include_generated_attributes:true
-          ?special_method:None
-          class_name
-        >>| List.map
-              ~f:
-                (self#instantiate_attribute
-                   ~cycle_detections
-                   ~instantiated
-                   ~accessed_through_class
-                   ~accessed_through_readonly
-                   ?apply_descriptors:None)
-      in
-      let class_hierarchy_handler = class_hierarchy () in
-      let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
-      let get_named_tuple_fields class_type =
-        resolve class_type
-        >>= fun { class_name; _ } ->
-        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
-           get_class_summary class_name
-           >>| Node.value
-           >>| fun summary ->
-           ClassSummary.fields_tuple_value summary
-           >>| List.map ~f:(fun name ->
-                   attribute class_type ~cycle_detections ~name
-                   >>| AnnotatedAttribute.annotation
-                   >>| TypeInfo.Unit.annotation)
-           >>| Option.all
-           |> Option.value ~default:None
-        else
-          None)
-        |> Option.value ~default:None
-      in
-      {
-        ConstraintsSet.class_hierarchy =
-          {
-            instantiate_successors_parameters =
-              ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-            has_transitive_successor;
-            generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler;
-            least_upper_bound;
-          };
-        attribute;
-        instantiated_attributes;
-        is_protocol;
-        cycle_detections;
-        get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
-        get_named_tuple_fields;
-        metaclass;
-      }
-
     method check_invalid_type_arguments
         ?(replace_unbound_parameters_with_any = true)
         ~cycle_detections
@@ -1126,7 +1005,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         | Some variable_map -> (
             fun variable_name ->
               let local_scope_variable = map_find variable_map variable_name in
-
               match local_scope_variable with
               | None -> get_variable variable_name
               | Some variable -> Some variable)
@@ -1184,6 +1062,127 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             annotation
       in
       result
+
+    method get_typed_dictionary ~cycle_detections annotation =
+      let Queries.{ is_typed_dictionary; _ } = queries in
+      match annotation with
+      | Type.Primitive class_name when is_typed_dictionary class_name ->
+          let fields =
+            self#attribute
+              ~cycle_detections
+              ~transitive:false
+              ~accessed_through_class:true
+              ~accessed_through_readonly:false
+              ~include_generated_attributes:true
+              ~instantiated:(Type.meta annotation)
+              ~special_method:false
+              ~attribute_name:"__init__"
+              class_name
+            >>| AnnotatedAttribute.annotation
+            >>| TypeInfo.Unit.annotation
+            >>= function
+            | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
+            | _ -> None
+          in
+          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
+      | _ -> None
+
+    method full_order ~cycle_detections =
+      let Queries.
+            {
+              is_protocol;
+              class_hierarchy;
+              has_transitive_successor;
+              least_upper_bound;
+              get_class_summary;
+              successors;
+              _;
+            }
+        =
+        queries
+      in
+      let resolve class_type =
+        match Type.class_data_for_attribute_lookup class_type with
+        | None -> None
+        | Some [] -> None
+        | Some [resolved] -> Some resolved
+        | Some (_ :: _) ->
+            (* These come from calling attributes on Unions, which are handled by
+               solve_less_or_equal indirectly by breaking apart the union before doing the
+               instantiate_protocol_parameters. Therefore, there is no reason to deal with joining
+               the attributes together here *)
+            None
+      in
+      let attribute class_type ~cycle_detections ~name =
+        resolve class_type
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        self#attribute
+          ~cycle_detections
+          ~transitive:true
+          ~accessed_through_class
+          ~accessed_through_readonly
+          ~include_generated_attributes:true
+          ?special_method:None
+          ~attribute_name:name
+          ~instantiated
+          class_name
+      in
+      let instantiated_attributes class_type ~cycle_detections =
+        resolve class_type
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        self#uninstantiated_attributes
+          ~cycle_detections
+          ~transitive:true
+          ~accessed_through_class
+          ~include_generated_attributes:true
+          ?special_method:None
+          class_name
+        >>| List.map
+              ~f:
+                (self#instantiate_attribute
+                   ~cycle_detections
+                   ~instantiated
+                   ~accessed_through_class
+                   ~accessed_through_readonly
+                   ?apply_descriptors:None)
+      in
+      let class_hierarchy_handler = class_hierarchy () in
+      let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
+      let get_named_tuple_fields class_type =
+        resolve class_type
+        >>= fun { class_name; _ } ->
+        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
+           get_class_summary class_name
+           >>| Node.value
+           >>| fun summary ->
+           ClassSummary.fields_tuple_value summary
+           >>| List.map ~f:(fun name ->
+                   attribute class_type ~cycle_detections ~name
+                   >>| AnnotatedAttribute.annotation
+                   >>| TypeInfo.Unit.annotation)
+           >>| Option.all
+           |> Option.value ~default:None
+        else
+          None)
+        |> Option.value ~default:None
+      in
+      {
+        ConstraintsSet.class_hierarchy =
+          {
+            instantiate_successors_parameters =
+              ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+            has_transitive_successor;
+            generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler;
+            least_upper_bound;
+          };
+        attribute;
+        instantiated_attributes;
+        is_protocol;
+        cycle_detections;
+        get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
+        get_named_tuple_fields;
+        metaclass;
+      }
 
     method sqlalchemy_attribute_table
         ~cycle_detections
