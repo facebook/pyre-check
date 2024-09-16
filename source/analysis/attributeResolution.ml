@@ -1063,6 +1063,114 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       result
 
+    method resolve_define_undecorated
+        ~cycle_detections
+        ~callable_name
+        ~(implementation : Ast.Statement.Define.Signature.t option)
+        ~overloads
+        ~scoped_type_variables:outer_scope_type_variables =
+      let Queries.{ param_spec_from_vararg_annotations; generic_parameters_as_variables; _ } =
+        queries
+      in
+      let parse (signature : Define.Signature.t) =
+        (* merge the parameters on top of the existing scope (ex. classes) *)
+        let scoped_type_variables =
+          (* collect our local type variables from our function defintion *)
+          let local_type_parameters =
+            let type_param_names =
+              List.map
+                ~f:(fun tp ->
+                  match tp.Node.value with
+                  | Expression.TypeParam.TypeVar { name; _ } ->
+                      Type.Variable.TypeVarVariable
+                        (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
+                  | Expression.TypeParam.TypeVarTuple name ->
+                      Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+                  | Expression.TypeParam.ParamSpec name ->
+                      Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+                signature.type_params
+            in
+            type_param_names
+          in
+          let local_scoped_type_variables = scoped_type_variables_as_map local_type_parameters in
+          merge_scoped_type_variables
+            ~inner_scope_type_variables:local_scoped_type_variables
+            ~outer_scope_type_variables
+        in
+        let parser =
+          {
+            AnnotatedCallable.parse_annotation =
+              self#parse_annotation ~cycle_detections ~scoped_type_variables;
+            param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
+          }
+        in
+        AnnotatedCallable.create_overload_without_applying_decorators
+          ~parser
+          ~generic_parameters_as_variables
+          signature
+      in
+      let kind =
+        match callable_name with
+        | Some name -> Callable.Named name
+        | None -> Callable.Anonymous
+      in
+      let undefined_overload =
+        { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
+      in
+      let parsed_overloads, parsed_implementation, decorators =
+        match overloads, implementation with
+        | ( ({ Ast.Statement.Define.Signature.decorators = head_decorators; _ } as overload) :: tail,
+            _ ) ->
+            let purify =
+              let is_not_overload_decorator decorator =
+                not
+                  (Ast.Statement.Define.Signature.is_overloaded_function
+                     { overload with Ast.Statement.Define.Signature.decorators = [decorator] })
+              in
+              List.filter ~f:is_not_overload_decorator
+            in
+            let enforce_equality ~parsed ~current sofar =
+              let equal left right =
+                Int.equal (Ast.Expression.location_insensitive_compare left right) 0
+              in
+              if List.equal equal sofar (purify current) then
+                Ok sofar
+              else
+                Error (AnnotatedAttribute.DifferingDecorators { offender = parsed })
+            in
+            let reversed_parsed_overloads, decorators =
+              let collect
+                  (reversed_parsed_overloads, decorators_sofar)
+                  ({ Define.Signature.decorators = current; _ } as overload)
+                =
+                let parsed = parse overload in
+                ( parsed :: reversed_parsed_overloads,
+                  Result.bind decorators_sofar ~f:(enforce_equality ~parsed ~current) )
+              in
+              List.fold tail ~f:collect ~init:([parse overload], Result.Ok (purify head_decorators))
+            in
+            let parsed_implementation, decorators =
+              match implementation with
+              | Some ({ Ast.Statement.Define.Signature.decorators = current; _ } as implementation)
+                ->
+                  let parsed = parse implementation in
+                  Some parsed, Result.bind decorators ~f:(enforce_equality ~parsed ~current)
+              | None -> None, decorators
+            in
+            List.rev reversed_parsed_overloads, parsed_implementation, decorators
+        | [], Some { decorators; _ } -> [], implementation >>| parse, Result.Ok decorators
+        | [], None -> [], None, Ok []
+      in
+      let undecorated_signature =
+        {
+          Type.Callable.implementation =
+            parsed_implementation |> Option.value ~default:undefined_overload;
+          overloads = parsed_overloads;
+          kind;
+        }
+      in
+      { AnnotatedAttribute.undecorated_signature; decorators }
+
     method metaclass ~cycle_detections target =
       let Queries.{ get_class_summary; _ } = queries in
       (* See
@@ -3036,112 +3144,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           undecorated_signature
       in
       Result.bind decorators ~f:apply_decorators
-
-    method resolve_define_undecorated
-        ~cycle_detections
-        ~callable_name
-        ~implementation
-        ~overloads
-        ~scoped_type_variables:outer_scope_type_variables =
-      let Queries.{ param_spec_from_vararg_annotations; generic_parameters_as_variables; _ } =
-        queries
-      in
-      let parse (signature : Define.Signature.t) =
-        (* merge the parameters on top of the existing scope (ex. classes) *)
-        let scoped_type_variables =
-          (* collect our local type variables from our function defintion *)
-          let local_type_parameters =
-            let type_param_names =
-              List.map
-                ~f:(fun tp ->
-                  match tp.Node.value with
-                  | Expression.TypeParam.TypeVar { name; _ } ->
-                      Type.Variable.TypeVarVariable
-                        (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-                  | Expression.TypeParam.TypeVarTuple name ->
-                      Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-                  | Expression.TypeParam.ParamSpec name ->
-                      Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
-                signature.type_params
-            in
-            type_param_names
-          in
-          let local_scoped_type_variables = scoped_type_variables_as_map local_type_parameters in
-          merge_scoped_type_variables
-            ~inner_scope_type_variables:local_scoped_type_variables
-            ~outer_scope_type_variables
-        in
-        let parser =
-          {
-            AnnotatedCallable.parse_annotation =
-              self#parse_annotation ~cycle_detections ~scoped_type_variables;
-            param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
-          }
-        in
-        AnnotatedCallable.create_overload_without_applying_decorators
-          ~parser
-          ~generic_parameters_as_variables
-          signature
-      in
-      let kind =
-        match callable_name with
-        | Some name -> Callable.Named name
-        | None -> Callable.Anonymous
-      in
-      let undefined_overload =
-        { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
-      in
-      let parsed_overloads, parsed_implementation, decorators =
-        match overloads, implementation with
-        | ({ decorators = head_decorators; _ } as overload) :: tail, _ ->
-            let purify =
-              let is_not_overload_decorator decorator =
-                not
-                  (Ast.Statement.Define.Signature.is_overloaded_function
-                     { overload with decorators = [decorator] })
-              in
-              List.filter ~f:is_not_overload_decorator
-            in
-            let enforce_equality ~parsed ~current sofar =
-              let equal left right =
-                Int.equal (Ast.Expression.location_insensitive_compare left right) 0
-              in
-              if List.equal equal sofar (purify current) then
-                Ok sofar
-              else
-                Error (AnnotatedAttribute.DifferingDecorators { offender = parsed })
-            in
-            let reversed_parsed_overloads, decorators =
-              let collect
-                  (reversed_parsed_overloads, decorators_sofar)
-                  ({ Define.Signature.decorators = current; _ } as overload)
-                =
-                let parsed = parse overload in
-                ( parsed :: reversed_parsed_overloads,
-                  Result.bind decorators_sofar ~f:(enforce_equality ~parsed ~current) )
-              in
-              List.fold tail ~f:collect ~init:([parse overload], Result.Ok (purify head_decorators))
-            in
-            let parsed_implementation, decorators =
-              match implementation with
-              | Some ({ Define.Signature.decorators = current; _ } as implementation) ->
-                  let parsed = parse implementation in
-                  Some parsed, Result.bind decorators ~f:(enforce_equality ~parsed ~current)
-              | None -> None, decorators
-            in
-            List.rev reversed_parsed_overloads, parsed_implementation, decorators
-        | [], Some { decorators; _ } -> [], implementation >>| parse, Result.Ok decorators
-        | [], None -> [], None, Ok []
-      in
-      let undecorated_signature =
-        {
-          Type.Callable.implementation =
-            parsed_implementation |> Option.value ~default:undefined_overload;
-          overloads = parsed_overloads;
-          kind;
-        }
-      in
-      { undecorated_signature; decorators }
 
     method signature_select
         ~cycle_detections

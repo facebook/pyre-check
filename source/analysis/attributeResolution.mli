@@ -63,6 +63,15 @@ module AttributeReadOnly : sig
     Expression.expression Node.t ->
     Type.t
 
+  val resolve_define_undecorated
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    callable_name:Reference.t option ->
+    implementation:Define.Signature.t option ->
+    overloads:Define.Signature.t list ->
+    scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
+    AnnotatedAttribute.decorated_method
+
   val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
 
   val uninstantiated_attributes
@@ -122,15 +131,6 @@ module AttributeReadOnly : sig
     overloads:Define.Signature.t list ->
     scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
     resolved_define
-
-  val resolve_define_undecorated
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    callable_name:Reference.t option ->
-    implementation:Define.Signature.t option ->
-    overloads:Define.Signature.t list ->
-    scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
-    AnnotatedAttribute.decorated_method
 
   val signature_select
     :  t ->
