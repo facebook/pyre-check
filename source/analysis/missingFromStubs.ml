@@ -247,6 +247,8 @@ let missing_typing_classes =
     make_class ~in_module "StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
     make_class ~in_module "GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
     make_class ~in_module "TypeAlias";
+    (* Note: ReadOnly is actually covariant. *)
+    make_class ~in_module "ReadOnly" ~bases:single_unary_generic;
     make_class ~in_module "Required" ~bases:single_unary_generic;
     make_class ~in_module "NotRequired" ~bases:single_unary_generic;
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
@@ -264,6 +266,8 @@ let missing_typing_extensions_classes =
     make_class ~in_module "Annotated" ~bases:catch_all_generic;
     make_class ~in_module "TypeAlias";
     make_class ~in_module "Never";
+    (* Note: ReadOnly is actually covariant. *)
+    make_class ~in_module "ReadOnly" ~bases:single_unary_generic;
     make_class ~in_module "Required" ~bases:single_unary_generic;
     make_class ~in_module "NotRequired" ~bases:single_unary_generic;
     (* Note: TypeGuard is actually covariant; we hardcode this in AttributeResolution. *)
