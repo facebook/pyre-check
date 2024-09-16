@@ -268,6 +268,9 @@ module DefineAnnotation = struct
       type t = {
         name: SerializableReference.t;
         annotation: TypeAnnotation.t;
+        (* TODO: Ideally we wouldn't compute this at all - the stub only needs to know whether there
+           *is* a default, not the value. Trying to include the value causes more problems (missing
+           imports, qualification, etc). For now, we are handling this in the frontend. *)
         value: DefaultValue.t;
         index: int;
       }
