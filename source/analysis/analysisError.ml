@@ -1830,7 +1830,7 @@ let rec messages ~concise ~signature location kind =
       | Some inner_message ->
           [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
       | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name])
-  | InvalidDecoration (ApplicationFailed { name; has_arguments; reason }) as kind -> (
+  | InvalidDecoration (ApplicationFailed { name; has_arguments; reason }) -> (
       let name = Reference.sanitized name |> Reference.show in
       let arguments = if has_arguments then "(...)" else "" in
       let recurse = messages ~concise ~signature location in
@@ -1843,12 +1843,8 @@ let rec messages ~concise ~signature location kind =
       | Some (IncompatibleParameterType { mismatch = { expected; _ }; _ }), _
         when Type.exists expected ~predicate:has_param_spec_variable ->
           [
-            Format.asprintf
-              "Pyre doesn't yet support decorators with ParamSpec applied to generic functions \
-               Please add # pyre-ignore[%d] to `%s%s`."
-              (code_of_kind kind)
-              name
-              arguments;
+            "Pyre doesn't yet support decorators with ParamSpec applied to generic functions. \
+             Consider using a context manager instead of a decorator, if possible.";
           ]
       | _, Some inner_message ->
           [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message])
