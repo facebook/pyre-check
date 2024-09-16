@@ -1125,126 +1125,260 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       get_class_summary target >>| handle
 
-    method get_typed_dictionary ~cycle_detections annotation =
-      let Queries.{ is_typed_dictionary; _ } = queries in
-      match annotation with
-      | Type.Primitive class_name when is_typed_dictionary class_name ->
-          let fields =
-            self#attribute
-              ~cycle_detections
-              ~transitive:false
-              ~accessed_through_class:true
-              ~accessed_through_readonly:false
-              ~include_generated_attributes:true
-              ~instantiated:(Type.meta annotation)
-              ~special_method:false
-              ~attribute_name:"__init__"
-              class_name
-            >>| AnnotatedAttribute.annotation
-            >>| TypeInfo.Unit.annotation
-            >>= function
-            | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
-            | _ -> None
-          in
-          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
-      | _ -> None
-
-    method full_order ~cycle_detections =
-      let Queries.
-            {
-              is_protocol;
-              class_hierarchy;
-              has_transitive_successor;
-              least_upper_bound;
-              get_class_summary;
-              successors;
-              _;
-            }
-        =
-        queries
+    method create_attribute
+        ~scoped_type_variables
+        ~cycle_detections
+        ~parent
+        ?(defined = true)
+        ~accessed_via_metaclass
+        ({ Attribute.name = attribute_name; kind } as attribute) =
+      let Queries.{ exists_matching_class_decorator; successors; extends_enum; _ } = queries in
+      let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
+      let parent_name = Reference.show parent_name in
+      let class_annotation = Type.Primitive parent_name in
+      let is_enum =
+        let metaclass_extends_enummeta class_name =
+          match self#metaclass ~cycle_detections class_name with
+          | Some metaclass_type ->
+              let metaclass_name = Type.class_name metaclass_type |> Reference.show_sanitized in
+              let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
+              not
+                (Set.is_empty
+                   (Set.inter
+                      (String.Set.of_list ["enum.EnumMeta"; "enum.EnumType"])
+                      metaclass_superclasses))
+          | _ -> false
+        in
+        (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
+        && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
       in
-      let resolve class_type =
-        match Type.class_data_for_attribute_lookup class_type with
-        | None -> None
-        | Some [] -> None
-        | Some [resolved] -> Some resolved
-        | Some (_ :: _) ->
-            (* These come from calling attributes on Unions, which are handled by
-               solve_less_or_equal indirectly by breaking apart the union before doing the
-               instantiate_protocol_parameters. Therefore, there is no reason to deal with joining
-               the attributes together here *)
-            None
+      let annotation, class_variable, visibility, undecorated_signature =
+        match kind with
+        | Simple { annotation; values; toplevel; _ } ->
+            let value = List.hd values >>| fun { value; _ } -> value in
+            let parsed_annotation =
+              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
+            in
+            (* Account for class attributes. *)
+            let annotation, final, class_variable =
+              parsed_annotation
+              >>| (fun annotation ->
+                    let process_class_variable annotation =
+                      match Type.class_variable_value annotation with
+                      | Some annotation -> true, annotation
+                      | None -> false, annotation
+                    in
+                    match Type.final_value annotation with
+                    | `NoArgument -> None, true, false
+                    | `NotFinal ->
+                        let is_class_variable, annotation = process_class_variable annotation in
+                        Some annotation, false, is_class_variable
+                    | `Ok annotation ->
+                        let is_class_variable, annotation = process_class_variable annotation in
+                        Some annotation, true, is_class_variable)
+              |> Option.value ~default:(None, false, false)
+            in
+            let visibility =
+              if final then
+                AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
+              else
+                ReadWrite
+            in
+            (* Try resolve to tuple of string literal types for __match_args__ *)
+            let annotation =
+              let open Expression in
+              match attribute_name, annotation, value with
+              | "__match_args__", None, Some { Node.value = Expression.Tuple elements; _ } ->
+                  let string_literal_value_to_type = function
+                    | {
+                        Node.value =
+                          Expression.Constant
+                            (Constant.String { StringLiteral.kind = String; value });
+                        _;
+                      } ->
+                        Some (Type.Literal (String (LiteralValue value)))
+                    | _ -> None
+                  in
+                  List.map elements ~f:string_literal_value_to_type |> Option.all >>| Type.tuple
+              | _ -> annotation
+            in
+            let annotation, visibility =
+              match annotation, value with
+              | _, Some value when is_enum && Attribute.may_be_enum_member attribute ->
+                  let literal_value_annotation =
+                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
+                  in
+                  let is_enum_member =
+                    match literal_value_annotation with
+                    | Type.Primitive "enum.nonmember" -> false
+                    | _ -> true
+                  in
+                  if is_enum_member then
+                    ( Type.Literal
+                        (Type.EnumerationMember
+                           { enumeration_type = class_annotation; member_name = attribute_name }),
+                      AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
+                  else if (not (Type.is_partially_typed literal_value_annotation)) && toplevel then
+                    Option.value annotation ~default:literal_value_annotation, visibility
+                  else
+                    Option.value annotation ~default:Type.Top, visibility
+              | Some annotation, _ -> annotation, visibility
+              | None, Some value ->
+                  let literal_value_annotation =
+                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
+                  in
+                  let is_dataclass_attribute =
+                    exists_matching_class_decorator
+                      ~names:["dataclasses.dataclass"; "dataclass"]
+                      parent
+                  in
+                  if
+                    (not (Type.is_partially_typed literal_value_annotation))
+                    && (not is_dataclass_attribute)
+                    && toplevel
+                  then (* Treat literal attributes as having been explicitly annotated. *)
+                    literal_value_annotation, visibility
+                  else
+                    Type.Top, visibility
+              | _ -> Type.Top, visibility
+            in
+            ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
+              class_variable,
+              visibility,
+              None )
+        | Method { signatures; final; _ } ->
+            (* Handle Callables *)
+            let visibility =
+              if final then
+                AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
+              else
+                ReadWrite
+            in
+            let callable, undecorated_signature =
+              let overloads =
+                let create_overload define =
+                  Define.Signature.is_overloaded_function define, define
+                in
+                List.map signatures ~f:create_overload
+              in
+              let implementation, overloads =
+                let to_signature (implementation, overloads) (is_overload, signature) =
+                  if is_overload then
+                    implementation, signature :: overloads
+                  else
+                    Some signature, overloads
+                in
+                List.fold ~init:(None, []) ~f:to_signature overloads
+              in
+              let callable_name = callable_name_of_public ~implementation ~overloads in
+              let { AnnotatedAttribute.undecorated_signature; decorators } =
+                self#resolve_define_undecorated
+                  ~callable_name
+                  ~implementation
+                  ~overloads
+                  ~cycle_detections
+                  ~scoped_type_variables
+              in
+              ( AnnotatedAttribute.UninstantiatedAnnotation.DecoratedMethod
+                  { undecorated_signature; decorators },
+                undecorated_signature )
+            in
+            (* If the method is decorated with @enum.member, it's an enum member so we should infer
+               a literal type *)
+            let callable, visibility =
+              if is_enum && Attribute.may_be_enum_member attribute then
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute
+                    (Type.Literal
+                       (Type.EnumerationMember
+                          { enumeration_type = class_annotation; member_name = attribute_name })),
+                  AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
+              else
+                callable, visibility
+            in
+            callable, false, visibility, Some undecorated_signature
+        | Property { kind; _ } -> (
+            let parse_annotation_option annotation =
+              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
+            in
+            match kind with
+            | ReadWrite
+                {
+                  getter = { self = getter_self_annotation; return = getter_annotation; _ };
+                  setter = { self = setter_self_annotation; value = setter_annotation; _ };
+                } ->
+                let getter_annotation = parse_annotation_option getter_annotation in
+                let setter_annotation = parse_annotation_option setter_annotation in
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
+                    {
+                      getter =
+                        {
+                          self = parse_annotation_option getter_self_annotation;
+                          value = getter_annotation;
+                        };
+                      setter =
+                        Some
+                          {
+                            self = parse_annotation_option setter_self_annotation;
+                            value = setter_annotation;
+                          };
+                    },
+                  false,
+                  ReadWrite,
+                  None )
+            | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
+                let annotation = parse_annotation_option getter_annotation in
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
+                    {
+                      getter =
+                        { self = parse_annotation_option self_annotation; value = annotation };
+                      setter = None;
+                    },
+                  false,
+                  ReadOnly Unrefinable,
+                  None ))
       in
-      let attribute class_type ~cycle_detections ~name =
-        resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
-        self#attribute
-          ~cycle_detections
-          ~transitive:true
-          ~accessed_through_class
-          ~accessed_through_readonly
-          ~include_generated_attributes:true
-          ?special_method:None
-          ~attribute_name:name
-          ~instantiated
-          class_name
+      let initialized =
+        match kind with
+        | Simple { nested_class = true; _ } -> AnnotatedAttribute.OnClass
+        | Simple { values; _ } ->
+            List.hd values
+            >>| (function
+                  | {
+                      Attribute.value = { Node.value = Constant Expression.Constant.Ellipsis; _ };
+                      _;
+                    } ->
+                      AnnotatedAttribute.OnlyOnInstance
+                  | { Attribute.origin = Explicit; _ } -> OnClass
+                  | { origin = Implicit; _ } -> OnlyOnInstance)
+            |> Option.value ~default:AnnotatedAttribute.NotInitialized
+        | Method _
+        | Property { class_property = true; _ } ->
+            OnClass
+        | Property { class_property = false; _ } -> OnlyOnInstance
       in
-      let instantiated_attributes class_type ~cycle_detections =
-        resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
-        self#uninstantiated_attributes
-          ~cycle_detections
-          ~transitive:true
-          ~accessed_through_class
-          ~include_generated_attributes:true
-          ?special_method:None
-          class_name
-        >>| List.map
-              ~f:
-                (self#instantiate_attribute
-                   ~cycle_detections
-                   ~instantiated
-                   ~accessed_through_class
-                   ~accessed_through_readonly
-                   ?apply_descriptors:None)
-      in
-      let class_hierarchy_handler = class_hierarchy () in
-      let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
-      let get_named_tuple_fields class_type =
-        resolve class_type
-        >>= fun { class_name; _ } ->
-        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
-           get_class_summary class_name
-           >>| Node.value
-           >>| fun summary ->
-           ClassSummary.fields_tuple_value summary
-           >>| List.map ~f:(fun name ->
-                   attribute class_type ~cycle_detections ~name
-                   >>| AnnotatedAttribute.annotation
-                   >>| TypeInfo.Unit.annotation)
-           >>| Option.all
-           |> Option.value ~default:None
-        else
-          None)
-        |> Option.value ~default:None
-      in
-      {
-        ConstraintsSet.class_hierarchy =
-          {
-            instantiate_successors_parameters =
-              ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-            has_transitive_successor;
-            generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler;
-            least_upper_bound;
-          };
-        attribute;
-        instantiated_attributes;
-        is_protocol;
-        cycle_detections;
-        get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
-        get_named_tuple_fields;
-        metaclass;
-      }
+      AnnotatedAttribute.create_uninstantiated
+        ~uninstantiated_annotation:
+          { AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
+        ~visibility
+        ~abstract:
+          (match kind with
+          | Method { signatures; _ } ->
+              List.exists signatures ~f:Define.Signature.is_abstract_method
+          | _ -> false)
+        ~async_property:
+          (match kind with
+          | Property { async; _ } -> async
+          | _ -> false)
+        ~class_variable
+        ~defined
+        ~initialized
+        ~name:attribute_name
+        ~parent:parent_name
+        ~property:
+          (match kind with
+          | Property _ -> true
+          | _ -> false)
+        ~undecorated_signature
 
     method sqlalchemy_attribute_table
         ~cycle_detections
@@ -1656,6 +1790,127 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         Sequence.append normal_tables (Sequence.of_lazy metaclass_tables)
       in
       get_class_metadata class_name >>| handle
+
+    method get_typed_dictionary ~cycle_detections annotation =
+      let Queries.{ is_typed_dictionary; _ } = queries in
+      match annotation with
+      | Type.Primitive class_name when is_typed_dictionary class_name ->
+          let fields =
+            self#attribute
+              ~cycle_detections
+              ~transitive:false
+              ~accessed_through_class:true
+              ~accessed_through_readonly:false
+              ~include_generated_attributes:true
+              ~instantiated:(Type.meta annotation)
+              ~special_method:false
+              ~attribute_name:"__init__"
+              class_name
+            >>| AnnotatedAttribute.annotation
+            >>| TypeInfo.Unit.annotation
+            >>= function
+            | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
+            | _ -> None
+          in
+          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
+      | _ -> None
+
+    method full_order ~cycle_detections =
+      let Queries.
+            {
+              is_protocol;
+              class_hierarchy;
+              has_transitive_successor;
+              least_upper_bound;
+              get_class_summary;
+              successors;
+              _;
+            }
+        =
+        queries
+      in
+      let resolve class_type =
+        match Type.class_data_for_attribute_lookup class_type with
+        | None -> None
+        | Some [] -> None
+        | Some [resolved] -> Some resolved
+        | Some (_ :: _) ->
+            (* These come from calling attributes on Unions, which are handled by
+               solve_less_or_equal indirectly by breaking apart the union before doing the
+               instantiate_protocol_parameters. Therefore, there is no reason to deal with joining
+               the attributes together here *)
+            None
+      in
+      let attribute class_type ~cycle_detections ~name =
+        resolve class_type
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        self#attribute
+          ~cycle_detections
+          ~transitive:true
+          ~accessed_through_class
+          ~accessed_through_readonly
+          ~include_generated_attributes:true
+          ?special_method:None
+          ~attribute_name:name
+          ~instantiated
+          class_name
+      in
+      let instantiated_attributes class_type ~cycle_detections =
+        resolve class_type
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        self#uninstantiated_attributes
+          ~cycle_detections
+          ~transitive:true
+          ~accessed_through_class
+          ~include_generated_attributes:true
+          ?special_method:None
+          class_name
+        >>| List.map
+              ~f:
+                (self#instantiate_attribute
+                   ~cycle_detections
+                   ~instantiated
+                   ~accessed_through_class
+                   ~accessed_through_readonly
+                   ?apply_descriptors:None)
+      in
+      let class_hierarchy_handler = class_hierarchy () in
+      let metaclass class_name ~cycle_detections = self#metaclass class_name ~cycle_detections in
+      let get_named_tuple_fields class_type =
+        resolve class_type
+        >>= fun { class_name; _ } ->
+        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
+           get_class_summary class_name
+           >>| Node.value
+           >>| fun summary ->
+           ClassSummary.fields_tuple_value summary
+           >>| List.map ~f:(fun name ->
+                   attribute class_type ~cycle_detections ~name
+                   >>| AnnotatedAttribute.annotation
+                   >>| TypeInfo.Unit.annotation)
+           >>| Option.all
+           |> Option.value ~default:None
+        else
+          None)
+        |> Option.value ~default:None
+      in
+      {
+        ConstraintsSet.class_hierarchy =
+          {
+            instantiate_successors_parameters =
+              ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+            has_transitive_successor;
+            generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler;
+            least_upper_bound;
+          };
+        attribute;
+        instantiated_attributes;
+        is_protocol;
+        cycle_detections;
+        get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
+        get_named_tuple_fields;
+        metaclass;
+      }
 
     method attribute
         ~cycle_detections
@@ -2230,261 +2485,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~original_annotation:original
         ~uninstantiated_annotation
         ~problem
-
-    method create_attribute
-        ~scoped_type_variables
-        ~cycle_detections
-        ~parent
-        ?(defined = true)
-        ~accessed_via_metaclass
-        ({ Attribute.name = attribute_name; kind } as attribute) =
-      let Queries.{ exists_matching_class_decorator; successors; extends_enum; _ } = queries in
-      let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
-      let parent_name = Reference.show parent_name in
-      let class_annotation = Type.Primitive parent_name in
-      let is_enum =
-        let metaclass_extends_enummeta class_name =
-          match self#metaclass ~cycle_detections class_name with
-          | Some metaclass_type ->
-              let metaclass_name = Type.class_name metaclass_type |> Reference.show_sanitized in
-              let metaclass_superclasses = successors metaclass_name |> String.Set.of_list in
-              not
-                (Set.is_empty
-                   (Set.inter
-                      (String.Set.of_list ["enum.EnumMeta"; "enum.EnumType"])
-                      metaclass_superclasses))
-          | _ -> false
-        in
-        (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
-        && (metaclass_extends_enummeta parent_name || extends_enum parent_name)
-      in
-      let annotation, class_variable, visibility, undecorated_signature =
-        match kind with
-        | Simple { annotation; values; toplevel; _ } ->
-            let value = List.hd values >>| fun { value; _ } -> value in
-            let parsed_annotation =
-              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
-            in
-            (* Account for class attributes. *)
-            let annotation, final, class_variable =
-              parsed_annotation
-              >>| (fun annotation ->
-                    let process_class_variable annotation =
-                      match Type.class_variable_value annotation with
-                      | Some annotation -> true, annotation
-                      | None -> false, annotation
-                    in
-                    match Type.final_value annotation with
-                    | `NoArgument -> None, true, false
-                    | `NotFinal ->
-                        let is_class_variable, annotation = process_class_variable annotation in
-                        Some annotation, false, is_class_variable
-                    | `Ok annotation ->
-                        let is_class_variable, annotation = process_class_variable annotation in
-                        Some annotation, true, is_class_variable)
-              |> Option.value ~default:(None, false, false)
-            in
-            let visibility =
-              if final then
-                AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
-              else
-                ReadWrite
-            in
-            (* Try resolve to tuple of string literal types for __match_args__ *)
-            let annotation =
-              let open Expression in
-              match attribute_name, annotation, value with
-              | "__match_args__", None, Some { Node.value = Expression.Tuple elements; _ } ->
-                  let string_literal_value_to_type = function
-                    | {
-                        Node.value =
-                          Expression.Constant
-                            (Constant.String { StringLiteral.kind = String; value });
-                        _;
-                      } ->
-                        Some (Type.Literal (String (LiteralValue value)))
-                    | _ -> None
-                  in
-                  List.map elements ~f:string_literal_value_to_type |> Option.all >>| Type.tuple
-              | _ -> annotation
-            in
-            let annotation, visibility =
-              match annotation, value with
-              | _, Some value when is_enum && Attribute.may_be_enum_member attribute ->
-                  let literal_value_annotation =
-                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
-                  in
-                  let is_enum_member =
-                    match literal_value_annotation with
-                    | Type.Primitive "enum.nonmember" -> false
-                    | _ -> true
-                  in
-                  if is_enum_member then
-                    ( Type.Literal
-                        (Type.EnumerationMember
-                           { enumeration_type = class_annotation; member_name = attribute_name }),
-                      AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
-                  else if (not (Type.is_partially_typed literal_value_annotation)) && toplevel then
-                    Option.value annotation ~default:literal_value_annotation, visibility
-                  else
-                    Option.value annotation ~default:Type.Top, visibility
-              | Some annotation, _ -> annotation, visibility
-              | None, Some value ->
-                  let literal_value_annotation =
-                    self#resolve_literal ~scoped_type_variables ~cycle_detections value
-                  in
-                  let is_dataclass_attribute =
-                    exists_matching_class_decorator
-                      ~names:["dataclasses.dataclass"; "dataclass"]
-                      parent
-                  in
-                  if
-                    (not (Type.is_partially_typed literal_value_annotation))
-                    && (not is_dataclass_attribute)
-                    && toplevel
-                  then (* Treat literal attributes as having been explicitly annotated. *)
-                    literal_value_annotation, visibility
-                  else
-                    Type.Top, visibility
-              | _ -> Type.Top, visibility
-            in
-            ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
-              class_variable,
-              visibility,
-              None )
-        | Method { signatures; final; _ } ->
-            (* Handle Callables *)
-            let visibility =
-              if final then
-                AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
-              else
-                ReadWrite
-            in
-            let callable, undecorated_signature =
-              let overloads =
-                let create_overload define =
-                  Define.Signature.is_overloaded_function define, define
-                in
-                List.map signatures ~f:create_overload
-              in
-              let implementation, overloads =
-                let to_signature (implementation, overloads) (is_overload, signature) =
-                  if is_overload then
-                    implementation, signature :: overloads
-                  else
-                    Some signature, overloads
-                in
-                List.fold ~init:(None, []) ~f:to_signature overloads
-              in
-              let callable_name = callable_name_of_public ~implementation ~overloads in
-              let { AnnotatedAttribute.undecorated_signature; decorators } =
-                self#resolve_define_undecorated
-                  ~callable_name
-                  ~implementation
-                  ~overloads
-                  ~cycle_detections
-                  ~scoped_type_variables
-              in
-              ( AnnotatedAttribute.UninstantiatedAnnotation.DecoratedMethod
-                  { undecorated_signature; decorators },
-                undecorated_signature )
-            in
-            (* If the method is decorated with @enum.member, it's an enum member so we should infer
-               a literal type *)
-            let callable, visibility =
-              if is_enum && Attribute.may_be_enum_member attribute then
-                ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute
-                    (Type.Literal
-                       (Type.EnumerationMember
-                          { enumeration_type = class_annotation; member_name = attribute_name })),
-                  AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
-              else
-                callable, visibility
-            in
-            callable, false, visibility, Some undecorated_signature
-        | Property { kind; _ } -> (
-            let parse_annotation_option annotation =
-              annotation >>| self#parse_annotation ~cycle_detections ~scoped_type_variables
-            in
-            match kind with
-            | ReadWrite
-                {
-                  getter = { self = getter_self_annotation; return = getter_annotation; _ };
-                  setter = { self = setter_self_annotation; value = setter_annotation; _ };
-                } ->
-                let getter_annotation = parse_annotation_option getter_annotation in
-                let setter_annotation = parse_annotation_option setter_annotation in
-                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
-                    {
-                      getter =
-                        {
-                          self = parse_annotation_option getter_self_annotation;
-                          value = getter_annotation;
-                        };
-                      setter =
-                        Some
-                          {
-                            self = parse_annotation_option setter_self_annotation;
-                            value = setter_annotation;
-                          };
-                    },
-                  false,
-                  ReadWrite,
-                  None )
-            | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
-                let annotation = parse_annotation_option getter_annotation in
-                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
-                    {
-                      getter =
-                        { self = parse_annotation_option self_annotation; value = annotation };
-                      setter = None;
-                    },
-                  false,
-                  ReadOnly Unrefinable,
-                  None ))
-      in
-      let initialized =
-        match kind with
-        | Simple { nested_class = true; _ } -> AnnotatedAttribute.OnClass
-        | Simple { values; _ } ->
-            List.hd values
-            >>| (function
-                  | {
-                      Attribute.value = { Node.value = Constant Expression.Constant.Ellipsis; _ };
-                      _;
-                    } ->
-                      AnnotatedAttribute.OnlyOnInstance
-                  | { Attribute.origin = Explicit; _ } -> OnClass
-                  | { origin = Implicit; _ } -> OnlyOnInstance)
-            |> Option.value ~default:AnnotatedAttribute.NotInitialized
-        | Method _
-        | Property { class_property = true; _ } ->
-            OnClass
-        | Property { class_property = false; _ } -> OnlyOnInstance
-      in
-      AnnotatedAttribute.create_uninstantiated
-        ~uninstantiated_annotation:
-          { AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
-        ~visibility
-        ~abstract:
-          (match kind with
-          | Method { signatures; _ } ->
-              List.exists signatures ~f:Define.Signature.is_abstract_method
-          | _ -> false)
-        ~async_property:
-          (match kind with
-          | Property { async; _ } -> async
-          | _ -> false)
-        ~class_variable
-        ~defined
-        ~initialized
-        ~name:attribute_name
-        ~parent:parent_name
-        ~property:
-          (match kind with
-          | Property _ -> true
-          | _ -> false)
-        ~undecorated_signature
 
     method constraints ~cycle_detections ~target ?arguments ~instantiated () =
       let Queries.{ generic_parameters_as_variables; _ } = queries in
