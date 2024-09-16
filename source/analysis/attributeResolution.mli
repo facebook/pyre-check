@@ -65,6 +65,16 @@ module AttributeReadOnly : sig
 
   val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
 
+  val uninstantiated_attributes
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    transitive:bool ->
+    accessed_through_class:bool ->
+    include_generated_attributes:bool ->
+    ?special_method:bool ->
+    string ->
+    AnnotatedAttribute.uninstantiated list option
+
   val get_typed_dictionary
     :  t ->
     ?dependency:DependencyKey.registered ->
@@ -85,16 +95,6 @@ module AttributeReadOnly : sig
     attribute_name:Identifier.t ->
     string ->
     AnnotatedAttribute.instantiated option
-
-  val uninstantiated_attributes
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    transitive:bool ->
-    accessed_through_class:bool ->
-    include_generated_attributes:bool ->
-    ?special_method:bool ->
-    string ->
-    AnnotatedAttribute.uninstantiated list option
 
   val constraints
     :  t ->

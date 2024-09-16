@@ -1786,10 +1786,37 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               |> Sequence.filter_map ~f:(get_table ~accessed_via_metaclass:true)
             end
         in
-
         Sequence.append normal_tables (Sequence.of_lazy metaclass_tables)
       in
       get_class_metadata class_name >>| handle
+
+    method uninstantiated_attributes
+        ~cycle_detections
+        ~transitive
+        ~accessed_through_class
+        ~include_generated_attributes
+        ?(special_method = false)
+        class_name =
+      let collect sofar table =
+        let add ((sofar_list, sofar_set) as sofar) attribute =
+          let name = AnnotatedAttribute.name attribute in
+          if Set.mem sofar_set name then
+            sofar
+          else
+            attribute :: sofar_list, Set.add sofar_set name
+        in
+        UninstantiatedAttributeTable.to_list table |> List.fold ~f:add ~init:sofar
+      in
+      self#uninstantiated_attribute_tables
+        ~cycle_detections
+        ~transitive
+        ~accessed_through_class
+        ~include_generated_attributes
+        ~special_method
+        class_name
+      >>| Sequence.fold ~f:collect ~init:([], Identifier.Set.empty)
+      >>| fst
+      >>| List.rev
 
     method get_typed_dictionary ~cycle_detections annotation =
       let Queries.{ is_typed_dictionary; _ } = queries in
@@ -1964,34 +1991,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ~accessed_through_readonly
                 ?instantiated
                 ?apply_descriptors
-
-    method uninstantiated_attributes
-        ~cycle_detections
-        ~transitive
-        ~accessed_through_class
-        ~include_generated_attributes
-        ?(special_method = false)
-        class_name =
-      let collect sofar table =
-        let add ((sofar_list, sofar_set) as sofar) attribute =
-          let name = AnnotatedAttribute.name attribute in
-          if Set.mem sofar_set name then
-            sofar
-          else
-            attribute :: sofar_list, Set.add sofar_set name
-        in
-        UninstantiatedAttributeTable.to_list table |> List.fold ~f:add ~init:sofar
-      in
-      self#uninstantiated_attribute_tables
-        ~cycle_detections
-        ~transitive
-        ~accessed_through_class
-        ~include_generated_attributes
-        ~special_method
-        class_name
-      >>| Sequence.fold ~f:collect ~init:([], Identifier.Set.empty)
-      >>| fst
-      >>| List.rev
 
     method instantiate_attribute
         ~cycle_detections
