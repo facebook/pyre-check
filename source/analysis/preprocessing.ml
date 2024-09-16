@@ -2485,19 +2485,21 @@ let expand_named_tuples
           in
           let attributes =
             match arguments with
-            | [
-             _;
-             {
-               Call.Argument.value =
-                 { value = Constant (Constant.String { StringLiteral.value = serialized; _ }); _ };
-               _;
-             };
-            ] ->
+            | _
+              :: {
+                   Call.Argument.value =
+                     {
+                       value = Constant (Constant.String { StringLiteral.value = serialized; _ });
+                       _;
+                     };
+                   _;
+                 }
+              :: _ ->
                 Str.split (Str.regexp "[, ]") serialized
                 |> List.map ~f:(fun name -> name, any_annotation, None)
                 |> List.filter ~f:(fun (name, _, _) -> not (String.is_empty name))
-            | [_; { Call.Argument.value = { Node.value = List arguments; _ }; _ }]
-            | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
+            | _ :: { Call.Argument.value = { Node.value = List arguments; _ }; _ } :: _
+            | _ :: { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ } :: _ ->
                 let get_name ({ Node.value; _ } as expression) =
                   match value with
                   | Expression.Constant (Constant.String { StringLiteral.value = name; _ }) ->
@@ -2517,6 +2519,8 @@ let expand_named_tuples
             | _ :: arguments ->
                 List.filter_map arguments ~f:(fun argument ->
                     match argument with
+                    | { Call.Argument.name = Some { Node.value = "rename" | "defaults"; _ }; _ } ->
+                        None
                     | { Call.Argument.name = Some { Node.value = name; _ }; value } ->
                         Some (name, value, None)
                     | _ -> None)
