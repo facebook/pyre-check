@@ -75,13 +75,23 @@ module AttributeReadOnly : sig
     string ->
     AnnotatedAttribute.uninstantiated list option
 
-  val get_typed_dictionary
+  val constraints
     :  t ->
     ?dependency:DependencyKey.registered ->
-    Type.t ->
-    Type.TypedDictionary.t option
+    target:Type.Primitive.t ->
+    ?arguments:Type.Argument.t list ->
+    instantiated:Type.t ->
+    unit ->
+    TypeConstraints.Solution.t
 
-  val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
+  val instantiate_attribute
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    accessed_through_class:bool ->
+    accessed_through_readonly:bool ->
+    ?instantiated:Type.t ->
+    AnnotatedAttribute.uninstantiated ->
+    AnnotatedAttribute.instantiated
 
   val attribute
     :  t ->
@@ -96,14 +106,13 @@ module AttributeReadOnly : sig
     string ->
     AnnotatedAttribute.instantiated option
 
-  val constraints
+  val get_typed_dictionary
     :  t ->
     ?dependency:DependencyKey.registered ->
-    target:Type.Primitive.t ->
-    ?arguments:Type.Argument.t list ->
-    instantiated:Type.t ->
-    unit ->
-    TypeConstraints.Solution.t
+    Type.t ->
+    Type.TypedDictionary.t option
+
+  val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
   val resolve_define
     :  t ->
@@ -150,15 +159,6 @@ module AttributeReadOnly : sig
     left:Type.t ->
     right:Type.t ->
     bool
-
-  val instantiate_attribute
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    accessed_through_class:bool ->
-    accessed_through_readonly:bool ->
-    ?instantiated:Type.t ->
-    AnnotatedAttribute.uninstantiated ->
-    AnnotatedAttribute.instantiated
 
   val global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 end
