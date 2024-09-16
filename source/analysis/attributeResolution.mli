@@ -63,6 +63,8 @@ module AttributeReadOnly : sig
     Expression.expression Node.t ->
     Type.t
 
+  val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
+
   val get_typed_dictionary
     :  t ->
     ?dependency:DependencyKey.registered ->
@@ -93,8 +95,6 @@ module AttributeReadOnly : sig
     ?special_method:bool ->
     string ->
     AnnotatedAttribute.uninstantiated list option
-
-  val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
 
   val constraints
     :  t ->

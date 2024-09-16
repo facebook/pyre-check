@@ -1063,6 +1063,68 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       result
 
+    method metaclass ~cycle_detections target =
+      let Queries.{ get_class_summary; _ } = queries in
+      (* See
+         https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
+         for why we need to consider all metaclasses. *)
+      let rec handle
+          ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
+          original)
+        =
+        let open Expression in
+        let parse_annotation =
+          self#parse_annotation ~cycle_detections ?validation:None ~scoped_type_variables:None
+        in
+        let metaclass_candidates =
+          let explicit_metaclass = metaclass >>| parse_annotation in
+          let metaclass_of_bases =
+            let explicit_bases =
+              let base_to_class base_expression =
+                delocalize base_expression |> parse_annotation |> Type.split |> fst
+              in
+              base_classes
+              |> List.map ~f:base_to_class
+              |> List.filter_map ~f:(Queries.class_summary_for_outer_type queries)
+              |> List.filter ~f:(fun base_class ->
+                     not ([%compare.equal: ClassSummary.t Node.t] base_class original))
+            in
+            let filter_generic_meta base_metaclasses =
+              (* We only want a class directly inheriting from Generic to have a metaclass of
+                 GenericMeta. *)
+              if
+                List.exists
+                  ~f:(fun base ->
+                    Reference.equal (Reference.create "typing.Generic") (class_name base))
+                  explicit_bases
+              then
+                base_metaclasses
+              else
+                List.filter
+                  ~f:(fun metaclass ->
+                    not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
+                  base_metaclasses
+            in
+            explicit_bases |> List.map ~f:handle |> filter_generic_meta
+          in
+          match explicit_metaclass with
+          | Some metaclass -> metaclass :: metaclass_of_bases
+          | None -> metaclass_of_bases
+        in
+        match metaclass_candidates with
+        | [] -> Type.Primitive "type"
+        | first :: candidates -> (
+            let order = self#full_order ~cycle_detections in
+            let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
+            match candidate with
+            | Type.Bottom ->
+                (* If we get Bottom here, we don't have a "most derived metaclass", so default to
+                   one. *)
+                first
+            | _ -> candidate)
+      in
+      get_class_summary target >>| handle
+
     method get_typed_dictionary ~cycle_detections annotation =
       let Queries.{ is_typed_dictionary; _ } = queries in
       match annotation with
@@ -2423,68 +2485,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | Property _ -> true
           | _ -> false)
         ~undecorated_signature
-
-    method metaclass ~cycle_detections target =
-      let Queries.{ get_class_summary; _ } = queries in
-      (* See
-         https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
-         for why we need to consider all metaclasses. *)
-      let rec handle
-          ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
-          original)
-        =
-        let open Expression in
-        let parse_annotation =
-          self#parse_annotation ~cycle_detections ?validation:None ~scoped_type_variables:None
-        in
-        let metaclass_candidates =
-          let explicit_metaclass = metaclass >>| parse_annotation in
-          let metaclass_of_bases =
-            let explicit_bases =
-              let base_to_class base_expression =
-                delocalize base_expression |> parse_annotation |> Type.split |> fst
-              in
-              base_classes
-              |> List.map ~f:base_to_class
-              |> List.filter_map ~f:(Queries.class_summary_for_outer_type queries)
-              |> List.filter ~f:(fun base_class ->
-                     not ([%compare.equal: ClassSummary.t Node.t] base_class original))
-            in
-            let filter_generic_meta base_metaclasses =
-              (* We only want a class directly inheriting from Generic to have a metaclass of
-                 GenericMeta. *)
-              if
-                List.exists
-                  ~f:(fun base ->
-                    Reference.equal (Reference.create "typing.Generic") (class_name base))
-                  explicit_bases
-              then
-                base_metaclasses
-              else
-                List.filter
-                  ~f:(fun metaclass ->
-                    not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
-                  base_metaclasses
-            in
-            explicit_bases |> List.map ~f:handle |> filter_generic_meta
-          in
-          match explicit_metaclass with
-          | Some metaclass -> metaclass :: metaclass_of_bases
-          | None -> metaclass_of_bases
-        in
-        match metaclass_candidates with
-        | [] -> Type.Primitive "type"
-        | first :: candidates -> (
-            let order = self#full_order ~cycle_detections in
-            let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
-            match candidate with
-            | Type.Bottom ->
-                (* If we get Bottom here, we don't have a "most derived metaclass", so default to
-                   one. *)
-                first
-            | _ -> candidate)
-      in
-      get_class_summary target >>| handle
 
     method constraints ~cycle_detections ~target ?arguments ~instantiated () =
       let Queries.{ generic_parameters_as_variables; _ } = queries in
