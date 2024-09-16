@@ -4926,6 +4926,38 @@ let test_transform_ast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
            {|
+      T = typing.NamedTuple('T', [('one', int), ('two', str)], rename=False)
+    |}
+           {|
+      class T(typing.NamedTuple):
+        def __new__(cls, one: int, two: str) -> typing.NamedTuple: ...
+        def __init__(self, one: int, two: str) -> None:
+         self.one = one
+         self.two = two
+        _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
+        one: typing.Final[int] = ...
+        two: typing.Final[str] = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
+      T = typing.NamedTuple('T', [('abc', int), ('def', str), ('abc', int)], rename=True)
+    |}
+           {|
+      class T(typing.NamedTuple):
+        def __new__(cls, abc: int, _1: str, _2: int) -> typing.NamedTuple: ...
+        def __init__(self, abc: int, _1: str, _2: int) -> None:
+         self.abc = abc
+         self._1 = _1
+         self._2 = _2
+        _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('abc', '_1', '_2')
+        abc: typing.Final[int] = ...
+        _1: typing.Final[str] = ...
+        _2: typing.Final[int] = ...
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
       T = collections.namedtuple('T', ['a'])
     |}
            {|

@@ -21,5 +21,20 @@ let test_remove_leading_underscores _ =
   assert_removed "__name__" "__name__"
 
 
+let test_is_valid_identifier _ =
+  assert_equal (Identifier.is_valid_identifier "abc") true;
+  assert_equal (Identifier.is_valid_identifier "def") false;
+  assert_equal (Identifier.is_valid_identifier "1") false;
+  assert_equal (Identifier.is_valid_identifier "_1") true;
+  assert_equal (Identifier.is_valid_identifier "ABC") true;
+  assert_equal (Identifier.is_valid_identifier "__ABC") true;
+  assert_equal (Identifier.is_valid_identifier "__ABC__") true
+
+
 let () =
-  "identifier" >::: ["remove_leading_underscores" >:: test_remove_leading_underscores] |> Test.run
+  "identifier"
+  >::: [
+         "remove_leading_underscores" >:: test_remove_leading_underscores;
+         "is_valid_identifier" >:: test_is_valid_identifier;
+       ]
+  |> Test.run

@@ -2480,6 +2480,23 @@ let expand_named_tuples
        value = Expression.Call { callee = { Node.value = Name callee_name; _ }; arguments };
       }
         when is_named_tuple callee_name ->
+          let should_rename_invalid_attributes =
+            let extract_rename_argument argument =
+              match argument with
+              | {
+               Call.Argument.name = Some { value = "rename"; _ };
+               value = { Node.value = Expression.Constant Constant.True; _ };
+              } ->
+                  Some true
+              | {
+               Call.Argument.name = Some { value = "rename"; _ };
+               value = { Node.value = Expression.Constant Constant.False; _ };
+              } ->
+                  Some false
+              | _ -> None
+            in
+            List.find_map arguments ~f:extract_rename_argument |> Option.value ~default:false
+          in
           let any_annotation =
             Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
           in
@@ -2526,6 +2543,23 @@ let expand_named_tuples
                     | _ -> None)
             | _ -> []
           in
+          (* https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields
+             if rename=True is set, invalid or duplicate field names are renamed to their index with
+             an underscore prefix *)
+          let renamed_attributes, _ =
+            Core.List.foldi
+              ~f:(fun idx (attributes, seen) ((name, annotation, value) as attribute) ->
+                if
+                  should_rename_invalid_attributes
+                  && (Set.mem seen name || not (Identifier.is_valid_identifier name))
+                then
+                  ("_" ^ string_of_int idx, annotation, value) :: attributes, seen
+                else
+                  attribute :: attributes, Set.add seen name)
+              ~init:([], Identifier.Set.empty)
+              attributes
+          in
+          let attributes = List.rev renamed_attributes in
           Some attributes
       | _ -> None
     in

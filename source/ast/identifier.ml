@@ -65,3 +65,53 @@ let remove_leading_underscores name =
 
 let is_private_name name =
   String.is_prefix ~prefix:"__" name && not (String.is_suffix ~suffix:"__" name)
+
+
+let keywords =
+  Set.of_list
+    [
+      "and";
+      "as";
+      "assert";
+      "async";
+      "await";
+      "break";
+      "case";
+      "class";
+      "continue";
+      "__debug__";
+      "def";
+      "del";
+      "elif";
+      "else";
+      "except";
+      "finally";
+      "for";
+      "from";
+      "global";
+      "if";
+      "import";
+      "in";
+      "is";
+      "lambda";
+      "match";
+      "nonlocal";
+      "not";
+      "or";
+      "pass";
+      "raise";
+      "return";
+      "try";
+      "type";
+      "while";
+      "with";
+      "yield";
+      "False";
+      "None";
+      "True";
+    ]
+
+
+let is_valid_identifier name =
+  let re = Str.regexp "^[a-zA-Z_][a-zA-Z0-9_]*$" in
+  Str.string_match re name 0 && not (Core.Set.mem keywords name)
