@@ -20,6 +20,7 @@ import dataclasses
 import functools
 import json
 import logging
+import os
 import random
 import subprocess
 import tempfile
@@ -964,9 +965,24 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
 
         pyautotargets_timer = timer.Timer()
+        system_pyautotarget = (
+            Path(
+                r"C:\ProgramData\chocolatey\lib\fb-pyautotargets-windows\bin\pyautotargets.exe"
+            )
+            if os.name == "nt"
+            else Path("/usr/local/bin/pyautotargets")
+        )
+        pyautotargets_bin = (
+            system_pyautotarget
+            if (
+                self.get_language_server_features().use_system_pyautotargets.is_enabled()
+                and system_pyautotarget.exists()
+            )
+            else Path(f"{buck2_root}/xplat/tools/pyautotargets")
+        )
 
         pyautodeps_parameters = [
-            f"{buck2_root}/xplat/tools/pyautotargets",
+            pyautotargets_bin,
             "--verbose",
             "--buck-root",
             buck2_root,

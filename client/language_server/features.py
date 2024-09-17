@@ -99,6 +99,7 @@ InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
 PerTargetTypeErrorsAvailability = CustomAvailability
 PythonAutoTargetsAvailability = CustomAvailability
+SystemPyAutoTargetsAvailability = CustomAvailability
 # TODO:T200368421 remove this once we have completed A/A testing
 AATest_AutoTargetsAvailability = CustomAvailability
 
@@ -128,6 +129,9 @@ class LanguageServerFeatures:
     formatting: FormattingAvailability = FormattingAvailability.DISABLED
     python_auto_targets: PythonAutoTargetsAvailability = (
         PythonAutoTargetsAvailability.from_enabled(False)
+    )
+    use_system_pyautotargets: SystemPyAutoTargetsAvailability = (
+        SystemPyAutoTargetsAvailability.from_enabled(False)
     )
     # TODO:T200368421 remove this once we have completed A/A testing
     aa_test_python_auto_targets: AATest_AutoTargetsAvailability = (
