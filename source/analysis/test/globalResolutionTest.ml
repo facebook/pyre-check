@@ -1068,7 +1068,7 @@ let test_invalid_type_parameters =
       GlobalResolution.create global_environment
     in
     let actual_mismatches, actual_transformed_type =
-      GlobalResolution.check_invalid_type_arguments global_resolution given_type
+      GlobalResolution.validate_and_sanitize_type_arguments global_resolution given_type
     in
     assert_equal
       ~cmp:[%equal: Type.t]
@@ -1095,7 +1095,7 @@ let test_invalid_type_parameters =
       in
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
-         `check_invalid_type_arguments`. *)
+         `validate_and_sanitize_type_arguments`. *)
       |> Type.create ~variables:variable_aliases ~aliases:Type.resolved_empty_aliases
     in
     assert_invalid_type_parameters_direct

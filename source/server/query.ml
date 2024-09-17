@@ -572,7 +572,7 @@ let rec process_request_exn
       in
       if ClassHierarchy.is_instantiated order annotation then
         let mismatches, _ =
-          GlobalResolution.check_invalid_type_arguments global_resolution annotation
+          GlobalResolution.validate_and_sanitize_type_arguments global_resolution annotation
         in
         if List.is_empty mismatches then
           annotation

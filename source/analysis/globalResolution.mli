@@ -165,7 +165,7 @@ val signature_select
   self_argument:Type.t option ->
   SignatureSelectionTypes.instantiated_return_annotation
 
-val check_invalid_type_arguments
+val validate_and_sanitize_type_arguments
   :  t ->
   Type.t ->
   AttributeResolution.type_parameters_mismatch list * Type.t

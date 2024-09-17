@@ -782,7 +782,18 @@ let callable_call_special_cases
 
 class base ~queries:(Queries.{ controls; _ } as queries) =
   object (self)
-    method check_invalid_type_arguments
+    (* Given a `Type.t`, recursively search for parameteric forms with invalid
+     * type arguments. If we find such arguments:
+     * - (validate) record the problems in a
+     *   `TypeParameterValidationTypes.type_parameters_mismatch list`
+     * - (sanitize) convert any problematic arguments to gradual forms (e.g.
+     *   `Any` for unary type parameters, `...` for param specs)
+     *
+     * The `parse_annotation` code relies on (sanitize), and `typeCheck.ml`
+     * relies on (validate) to eventually produce user-facing errors on bad
+     * annotations.
+     *)
+    method validate_and_sanitize_type_arguments
         ?(replace_unbound_parameters_with_any = true)
         ~cycle_detections
         annotation =
@@ -1012,7 +1023,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let modify_variables ?replace_unbound_parameters_with_any = function
         | Type.Variable.TypeVarVariable variable ->
             let visited_variable =
-              self#check_invalid_type_arguments
+              self#validate_and_sanitize_type_arguments
                 ?replace_unbound_parameters_with_any
                 (Variable variable)
                 ~cycle_detections
@@ -1023,8 +1034,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Variable variable -> Type.Variable.TypeVarVariable variable
               | _ ->
                   failwith
-                    "Impossible: check_invalid_type_arguments received a variable variant as input \
-                     and output a different variant."
+                    "Impossible: validate_and_sanitize_type_arguments received a variable variant \
+                     as input and output a different variant."
             end
         | result -> result
       in
@@ -1033,7 +1044,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let modify_aliases ?replace_unbound_parameters_with_any = function
         | alias ->
-            self#check_invalid_type_arguments
+            self#validate_and_sanitize_type_arguments
               ?replace_unbound_parameters_with_any
               alias
               ~cycle_detections
@@ -1056,7 +1067,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let result =
         match validation with
         | ValidatePrimitivesAndTypeParameters ->
-            self#check_invalid_type_arguments annotation ~cycle_detections |> snd
+            self#validate_and_sanitize_type_arguments annotation ~cycle_detections |> snd
         | NoValidation
         | ValidatePrimitives ->
             annotation
@@ -3840,9 +3851,9 @@ module ReadOnly = struct
     add_all_caches_and_empty_cycle_detections (fun o -> o#uninstantiated_attributes)
 
 
-  let check_invalid_type_arguments =
+  let validate_and_sanitize_type_arguments =
     add_all_caches_and_empty_cycle_detections (fun o ->
-        o#check_invalid_type_arguments ~replace_unbound_parameters_with_any:true)
+        o#validate_and_sanitize_type_arguments ~replace_unbound_parameters_with_any:true)
 
 
   let parse_annotation read_only ?dependency ~scoped_type_variables =

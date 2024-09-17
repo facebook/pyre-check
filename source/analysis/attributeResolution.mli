@@ -49,7 +49,7 @@ module AttributeReadOnly : sig
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
-  val check_invalid_type_arguments
+  val validate_and_sanitize_type_arguments
     :  t ->
     ?dependency:DependencyKey.registered ->
     Type.t ->

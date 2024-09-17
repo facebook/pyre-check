@@ -460,7 +460,7 @@ module State (Context : Context) = struct
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
     let mismatches, annotation =
-      GlobalResolution.check_invalid_type_arguments resolution annotation
+      GlobalResolution.validate_and_sanitize_type_arguments resolution annotation
     in
     let add_error errors mismatch =
       match annotation with
@@ -7712,7 +7712,9 @@ module State (Context : Context) = struct
         let unarize unary =
           let fix_invalid_arguments_in_bounds unary =
             match
-              GlobalResolution.check_invalid_type_arguments global_resolution (Type.Variable unary)
+              GlobalResolution.validate_and_sanitize_type_arguments
+                global_resolution
+                (Type.Variable unary)
             with
             | _, Type.Variable unary -> unary
             | _ -> failwith "did not transform"

@@ -306,8 +306,8 @@ let signature_select ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
-let check_invalid_type_arguments ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.check_invalid_type_arguments
+let validate_and_sanitize_type_arguments ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.validate_and_sanitize_type_arguments
     (attribute_resolution resolution)
     ?dependency
 
