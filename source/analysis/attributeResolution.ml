@@ -1193,11 +1193,19 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       { AnnotatedAttribute.undecorated_signature; decorators }
 
+    (* Given the name of a class, return the metaclass as a `Type.t`.
+     *
+     * This requires a specific search order, see
+     * https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
+     *
+     * This method is mostly self-explanatory but Pyre's handling of `GenericMeta`, which hasn't
+     * even existed in the runtime for several years, is special: in `missingFromStubs.ml` we
+     * make up `GenericMeta` as a fake metaclass, and then we treat a class as having this
+     * metaclass only if `Generic` is a *direct* parent of the current class, without checking
+     * all ancestors as we would for normal metaclass resolution.
+     *)
     method metaclass ~cycle_detections target =
       let Queries.{ get_class_summary; _ } = queries in
-      (* See
-         https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
-         for why we need to consider all metaclasses. *)
       let rec handle
           ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
           original)
@@ -1220,8 +1228,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                      not ([%compare.equal: ClassSummary.t Node.t] base_class original))
             in
             let filter_generic_meta base_metaclasses =
-              (* We only want a class directly inheriting from Generic to have a metaclass of
-                 GenericMeta. *)
               if
                 List.exists
                   ~f:(fun base ->
