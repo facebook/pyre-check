@@ -2082,6 +2082,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ( instantiate_property_annotation getter,
                     setter >>| instantiate_property_annotation ))
       in
+      let ({ ConstraintsSet.get_named_tuple_fields; _ } as order) =
+        self#full_order ~cycle_detections
+      in
       let annotation, original =
         let instantiated =
           match instantiated with
@@ -2097,30 +2100,31 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             Type.Callable.CallableParamType.Named
               { name = "self"; annotation = Type.Top; default = false }
           in
+          let tuple_getitem_overloads members =
+            let { Type.Callable.overloads; _ } = callable in
+            let overload index member =
+              {
+                Type.Callable.annotation = member;
+                parameters =
+                  Defined
+                    [
+                      self_parameter;
+                      Named { name = "x"; annotation = Type.literal_integer index; default = false };
+                    ];
+              }
+            in
+            let overloads =
+              List.mapi ~f:overload members
+              @ List.map2_exn
+                  ~f:overload
+                  (List.init ~f:(fun x -> -x - 1) (List.length members))
+                  (List.rev members)
+              @ overloads
+            in
+            Type.Callable { callable with overloads }
+          in
           match instantiated, attribute_name, class_name with
-          | Type.Tuple (Concrete members), "__getitem__", _ ->
-              let { Type.Callable.overloads; _ } = callable in
-              let overload index member =
-                {
-                  Type.Callable.annotation = member;
-                  parameters =
-                    Defined
-                      [
-                        self_parameter;
-                        Named
-                          { name = "x"; annotation = Type.literal_integer index; default = false };
-                      ];
-                }
-              in
-              let overloads =
-                List.mapi ~f:overload members
-                @ List.map2_exn
-                    ~f:overload
-                    (List.init ~f:(fun x -> -x - 1) (List.length members))
-                    (List.rev members)
-                @ overloads
-              in
-              Type.Callable { callable with overloads }
+          | Type.Tuple (Concrete members), "__getitem__", _ -> tuple_getitem_overloads members
           | ( Parametric { name = "type"; arguments = [Single (Type.Primitive name)] },
               "__getitem__",
               "typing.GenericMeta" ) ->
@@ -2216,6 +2220,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               >>= Option.all
               >>| Type.union
               |> Option.value ~default:(Type.Callable callable)
+          | _, "__getitem__", _ -> (
+              match get_named_tuple_fields instantiated with
+              | Some members -> tuple_getitem_overloads members
+              | None -> Type.Callable callable)
           | _ -> Type.Callable callable
         in
         match annotation with
@@ -2230,7 +2238,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               match value_annotation with
               | None -> Type.Top
               | Some annotation -> (
-                  let order = self#full_order ~cycle_detections in
                   let constraints =
                     match self_annotation with
                     | Some annotation ->
@@ -2256,7 +2263,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               | Type.Callable callable -> special_case_methods callable
               | other -> other
             in
-            let order () = self#full_order ~cycle_detections in
+            let order () = order in
             let special =
               callable_call_special_cases
                 ~instantiated:(Some instantiated)
