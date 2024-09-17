@@ -367,7 +367,21 @@ module OutgoingDataComputation = struct
     List.exists ~f:(fun class_name -> not (class_exists class_name)) (Type.collect_names annotation)
 
 
-  let parse_annotation_without_validating_type_parameters
+  (* Convert a type expression of type `Expression.t` to a `Type.t`.
+   *
+   * In the process we perform two transforms
+   * - Verify that all types map to valid classes (Pyre incorrectly assumes all
+   *   types are classes; we use `missingFromStubs.ml` to fabricate classes for
+   *   special forms that aren't really classes).
+   * - Expand type aliases eagerly. NOTE: We use a parameterized macro expansion style
+   *   which will detect arity problems, but ignores constraints and variance for
+   *   type alias parameters; only generic classes validate these.
+   *
+   * This parse helper differs from the higher-level `parse_annotation` in that it does
+   * not validate type arguments to generic classes; that requires analysis information
+   * that is not available here.
+   *)
+  let parse_annotation_without_sanitizing_type_arguments
       (Queries.{ get_type_alias; _ } as queries)
       ?modify_aliases
       ~variables
@@ -499,8 +513,8 @@ module ReadOnly = struct
     OutgoingDataComputation.get_variable (outgoing_queries ?dependency environment)
 
 
-  let parse_annotation_without_validating_type_parameters environment ?dependency =
-    OutgoingDataComputation.parse_annotation_without_validating_type_parameters
+  let parse_annotation_without_sanitizing_type_arguments environment ?dependency =
+    OutgoingDataComputation.parse_annotation_without_sanitizing_type_arguments
       (outgoing_queries ?dependency environment)
 
 

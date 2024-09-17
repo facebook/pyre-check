@@ -1210,7 +1210,7 @@ let should_analyze_define
   let is_missing_or_invalid maybe_expression =
     let resolve_type expression =
       expression
-      |> GlobalResolution.parse_annotation_without_validating_type_parameters
+      |> GlobalResolution.parse_annotation_without_sanitizing_type_arguments
            ~variables:Type.resolved_empty_variables
            global_resolution
     in

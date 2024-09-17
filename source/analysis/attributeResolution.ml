@@ -91,7 +91,7 @@ module Queries = struct
       names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
     exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
     class_exists: string -> bool;
-    parse_annotation_without_validating_type_parameters:
+    parse_annotation_without_sanitizing_type_arguments:
       ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
       variables:(string -> Type.Variable.t option) ->
       ?allow_untracked:bool ->
@@ -1018,7 +1018,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
         ~(scoped_type_variables : Type.Variable.t Identifier.Map.t option)
         expression =
-      let { Queries.parse_annotation_without_validating_type_parameters; get_variable; _ } =
+      let { Queries.parse_annotation_without_sanitizing_type_arguments; get_variable; _ } =
         queries
       in
       let variables_before_modify =
@@ -1069,7 +1069,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             false
       in
       let annotation =
-        parse_annotation_without_validating_type_parameters
+        parse_annotation_without_sanitizing_type_arguments
           ~modify_aliases
           ~variables
           ~allow_untracked
@@ -3549,9 +3549,9 @@ let create_queries ~class_metadata_environment ~dependency =
       class_exists =
         unannotated_global_environment class_metadata_environment
         |> UnannotatedGlobalEnvironment.ReadOnly.class_exists ?dependency;
-      parse_annotation_without_validating_type_parameters =
+      parse_annotation_without_sanitizing_type_arguments =
         alias_environment class_metadata_environment
-        |> TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+        |> TypeAliasEnvironment.ReadOnly.parse_annotation_without_sanitizing_type_arguments
              ?dependency;
       param_spec_from_vararg_annotations =
         alias_environment class_metadata_environment

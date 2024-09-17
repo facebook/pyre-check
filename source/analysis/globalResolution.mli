@@ -57,7 +57,7 @@ val get_type_alias : t -> Type.Primitive.t -> Type.t option
 
 val get_variable : t -> Type.Primitive.t -> Type.Variable.t option
 
-val parse_annotation_without_validating_type_parameters
+val parse_annotation_without_sanitizing_type_arguments
   :  t ->
   ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
   variables:(string -> Type.Variable.t option) ->

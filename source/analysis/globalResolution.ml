@@ -162,8 +162,8 @@ let get_variable ({ dependency; _ } as resolution) =
   TypeAliasEnvironment.ReadOnly.get_variable ?dependency (alias_environment resolution)
 
 
-let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
-  TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+let parse_annotation_without_sanitizing_type_arguments ({ dependency; _ } as resolution) =
+  TypeAliasEnvironment.ReadOnly.parse_annotation_without_sanitizing_type_arguments
     ?dependency
     (alias_environment resolution)
 

@@ -28,7 +28,7 @@ module IncomingDataComputation = struct
     type t = {
       class_exists: string -> bool;
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
-      parse_annotation_without_validating_type_parameters:
+      parse_annotation_without_sanitizing_type_arguments:
         ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
         variables:(string -> Type.Variable.t option) ->
         ?allow_untracked:bool ->
@@ -83,7 +83,7 @@ module IncomingDataComputation = struct
         {
           class_exists;
           get_class_summary;
-          parse_annotation_without_validating_type_parameters;
+          parse_annotation_without_sanitizing_type_arguments;
           get_variable_declaration;
           get_variable;
           _;
@@ -100,7 +100,7 @@ module IncomingDataComputation = struct
       | Expression.Subscript _
       | Name _ -> (
           let supertype, arguments =
-            parse_annotation_without_validating_type_parameters
+            parse_annotation_without_sanitizing_type_arguments
               ~allow_untracked:true
               value
               ~variables:get_variable
@@ -212,7 +212,7 @@ module IncomingDataComputation = struct
           let parsed_bases =
             List.map
               base_classes
-              ~f:(parse_annotation_without_validating_type_parameters ~variables:get_variable)
+              ~f:(parse_annotation_without_sanitizing_type_arguments ~variables:get_variable)
           in
           let maybe_generic_base_arguments =
             compute_generic_base parsed_bases
@@ -235,7 +235,7 @@ module IncomingDataComputation = struct
                       Type.Variable.name variable
                       |> get_variable_declaration
                       >>| Type.GenericParameter.of_declaration ~create_type:(fun expression ->
-                              parse_annotation_without_validating_type_parameters
+                              parse_annotation_without_sanitizing_type_arguments
                                 ~variables:get_variable
                                 expression)
                     in
@@ -313,8 +313,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
             UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
               unannotated_global_environment
               ?dependency;
-          parse_annotation_without_validating_type_parameters =
-            TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+          parse_annotation_without_sanitizing_type_arguments =
+            TypeAliasEnvironment.ReadOnly.parse_annotation_without_sanitizing_type_arguments
               alias_environment
               ?dependency;
           get_variable_declaration =

@@ -38,7 +38,7 @@ module AliasReadOnly : sig
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
-  val parse_annotation_without_validating_type_parameters
+  val parse_annotation_without_sanitizing_type_arguments
     :  t ->
     ?dependency:DependencyKey.registered ->
     ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.t -> Type.t) ->
