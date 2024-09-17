@@ -329,11 +329,11 @@ module IncomingDataComputation = struct
                           (* This case is known to be possible because it happens in production,
                              although we do not understand why yet. Log an error, which will help us
                              track this problem down, and proceed. *)
-                          Log.error
-                            "TypeAliasEnvironment could not resolve type variable with name %s to \
-                             a declaration when resolving the symbol %a. This should not occur, \
-                             and may cause downstream generic classes to be poorly understood by \
-                             Pyre."
+                          Log.warning
+                            "Pyre could not resolve the type variable for symbol %s, which is \
+                             probably an imported type variable %a. This could cause downstream \
+                             generic classes to be poorly understood. You can fix this problem by \
+                             avoiding importing the type variable."
                             name
                             Reference.pp
                             current;
