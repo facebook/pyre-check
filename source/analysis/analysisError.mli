@@ -551,6 +551,7 @@ and kind =
       actual: Type.t;
       expected: Type.t;
     }
+  | TupleDelete
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

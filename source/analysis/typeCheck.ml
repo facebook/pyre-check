@@ -5822,6 +5822,25 @@ module State (Context : Context) = struct
                     else
                       resolution, errors
                 | _ -> resolution, errors)
+            | Name (Attribute { Name.Attribute.base; _ }) ->
+                let { Resolved.resolved; _ } = forward_expression ~resolution base in
+                if
+                  NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved
+                  && not (Type.is_any resolved)
+                then
+                  resolution, emit_error ~errors ~location ~kind:Error.TupleDelete
+                else
+                  resolution, errors
+            | Subscript { Subscript.base; _ } ->
+                let { Resolved.resolved; _ } = forward_expression ~resolution base in
+                if
+                  (Type.is_tuple resolved
+                  || NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved)
+                  && not (Type.is_any resolved)
+                then
+                  resolution, emit_error ~errors ~location ~kind:Error.TupleDelete
+                else
+                  resolution, errors
             | _ -> resolution, errors
           in
           resolution, List.append errors errors_sofar

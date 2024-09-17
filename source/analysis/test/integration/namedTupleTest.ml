@@ -66,4 +66,47 @@ reveal_type(p[-2])
     ]
 
 
-let () = "named_tuple" >::: [test_unpack; test_index] |> Test.run
+let test_delete =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple):
+    field1: int
+    field2: str
+p = MyTuple(field1=1, field2="abc")
+del p.field1
+            |}
+           [
+             "Unable to delete tuple member [72]: Tuples are immutable, so their members may not \
+              be deleted.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple):
+    field1: int
+    field2: str
+p = MyTuple(field1=1, field2="abc")
+del p[1]
+            |}
+           [
+             "Unable to delete tuple member [72]: Tuples are immutable, so their members may not \
+              be deleted.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
+from typing import Any
+def foo() -> None:
+  x: Any = ...
+  del x[0]
+            |}
+           [];
+    ]
+
+
+let () = "named_tuple" >::: [test_unpack; test_index; test_delete] |> Test.run

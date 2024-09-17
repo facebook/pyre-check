@@ -897,6 +897,7 @@ and kind =
       actual: Type.t;
       expected: Type.t;
     }
+  | TupleDelete
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -983,6 +984,7 @@ let code_of_kind = function
   | InvalidPositionalOnlyParameter -> 69
   | AssertType _ -> 70
   | TypedDictionaryIsInstance -> 71
+  | TupleDelete -> 72
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1071,6 +1073,7 @@ let name_of_kind = function
   | UnusedIgnore _ -> "Unused ignore"
   | UnusedLocalMode _ -> "Unused local mode"
   | TupleConcatenationError _ -> "Unable to concatenate tuple"
+  | TupleDelete -> "Unable to delete tuple member"
   | AssertType _ -> "Assert type"
 
 
@@ -2774,6 +2777,7 @@ let rec messages ~concise ~signature location kind =
           "Concatenation not yet support for multiple variadic tuples: `%s`."
           (String.concat ~sep:", " (List.map ~f:show_sanitized_expression variadic_expressions));
       ]
+  | TupleDelete -> [Format.asprintf "Tuples are immutable, so their members may not be deleted."]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -3344,6 +3348,7 @@ let due_to_analysis_limitations { kind; _ } =
   | ProhibitedAny _
   | TooManyArguments _
   | TupleConcatenationError _
+  | TupleDelete
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound _
@@ -3887,6 +3892,7 @@ let join ~resolution left right =
     | UnsafeCast _, _
     | TooManyArguments _, _
     | TupleConcatenationError _, _
+    | TupleDelete, _
     | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryIsInstance, _
@@ -4502,6 +4508,7 @@ let dequalify
           }
     | InvalidDecoration expression -> InvalidDecoration expression
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
+    | TupleDelete -> TupleDelete
     | ReadOnlynessMismatch mismatch ->
         ReadOnlynessMismatch (ReadOnly.dequalify ~dequalify_type:dequalify mismatch)
     | SuppressionCommentWithoutErrorCode error_codes ->

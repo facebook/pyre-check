@@ -1062,6 +1062,22 @@ let test_star_args =
     ]
 
 
+let test_delete =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+p: tuple[int, str] = (1, "abc")
+del p[0]
+            |}
+           [
+             "Unable to delete tuple member [72]: Tuples are immutable, so their members may not \
+              be deleted.";
+           ];
+    ]
+
+
 let () =
   "tuple"
   >::: [
@@ -1071,5 +1087,6 @@ let () =
          test_length;
          test_unpacking;
          test_star_args;
+         test_delete;
        ]
   |> Test.run
