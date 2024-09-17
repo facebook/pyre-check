@@ -1002,6 +1002,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       InvalidTypeParametersTransform.visit [] annotation
 
+    (* Convert a type expression of type `Expression.t` to a `Type.t`.
+     *
+     * In the process several sanitization phases happen:
+     * - TypeAliasEnvironment will verify that all types map to valid classes
+     *   (Pyre incorrectly assumes all types are classes; we use `missingFromStubs.ml`
+     *   to fabricate classes for special forms that aren't really classes).
+     * - TypeAliasEnvironment will expand type aliases eagerly.
+     * - The `validate_and_sanitize_type_arguments` transform will convert invalid
+     *   type arguments (which can be invalid because of arity mismatches or because
+     *   they fail to meet constraints) to gradual forms.
+     *)
     method parse_annotation
         ~cycle_detections
         ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
