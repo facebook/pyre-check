@@ -30,11 +30,13 @@ from collections import defaultdict
 from pathlib import Path
 from typing import (
     Callable,
+    Collection,
     Coroutine,
     DefaultDict,
     Dict,
     Generic,
     List,
+    Mapping,
     Optional,
     Protocol,
     Set,
@@ -647,6 +649,18 @@ class PyreLanguageServer(PyreLanguageServerApi):
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def _publish_type_errors_for_files(
+        self,
+        type_errors: Mapping[Path, Collection[error.Error]],
+        type_checked_files: Set[Path],
+    ) -> None:
+        for file in type_checked_files:
+            document_errors = type_errors.get(file, set())
+            await self.client_type_error_handler.show_overlay_type_errors(
+                path=file,
+                type_errors=list(document_errors),
+            )
+
     @staticmethod
     def _process_buck_target_type_errors(
         buck_root: Path,
@@ -739,6 +753,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         type_errors: Dict[Path, Set[error.Error]] = {}
         try:
             type_errors = self._process_buck_type_errors_from_stdout(stdout_text)
+            await self._publish_type_errors_for_files(type_errors, type_checkable_files)
         except (
             json.JSONDecodeError,
             AssertionError,
@@ -791,6 +806,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
     async def _query_pyre_daemon_type_errors(
         self, document_path: Path, type_checkable_files: Set[Path]
     ) -> PyreDaemonTypeErrors:
+        if len(type_checkable_files) == 0:
+            LOG.debug("No daemon type checkable files found")
+            return PyreDaemonTypeErrors(
+                type_errors={},
+                error_message=None,
+                duration=0,
+            )
         type_errors_timer = timer.Timer()
         # TODO(connernilsen): we should get rid of this
         await self.update_overlay_if_needed(document_path)
@@ -803,12 +825,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             error_message = result.error_message
         else:
             type_errors = result
-            for opened_document in self.server_state.opened_documents:
-                document_errors = result.get(opened_document, [])
-                await self.client_type_error_handler.show_overlay_type_errors(
-                    path=opened_document,
-                    type_errors=document_errors,
-                )
+            await self._publish_type_errors_for_files(type_errors, type_checkable_files)
 
         return PyreDaemonTypeErrors(
             type_errors=type_errors,

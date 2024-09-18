@@ -12,7 +12,7 @@ This module provides shared logic for publishing diagnostics for type errors
 import dataclasses
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Collection, Dict, List, Optional
 
 from .. import backend_arguments, error, json_rpc
 from ..language_server import connections, protocol as lsp
@@ -25,7 +25,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 async def _publish_diagnostics(
     output_channel: connections.AsyncTextWriter,
     path: Path,
-    diagnostics: Sequence[lsp.Diagnostic],
+    diagnostics: Collection[lsp.Diagnostic],
 ) -> None:
     LOG.debug(f"Publish diagnostics for {path}: {diagnostics}")
     await lsp.write_json_rpc(
@@ -43,7 +43,7 @@ async def _publish_diagnostics(
 
 
 def type_errors_to_diagnostics(
-    type_errors: Sequence[error.Error],
+    type_errors: Collection[error.Error],
 ) -> Dict[Path, List[lsp.Diagnostic]]:
     result: Dict[Path, List[lsp.Diagnostic]] = {}
     for type_error in type_errors:
@@ -85,7 +85,7 @@ class ClientTypeErrorHandler:
     server_state: server_state.ServerState
     remote_logging: Optional[backend_arguments.RemoteLogging] = None
 
-    def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
+    def update_type_errors(self, type_errors: Collection[error.Error]) -> None:
         LOG.info(
             "Refreshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
@@ -103,7 +103,7 @@ class ClientTypeErrorHandler:
     async def show_overlay_type_errors(
         self,
         path: Path,
-        type_errors: Sequence[error.Error],
+        type_errors: Collection[error.Error],
     ) -> None:
         LOG.info(
             f"Refreshing type errors at path {path}. "
