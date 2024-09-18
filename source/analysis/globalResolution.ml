@@ -631,6 +631,8 @@ let refine global_resolution annotation refined_type =
 
 
 module Testing = struct
-  let constraints ({ dependency; _ } as resolution) =
-    AttributeResolution.ReadOnly.Testing.constraints ?dependency (attribute_resolution resolution)
+  let constraints_for_instantiate ({ dependency; _ } as resolution) =
+    AttributeResolution.ReadOnly.Testing.constraints_for_instantiate
+      ?dependency
+      (attribute_resolution resolution)
 end

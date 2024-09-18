@@ -2036,18 +2036,30 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       >>| fst
       >>| List.rev
 
-    method constraints ~cycle_detections ~target ~instantiated () =
+    (* Take a type `current_type` and the name `source_type_name` of an ancestor class (potentially a
+     * metaclass) of that type, compute the constraints on the type parameters of the source
+     * type (expressed as `Type.Variable.t` values).
+     *
+     * These constraints represent the substitution needed to take an uninstantiated
+     * attribute coming from the source type's attribute table (which will be expressed in terms of the
+     * parameters of that type, as variables) and instantiate it for `current_type`.
+     *
+     * The implementation has two steps:
+     * - take the source type and parameterize it by its own parameters, as arguments
+     * - solve for (parameterized source type) <: (current_type)
+     *)
+    method constraints_for_instantiate ~cycle_detections ~source_type_name ~current_type () =
       let Queries.{ generic_parameters_as_variables; _ } = queries in
-      let arguments =
-        generic_parameters_as_variables target
+      let parameters_as_arguments =
+        generic_parameters_as_variables source_type_name
         >>| List.map ~f:Type.Variable.to_argument
         |> Option.value ~default:[]
       in
-      if List.is_empty arguments then
+      if List.is_empty parameters_as_arguments then
         TypeConstraints.Solution.empty
       else
-        let right = Type.parametric target arguments in
-        match instantiated, right with
+        let right = Type.parametric source_type_name parameters_as_arguments in
+        match current_type, right with
         | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name
           ->
             (* TODO(T42259381) This special case is only necessary because constructor calls
@@ -2058,7 +2070,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             let order = self#full_order ~cycle_detections in
             TypeOrder.OrderedConstraintsSet.add_and_simplify
               ConstraintsSet.empty
-              ~new_constraint:(LessOrEqual { left = instantiated; right })
+              ~new_constraint:(LessOrEqual { left = current_type; right })
               ~order
             |> TypeOrder.OrderedConstraintsSet.solve ~order
             (* TODO(T39598018): error in this case somehow, something must be wrong *)
@@ -2144,7 +2156,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         match instantiated with
         | None -> annotation
         | Some instantiated -> (
-            let solution = self#constraints ~target:class_name ~instantiated ~cycle_detections () in
+            let solution =
+              self#constraints_for_instantiate
+                ~source_type_name:class_name
+                ~current_type:instantiated
+                ~cycle_detections
+                ()
+            in
             let instantiate annotation = TypeConstraints.Solution.instantiate solution annotation in
             match annotation with
             | `Attribute annotation -> `Attribute (instantiate annotation)
@@ -4008,7 +4026,8 @@ module ReadOnly = struct
 
 
   module Testing = struct
-    let constraints = add_all_caches_and_empty_cycle_detections (fun o -> o#constraints)
+    let constraints_for_instantiate =
+      add_all_caches_and_empty_cycle_detections (fun o -> o#constraints_for_instantiate)
   end
 end
 

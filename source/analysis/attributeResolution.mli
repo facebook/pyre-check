@@ -154,11 +154,11 @@ module AttributeReadOnly : sig
   val global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 
   module Testing : sig
-    val constraints
+    val constraints_for_instantiate
       :  t ->
       ?dependency:DependencyKey.registered ->
-      target:Type.Primitive.t ->
-      instantiated:Type.t ->
+      source_type_name:Type.Primitive.t ->
+      current_type:Type.t ->
       unit ->
       TypeConstraints.Solution.t
   end

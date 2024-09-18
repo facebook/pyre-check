@@ -235,10 +235,10 @@ val refine : t -> TypeInfo.Unit.t -> Type.t -> TypeInfo.Unit.t
 val extract_unary_type_arguments__unsafe : t -> source:Type.t -> target:string -> Type.t list option
 
 module Testing : sig
-  val constraints
+  val constraints_for_instantiate
     :  t ->
-    target:Type.Primitive.t ->
-    instantiated:Type.t ->
+    source_type_name:Type.Primitive.t ->
+    current_type:Type.t ->
     unit ->
     TypeConstraints.Solution.t
 end

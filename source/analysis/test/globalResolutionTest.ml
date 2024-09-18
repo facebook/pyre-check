@@ -1504,12 +1504,18 @@ let test_typed_dictionary_attributes =
 
 
 let test_constraints =
-  let assert_constraints ~target ~instantiated source expected context =
+  let assert_constraints ~source_type_name ~current_type source expected context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let constraints = GlobalResolution.Testing.constraints ~target resolution ~instantiated () in
+    let constraints =
+      GlobalResolution.Testing.constraints_for_instantiate
+        ~source_type_name
+        resolution
+        ~current_type
+        ()
+    in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.TypeVarPair (variable, value))
     in
@@ -1536,8 +1542,8 @@ let test_constraints =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![int_and_foo_string_union])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![int_and_foo_string_union])
            {|
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_V]):
@@ -1546,8 +1552,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._V", int_and_foo_string_union];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.Primitive "test.Foo")
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.Primitive "test.Foo")
            {|
       class Foo:
         pass
@@ -1556,8 +1562,8 @@ let test_constraints =
       (* Consequence of the special case we need to remove *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.Bottom])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.Bottom])
            {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
@@ -1566,8 +1572,8 @@ let test_constraints =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer; Type.float])
            {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1580,8 +1586,8 @@ let test_constraints =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer; Type.float])
            {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1594,8 +1600,8 @@ let test_constraints =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.Primitive "test.Foo")
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.Primitive "test.Foo")
            {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -1606,8 +1612,8 @@ let test_constraints =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Bar"
-           ~instantiated:(Type.Primitive "test.Foo")
+           ~source_type_name:"test.Bar"
+           ~current_type:(Type.Primitive "test.Foo")
            {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -1618,8 +1624,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._T", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Bar"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
+           ~source_type_name:"test.Bar"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer])
            {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1631,8 +1637,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._V", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Bar"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           ~source_type_name:"test.Bar"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer; Type.float])
            {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
@@ -1647,8 +1653,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._T", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Baz"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
+           ~source_type_name:"test.Baz"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer; Type.float])
            {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
@@ -1663,8 +1669,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._T", Type.float];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Iterator"
-           ~instantiated:(Type.parametric "test.Iterator" !![Type.integer])
+           ~source_type_name:"test.Iterator"
+           ~current_type:(Type.parametric "test.Iterator" !![Type.integer])
            {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
@@ -1673,8 +1679,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._T", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Iterator"
-           ~instantiated:(Type.parametric "test.Iterable" !![Type.integer])
+           ~source_type_name:"test.Iterator"
+           ~current_type:(Type.parametric "test.Iterable" !![Type.integer])
            {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
@@ -1685,8 +1691,8 @@ let test_constraints =
            [Type.Variable.TypeVar.create "test._T", Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.Bound"])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.Primitive "test.Bound"])
            {|
       class Bound:
         pass
@@ -1697,8 +1703,8 @@ let test_constraints =
            [t_bound, Type.Primitive "test.Bound"];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.UnderBound"])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.Primitive "test.UnderBound"])
            {|
       class Bound:
         pass
@@ -1711,8 +1717,8 @@ let test_constraints =
            [t_bound, Type.Primitive "test.UnderBound"];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.OverBound"])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.Primitive "test.OverBound"])
            {|
       class Bound:
         pass
@@ -1725,8 +1731,8 @@ let test_constraints =
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.integer])
            {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
@@ -1735,8 +1741,8 @@ let test_constraints =
            [t_explicit, Type.integer];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_constraints
-           ~target:"test.Foo"
-           ~instantiated:(Type.parametric "test.Foo" !![Type.bool])
+           ~source_type_name:"test.Foo"
+           ~current_type:(Type.parametric "test.Foo" !![Type.bool])
            {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
