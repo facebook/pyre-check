@@ -684,8 +684,21 @@ class PyreLanguageServer(PyreLanguageServerApi):
         buck_query_timer: timer.Timer,
         retries: int,
     ) -> PyreBuckTypeErrorMetadata:
-        buck_query_timer = timer.Timer()
-        with tempfile.NamedTemporaryFile() as build_id_file:
+        with (
+            tempfile.NamedTemporaryFile(mode="rb") as build_id_file,
+            tempfile.NamedTemporaryFile(mode="w") as argfile,
+        ):
+            print("--", file=argfile)
+            print(
+                *[
+                    argument
+                    for file in type_checkable_files
+                    for argument in ["--source", str(file)]
+                ],
+                sep="\n",
+                file=argfile,
+            )
+            argfile.flush()
             type_check_parameters = [
                 "buck2",
                 "bxl",
@@ -695,12 +708,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "--client-metadata=client_id=pyre.ide",
                 f"--write-build-id={build_id_file.name}",
                 "prelude//python/typecheck/batch_files.bxl:run",
-                "--",
-                *[
-                    argument
-                    for file in type_checkable_files
-                    for argument in ["--source", str(file)]
-                ],
+                f"@{argfile.name}",
             ]
             type_check = await asyncio.create_subprocess_exec(
                 *type_check_parameters,
@@ -910,6 +918,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 did_run=False,
             )
 
+        error_message = (daemon_type_errors.error_message or "") + (
+            pyre_buck_metadata.error_message or ""
+        )
+
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -919,8 +931,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     self.server_state.opened_documents
                 ),
                 "duration_ms": type_errors_timer.stop_in_millisecond(),
-                "error_message": daemon_type_errors.error_message,
-                "type_errors": json.dumps(daemon_type_errors.type_errors_to_json()),
+                "error_message": error_message,
                 "type_check_metadata": {
                     "buck_type_errors": pyre_buck_metadata.to_json(),
                     "daemon_type_errors": daemon_type_errors.to_json(),
