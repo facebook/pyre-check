@@ -262,7 +262,7 @@ end
 let apply_dataclass_transforms_to_table
     ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
     ~definition
-    create_attribute
+    create_uninstantiated_attribute
     instantiate_attribute
     class_name
     table
@@ -387,7 +387,7 @@ let apply_dataclass_transforms_to_table
               | { Node.location; _ } ->
                   Node.create (Expression.Constant Constant.Ellipsis) ~location
             in
-            ( create_attribute
+            ( create_uninstantiated_attribute
                 ~scoped_type_variables:None
                 ~parent
                 ?defined:None
@@ -1281,7 +1281,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       get_class_summary target >>| handle
 
-    method create_attribute
+    method create_uninstantiated_attribute
         ~scoped_type_variables
         ~cycle_detections
         ~parent
@@ -1555,7 +1555,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           |> List.map ~f:(fun (_, attribute) -> attribute)
         in
         let unannotated_attribute { Node.value = attribute; _ } =
-          self#create_attribute
+          self#create_uninstantiated_attribute
             ~scoped_type_variables:None
             ~cycle_detections
             ~parent
@@ -1699,7 +1699,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
-                 ( self#create_attribute
+                 ( self#create_uninstantiated_attribute
                      ~scoped_type_variables:None
                      ~cycle_detections
                      ~parent:parent_definition
@@ -1825,7 +1825,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         let add_actual () =
           let collect_attributes attribute =
             let created_attribute =
-              self#create_attribute
+              self#create_uninstantiated_attribute
                 ~scoped_type_variables:(scoped_type_variables_as_map class_parameters)
                 (Node.value attribute)
                 ~cycle_detections
@@ -1846,7 +1846,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             apply_dataclass_transforms_to_table
               ~queries
               ~definition:parent
-              (self#create_attribute ~cycle_detections)
+              (self#create_uninstantiated_attribute ~cycle_detections)
               (self#instantiate_attribute
                  ~cycle_detections
                  ?instantiated:None
