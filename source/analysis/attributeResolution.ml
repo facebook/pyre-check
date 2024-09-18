@@ -1544,6 +1544,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | _ -> false)
         ~undecorated_signature
 
+    (* Special-case attribute table factory used as a helper in
+     * single_uninstantiated_attribute_table.
+     *)
     method sqlalchemy_attribute_table
         ~cycle_detections
         ~include_generated_attributes
@@ -1669,6 +1672,16 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         table;
       table
 
+    (* Special-case attribute table factory used as a helper in
+     * single_uninstantiated_attribute_table.
+     *
+     * This creates overloaded method signatures that approximate the behavior
+     * of TypedDictionary, mostly using helpers defined in the
+     * `Type.TypedDictionary` module.
+     *
+     * These methods are only sufficient for type checking some kinds of code involving
+     * TypedDictionary, often we still have to special-case the logic.
+     *)
     method typed_dictionary_special_methods_table
         ~cycle_detections
         ~include_generated_attributes
@@ -1802,6 +1815,24 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       if include_generated_attributes then add_special_methods ();
       table
 
+    (* Create an UninstantiatedAttributeTable value with all of the uninstantiated
+     * attributes defined on the body of a class.
+     * 
+     * The output of this function is generally cached in the `AttributeCache`
+     * environment layer, which is critical for performance.
+     *
+     * Note that in the standard case this does *not* contain any inherited attributes;
+     * we usually have to traverse a lazy sequence of these tables to find an attribute
+     * on a class. 
+     *
+     * The granularity is usually the same as ClassSummary, which is why caching this
+     * table turns out to work well for performance.
+     *
+     * Dataclasses are heavily special-cased via the
+     * `apply_dataclass_transforms_to_table` helper, which also flattens fields
+     * defined in all dataclass ancestors (so the granularity of this table for
+     * dataclasses is substantially different than normal classes).
+     *)
     method single_uninstantiated_attribute_table
         ~cycle_detections
         ~include_generated_attributes
