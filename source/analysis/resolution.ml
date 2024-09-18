@@ -419,7 +419,7 @@ let fallback_attribute
               | NotFound _ -> Type.Callable.Overload.return_annotation implementation
             in
             Some
-              (AnnotatedAttribute.create
+              (AnnotatedAttribute.create_instantiated
                  ~annotation:return_annotation
                  ~original_annotation:return_annotation
                  ~uninstantiated_annotation:(Some return_annotation)

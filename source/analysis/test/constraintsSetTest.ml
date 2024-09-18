@@ -18,7 +18,7 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single 
 
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
-    AnnotatedAttribute.create
+    AnnotatedAttribute.create_instantiated
       ~annotation
       ~original_annotation:annotation
       ~uninstantiated_annotation:(Some annotation)

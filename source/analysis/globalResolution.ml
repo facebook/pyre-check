@@ -395,7 +395,7 @@ let attribute_from_class_name
     | None -> (
         match get_class_summary resolution class_name with
         | Some _ ->
-            AnnotatedAttribute.create
+            AnnotatedAttribute.create_instantiated
               ~annotation:Type.Top
               ~original_annotation:Type.Top
               ~uninstantiated_annotation:(Some Type.Top)

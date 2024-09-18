@@ -582,7 +582,7 @@ let test_all_attributes =
       ~parent
       name
     =
-    AnnotatedAttribute.create
+    AnnotatedAttribute.create_instantiated
       ~abstract:false
       ~annotation
       ~original_annotation:annotation
@@ -778,7 +778,7 @@ let test_attribute_from_class_name =
       | _ -> None
     in
     Some
-      (AnnotatedAttribute.create
+      (AnnotatedAttribute.create_instantiated
          ~annotation
          ~original_annotation:annotation
          ~uninstantiated_annotation
@@ -1900,7 +1900,7 @@ let test_metaclasses =
 let test_overrides =
   let create_simple_callable_attribute ?(initialized = Attribute.OnClass) ~signature ~parent name =
     let annotation = Type.Callable signature in
-    AnnotatedAttribute.create
+    AnnotatedAttribute.create_instantiated
       ~abstract:false
       ~annotation
       ~original_annotation:annotation

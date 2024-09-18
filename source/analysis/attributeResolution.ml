@@ -2506,7 +2506,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ~order
       with
       | Some callable ->
-          AnnotatedAttribute.create
+          AnnotatedAttribute.create_instantiated
             ~annotation:callable
             ~original_annotation:callable
             ~uninstantiated_annotation:None

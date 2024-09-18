@@ -50,7 +50,7 @@ let concrete_connect_with_variance ~arguments_with_variances =
 
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
-    AnnotatedAttribute.create
+    AnnotatedAttribute.create_instantiated
       ~annotation
       ~original_annotation:annotation
       ~uninstantiated_annotation:(Some annotation)

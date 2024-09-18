@@ -118,7 +118,7 @@ type uninstantiated = UninstantiatedAnnotation.t t [@@deriving compare, sexp]
 
 type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
 
-let create
+let create_instantiated
     ~abstract
     ~annotation
     ~original_annotation

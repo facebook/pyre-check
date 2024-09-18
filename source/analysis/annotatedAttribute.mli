@@ -85,7 +85,7 @@ type uninstantiated = UninstantiatedAnnotation.t t [@@deriving compare, sexp]
 
 type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
 
-val create
+val create_instantiated
   :  abstract:bool ->
   annotation:Type.t ->
   original_annotation:Type.t ->
