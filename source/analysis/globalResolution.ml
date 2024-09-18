@@ -255,10 +255,6 @@ let constraints_solution_exists ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let constraints ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
-
-
 let uninstantiated_attributes
     ({ dependency; _ } as resolution)
     ?(transitive = false)
@@ -632,3 +628,9 @@ let refine global_resolution annotation refined_type =
   in
   let type_less_or_equal = less_or_equal global_resolution in
   TypeInfo.Unit.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation
+
+
+module Testing = struct
+  let constraints ({ dependency; _ } as resolution) =
+    AttributeResolution.ReadOnly.Testing.constraints ?dependency (attribute_resolution resolution)
+end

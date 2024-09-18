@@ -84,14 +84,6 @@ module AttributeReadOnly : sig
     string ->
     AnnotatedAttribute.uninstantiated list option
 
-  val constraints
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    target:Type.Primitive.t ->
-    instantiated:Type.t ->
-    unit ->
-    TypeConstraints.Solution.t
-
   val instantiate_attribute
     :  t ->
     ?dependency:DependencyKey.registered ->
@@ -160,6 +152,16 @@ module AttributeReadOnly : sig
     bool
 
   val global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
+
+  module Testing : sig
+    val constraints
+      :  t ->
+      ?dependency:DependencyKey.registered ->
+      target:Type.Primitive.t ->
+      instantiated:Type.t ->
+      unit ->
+      TypeConstraints.Solution.t
+  end
 end
 
 include

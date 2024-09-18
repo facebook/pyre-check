@@ -3970,8 +3970,6 @@ module ReadOnly = struct
 
   let metaclass = add_all_caches_and_empty_cycle_detections (fun o -> o#metaclass)
 
-  let constraints = add_all_caches_and_empty_cycle_detections (fun o -> o#constraints)
-
   let resolve_define = add_all_caches_and_empty_cycle_detections (fun o -> o#resolve_define)
 
   let resolve_define_undecorated =
@@ -4007,6 +4005,11 @@ module ReadOnly = struct
       OutgoingDataComputation.Queries.
         { global_annotation = global_annotation ?dependency read_only }
       reference
+
+
+  module Testing = struct
+    let constraints = add_all_caches_and_empty_cycle_detections (fun o -> o#constraints)
+  end
 end
 
 module AttributeReadOnly = ReadOnly

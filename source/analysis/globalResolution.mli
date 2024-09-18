@@ -105,13 +105,6 @@ val constraints_solution_exists
   right:Type.t ->
   bool
 
-val constraints
-  :  t ->
-  target:Type.Primitive.t ->
-  instantiated:Type.t ->
-  unit ->
-  TypeConstraints.Solution.t
-
 val uninstantiated_attributes
   :  t ->
   ?transitive:bool ->
@@ -240,3 +233,12 @@ val refine : t -> TypeInfo.Unit.t -> Type.t -> TypeInfo.Unit.t
 
 (* Exposed in the API for testing only *)
 val extract_unary_type_arguments__unsafe : t -> source:Type.t -> target:string -> Type.t list option
+
+module Testing : sig
+  val constraints
+    :  t ->
+    target:Type.Primitive.t ->
+    instantiated:Type.t ->
+    unit ->
+    TypeConstraints.Solution.t
+end

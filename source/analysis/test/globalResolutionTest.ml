@@ -1509,7 +1509,7 @@ let test_constraints =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let constraints = GlobalResolution.constraints ~target resolution ~instantiated () in
+    let constraints = GlobalResolution.Testing.constraints ~target resolution ~instantiated () in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.TypeVarPair (variable, value))
     in
