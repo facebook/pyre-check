@@ -20,7 +20,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, Iterable, List, Optional, Set, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error, timer
 from ..language_server import (
@@ -154,7 +154,7 @@ class AbstractDaemonQuerier(abc.ABC):
     @abc.abstractmethod
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
@@ -274,7 +274,7 @@ class AbstractDaemonQuerier(abc.ABC):
 class EmptyQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
@@ -418,7 +418,7 @@ class PersistentDaemonQuerier(ServerStateBackedDaemonQuerier):
 
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         errors: Dict[Path, List[error.Error]] = {}
         for path in paths:
@@ -648,7 +648,7 @@ class CodeNavigationDaemonQuerier(ServerStateBackedDaemonQuerier):
 
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         dropped_paths: Set[Path] = set()
         for path in paths:
@@ -909,7 +909,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         return await self.base_querier.get_type_errors(paths)
 

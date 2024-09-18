@@ -167,7 +167,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        paths: List[Path],
+        paths: Iterable[Path],
     ) -> Union[querier.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         return self.mock_type_errors or {}
 
