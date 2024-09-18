@@ -1281,6 +1281,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       get_class_summary target >>| handle
 
+    (* Create an uninstantiated attribute. This operation essentially
+     * "lifts" the ClassSummary.Attribute.t type to the type level, producing
+     * an `AnnotatedAttribute.uninstantiated` value.
+     *
+     * Note that for methods, decorators are not yet applied in the resulting
+     * type, we track the callable type of the undecorated signature but defer
+     * applying decorators until instantiation.
+     *)
     method create_uninstantiated_attribute
         ~scoped_type_variables
         ~cycle_detections
