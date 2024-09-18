@@ -1085,6 +1085,23 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       result
 
+    (* Given a define signature (which arrives in the form of an overloads list plus
+     * an optional implementation - the implementation is optional for stubs), produce
+     * an `AnnotatedAttribute.decorated_method` value that tracks:
+     * - the type of the raw function signature without resolving decorators
+     * - all of the decorators that are consistently applied (which are resolved later)
+     * - an `AnnotatedAttribute.problem` whenever decorators are inconsistent across overloads
+     *
+     * How this relates to other parts of AttributeResolution and TypeCheck:
+     * - uninstantiated attribute tables store method types in this form, which allows
+     *   us to defer the expensive work of resolving and applying decorators and gives
+     *   much better cache performance.
+     * - Decorators can modify the signature; that logic is handled downstream in the
+     *   `apply_decorators` function.
+     * - The `resolve_define` function combines both steps into one; this is what
+     *   is used both for resolving globals and inside of TypeCheck to get the types
+     *   of locally-defined functions.
+     *)
     method resolve_define_undecorated
         ~cycle_detections
         ~callable_name
@@ -1143,7 +1160,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         match overloads, implementation with
         | ( ({ Ast.Statement.Define.Signature.decorators = head_decorators; _ } as overload) :: tail,
             _ ) ->
-            let purify =
+            let filter_overload_decorator =
               let is_not_overload_decorator decorator =
                 not
                   (Ast.Statement.Define.Signature.is_overloaded_function
@@ -1155,7 +1172,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               let equal left right =
                 Int.equal (Ast.Expression.location_insensitive_compare left right) 0
               in
-              if List.equal equal sofar (purify current) then
+              if List.equal equal sofar (filter_overload_decorator current) then
                 Ok sofar
               else
                 Error (AnnotatedAttribute.DifferingDecorators { offender = parsed })
@@ -1169,7 +1186,10 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ( parsed :: reversed_parsed_overloads,
                   Result.bind decorators_sofar ~f:(enforce_equality ~parsed ~current) )
               in
-              List.fold tail ~f:collect ~init:([parse overload], Result.Ok (purify head_decorators))
+              List.fold
+                tail
+                ~f:collect
+                ~init:([parse overload], Result.Ok (filter_overload_decorator head_decorators))
             in
             let parsed_implementation, decorators =
               match implementation with
