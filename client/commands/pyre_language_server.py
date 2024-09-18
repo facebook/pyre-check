@@ -82,7 +82,6 @@ CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 PYAUTOTARGETS_ENABLED_SUFFIXES: Set[str] = {
     ".py",
 }
-PTT_ISOLATION_DIR = ".pyreptt"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -643,13 +642,12 @@ class PyreLanguageServer(PyreLanguageServerApi):
         return errors
 
     async def _query_buck_type_errors(
-        self, open_documents: List[Path], isolation_dir: str
+        self, open_documents: List[Path]
     ) -> PyreBuckTypeErrorMetadata:
         buck_query_timer = timer.Timer()
         buck_query_durations: Dict[str, float] = {}
         query_parameters = [
             "buck2",
-            f"--isolation-dir={isolation_dir}",
             "bxl",
             "--reuse-current-config",
             "--oncall=pyre",
@@ -711,10 +709,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         with tempfile.NamedTemporaryFile() as build_id_file:
             type_check_parameters = [
                 "buck2",
-                f"--isolation-dir={isolation_dir}",
                 "bxl",
                 "--reuse-current-config",
-                "--preemptible=never",
+                "--preemptible=ondifferentstate",
                 "--oncall=pyre",
                 "--client-metadata=client_id=pyre.ide",
                 f"--write-build-id={build_id_file.name}",
@@ -837,7 +834,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
                 self._query_pyre_daemon_type_errors(document_path, open_documents),
                 self._query_buck_type_errors(
-                    open_documents, isolation_dir=PTT_ISOLATION_DIR
+                    open_documents,
                 ),
             )
         else:
@@ -874,7 +871,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
                     "preempted": pyre_buck_metadata.preempted,
                     "new_file_loaded": new_file_loaded,
-                    "isolation_dir": PTT_ISOLATION_DIR,
                     "buck_type_errors": pyre_buck_metadata.type_errors_to_json(),
                     "buck_error_message": pyre_buck_metadata.error_message,
                     "buck_build_id": pyre_buck_metadata.build_id,
