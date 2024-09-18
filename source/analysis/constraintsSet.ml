@@ -239,7 +239,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           |> Option.value ~default:impossible
         and solve_parameters ~left_parameters ~right_parameters constraints =
           let expand_typed_dictionary_parameters =
-            List.map ~f:(fun { Type.TypedDictionary.name; annotation; required } ->
+            List.map ~f:(fun { Type.TypedDictionary.name; annotation; required; _ } ->
                 CallableParamType.KeywordOnly { name; annotation; default = not required })
           in
           let all_left_parameters = left_parameters in

@@ -3918,6 +3918,7 @@ module TypedDictionary = struct
     name: string;
     annotation: T.t;
     required: bool;
+    readonly: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -3932,23 +3933,35 @@ module TypedDictionary = struct
   let anonymous fields = { name = "$anonymous"; fields }
 
   let create_field ~annotation ~has_non_total_typed_dictionary_base_class name =
-    let annotation, required =
+    let rec get_properties annotation ~required ~readonly =
       match annotation with
       | Parametric
           {
             name = "typing_extensions.NotRequired" | "typing.NotRequired";
             arguments = [Single annotation];
           } ->
-          annotation, false
+          get_properties annotation ~required:(Some false) ~readonly
       | Parametric
           {
             name = "typing_extensions.Required" | "typing.Required";
             arguments = [Single annotation];
           } ->
-          annotation, true
-      | _ -> annotation, not has_non_total_typed_dictionary_base_class
+          get_properties annotation ~required:(Some true) ~readonly
+      | Parametric
+          {
+            name = "typing_extensions.ReadOnly" | "typing.ReadOnly";
+            arguments = [Single annotation];
+          } ->
+          get_properties ~required ~readonly:(Some true) annotation
+      | _ -> annotation, required, readonly
     in
-    { name; annotation; required }
+    let annotation, required, readonly = get_properties annotation ~required:None ~readonly:None in
+    {
+      name;
+      annotation;
+      required = Option.value required ~default:(not has_non_total_typed_dictionary_base_class);
+      readonly = Option.value readonly ~default:false;
+    }
 
 
   let are_fields_total = List.for_all ~f:(fun { required; _ } -> required)
@@ -3973,13 +3986,20 @@ module TypedDictionary = struct
 
   let fields_have_colliding_keys left_fields right_fields =
     let found_collision
-        { name = needle_name; annotation = needle_annotation; required = needle_required }
+        {
+          name = needle_name;
+          annotation = needle_annotation;
+          required = needle_required;
+          readonly = needle_readonly;
+        }
       =
-      let same_name_different_annotation_or_requiredness { name; annotation; required } =
+      let same_name_different_properties { name; annotation; required; readonly } =
         String.equal name needle_name
-        && ((not (equal annotation needle_annotation)) || not (Bool.equal required needle_required))
+        && ((not (equal annotation needle_annotation))
+           || (not (Bool.equal required needle_required))
+           || not (Bool.equal readonly needle_readonly))
       in
-      List.exists left_fields ~f:same_name_different_annotation_or_requiredness
+      List.exists left_fields ~f:same_name_different_properties
     in
     List.exists right_fields ~f:found_collision
 
@@ -3989,7 +4009,7 @@ module TypedDictionary = struct
 
 
   let field_named_parameters ?(all_default = false) ~class_name fields =
-    let field_to_argument { name; annotation; required } =
+    let field_to_argument { name; annotation; required; _ } =
       Record.Callable.CallableParamType.KeywordOnly
         {
           name = Format.asprintf "$parameter$%s" name;
@@ -4044,6 +4064,7 @@ module TypedDictionary = struct
                   name = String.split ~on:'$' name |> List.last_exn;
                   annotation;
                   required = not default;
+                  readonly = false;
                 }
           | _ -> None
         in
@@ -4187,7 +4208,7 @@ module TypedDictionary = struct
       List.concat_map ~f:overloads
     in
     let delitem_overloads fields =
-      let overload { name; annotation = _; required } =
+      let overload { name; required; _ } =
         Option.some_if
           (not required)
           {

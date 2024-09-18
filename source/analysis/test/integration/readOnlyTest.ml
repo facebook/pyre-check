@@ -24,12 +24,7 @@ let test_readonly =
            blur: Band = {"name": "blur", "members": []}
            blur["members"] = ["Damon Albarn"]  # Type check error: "members" is read-only
             |}
-           [
-             "TypedDict initialization error [55]: Expected type `ReadOnly[typing.List[str]]` for \
-              `Band` field `members` but got `typing.List[Variable[_T]]`.";
-             "Invalid TypedDict operation [54]: Expected `ReadOnly[typing.List[str]]` to be \
-              assigned to `Band` field `members` but got `typing.List[str]`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -43,12 +38,50 @@ let test_readonly =
            blur: Band = {"name": "blur", "members": []}
            blur["members"].append("Damon Albarn")  # OK: list is mutable
             |}
-           [
-             "TypedDict initialization error [55]: Expected type `ReadOnly[typing.List[str]]` for \
-              `Band` field `members` but got `typing.List[Variable[_T]]`.";
-             "Undefined attribute [16]: `ReadOnly` has no attribute `append`.";
-           ];
+           [];
     ]
 
 
-let () = "readOnly" >::: [test_readonly] |> Test.run
+let test_interaction =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+          from typing import Annotated, TypedDict
+          from typing_extensions import NotRequired, ReadOnly, Required
+
+          class TD(TypedDict):
+            x: Annotated[ReadOnly[int], 42]
+            y: Required[ReadOnly[str]]
+            z: NotRequired[ReadOnly[bytes]]
+
+          # Test that NotRequired on 'z' is respected
+          td1: TD = {'x': 0, 'y': ""}  # OK
+
+          # Test that Required on 'y' is respected
+          td2: TD = {'x': 0, 'z': b""}  # Error
+          |}
+           ["TypedDict initialization error [55]: Missing required field `y` for TypedDict `TD`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+          from typing import Annotated, TypedDict
+          from typing_extensions import NotRequired, ReadOnly, Required
+
+          class TD(TypedDict):
+            x: ReadOnly[Annotated[int, 42]]
+            y: ReadOnly[Required[str]]
+            z: ReadOnly[NotRequired[bytes]]
+
+          # Test that NotRequired on 'z' is respected
+          td1: TD = {'x': 0, 'y': ""}  # OK
+
+          # Test that Required on 'y' is respected
+          td2: TD = {'x': 0, 'z': b""}  # Error
+            |}
+           ["TypedDict initialization error [55]: Missing required field `y` for TypedDict `TD`."];
+    ]
+
+
+let () = "readOnly" >::: [test_readonly; test_interaction] |> Test.run

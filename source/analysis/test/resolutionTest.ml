@@ -261,8 +261,18 @@ let test_get_typed_dictionary context =
          name = "test.Movie";
          fields =
            [
-             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = true };
+             {
+               Type.TypedDictionary.name = "name";
+               annotation = Type.string;
+               required = true;
+               readonly = false;
+             };
+             {
+               Type.TypedDictionary.name = "year";
+               annotation = Type.integer;
+               required = true;
+               readonly = false;
+             };
            ];
        });
   assert_typed_dictionary
@@ -272,9 +282,24 @@ let test_get_typed_dictionary context =
          name = "test.Child";
          fields =
            [
-             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-             { Type.TypedDictionary.name = "rating"; annotation = Type.integer; required = true };
-             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = true };
+             {
+               Type.TypedDictionary.name = "name";
+               annotation = Type.string;
+               required = true;
+               readonly = false;
+             };
+             {
+               Type.TypedDictionary.name = "rating";
+               annotation = Type.integer;
+               required = true;
+               readonly = false;
+             };
+             {
+               Type.TypedDictionary.name = "year";
+               annotation = Type.integer;
+               required = true;
+               readonly = false;
+             };
            ];
        });
   assert_typed_dictionary
@@ -284,8 +309,18 @@ let test_get_typed_dictionary context =
          name = "test.NonTotalMovie";
          fields =
            [
-             { Type.TypedDictionary.name = "name"; annotation = Type.string; required = false };
-             { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
+             {
+               Type.TypedDictionary.name = "name";
+               annotation = Type.string;
+               required = false;
+               readonly = false;
+             };
+             {
+               Type.TypedDictionary.name = "year";
+               annotation = Type.integer;
+               required = false;
+               readonly = false;
+             };
            ];
        });
   ()

@@ -469,7 +469,9 @@ let get_parameter_argument_mapping
               (* Expand typed dictionaries *)
               match get_typed_dictionary resolved with
               | Some { Type.TypedDictionary.fields; _ } ->
-                  let accumulate_argument { Type.TypedDictionary.name; annotation; required } so_far
+                  let accumulate_argument
+                      { Type.TypedDictionary.name; annotation; required; _ }
+                      so_far
                     =
                     {
                       Argument.WithPosition.kind =

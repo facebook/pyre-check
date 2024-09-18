@@ -3738,8 +3738,18 @@ let test_fields_from_constructor _ =
   in
   let fields =
     [
-      { Type.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-      { Type.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
+      {
+        Type.TypedDictionary.name = "name";
+        annotation = Type.string;
+        required = true;
+        readonly = false;
+      };
+      {
+        Type.TypedDictionary.name = "year";
+        annotation = Type.integer;
+        required = false;
+        readonly = false;
+      };
     ]
   in
   let non_constructor =

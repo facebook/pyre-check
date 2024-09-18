@@ -329,7 +329,9 @@ let rec weaken_mutable_literals
                       >>| (fun field -> relax field, field.required)
                       |> Option.value ~default:(make_weakened_type resolved, true)
                     in
-                    Some ({ name; annotation = resolved; required }, typed_dictionary_errors)
+                    Some
+                      ( { name; annotation = resolved; required; readonly = false },
+                        typed_dictionary_errors )
                 | _ -> None
               end
             | Splat _ -> None

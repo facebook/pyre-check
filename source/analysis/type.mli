@@ -958,6 +958,7 @@ module TypedDictionary : sig
     name: string;
     annotation: type_t;
     required: bool;
+    readonly: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
