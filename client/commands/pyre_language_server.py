@@ -107,12 +107,19 @@ class FilesForTypeChecker:
 class PyreDaemonTypeErrors:
     type_errors: Dict[Path, List[error.Error]]
     error_message: Optional[str]
-    durations: Dict[str, float]
+    duration: float
 
     def type_errors_to_json(self) -> Dict[str, object]:
         return {
             str(path): [document_error.to_json() for document_error in errors]
             for path, errors in self.type_errors.items()
+        }
+
+    def to_json(self) -> Dict[str, object]:
+        return {
+            "type_errors": self.type_errors_to_json(),
+            "error_message": self.error_message,
+            "duration": self.duration,
         }
 
 
@@ -783,15 +790,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
         type_errors_timer = timer.Timer()
         # TODO(connernilsen): we should get rid of this
         await self.update_overlay_if_needed(document_path)
-        overlay_update_duration = type_errors_timer.stop_in_millisecond()
-        type_errors_timer.reset()
         result = await self.querier.get_type_errors(
             type_checkable_files,
         )
         error_message: Optional[str] = None
         type_errors: Dict[Path, List[error.Error]] = {}
-        type_check_duration = type_errors_timer.stop_in_millisecond()
-        type_errors_timer.reset()
         if isinstance(result, DaemonQueryFailure):
             error_message = result.error_message
         else:
@@ -806,11 +809,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         return PyreDaemonTypeErrors(
             type_errors=type_errors,
             error_message=error_message,
-            durations={
-                "overlay_update": overlay_update_duration,
-                "daemon_type_check": type_check_duration,
-                "type_error_publisher": type_errors_timer.stop_in_millisecond(),
-            },
+            duration=type_errors_timer.stop_in_millisecond(),
         )
 
     async def _get_files_for_type_checker(
@@ -931,7 +930,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "type_errors": json.dumps(daemon_type_errors.type_errors_to_json()),
                 "buck_type_check_metadata": {
                     "type_check_durations": {
-                        **daemon_type_errors.durations,
                         **pyre_buck_metadata.durations,
                     },
                     "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
@@ -941,6 +939,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "buck_type_errors": pyre_buck_metadata.type_errors_to_json(),
                     "buck_error_message": pyre_buck_metadata.error_message,
                     "buck_build_id": pyre_buck_metadata.build_id,
+                    "daemon_type_errors": daemon_type_errors.to_json(),
                     "typing_query": type_checked_files.to_json(),
                     "daemon_type_errors_correct": pyre_buck_metadata.do_daemon_type_errors_match(
                         daemon_type_errors.type_errors
