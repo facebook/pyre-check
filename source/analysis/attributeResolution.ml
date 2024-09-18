@@ -2001,6 +2001,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       get_class_metadata class_name >>| handle
 
+    (* Collect all of the uninstantiated attributes from all the individual
+     * uninstantiated attribute tables into one big list.
+     *
+     * This operation is expensive and should be avoided when type checking
+     * dependent code; it should only be used when performing once-per-class
+     * checks (e.g. in typeCheck.ml when checking the body of a class).
+     *)
     method uninstantiated_attributes
         ~cycle_detections
         ~transitive
