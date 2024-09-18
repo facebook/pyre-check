@@ -1931,6 +1931,22 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           Some table
       | _ -> None
 
+    (* Get all the uninstantiated attribute tables for a class.
+     *
+     * This normally produces a Sequence.t (which is lazy) of the uninstantiated attribute table
+     * for each class in the method resolution order (MRO) of the class with name `class_name`,
+     * plus potentially the metaclass hierarchy as well.
+     *
+     * There are a few flags controlling behavior; in particular
+     * - if `transistive` is false we don't traverse the MRO, only the current
+     *   class.
+     * - if `accessed_through_class` and `special_method` are both set, then we will skip straight
+     *   to the metaclass hierarchy.
+     *
+     * Note that the behavior of jumping straight to the metaclass hierarchy
+     * on special methods is consistent with the runtime, see more details at
+     * https://docs.python.org/3/reference/datamodel.html.
+     *)
     method uninstantiated_attribute_tables
         ~cycle_detections
         ~transitive
