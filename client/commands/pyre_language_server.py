@@ -79,6 +79,7 @@ from .source_code_context import SourceCodeContext
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
+PTT_PREEMPTED_RETRIES: int = 3
 PYAUTOTARGETS_ENABLED_SUFFIXES: Set[str] = {
     ".py",
 }
@@ -117,6 +118,7 @@ class PyreBuckTypeErrorMetadata:
     build_id: Optional[str]
     type_errors: Optional[Set[error.Error]]
     error_message: Optional[str]
+    retries: int = 0
 
     def do_daemon_type_errors_match(
         self, daemon_type_errors: Dict[Path, List[error.Error]]
@@ -641,71 +643,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 )
         return errors
 
-    async def _query_buck_type_errors(
-        self, open_documents: List[Path]
+    async def _query_buck_for_type_errors(
+        self,
+        type_checkable_files: Set[Path],
+        buck_query_durations: Dict[str, float],
+        retries: int,
     ) -> PyreBuckTypeErrorMetadata:
         buck_query_timer = timer.Timer()
-        buck_query_durations: Dict[str, float] = {}
-        query_parameters = [
-            "buck2",
-            "bxl",
-            "--reuse-current-config",
-            "--oncall=pyre",
-            "--client-metadata=client_id=pyre.ide",
-            "prelude//python/sourcedb/typing_query.bxl:typing_query",
-            "--",
-            *[
-                argument
-                for file in open_documents
-                for argument in ["--source", str(file)]
-            ],
-        ]
-        type_checked_files_query = await asyncio.create_subprocess_exec(
-            *query_parameters,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout_data, stderr_data = await type_checked_files_query.communicate()
-
-        if type_checked_files_query.returncode != 0:
-            stderr = stderr_data.decode("utf-8")
-            message = f"Typing query ended in error: {stderr}"
-            LOG.error(message)
-            return PyreBuckTypeErrorMetadata(
-                durations=buck_query_durations,
-                type_checked_files=set(),
-                preempted=None,
-                build_id=None,
-                number_files_buck_checked=0,
-                type_errors=None,
-                error_message=message,
-            )
-
-        stdout_decoded = stdout_data.decode("utf-8")
-        query_data = json.loads(stdout_decoded)
-        type_checkable_files = {
-            Path(file)
-            for file, is_type_checkable in query_data.items()
-            if is_type_checkable
-        }
-
-        buck_query_durations["typing_query_duration"] = (
-            buck_query_timer.stop_in_millisecond()
-        )
-        buck_query_timer.reset()
-
-        if len(type_checkable_files) == 0:
-            LOG.debug("No Buck type checkable files found")
-            return PyreBuckTypeErrorMetadata(
-                durations=buck_query_durations,
-                type_checked_files=type_checkable_files,
-                preempted=None,
-                number_files_buck_checked=0,
-                build_id=None,
-                type_errors=None,
-                error_message=None,
-            )
-
         with tempfile.NamedTemporaryFile() as build_id_file:
             type_check_parameters = [
                 "buck2",
@@ -751,6 +695,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 number_files_buck_checked=len(type_checkable_files),
                 type_errors=None,
                 error_message=message,
+                retries=retries,
             )
 
         was_preempted = type_check.returncode == 5
@@ -779,7 +724,88 @@ class PyreLanguageServer(PyreLanguageServerApi):
             number_files_buck_checked=len(type_checkable_files),
             type_errors=type_errors,
             error_message=error_message,
+            retries=retries,
         )
+
+    async def _get_buck_type_errors(
+        self, open_documents: List[Path]
+    ) -> PyreBuckTypeErrorMetadata:
+        buck_query_timer = timer.Timer()
+        buck_query_durations: Dict[str, float] = {}
+        query_parameters = [
+            "buck2",
+            "bxl",
+            "--reuse-current-config",
+            "--oncall=pyre",
+            "--client-metadata=client_id=pyre.ide",
+            "prelude//python/sourcedb/typing_query.bxl:typing_query",
+            "--",
+            *[
+                argument
+                for file in open_documents
+                for argument in ["--source", str(file)]
+            ],
+        ]
+        type_checked_files_query = await asyncio.create_subprocess_exec(
+            *query_parameters,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_data, stderr_data = await type_checked_files_query.communicate()
+
+        if type_checked_files_query.returncode != 0:
+            stderr = stderr_data.decode("utf-8")
+            message = f"Typing query ended in error: {stderr}"
+            LOG.error(message)
+            return PyreBuckTypeErrorMetadata(
+                durations=buck_query_durations,
+                type_checked_files=set(),
+                preempted=None,
+                build_id=None,
+                number_files_buck_checked=0,
+                type_errors=None,
+                error_message=message,
+            )
+
+        stdout_decoded = stdout_data.decode("utf-8")
+        query_data = json.loads(stdout_decoded)
+        type_checkable_files: Set[Path] = {
+            Path(file)
+            for file, is_type_checkable in query_data.items()
+            if is_type_checkable
+        }
+
+        buck_query_durations["typing_query_duration"] = (
+            buck_query_timer.stop_in_millisecond()
+        )
+
+        result = PyreBuckTypeErrorMetadata(
+            durations=buck_query_durations,
+            type_checked_files=type_checkable_files,
+            preempted=None,
+            number_files_buck_checked=0,
+            build_id=None,
+            type_errors=None,
+            error_message=None,
+        )
+
+        if len(type_checkable_files) == 0:
+            LOG.debug("No Buck type checkable files found")
+            return result
+
+        for retries in range(PTT_PREEMPTED_RETRIES):
+            if retries != 0:
+                LOG.warning("Rerunning preempted Buck type check")
+            result = await self._query_buck_for_type_errors(
+                type_checkable_files, buck_query_durations, retries=retries
+            )
+            if not result.preempted:
+                return result
+
+        LOG.warning(
+            f"Giving up on type check after being preempted {PTT_PREEMPTED_RETRIES} times"
+        )
+        return result
 
     async def _query_pyre_daemon_type_errors(
         self, document_path: Path, open_documents: List[Path]
@@ -833,7 +859,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         if self.get_language_server_features().per_target_type_errors.is_enabled():
             daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
                 self._query_pyre_daemon_type_errors(document_path, open_documents),
-                self._query_buck_type_errors(
+                self._get_buck_type_errors(
                     open_documents,
                 ),
             )
@@ -870,6 +896,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     },
                     "number_files_buck_type_checked": pyre_buck_metadata.number_files_buck_checked,
                     "preempted": pyre_buck_metadata.preempted,
+                    "retries": pyre_buck_metadata.retries,
                     "new_file_loaded": new_file_loaded,
                     "buck_type_errors": pyre_buck_metadata.type_errors_to_json(),
                     "buck_error_message": pyre_buck_metadata.error_message,
