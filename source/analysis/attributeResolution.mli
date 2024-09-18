@@ -88,7 +88,6 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     target:Type.Primitive.t ->
-    ?arguments:Type.Argument.t list ->
     instantiated:Type.t ->
     unit ->
     TypeConstraints.Solution.t

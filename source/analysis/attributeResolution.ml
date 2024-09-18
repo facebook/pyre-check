@@ -2036,15 +2036,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       >>| fst
       >>| List.rev
 
-    method constraints ~cycle_detections ~target ?arguments ~instantiated () =
+    method constraints ~cycle_detections ~target ~instantiated () =
       let Queries.{ generic_parameters_as_variables; _ } = queries in
       let arguments =
-        match arguments with
-        | None ->
-            generic_parameters_as_variables target
-            >>| List.map ~f:Type.Variable.to_argument
-            |> Option.value ~default:[]
-        | Some arguments -> arguments
+        generic_parameters_as_variables target
+        >>| List.map ~f:Type.Variable.to_argument
+        |> Option.value ~default:[]
       in
       if List.is_empty arguments then
         TypeConstraints.Solution.empty

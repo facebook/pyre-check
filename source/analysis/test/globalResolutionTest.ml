@@ -1504,12 +1504,12 @@ let test_typed_dictionary_attributes =
 
 
 let test_constraints =
-  let assert_constraints ~target ~instantiated ?arguments source expected context =
+  let assert_constraints ~target ~instantiated source expected context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let constraints = GlobalResolution.constraints ~target resolution ?arguments ~instantiated () in
+    let constraints = GlobalResolution.constraints ~target resolution ~instantiated () in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.TypeVarPair (variable, value))
     in
@@ -1680,35 +1680,6 @@ let test_constraints =
       class Iterator(typing.Protocol[_T]):
         pass
       class Iterable(Iterator[_T]):
-        pass
-    |}
-           [Type.Variable.TypeVar.create "test._T", Type.integer];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_constraints
-           ~target:"test.Iterator"
-           ~instantiated:
-             (Type.parametric "test.Iterable" !![Type.parametric "test.Iterable" !![Type.integer]])
-           ~arguments:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
-           {|
-      _T = typing.TypeVar('_T')
-      class Iterator(typing.Protocol[_T]):
-        pass
-      class Iterable(Iterator[_T]):
-        pass
-    |}
-           [Type.Variable.TypeVar.create "test._T", Type.integer];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_constraints
-           ~target:"test.Foo"
-           ~arguments:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
-           ~instantiated:
-             (Type.parametric "test.Bar" !![Type.parametric "test.Bar" !![Type.integer]])
-           {|
-      _V = typing.TypeVar('_V', covariant=True)
-      class Foo(typing.Generic[_V]):
-        pass
-      _V2 = typing.TypeVar('_V2')
-      class Bar(Foo[_V2]):
         pass
     |}
            [Type.Variable.TypeVar.create "test._T", Type.integer];
