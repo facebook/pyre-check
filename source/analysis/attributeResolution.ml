@@ -1226,6 +1226,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
      *)
     method metaclass ~cycle_detections target =
       let Queries.{ get_class_summary; _ } = queries in
+      let type_params =
+        match get_class_summary target with
+        | None -> []
+        | Some class_summary -> class_summary.value.type_params
+      in
       let rec handle
           ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
           original)
@@ -1266,6 +1271,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           match explicit_metaclass with
           | Some metaclass -> metaclass :: metaclass_of_bases
           | None -> metaclass_of_bases
+        in
+        let metaclass_candidates =
+          match type_params with
+          | [] -> metaclass_candidates
+          | _ -> Type.Primitive "typing.GenericMeta" :: metaclass_candidates
         in
         match metaclass_candidates with
         | [] -> Type.Primitive "type"

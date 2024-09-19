@@ -45,7 +45,7 @@ let test_type_variable_scoping =
                 def func2[U](self, x:U) -> U:
                     ...
 
-            a: A[int] = A[int]()
+            a = A[int]()
             reveal_type(a)
             reveal_type(a.func(42))
             reveal_type(a.func2("42"))
@@ -53,7 +53,6 @@ let test_type_variable_scoping =
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Undefined attribute [16]: `A` has no attribute `__getitem__`.";
              "Revealed type [-1]: Revealed type for `a` is `A[int]`.";
              "Revealed type [-1]: Revealed type for `a.func(42)` is `int`.";
              "Revealed type [-1]: Revealed type for `a.func2(\"42\")` is \
