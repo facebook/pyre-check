@@ -242,7 +242,7 @@ module IncomingDataComputation = struct
                   annotation ->
           let alias_name = Reference.show alias_reference in
           let is_directly_recursive =
-            Type.class_data_for_attribute_lookup annotation
+            Type.class_attribute_lookups_for_type annotation
             >>| List.exists ~f:(fun { Type.class_name; _ } ->
                     Identifier.equal class_name alias_name)
             |> Option.value ~default:true

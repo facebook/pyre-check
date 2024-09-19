@@ -5293,7 +5293,7 @@ let infer_transform annotation =
   snd (InferTransform.visit () annotation)
 
 
-type class_data_for_attribute_lookup = {
+type class_attribute_lookup_data = {
   class_name: Primitive.t;
   instantiated: t;
   accessed_through_class: bool;
@@ -5312,7 +5312,7 @@ type class_data_for_attribute_lookup = {
    A complication is that we need to track whether the class was wrapped by `Type[...]` or
    `PyreReadOnly[...]`, since they affect the type of the attribute looked up, by making it
    `Type[X]` or `PyreReadOnly[X]`, respectively. *)
-let class_data_for_attribute_lookup type_ =
+let class_attribute_lookups_for_type type_ =
   let rec extract_class_data ~accessed_through_class ~accessed_through_readonly original_type =
     let type_ =
       match original_type with

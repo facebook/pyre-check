@@ -242,7 +242,7 @@ let make_assert_functions context =
         match attributes annotation ~cycle_detections with
         | Some attributes -> Some attributes
         | None -> (
-            match Type.class_data_for_attribute_lookup annotation with
+            match Type.class_attribute_lookups_for_type annotation with
             | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }]
               ->
                 GlobalResolution.uninstantiated_attributes

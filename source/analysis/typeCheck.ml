@@ -1659,7 +1659,7 @@ module State (Context : Context) = struct
         | None -> None
       in
       match
-        Type.class_data_for_attribute_lookup resolved_base
+        Type.class_attribute_lookups_for_type resolved_base
         >>| List.map ~f:find_attribute
         >>= Option.all
       with
@@ -3004,8 +3004,8 @@ module State (Context : Context) = struct
           in
           let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
           let resolution, errors, resolved =
-            (* We should really error here if class_data_for_attribute_lookup fails *)
-            Type.class_data_for_attribute_lookup resolved
+            (* We should really error here if class_attribute_lookups_for_type fails *)
+            Type.class_attribute_lookups_for_type resolved
             >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
             |> Option.value ~default:(resolution, errors, Type.Bottom)
           in
@@ -3773,13 +3773,13 @@ module State (Context : Context) = struct
                 ~instantiated:parent
                 ~transitive:true
             in
-            match Type.class_data_for_attribute_lookup parent with
+            match Type.class_attribute_lookups_for_type parent with
             | Some [{ Type.class_name; accessed_through_readonly; accessed_through_class; _ }] ->
                 get_attribute ~accessed_through_readonly ~accessed_through_class class_name
             | Some []
             | Some (_ :: _ :: _)
             (* TODO(T159930161): Refine attribute of union in ternary expression. In that case,
-               `class_data_for_attribute_lookup` will return multiple class_data items. *)
+               `class_attribute_lookups_for_type` will return multiple class_data items. *)
             | None ->
                 None
           in
@@ -4679,7 +4679,7 @@ module State (Context : Context) = struct
           in
           let find_getattr parent =
             let attribute =
-              match Type.class_data_for_attribute_lookup parent with
+              match Type.class_attribute_lookups_for_type parent with
               | Some [{ instantiated; class_name; _ }] ->
                   GlobalResolution.attribute_from_class_name
                     global_resolution
@@ -5029,7 +5029,7 @@ module State (Context : Context) = struct
             in
             let parent_class =
               match resolved_base with
-              | `Attribute (_, base_type) -> Type.class_data_for_attribute_lookup base_type
+              | `Attribute (_, base_type) -> Type.class_attribute_lookups_for_type base_type
               | _ -> None
             in
             match name, parent_class with
@@ -5357,7 +5357,7 @@ module State (Context : Context) = struct
         | `Attribute (attribute, Type.Union types) ->
             (* Union[A,B].attr is valid iff A.attr and B.attr is valid
 
-               TODO(T130377746): Use `Type.class_data_for_attribute_lookup` here to avoid
+               TODO(T130377746): Use `Type.class_attribute_lookups_for_type` here to avoid
                duplicating the logic of how to figure out the attribute type for various types.
                Right now, we're duplicating some of the logic (for unions) but missing others. We're
                also hackily extracting `accessed_through_class` later on by checking if the

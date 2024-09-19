@@ -2317,7 +2317,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 else
                   Some (self#constructor ~cycle_detections class_name ~instantiated)
               in
-              Type.class_data_for_attribute_lookup meta_argument
+              Type.class_attribute_lookups_for_type meta_argument
               >>| List.map ~f:get_constructor
               >>= Option.all
               >>| Type.union
@@ -2529,11 +2529,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                                Callables, but for now lets just ignore that *)
                             `DescriptorNotACallable)
                 in
-                match Type.class_data_for_attribute_lookup annotation with
+                match Type.class_attribute_lookups_for_type annotation with
                 | None ->
                     (* This means we have a type that can't be `Type.split`, (most of) which aren't
                        descriptors, so we should be usually safe to just ignore. In general we
-                       should fix class_data_for_attribute_lookup to always return something. *)
+                       should fix class_attribute_lookups_for_type to always return something. *)
                     annotation, annotation
                 | Some elements ->
                     let collect x =
@@ -2679,7 +2679,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         queries
       in
       let resolve class_type =
-        match Type.class_data_for_attribute_lookup class_type with
+        match Type.class_attribute_lookups_for_type class_type with
         | None -> None
         | Some [] -> None
         | Some [resolved] -> Some resolved
@@ -3084,7 +3084,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           List.fold tail ~init:head ~f:(TypeOrder.join order) |> Option.some
                       | [] -> None
                     in
-                    Type.class_data_for_attribute_lookup base
+                    Type.class_attribute_lookups_for_type base
                     >>| List.map ~f:access
                     >>= Option.all
                     >>| List.map ~f:AnnotatedAttribute.annotation

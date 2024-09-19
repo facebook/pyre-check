@@ -3846,13 +3846,13 @@ let test_resolve_alias_before_handling_callable _ =
   ()
 
 
-let test_class_data_for_attribute_lookup _ =
+let test_class_attribute_lookups_for_type _ =
   let assert_class_data annotation expected =
     assert_equal
       ~printer:(fun x ->
-        [%sexp_of: Type.class_data_for_attribute_lookup list option] x |> Sexp.to_string_hum)
+        [%sexp_of: Type.class_attribute_lookup_data list option] x |> Sexp.to_string_hum)
       expected
-      (Type.class_data_for_attribute_lookup annotation)
+      (Type.class_attribute_lookups_for_type annotation)
   in
   assert_class_data Type.Any (Some []);
   assert_class_data
@@ -4221,7 +4221,7 @@ let () =
          "fields_from_constructor" >:: test_fields_from_constructor;
          "map_callable_annotation" >:: test_map_callable_annotation;
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
-         "class_data_for_attribute_lookup" >:: test_class_data_for_attribute_lookup;
+         "class_attribute_lookups_for_type" >:: test_class_attribute_lookups_for_type;
          "show" >:: test_show;
          "is_truthy" >:: test_is_truthy;
          "is_falsy" >:: test_is_falsy;

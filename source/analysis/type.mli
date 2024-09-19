@@ -1050,7 +1050,7 @@ val contains_prohibited_any : t -> bool
 
 val to_yojson : t -> Yojson.Safe.t
 
-type class_data_for_attribute_lookup = {
+type class_attribute_lookup_data = {
   class_name: Primitive.t;
   instantiated: t;
   accessed_through_class: bool;
@@ -1058,7 +1058,7 @@ type class_data_for_attribute_lookup = {
 }
 [@@deriving sexp]
 
-val class_data_for_attribute_lookup : t -> class_data_for_attribute_lookup list option
+val class_attribute_lookups_for_type : t -> class_attribute_lookup_data list option
 
 (* Gives the name of either a Callable or BoundMethod[Callable, X] type *)
 val callable_name : t -> Reference.t option
