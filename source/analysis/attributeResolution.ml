@@ -2810,8 +2810,21 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         metaclass;
       }
 
-    (* In general, python expressions can be self-referential. This resolution only checks literals
-       and annotations found in the resolution map, without resolving expressions. *)
+    (* Given an expression, produce a Type.t where literal type information - that is,
+     * type information we can infer directly from the expression structure, including
+     * constructor calls, is resolved.
+     *
+     * By "type information we can infer directly" I mean that in addition to
+     * constructor calls we handle things like constant values, container literals,
+     * comprehensions, await expressions, etc.
+     *
+     * This function is what determines scenarios where Pyre is able to automatically
+     * infer global variable and class attribute types (Pyre does less inference in
+     * these cases than normal type checking, because it does not track scope across
+     * control flow).
+     *
+     * Any situation Pyre cannot resolve as a literal results in a `Type.Any`.
+     *)
     method resolve_literal ~cycle_detections ~scoped_type_variables expression =
       let Queries.{ generic_parameters_as_variables; get_unannotated_global; _ } = queries in
       let open Ast.Expression in
