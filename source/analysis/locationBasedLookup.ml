@@ -1119,7 +1119,7 @@ module SingleSymbolQueries = struct
                 | Ok annotation as resolved ->
                     (* If it is a call to a class method or static method, `Foo.my_class_method()`,
                        the resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-                    if Type.is_meta annotation then
+                    if Type.is_builtins_type annotation then
                       Ok (Type.single_argument annotation)
                     else
                       resolved
@@ -1176,7 +1176,7 @@ module SingleSymbolQueries = struct
       | Ok annotation ->
           (* If it is a call to a class method or static method, `Foo.my_class_method()`, the
              resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-          if Type.is_meta annotation then
+          if Type.is_builtins_type annotation then
             Some (Type.single_argument annotation)
           else
             Some annotation

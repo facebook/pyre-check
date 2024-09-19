@@ -1529,9 +1529,9 @@ let test_is_not_instantiated _ =
 
 
 let test_is_meta _ =
-  assert_true (Type.is_meta (Type.parametric "type" ![Type.integer]));
-  assert_false (Type.is_meta Type.integer);
-  assert_false (Type.is_meta (Type.parametric "typing.Type" ![Type.integer]))
+  assert_true (Type.is_builtins_type (Type.parametric "type" ![Type.integer]));
+  assert_false (Type.is_builtins_type Type.integer);
+  assert_false (Type.is_builtins_type (Type.parametric "typing.Type" ![Type.integer]))
 
 
 let test_is_none _ =

@@ -853,7 +853,7 @@ module Predicates = struct
     | _ -> false
 
 
-  let is_meta = function
+  let is_builtins_type = function
     | Parametric { name = "type"; _ } -> true
     | _ -> false
 
@@ -5313,7 +5313,7 @@ type class_data_for_attribute_lookup = {
    `PyreReadOnly[...]`, since they affect the type of the attribute looked up, by making it
    `Type[X]` or `PyreReadOnly[X]`, respectively. *)
 let class_data_for_attribute_lookup type_ =
-  let rec extract_class_data ~meta ~accessed_through_readonly original_type =
+  let rec extract_class_data ~accessed_through_class ~accessed_through_readonly original_type =
     let type_ =
       match original_type with
       (* Variables return their upper bound because we need to take the least informative type in
@@ -5335,7 +5335,7 @@ let class_data_for_attribute_lookup type_ =
           [
             {
               instantiated = original_type;
-              accessed_through_class = meta;
+              accessed_through_class;
               accessed_through_readonly;
               class_name = "typing.Optional";
             };
@@ -5348,17 +5348,17 @@ let class_data_for_attribute_lookup type_ =
           | Some sofar, Some optional -> Some (optional :: sofar)
           | _ -> None
         in
-        List.map ~f:(extract_class_data ~meta ~accessed_through_readonly) types
+        List.map ~f:(extract_class_data ~accessed_through_class ~accessed_through_readonly) types
         |> List.fold ~init:(Some []) ~f:flatten_optional
         >>| List.concat
         >>| List.rev
     | RecursiveType ({ name; body } as recursive_type) ->
-        extract_class_data ~meta ~accessed_through_readonly body
+        extract_class_data ~accessed_through_class ~accessed_through_readonly body
         (* Filter out the recursive type name itself since it's not a valid class name.
-
-           Removing the inner occurrences of the recursive type is fine because of induction. If the
-           other classes in a union support an attribute lookup, the recursive type will too. If
-           they don't, then the recursive type won't either. *)
+         *
+         * Removing the inner occurrences of the recursive type is fine because of induction. If the
+         * other classes in a union support an attribute lookup, the recursive type will too. If
+         * they don't, then the recursive type won't either. *)
         >>| List.filter ~f:(fun { class_name; _ } -> not (Identifier.equal class_name name))
         >>| List.map ~f:(fun ({ instantiated; _ } as class_data) ->
                 {
@@ -5368,11 +5368,15 @@ let class_data_for_attribute_lookup type_ =
                       ~recursive_type
                       instantiated;
                 })
-    | PyreReadOnly type_ -> extract_class_data ~meta ~accessed_through_readonly:true type_
-    | type_ when Predicates.is_meta type_ ->
-        (* Metaclasses return accessed_through_class=true since they allow looking up only class
-           attribute, etc. *)
-        single_argument type_ |> extract_class_data ~meta:true ~accessed_through_readonly
+    | PyreReadOnly type_ ->
+        (* The `PyreReadOnly[Xyz]` type behaves like a qualifier: anything accessed on a value of
+           this type behaves like an access on Xyz, but restricted to read-only *)
+        extract_class_data ~accessed_through_class ~accessed_through_readonly:true type_
+    | type_ when Predicates.is_builtins_type type_ ->
+        (* The `type[Xyz]` type (also known as `typing.Type[Xyz]`) indicates a class object: access
+           on a value of this type is always a class rather than instance access. *)
+        single_argument type_
+        |> extract_class_data ~accessed_through_class:true ~accessed_through_readonly
     | _ -> (
         match split type_ |> fst |> primitive_name with
         | Some class_name ->
@@ -5380,14 +5384,14 @@ let class_data_for_attribute_lookup type_ =
               [
                 {
                   instantiated = original_type;
-                  accessed_through_class = meta;
+                  accessed_through_class;
                   accessed_through_readonly;
                   class_name;
                 };
               ]
         | None -> None)
   in
-  extract_class_data ~meta:false ~accessed_through_readonly:false type_
+  extract_class_data ~accessed_through_class:false ~accessed_through_readonly:false type_
 
 
 let callable_name = function

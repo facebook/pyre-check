@@ -1785,7 +1785,8 @@ module State (Context : Context) = struct
                   resolution
                   ~name
                   ~attribute_path
-                  ~global_fallback:(Type.is_meta (TypeInfo.Unit.annotation global_annotation))
+                  ~global_fallback:
+                    (Type.is_builtins_type (TypeInfo.Unit.annotation global_annotation))
               in
               match local_override with
               | Some local_annotation -> local_annotation
@@ -1858,7 +1859,7 @@ module State (Context : Context) = struct
                   |> Option.is_some
               | _ -> false
             in
-            Type.is_meta resolved_base && is_global ()
+            Type.is_builtins_type resolved_base && is_global ()
           in
           if is_global_meta then
             Some (Resolved.Class resolved_base)
@@ -2474,14 +2475,14 @@ module State (Context : Context) = struct
             in
             let rec is_compatible annotation =
               match annotation with
-              | _ when Type.is_meta annotation || Type.is_untyped annotation -> true
+              | _ when Type.is_builtins_type annotation || Type.is_untyped annotation -> true
               | Type.Primitive "typing._Alias" -> true
               | Type.Tuple (Concatenation concatenation) ->
                   Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-                  >>| (fun annotation -> Type.is_meta annotation)
+                  >>| (fun annotation -> Type.is_builtins_type annotation)
                   |> Option.value ~default:false
               | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-                  List.for_all ~f:Type.is_meta annotations
+                  List.for_all ~f:Type.is_builtins_type annotations
               | Type.Union annotations -> List.for_all annotations ~f:is_compatible
               | _ -> false
             in
@@ -2645,7 +2646,7 @@ module State (Context : Context) = struct
           in
           let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
             let target_and_dynamic resolved_callee =
-              if Type.is_meta resolved_callee then
+              if Type.is_builtins_type resolved_callee then
                 Some (Type.single_argument resolved_callee), false
               else
                 match resolved_base with
@@ -3667,13 +3668,13 @@ module State (Context : Context) = struct
         | Type.Top -> (
             (* Try to resolve meta-types given as expressions. *)
             match resolve_expression_type ~resolution annotation with
-            | annotation when Type.is_meta annotation -> Type.single_argument annotation
-            | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_meta elements ->
+            | annotation when Type.is_builtins_type annotation -> Type.single_argument annotation
+            | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_builtins_type elements ->
                 List.map ~f:Type.single_argument elements |> Type.union
             | Type.Tuple (Concatenation concatenation) ->
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
                 >>= (fun element ->
-                      if Type.is_meta element then
+                      if Type.is_builtins_type element then
                         Some (Type.single_argument element)
                       else
                         None)
@@ -4616,7 +4617,9 @@ module State (Context : Context) = struct
             | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
                 let name = attribute in
                 let parent, accessed_through_class, accessed_through_readonly =
-                  match Type.PyreReadOnly.unpack_readonly resolved, Type.is_meta resolved with
+                  match
+                    Type.PyreReadOnly.unpack_readonly resolved, Type.is_builtins_type resolved
+                  with
                   | Some resolved, _ -> resolved, false, true
                   | None, true -> Type.single_argument resolved, true, false
                   | _ -> resolved, false, false
@@ -4797,7 +4800,8 @@ module State (Context : Context) = struct
                   attribute >>| fst >>| AnnotatedAttribute.name )
               with
               | `Attribute (_, parent), Some true, Some class_variable
-                when Option.is_none unwrapped_annotation_type && not (Type.is_meta parent) ->
+                when Option.is_none unwrapped_annotation_type && not (Type.is_builtins_type parent)
+                ->
                   emit_error
                     ~errors
                     ~location
@@ -4811,7 +4815,7 @@ module State (Context : Context) = struct
               | `Attribute (_, parent), Some (attribute, _)
                 when not (AnnotatedAttribute.defined attribute) ->
                   let is_meta_typed_dictionary =
-                    Type.is_meta parent
+                    Type.is_builtins_type parent
                     && GlobalResolution.is_typed_dictionary
                          global_resolution
                          (Type.single_argument parent)
@@ -5420,7 +5424,7 @@ module State (Context : Context) = struct
           updated_resolution, base_and_callee_errors, [index_argument; value_argument]
         in
         let target, dynamic =
-          if Type.is_meta resolved_setitem_type then
+          if Type.is_builtins_type resolved_setitem_type then
             Some (Type.single_argument resolved_setitem_type), false
           else
             match resolved_setitem_base with
@@ -5867,7 +5871,7 @@ module State (Context : Context) = struct
         in
         let expected = Type.Primitive "BaseException" in
         let actual =
-          if Type.is_meta resolved then
+          if Type.is_builtins_type resolved then
             Type.single_argument resolved
           else
             resolved

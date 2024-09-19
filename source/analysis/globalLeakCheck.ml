@@ -628,7 +628,9 @@ module State (Context : Context) = struct
       | Return { expression = Some expression; _ } ->
           let { errors; reachable_globals } = forward_expression ~resolution expression in
           let reachable_globals =
-            let is_safe_global { expression_type; _ } = not (Type.is_meta expression_type) in
+            let is_safe_global { expression_type; _ } =
+              not (Type.is_builtins_type expression_type)
+            in
             List.filter ~f:is_safe_global reachable_globals
           in
           let leak_to_global_returns =

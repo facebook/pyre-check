@@ -121,7 +121,7 @@ module DefaultBuilder : Builder = struct
         match callable_kind with
         | Type.Callable.Named direct_target when not (is_protocol ()) ->
             let class_name =
-              if Type.is_meta annotation then
+              if Type.is_builtins_type annotation then
                 Type.single_argument annotation
               else
                 annotation

@@ -1228,7 +1228,7 @@ module CalleeKind = struct
               >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
               |> Option.is_some
             in
-            if Type.is_meta parent_type then
+            if Type.is_builtins_type parent_type then
               Method { is_direct_call = true; is_static_method; is_class_method }
             else if is_class () then
               Method { is_direct_call = false; is_static_method; is_class_method }
@@ -1254,7 +1254,7 @@ end
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
 
 let strip_meta annotation =
-  if Type.is_meta annotation then
+  if Type.is_builtins_type annotation then
     Type.single_argument annotation
   else
     annotation
@@ -1646,7 +1646,7 @@ let resolve_callee_from_defining_expression
         (Type.Callable undecorated_signature)
   | _ -> (
       let implementing_class_name =
-        if Type.is_meta implementing_class then
+        if Type.is_builtins_type implementing_class then
           Type.arguments implementing_class
           >>= fun parameters ->
           List.nth parameters 0
@@ -2150,7 +2150,7 @@ let resolve_attribute_access_properties
     let parent = AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
-      if Type.is_meta base_type_info then
+      if Type.is_builtins_type base_type_info then
         [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
       else
         let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
