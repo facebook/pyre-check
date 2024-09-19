@@ -2263,7 +2263,6 @@ let test_generic_aliases =
 
             |}
            [
-             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `test.func(x)` is \
               `typing.Union[typing.List[int], typing.Set[int]]`.";
@@ -2302,8 +2301,6 @@ let test_generic_aliases =
             reveal_type(apply_callback)
             |}
            [
-             "Undefined or invalid type [11]: Annotation `S1` is not defined as a type.";
-             "Undefined or invalid type [11]: Annotation `S2` is not defined as a type.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `test.apply_callback` is \
               `typing.Callable(apply_callback)[[Named(callback, typing.Callable[[int], \

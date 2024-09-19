@@ -458,6 +458,18 @@ module State (Context : Context) = struct
     List.fold mismatches ~f:emit_error ~init:errors
 
 
+  let get_type_params_as_variables type_params =
+    List.map type_params ~f:(fun { Node.value; _ } ->
+        match value with
+        | Ast.Expression.TypeParam.TypeVar { name; _ } ->
+            Type.Variable.TypeVarVariable
+              (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
+        | Ast.Expression.TypeParam.TypeVarTuple name ->
+            Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+        | Ast.Expression.TypeParam.ParamSpec name ->
+            Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+
+
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
     let mismatches, annotation =
       GlobalResolution.validate_and_sanitize_type_arguments resolution annotation
@@ -5758,6 +5770,11 @@ module State (Context : Context) = struct
         forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some call)
     (* TODO(T196994965): handle type alias *)
     | TypeAlias { TypeAlias.name; type_params; value } ->
+        let resolution =
+          get_type_params_as_variables type_params
+          |> List.fold ~init:resolution ~f:(fun resolution variable ->
+                 Resolution.add_type_variable resolution ~variable)
+        in
         (* TODO: remove after PEP 695 is supported *)
         let type_params_errors =
           match type_params with
@@ -6352,20 +6369,10 @@ module State (Context : Context) = struct
       Context.define
     in
     (* collect type parameters for functions *)
-    let type_param_names =
-      List.map type_params ~f:(fun { Node.value; _ } ->
-          match value with
-          | Ast.Expression.TypeParam.TypeVar { name; _ } ->
-              Type.Variable.TypeVarVariable
-                (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-          | Ast.Expression.TypeParam.TypeVarTuple name ->
-              Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-          | Ast.Expression.TypeParam.ParamSpec name ->
-              Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
-    in
+    let type_params = get_type_params_as_variables type_params in
     (* Add them to the resolution *)
     let resolution =
-      type_param_names
+      type_params
       |> List.fold ~init:resolution ~f:(fun resolution variable ->
              Resolution.add_type_variable resolution ~variable)
     in
