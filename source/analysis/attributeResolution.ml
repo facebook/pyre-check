@@ -2982,6 +2982,22 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
+    (* Given a Type.Callable.t representing the type of a bare function signature,
+     * apply decorators to get the decorated type.
+     *
+     * We return both the resulting type, which may be transformed by the decorators,
+     * and a list of "problems" that we encountered when trying to apply decorators
+     * which can occur for various reasons ranging from not being able to find the
+     * decorator at all to a signature selection error checking the decorator call.
+     *
+     * The type output is used in three main places:
+     * - as part of instantiating an attribute, to get decorated method types
+     * - in `global_annotation` to get the decorated type of global functions
+     * - within `typeCheck.ml` to get the decorated type of inner, nested defines
+     *
+     * The problems are converted into `AnalysisError` values in typeCheck.ml, if
+     * the module where this decorator is called is type checked.
+     *)
     method apply_decorators
         ~cycle_detections
         ~scoped_type_variables:outer_scope_type_variables
