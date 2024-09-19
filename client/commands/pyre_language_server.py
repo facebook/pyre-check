@@ -702,6 +702,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         buck_query_timer: timer.Timer,
         retries: int,
     ) -> PyreBuckTypeErrorMetadata:
+        open_documents = set(self.server_state.opened_documents.keys())
+        # filter out documents that may have been closed in between preempts
+        type_checkable_files &= open_documents
         with (
             tempfile.NamedTemporaryFile(mode="rb") as build_id_file,
             tempfile.NamedTemporaryFile(mode="w") as argfile,
