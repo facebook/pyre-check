@@ -1549,7 +1549,7 @@ and resolve_callees_from_type_external
 
 
 and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_indexer class_type =
-  let meta_type = Type.meta class_type in
+  let meta_type = Type.builtins_type class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
         ~pyre_in_context

@@ -198,7 +198,7 @@ module ExpressionTypes = struct
             GlobalResolution.parse_annotation
               (Resolution.global_resolution pre_resolution)
               annotation
-            |> Type.meta
+            |> Type.builtins_type
           in
           let location = Node.location annotation in
           if not (Location.equal location Location.any) then

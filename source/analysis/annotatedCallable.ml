@@ -125,7 +125,7 @@ let create_overload_without_applying_decorators
             >>| Type.parametric class_annotation
             |> Option.value ~default:(Type.Primitive class_annotation)
           in
-          let annotation = if meta then Type.meta parent_type else parent_type in
+          let annotation = if meta then Type.builtins_type parent_type else parent_type in
           Type.Callable.Defined (Named { CallableParamType.name; annotation; default } :: tail)
         in
         if String.equal (Define.Signature.unqualified_name signature) "__new__" then

@@ -591,12 +591,12 @@ let test_handle_types_query context =
                          overloads = [];
                        } );
                    2, 8, 2, 9, Type.integer;
-                   2, 11, 2, 14, Type.meta Type.integer;
+                   2, 11, 2, 14, Type.builtins_type Type.integer;
                    2, 17, 2, 19, Type.literal_integer 10;
                    2, 21, 2, 22, Type.string;
-                   2, 24, 2, 27, Type.meta Type.string;
+                   2, 24, 2, 27, Type.builtins_type Type.string;
                    2, 30, 2, 35, Type.literal_string "bar";
-                   2, 40, 2, 44, Type.meta Type.none;
+                   2, 40, 2, 44, Type.builtins_type Type.none;
                    3, 2, 3, 3, Type.literal_integer 42;
                    3, 6, 3, 8, Type.literal_integer 42;
                  ]
@@ -663,10 +663,10 @@ let test_handle_types_query context =
                          overloads = [];
                        } );
                    2, 8, 2, 9, Type.integer;
-                   2, 11, 2, 14, Type.meta Type.integer;
+                   2, 11, 2, 14, Type.builtins_type Type.integer;
                    2, 16, 2, 17, Type.string;
-                   2, 19, 2, 22, Type.meta Type.string;
-                   2, 27, 2, 30, Type.meta Type.string;
+                   2, 19, 2, 22, Type.builtins_type Type.string;
+                   2, 27, 2, 30, Type.builtins_type Type.string;
                    3, 1, 3, 2, Type.integer;
                    3, 5, 3, 6, Type.literal_integer 4;
                    4, 1, 4, 2, Type.string;
@@ -737,8 +737,8 @@ let test_handle_types_query context =
                            };
                          overloads = [];
                        } );
-                   2, 16, 2, 19, Type.meta Type.integer;
-                   2, 24, 2, 27, Type.meta Type.integer;
+                   2, 16, 2, 19, Type.builtins_type Type.integer;
+                   2, 24, 2, 27, Type.builtins_type Type.integer;
                  ]
                  |> QueryTestTypes.create_types_at_locations;
              };
@@ -858,7 +858,7 @@ let test_handle_types_query context =
                            };
                          overloads = [];
                        } );
-                   2, 13, 2, 17, Type.meta Type.none;
+                   2, 13, 2, 17, Type.builtins_type Type.none;
                    4, 4, 4, 5, Type.literal_integer 1;
                    4, 8, 4, 9, Type.literal_integer 1;
                    5, 9, 5, 18, Type.parametric "type" [Single (Type.Primitive "Exception")];
@@ -956,11 +956,11 @@ let test_handle_types_query context =
                          overloads = [];
                        } );
                    2, 8, 2, 9, Type.integer;
-                   2, 11, 2, 14, Type.meta Type.integer;
-                   2, 19, 2, 22, Type.meta Type.string;
+                   2, 11, 2, 14, Type.builtins_type Type.integer;
+                   2, 19, 2, 22, Type.builtins_type Type.string;
                    3, 10, 3, 11, Type.integer;
-                   3, 13, 3, 16, Type.meta Type.integer;
-                   3, 21, 3, 24, Type.meta Type.string;
+                   3, 13, 3, 16, Type.builtins_type Type.integer;
+                   3, 21, 3, 24, Type.builtins_type Type.string;
                    4, 11, 4, 12, Type.integer;
                    5, 9, 5, 10, Type.integer;
                  ]
@@ -1006,8 +1006,8 @@ let test_handle_types_query context =
                          overloads = [];
                        } );
                    2, 8, 2, 9, Type.list Type.integer;
-                   2, 11, 2, 27, Type.meta (Type.list Type.integer);
-                   2, 32, 2, 36, Type.meta Type.none;
+                   2, 11, 2, 27, Type.builtins_type (Type.list Type.integer);
+                   2, 32, 2, 36, Type.builtins_type Type.none;
                  ]
                  |> QueryTestTypes.create_types_at_locations;
              };
@@ -1064,7 +1064,7 @@ let test_handle_types_query context =
                types =
                  [
                    5, 0, 5, 6, Type.Any;
-                   5, 8, 5, 11, Type.meta Type.Top;
+                   5, 8, 5, 11, Type.builtins_type Type.Top;
                    ( 7,
                      4,
                      7,
@@ -1081,8 +1081,8 @@ let test_handle_types_query context =
                            };
                          overloads = [];
                        } );
-                   7, 16, 7, 19, Type.meta Type.Top;
-                   7, 24, 7, 28, Type.meta Type.none;
+                   7, 16, 7, 19, Type.builtins_type Type.Top;
+                   7, 24, 7, 28, Type.builtins_type Type.none;
                  ]
                  |> QueryTestTypes.create_types_at_locations;
              };
@@ -1108,10 +1108,10 @@ let test_handle_types_query context =
                Base.path = "test.py";
                types =
                  [
-                   5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
+                   5, 6, 5, 9, Type.builtins_type (Type.Primitive "test.Foo");
                    6, 4, 6, 17, Type.Any;
-                   6, 19, 6, 22, Type.meta Type.Top;
-                   8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
+                   6, 19, 6, 22, Type.builtins_type Type.Top;
+                   8, 4, 8, 7, Type.builtins_type (Type.Primitive "test.Foo");
                    8, 4, 8, 9, Type.Primitive "test.Foo";
                  ]
                  |> QueryTestTypes.create_types_at_locations;
@@ -1273,12 +1273,12 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  2, 8, 2, 9, Type.integer;
-                 2, 11, 2, 14, Type.meta Type.integer;
+                 2, 11, 2, 14, Type.builtins_type Type.integer;
                  2, 17, 2, 19, Type.literal_integer 10;
                  2, 21, 2, 22, Type.string;
-                 2, 24, 2, 27, Type.meta Type.string;
+                 2, 24, 2, 27, Type.builtins_type Type.string;
                  2, 30, 2, 35, Type.literal_string "bar";
-                 2, 40, 2, 44, Type.meta Type.none;
+                 2, 40, 2, 44, Type.builtins_type Type.none;
                  3, 2, 3, 3, Type.literal_integer 42;
                  3, 6, 3, 8, Type.literal_integer 42;
                ]
@@ -1332,10 +1332,10 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  2, 8, 2, 9, Type.integer;
-                 2, 11, 2, 14, Type.meta Type.integer;
+                 2, 11, 2, 14, Type.builtins_type Type.integer;
                  2, 16, 2, 17, Type.string;
-                 2, 19, 2, 22, Type.meta Type.string;
-                 2, 27, 2, 30, Type.meta Type.string;
+                 2, 19, 2, 22, Type.builtins_type Type.string;
+                 2, 27, 2, 30, Type.builtins_type Type.string;
                  3, 1, 3, 2, Type.integer;
                  3, 5, 3, 6, Type.literal_integer 4;
                  4, 1, 4, 2, Type.string;
@@ -1404,8 +1404,8 @@ let test_handle_references_used_by_file_query context =
                          };
                        overloads = [];
                      } );
-                 2, 16, 2, 19, Type.meta Type.integer;
-                 2, 24, 2, 27, Type.meta Type.integer;
+                 2, 16, 2, 19, Type.builtins_type Type.integer;
+                 2, 24, 2, 27, Type.builtins_type Type.integer;
                ]
                |> QueryTestTypes.create_types_at_locations;
            }))
@@ -1521,7 +1521,7 @@ let test_handle_references_used_by_file_query context =
                          };
                        overloads = [];
                      } );
-                 2, 13, 2, 17, Type.meta Type.none;
+                 2, 13, 2, 17, Type.builtins_type Type.none;
                  4, 4, 4, 5, Type.literal_integer 1;
                  4, 8, 4, 9, Type.literal_integer 1;
                  5, 9, 5, 18, Type.parametric "type" [Single (Type.Primitive "Exception")];
@@ -1616,11 +1616,11 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  2, 8, 2, 9, Type.integer;
-                 2, 11, 2, 14, Type.meta Type.integer;
-                 2, 19, 2, 22, Type.meta Type.string;
+                 2, 11, 2, 14, Type.builtins_type Type.integer;
+                 2, 19, 2, 22, Type.builtins_type Type.string;
                  3, 10, 3, 11, Type.integer;
-                 3, 13, 3, 16, Type.meta Type.integer;
-                 3, 21, 3, 24, Type.meta Type.string;
+                 3, 13, 3, 16, Type.builtins_type Type.integer;
+                 3, 21, 3, 24, Type.builtins_type Type.string;
                  4, 11, 4, 12, Type.integer;
                  5, 9, 5, 10, Type.integer;
                ]
@@ -1665,8 +1665,8 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  2, 8, 2, 9, Type.list Type.integer;
-                 2, 11, 2, 27, Type.meta (Type.list Type.integer);
-                 2, 32, 2, 36, Type.meta Type.none;
+                 2, 11, 2, 27, Type.builtins_type (Type.list Type.integer);
+                 2, 32, 2, 36, Type.builtins_type Type.none;
                ]
                |> QueryTestTypes.create_types_at_locations;
            }))
@@ -1721,7 +1721,7 @@ let test_handle_references_used_by_file_query context =
              types =
                [
                  5, 0, 5, 6, Type.Primitive "other_module.Bar";
-                 5, 8, 5, 11, Type.meta (Type.Primitive "other_module.Bar");
+                 5, 8, 5, 11, Type.builtins_type (Type.Primitive "other_module.Bar");
                  ( 7,
                    4,
                    7,
@@ -1746,8 +1746,8 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  7, 11, 7, 14, Type.Primitive "other_module.Bar";
-                 7, 16, 7, 19, Type.meta (Type.Primitive "other_module.Bar");
-                 7, 24, 7, 28, Type.meta Type.none;
+                 7, 16, 7, 19, Type.builtins_type (Type.Primitive "other_module.Bar");
+                 7, 24, 7, 28, Type.builtins_type Type.none;
                  8, 2, 8, 3, Type.Primitive "other_module.Bar";
                  8, 6, 8, 9, Type.Primitive "other_module.Bar";
                ]
@@ -1774,11 +1774,11 @@ let test_handle_references_used_by_file_query context =
              Base.path = "test.py";
              types =
                [
-                 5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
+                 5, 6, 5, 9, Type.builtins_type (Type.Primitive "test.Foo");
                  6, 4, 6, 17, Type.Primitive "other_module.Bar";
-                 6, 19, 6, 22, Type.meta (Type.Primitive "other_module.Bar");
+                 6, 19, 6, 22, Type.builtins_type (Type.Primitive "other_module.Bar");
                  8, 0, 8, 1, Type.Primitive "other_module.Bar";
-                 8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
+                 8, 4, 8, 7, Type.builtins_type (Type.Primitive "test.Foo");
                  8, 4, 8, 9, Type.Primitive "test.Foo";
                  8, 4, 8, 23, Type.Primitive "other_module.Bar";
                ]
@@ -1824,8 +1824,12 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  5, 8, 5, 9, Type.string;
-                 5, 11, 5, 14, Type.meta Type.string;
-                 5, 19, 5, 22, Type.meta (QueryTestTypes.parse_annotation "other_module.Bar");
+                 5, 11, 5, 14, Type.builtins_type Type.string;
+                 ( 5,
+                   19,
+                   5,
+                   22,
+                   Type.builtins_type (QueryTestTypes.parse_annotation "other_module.Bar") );
                  6, 9, 6, 14, Type.Any;
                  ( 8,
                    4,
@@ -1844,8 +1848,8 @@ let test_handle_references_used_by_file_query context =
                        overloads = [];
                      } );
                  8, 8, 8, 9, Type.string;
-                 8, 11, 8, 14, Type.meta Type.string;
-                 8, 19, 8, 22, Type.meta Type.integer;
+                 8, 11, 8, 14, Type.builtins_type Type.string;
+                 8, 19, 8, 22, Type.builtins_type Type.integer;
                  ( 9,
                    9,
                    9,
@@ -1906,7 +1910,7 @@ let test_handle_references_used_by_file_query context =
              Base.path = "test.py";
              types =
                [
-                 3, 6, 3, 9, Type.meta (Type.Primitive "test.Bar");
+                 3, 6, 3, 9, Type.builtins_type (Type.Primitive "test.Bar");
                  ( 4,
                    8,
                    4,
@@ -1938,8 +1942,8 @@ let test_handle_references_used_by_file_query context =
                      } );
                  5, 8, 5, 12, Type.Primitive "test.Bar";
                  5, 14, 5, 31, Type.Primitive "other_module.subscription.Body";
-                 5, 33, 5, 50, Type.meta (Type.Primitive "other_module.subscription.Body");
-                 6, 9, 6, 13, Type.meta Type.NoneType;
+                 5, 33, 5, 50, Type.builtins_type (Type.Primitive "other_module.subscription.Body");
+                 6, 9, 6, 13, Type.builtins_type Type.NoneType;
                  ( 7,
                    11,
                    7,
@@ -1981,7 +1985,7 @@ let test_handle_references_used_by_file_query context =
                      } );
                  7, 11, 7, 45, Type.bool;
                  7, 22, 7, 39, Type.Primitive "other_module.subscription.Body";
-                 7, 41, 7, 44, Type.meta Type.integer;
+                 7, 41, 7, 44, Type.builtins_type Type.integer;
                  8, 12, 8, 19, Type.Any;
                ]
                |> QueryTestTypes.create_types_at_locations;

@@ -3856,7 +3856,7 @@ let test_class_data_for_attribute_lookup _ =
   in
   assert_class_data Type.Any (Some []);
   assert_class_data
-    (Type.meta Type.integer)
+    (Type.builtins_type Type.integer)
     (Some
        [
          {
@@ -4014,7 +4014,7 @@ let test_class_data_for_attribute_lookup _ =
          };
        ]);
   assert_class_data
-    (Type.meta (Type.PyreReadOnly.create (Type.Primitive "Foo")))
+    (Type.builtins_type (Type.PyreReadOnly.create (Type.Primitive "Foo")))
     (Some
        [
          {
@@ -4025,7 +4025,7 @@ let test_class_data_for_attribute_lookup _ =
          };
        ]);
   assert_class_data
-    (Type.PyreReadOnly.create (Type.meta (Type.Primitive "Foo")))
+    (Type.PyreReadOnly.create (Type.builtins_type (Type.Primitive "Foo")))
     (Some
        [
          {

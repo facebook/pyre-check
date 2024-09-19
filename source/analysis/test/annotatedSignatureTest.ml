@@ -553,7 +553,7 @@ let test_unresolved_select =
            "(str)"
            (`NotFoundMismatch
              [
-               ( Type.meta Type.string,
+               ( Type.builtins_type Type.string,
                  Type.Callable.create
                    ~parameters:
                      (Type.Callable.Defined

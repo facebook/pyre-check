@@ -41,7 +41,7 @@ let test_simple_registration context =
       class P: pass
     |}
     "test.P"
-    (Some (Type.meta (Type.Primitive "test.P")));
+    (Some (Type.builtins_type (Type.Primitive "test.P")));
   assert_registers
     {|
       class P: pass

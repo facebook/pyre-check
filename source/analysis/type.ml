@@ -422,9 +422,9 @@ module Constructors = struct
 
   let list argument = Parametric { name = "list"; arguments = [Single argument] }
 
-  let meta annotation = Parametric { name = "type"; arguments = [Single annotation] }
+  let builtins_type annotation = Parametric { name = "type"; arguments = [Single annotation] }
 
-  let extract_meta = function
+  let extract_from_builtins_type = function
     | Parametric { name = "type"; arguments = [Single annotation] } -> Some annotation
     | _ -> None
 

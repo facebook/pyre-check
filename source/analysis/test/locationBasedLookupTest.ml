@@ -3045,7 +3045,7 @@ let test_lookup_expression context =
       def foo(x) -> None:
         print(x + 1) |}
     [
-      None, Type.meta NoneType;
+      None, Type.builtins_type NoneType;
       ( Some
           (Expression.Name
              (Name.Attribute
@@ -3772,14 +3772,14 @@ let test_resolve_type_for_symbol context =
                           Type.Callable.CallableParamType.Named
                             {
                               name = "$parameter$cls";
-                              annotation = Type.meta (Type.Primitive "test.Foo");
+                              annotation = Type.builtins_type (Type.Primitive "test.Foo");
                               default = false;
                             };
                         ];
                   };
                 overloads = [];
               });
-         Single (Type.meta (Type.Primitive "test.Foo"));
+         Single (Type.builtins_type (Type.Primitive "test.Foo"));
        ]
     |> Option.some);
   assert_resolved_explicit_type

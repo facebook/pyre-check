@@ -452,7 +452,7 @@ let test_register_globals context =
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
-  assert_global "qualifier.Class" (Some (Type.meta (Type.Primitive "qualifier.Class")));
+  assert_global "qualifier.Class" (Some (Type.builtins_type (Type.Primitive "qualifier.Class")));
   assert_global "qualifier.in_branch" (Some Type.integer);
   assert_global "qualifier.identifier.access" None;
   assert_global "qualifier.identifier().access" None;
@@ -705,7 +705,7 @@ let test_populate context =
           ()));
   assert_global
     "test.Class"
-    (TypeInfo.Unit.create_immutable (Type.meta (Type.Primitive "test.Class")));
+    (TypeInfo.Unit.create_immutable (Type.builtins_type (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 
   (* Properties. *)
@@ -742,7 +742,7 @@ let test_populate context =
   in
   assert_global
     "test.A"
-    (Some (Type.Primitive "test.A" |> Type.meta |> TypeInfo.Unit.create_immutable));
+    (Some (Type.Primitive "test.A" |> Type.builtins_type |> TypeInfo.Unit.create_immutable));
 
   (* Callable classes. *)
   let environment =

@@ -298,9 +298,9 @@ val list : t -> t
 
 val mapping_primitive : string
 
-val meta : t -> t
+val builtins_type : t -> t
 
-val extract_meta : t -> t option
+val extract_from_builtins_type : t -> t option
 
 val named_tuple : t
 

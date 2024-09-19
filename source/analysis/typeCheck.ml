@@ -2181,7 +2181,7 @@ module State (Context : Context) = struct
             arguments = [{ Call.Argument.value; _ }];
           } ->
           (* Resolve `type()` calls. *)
-          let resolved = resolve_expression_type ~resolution value |> Type.meta in
+          let resolved = resolve_expression_type ~resolution value |> Type.builtins_type in
           { resolution; errors = []; resolved; resolved_annotation = None; base = None }
       | Call { callee = { Node.location; value = Name (Name.Identifier "reveal_locals") }; _ } ->
           (* Special case reveal_locals(). *)
@@ -2464,10 +2464,10 @@ module State (Context : Context) = struct
                            expected =
                              Type.union
                                [
-                                 Type.meta Type.Any;
+                                 Type.builtins_type Type.Any;
                                  Type.Tuple
                                    (Type.OrderedTypes.create_unbounded_concatenation
-                                      (Type.meta Type.Any));
+                                      (Type.builtins_type Type.Any));
                                ];
                            due_to_invariance = false;
                          };
@@ -2695,7 +2695,7 @@ module State (Context : Context) = struct
                   List.fold_left
                     ~f:forward_inner_callable
                     ~init:(callee_resolution, callee_errors, [])
-                    (List.map ~f:Type.meta resolved_callees)
+                    (List.map ~f:Type.builtins_type resolved_callees)
                 in
                 {
                   resolution;
@@ -6272,7 +6272,8 @@ module State (Context : Context) = struct
                   in
                   List.fold handler_types ~init:errors ~f:(fun errors exception_type ->
                       let exception_type =
-                        Type.extract_meta exception_type |> Option.value ~default:exception_type
+                        Type.extract_from_builtins_type exception_type
+                        |> Option.value ~default:exception_type
                       in
                       (* all handlers must extend BaseException *)
                       let errors =
@@ -6753,7 +6754,7 @@ module State (Context : Context) = struct
           | Define.Capture.Kind.Self parent ->
               resolution, errors, type_of_parent ~global_resolution parent
           | Define.Capture.Kind.ClassSelf parent ->
-              resolution, errors, type_of_parent ~global_resolution parent |> Type.meta
+              resolution, errors, type_of_parent ~global_resolution parent |> Type.builtins_type
         in
         let annotation =
           let is_readonly_entrypoint_function =
@@ -6885,7 +6886,7 @@ module State (Context : Context) = struct
                   in
                   if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
-                    Type.meta parent_annotation, true
+                    Type.builtins_type parent_annotation, true
                   else (* First parameter of a method is the callee object. *)
                     parent_annotation, false
                 in

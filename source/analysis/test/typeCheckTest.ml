@@ -789,8 +789,8 @@ let test_forward_expression =
                 def foo(self) -> int:
                   return 9
             |}
-           ~precondition:["Container", Type.meta (Type.Primitive "test.Foo")]
-           ~postcondition:["Container", Type.meta (Type.Primitive "test.Foo")]
+           ~precondition:["Container", Type.builtins_type (Type.Primitive "test.Foo")]
+           ~postcondition:["Container", Type.builtins_type (Type.Primitive "test.Foo")]
            "1 in Container"
            Type.bool;
       labeled_test_case __FUNCTION__ __LINE__
@@ -1112,19 +1112,19 @@ let test_forward_expression =
       @@ assert_forward
            "typing.Optional[int]"
            (* TODO (T65870531): This should be typing.Union or typing._GenericAlias *)
-           (Type.meta (Type.optional Type.integer));
+           (Type.builtins_type (Type.optional Type.integer));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward
            "typing.Callable[[int, str], int]"
-           (Type.meta (Type.Callable.create ~annotation:Type.integer ()));
+           (Type.builtins_type (Type.Callable.create ~annotation:Type.integer ()));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_forward "typing_extensions.Literal[1, 2, 3]" (Type.meta Type.Any);
+      @@ assert_forward "typing_extensions.Literal[1, 2, 3]" (Type.builtins_type Type.Any);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward
            "typing.ClassVar[int]"
-           (Type.meta (Type.parametric "typing.ClassVar" [Single Type.integer]));
+           (Type.builtins_type (Type.parametric "typing.ClassVar" [Single Type.integer]));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_forward "typing.Union[int, str]" (Type.meta Type.Any);
+      @@ assert_forward "typing.Union[int, str]" (Type.builtins_type Type.Any);
     ]
 
 
@@ -1677,12 +1677,17 @@ let test_forward_statement__refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_refinement_by_type_comparison
            ~precondition:
-             ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
+             [
+               ( "my_type",
+                 Type.tuple [Type.builtins_type Type.integer; Type.builtins_type Type.string] );
+               "x", Type.Top;
+             ]
            ~variable:"x"
            ~type_expression:"my_type"
            ~postcondition:
              [
-               "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+               ( "my_type",
+                 Type.tuple [Type.builtins_type Type.integer; Type.builtins_type Type.string] );
                "x", Type.union [Type.integer; Type.string];
              ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1691,7 +1696,8 @@ let test_forward_statement__refinement =
              [
                ( "my_type",
                  Type.Tuple
-                   (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+                   (Type.OrderedTypes.create_unbounded_concatenation
+                      (Type.builtins_type Type.integer)) );
                "x", Type.Top;
              ]
            ~variable:"x"
@@ -1700,7 +1706,8 @@ let test_forward_statement__refinement =
              [
                ( "my_type",
                  Type.Tuple
-                   (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+                   (Type.OrderedTypes.create_unbounded_concatenation
+                      (Type.builtins_type Type.integer)) );
                "x", Type.integer;
              ];
       labeled_test_case __FUNCTION__ __LINE__
