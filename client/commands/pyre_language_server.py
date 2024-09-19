@@ -139,7 +139,9 @@ class BuckTypeErrorsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 class BuckTypeCheckStatus(enum.Enum):
     SUCCESS = "success"
-    ERROR = "error"
+    BUCK_ERROR = "buck_error"
+    USER_ERROR = "user_error"
+    PARSE_ERROR = "parse_error"
     NOT_RUN = "not_run"
     PREEMPTED = "preempted"
 
@@ -147,10 +149,12 @@ class BuckTypeCheckStatus(enum.Enum):
     def from_returncode(cls, returncode: Optional[int]) -> BuckTypeCheckStatus:
         if returncode == 0:
             return BuckTypeCheckStatus.SUCCESS
+        elif returncode == 3:
+            return BuckTypeCheckStatus.USER_ERROR
         elif returncode == 5:
             return BuckTypeCheckStatus.PREEMPTED
         else:
-            return BuckTypeCheckStatus.ERROR
+            return BuckTypeCheckStatus.BUCK_ERROR
 
 
 @dataclasses.dataclass(frozen=True)
@@ -766,7 +770,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             status=(
                 BuckTypeCheckStatus.SUCCESS
                 if error_message is None
-                else BuckTypeCheckStatus.ERROR
+                else BuckTypeCheckStatus.PARSE_ERROR
             ),
             duration=buck_query_timer.stop_in_millisecond(),
             type_errors=type_errors,
