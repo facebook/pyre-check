@@ -2595,6 +2595,22 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~uninstantiated_annotation
         ~problem
 
+    (* Given the name of an attribute on a class `class_name`, fetch an
+     * `AnnotatedAttribute.instantiated`.
+     *
+     * There are many flags controlling behavior; the most important are:
+     * - `type_for_lookup`: this will control the instantiation of the attribute; if it
+     *   comes from a generic class and we are looking it up on an instantiated type,
+     *   we will substitute type variables accordingly.
+     * - `transitive`: if set to false, we will only search the uninstantiated attribute
+     *   table of `class_name`, we won't look upward in the MRO
+     *
+     * The implementation proceeds as follows:
+     * - special case some callable scenarios to handle `BoundMethod` and the fact
+     *   that many types are callable in various ways.
+     * - otherwise, create a lazy sequence of the uninstantiated tables for classes
+     *   in the MRO, take the first hit, and instantiate it with `instantiate_attribute`.
+     *)
     method attribute
         ~cycle_detections
         ~transitive
