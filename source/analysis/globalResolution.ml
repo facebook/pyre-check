@@ -271,11 +271,11 @@ let uninstantiated_attributes
     ?dependency
 
 
-let instantiate_attribute ({ dependency; _ } as resolution) ?instantiated =
+let instantiate_attribute ({ dependency; _ } as resolution) ?type_for_lookup =
   AttributeResolution.ReadOnly.instantiate_attribute
     (attribute_resolution resolution)
     ?dependency
-    ?instantiated
+    ?type_for_lookup
 
 
 let metaclass ({ dependency; _ } as resolution) =
@@ -384,7 +384,7 @@ let attribute_from_class_name
     ?(special_method = false)
     class_name
     ~name
-    ~instantiated
+    ~type_for_lookup
   =
   let access = function
     | Some attribute -> Some attribute
@@ -410,7 +410,7 @@ let attribute_from_class_name
   in
   try
     attribute
-      ~instantiated
+      ~type_for_lookup
       ~transitive
       ~accessed_through_class
       ~accessed_through_readonly
@@ -434,11 +434,12 @@ let attribute_from_annotation ?special_method resolution ~parent:annotation ~nam
   match Type.class_attribute_lookups_for_type annotation with
   | None -> None
   | Some [] -> None
-  | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }] ->
+  | Some [{ Type.type_for_lookup; accessed_through_class; class_name; accessed_through_readonly }]
+    ->
       attribute_from_class_name
         resolution
         ~transitive:true
-        ~instantiated
+        ~type_for_lookup
         ~accessed_through_class
         ~accessed_through_readonly
         ~name
@@ -611,7 +612,7 @@ let overrides resolution class_name ~name =
       ~accessed_through_class:true
       ~name
       parent
-      ~instantiated:(Type.Primitive class_name)
+      ~type_for_lookup:(Type.Primitive class_name)
     >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   in
   successors resolution class_name |> List.find_map ~f:find_override

@@ -133,7 +133,7 @@ val variables : t -> string -> Type.Variable.t option
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  ?accessed_through_class:bool ->
-  ?instantiated:Type.t option ->
+  ?type_for_lookup:Type.t option ->
   resolution:t ->
   name:Identifier.t ->
   Type.Primitive.t ->

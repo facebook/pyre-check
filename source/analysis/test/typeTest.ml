@@ -3860,7 +3860,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.integer;
+           type_for_lookup = Type.integer;
            accessed_through_class = true;
            class_name = "int";
            accessed_through_readonly = false;
@@ -3871,7 +3871,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.optional Type.integer;
+           type_for_lookup = Type.optional Type.integer;
            accessed_through_class = false;
            class_name = "typing.Optional";
            accessed_through_readonly = false;
@@ -3882,13 +3882,13 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.integer;
+           type_for_lookup = Type.integer;
            accessed_through_class = false;
            class_name = "int";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.string;
+           type_for_lookup = Type.string;
            accessed_through_class = false;
            class_name = "str";
            accessed_through_readonly = false;
@@ -3899,13 +3899,13 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.list Type.integer;
+           type_for_lookup = Type.list Type.integer;
            accessed_through_class = false;
            class_name = "list";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = false;
            class_name = "Foo";
            accessed_through_readonly = false;
@@ -3916,13 +3916,13 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.list Type.integer;
+           type_for_lookup = Type.list Type.integer;
            accessed_through_class = false;
            class_name = "list";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = false;
            class_name = "Foo";
            accessed_through_readonly = false;
@@ -3939,13 +3939,13 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.integer;
+           type_for_lookup = Type.integer;
            accessed_through_class = false;
            class_name = "int";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.tuple [Type.Primitive "Foo"; tree_annotation];
+           type_for_lookup = Type.tuple [Type.Primitive "Foo"; tree_annotation];
            accessed_through_class = false;
            class_name = "tuple";
            accessed_through_readonly = false;
@@ -3962,7 +3962,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.list (Type.union [Type.integer; recursive_list]);
+           type_for_lookup = Type.list (Type.union [Type.integer; recursive_list]);
            accessed_through_class = false;
            class_name = "list";
            accessed_through_readonly = false;
@@ -3978,7 +3978,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.integer;
+           type_for_lookup = Type.integer;
            accessed_through_class = false;
            class_name = "int";
            accessed_through_readonly = false;
@@ -3990,7 +3990,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = false;
            class_name = "Foo";
            accessed_through_readonly = true;
@@ -4001,13 +4001,13 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.list (Type.Primitive "Foo");
+           type_for_lookup = Type.list (Type.Primitive "Foo");
            accessed_through_class = false;
            class_name = "list";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = false;
            class_name = "Foo";
            accessed_through_readonly = true;
@@ -4018,7 +4018,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = true;
            class_name = "Foo";
            accessed_through_readonly = true;
@@ -4029,7 +4029,7 @@ let test_class_attribute_lookups_for_type _ =
     (Some
        [
          {
-           instantiated = Type.Primitive "Foo";
+           type_for_lookup = Type.Primitive "Foo";
            accessed_through_class = true;
            class_name = "Foo";
            accessed_through_readonly = true;

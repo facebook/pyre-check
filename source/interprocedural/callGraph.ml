@@ -2239,7 +2239,7 @@ let resolve_attribute_access_global_targets
                       pyre_api
                       ~transitive:true
                       ~name:attribute
-                      ~instantiated:annotation
+                      ~type_for_lookup:annotation
               in
               match attribute with
               | Some attribute when AnnotatedAttribute.defined attribute ->

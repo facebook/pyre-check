@@ -89,7 +89,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     accessed_through_class:bool ->
     accessed_through_readonly:bool ->
-    ?instantiated:Type.t ->
+    ?type_for_lookup:Type.t ->
     AnnotatedAttribute.uninstantiated ->
     AnnotatedAttribute.instantiated
 
@@ -101,7 +101,7 @@ module AttributeReadOnly : sig
     accessed_through_readonly:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
-    ?instantiated:Type.t ->
+    ?type_for_lookup:Type.t ->
     attribute_name:Identifier.t ->
     string ->
     AnnotatedAttribute.instantiated option

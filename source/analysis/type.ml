@@ -5295,7 +5295,7 @@ let infer_transform annotation =
 
 type class_attribute_lookup_data = {
   class_name: Primitive.t;
-  instantiated: t;
+  type_for_lookup: t;
   accessed_through_class: bool;
   accessed_through_readonly: bool;
 }
@@ -5334,7 +5334,7 @@ let class_attribute_lookups_for_type type_ =
         Some
           [
             {
-              instantiated = original_type;
+              type_for_lookup = original_type;
               accessed_through_class;
               accessed_through_readonly;
               class_name = "typing.Optional";
@@ -5360,13 +5360,13 @@ let class_attribute_lookups_for_type type_ =
          * other classes in a union support an attribute lookup, the recursive type will too. If
          * they don't, then the recursive type won't either. *)
         >>| List.filter ~f:(fun { class_name; _ } -> not (Identifier.equal class_name name))
-        >>| List.map ~f:(fun ({ instantiated; _ } as class_data) ->
+        >>| List.map ~f:(fun ({ type_for_lookup; _ } as class_data) ->
                 {
                   class_data with
-                  instantiated =
+                  type_for_lookup =
                     RecursiveType.replace_references_with_recursive_type
                       ~recursive_type
-                      instantiated;
+                      type_for_lookup;
                 })
     | PyreReadOnly type_ ->
         (* The `PyreReadOnly[Xyz]` type behaves like a qualifier: anything accessed on a value of
@@ -5383,7 +5383,7 @@ let class_attribute_lookups_for_type type_ =
             Some
               [
                 {
-                  instantiated = original_type;
+                  type_for_lookup = original_type;
                   accessed_through_class;
                   accessed_through_readonly;
                   class_name;

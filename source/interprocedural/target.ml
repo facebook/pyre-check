@@ -307,7 +307,7 @@ let resolve_method ~pyre_api ~class_type ~method_name =
           pyre_api
           ~transitive:true
           ~name:method_name
-          ~instantiated:class_type
+          ~type_for_lookup:class_type
   in
   match callable_implementation with
   | Some callable when Analysis.AnnotatedAttribute.defined callable ->

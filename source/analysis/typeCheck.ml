@@ -1620,8 +1620,8 @@ module State (Context : Context) = struct
     let reference = name_to_reference name in
     let access_as_attribute () =
       let find_attribute
-          ({ Type.instantiated; accessed_through_class; class_name; accessed_through_readonly } as
-          class_data)
+          ({ Type.type_for_lookup; accessed_through_class; class_name; accessed_through_readonly }
+          as class_data)
         =
         let name = attribute in
         match
@@ -1633,14 +1633,14 @@ module State (Context : Context) = struct
             ~accessed_through_readonly
             ~special_method:special
             ~name
-            ~instantiated
+            ~type_for_lookup
         with
         | Some attribute ->
             let attribute =
               if not (AnnotatedAttribute.defined attribute) then
                 Resolution.fallback_attribute
                   class_name
-                  ~instantiated:(Some resolved_base)
+                  ~type_for_lookup:(Some resolved_base)
                   ~accessed_through_class
                   ~resolution
                   ~name
@@ -1652,7 +1652,7 @@ module State (Context : Context) = struct
               if AnnotatedAttribute.defined attribute then
                 None
               else
-                Some instantiated
+                Some type_for_lookup
             in
             (* Collect @property's in the call graph. *)
             Some (class_data, attribute, undefined_target)
@@ -1701,10 +1701,10 @@ module State (Context : Context) = struct
           }
       | Some (head_attribute_info :: tail_attributes_info) ->
           let add_attributes_to_context attribute_info =
-            let get_instantiated { Type.instantiated; _ } = instantiated in
+            let get_type_for_lookup { Type.type_for_lookup; _ } = type_for_lookup in
             let attributes_with_instantiated =
               List.map attribute_info ~f:(fun (class_data, attribute, _) ->
-                  attribute, get_instantiated class_data)
+                  attribute, get_type_for_lookup class_data)
             in
             Context.Builder.add_property_callees
               ~global_resolution
@@ -2767,13 +2767,13 @@ module State (Context : Context) = struct
           { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
           let resolve_in_call
               (resolution, errors, joined_annotation)
-              { Type.instantiated; class_name; accessed_through_class; _ }
+              { Type.type_for_lookup; class_name; accessed_through_class; _ }
             =
             let resolve_method
                 ?(accessed_through_class = false)
                 ?(special_method = false)
                 class_name
-                instantiated
+                type_for_lookup
                 name
               =
               GlobalResolution.attribute_from_class_name
@@ -2783,7 +2783,7 @@ module State (Context : Context) = struct
                 class_name
                 ~special_method
                 ~name
-                ~instantiated
+                ~type_for_lookup
               >>| AnnotatedAttribute.annotation
               >>| TypeInfo.Unit.annotation
               >>= function
@@ -2796,7 +2796,7 @@ module State (Context : Context) = struct
                   ~accessed_through_class
                   ~special_method:true
                   class_name
-                  instantiated
+                  type_for_lookup
                   "__contains__"
               with
               | Some resolved ->
@@ -2822,7 +2822,7 @@ module State (Context : Context) = struct
                     ~resolution
                     ~location
                     ~errors
-                    ~target:(Some instantiated)
+                    ~target:(Some type_for_lookup)
                     ~dynamic:true
                     ~callee
                     ~arguments:[{ Call.Argument.name = None; value = left }]
@@ -2832,7 +2832,7 @@ module State (Context : Context) = struct
                       ~accessed_through_class
                       ~special_method:true
                       class_name
-                      instantiated
+                      type_for_lookup
                       "__iter__"
                   with
                   | Some iter_callable ->
@@ -2879,7 +2879,7 @@ module State (Context : Context) = struct
                         ~resolution
                         ~location
                         ~errors
-                        ~target:(Some instantiated)
+                        ~target:(Some type_for_lookup)
                         ~callee:(create_callee iter_callable)
                         ~arguments:[]
                       |> forward_method ~method_name:"__next__" ~arguments:[]
@@ -3739,7 +3739,7 @@ module State (Context : Context) = struct
               >>= GlobalResolution.attribute_from_class_name
                     global_resolution
                     ~name:attribute
-                    ~instantiated:parent
+                    ~type_for_lookup:parent
                     ~transitive:true
             in
             match
@@ -3770,7 +3770,7 @@ module State (Context : Context) = struct
               GlobalResolution.attribute_from_class_name
                 global_resolution
                 ~name:attribute
-                ~instantiated:parent
+                ~type_for_lookup:parent
                 ~transitive:true
             in
             match Type.class_attribute_lookups_for_type parent with
@@ -4639,7 +4639,7 @@ module State (Context : Context) = struct
                   >>= GlobalResolution.attribute_from_class_name
                         global_resolution
                         ~name:attribute
-                        ~instantiated:parent
+                        ~type_for_lookup:parent
                         ~transitive:true
                         ~accessed_through_class
                         ~accessed_through_readonly
@@ -4680,14 +4680,14 @@ module State (Context : Context) = struct
           let find_getattr parent =
             let attribute =
               match Type.class_attribute_lookups_for_type parent with
-              | Some [{ instantiated; class_name; _ }] ->
+              | Some [{ Type.type_for_lookup; class_name; _ }] ->
                   GlobalResolution.attribute_from_class_name
                     global_resolution
                     class_name
                     ~accessed_through_class:false
                     ~transitive:true
                     ~name:"__getattr__"
-                    ~instantiated
+                    ~type_for_lookup
               | _ -> None
             in
             match attribute with
@@ -5100,14 +5100,14 @@ module State (Context : Context) = struct
                 else
                   errors, true
             | ( Name.Attribute { attribute; _ },
-                Some ({ Type.instantiated; accessed_through_class; class_name; _ } :: _) ) -> (
+                Some ({ Type.type_for_lookup; accessed_through_class; class_name; _ } :: _) ) -> (
                 (* Instance *)
                 let reference = Reference.create attribute in
                 let attribute =
                   GlobalResolution.attribute_from_class_name
                     global_resolution
                     ~name:attribute
-                    ~instantiated
+                    ~type_for_lookup
                     ~accessed_through_class
                     ~transitive:true
                     class_name
@@ -7318,7 +7318,7 @@ module State (Context : Context) = struct
             ~transitive:false
             ~accessed_through_class:true
             ~name:"__init_subclass__"
-            ~instantiated:(Type.Primitive parent_class)
+            ~type_for_lookup:(Type.Primitive parent_class)
             parent_class
           >>= fun attribute ->
           Option.some_if
@@ -8009,7 +8009,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     global_resolution
                     ~accessed_through_class:false
                     ~accessed_through_readonly:false
-                    ?instantiated:None
+                    ?type_for_lookup:None
                     attribute
                   |> AnnotatedAttribute.annotation
                   |> TypeInfo.Unit.annotation
@@ -8259,7 +8259,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         global_resolution
                         ~accessed_through_class:true
                         ~accessed_through_readonly:false
-                        ?instantiated:None
+                        ?type_for_lookup:None
                         attribute
                       |> AnnotatedAttribute.annotation
                       |> TypeInfo.Unit.annotation
@@ -8640,7 +8640,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           >>= GlobalResolution.attribute_from_class_name
                 global_resolution
                 ~name:(Reference.last name)
-                ~instantiated:Top
+                ~type_for_lookup:Top
         in
         match
           attribute

@@ -329,7 +329,7 @@ let test_get_typed_dictionary context =
 (* We don't reverse order when returning the classes. *)
 
 let test_fallback_attribute =
-  let assert_fallback_attribute ?(instantiated = None) ~name source annotation context =
+  let assert_fallback_attribute ?(type_for_lookup = None) ~name source annotation context =
     let project = ScratchProject.setup ~context ["test.py", source] in
     let global_resolution = Test.ScratchProject.build_global_resolution project in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
@@ -354,7 +354,7 @@ let test_fallback_attribute =
            | _ -> failwith "Last statement was not a class")
       |> ClassSummary.name
       |> Reference.show
-      |> Resolution.fallback_attribute ~instantiated ~resolution ~name
+      |> Resolution.fallback_attribute ~type_for_lookup ~resolution ~name
     in
     let printer optional_type = optional_type >>| Type.show |> Option.value ~default:"None" in
     assert_equal
@@ -424,7 +424,7 @@ let test_fallback_attribute =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_fallback_attribute
            ~name:"__iadd__"
-           ~instantiated:(Some (Type.parametric "test.Foo" [Single Type.integer]))
+           ~type_for_lookup:(Some (Type.parametric "test.Foo" [Single Type.integer]))
            {|
               from typing import Generic, TypeVar
               T = TypeVar("T")

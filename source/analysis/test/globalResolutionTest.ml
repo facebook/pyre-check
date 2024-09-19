@@ -682,7 +682,7 @@ let test_attribute_from_class_name =
       ?(accessed_through_class = false)
       ?(accessed_through_readonly = false)
       ~parent
-      ~instantiated
+      ~type_for_lookup
       ~attribute_name
       expected_attribute
       context
@@ -747,7 +747,7 @@ let test_attribute_from_class_name =
         ~accessed_through_class
         ~accessed_through_readonly
         ~name:attribute_name
-        ~instantiated
+        ~type_for_lookup
     in
     let cmp =
       let equal = Attribute.equal_instantiated in
@@ -798,7 +798,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Attributes"
-           ~instantiated:(Type.Primitive "test.Attributes")
+           ~type_for_lookup:(Type.Primitive "test.Attributes")
            ~attribute_name:"bar"
            (create_expected_attribute
               "bar"
@@ -809,7 +809,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Attributes"
-           ~instantiated:(Type.Primitive "test.Attributes")
+           ~type_for_lookup:(Type.Primitive "test.Attributes")
            ~attribute_name:"baz"
            (create_expected_attribute
               "baz"
@@ -821,7 +821,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Attributes"
-           ~instantiated:(Type.Primitive "test.Attributes")
+           ~type_for_lookup:(Type.Primitive "test.Attributes")
            ~attribute_name:"implicit"
            ~accessed_through_class:true
            (create_expected_attribute
@@ -834,7 +834,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Attributes"
-           ~instantiated:(Type.Primitive "test.Attributes")
+           ~type_for_lookup:(Type.Primitive "test.Attributes")
            ~attribute_name:"property"
            ~accessed_through_class:true
            (create_expected_attribute
@@ -846,7 +846,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Attributes"
-           ~instantiated:(Type.Primitive "Nonsense")
+           ~type_for_lookup:(Type.Primitive "Nonsense")
            ~attribute_name:"property"
            (create_expected_attribute
               ~property:true
@@ -857,7 +857,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.DC"
-           ~instantiated:(Type.Primitive "test.DC")
+           ~type_for_lookup:(Type.Primitive "test.DC")
            ~attribute_name:"x"
            (create_expected_attribute
               ~parent:"test.DC"
@@ -869,7 +869,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.DC"
-           ~instantiated:(Type.Primitive "test.DC")
+           ~type_for_lookup:(Type.Primitive "test.DC")
            ~attribute_name:"inherited"
            (create_expected_attribute
               ~parent:"test.Parent"
@@ -881,7 +881,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.NT"
-           ~instantiated:(Type.Primitive "test.NT")
+           ~type_for_lookup:(Type.Primitive "test.NT")
            ~attribute_name:"x"
            (create_expected_attribute
               ~parent:"test.NT"
@@ -893,7 +893,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Prot"
-           ~instantiated:(Type.Primitive "test.Prot")
+           ~type_for_lookup:(Type.Primitive "test.Prot")
            ~attribute_name:"method"
            (create_expected_attribute
               ~parent:"test.Prot"
@@ -910,7 +910,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.Prot"
-           ~instantiated:(Type.Primitive "test.ExplicitProtChild")
+           ~type_for_lookup:(Type.Primitive "test.ExplicitProtChild")
            ~attribute_name:"method"
            (create_expected_attribute
               ~parent:"test.Prot"
@@ -925,7 +925,7 @@ let test_attribute_from_class_name =
        labeled_test_case __FUNCTION__ __LINE__
        @@ assert_attribute
             ~parent:"BoundMethod"
-            ~instantiated:
+            ~type_for_lookup:
               (Type.parametric
                  "BoundMethod"
                  [
@@ -953,7 +953,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.SimpleClass"
-           ~instantiated:(Type.Primitive "test.SimpleClass")
+           ~type_for_lookup:(Type.Primitive "test.SimpleClass")
            ~attribute_name:"some_attribute"
            ~accessed_through_readonly:true
            (create_expected_attribute
@@ -964,7 +964,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.SimpleClass"
-           ~instantiated:(Type.Primitive "test.SimpleClass")
+           ~type_for_lookup:(Type.Primitive "test.SimpleClass")
            ~attribute_name:"some_method"
            ~accessed_through_readonly:true
            (create_expected_attribute
@@ -981,7 +981,7 @@ let test_attribute_from_class_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_attribute
            ~parent:"test.SimpleClass"
-           ~instantiated:(Type.Primitive "test.SimpleClass")
+           ~type_for_lookup:(Type.Primitive "test.SimpleClass")
            ~attribute_name:"some_method"
            ~accessed_through_class:true
            ~accessed_through_readonly:true

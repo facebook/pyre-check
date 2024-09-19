@@ -760,14 +760,14 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
 
 
 let callable_call_special_cases
-    ~instantiated
+    ~type_for_lookup
     ~class_name
     ~attribute_name
     ~order
     ~accessed_through_class
   =
-  match instantiated, class_name, attribute_name, accessed_through_class with
-  | Some (Type.Callable _), "typing.Callable", "__call__", false -> instantiated
+  match type_for_lookup, class_name, attribute_name, accessed_through_class with
+  | Some (Type.Callable _), "typing.Callable", "__call__", false -> type_for_lookup
   | ( Some
         (Parametric
           { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] }),
@@ -1589,7 +1589,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   ~cycle_detections
                   ~accessed_through_class:false
                   ~accessed_through_readonly:false
-                  ?instantiated:None
+                  ?type_for_lookup:None
                   ?apply_descriptors:None
                   attribute
                 |> AnnotatedAttribute.annotation
@@ -1888,7 +1888,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               (self#create_uninstantiated_attribute ~cycle_detections)
               (self#instantiate_attribute
                  ~cycle_detections
-                 ?instantiated:None
+                 ?type_for_lookup:None
                  ~accessed_through_class:false
                  ~accessed_through_readonly:false
                    (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
@@ -2080,7 +2080,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~cycle_detections
         ~accessed_through_class
         ~accessed_through_readonly
-        ?instantiated
+        ?type_for_lookup
         ?(apply_descriptors = true)
         attribute =
       let Queries.
@@ -2153,13 +2153,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         if accessed_through_readonly then make_annotation_readonly annotation else annotation
       in
       let annotation =
-        match instantiated with
+        match type_for_lookup with
         | None -> annotation
-        | Some instantiated -> (
+        | Some type_for_lookup -> (
             let solution =
               self#constraints_for_instantiate
                 ~source_type_name:class_name
-                ~current_type:instantiated
+                ~current_type:type_for_lookup
                 ~cycle_detections
                 ()
             in
@@ -2183,13 +2183,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         self#full_order ~cycle_detections
       in
       let annotation, original =
-        let instantiated =
-          match instantiated with
-          | Some instantiated -> instantiated
+        let type_for_lookup =
+          match type_for_lookup with
+          | Some type_for_lookup -> type_for_lookup
           | None -> Type.Primitive class_name
         in
-        let instantiated =
-          if accessed_via_metaclass then Type.builtins_type instantiated else instantiated
+        let type_for_lookup =
+          if accessed_via_metaclass then Type.builtins_type type_for_lookup else type_for_lookup
         in
         let special_case_methods callable =
           (* Certain callables' types can't be expressed directly and need to be special cased *)
@@ -2220,7 +2220,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             in
             Type.Callable { callable with overloads }
           in
-          match instantiated, attribute_name, class_name with
+          match type_for_lookup, attribute_name, class_name with
           | Type.Tuple (Concrete members), "__getitem__", _ -> tuple_getitem_overloads members
           | ( Parametric { name = "type"; arguments = [Single (Type.Primitive name)] },
               "__getitem__",
@@ -2311,11 +2311,11 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               Type.Callable { callable with implementation; overloads }
           | Parametric { name = "type"; arguments = [Single meta_argument] }, "__call__", "type"
             when accessed_via_metaclass ->
-              let get_constructor { Type.instantiated; accessed_through_class; class_name; _ } =
+              let get_constructor { Type.type_for_lookup; accessed_through_class; class_name; _ } =
                 if accessed_through_class then (* Type[Type[X]] is invalid *)
                   None
                 else
-                  Some (self#constructor ~cycle_detections class_name ~instantiated)
+                  Some (self#constructor ~cycle_detections class_name ~type_for_lookup)
               in
               Type.class_attribute_lookups_for_type meta_argument
               >>| List.map ~f:get_constructor
@@ -2323,7 +2323,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               >>| Type.union
               |> Option.value ~default:(Type.Callable callable)
           | _, "__getitem__", _ -> (
-              match get_named_tuple_fields instantiated with
+              match get_named_tuple_fields type_for_lookup with
               | Some members -> tuple_getitem_overloads members
               | None -> Type.Callable callable)
           | _ -> Type.Callable callable
@@ -2345,7 +2345,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     | Some annotation ->
                         TypeOrder.OrderedConstraintsSet.add_and_simplify
                           ConstraintsSet.empty
-                          ~new_constraint:(LessOrEqual { left = instantiated; right = annotation })
+                          ~new_constraint:
+                            (LessOrEqual { left = type_for_lookup; right = annotation })
                           ~order
                     | None -> ConstraintsSet.empty
                   in
@@ -2368,7 +2369,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             let order () = order in
             let special =
               callable_call_special_cases
-                ~instantiated:(Some instantiated)
+                ~type_for_lookup:(Some type_for_lookup)
                 ~class_name
                 ~attribute_name
                 ~order
@@ -2392,12 +2393,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           {
                             Argument.kind = Positional;
                             expression = None;
-                            resolved = (if accessed_through_class then Type.none else instantiated);
+                            resolved =
+                              (if accessed_through_class then Type.none else type_for_lookup);
                           };
                           {
                             Argument.kind = Positional;
                             expression = None;
-                            resolved = Type.builtins_type instantiated;
+                            resolved = Type.builtins_type type_for_lookup;
                           };
                         ]
                       ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
@@ -2420,7 +2422,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                            [
                              PositionalOnly { index = 0; annotation = descriptor; default = false };
                              PositionalOnly
-                               { index = 1; annotation = instantiated; default = false };
+                               { index = 1; annotation = type_for_lookup; default = false };
                              PositionalOnly
                                { index = 2; annotation = Variable synthetic; default = false };
                            ])
@@ -2464,31 +2466,31 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   else
                     let bound_self_type =
                       if accessed_through_readonly then
-                        Type.PyreReadOnly.create instantiated
+                        Type.PyreReadOnly.create type_for_lookup
                       else
-                        instantiated
+                        type_for_lookup
                     in
                     Type.parametric
                       "BoundMethod"
                       [Single (Callable callable); Single bound_self_type]
                 in
                 let get_descriptor_method
-                    { Type.instantiated; accessed_through_class; class_name; _ }
+                    { Type.type_for_lookup; accessed_through_class; class_name; _ }
                     ~kind
                   =
                   if accessed_through_class then
                     (* descriptor methods are statically looked up on the class (in this case
                        `type`), not on the instance. `type` is not a descriptor. *)
-                    `NotDescriptor (Type.builtins_type instantiated)
+                    `NotDescriptor (Type.builtins_type type_for_lookup)
                   else
-                    match instantiated with
+                    match type_for_lookup with
                     | Callable callable -> (
                         match kind with
                         | `DunderGet ->
                             (* We unsoundly assume all callables are callables with the `function`
                                `__get__` *)
                             `HadDescriptor (function_dunder_get callable)
-                        | `DunderSet -> `NotDescriptor instantiated)
+                        | `DunderSet -> `NotDescriptor type_for_lookup)
                     | _ -> (
                         let attribute =
                           let attribute_name =
@@ -2505,7 +2507,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                             ~accessed_through_readonly:false
                             ~include_generated_attributes:true
                             ?special_method:None
-                            ?instantiated:(Some instantiated)
+                            ?type_for_lookup:(Some type_for_lookup)
                             ?apply_descriptors:(Some false)
                             ~attribute_name
                             class_name
@@ -2513,13 +2515,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           >>| TypeInfo.Unit.annotation
                         in
                         match attribute with
-                        | None -> `NotDescriptor instantiated
+                        | None -> `NotDescriptor type_for_lookup
                         | Some (Type.Callable callable) ->
                             let extracted =
                               match kind with
-                              | `DunderGet -> call_dunder_get (instantiated, callable)
+                              | `DunderGet -> call_dunder_get (type_for_lookup, callable)
                               | `DunderSet ->
-                                  invert_dunder_set ~order:(order ()) (instantiated, callable)
+                                  invert_dunder_set ~order:(order ()) (type_for_lookup, callable)
                             in
                             extracted
                             >>| (fun extracted -> `HadDescriptor extracted)
@@ -2594,14 +2596,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~accessed_through_readonly
         ~include_generated_attributes
         ?(special_method = false)
-        ?instantiated
+        ?type_for_lookup
         ?apply_descriptors
         ~attribute_name
         class_name =
       let order () = self#full_order ~cycle_detections in
       match
         callable_call_special_cases
-          ~instantiated
+          ~type_for_lookup
           ~class_name
           ~attribute_name
           ~accessed_through_class
@@ -2637,7 +2639,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ~cycle_detections
                 ~accessed_through_class
                 ~accessed_through_readonly
-                ?instantiated
+                ?type_for_lookup
                 ?apply_descriptors
 
     method get_typed_dictionary ~cycle_detections annotation =
@@ -2651,7 +2653,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ~accessed_through_class:true
               ~accessed_through_readonly:false
               ~include_generated_attributes:true
-              ~instantiated:(Type.builtins_type annotation)
+              ~type_for_lookup:(Type.builtins_type annotation)
               ~special_method:false
               ~attribute_name:"__init__"
               class_name
@@ -2692,7 +2694,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let attribute class_type ~cycle_detections ~name =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        >>= fun {
+                  Type.type_for_lookup;
+                  accessed_through_class;
+                  class_name;
+                  accessed_through_readonly;
+                } ->
         self#attribute
           ~cycle_detections
           ~transitive:true
@@ -2701,12 +2708,17 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           ~include_generated_attributes:true
           ?special_method:None
           ~attribute_name:name
-          ~instantiated
+          ~type_for_lookup
           class_name
       in
       let instantiated_attributes class_type ~cycle_detections =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
+        >>= fun {
+                  Type.type_for_lookup;
+                  accessed_through_class;
+                  class_name;
+                  accessed_through_readonly;
+                } ->
         self#uninstantiated_attributes
           ~cycle_detections
           ~transitive:true
@@ -2718,7 +2730,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ~f:
                 (self#instantiate_attribute
                    ~cycle_detections
-                   ~instantiated
+                   ~type_for_lookup
                    ~accessed_through_class
                    ~accessed_through_readonly
                    ?apply_descriptors:None)
@@ -3061,7 +3073,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                   let resolve_attribute_access ?special_method base ~attribute_name =
                     let access
                         {
-                          Type.instantiated;
+                          Type.type_for_lookup;
                           accessed_through_class;
                           class_name;
                           accessed_through_readonly;
@@ -3075,7 +3087,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         ~include_generated_attributes:true
                         ?special_method
                         ~attribute_name
-                        ~instantiated
+                        ~type_for_lookup
                         class_name
                     in
                     let join_all = function
@@ -3331,7 +3343,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       |> TypeOrder.OrderedConstraintsSet.solve ~order
       |> Option.is_some
 
-    method constructor ~cycle_detections class_name ~instantiated =
+    method constructor ~cycle_detections class_name ~type_for_lookup =
       let Queries.{ generic_parameters_as_variables; successors; _ } = queries in
       let return_annotation =
         let generics =
@@ -3347,15 +3359,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           | _ -> Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any)
         else
           let backup = Type.parametric class_name generics in
-          match instantiated, generics with
-          | _, [] -> instantiated
+          match type_for_lookup, generics with
+          | _, [] -> type_for_lookup
           | Type.Primitive instantiated_name, _ when String.equal instantiated_name class_name ->
               backup
           | Type.Parametric { arguments; name = instantiated_name }, generics
             when String.equal instantiated_name class_name
                  && List.length arguments <> List.length generics ->
               backup
-          | _ -> instantiated
+          | _ -> type_for_lookup
       in
       let definitions = class_name :: successors class_name in
       let definition_index parent =
@@ -3376,7 +3388,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               ~accessed_through_readonly:false
               ~include_generated_attributes:true
               ?special_method:None
-              ?instantiated:(Some return_annotation)
+              ?type_for_lookup:(Some return_annotation)
               ~attribute_name:name
               class_name
           with
@@ -3396,7 +3408,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         ( Type.parametric
             "BoundMethod"
-            [Single new_signature; Single (Type.builtins_type instantiated)],
+            [Single new_signature; Single (Type.builtins_type type_for_lookup)],
           new_index,
           new_parent_name )
       in

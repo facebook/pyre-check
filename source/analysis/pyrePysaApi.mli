@@ -126,7 +126,7 @@ module ReadOnly : sig
     ?special_method:bool ->
     string ->
     name:string ->
-    instantiated:Type.t ->
+    type_for_lookup:Type.t ->
     AnnotatedAttribute.instantiated option
 
   val has_transitive_successor : t -> successor:string -> string -> bool
@@ -188,7 +188,7 @@ module InContext : sig
   val fallback_attribute
     :  t ->
     ?accessed_through_class:bool ->
-    ?instantiated:Type.t option ->
+    ?type_for_lookup:Type.t option ->
     name:string ->
     string ->
     AnnotatedAttribute.instantiated option

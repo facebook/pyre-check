@@ -43,7 +43,7 @@ let field_annotations ~global_resolution annotation =
           GlobalResolution.attribute_from_class_name
             global_resolution
             ~name
-            ~instantiated:(Primitive class_name)
+            ~type_for_lookup:(Primitive class_name)
             class_name
         in
         match attribute with

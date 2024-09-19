@@ -346,7 +346,7 @@ let variables resolution name =
 
 let fallback_attribute
     ?(accessed_through_class = false)
-    ?(instantiated = None)
+    ?(type_for_lookup = None)
     ~resolution
     ~name
     class_name
@@ -379,7 +379,7 @@ let fallback_attribute
           class_name
           ~accessed_through_class:false
           ~transitive:true
-          ~instantiated:(Option.value instantiated ~default:(Type.Primitive class_name))
+          ~type_for_lookup:(Option.value type_for_lookup ~default:(Type.Primitive class_name))
           ~name
     | _ -> None
   in
@@ -392,7 +392,7 @@ let fallback_attribute
         ~special_method:true
         ~transitive:true
         ~name:"__getattr__"
-        ~instantiated:(Type.Primitive class_name)
+        ~type_for_lookup:(Type.Primitive class_name)
     in
     match fallback with
     | Some fallback when AnnotatedAttribute.defined fallback -> (

@@ -1052,7 +1052,7 @@ val to_yojson : t -> Yojson.Safe.t
 
 type class_attribute_lookup_data = {
   class_name: Primitive.t;
-  instantiated: t;
+  type_for_lookup: t;
   accessed_through_class: bool;
   accessed_through_readonly: bool;
 }

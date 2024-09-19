@@ -115,7 +115,7 @@ val uninstantiated_attributes
 
 val instantiate_attribute
   :  t ->
-  ?instantiated:Type.t ->
+  ?type_for_lookup:Type.t ->
   accessed_through_class:bool ->
   accessed_through_readonly:bool ->
   AnnotatedAttribute.uninstantiated ->
@@ -193,7 +193,7 @@ val attribute_from_class_name
   ?special_method:bool ->
   Type.Primitive.t ->
   name:Identifier.t ->
-  instantiated:Type.t ->
+  type_for_lookup:Type.t ->
   AnnotatedAttribute.instantiated option
 
 val attribute_from_annotation

@@ -194,9 +194,9 @@ module DefaultBuilder : Builder = struct
         Method { direct_target; class_name; dispatch = Dynamic; is_optional_class_attribute }
         :: !property_callables
     in
-    let register (attribute, instantiated) =
+    let register (attribute, type_for_lookup) =
       if AnnotatedAttribute.property attribute then
-        register_attribute_callable instantiated attribute
+        register_attribute_callable type_for_lookup attribute
       (* As the callgraph is an overapproximation, we also have to consider property calls from
          optional attributes.*)
       else
@@ -205,7 +205,7 @@ module DefaultBuilder : Builder = struct
         | Type.Union [base; Type.NoneType] -> (
             Type.class_attribute_lookups_for_type base
             |> function
-            | Some [{ instantiated; accessed_through_class; class_name; _ }] -> (
+            | Some [{ Type.type_for_lookup; accessed_through_class; class_name; _ }] -> (
                 let attribute =
                   GlobalResolution.attribute_from_class_name
                     global_resolution
@@ -214,14 +214,14 @@ module DefaultBuilder : Builder = struct
                     ~accessed_through_class
                     ~special_method:false
                     ~name
-                    ~instantiated
+                    ~type_for_lookup
                 in
                 match attribute with
                 | Some attribute ->
                     if AnnotatedAttribute.property attribute then
                       register_attribute_callable
                         ~is_optional_class_attribute:true
-                        instantiated
+                        type_for_lookup
                         attribute
                 | None -> ())
             | Some _
