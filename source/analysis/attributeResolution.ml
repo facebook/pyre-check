@@ -2664,6 +2664,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ?type_for_lookup
                 ?apply_descriptors
 
+    (* Given a Type.t that might represent a typed dictionary, return a `Type.TypedDictionary.t`
+     * if it is. Return `None` if the type is not a typed dictionary.
+     * 
+     * The implementation relies on the synthesized constructor method to
+     * determine the typed dictionary fields.
+     *)
     method get_typed_dictionary ~cycle_detections annotation =
       let Queries.{ is_typed_dictionary; _ } = queries in
       match annotation with
