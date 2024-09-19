@@ -2694,6 +2694,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
       | _ -> None
 
+    (* Construct a ConstraintsSet.order representing the lattice of types for a
+     * project. The order object is just a record of callbacks providing access to
+     * shared memory for all cases where type order and constraint solving operations
+     * require information about the codebase.
+     *
+     * Note that the assumption that we can create such an object without scope
+     * is the root cause for why Pyre has to put classes nested inside functions
+     * (which are not actually global) into the global symbol table.
+     *)
     method full_order ~cycle_detections =
       let Queries.
             {
