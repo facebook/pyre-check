@@ -2076,6 +2076,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             (* TODO(T39598018): error in this case somehow, something must be wrong *)
             |> Option.value ~default:TypeConstraints.Solution.empty
 
+    (* Given an `AnnotatedAttribute.uninstantiated` value `attribute`, compute an instantiated attribute.
+     *
+     * In many cases, this will be called with `type_for_lookup` set to an instantiated `Type.t`
+     * that allows us to substitute tyep variables in the attribute for the result of
+     * applying type arguments. If no `type_for_lookup` is provided, we assume we are in the body
+     * of the attribute's parent class, and use the type variables as given. *)
     method instantiate_attribute
         ~cycle_detections
         ~accessed_through_class
