@@ -959,7 +959,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     self.server_state.opened_documents
                 ),
                 "duration_ms": type_errors_timer.stop_in_millisecond(),
-                "error_message": error_message,
+                "error_message": error_message
+                if len(error_message.strip()) != 0
+                else None,
                 "type_check_metadata": {
                     "buck_type_errors": pyre_buck_metadata.to_json(),
                     "daemon_type_errors": daemon_type_errors.to_json(),
