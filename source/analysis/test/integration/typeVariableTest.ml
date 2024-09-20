@@ -323,6 +323,64 @@ let test_check_bounded_variables =
               T = TypeVar("T", bound=Any)
               |}
            ["Prohibited any [33]: Type variable `T` cannot have `Any` as a bound."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            def func[T:int](a: T) -> T:
+                return a
+
+            func(3.0)
+              |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Incompatible parameter type [6]: In call `func`, for 1st positional argument, \
+              expected `Variable[T (bound to int)]` but got `float`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import TypeVar
+
+            T = TypeVar("T", bound=int)
+
+            def func(a: T) -> T:
+                return a
+
+            func(3.0)
+              |}
+           [
+             "Incompatible parameter type [6]: In call `func`, for 1st positional argument, \
+              expected `Variable[T (bound to int)]` but got `float`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import TypeVar
+
+            T = TypeVar('T', int, str)
+
+            def func(a: T) -> T:
+                return a
+
+            func(3.0)
+              |}
+           [
+             "Incompatible parameter type [6]: In call `func`, for 1st positional argument, \
+              expected `Variable[T <: [int, str]]` but got `float`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            def func[T:(int, str)](a: T) -> T:
+                return a
+
+            func(3.0)
+              |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Incompatible parameter type [6]: In call `func`, for 1st positional argument, \
+              expected `Variable[T <: [int, str]]` but got `float`.";
+           ];
     ]
 
 

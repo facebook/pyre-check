@@ -1101,7 +1101,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~(implementation : Ast.Statement.Define.Signature.t option)
         ~overloads
         ~scoped_type_variables:outer_scope_type_variables =
-      let Queries.{ param_spec_from_vararg_annotations; generic_parameters_as_variables; _ } =
+      let Queries.
+            {
+              param_spec_from_vararg_annotations;
+              generic_parameters_as_variables;
+              parse_annotation_without_sanitizing_type_arguments;
+              _;
+            }
+        =
         queries
       in
       let parse (signature : Define.Signature.t) =
@@ -1111,15 +1118,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           let local_type_parameters =
             let type_param_names =
               List.map
-                ~f:(fun tp ->
-                  match tp.Node.value with
-                  | Expression.TypeParam.TypeVar { name; _ } ->
-                      Type.Variable.TypeVarVariable
-                        (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-                  | Expression.TypeParam.TypeVarTuple name ->
-                      Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-                  | Expression.TypeParam.ParamSpec name ->
-                      Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+                ~f:
+                  (Type.Variable.of_ast_type_param
+                     ~create_type:
+                       (parse_annotation_without_sanitizing_type_arguments
+                          ?modify_aliases:None
+                          ?allow_untracked:None
+                          ~variables:Type.resolved_empty_variables))
                 signature.type_params
             in
             type_param_names
@@ -1820,13 +1825,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
 
     (* Create an UninstantiatedAttributeTable value with all of the uninstantiated
      * attributes defined on the body of a class.
-     * 
+     *
      * The output of this function is generally cached in the `AttributeCache`
      * environment layer, which is critical for performance.
      *
      * Note that in the standard case this does *not* contain any inherited attributes;
      * we usually have to traverse a lazy sequence of these tables to find an attribute
-     * on a class. 
+     * on a class.
      *
      * The granularity is usually the same as ClassSummary, which is why caching this
      * table turns out to work well for performance.
@@ -2668,7 +2673,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
 
     (* Given a Type.t that might represent a typed dictionary, return a `Type.TypedDictionary.t`
      * if it is. Return `None` if the type is not a typed dictionary.
-     * 
+     *
      * The implementation relies on the synthesized constructor method to
      * determine the typed dictionary fields.
      *)
