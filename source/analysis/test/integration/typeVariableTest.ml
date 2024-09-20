@@ -2323,6 +2323,17 @@ let test_generic_aliases =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            type IntList[T:int] = list[T]
+            x: IntList[int] = [3.0]
+            |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Incompatible variable type [9]: x is declared to have type `List[int]` but is used \
+              as type `List[float]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
 
             from typing import Callable
 

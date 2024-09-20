@@ -204,21 +204,17 @@ module IncomingDataComputation = struct
       | Define _ ->
           None
       | TypeStatement { value; type_params; _ } ->
-          (* convert a type parameter to a type variable *)
-          let collected_type_parameter parameter =
-            let parameter = Node.value parameter in
-            match parameter with
-            | TypeParam.TypeVar { TypeParam.name; _ } ->
-                Type.Variable.TypeVarVariable
-                  (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-            | TypeParam.TypeVarTuple name ->
-                Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-            | TypeParam.ParamSpec name ->
-                Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name)
-          in
           (* collect type parameters from type statement *)
-          let variables = List.map ~f:collected_type_parameter type_params in
-
+          let variables =
+            List.map
+              ~f:
+                (Type.Variable.of_ast_type_param
+                   ~create_type:
+                     (Type.create
+                        ~aliases:Type.resolved_empty_aliases
+                        ~variables:Type.resolved_empty_variables))
+              type_params
+          in
           (* create a mapping which looks up type variables based on their name *)
           let variables variable_name =
             match
