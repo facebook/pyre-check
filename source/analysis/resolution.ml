@@ -232,6 +232,10 @@ let add_type_variable ({ type_variables; _ } as resolution) ~variable =
 
 let type_variable_exists { type_variables; _ } ~variable = Set.mem type_variables variable
 
+let type_variable_name_exists { type_variables; _ } name =
+  Set.exists type_variables ~f:(fun tv1 -> String.compare (Type.Variable.name tv1) name = 0)
+
+
 let all_type_variables_in_scope { type_variables; _ } = Set.to_list type_variables
 
 let type_info_store { type_info_store; _ } = type_info_store

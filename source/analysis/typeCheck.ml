@@ -520,25 +520,11 @@ module State (Context : Context) = struct
           |> List.dedup_and_sort ~compare:String.compare
           |> List.filter ~f:is_untracked_name
           |> List.fold ~init:errors ~f:(fun errors name ->
-                 let variable = Type.Variable.TypeVarVariable (Type.Variable.TypeVar.create name) in
-                 let type_var_tuple_variable =
-                   Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-                 in
-                 let param_spec_variable =
-                   Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name)
-                 in
-                 if
-                   Resolution.type_variable_exists local_resolution ~variable
-                   || Resolution.type_variable_exists
-                        local_resolution
-                        ~variable:type_var_tuple_variable
-                   || Resolution.type_variable_exists local_resolution ~variable:param_spec_variable
-                 then
+                 if Resolution.type_variable_name_exists local_resolution name then
                    errors
                  else
                    emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
         in
-
         let add_literal_value_errors errors =
           (* Literal enum class names will later be parsed as types, so we must validate them when
              checking for untracked annotations. In error messaging, assume these are arbitrary

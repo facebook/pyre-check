@@ -45,7 +45,6 @@ let test_type_variable_scoping =
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
-             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `a` is `A[int]`.";
              "Revealed type [-1]: Revealed type for `a.func(42.000000)` is `int`.";

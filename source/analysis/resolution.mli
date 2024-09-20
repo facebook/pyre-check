@@ -91,6 +91,8 @@ val add_type_variable : t -> variable:Type.Variable.t -> t
 
 val type_variable_exists : t -> variable:Type.Variable.t -> bool
 
+val type_variable_name_exists : t -> string -> bool
+
 val all_type_variables_in_scope : t -> Type.Variable.t list
 
 val type_info_store : t -> TypeInfo.Store.t
