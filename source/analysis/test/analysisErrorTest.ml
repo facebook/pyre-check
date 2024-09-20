@@ -949,7 +949,7 @@ let test_description _ =
               };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for argument \
-     `my_name`, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+     `my_name`, expected `Foo` but got `pyre_extensions.PyreReadOnly[Foo]`.";
   assert_messages
     (ReadOnlynessMismatch
        (IncompatibleParameterType
@@ -965,7 +965,7 @@ let test_description _ =
               };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
-     positional argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+     positional argument, expected `Foo` but got `pyre_extensions.PyreReadOnly[Foo]`.";
   let error =
     Error.ReadOnlynessMismatch
       (CallingMutatingMethodOnReadOnly
@@ -982,7 +982,7 @@ let test_description _ =
     error
     "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
      `test.Foo.my_method` may modify its object. Cannot call it on readonly expression `my_object` \
-     of type `pyre_extensions.ReadOnly[test.Foo]`.";
+     of type `pyre_extensions.PyreReadOnly[test.Foo]`.";
   assert_messages
     ~concise:true
     error
@@ -1001,7 +1001,7 @@ let test_description _ =
             define_location = Node.location mock_define;
           }))
     "ReadOnly violation - Incompatible return type [3004]: Expected `test.Foo` but got \
-     `pyre_extensions.ReadOnly[test.Foo]`.";
+     `pyre_extensions.PyreReadOnly[test.Foo]`.";
   let incompatible_parameter_type_error =
     Error.IncompatibleParameterType
       {

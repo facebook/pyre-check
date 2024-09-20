@@ -26,7 +26,7 @@ let test_ignore_readonly =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       (* The type checking analysis will check compatibility for the type wrapped by `ReadOnly`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -41,7 +41,7 @@ let test_ignore_readonly =
             |}
            [
              "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
-              `pyre_extensions.ReadOnly[Bar]`.";
+              `pyre_extensions.PyreReadOnly[Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -59,10 +59,10 @@ let test_ignore_readonly =
            [
              "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
               `typing_extensions.Literal[True]` but is used as type \
-              `pyre_extensions.ReadOnly[typing_extensions.Literal[True]]`.";
+              `pyre_extensions.PyreReadOnly[typing_extensions.Literal[True]]`.";
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
               `typing_extensions.Literal[False]` but is used as type \
-              `pyre_extensions.ReadOnly[typing_extensions.Literal[False]]`.";
+              `pyre_extensions.PyreReadOnly[typing_extensions.Literal[False]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -75,7 +75,7 @@ let test_ignore_readonly =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `str.capitalize` may modify its object. Cannot call it on readonly expression `s` of \
-              type `pyre_extensions.ReadOnly[str]`.";
+              type `pyre_extensions.PyreReadOnly[str]`.";
            ];
       (* Verify the behavior of overload selection, when ordering is correct *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -104,7 +104,7 @@ let test_ignore_readonly =
               have an implementation.";
              "Revealed type [-1]: Revealed type for `rw.method_rw_ro()` is `Bar`.";
              "Revealed type [-1]: Revealed type for `ro.method_rw_ro()` is \
-              `pyre_extensions.ReadOnly[Bar]`.";
+              `pyre_extensions.PyreReadOnly[Bar]`.";
            ];
       (* Verify the behavior of overload selection, when ordering is incorrect *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -133,12 +133,12 @@ let test_ignore_readonly =
               have an implementation.";
              "Incompatible overload [43]: The overloaded function `Bar.method_ro_rw` on line 12 \
               will never be matched. The signature `(self: \
-              pyre_extensions.ReadOnly[_Self_test_Bar__]) -> \
-              pyre_extensions.ReadOnly[_Self_test_Bar__]` is the same or broader.";
+              pyre_extensions.PyreReadOnly[_Self_test_Bar__]) -> \
+              pyre_extensions.PyreReadOnly[_Self_test_Bar__]` is the same or broader.";
              "Revealed type [-1]: Revealed type for `rw.method_ro_rw()` is \
-              `pyre_extensions.ReadOnly[Bar]`.";
+              `pyre_extensions.PyreReadOnly[Bar]`.";
              "Revealed type [-1]: Revealed type for `ro.method_ro_rw()` is \
-              `pyre_extensions.ReadOnly[Bar]`.";
+              `pyre_extensions.PyreReadOnly[Bar]`.";
            ];
     ]
 
@@ -161,7 +161,7 @@ let test_readonly_configuration_flag =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       (* Test readonly violations at the top level. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -176,7 +176,7 @@ let test_readonly_configuration_flag =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
     ]
 
@@ -199,7 +199,7 @@ let test_assignment =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -252,7 +252,7 @@ let test_assignment =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -276,7 +276,7 @@ let test_assignment =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
-              `test.Baz` but is used as type `pyre_extensions.ReadOnly[test.Baz]`.";
+              `test.Baz` but is used as type `pyre_extensions.PyreReadOnly[test.Baz]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -297,9 +297,9 @@ let test_assignment =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       (* Handle attribute types that have both `ReadOnly[...]` and `Type[...]`. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -321,9 +321,9 @@ let test_assignment =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -414,7 +414,7 @@ let test_assignment =
                 type_readonly_foo.some_attribute = Bar()
             |}
            [
-             "Undefined attribute [16]: `pyre_extensions.ReadOnly[Type[Foo]]` has no attribute \
+             "Undefined attribute [16]: `pyre_extensions.PyreReadOnly[Type[Foo]]` has no attribute \
               `some_attribute`.";
            ];
       (* TODO(T130377746): Emit readonly violation error when assigning to attribute of
@@ -463,7 +463,7 @@ let test_assignment =
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
               `typing.List[test.Bar]` but is used as type \
-              `typing.List[pyre_extensions.ReadOnly[test.Bar]]`.";
+              `typing.List[pyre_extensions.PyreReadOnly[test.Bar]]`.";
            ];
       (* We cannot assign to any attribute of a readonly object. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -497,7 +497,7 @@ let test_assignment =
             |}
            [
              "Revealed type [-1]: Revealed type for `readonly_foo.some_property` is \
-              `pyre_extensions.ReadOnly[str]` (final).";
+              `pyre_extensions.PyreReadOnly[str]` (final).";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -540,10 +540,10 @@ let test_function_call =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_mutable_and_readonly`, for 1st positional argument, expected `test.Bar` \
-              but got `pyre_extensions.ReadOnly[test.Bar]`.";
+              but got `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -559,10 +559,10 @@ let test_function_call =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+              `test.Foo` but is used as type `pyre_extensions.PyreReadOnly[test.Foo]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
               positional argument, expected `test.Foo` but got \
-              `pyre_extensions.ReadOnly[test.Foo]`.";
+              `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -580,7 +580,7 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_mutable`, for 1st positional argument, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -599,10 +599,10 @@ let test_function_call =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.Foo.return_readonly`, for 1st positional argument, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -623,13 +623,13 @@ let test_function_call =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call `test.return_foo`, \
               for 1st positional argument, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.Foo.return_readonly`, for 1st positional argument, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -669,7 +669,7 @@ let test_function_call =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly \
-              expression `readonly_foo` of type `pyre_extensions.ReadOnly[Foo]`.";
+              expression `readonly_foo` of type `pyre_extensions.PyreReadOnly[Foo]`.";
            ];
       (* A method with readonly `self` can be called on either mutable or readonly objects. However,
          the method itself cannot call other mutating methods. *)
@@ -697,7 +697,7 @@ let test_function_call =
            [
              "8: ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly \
-              expression `self` of type `pyre_extensions.ReadOnly[Foo]`.";
+              expression `self` of type `pyre_extensions.PyreReadOnly[Foo]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -715,10 +715,10 @@ let test_function_call =
             |}
            [
              "Revealed type [-1]: Revealed type for `x` is `Bar`.";
-             "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`.";
+             "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.PyreReadOnly[Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_positional_mutable_and_readonly`, for 1st positional argument, expected \
-              `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but got `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -736,10 +736,10 @@ let test_function_call =
             |}
            [
              "Revealed type [-1]: Revealed type for `x` is `Bar`.";
-             "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`.";
+             "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.PyreReadOnly[Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_keyword_only`, for argument `x`, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -757,10 +757,10 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_kwargs`, for argument `x`, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_kwargs`, for 1st positional argument, expected `test.Bar` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -775,7 +775,7 @@ let test_function_call =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -794,7 +794,7 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_mutable`, for 1st positional argument, expected `object` but got \
-              `pyre_extensions.ReadOnly[test.Bar]`.";
+              `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -825,7 +825,8 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_list_mutable`, for 1st positional argument, expected \
-              `typing.List[pyre_extensions.ReadOnly[test.Bar]]` but got `typing.List[test.Bar]`.";
+              `typing.List[pyre_extensions.PyreReadOnly[test.Bar]]` but got \
+              `typing.List[test.Bar]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -843,7 +844,7 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_list_list_mutable`, for 1st positional argument, expected \
-              `typing.List[typing.List[pyre_extensions.ReadOnly[test.Bar]]]` but got \
+              `typing.List[typing.List[pyre_extensions.PyreReadOnly[test.Bar]]]` but got \
               `typing.List[typing.List[test.Bar]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -862,8 +863,8 @@ let test_function_call =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_union`, for 1st positional argument, expected `typing.Union[str, \
-              test.Bar]` but got `typing.Union[pyre_extensions.ReadOnly[str], \
-              pyre_extensions.ReadOnly[test.Bar]]`.";
+              test.Bar]` but got `typing.Union[pyre_extensions.PyreReadOnly[str], \
+              pyre_extensions.PyreReadOnly[test.Bar]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -881,8 +882,8 @@ let test_function_call =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.mutable_method` may modify its object. Cannot call it on readonly \
-              expression `self` of type `pyre_extensions.ReadOnly[Variable[_Self_test_Foo__ (bound \
-              to Foo)]]`.";
+              expression `self` of type `pyre_extensions.PyreReadOnly[Variable[_Self_test_Foo__ \
+              (bound to Foo)]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -913,7 +914,7 @@ let test_function_call =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.some_method` may modify its object. Cannot call it on readonly expression \
-              `self` of type `pyre_extensions.ReadOnly[Foo]`.\n\
+              `self` of type `pyre_extensions.PyreReadOnly[Foo]`.\n\
               Note that this is a zone entrypoint and any captured variables are treated as \
               readonly. Wiki: \
               https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
@@ -935,7 +936,7 @@ let test_function_call =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.C.f` may modify its object. Cannot call it on readonly expression `c` of type \
-              `pyre_extensions.ReadOnly[C]`.";
+              `pyre_extensions.PyreReadOnly[C]`.";
            ];
     ]
 
@@ -958,7 +959,7 @@ let test_await =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
     ]
 
@@ -980,7 +981,7 @@ let test_parameters =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+              `test.Foo` but is used as type `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -1005,11 +1006,11 @@ let test_parameters =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have type \
-              `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+              `test.Foo` but is used as type `pyre_extensions.PyreReadOnly[test.Foo]`.";
              "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have type \
-              `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+              `test.Foo` but is used as type `pyre_extensions.PyreReadOnly[test.Foo]`.";
              "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have type \
-              `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+              `test.Foo` but is used as type `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
@@ -1024,9 +1025,9 @@ let test_parameters =
             |}
            [
              "Revealed type [-1]: Revealed type for `args` is \
-              `typing.Tuple[pyre_extensions.ReadOnly[Foo], ...]`.";
+              `typing.Tuple[pyre_extensions.PyreReadOnly[Foo], ...]`.";
              "Revealed type [-1]: Revealed type for `kwargs` is `typing.Dict[str, \
-              pyre_extensions.ReadOnly[Foo]]`.";
+              pyre_extensions.PyreReadOnly[Foo]]`.";
            ];
       (* Check for errors in constructing the default value of a parameter. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1046,7 +1047,7 @@ let test_parameters =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_mutable`, for 1st positional argument, expected `test.Foo` but got \
-              `pyre_extensions.ReadOnly[test.Foo]`.";
+              `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
       (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit
          an error here, because the type checking analysis will. *)
@@ -1086,7 +1087,7 @@ let test_reveal_type =
                 reveal_type(y2)
             |}
            [
-             "Revealed type [-1]: Revealed type for `y1` is `pyre_extensions.ReadOnly[Foo]`.";
+             "Revealed type [-1]: Revealed type for `y1` is `pyre_extensions.PyreReadOnly[Foo]`.";
              "Revealed type [-1]: Revealed type for `y2` is `Foo`.";
            ];
     ]
@@ -1111,7 +1112,7 @@ let test_format_string =
            [
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.expect_mutable`, for 1st positional argument, expected `test.Foo` but got \
-              `pyre_extensions.ReadOnly[test.Foo]`.";
+              `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
     ]
 
@@ -1135,7 +1136,7 @@ let test_generic_types =
                 y = identity(readonly)
                 reveal_type(y)
             |}
-           ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`."];
+           ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.PyreReadOnly[Bar]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1153,7 +1154,7 @@ let test_generic_types =
                 x = foo.get_element()
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Bar]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1166,7 +1167,7 @@ let test_generic_types =
                 x = xs[0]
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Bar]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1179,7 +1180,7 @@ let test_generic_types =
                 x = xs[0]
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Bar]`."];
     ]
 
 
@@ -1202,10 +1203,10 @@ let test_refinement =
             |}
            [
              "Revealed type [-1]: Revealed type for `optional_readonly` is \
-              `Optional[pyre_extensions.ReadOnly[Foo]]` (inferred: \
-              `pyre_extensions.ReadOnly[Foo]`).";
+              `Optional[pyre_extensions.PyreReadOnly[Foo]]` (inferred: \
+              `pyre_extensions.PyreReadOnly[Foo]`).";
              "Revealed type [-1]: Revealed type for `optional_readonly` is \
-              `Optional[pyre_extensions.ReadOnly[Foo]]`.";
+              `Optional[pyre_extensions.PyreReadOnly[Foo]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1219,7 +1220,7 @@ let test_refinement =
                 x = optional_readonly if optional_readonly else Foo()
                 reveal_type(x)
             |}
-           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Foo]`."];
+           ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Foo]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1238,9 +1239,10 @@ let test_refinement =
                   reveal_type(x)
             |}
            [
-             "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Child]`.";
+             "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Child]`.";
              "Revealed type [-1]: Revealed type for `x` is \
-              `typing.Union[pyre_extensions.ReadOnly[Base], pyre_extensions.ReadOnly[Foo]]`.";
+              `typing.Union[pyre_extensions.PyreReadOnly[Base], \
+              pyre_extensions.PyreReadOnly[Foo]]`.";
            ];
       (* If the variable has type `Top`, don't pollute the output with `ReadOnly` type. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1280,7 +1282,7 @@ let test_refinement =
                   reveal_type(x)
             |}
            [
-             "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Foo]`.";
+             "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.PyreReadOnly[Foo]`.";
              "Revealed type [-1]: Revealed type for `x` is `Bar`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -1314,8 +1316,8 @@ let test_refinement =
             |}
            [
              "Revealed type [-1]: Revealed type for `readonly_foo.optional_attribute` is \
-              `Optional[pyre_extensions.ReadOnly[Bar]]` (inferred: \
-              `pyre_extensions.ReadOnly[Bar]`).";
+              `Optional[pyre_extensions.PyreReadOnly[Bar]]` (inferred: \
+              `pyre_extensions.PyreReadOnly[Bar]`).";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1351,7 +1353,7 @@ let test_refinement =
                   y = self.bar.some_attribute if self.bar else ""
                   reveal_type(y)
             |}
-           ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[str]`."];
+           ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.PyreReadOnly[str]`."];
     ]
 
 
@@ -1381,7 +1383,8 @@ let test_captured_variable_for_specially_decorated_functions =
                 reveal_type(not_captured)
             |}
            [
-             "Revealed type [-1]: Revealed type for `parameter` is `pyre_extensions.ReadOnly[Foo]`.";
+             "Revealed type [-1]: Revealed type for `parameter` is \
+              `pyre_extensions.PyreReadOnly[Foo]`.";
              "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to \
               attribute `x` since it is readonly.\n\
               Note that this is a zone entrypoint and any captured variables are treated as \
@@ -1411,7 +1414,7 @@ let test_captured_variable_for_specially_decorated_functions =
             |}
            [
              "Revealed type [-1]: Revealed type for `local_variable` is \
-              `pyre_extensions.ReadOnly[Foo]`.";
+              `pyre_extensions.PyreReadOnly[Foo]`.";
              "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to \
               attribute `x` since it is readonly.\n\
               Note that this is a zone entrypoint and any captured variables are treated as \
@@ -1462,7 +1465,7 @@ let test_captured_variable_for_specially_decorated_functions =
                     self.x = Bar()
             |}
            [
-             "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
+             "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.PyreReadOnly[Foo]`.";
              "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to \
               attribute `x` since it is readonly.\n\
               Note that this is a zone entrypoint and any captured variables are treated as \
@@ -1491,10 +1494,10 @@ let test_captured_variable_for_specially_decorated_functions =
             |}
            [
              "Revealed type [-1]: Revealed type for `cls` is \
-              `pyre_extensions.ReadOnly[typing.Type[Foo]]`.";
+              `pyre_extensions.PyreReadOnly[typing.Type[Foo]]`.";
              (* TODO(T130377746): Recognize attribute for `ReadOnly[Type[Foo]]` when it is the
                 target of an assignment. *)
-             "Undefined attribute [16]: `pyre_extensions.ReadOnly[typing.Type[Foo]]` has no \
+             "Undefined attribute [16]: `pyre_extensions.PyreReadOnly[typing.Type[Foo]]` has no \
               attribute `x`.";
            ];
       (* TODO(T130377746): We should error when calling a readonly callable. *)
@@ -1517,7 +1520,7 @@ let test_captured_variable_for_specially_decorated_functions =
             |}
            [
              "Revealed type [-1]: Revealed type for `other_nested` is \
-              `pyre_extensions.ReadOnly[typing.Callable(main.other_nested)[[], None]]`.";
+              `pyre_extensions.PyreReadOnly[typing.Callable(main.other_nested)[[], None]]`.";
            ];
     ]
 
@@ -1537,7 +1540,7 @@ let test_return_type =
             |}
            [
              "ReadOnly violation - Incompatible return type [3004]: Expected `test.Foo` but got \
-              `pyre_extensions.ReadOnly[test.Foo]`.";
+              `pyre_extensions.PyreReadOnly[test.Foo]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1552,7 +1555,8 @@ let test_return_type =
             |}
            [
              "ReadOnly violation - Incompatible return type [3004]: Expected \
-              `typing.List[test.Foo]` but got `typing.List[pyre_extensions.ReadOnly[test.Foo]]`.";
+              `typing.List[test.Foo]` but got \
+              `typing.List[pyre_extensions.PyreReadOnly[test.Foo]]`.";
            ];
     ]
 
@@ -1612,7 +1616,7 @@ let test_ignored_module =
              "ReadOnly violation - Incompatible parameter type [3002]: In call \
               `test.user_function_expects_mutable_foo`, for 1st positional argument, expected \
               `readonly_module_to_ignore.Foo` but got \
-              `pyre_extensions.ReadOnly[readonly_module_to_ignore.Foo]`.";
+              `pyre_extensions.PyreReadOnly[readonly_module_to_ignore.Foo]`.";
            ];
     ]
 
@@ -1634,7 +1638,7 @@ let test_typechecking_errors_are_prioritized =
             |}
            [
              "Incompatible parameter type [6]: In call `expect_mutable_int`, for 1st positional \
-              argument, expected `pyre_extensions.ReadOnly[Foo]` but got `str`.";
+              argument, expected `pyre_extensions.PyreReadOnly[Foo]` but got `str`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1651,7 +1655,7 @@ let test_typechecking_errors_are_prioritized =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly \
-              expression `readonly_foo` of type `pyre_extensions.ReadOnly[Foo]`.";
+              expression `readonly_foo` of type `pyre_extensions.PyreReadOnly[Foo]`.";
              "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 1st \
               positional argument, expected `int` but got `str`.";
              "Undefined attribute [16]: `Foo` has no attribute `non_existent_method`.";
@@ -1671,7 +1675,7 @@ let test_typechecking_errors_are_prioritized =
             |}
            [
              "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
-              `pyre_extensions.ReadOnly[Bar]` but is used as type `str`.";
+              `pyre_extensions.PyreReadOnly[Bar]` but is used as type `str`.";
              "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to \
               attribute `x` since it is readonly.";
            ];
@@ -1774,7 +1778,7 @@ let test_weaken_readonly_literals =
             |}
            [
              "Revealed type [-1]: Revealed type for `xs` is \
-              `pyre_extensions.ReadOnly[typing.List[Foo]]`.";
+              `pyre_extensions.PyreReadOnly[typing.List[Foo]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1789,7 +1793,7 @@ let test_weaken_readonly_literals =
             |}
            [
              "Revealed type [-1]: Revealed type for `xs` is \
-              `pyre_extensions.ReadOnly[typing.List[Foo]]`.";
+              `pyre_extensions.PyreReadOnly[typing.List[Foo]]`.";
            ];
     ]
 
@@ -1820,17 +1824,17 @@ let test_error_message_has_non_any_location =
             |}
            [
              "11: Unsupported operand [58]: `==` is not supported for operand types \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]` and \
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]`.";
              "11: Unsupported operand [58]: `==` is not supported for operand types \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]` and \
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]`.";
              "12: Unsupported operand [58]: `==` is not supported for operand types \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]` and \
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]`.";
              "13: Unsupported operand [58]: `==` is not supported for operand types \
               `FooWithCustomEqualityCheck` and \
-              `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+              `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]`.";
            ];
       (* Test that fixmes are able to suppress the error. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1846,8 +1850,8 @@ let test_error_message_has_non_any_location =
                 mutable_foo: FooWithCustomEqualityCheck
               ) -> None:
                 # pyre-ignore[58]: `==` is not supported for operand types
-                # `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and
-                # `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.
+                # `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]` and
+                # `pyre_extensions.PyreReadOnly[FooWithCustomEqualityCheck]`.
                 readonly_foo == readonly_foo
             |}
            [];
@@ -1882,7 +1886,7 @@ let test_allowlisted_classes_are_not_readonly =
             |}
            [
              "Revealed type [-1]: Revealed type for `readonly_object` is \
-              `typing.Union[MySafeReadOnlyClass, bool, pyre_extensions.ReadOnly[str]]`.";
+              `typing.Union[MySafeReadOnlyClass, bool, pyre_extensions.PyreReadOnly[str]]`.";
            ];
       (* Looking up an attribute of `MySafeReadOnlyClass` even from a readonly object is treated as
          mutable. *)
@@ -1976,7 +1980,7 @@ let test_allowlisted_generic_integer_classes =
 let test_typing_PyreReadOnly =
   (* In order to safely patch typeshed so that some stdlib methods are read-only, we rely on a
      made-up, stub-only `typing._PyreReadOnly_` class. This test verifies that it behaves
-     equivalently to (and interoperates with) `pyre_extensions.ReadOnly` *)
+     equivalently to (and interoperates with) `pyre_extensions.PyreReadOnly` *)
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -1995,7 +1999,7 @@ let test_typing_PyreReadOnly =
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-              `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+              `test.Bar` but is used as type `pyre_extensions.PyreReadOnly[test.Bar]`.";
            ];
     ]
 
@@ -2012,7 +2016,7 @@ let test_no_pyre_extensions =
       |}
            [
              "Incompatible parameter type [6]: In call `len`, for 1st positional argument, \
-              expected `pyre_extensions.ReadOnly[Sized]` but got `int`.";
+              expected `pyre_extensions.PyreReadOnly[Sized]` but got `int`.";
            ];
     ]
 
@@ -2035,7 +2039,7 @@ let test_pyre_extensions_PyreReadOnly =
            [
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `list.append` may modify its object. Cannot call it on readonly expression `x` of \
-              type `pyre_extensions.ReadOnly[List[int]]`.";
+              type `pyre_extensions.PyreReadOnly[List[int]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

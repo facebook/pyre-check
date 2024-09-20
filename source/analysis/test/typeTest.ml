@@ -2052,7 +2052,7 @@ let test_visit _ =
   assert_equal
     ~cmp:[%compare.equal: string list]
     ~printer:[%show: string list]
-    ["int"; "typing.List[int]"; "pyre_extensions.ReadOnly[typing.List[int]]"]
+    ["int"; "typing.List[int]"; "pyre_extensions.PyreReadOnly[typing.List[int]]"]
     (List.map visited_annotations ~f:Type.show);
   ()
 
@@ -4081,8 +4081,8 @@ let test_show _ =
     ~expected_concise:"Compose[(int) -> str, *Tuple[(str) -> bool, ...]]";
   assert_show
     (Type.PyreReadOnly (Type.list Type.integer))
-    ~expected_full:"pyre_extensions.ReadOnly[typing.List[int]]"
-    ~expected_concise:"pyre_extensions.ReadOnly[list[int]]";
+    ~expected_full:"pyre_extensions.PyreReadOnly[typing.List[int]]"
+    ~expected_concise:"pyre_extensions.PyreReadOnly[list[int]]";
   ()
 
 

@@ -21,7 +21,7 @@ let test_check_assert =
     |}
            [
              "Incompatible parameter type [6]: In call `len`, for 1st positional argument, \
-              expected `pyre_extensions.ReadOnly[Sized]` but got `Optional[str]`.";
+              expected `pyre_extensions.PyreReadOnly[Sized]` but got `Optional[str]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

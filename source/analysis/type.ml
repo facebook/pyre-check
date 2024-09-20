@@ -1310,7 +1310,7 @@ module PrettyPrinting = struct
         Format.fprintf format "%s[%a]" name (pp_arguments ~pp_type:pp) arguments
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive name -> Format.fprintf format "%s" name
-    | PyreReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
+    | PyreReadOnly type_ -> Format.fprintf format "pyre_extensions.PyreReadOnly[%a]" pp type_
     | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
     | Top -> Format.fprintf format "unknown"
     | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
@@ -1398,7 +1398,8 @@ module PrettyPrinting = struct
     | ParamSpecComponent component -> Variable.ParamSpec.Components.pp_concise format component
     | Primitive "..." -> Format.fprintf format "..."
     | Primitive name -> Format.fprintf format "%s" (canonicalize_and_strip_qualification name)
-    | PyreReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp_concise type_
+    | PyreReadOnly type_ ->
+        Format.fprintf format "pyre_extensions.PyreReadOnly[%a]" pp_concise type_
     | RecursiveType { name; _ } -> Format.fprintf format "%s" name
     | Top -> Format.fprintf format "unknown"
     | Tuple (Concatenation { middle = UnboundedElements argument; prefix = []; suffix = [] }) ->

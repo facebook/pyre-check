@@ -1048,7 +1048,7 @@ let test_attribute_from_annotation =
     |}
            ~parent:"pyre_extensions.ReadOnly[test.Foo]"
            ~name:"x"
-           (Some "pyre_extensions.ReadOnly[str]");
+           (Some "pyre_extensions.PyreReadOnly[str]");
     ]
 
 
