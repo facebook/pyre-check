@@ -795,6 +795,11 @@ module Extractions = struct
         } ->
         Some argument
     | _ -> None
+
+
+  let literal_integer_value = function
+    | Literal (Integer value) -> Some value
+    | _ -> None
 end
 
 module Predicates = struct

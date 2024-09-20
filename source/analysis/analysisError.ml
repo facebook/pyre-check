@@ -898,6 +898,10 @@ and kind =
       expected: Type.t;
     }
   | TupleDelete
+  | OutOfBoundsTupleIndex of {
+      index: int;
+      members: int;
+    }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -985,6 +989,7 @@ let code_of_kind = function
   | AssertType _ -> 70
   | TypedDictionaryIsInstance -> 71
   | TupleDelete -> 72
+  | OutOfBoundsTupleIndex _ -> 73
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1074,6 +1079,7 @@ let name_of_kind = function
   | UnusedLocalMode _ -> "Unused local mode"
   | TupleConcatenationError _ -> "Unable to concatenate tuple"
   | TupleDelete -> "Unable to delete tuple member"
+  | OutOfBoundsTupleIndex _ -> "Invalid tuple index"
   | AssertType _ -> "Assert type"
 
 
@@ -2778,6 +2784,10 @@ let rec messages ~concise ~signature location kind =
           (String.concat ~sep:", " (List.map ~f:show_sanitized_expression variadic_expressions));
       ]
   | TupleDelete -> [Format.asprintf "Tuples are immutable, so their members may not be deleted."]
+  | OutOfBoundsTupleIndex { index; members } ->
+      [
+        Format.asprintf "Index %d is out of bounds for concrete tuple with %d members." index members;
+      ]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -3304,6 +3314,8 @@ let due_to_analysis_limitations { kind; _ } =
   | Top -> true
   | UndefinedAttribute { origin = Class { class_origin = ClassType annotation; _ }; _ } ->
       Type.contains_unknown annotation
+  (* TODO(yangdanny): investigate unexpected cases of 0-1 member tuples being inferred *)
+  | OutOfBoundsTupleIndex { members = 0 | 1; _ } -> true
   | AnalysisFailure _
   | AssertType _
   | BroadcastError _
@@ -3349,6 +3361,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TooManyArguments _
   | TupleConcatenationError _
   | TupleDelete
+  | OutOfBoundsTupleIndex _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound _
@@ -3893,6 +3906,7 @@ let join ~resolution left right =
     | TooManyArguments _, _
     | TupleConcatenationError _, _
     | TupleDelete, _
+    | OutOfBoundsTupleIndex _, _
     | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryIsInstance, _
@@ -4509,6 +4523,7 @@ let dequalify
     | InvalidDecoration expression -> InvalidDecoration expression
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
     | TupleDelete -> TupleDelete
+    | OutOfBoundsTupleIndex details -> OutOfBoundsTupleIndex details
     | ReadOnlynessMismatch mismatch ->
         ReadOnlynessMismatch (ReadOnly.dequalify ~dequalify_type:dequalify mismatch)
     | SuppressionCommentWithoutErrorCode error_codes ->

@@ -552,6 +552,10 @@ and kind =
       expected: Type.t;
     }
   | TupleDelete
+  | OutOfBoundsTupleIndex of {
+      index: int;
+      members: int;
+    }
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

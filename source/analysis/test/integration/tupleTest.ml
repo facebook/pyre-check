@@ -560,7 +560,6 @@ let test_tuple_literal_access =
         return x[-3]
     |}
            [];
-      (* TODO(T41500114): This should trigger a separate error *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -568,7 +567,10 @@ let test_tuple_literal_access =
         x = (0, "one", 2)
         return x[3]
     |}
-           ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
+           [
+             "Incompatible return type [7]: Expected `int` but got `Union[int, str]`.";
+             "Invalid tuple index [73]: Index 3 is out of bounds for concrete tuple with 3 members.";
+           ];
       (* TODO(T41500251): This would ideally work as well *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

@@ -308,6 +308,7 @@ let test_pattern =
             reveal_type(z)
     |}
            [
+             "Invalid tuple index [73]: Index 2 is out of bounds for concrete tuple with 2 members.";
              "Revealed type [-1]: Revealed type for `x` is `int`.";
              "Revealed type [-1]: Revealed type for `y` is `str`.";
              "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";

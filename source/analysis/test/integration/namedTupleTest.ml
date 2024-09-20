@@ -63,6 +63,22 @@ reveal_type(p[-2])
              "Revealed type [-1]: Revealed type for `p[-1]` is `str`.";
              "Revealed type [-1]: Revealed type for `p[-2]` is `int`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple):
+    field1: int
+    field2: str
+p = MyTuple(field1=1, field2="abc")
+p[2]
+p[-3]
+            |}
+           [
+             "Invalid tuple index [73]: Index 2 is out of bounds for concrete tuple with 2 members.";
+             "Invalid tuple index [73]: Index -3 is out of bounds for concrete tuple with 2 \
+              members.";
+           ];
     ]
 
 

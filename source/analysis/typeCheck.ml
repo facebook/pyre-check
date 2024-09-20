@@ -3457,6 +3457,27 @@ module State (Context : Context) = struct
       | Subscript { Subscript.base; index } ->
           (* The python runtime will treat `base[index]` (when not inside an assignment target) as
              `base.__getitem__(index)`. *)
+          let { Resolved.resolved = resolved_base; _ } = forward_expression ~resolution base in
+          let { Resolved.resolved = resolved_index; _ } = forward_expression ~resolution index in
+          let concrete_tuple_members =
+            match resolved_base with
+            | Tuple (Concrete members) -> Some (List.length members)
+            | Tuple _ -> None
+            | _
+              when NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved_base
+                   && not (Type.is_any resolved_base) ->
+                NamedTuple.field_annotations ~global_resolution resolved_base >>| List.length
+            | _ -> None
+          in
+          let tuple_subscript_errors =
+            match concrete_tuple_members, Type.literal_integer_value resolved_index with
+            | Some members, Some index when index < -members || index >= members ->
+                emit_error
+                  ~errors:[]
+                  ~location
+                  ~kind:(Error.OutOfBoundsTupleIndex { index; members })
+            | _ -> []
+          in
           let synthetic_getitem_call =
             Expression.Call
               {
@@ -3469,7 +3490,10 @@ module State (Context : Context) = struct
                 arguments = [{ Call.Argument.value = index; name = None }];
               }
           in
-          forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+          let ({ Resolved.errors; _ } as resolved) =
+            forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+          in
+          { resolved with errors = tuple_subscript_errors @ errors }
       | Ternary { Ternary.target; test; alternative } ->
           let test_errors =
             let { Resolved.errors; _ } = forward_expression ~resolution test in

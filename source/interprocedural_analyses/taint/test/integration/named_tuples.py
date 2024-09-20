@@ -77,7 +77,6 @@ def aliased_indicies_forward_unknown_attribute(i: int):
 def aliased_indicies_backward(a: MyNamedTuple):
     _test_sink(a.benign)
     _test_sink(a[1])
-    _test_sink(a[2])
 
 
 def aliased_indicies_backward_unknown_attribute(a: MyNamedTuple, i: int):

@@ -490,6 +490,8 @@ val class_variable_value : t -> t option
 
 val unpack_value : t -> t option
 
+val literal_integer_value : t -> int option
+
 val final_value : t -> [> `NoArgument | `NotFinal | `Ok of t ]
 
 val is_any : t -> bool
