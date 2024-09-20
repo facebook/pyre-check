@@ -113,31 +113,39 @@ let create_overload_without_applying_decorators
     List.map parameters ~f:parameter |> CallableParamType.create |> parse_parameters
   in
   let parameters =
+    let replace_self_or_cls_annotation parent_class parameter_factory parameters_tail =
+      let replacement ~meta =
+        let parent_type =
+          let class_annotation = Reference.show parent_class in
+          generic_parameters_as_variables class_annotation
+          >>| List.map ~f:Type.Variable.to_argument
+          >>| Type.parametric class_annotation
+          |> Option.value ~default:(Type.Primitive class_annotation)
+        in
+        let annotation = if meta then Type.builtins_type parent_type else parent_type in
+        Type.Callable.Defined (parameter_factory annotation :: parameters_tail)
+      in
+      if String.equal (Define.Signature.unqualified_name signature) "__new__" then
+        replacement ~meta:true
+      else if Define.Signature.is_static_method signature then
+        parameters
+      else if
+        Define.Signature.is_class_method signature || Define.Signature.is_class_property signature
+      then
+        replacement ~meta:true
+      else
+        replacement ~meta:false
+    in
     match parameters, legacy_parent with
     | ( Type.Callable.Defined
           (Named { CallableParamType.name; annotation = Type.Top; default } :: tail),
         Some parent ) ->
-        let replacement ~meta =
-          let parent_type =
-            let class_annotation = Reference.show parent in
-            generic_parameters_as_variables class_annotation
-            >>| List.map ~f:Type.Variable.to_argument
-            >>| Type.parametric class_annotation
-            |> Option.value ~default:(Type.Primitive class_annotation)
-          in
-          let annotation = if meta then Type.builtins_type parent_type else parent_type in
-          Type.Callable.Defined (Named { CallableParamType.name; annotation; default } :: tail)
-        in
-        if String.equal (Define.Signature.unqualified_name signature) "__new__" then
-          replacement ~meta:true
-        else if Define.Signature.is_static_method signature then
-          parameters
-        else if
-          Define.Signature.is_class_method signature || Define.Signature.is_class_property signature
-        then
-          replacement ~meta:true
-        else
-          replacement ~meta:false
+        let factory annotation = CallableParamType.Named { name; annotation; default } in
+        replace_self_or_cls_annotation parent factory tail
+    | ( Type.Callable.Defined (PositionalOnly { index; annotation = Type.Top; default } :: tail),
+        Some parent ) ->
+        let factory annotation = CallableParamType.PositionalOnly { index; annotation; default } in
+        replace_self_or_cls_annotation parent factory tail
     | _ -> parameters
   in
   { annotation = return_annotation_without_applying_decorators ~signature ~parser; parameters }

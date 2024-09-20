@@ -922,6 +922,21 @@ let test_function_call =
              "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
               argument, expected `str` but got `int`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_including_readonly
+           {|
+          from pyre_extensions import ReadOnly
+          class C:
+            def f(self, x: int, /) -> None:
+              pass
+          def f(c: ReadOnly[C]) -> None:
+            c.f(0)
+        |}
+           [
+             "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+              `test.C.f` may modify its object. Cannot call it on readonly expression `c` of type \
+              `pyre_extensions.ReadOnly[C]`.";
+           ];
     ]
 
 
