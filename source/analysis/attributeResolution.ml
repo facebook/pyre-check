@@ -2779,19 +2779,21 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let get_named_tuple_fields class_type =
         resolve class_type
         >>= fun { class_name; _ } ->
-        (if List.exists ~f:(Identifier.equal "typing.NamedTuple") (successors class_name) then
-           get_class_summary class_name
-           >>| Node.value
-           >>| fun summary ->
-           ClassSummary.fields_tuple_value summary
-           >>| List.map ~f:(fun name ->
-                   attribute class_type ~cycle_detections ~name
-                   >>| AnnotatedAttribute.annotation
-                   >>| TypeInfo.Unit.annotation)
-           >>| Option.all
-           |> Option.value ~default:None
-        else
-          None)
+        (let successors = successors class_name in
+         if List.exists ~f:(Identifier.equal "typing.NamedTuple") successors then
+           List.find_map
+             ~f:(fun class_name ->
+               get_class_summary class_name
+               >>| Node.value
+               >>= ClassSummary.fields_tuple_value
+               >>| List.map ~f:(fun name ->
+                       attribute class_type ~cycle_detections ~name
+                       >>| AnnotatedAttribute.annotation
+                       >>| TypeInfo.Unit.annotation)
+               >>| Option.all)
+             (class_name :: successors)
+         else
+           None)
         |> Option.value ~default:None
       in
       {

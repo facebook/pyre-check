@@ -12,7 +12,8 @@ open Ast
 open Pyre
 
 let is_named_tuple ~global_resolution ~annotation =
-  GlobalResolution.less_or_equal global_resolution ~left:annotation ~right:Type.named_tuple
+  (not (Type.is_any annotation))
+  && GlobalResolution.less_or_equal global_resolution ~left:annotation ~right:Type.named_tuple
 
 
 let class_name ~global_resolution annotation =
@@ -24,9 +25,13 @@ let class_name ~global_resolution annotation =
 
 
 let field_names_from_class_name ~global_resolution class_name =
-  GlobalResolution.get_class_summary global_resolution class_name
-  >>| Node.value
-  >>| fun summary -> ClassSummary.fields_tuple_value summary |> Option.value ~default:[]
+  let classes_to_check = class_name :: GlobalResolution.successors global_resolution class_name in
+  List.find_map
+    ~f:(fun class_name ->
+      GlobalResolution.get_class_summary global_resolution class_name
+      >>| Node.value
+      >>= ClassSummary.fields_tuple_value)
+    classes_to_check
 
 
 let field_names ~global_resolution annotation =
@@ -43,6 +48,7 @@ let field_annotations ~global_resolution annotation =
           GlobalResolution.attribute_from_class_name
             global_resolution
             ~name
+            ~transitive:true
             ~type_for_lookup:(Primitive class_name)
             class_name
         in

@@ -3463,9 +3463,7 @@ module State (Context : Context) = struct
             match resolved_base with
             | Tuple (Concrete members) -> Some members
             | Tuple _ -> None
-            | _
-              when NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved_base
-                   && not (Type.is_any resolved_base) ->
+            | _ when NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved_base ->
                 NamedTuple.field_annotations ~global_resolution resolved_base
             | _ -> None
           in
@@ -5911,19 +5909,15 @@ module State (Context : Context) = struct
                 | _ -> resolution, errors)
             | Name (Attribute { Name.Attribute.base; _ }) ->
                 let { Resolved.resolved; _ } = forward_expression ~resolution base in
-                if
-                  NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved
-                  && not (Type.is_any resolved)
-                then
+                if NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved then
                   resolution, emit_error ~errors ~location ~kind:Error.TupleDelete
                 else
                   resolution, errors
             | Subscript { Subscript.base; _ } ->
                 let { Resolved.resolved; _ } = forward_expression ~resolution base in
                 if
-                  (Type.is_tuple resolved
-                  || NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved)
-                  && not (Type.is_any resolved)
+                  Type.is_tuple resolved
+                  || NamedTuple.is_named_tuple ~global_resolution ~annotation:resolved
                 then
                   resolution, emit_error ~errors ~location ~kind:Error.TupleDelete
                 else
