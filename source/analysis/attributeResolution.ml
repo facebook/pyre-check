@@ -656,14 +656,7 @@ let apply_dataclass_transforms_to_table
           if match_args && not (already_in_table "__match_args__") then
             let parameter_name { Callable.CallableParamType.name; _ } = Identifier.sanitized name in
             let params = match_parameters ~implicitly_initialize:false in
-            let is_not_initvar param =
-              match param.Callable.CallableParamType.annotation with
-              | Type.Parametric { name = "dataclasses.InitVar"; arguments = [Single _] } -> false
-              | _ -> true
-            in
-            let initvar_params = List.filter ~f:is_not_initvar params in
-
-            let init_parameter_names = List.map ~f:parameter_name initvar_params in
+            let init_parameter_names = List.map ~f:parameter_name params in
             let literal_string_value_type name = Type.Literal (String (LiteralValue name)) in
             let annotation =
               Type.tuple (List.map ~f:literal_string_value_type init_parameter_names)
@@ -1853,17 +1846,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
-
-        let is_not_init_var attribute =
-          match AnnotatedAttribute.uninstantiated_annotation attribute with
-          | {
-           AnnotatedAttribute.UninstantiatedAnnotation.kind =
-             Attribute (Type.Parametric { name = "dataclasses.InitVar"; _ });
-           _;
-          } ->
-              false
-          | _ -> true
-        in
         (* collect generic parameters (which we initially added in our class hierarchy environment)
            for this class *)
         let class_parameters =
@@ -1881,9 +1863,19 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 ~parent
                 ~accessed_via_metaclass
             in
-            match is_not_init_var created_attribute with
-            | true -> UninstantiatedAttributeTable.add table created_attribute
-            | false -> ()
+            let is_not_init_var attribute =
+              match AnnotatedAttribute.uninstantiated_annotation attribute with
+              | {
+               AnnotatedAttribute.UninstantiatedAnnotation.kind =
+                 Attribute (Type.Parametric { name = "dataclasses.InitVar"; _ });
+               _;
+              } ->
+                  false
+              | _ -> true
+            in
+            if is_not_init_var created_attribute then
+              UninstantiatedAttributeTable.add table created_attribute;
+            ()
           in
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> fun attribute_map ->

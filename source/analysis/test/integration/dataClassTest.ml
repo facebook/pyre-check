@@ -55,7 +55,7 @@ let test_transform_environment =
 
                   def __post_init__(self, x: int, y: str) -> None:
                     pass
-                  __match_args__ = ("a", "b", "c")
+                  __match_args__ = ("a", "b", "c", "x", "y")
                   def __init__(self, a: int, b:int, c: int, x: int, y: str) -> None:
                     self.a = a
                     self.b = b
