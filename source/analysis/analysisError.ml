@@ -204,6 +204,7 @@ and invalid_inheritance =
   | FinalEnum of Identifier.t
   | GenericProtocol
   | ProtocolBaseClass
+  | NamedTupleMultipleInheritance
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;
@@ -2150,6 +2151,12 @@ let rec messages ~concise ~signature location kind =
             Format.asprintf
               "If Protocol is included as a base class, all other base classes must be protocols \
                or Generic.";
+          ]
+      | NamedTupleMultipleInheritance ->
+          [
+            Format.asprintf
+              "If NamedTuple is included as a base class, the class may not extend anything else \
+               besides Generic.";
           ]
       | FinalEnum enum_name ->
           [
@@ -4248,6 +4255,7 @@ let dequalify
     | FinalEnum name -> FinalEnum (dequalify_identifier name)
     | GenericProtocol -> GenericProtocol
     | ProtocolBaseClass -> ProtocolBaseClass
+    | NamedTupleMultipleInheritance -> NamedTupleMultipleInheritance
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }

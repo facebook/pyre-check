@@ -9,6 +9,42 @@ open OUnit2
 open IntegrationTest
 open Test
 
+let test_inheritance =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple, object):
+  pass
+            |}
+           [
+             "Invalid inheritance [39]: If NamedTuple is included as a base class, the class may \
+              not extend anything else besides Generic.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple):
+  pass
+class MyTuple2(MyTuple, object):
+  pass
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple, Generic, TypeVar
+T = TypeVar('T')
+class MyTuple(NamedTuple, Generic[T]):
+  pass
+            |}
+           [];
+    ]
+
+
 let test_unpack =
   test_list
     [
@@ -148,4 +184,4 @@ def foo() -> None:
     ]
 
 
-let () = "named_tuple" >::: [test_unpack; test_index; test_delete] |> Test.run
+let () = "named_tuple" >::: [test_inheritance; test_unpack; test_index; test_delete] |> Test.run

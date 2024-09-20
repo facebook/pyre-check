@@ -170,6 +170,7 @@ and invalid_inheritance =
   | FinalEnum of Identifier.t
   | GenericProtocol
   | ProtocolBaseClass
+  | NamedTupleMultipleInheritance
   | NonMethodFunction of Identifier.t
   | UninheritableType of {
       annotation: Type.t;

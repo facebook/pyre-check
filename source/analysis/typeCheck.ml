@@ -6231,10 +6231,34 @@ module State (Context : Context) = struct
           if has_protocol_base then
             List.fold ~init:errors base_types_with_location ~f:(fun errors (base, location) ->
                 match base with
-                | Type.Primitive "typing.Protocol" -> errors
-                | Type.Parametric { name = "typing.Generic"; _ } -> errors
+                | Type.Primitive "typing.Protocol"
+                | Type.Parametric { name = "typing.Generic"; _ } ->
+                    errors
                 | _ when GlobalResolution.is_protocol global_resolution base -> errors
                 | _ -> emit_error ~errors ~location ~kind:(InvalidInheritance ProtocolBaseClass))
+          else
+            errors
+        in
+        let check_named_tuple_inheritance base_types_with_location errors =
+          (* Classes that directly inherit from NamedTuple may only inherit Generic *)
+          let has_named_tuple_base =
+            List.find base_types_with_location ~f:(fun (base, _) ->
+                match base with
+                | Type.Primitive "typing.NamedTuple" -> true
+                | _ -> false)
+            |> Option.is_some
+          in
+          if has_named_tuple_base then
+            List.fold ~init:errors base_types_with_location ~f:(fun errors (base, location) ->
+                match base with
+                | Type.Primitive "typing.NamedTuple"
+                | Type.Parametric { name = "typing.Generic"; _ } ->
+                    errors
+                | _ ->
+                    emit_error
+                      ~errors
+                      ~location
+                      ~kind:(InvalidInheritance NamedTupleMultipleInheritance))
           else
             errors
         in
@@ -6261,6 +6285,7 @@ module State (Context : Context) = struct
           |> check_duplicate_type_parameters generic_and_protocol_bases_with_location
           |> check_generic_protocols generic_and_protocol_bases_with_location
           |> check_protocol_bases generic_and_protocol_bases_with_location base_types_with_location
+          |> check_named_tuple_inheritance base_types_with_location
         in
         let type_params_errors =
           match type_params with
