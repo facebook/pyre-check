@@ -965,6 +965,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "daemon_type_errors": daemon_type_errors.to_json(),
                     "typing_query": type_checked_files.to_json(),
                     "telemetry_version": 3,
+                    "new_file_loaded": new_file_loaded,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
