@@ -3247,20 +3247,21 @@ module Variable = struct
     | Declaration.DTypeVarTuple { name } -> TypeVarTupleVariable (TypeVarTuple.create name)
 
 
+  let constraints_of_bound bound ~create_type =
+    match bound with
+    | Some bound -> (
+        match bound.Node.value with
+        | Expression.Tuple t -> Record.TypeVarConstraints.Explicit (List.map ~f:create_type t)
+        | _ -> Record.TypeVarConstraints.Bound (create_type bound))
+    | None -> Unconstrained
+
+
   let of_ast_type_param type_param ~create_type =
     (* TODO T194670955: look into LiteralIntegers, which is for shape types. We could potentially
        remove it entirely. For now, we do not handle it. *)
-    let constraints_of_bound bound =
-      match bound with
-      | Some bound -> (
-          match bound.Node.value with
-          | Expression.Tuple t -> Record.TypeVarConstraints.Explicit (List.map ~f:create_type t)
-          | _ -> Record.TypeVarConstraints.Bound (create_type bound))
-      | None -> Unconstrained
-    in
     match type_param.Node.value with
     | Ast.Expression.TypeParam.TypeVar { name; bound; _ } ->
-        let constraints = constraints_of_bound bound in
+        let constraints = constraints_of_bound bound ~create_type in
         TypeVarVariable (TypeVar.create ~constraints name)
     | Ast.Expression.TypeParam.TypeVarTuple name -> TypeVarTupleVariable (TypeVarTuple.create name)
     | Ast.Expression.TypeParam.ParamSpec name -> ParamSpecVariable (ParamSpec.create name)

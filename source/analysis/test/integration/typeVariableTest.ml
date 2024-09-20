@@ -26,19 +26,12 @@ let test_type_variable_scoping =
              "Mutually recursive type variables [36]: Solving type variables for call `f1` led to \
               infinite recursion.";
            ];
-      (* TODO T194670955 migeedz: I had to annotate the global variable "a" here to unblock myself.
-         We need to figure out why we're not picking up the global annotation. I checked
-         global_annotation in attributeResolution. It's picking up the annotation. However, the
-         error message we get if we don't annotate, comes from TypeInfo.ml (from reveal_type) which
-         comes from the typechecker.
-
-         Also, we will add unittests by moving the definitions to a different files. But I would
-         like to do this once I'm done with everything, as I'm finding it confusing to keep looking
-         at the sources and then back to the unittests to get the whole picture. *)
       labeled_test_case __FUNCTION__ __LINE__
+      (* TODO migeedz: look into why we get an Annotation `T` is not defined as a type error after
+         adding bound support. Without bounds, we don't get this problem. *)
       @@ assert_type_errors
            {|
-            class A[T]:
+            class A[T:int]:
                 def func(self, x: T) -> T:
                     ...
 
@@ -47,14 +40,17 @@ let test_type_variable_scoping =
 
             a = A[int]()
             reveal_type(a)
-            reveal_type(a.func(42))
+            reveal_type(a.func(42.0))
             reveal_type(a.func2("42"))
             |}
            [
              "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Undefined or invalid type [11]: Annotation `T` is not defined as a type.";
              "Parsing failure [404]: PEP 695 type params are unsupported";
              "Revealed type [-1]: Revealed type for `a` is `A[int]`.";
-             "Revealed type [-1]: Revealed type for `a.func(42)` is `int`.";
+             "Revealed type [-1]: Revealed type for `a.func(42.000000)` is `int`.";
+             "Incompatible parameter type [6]: In call `A.func`, for 1st positional argument, \
+              expected `int` but got `float`.";
              "Revealed type [-1]: Revealed type for `a.func2(\"42\")` is \
               `typing_extensions.Literal['42']`.";
            ];

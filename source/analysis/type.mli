@@ -850,6 +850,11 @@ module Variable : sig
     create_type:(Ast.Expression.Expression.t -> 'a) ->
     'a record
 
+  val constraints_of_bound
+    :  Ast.Expression.Expression.expression Ast.Node.t option ->
+    create_type:(Ast.Expression.Expression.t -> 'a) ->
+    'a Record.TypeVarConstraints.t
+
   val pp_concise : Format.formatter -> t -> unit
 
   val dequalify : Reference.t Reference.Map.t -> t -> t

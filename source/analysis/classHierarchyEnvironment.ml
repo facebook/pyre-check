@@ -181,16 +181,19 @@ module IncomingDataComputation = struct
     match get_class_summary name with
     | None -> None
     | Some class_summary ->
+        let bound_to_type bound =
+          let create_type expression =
+            parse_annotation_without_sanitizing_type_arguments ~variables:get_variable expression
+          in
+          Type.Variable.constraints_of_bound bound ~create_type
+        in
         (* Here, we are converting our type parameters from the AST to generic type parameters,
            which we will later pick up in attributeResolution and put into a scope *)
         let type_param_to_generic_param parameter =
           match parameter.Node.value with
-          (* TODO: migeedz think about how to handle constraints/bounds. Probably we need to convert
-             bounds to constraints? this also needs to happen in type statements and top level
-             function definitions *)
-          | Ast.Expression.TypeParam.TypeVar { name; _ } ->
+          | Ast.Expression.TypeParam.TypeVar { name; bound; _ } ->
               Type.GenericParameter.GpTypeVar
-                { name; variance = Invariant; constraints = Unconstrained }
+                { name; variance = Invariant; constraints = bound_to_type bound }
           | TypeParam.TypeVarTuple name -> GpTypeVarTuple { name }
           | TypeParam.ParamSpec name -> GpParamSpec { name }
         in
