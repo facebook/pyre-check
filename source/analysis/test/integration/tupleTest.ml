@@ -571,7 +571,6 @@ let test_tuple_literal_access =
              "Incompatible return type [7]: Expected `int` but got `Union[int, str]`.";
              "Invalid tuple index [73]: Index 3 is out of bounds for concrete tuple with 3 members.";
            ];
-      (* TODO(T41500251): This would ideally work as well *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -580,10 +579,7 @@ let test_tuple_literal_access =
         x = (0, 1, "two")
         return x[0:2]
     |}
-           [
-             "Incompatible return type [7]: Expected `Tuple[int, int]` but got "
-             ^ "`typing.Tuple[Union[int, str], ...]`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
