@@ -2777,6 +2777,8 @@ let expand_named_tuples
                 }
           | _ -> value)
       | Class ({ Class.name; base_arguments; parent; body; _ } as original) ->
+          (* TODO(yangdanny): move synthesizing _fields, __init__, __new__, etc out of
+             preprocessing *)
           let is_named_tuple_primitive = function
             | { Call.Argument.value = { Node.value = Name callee_name; _ }; _ } ->
                 is_named_tuple callee_name

@@ -38,6 +38,29 @@ b: int
 a, b = p
             |}
            [];
+      (* TODO(yangdanny): named tuple classes do not function correctly if they do not directly
+         extend NamedTuple *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class Point(NamedTuple):
+    x: int
+    y: int
+class Point3D(Point):
+    z: int
+p = Point3D(x=1, y=2, z=3)
+a: int
+b: int
+c: int
+a, b, c = p
+            |}
+           [
+             "Uninitialized attribute [13]: Attribute `z` is declared in class `Point3D` to have \
+              type `int` but is never initialized.";
+             "Unexpected keyword [28]: Unexpected keyword argument `z` to call `Point.__init__`.";
+             "Unable to unpack [23]: Unable to unpack 0 values, 3 were expected.";
+           ];
     ]
 
 
