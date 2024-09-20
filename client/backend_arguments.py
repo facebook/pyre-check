@@ -114,7 +114,7 @@ class BuckSourcePath:
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
     bxl_builder: Optional[str] = None
-    use_buck2: bool = False
+    use_buck2: bool = True
 
     def serialize(self) -> Dict[str, object]:
         mode = self.mode

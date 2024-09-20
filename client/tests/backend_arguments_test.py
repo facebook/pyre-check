@@ -102,7 +102,7 @@ class ArgumentsTest(testslide.TestCase):
                 "source_root": "/source",
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar", "//foo:baz"],
-                "use_buck2": False,
+                "use_buck2": True,
             },
         )
         self.assertDictEqual(

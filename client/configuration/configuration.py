@@ -613,7 +613,7 @@ class Configuration:
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
-    use_buck2: bool = False
+    use_buck2: bool = True
     version_hash: Optional[str] = None
     use_errpy_parser: bool = False
 
@@ -676,7 +676,7 @@ class Configuration:
             typeshed=partial_configuration.typeshed,
             unwatched_dependency=partial_configuration.unwatched_dependency,
             use_buck2=_get_optional_value(
-                partial_configuration.use_buck2, default=False
+                partial_configuration.use_buck2, default=True
             ),
             version_hash=partial_configuration.version_hash,
             use_errpy_parser=_get_optional_value(
