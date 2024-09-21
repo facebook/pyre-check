@@ -103,6 +103,26 @@ let test_type_variable_scoping =
 
             |}
            [];
+      (* TODO: migeedz do not mix legacy and PEP695 syntax *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import TypeVar
+
+            K = TypeVar("K")
+
+            class ClassC[V]:
+                def method1(self, a: V, b: K) -> V | K:  # OK
+                    ...
+
+                def method2[M](self, a: M, b: K) -> M | K:  # E
+                    ...
+
+            |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
