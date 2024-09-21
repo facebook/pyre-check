@@ -74,6 +74,35 @@ let test_type_variable_scoping =
               `BoundMethod[typing.Callable(A.func2)[[Named(self, A[int]), Named(x, int), Named(y, \
               Variable[U])], typing.Union[int, Variable[U]]], A[int]]`.";
            ];
+      (* TODO migeedz: Investigate why we're not recognizing paramSpec but recognizing TypeVar and
+         TypeVarTuple *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import ParamSpec, Generic, assert_type, TypeVar, TypeVarTuple
+
+            class ChildClass[T, *Ts, **P]:
+                assert_type(T, TypeVar)
+                assert_type(Ts, TypeVarTuple)
+                assert_type(P, ParamSpec)
+
+            |}
+           [
+             "Parsing failure [404]: PEP 695 type params are unsupported";
+             "Assert type [70]: Expected `ParamSpec` but got `unknown`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import ParamSpec, Generic, assert_type
+
+            V = ParamSpec("V")
+
+            class D(Generic[V]):
+                assert_type(V, ParamSpec)
+
+            |}
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
