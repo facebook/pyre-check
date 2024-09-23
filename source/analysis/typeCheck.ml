@@ -3895,6 +3895,44 @@ module State (Context : Context) = struct
       | false, Some name -> Value (resolve_non_instance ~boundary name)
       | _, None -> Value resolution
     in
+    let refine_iterable_member refinement_target iterable =
+      match maybe_simple_name_of refinement_target with
+      | None -> Value resolution
+      | Some name -> (
+          let reference = name_to_reference_exn name in
+          let { Resolved.resolved; _ } = forward_expression ~resolution iterable in
+          match GlobalResolution.type_of_iteration_value global_resolution resolved with
+          | Some element_type -> (
+              let { name = partitioned_name; attribute_path; _ } =
+                partition_name ~resolution name
+              in
+              let annotation =
+                Resolution.get_local_with_attributes
+                  ~global_fallback:false
+                  ~name:partitioned_name
+                  ~attribute_path
+                  resolution
+              in
+              match annotation with
+              | Some previous ->
+                  let refined =
+                    if TypeInfo.Unit.is_immutable previous then
+                      TypeInfo.Unit.create_immutable
+                        ~original:(Some (TypeInfo.Unit.original previous))
+                        element_type
+                    else
+                      TypeInfo.Unit.create_mutable element_type
+                  in
+                  if annotation_less_or_equal ~left:refined ~right:previous then
+                    Value (refine_local ~name refined)
+                  else (* Keeping previous state, since it is more refined. *)
+                    Value resolution
+              | None when not (Resolution.is_global resolution ~reference) ->
+                  let resolution = refine_local ~name (TypeInfo.Unit.create_mutable element_type) in
+                  Value resolution
+              | _ -> Value resolution)
+          | _ -> Value resolution)
+    in
     match Node.value test with
     (* Explicit asserting falsy values. *)
     | Expression.Constant Constant.(False | NoneLiteral)
@@ -4193,6 +4231,49 @@ module State (Context : Context) = struct
                 | _ -> Value resolution)
             | _ -> Value resolution)
       end
+    (* Membership in a literal list/tuple/set of literals *)
+    | ComparisonOperator
+        {
+          ComparisonOperator.left = refinement_target;
+          operator = ComparisonOperator.In;
+          right = { Node.value = List elements | Tuple elements | Set elements; _ } as iterable;
+        } -> (
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name -> (
+            match existing_annotation name with
+            | None -> Value resolution
+            | Some previous -> (
+                (* Only refine the type if all the elements are literals and narrower than the
+                   previous type *)
+                let refine_union_types, should_not_refine_types =
+                  List.partition_map
+                    ~f:(fun element ->
+                      let { Resolved.resolved = refined; _ } =
+                        forward_expression ~resolution element
+                      in
+                      let refined =
+                        if TypeInfo.Unit.is_immutable previous then
+                          TypeInfo.Unit.create_immutable
+                            ~original:(Some (TypeInfo.Unit.original previous))
+                            refined
+                        else
+                          TypeInfo.Unit.create_mutable refined
+                      in
+                      match refined with
+                      | { TypeInfo.Unit.annotation = Type.Literal _; _ }
+                        when annotation_less_or_equal ~left:refined ~right:previous ->
+                          Either.first (TypeInfo.Unit.annotation refined)
+                      | _ -> Either.second (TypeInfo.Unit.annotation refined))
+                    elements
+                in
+                match should_not_refine_types with
+                | [] ->
+                    Value
+                      (refine_local
+                         ~name
+                         { previous with annotation = Type.union refine_union_types })
+                | _ -> refine_iterable_member refinement_target iterable)))
     (* `is` and `in` refinement *)
     | ComparisonOperator
         { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.Is; right } ->
@@ -4212,46 +4293,7 @@ module State (Context : Context) = struct
       end
     | ComparisonOperator
         { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.In; right } ->
-    begin
-        match maybe_simple_name_of refinement_target with
-        | None -> Value resolution
-        | Some name -> (
-            let reference = name_to_reference_exn name in
-            let { Resolved.resolved; _ } = forward_expression ~resolution right in
-            match GlobalResolution.type_of_iteration_value global_resolution resolved with
-            | Some element_type -> (
-                let { name = partitioned_name; attribute_path; _ } =
-                  partition_name ~resolution name
-                in
-                let annotation =
-                  Resolution.get_local_with_attributes
-                    ~global_fallback:false
-                    ~name:partitioned_name
-                    ~attribute_path
-                    resolution
-                in
-                match annotation with
-                | Some previous ->
-                    let refined =
-                      if TypeInfo.Unit.is_immutable previous then
-                        TypeInfo.Unit.create_immutable
-                          ~original:(Some (TypeInfo.Unit.original previous))
-                          element_type
-                      else
-                        TypeInfo.Unit.create_mutable element_type
-                    in
-                    if annotation_less_or_equal ~left:refined ~right:previous then
-                      Value (refine_local ~name refined)
-                    else (* Keeping previous state, since it is more refined. *)
-                      Value resolution
-                | None when not (Resolution.is_global resolution ~reference) ->
-                    let resolution =
-                      refine_local ~name (TypeInfo.Unit.create_mutable element_type)
-                    in
-                    Value resolution
-                | _ -> Value resolution)
-            | _ -> Value resolution)
-      end
+        refine_iterable_member refinement_target right
     (* Not-none checks (including ones that work over containers) *)
     | ComparisonOperator
         {

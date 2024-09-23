@@ -1512,7 +1512,7 @@ let test_forward_statement =
            ~postcondition_immutables:["x", Type.float]
            ["x", Type.float]
            "assert x in [1]"
-           ["x", Type.integer];
+           ["x", Type.Literal (Integer 1)];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
       labeled_test_case __FUNCTION__ __LINE__

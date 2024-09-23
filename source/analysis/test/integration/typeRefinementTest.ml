@@ -848,6 +848,25 @@ let test_check_if_else_clause =
            [
              "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`).";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+    from enum import Enum
+    class Color(Enum):
+      RED = 1
+      BLUE = 2
+
+    def foo(x: Color | None) -> None:
+      if x in [Color.RED, Color.BLUE]:
+        reveal_type(x)
+      reveal_type(x)
+  |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing.Optional[Color]` (inferred: \
+              `typing.Union[typing_extensions.Literal[Color.BLUE], \
+              typing_extensions.Literal[Color.RED]]`).";
+             "Revealed type [-1]: Revealed type for `x` is `typing.Optional[Color]`.";
+           ];
     ]
 
 

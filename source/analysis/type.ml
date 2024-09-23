@@ -458,7 +458,14 @@ module Constructors = struct
         | argument -> Base.Hash_set.add argument_set argument
       in
       List.iter arguments ~f:add_argument;
-      Base.Hash_set.to_list argument_set |> List.sort ~compare
+      Base.Hash_set.to_list argument_set
+      |> List.sort ~compare
+      |> List.filter ~f:(fun argument ->
+             match argument with
+             | Literal (EnumerationMember { enumeration_type; _ })
+               when Base.Hash_set.mem argument_set enumeration_type ->
+                 false
+             | _ -> true)
     in
     let is_top = function
       | Top -> true
