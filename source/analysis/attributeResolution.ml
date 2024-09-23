@@ -3375,6 +3375,15 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       in
       Result.bind decorators ~f:apply_decorators
 
+    (* Given a call whose callee has type `callable` with arguments `arguments`, resolve the
+     * call which either produces a `Type.t` for the return, or information about why
+     * resolution failed.
+     * 
+     * The implementation chains the `SignatureSelection` functions
+     * `select_closest_signature_for_function_call` to pick an overload
+     * and `instantiate_return_annotation`, injecting callbacks to global symbol
+     * tables as needed.
+     *)
     method signature_select
         ~cycle_detections
         ~resolve_with_locals
@@ -3396,6 +3405,9 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       >>| SignatureSelection.instantiate_return_annotation ~skip_marking_escapees ~order
       |> Option.value ~default:(SignatureSelection.default_instantiated_return_annotation callable)
 
+    (* Wrap `weaken_mutable_literals` with callbacks powering constraint solving
+     * and typed dictionary finding with global symbol tables.
+     *)
     method resolve_mutable_literals ~cycle_detections ~resolve =
       WeakenMutableLiterals.weaken_mutable_literals
         ~resolve
