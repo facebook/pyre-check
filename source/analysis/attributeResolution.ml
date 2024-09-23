@@ -3414,6 +3414,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~get_typed_dictionary:(self#get_typed_dictionary ~cycle_detections)
         ~comparator:(self#constraints_solution_exists ~cycle_detections)
 
+    (* Use constraint solving to determine whether `left` is a gradual subtype of `right`.
+     * 
+     * For the most part this is just the constraint set operations
+     * `add_and_simplify` |> `solve`, with callbacks to global symbol tables.
+     *
+     * The `get_typed_dictinary_override` argument is used by `weaken_mutable_literals`
+     * to handle recursive typed dictionaries; all other callsites pass `fun _ -> None`.
+     *)
     method constraints_solution_exists ~cycle_detections ~get_typed_dictionary_override ~left ~right
         =
       let ({ ConstraintsSet.get_typed_dictionary; _ } as order) =
