@@ -3444,6 +3444,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       |> TypeOrder.OrderedConstraintsSet.solve ~order
       |> Option.is_some
 
+    (* This is a helper method - used exclusively in `instantiate_attribute` - to deal
+     * with the complexities of accessing the `__call__` method on a value whose type
+     * is some class object `type[Xyz]`.
+     *
+     * This logic is complex because there are both constructors (`__new__`) and
+     * initializers (`__init__`) to consider, and we also have to handle unwrapping bound
+     * methods.
+     *)
     method constructor ~cycle_detections class_name ~type_for_lookup =
       let Queries.{ generic_parameters_as_variables; successors; _ } = queries in
       let return_annotation =
