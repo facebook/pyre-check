@@ -3558,6 +3558,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             }
       | _ -> signature
 
+    (* Given the fully-qualified name of a global (i.e. a top-level name of a module),
+     * produce a Global.t indicating its type and any problems we encountered (in particular,
+     * failure to resolve decorators) finding that type.
+     *
+     * This computation is at the core of Pyre's primary global symbol table that powers
+     * everything except class attribute lookups. It can be thought of as lifting
+     * the globals from `UnannotatedGlobalEnvironment` to the type level.
+     *)
     method global_annotation ~cycle_detections name =
       let Queries.{ class_exists; get_unannotated_global; _ } = queries in
       let process_unannotated_global global =
