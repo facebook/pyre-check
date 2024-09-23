@@ -557,6 +557,7 @@ and kind =
       index: int;
       members: int;
     }
+  | NamedTupleMissingDefault
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

@@ -8213,6 +8213,51 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       else
         errors
     in
+    let check_named_tuple_defaults definition errors =
+      if ClassSummary.directly_extends_named_tuple definition then
+        let class_name = Reference.show (ClassSummary.name definition) in
+        let field_names = NamedTuple.field_names_from_class_name ~global_resolution class_name in
+        match field_names with
+        | Some field_names ->
+            List.fold
+              ~f:(fun (errors, require_default) name ->
+                let attribute =
+                  let class_attributes = ClassSummary.attributes definition in
+                  Identifier.SerializableMap.find_opt name class_attributes
+                in
+                match attribute with
+                | Some { Node.location; value } ->
+                    let has_default =
+                      match value with
+                      | {
+                       ClassSummary.Attribute.kind =
+                         Simple { values = { ClassSummary.Attribute.origin = Explicit; _ } :: _; _ };
+                       _;
+                      } ->
+                          true
+                      | _ -> false
+                    in
+                    if require_default && not has_default then
+                      let error =
+                        Error.create
+                          ~location:
+                            (Location.with_module ~module_reference:Context.qualifier location)
+                          ~kind:NamedTupleMissingDefault
+                          ~define:Context.define
+                      in
+                      error :: errors, true
+                    else if has_default then
+                      errors, true
+                    else
+                      errors, require_default
+                | _ -> errors, require_default)
+              ~init:(errors, false)
+              field_names
+            |> fst
+        | None -> errors
+      else
+        errors
+    in
     if Define.is_class_toplevel define then
       let check_final_inheritance errors =
         let is_final errors expression_value =
@@ -8436,7 +8481,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               check_final_inheritance errors
               |> check_protocol_properties definition
               |> check_attribute_initialization definition
-              |> check_overrides definition)
+              |> check_overrides definition
+              |> check_named_tuple_defaults definition)
     else
       errors
   in

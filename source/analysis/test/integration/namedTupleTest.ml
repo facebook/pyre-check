@@ -277,4 +277,25 @@ def foo() -> None:
     ]
 
 
-let () = "named_tuple" >::: [test_inheritance; test_unpack; test_index; test_delete] |> Test.run
+let test_default =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+from typing import NamedTuple
+class MyTuple(NamedTuple):
+    field1: int = 0
+    field2: str
+            |}
+           [
+             "Missing named tuple default [74]: Named tuple field without default value may not be \
+              preceded by a field with default value.";
+           ];
+    ]
+
+
+let () =
+  "named_tuple"
+  >::: [test_inheritance; test_unpack; test_index; test_delete; test_default]
+  |> Test.run

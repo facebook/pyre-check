@@ -975,6 +975,20 @@ let is_protocol { bases = { base_classes; _ }; _ } =
   List.exists ~f:is_protocol base_classes
 
 
+let directly_extends_named_tuple { bases = { base_classes; _ }; _ } =
+  let is_named_tuple { Node.value; _ } =
+    let open Expression in
+    match value with
+    | Expression.Name
+        (Attribute
+          { base = { Node.value = Name (Identifier "typing"); _ }; attribute = "NamedTuple"; _ })
+    | Name (Identifier ("typing.NamedTuple" | "NamedTuple")) ->
+        true
+    | _ -> false
+  in
+  List.exists ~f:is_named_tuple base_classes
+
+
 let is_special_form { bases = { base_classes; _ }; _ } =
   let is_special_form { Node.value; _ } =
     let open Expression in

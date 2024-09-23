@@ -4935,8 +4935,8 @@ let test_transform_ast =
          self.one = one
          self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[int] = ...
-        two: typing.Final[str] = ...
+        one: typing.Final[int]
+        two: typing.Final[str]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -4966,9 +4966,9 @@ let test_transform_ast =
          self._1 = _1
          self._2 = _2
         _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('abc', '_1', '_2')
-        abc: typing.Final[int] = ...
-        _1: typing.Final[str] = ...
-        _2: typing.Final[int] = ...
+        abc: typing.Final[int]
+        _1: typing.Final[str]
+        _2: typing.Final[int]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -4981,7 +4981,7 @@ let test_transform_ast =
         def __init__(self, a: typing.Any) -> None:
           self.a = a
         _fields: typing.ClassVar[typing.Tuple[str]] = ('a',)
-        a: typing.Final[typing.Any] = ...
+        a: typing.Final[typing.Any]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -4995,8 +4995,8 @@ let test_transform_ast =
          self.one = one
          self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[typing.Any] = ...
-        two: typing.Final[typing.Any] = ...
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5010,8 +5010,8 @@ let test_transform_ast =
          self.one = one
          self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[int] = ...
-        two: typing.Final[str] = ...
+        one: typing.Final[int]
+        two: typing.Final[str]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5030,9 +5030,9 @@ let test_transform_ast =
           self.b = b
           self.c = c
         _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any] = ...
-        b: typing.Final[typing.Any] = ...
-        c: typing.Final[typing.Any] = ...
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5051,9 +5051,9 @@ let test_transform_ast =
           self.b = b
           self.c = c
         _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any] = ...
-        b: typing.Final[typing.Any] = ...
-        c: typing.Final[typing.Any] = ...
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
     |};
       (* The purpose of the following tests is to test for multiple consecutive commas and
          whitespaces in the field names parameter. Expected behavior is to strip all the commas and
@@ -5075,9 +5075,9 @@ let test_transform_ast =
           self.b = b
           self.c = c
         _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any] = ...
-        b: typing.Final[typing.Any] = ...
-        c: typing.Final[typing.Any] = ...
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
   |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5094,8 +5094,8 @@ let test_transform_ast =
           self.a = a
           self.b = b
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('a', 'b')
-        a: typing.Final[typing.Any] = ...
-        b: typing.Final[typing.Any] = ...
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
   |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5110,8 +5110,8 @@ let test_transform_ast =
           self.one = one
           self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[typing.Any] = ...
-        two: typing.Final[typing.Any] = ...
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
         three: int = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -5130,8 +5130,8 @@ let test_transform_ast =
           self.b = b
           self.c = c
         _fields: typing.ClassVar[typing.Tuple[str, str, str]] = ('a', 'b', 'c')
-        a: typing.Final[int] = ...
-        b: typing.Final[str] = ...
+        a: typing.Final[int]
+        b: typing.Final[str]
         c: typing.Final[int] = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -5156,8 +5156,8 @@ let test_transform_ast =
           self.blah = blah
           self.state = state
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('blah', 'state')
-        blah: typing.Final[int] = ...
-        state: typing.Final[State] = ...
+        blah: typing.Final[int]
+        state: typing.Final[State]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5181,8 +5181,8 @@ let test_transform_ast =
           self.blah = blah
           self.state = state
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('blah', 'state')
-        blah: typing.Final[int] = ...
-        state: typing.Final[State] = ...
+        blah: typing.Final[int]
+        state: typing.Final[State]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5213,11 +5213,11 @@ let test_transform_ast =
            self.ts = ts
            self.lazy = lazy
          _fields: typing.ClassVar[typing.Tuple[str, str, str, str, str]] = ('op', 'path', 'value', 'ts', 'lazy')
-         op: typing.Final[typing.Any] = ...
-         path: typing.Final[typing.Any] = ...
-         value: typing.Final[typing.Any] = ...
-         ts: typing.Final[typing.Any] = ...
-         lazy: typing.Final[typing.Any] = ...
+         op: typing.Final[typing.Any]
+         path: typing.Final[typing.Any]
+         value: typing.Final[typing.Any]
+         ts: typing.Final[typing.Any]
+         lazy: typing.Final[typing.Any]
          pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -5234,8 +5234,8 @@ let test_transform_ast =
             self.a = a
             self.b = b
           _fields: typing.ClassVar[typing.Tuple[str, str]] = ('a', 'b')
-          a: typing.Final[typing.Any] = ...
-          b: typing.Final[typing.Any] = ...
+          a: typing.Final[typing.Any]
+          b: typing.Final[typing.Any]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5272,8 +5272,8 @@ let test_transform_ast =
            {|
       class Foo(typing.NamedTuple):
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[typing.Any] = ...
-        two: typing.Final[typing.Any] = ...
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
         def __new__(cls, one) -> typing.NamedTuple:
           return super(Foo, cls).__new__(cls, one, two=0)
     |};
@@ -5289,8 +5289,8 @@ let test_transform_ast =
           self.one = one
           self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[int] = ...
-        two: typing.Final[str] = ...
+        one: typing.Final[int]
+        two: typing.Final[str]
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expand
@@ -5304,8 +5304,8 @@ let test_transform_ast =
           self.one = one
           self.two = two
         _fields: typing.ClassVar[typing.Tuple[str, str]] = ('one', 'two')
-        one: typing.Final[int] = ...
-        two: typing.Final[str] = ...
+        one: typing.Final[int]
+        two: typing.Final[str]
     |};
     ]
 

@@ -2628,7 +2628,7 @@ let expand_named_tuples
     in
     let tuple_attributes ~location attributes =
       let attribute_statements =
-        let attribute { Node.value = name, annotation, _value; location } =
+        let attribute { Node.value = name, annotation, default_value; location } =
           let target = Node.create ~location (Expression.Name (Name.Identifier name)) in
           let annotation =
             let location = Node.location annotation in
@@ -2647,7 +2647,9 @@ let expand_named_tuples
             {
               Assign.target;
               annotation = Some annotation;
-              value = Some (Node.create (Expression.Constant Constant.Ellipsis) ~location);
+              value =
+                (default_value
+                >>| fun _ -> Node.create (Expression.Constant Constant.Ellipsis) ~location);
             }
           |> Node.create ~location
         in

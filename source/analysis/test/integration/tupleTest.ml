@@ -291,6 +291,10 @@ let test_check_tuple =
               than `Any`.";
              "Missing attribute annotation [4]: Attribute `b` of class `C` must have a type other \
               than `Any`.";
+             "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type \
+              `typing.Any` but is never initialized.";
+             "Uninitialized attribute [13]: Attribute `b` is declared in class `C` to have type \
+              `typing.Any` but is never initialized.";
              "Too many arguments [19]: Call `C.__new__` expects 1 positional argument, 2 were \
               provided.";
            ];

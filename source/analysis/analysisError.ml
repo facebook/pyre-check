@@ -903,6 +903,7 @@ and kind =
       index: int;
       members: int;
     }
+  | NamedTupleMissingDefault
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -991,6 +992,7 @@ let code_of_kind = function
   | TypedDictionaryIsInstance -> 71
   | TupleDelete -> 72
   | OutOfBoundsTupleIndex _ -> 73
+  | NamedTupleMissingDefault -> 74
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1081,6 +1083,7 @@ let name_of_kind = function
   | TupleConcatenationError _ -> "Unable to concatenate tuple"
   | TupleDelete -> "Unable to delete tuple member"
   | OutOfBoundsTupleIndex _ -> "Invalid tuple index"
+  | NamedTupleMissingDefault -> "Missing named tuple default"
   | AssertType _ -> "Assert type"
 
 
@@ -2795,6 +2798,12 @@ let rec messages ~concise ~signature location kind =
       [
         Format.asprintf "Index %d is out of bounds for concrete tuple with %d members." index members;
       ]
+  | NamedTupleMissingDefault ->
+      [
+        Format.asprintf
+          "Named tuple field without default value may not be preceded by a field with default \
+           value.";
+      ]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -3369,6 +3378,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TupleConcatenationError _
   | TupleDelete
   | OutOfBoundsTupleIndex _
+  | NamedTupleMissingDefault
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound _
@@ -3914,6 +3924,7 @@ let join ~resolution left right =
     | TupleConcatenationError _, _
     | TupleDelete, _
     | OutOfBoundsTupleIndex _, _
+    | NamedTupleMissingDefault, _
     | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryIsInstance, _
@@ -4532,6 +4543,7 @@ let dequalify
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
     | TupleDelete -> TupleDelete
     | OutOfBoundsTupleIndex details -> OutOfBoundsTupleIndex details
+    | NamedTupleMissingDefault -> NamedTupleMissingDefault
     | ReadOnlynessMismatch mismatch ->
         ReadOnlynessMismatch (ReadOnly.dequalify ~dequalify_type:dequalify mismatch)
     | SuppressionCommentWithoutErrorCode error_codes ->
