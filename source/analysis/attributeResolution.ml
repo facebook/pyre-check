@@ -2083,6 +2083,120 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             (* TODO(T39598018): error in this case somehow, something must be wrong *)
             |> Option.value ~default:TypeConstraints.Solution.empty
 
+    (* This is a helper method - used exclusively in `instantiate_attribute` - to deal
+     * with the complexities of accessing the `__call__` method on a value whose type
+     * is some class object `type[Xyz]`.
+     *
+     * This logic is complex because there are both constructors (`__new__`) and
+     * initializers (`__init__`) to consider, and we also have to handle unwrapping bound
+     * methods.
+     *)
+    method constructor ~cycle_detections class_name ~type_for_lookup =
+      let Queries.{ generic_parameters_as_variables; successors; _ } = queries in
+      let return_annotation =
+        let generics =
+          generic_parameters_as_variables class_name
+          >>| List.map ~f:Type.Variable.to_argument
+          |> Option.value ~default:[]
+        in
+        (* Tuples are special. *)
+        if String.equal class_name "tuple" then
+          match generics with
+          | [Single tuple_variable] ->
+              Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation tuple_variable)
+          | _ -> Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any)
+        else
+          let backup = Type.parametric class_name generics in
+          match type_for_lookup, generics with
+          | _, [] -> type_for_lookup
+          | Type.Primitive instantiated_name, _ when String.equal instantiated_name class_name ->
+              backup
+          | Type.Parametric { arguments; name = instantiated_name }, generics
+            when String.equal instantiated_name class_name
+                 && List.length arguments <> List.length generics ->
+              backup
+          | _ -> type_for_lookup
+      in
+      let definitions = class_name :: successors class_name in
+      let definition_index parent =
+        parent
+        |> (fun class_annotation ->
+             List.findi definitions ~f:(fun _ annotation ->
+                 Type.equal (Primitive annotation) class_annotation))
+        >>| fst
+        |> Option.value ~default:Int.max_value
+      in
+      let signature_index_and_parent ~name =
+        let signature, parent_name =
+          match
+            self#attribute
+              ~cycle_detections
+              ~transitive:true
+              ~accessed_through_class:false
+              ~accessed_through_readonly:false
+              ~include_generated_attributes:true
+              ?special_method:None
+              ?type_for_lookup:(Some return_annotation)
+              ~attribute_name:name
+              class_name
+          with
+          | Some attribute ->
+              ( AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation,
+                AnnotatedAttribute.parent attribute )
+          | None -> Type.Top, class_name
+        in
+        signature, definition_index (Type.Primitive parent_name), parent_name
+      in
+      let constructor_signature, constructor_index, _ =
+        signature_index_and_parent ~name:"__init__"
+      in
+      let new_signature, new_index, new_parent_name =
+        let new_signature, new_index, new_parent_name =
+          signature_index_and_parent ~name:"__new__"
+        in
+        ( Type.parametric
+            "BoundMethod"
+            [Single new_signature; Single (Type.builtins_type type_for_lookup)],
+          new_index,
+          new_parent_name )
+      in
+      let signature, with_return =
+        let replace_return_type_for_degenerate_cases callable_return_type =
+          let is_instance_of_current_class =
+            Reference.equal (Type.class_name callable_return_type) (Reference.create class_name)
+          in
+          let should_ignore_return_type =
+            (* If the class inherits `__new__` from a parent class, replace the return type with the
+               child type. Otherwise, it would be returning `Base[T1, T2]` instead of `Child[...]`.
+               Note that this will result in the same return type for all `__new__` overloads but it
+               seems like the best we can do in an ambiguous situation.
+
+               If the user has erroneously marked the `__new__` method as returning something other
+               than an instance of the class, such as `None`, replace the return type with the
+               synthesized return type, such as `Base[T1, T2]`. *)
+            (not (String.equal class_name new_parent_name)) || not is_instance_of_current_class
+          in
+          if should_ignore_return_type then
+            return_annotation
+          else
+            callable_return_type
+        in
+        if new_index < constructor_index then
+          new_signature, Type.Callable.map_annotation ~f:replace_return_type_for_degenerate_cases
+        else
+          constructor_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
+      in
+      match signature with
+      | Type.Callable callable -> Type.Callable (with_return callable)
+      | Parametric
+          { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] } ->
+          Parametric
+            {
+              name = "BoundMethod";
+              arguments = [Single (Callable (with_return callable)); Single self_type];
+            }
+      | _ -> signature
+
     (* Given an `AnnotatedAttribute.uninstantiated` value `attribute`, compute an instantiated attribute.
      *
      * In many cases, this will be called with `type_for_lookup` set to an instantiated `Type.t`
@@ -3443,120 +3557,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~order
       |> TypeOrder.OrderedConstraintsSet.solve ~order
       |> Option.is_some
-
-    (* This is a helper method - used exclusively in `instantiate_attribute` - to deal
-     * with the complexities of accessing the `__call__` method on a value whose type
-     * is some class object `type[Xyz]`.
-     *
-     * This logic is complex because there are both constructors (`__new__`) and
-     * initializers (`__init__`) to consider, and we also have to handle unwrapping bound
-     * methods.
-     *)
-    method constructor ~cycle_detections class_name ~type_for_lookup =
-      let Queries.{ generic_parameters_as_variables; successors; _ } = queries in
-      let return_annotation =
-        let generics =
-          generic_parameters_as_variables class_name
-          >>| List.map ~f:Type.Variable.to_argument
-          |> Option.value ~default:[]
-        in
-        (* Tuples are special. *)
-        if String.equal class_name "tuple" then
-          match generics with
-          | [Single tuple_variable] ->
-              Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation tuple_variable)
-          | _ -> Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any)
-        else
-          let backup = Type.parametric class_name generics in
-          match type_for_lookup, generics with
-          | _, [] -> type_for_lookup
-          | Type.Primitive instantiated_name, _ when String.equal instantiated_name class_name ->
-              backup
-          | Type.Parametric { arguments; name = instantiated_name }, generics
-            when String.equal instantiated_name class_name
-                 && List.length arguments <> List.length generics ->
-              backup
-          | _ -> type_for_lookup
-      in
-      let definitions = class_name :: successors class_name in
-      let definition_index parent =
-        parent
-        |> (fun class_annotation ->
-             List.findi definitions ~f:(fun _ annotation ->
-                 Type.equal (Primitive annotation) class_annotation))
-        >>| fst
-        |> Option.value ~default:Int.max_value
-      in
-      let signature_index_and_parent ~name =
-        let signature, parent_name =
-          match
-            self#attribute
-              ~cycle_detections
-              ~transitive:true
-              ~accessed_through_class:false
-              ~accessed_through_readonly:false
-              ~include_generated_attributes:true
-              ?special_method:None
-              ?type_for_lookup:(Some return_annotation)
-              ~attribute_name:name
-              class_name
-          with
-          | Some attribute ->
-              ( AnnotatedAttribute.annotation attribute |> TypeInfo.Unit.annotation,
-                AnnotatedAttribute.parent attribute )
-          | None -> Type.Top, class_name
-        in
-        signature, definition_index (Type.Primitive parent_name), parent_name
-      in
-      let constructor_signature, constructor_index, _ =
-        signature_index_and_parent ~name:"__init__"
-      in
-      let new_signature, new_index, new_parent_name =
-        let new_signature, new_index, new_parent_name =
-          signature_index_and_parent ~name:"__new__"
-        in
-        ( Type.parametric
-            "BoundMethod"
-            [Single new_signature; Single (Type.builtins_type type_for_lookup)],
-          new_index,
-          new_parent_name )
-      in
-      let signature, with_return =
-        let replace_return_type_for_degenerate_cases callable_return_type =
-          let is_instance_of_current_class =
-            Reference.equal (Type.class_name callable_return_type) (Reference.create class_name)
-          in
-          let should_ignore_return_type =
-            (* If the class inherits `__new__` from a parent class, replace the return type with the
-               child type. Otherwise, it would be returning `Base[T1, T2]` instead of `Child[...]`.
-               Note that this will result in the same return type for all `__new__` overloads but it
-               seems like the best we can do in an ambiguous situation.
-
-               If the user has erroneously marked the `__new__` method as returning something other
-               than an instance of the class, such as `None`, replace the return type with the
-               synthesized return type, such as `Base[T1, T2]`. *)
-            (not (String.equal class_name new_parent_name)) || not is_instance_of_current_class
-          in
-          if should_ignore_return_type then
-            return_annotation
-          else
-            callable_return_type
-        in
-        if new_index < constructor_index then
-          new_signature, Type.Callable.map_annotation ~f:replace_return_type_for_degenerate_cases
-        else
-          constructor_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
-      in
-      match signature with
-      | Type.Callable callable -> Type.Callable (with_return callable)
-      | Parametric
-          { name = "BoundMethod"; arguments = [Single (Callable callable); Single self_type] } ->
-          Parametric
-            {
-              name = "BoundMethod";
-              arguments = [Single (Callable (with_return callable)); Single self_type];
-            }
-      | _ -> signature
 
     (* Given the fully-qualified name of a global (i.e. a top-level name of a module),
      * produce a Global.t indicating its type and any problems we encountered (in particular,
