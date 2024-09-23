@@ -3347,6 +3347,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
           Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
       | other -> other
 
+    (* Resolve a define signature to a Type.t, accounting for decorators.
+     *
+     * Implementation just pipelines `resolve_define_undecorated` with `apply_decorators`;
+     * these stages are separated so that uninstantiated attributes can defer decorator
+     * handling which is important for cache coherence.
+     *)
     method resolve_define
         ~cycle_detections
         ~callable_name
