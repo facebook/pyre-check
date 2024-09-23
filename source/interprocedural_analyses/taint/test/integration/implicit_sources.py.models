@@ -190,20 +190,16 @@
         "port": "formal(template, position=0)",
         "taint": [
           {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
+              { "via": "format-string" },
+              { "via": "model-shaping" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [
-              { "line": 57, "start": 15, "end": 23 },
-              { "line": 59, "start": 15, "end": 23 }
-            ],
+            "tito_positions": [ { "line": 57, "start": 15, "end": 23 } ],
             "tito": {}
           }
         ]

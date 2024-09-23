@@ -4333,6 +4333,17 @@ module State (Context : Context) = struct
                 else (* Keeping previous state, since it is more refined. *)
                   Value resolution
             | _, _ -> Value resolution))
+    | ComparisonOperator
+        {
+          ComparisonOperator.left = refinement_target;
+          operator = ComparisonOperator.NotEquals | ComparisonOperator.IsNot;
+          right = value;
+        } -> (
+        let { Resolved.resolved; _ } = forward_expression ~resolution value in
+        let type_not_matched = TypeInfo.Unit.create_mutable resolved |> TypeInfo.Unit.annotation in
+        match type_not_matched with
+        | Type.Literal _ -> handle_negative_exact_type_match type_not_matched refinement_target
+        | _ -> Value resolution)
     | Name name when is_simple_name name -> (
         match existing_annotation name with
         | Some { TypeInfo.Unit.annotation = Type.NoneType; _ } -> Unreachable

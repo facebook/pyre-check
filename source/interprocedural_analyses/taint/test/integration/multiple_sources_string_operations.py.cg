@@ -6,7 +6,7 @@ multiple_sources_string_operations.format_string_issue_with_triggered_sql (fun) 
 multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled (fun) -> [multiple_sources_string_operations.format_string_triggered_user_controlled (fun) multiple_sources_string_operations.user_controlled_input (fun)]
 multiple_sources_string_operations.format_string_multiple_issues_string_literal (fun) -> [<format-string> (object) multiple_sources_string_operations.user_controlled_input (fun)]
 multiple_sources_string_operations.format_string_multiple_triggered_user_controlled (fun) -> [<format-string> (object)]
-multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter (fun) -> [<format-string> (object) int.__eq__ (method) int.__ne__ (method) multiple_sources_string_operations.user_controlled_input (fun)]
+multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter (fun) -> [<format-string> (object) int.__eq__ (method) int.__ne__ (method) multiple_sources_string_operations.user_controlled_input (fun) str.__str__ (method)]
 multiple_sources_string_operations.format_string_triggered_user_controlled (fun) -> [<format-string> (object) str.__str__ (method)]
 multiple_sources_string_operations.stradd_tito_triggered_user_controlled (fun) -> [multiple_sources_string_operations.tito (fun) multiple_sources_string_operations.user_controlled_input (fun) str.__add__ (method)]
 multiple_sources_string_operations.stradd_triggered_user_controlled (fun) -> [multiple_sources_string_operations.user_controlled_input (fun) str.__add__ (method)]

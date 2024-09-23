@@ -97,10 +97,7 @@ let test_simple =
             reveal_type(status)
             return "Something's wrong with the Internet"
     |}
-           [
-             "Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: \
-              `int`).";
-           ];
+           ["Revealed type [-1]: Revealed type for `status` is `int`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
