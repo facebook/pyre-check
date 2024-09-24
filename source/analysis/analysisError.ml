@@ -861,7 +861,7 @@ and kind =
     }
   | UndefinedImport of undefined_import
   | UndefinedType of Type.t
-  | InvalidTypeVariableConstraint of Type.t
+  | InvalidTypeVariableConstraint of Expression.t
   | UnexpectedKeyword of {
       name: Identifier.t;
       callee: Reference.t option;
@@ -1074,7 +1074,7 @@ let name_of_kind = function
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedImport _ -> "Undefined import"
   | UndefinedType _ -> "Undefined or invalid type"
-  | InvalidTypeVariableConstraint _ -> "Invalid bound format"
+  | InvalidTypeVariableConstraint _ -> "Invalid bound"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UninitializedLocal _ -> "Uninitialized local"
@@ -3095,8 +3095,8 @@ let rec messages ~concise ~signature location kind =
       ]
   | UndefinedType annotation ->
       [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]
-  | InvalidTypeVariableConstraint annotation ->
-      [Format.asprintf "`%a` is not valid bound." pp_type annotation]
+  | InvalidTypeVariableConstraint expression ->
+      [Format.asprintf "`%s` is not valid bound." (Expression.show expression)]
   | UnexpectedKeyword { name; _ } when concise ->
       [Format.asprintf "Unexpected keyword argument `%s`." (Identifier.sanitized name)]
   | UnexpectedKeyword { name; callee } ->
@@ -3771,7 +3771,7 @@ let join ~resolution left right =
         UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute }
     | UndefinedType left, UndefinedType right when Type.equal left right -> UndefinedType left
     | InvalidTypeVariableConstraint left, InvalidTypeVariableConstraint right
-      when Type.equal left right ->
+      when Expression.equal left right ->
         InvalidTypeVariableConstraint left
     | UnexpectedKeyword left, UnexpectedKeyword right
       when Option.equal Reference.equal_sanitized left.callee right.callee
@@ -4639,8 +4639,7 @@ let dequalify
         in
         UndefinedAttribute { attribute; origin }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
-    | InvalidTypeVariableConstraint annotation ->
-        InvalidTypeVariableConstraint (dequalify annotation)
+    | InvalidTypeVariableConstraint expression -> InvalidTypeVariableConstraint expression
     | UndefinedImport reference -> UndefinedImport reference
     | UnexpectedKeyword { name; callee } ->
         UnexpectedKeyword { name; callee = Option.map callee ~f:dequalify_reference }

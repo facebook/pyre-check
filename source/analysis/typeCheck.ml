@@ -459,11 +459,24 @@ module State (Context : Context) = struct
 
 
   let get_type_params_as_variables type_params global_resolution =
-    let create_type =
-      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution
+    let create_type = GlobalResolution.parse_annotation global_resolution in
+    (* TODO migeedz: why does parse_annotation return Top for types of the form A[int]? . *)
+    let validate_bound bound =
+      match bound.Node.value with
+      | Expression.Tuple elements ->
+          List.length elements >= 2
+          && List.for_all
+               ~f:(fun e ->
+                 match create_type e with
+                 | Type.Top -> (
+                     match e.Node.value with
+                     | Expression.Constant _ -> true
+                     | _ -> false)
+                 | _ -> true)
+               elements
+      | Expression.Constant _ -> true
+      | _ -> not (Type.equal (create_type bound) Type.Top)
     in
-    (* TODO migeedz: Add bound validation here. *)
-    let validate_bound _bound = None in
     let transformed_type_params =
       List.map type_params ~f:(fun { Node.value; _ } ->
           match value with
@@ -479,18 +492,24 @@ module State (Context : Context) = struct
     in
     let error_list =
       List.fold
-        ~f:(fun acc { Node.value; _ } ->
+        ~f:(fun errors { Node.value; _ } ->
           match value with
           | Ast.Expression.TypeParam.TypeVar { bound; _ } -> begin
-              match validate_bound bound with
-              | Some error -> error :: acc
-              | None -> acc
+              match bound with
+              | Some bound -> (
+                  match validate_bound bound with
+                  | true -> errors
+                  | false ->
+                      emit_error
+                        ~errors
+                        ~location:bound.location
+                        ~kind:(Error.InvalidTypeVariableConstraint bound))
+              | None -> errors
             end
-          | _ -> acc)
+          | _ -> errors)
         type_params
         ~init:[]
     in
-
     transformed_type_params, error_list
 
 
@@ -6104,7 +6123,15 @@ module State (Context : Context) = struct
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class ({ Class.type_params; _ } as class_statement) ->
-        let _, type_params_errors = get_type_params_as_variables type_params global_resolution in
+        let type_params, type_params_errors =
+          get_type_params_as_variables type_params global_resolution
+        in
+        let resolution =
+          type_params
+          |> List.fold ~init:resolution ~f:(fun resolution variable ->
+                 Resolution.add_type_variable resolution ~variable)
+        in
+        let global_resolution = Resolution.global_resolution resolution in
         let this_class_name = Reference.show class_statement.name in
         let check_dataclass_inheritance base_types_with_location errors =
           let dataclass_options_from_decorator class_name =

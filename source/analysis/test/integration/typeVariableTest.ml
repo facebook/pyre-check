@@ -173,15 +173,51 @@ let test_type_variable_scoping =
 let test_check_bounded_variables =
   test_list
     [
-      (* TODO migeedz: Validate bounds *)
+      (* TODO migeedz: ForwardReference[int], "ForwardReference[str]", bytes) is valid as a bound as
+         well *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
             t1 = (bytes, str)
             class ClassM[T: t1]:  # E: literal tuple expression required
                 ...
+
+            class ClassG[V]:
+                class ClassD[T: dict[str, V]]:  # E: generic type not allowed
+                    ...
+
+            class ClassH[T: [str, int]]:  # E: illegal expression form
+                ...
+
+
+            class ClassI[AnyStr: (str, bytes)]:  # OK
+                ...
+
+            class ForwardReference[T]: ...
+
+
+            class ClassJ[T: (ForwardReference[int], "ForwardReference[str]", bytes)]:  # OK
+                ...
+
+
+            class ClassK[T: ()]:  # E: two or more types required
+                ...
+
+
+            class ClassL[T: (str,)]:  # E: two or more types required
+                ...
+
+
             |}
-           [];
+           [
+             "Invalid bound [74]: `t1` is not valid bound.";
+             "Invalid bound [74]: `dict[(str, V)]` is not valid bound.";
+             "Invalid bound [74]: `[str, int]` is not valid bound.";
+             "Invalid bound [74]: `(ForwardReference[int], \"ForwardReference[str]\", bytes)` is \
+              not valid bound.";
+             "Invalid bound [74]: `()` is not valid bound.";
+             "Invalid bound [74]: `(str)` is not valid bound.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
