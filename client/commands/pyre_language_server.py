@@ -1043,10 +1043,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
         try:
             buck2_root = get_buck_root()
         except subprocess.CalledProcessError as error:
-            LOG.error(f"Error occurred while querying buck root: {str(error)}")
+            message = f"Error occurred while querying buck root:\n\tCWD: {os.getcwd()}\n\t{str(error)}"
+            LOG.error(message)
             return PythonAutoTargetsMetadata(
                 duration=None,
-                error_message=f"Error occurred while querying buck root: {str(error)}",
+                error_message=message,
             )
 
         pyautotargets_timer = timer.Timer()
@@ -1084,8 +1085,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         if pyautodeps_run.returncode != 0:
             stderr = stderr_data.decode("utf-8")
-            LOG.error(f"Pyautodeps run failed:\n{stderr}")
-            return PythonAutoTargetsMetadata(duration=None, error_message=stderr)
+            message = f"Pyautodeps run failed:\n{stderr}"
+            LOG.error(message)
+            return PythonAutoTargetsMetadata(duration=None, error_message=message)
 
         stdout = stdout_data.decode("utf-8")
         LOG.debug(f"Pyautodeps result:\n{stdout}")
