@@ -6,7 +6,7 @@
  *)
 
 open Ast
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap : sig
@@ -24,7 +24,7 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
+  val from_source : pyre_api:PyrePysaEnvironment.ReadOnly.t -> source:Source.t -> t
 
   val skip_overrides : to_skip:Reference.SerializableSet.t -> t -> t
 
@@ -86,7 +86,7 @@ type whole_program_overrides = {
 val build_whole_program_overrides
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   skip_overrides_targets:Reference.SerializableSet.t ->
   maximum_overrides:int option ->
   analyze_all_overrides_targets:Target.Set.t ->

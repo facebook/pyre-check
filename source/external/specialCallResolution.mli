@@ -8,7 +8,7 @@
 open Ast
 
 val redirect
-  :  pyre_in_context:Analysis.PyrePysaApi.InContext.t ->
+  :  pyre_in_context:Analysis.PyrePysaEnvironment.InContext.t ->
   Expression.Call.t ->
   Expression.Call.t option
 

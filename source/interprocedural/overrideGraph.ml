@@ -15,7 +15,7 @@ open Core
 open Pyre
 open Ast
 open Statement
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
@@ -47,7 +47,7 @@ module Heap = struct
   let show = Format.asprintf "%a" pp
 
   let from_source ~pyre_api ~source =
-    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
+    if PyrePysaEnvironment.ReadOnly.source_is_unit_test pyre_api ~source then
       Target.Map.Tree.empty
     else
       let timer = Timer.start () in
@@ -56,7 +56,10 @@ module Heap = struct
           let method_name = Define.unqualified_name child_method in
           let ancestor =
             try
-              PyrePysaApi.ReadOnly.overrides pyre_api (Reference.show class_name) ~name:method_name
+              PyrePysaEnvironment.ReadOnly.overrides
+                pyre_api
+                (Reference.show class_name)
+                ~name:method_name
             with
             | Analysis.ClassHierarchy.Untracked untracked_type ->
                 Log.warning
@@ -265,7 +268,7 @@ let build_whole_program_overrides
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
     let build_overrides overrides qualifier =
-      match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
+      match PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier with
       | None -> overrides
       | Some source ->
           let new_overrides =

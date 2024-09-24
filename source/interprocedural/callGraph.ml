@@ -21,7 +21,7 @@ open Ast
 open Statement
 open Expression
 open Pyre
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module Cfg = Analysis.Cfg
 module ResolvedReference = Analysis.ResolvedReference
 module ClassSummary = Analysis.ClassSummary
@@ -108,19 +108,19 @@ module ReturnType = struct
     try
       let is_boolean =
         matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.bool)
+            PyrePysaEnvironment.ReadOnly.less_or_equal pyre_api ~left ~right:Type.bool)
       in
       let is_integer =
         matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.integer)
+            PyrePysaEnvironment.ReadOnly.less_or_equal pyre_api ~left ~right:Type.integer)
       in
       let is_float =
         matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.float)
+            PyrePysaEnvironment.ReadOnly.less_or_equal pyre_api ~left ~right:Type.float)
       in
       let is_enumeration =
         matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.enumeration)
+            PyrePysaEnvironment.ReadOnly.less_or_equal pyre_api ~left ~right:Type.enumeration)
       in
       { is_boolean; is_integer; is_float; is_enumeration }
     with
@@ -1176,7 +1176,7 @@ module CalleeKind = struct
     | Function
 
   let rec from_callee ~pyre_in_context callee callee_type =
-    let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+    let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
     let is_super_call =
       let rec is_super callee =
         match Node.value callee with
@@ -1190,7 +1190,9 @@ module CalleeKind = struct
     let is_static_method, is_class_method =
       (* TODO(T171340051): A better implementation that uses `Annotation`. *)
       match
-        PyrePysaApi.ReadOnly.get_define_body pyre_api (callee |> Expression.show |> Reference.create)
+        PyrePysaEnvironment.ReadOnly.get_define_body
+          pyre_api
+          (callee |> Expression.show |> Reference.create)
       with
       | Some define_body ->
           let define = Node.value define_body in
@@ -1225,7 +1227,7 @@ module CalleeKind = struct
             let is_class () =
               let primitive, _ = Type.split parent_type in
               Type.primitive_name primitive
-              >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
+              >>= PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api
               |> Option.is_some
             in
             if Type.is_builtins_type parent_type then
@@ -1274,8 +1276,8 @@ let strip_meta annotation =
  *)
 let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type implementation_target =
   (* Target name must be the resolved implementation target *)
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
-  let get_class_type = PyrePysaApi.ReadOnly.parse_reference pyre_api in
+  let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
+  let get_class_type = PyrePysaEnvironment.ReadOnly.parse_reference pyre_api in
   let get_actual_target method_name =
     match override_graph with
     | Some override_graph
@@ -1310,7 +1312,10 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
           try
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left:candidate_type ~right:receiver_type
+            PyrePysaEnvironment.ReadOnly.less_or_equal
+              pyre_api
+              ~left:candidate_type
+              ~right:receiver_type
           with
           | Analysis.ClassHierarchy.Untracked untracked_type ->
               Log.warning
@@ -1359,7 +1364,7 @@ let rec resolve_callees_from_type
       callable_type
       (Type.show_type_t callable_type)
   in
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+  let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   match callable_type with
   | Type.Callable { kind = Named name; _ } -> (
       let return_type =
@@ -1595,7 +1600,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
       (* Technically, `object.__new__` returns `object` and `C.__init__` returns None.
        * In practice, we actually want to use the class type. *)
       let return_type =
-        let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+        let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
         ReturnType.from_annotation ~pyre_api class_type
       in
       let set_return_type call_target =
@@ -1627,12 +1632,12 @@ let resolve_callee_from_defining_expression
     ~return_type
     ~implementing_class
   =
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+  let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   match implementing_class, callee with
   | Type.Top, Expression.Name name when is_all_names callee ->
       (* If implementing_class is unknown, this must be a function rather than a method. We can use
          global resolution on the callee. *)
-      PyrePysaApi.ReadOnly.global pyre_api (Ast.Expression.name_to_reference_exn name)
+      PyrePysaEnvironment.ReadOnly.global pyre_api (Ast.Expression.name_to_reference_exn name)
       >>= fun { Analysis.AttributeResolution.Global.undecorated_signature; _ } ->
       undecorated_signature
       >>| fun undecorated_signature ->
@@ -1780,7 +1785,7 @@ let redirect_special_calls ~pyre_in_context call =
   | None ->
       (* Rewrite certain calls using the same logic used in the type checker.
        * This should be sound for most analyses. *)
-      PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
+      PyrePysaEnvironment.InContext.redirect_special_calls pyre_in_context call
 
 
 let redirect_expressions ~pyre_in_context ~location = function
@@ -1913,7 +1918,7 @@ let resolve_recognized_callees
       >>| Reference.show
       >>| fun name ->
       let return_type =
-        let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+        let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
         ReturnType.from_annotation ~pyre_api (Lazy.force return_type)
       in
       CallCallees.create
@@ -1937,7 +1942,7 @@ let resolve_callee_ignoring_decorators
     ~return_type
     callee
   =
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+  let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   let return_type () = ReturnType.from_annotation ~pyre_api (Lazy.force return_type) in
   let contain_class_method signatures =
     signatures
@@ -1955,7 +1960,7 @@ let resolve_callee_ignoring_decorators
     | Expression.Name name when is_all_names (Node.value callee) -> (
         (* Resolving expressions that do not reference local variables or parameters. *)
         let name = Ast.Expression.name_to_reference_exn name in
-        match PyrePysaApi.ReadOnly.resolve_exports pyre_api name with
+        match PyrePysaEnvironment.ReadOnly.resolve_exports pyre_api name with
         | Some
             (ResolvedReference.ModuleAttribute
               {
@@ -1980,7 +1985,7 @@ let resolve_callee_ignoring_decorators
                 _;
               }) -> (
             let class_name = Reference.create ~prefix:from name |> Reference.show in
-            PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+            PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
             >>| Node.value
             >>| ClassSummary.attributes
             >>= Identifier.SerializableMap.find_opt attribute
@@ -2038,7 +2043,7 @@ let resolve_callee_ignoring_decorators
         | Type.Parametric { name = class_name; arguments = _ } -> (
             let find_attribute element =
               match
-                PyrePysaApi.ReadOnly.get_class_summary pyre_api element
+                PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api element
                 >>| Node.value
                 >>| ClassSummary.attributes
                 >>= Identifier.SerializableMap.find_opt attribute
@@ -2048,7 +2053,9 @@ let resolve_callee_ignoring_decorators
                   Some (element, contain_class_method signatures, static)
               | _ -> None
             in
-            let parent_classes_in_mro = PyrePysaApi.ReadOnly.successors pyre_api class_name in
+            let parent_classes_in_mro =
+              PyrePysaEnvironment.ReadOnly.successors pyre_api class_name
+            in
             match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
             | Some (base_class, is_class_method, is_static_method) ->
                 let receiver_type =
@@ -2142,7 +2149,7 @@ let resolve_attribute_access_properties
       if setter then
         ReturnType.none
       else
-        let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+        let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
         AnnotatedAttribute.annotation property
         |> TypeInfo.Unit.annotation
         |> ReturnType.from_annotation ~pyre_api
@@ -2185,7 +2192,7 @@ let as_identifier_reference ~define ~pyre_in_context expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
       let reference = Reference.create identifier in
-      if PyrePysaApi.InContext.is_global pyre_in_context ~reference then
+      if PyrePysaEnvironment.InContext.is_global pyre_in_context ~reference then
         Some (IdentifierCallees.Global (Reference.delocalize reference))
       else if CallResolution.is_nonlocal ~pyre_in_context ~define reference then
         Some (IdentifierCallees.Nonlocal (Reference.delocalize reference))
@@ -2194,8 +2201,8 @@ let as_identifier_reference ~define ~pyre_in_context expression =
   | Name name -> (
       name_to_reference name
       >>= fun reference ->
-      PyrePysaApi.ReadOnly.resolve_exports
-        (PyrePysaApi.InContext.pyre_api pyre_in_context)
+      PyrePysaEnvironment.ReadOnly.resolve_exports
+        (PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
         reference
       >>= function
       | ResolvedReference.ModuleAttribute { from; name; remaining = []; _ } ->
@@ -2217,7 +2224,7 @@ let resolve_attribute_access_global_targets
     ~attribute
     ~special
   =
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+  let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   let expression =
     Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
     |> Node.create_with_default_location
@@ -2235,7 +2242,7 @@ let resolve_attribute_access_global_targets
                 Type.split annotation
                 |> fst
                 |> Type.primitive_name
-                >>= PyrePysaApi.ReadOnly.attribute_from_class_name
+                >>= PyrePysaEnvironment.ReadOnly.attribute_from_class_name
                       pyre_api
                       ~transitive:true
                       ~name:attribute
@@ -2253,7 +2260,7 @@ let resolve_attribute_access_global_targets
             (* Access on an instance, i.e `self.foo`. *)
             let parents =
               let successors =
-                match PyrePysaApi.ReadOnly.get_class_metadata pyre_api class_name with
+                match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
                 | Some
                     { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ }
                   ->
@@ -2312,7 +2319,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
    having to hackily recompute them. *)
 module DefineCallGraphFixpoint (Context : sig
-  val pyre_api : PyrePysaApi.ReadOnly.t
+  val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
   val define_name : Reference.t
 
@@ -2336,7 +2343,7 @@ struct
   type assignment_target = { location: Location.t }
 
   type visitor_t = {
-    pyre_in_context: PyrePysaApi.InContext.t;
+    pyre_in_context: PyrePysaEnvironment.InContext.t;
     assignment_target: assignment_target option;
   }
 
@@ -2849,7 +2856,8 @@ struct
       let state = expression_visitor state { Node.value = iter_next; location } in
       {
         state with
-        pyre_in_context = PyrePysaApi.InContext.resolve_assignment pyre_in_context assignment;
+        pyre_in_context =
+          PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment;
       }
 
 
@@ -2914,7 +2922,7 @@ struct
 
     let forward ~statement_key _ ~statement =
       let pyre_in_context =
-        PyrePysaApi.InContext.create_at_statement_key
+        PyrePysaEnvironment.InContext.create_at_statement_key
           Context.pyre_api
           ~define_name:Context.define_name
           ~define:Context.define
@@ -2967,7 +2975,7 @@ let call_graph_of_define
   let () = DefineFixpoint.log "Building call graph of `%a`" Reference.pp name in
   (* Handle parameters. *)
   let () =
-    let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+    let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
     List.iter
       define.Ast.Statement.Define.signature.parameters
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->

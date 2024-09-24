@@ -11,7 +11,7 @@ open Core
 open Pyre
 open Taint
 module Target = Interprocedural.Target
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let initialize_and_verify_configuration
     ~static_analysis_configuration:
@@ -241,7 +241,7 @@ let create_pyre_read_write_api_and_perform_type_analysis
         ()
     | None -> ()
   in
-  PyrePysaApi.ReadWrite.create_with_cold_start
+  PyrePysaEnvironment.ReadWrite.create_with_cold_start
     ~scheduler
     ~configuration
     ~decorator_configuration
@@ -560,7 +560,7 @@ let run_taint_analysis
           ~decorator_configuration
           ~skip_type_checking_callables)
   in
-  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
+  let pyre_api = PyrePysaEnvironment.ReadOnly.of_read_write_api pyre_read_write_api in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"after type check";
@@ -571,7 +571,7 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
+  let qualifiers = PyrePysaEnvironment.ReadOnly.explicit_qualifiers pyre_api in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
@@ -696,7 +696,7 @@ let run_taint_analysis
     resolve_module_path
       ~lookup_source
       ~absolute_source_path_of_qualifier:
-        (PyrePysaApi.ReadOnly.absolute_source_path_of_qualifier pyre_api)
+        (PyrePysaEnvironment.ReadOnly.absolute_source_path_of_qualifier pyre_api)
       ~static_analysis_configuration
   in
 
@@ -778,7 +778,7 @@ let run_taint_analysis
      let () = Log.info "Cache has been built. Exiting now" in
      raise Cache.BuildCacheOnly);
 
-  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
+  let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -787,7 +787,7 @@ let run_taint_analysis
       ~initial_models
   in
 
-  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
+  let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";

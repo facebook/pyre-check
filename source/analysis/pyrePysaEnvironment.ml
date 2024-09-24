@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* PyrePysaApi provides the Pyre environment interfaces used by the Pysa OCaml codebase, including
-   both taint analysis and model queries. *)
+(* PyrePysaEnvironment provides the Pyre environment interfaces used by the Pysa OCaml codebase,
+   including both taint analysis and model queries. *)
 
 open Core
 

@@ -7,7 +7,7 @@
 
 open Ast
 open Statement
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type kind =
   | Normal
@@ -130,17 +130,23 @@ type definitions_result = {
 
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
-val get_definitions : pyre_api:PyrePysaApi.ReadOnly.t -> Reference.t -> definitions_result option
+val get_definitions
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  Reference.t ->
+  definitions_result option
 
 val get_module_and_definition
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   t ->
   (Reference.t * Define.t Node.t) option
 
-val get_callable_location : pyre_api:PyrePysaApi.ReadOnly.t -> t -> Ast.Location.WithModule.t option
+val get_callable_location
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  t ->
+  Ast.Location.WithModule.t option
 
 val resolve_method
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   class_type:Type.t ->
   method_name:string ->
   t option

@@ -6,7 +6,7 @@
  *)
 
 open Interprocedural
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type t
 
@@ -38,7 +38,10 @@ val save
   t ->
   unit
 
-val pyre_read_write_api : t -> (unit -> PyrePysaApi.ReadWrite.t) -> PyrePysaApi.ReadWrite.t * t
+val pyre_read_write_api
+  :  t ->
+  (unit -> PyrePysaEnvironment.ReadWrite.t) ->
+  PyrePysaEnvironment.ReadWrite.t * t
 
 val class_hierarchy_graph
   :  t ->

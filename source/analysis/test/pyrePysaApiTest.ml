@@ -25,9 +25,11 @@ let test_source_is_unit_test context =
       |> fun option -> Option.value_exn option
     in
     let pyre_pysa_read_only_api =
-      PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api
+      PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
     in
-    assert_equal expected (PyrePysaApi.ReadOnly.source_is_unit_test pyre_pysa_read_only_api ~source)
+    assert_equal
+      expected
+      (PyrePysaEnvironment.ReadOnly.source_is_unit_test pyre_pysa_read_only_api ~source)
   in
   let assert_not_unit_test = assert_is_unit_test ~expected:false in
   assert_is_unit_test "class C(unittest.case.TestCase): ...";

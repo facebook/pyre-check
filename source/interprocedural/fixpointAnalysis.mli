@@ -6,7 +6,7 @@
  *)
 
 open Ast
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Represents the set of information that must be propagated from callees to callers during an
     interprocedural analysis, within the global fixpoint. Each iteration should produce a model for
@@ -187,7 +187,7 @@ module Make (Analysis : ANALYSIS) : sig
   val compute
     :  scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
     dependency_graph:DependencyGraph.t ->
     context:Analysis.context ->

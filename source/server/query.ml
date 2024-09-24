@@ -597,7 +597,9 @@ let rec process_request_exn
         errors
     in
     let setup_and_execute_model_queries model_queries =
-      let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+      let pyre_api =
+        PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
+      in
       let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
       let initial_callables =
         Interprocedural.FetchCallables.from_qualifiers
@@ -919,7 +921,9 @@ let rec process_request_exn
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | ModelQuery { path; query_name } -> (
-        let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+        let pyre_api =
+          PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
+        in
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
         else
@@ -1160,7 +1164,9 @@ let rec process_request_exn
           |> Taint.TaintConfiguration.exception_on_error
         in
         let get_model_errors_and_model_queries sources =
-          let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+          let pyre_api =
+            PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
+          in
           let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
           let get_model_errors_and_model_queries (path, source) =
             Taint.ModelParser.parse

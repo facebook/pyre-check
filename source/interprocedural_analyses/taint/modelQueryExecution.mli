@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 module ModelQueryRegistryMap : sig
   type t
@@ -93,7 +93,7 @@ end
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -101,14 +101,14 @@ module CallableQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
   val make_modelable
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -116,7 +116,7 @@ end
 module AttributeQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -124,22 +124,22 @@ module AttributeQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_attributes : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t list
+  val get_attributes : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
 
   val get_type_annotation
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     string ->
     string ->
     Ast.Expression.t option
 
   val make_modelable
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -147,7 +147,7 @@ end
 module GlobalVariableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -155,27 +155,27 @@ module GlobalVariableQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_globals : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t list
+  val get_globals : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
 
   val get_type_annotation
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     Ast.Reference.t ->
     Ast.Expression.t option
 
   val make_modelable
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
 
 val generate_models_from_queries
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   scheduler:Scheduler.t ->
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->

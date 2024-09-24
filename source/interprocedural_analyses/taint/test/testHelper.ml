@@ -364,7 +364,7 @@ let check_expectation
     let to_analysis_error =
       Error.instantiate
         ~show_error_traces:true
-        ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
+        ~lookup:(PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -439,7 +439,7 @@ type test_environment = {
   stubs: Target.t list;
   initial_models: Registry.t;
   model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
-  pyre_api: PyrePysaApi.ReadOnly.t;
+  pyre_api: PyrePysaEnvironment.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.Heap.t;
   class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
   global_constants: GlobalConstants.SharedMemory.t;
@@ -517,7 +517,7 @@ let initialize
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
-  let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+  let pyre_api = PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =
@@ -843,7 +843,7 @@ let end_to_end_integration_test path context =
         ~shared_models
     in
     let resolve_module_path qualifier =
-      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+      PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api qualifier
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in

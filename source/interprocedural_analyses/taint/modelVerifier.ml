@@ -11,7 +11,7 @@ open Core
 open Pyre
 open Ast
 open Expression
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module TypeInfo = Analysis.TypeInfo
 module ClassSummary = Analysis.ClassSummary
 
@@ -37,14 +37,14 @@ let containing_source ~pyre_api reference =
     match tail with
     | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
-        if PyrePysaApi.ReadOnly.module_exists pyre_api new_lead then
+        if PyrePysaEnvironment.ReadOnly.module_exists pyre_api new_lead then
           qualifier ~found:new_lead ~lead:new_lead ~tail
         else
           qualifier ~found ~lead:new_lead ~tail
     | _ -> found
   in
   qualifier ~found:Reference.empty ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> PyrePysaApi.ReadOnly.source_of_qualifier pyre_api
+  |> PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api
 
 
 let class_summaries ~pyre_api reference =
@@ -76,9 +76,9 @@ let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
         _;
       } ->
         if Reference.equal define_name name && predicate define then
-          let parser = PyrePysaApi.ReadOnly.annotation_parser pyre_api in
+          let parser = PyrePysaEnvironment.ReadOnly.annotation_parser pyre_api in
           let generic_parameters_as_variables =
-            PyrePysaApi.ReadOnly.generic_parameters_as_variables pyre_api
+            PyrePysaEnvironment.ReadOnly.generic_parameters_as_variables pyre_api
           in
           Analysis.AnnotatedDefine.Callable.create_overload_without_applying_decorators
             ~parser
@@ -120,7 +120,7 @@ let resolve_global ~pyre_api name =
     if
       name
       |> Reference.prefix
-      >>| PyrePysaApi.ReadOnly.module_exists pyre_api
+      >>| PyrePysaEnvironment.ReadOnly.module_exists pyre_api
       |> Option.value ~default:false
     then
       Some (Global.Attribute toplevel_define_type)
@@ -131,23 +131,23 @@ let resolve_global ~pyre_api name =
       name
       |> Reference.prefix
       >>| Reference.show
-      >>| PyrePysaApi.ReadOnly.class_exists pyre_api
+      >>| PyrePysaEnvironment.ReadOnly.class_exists pyre_api
       |> Option.value ~default:false
     then
       Some (Global.Attribute toplevel_define_type)
     else
       None
   else (* Resolve undecorated functions. *)
-    let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
+    let resolved_global = PyrePysaEnvironment.ReadOnly.global pyre_api name in
     let resolved_local =
       if Option.is_none resolved_global then
         name
-        |> PyrePysaApi.ReadOnly.get_define_body pyre_api
+        |> PyrePysaEnvironment.ReadOnly.get_define_body pyre_api
         >>| Node.value
         |> function
         | Some ({ signature = { parent = NestingContext.Function _; _ }; _ } as define) ->
             Some
-              (PyrePysaApi.ReadOnly.resolve_define_undecorated
+              (PyrePysaEnvironment.ReadOnly.resolve_define_undecorated
                  ~callable_name:(Some name)
                  ~implementation:(Some define.signature)
                  ~overloads:[]
@@ -179,13 +179,14 @@ let resolve_global ~pyre_api name =
             (* Fall back for anything else. *)
             let annotation =
               from_reference name ~location:Location.any
-              |> PyrePysaApi.ReadOnly.resolve_expression_to_type_info pyre_api
+              |> PyrePysaEnvironment.ReadOnly.resolve_expression_to_type_info pyre_api
             in
             match TypeInfo.Unit.annotation annotation with
             | Type.Parametric { name = "type"; _ }
-              when PyrePysaApi.ReadOnly.class_exists pyre_api (Reference.show name) ->
+              when PyrePysaEnvironment.ReadOnly.class_exists pyre_api (Reference.show name) ->
                 Some Global.Class
-            | Type.Top when PyrePysaApi.ReadOnly.module_exists pyre_api name -> Some Global.Module
+            | Type.Top when PyrePysaEnvironment.ReadOnly.module_exists pyre_api name ->
+                Some Global.Module
             | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
                 (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
                    to mutable annotation, while existing ones resolve to immutable annotation. This
@@ -417,7 +418,7 @@ let verify_global ~path ~location ~pyre_api ~name =
       let class_summary =
         Reference.prefix name
         >>| Reference.show
-        >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
+        >>= PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api
         >>| Node.value
       in
       match class_summary, global with

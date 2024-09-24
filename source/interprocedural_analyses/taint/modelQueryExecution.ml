@@ -17,7 +17,7 @@ open Pyre
 open Ast
 open Interprocedural
 open ModelParseResult
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module ClassSummary = Analysis.ClassSummary
 
 (* Represents the result of generating models from queries. *)
@@ -387,7 +387,7 @@ let matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee =
   in
   let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
     Interprocedural.CallGraph.resolve_callees_from_type_external
-      ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
+      ~pyre_in_context:(PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
       ~override_graph:None
       ~return_type
       callee
@@ -538,7 +538,9 @@ let matches_annotation_constraint
             extract_class_name (extract_readonly t)
         | extracted_class_name -> Some extracted_class_name
       in
-      let parsed_type = PyrePysaApi.ReadOnly.parse_annotation pyre_api annotation_expression in
+      let parsed_type =
+        PyrePysaEnvironment.ReadOnly.parse_annotation pyre_api annotation_expression
+      in
       match extract_class_name parsed_type with
       | Some extracted_class_name ->
           find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
@@ -611,7 +613,7 @@ let rec normalized_parameter_matches_constraint
 
 
 let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_constraint class_name =
-  PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+  PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
@@ -629,13 +631,13 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
 let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
   let parents =
     if is_transitive then
-      match PyrePysaApi.ReadOnly.get_class_metadata pyre_api class_name with
+      match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
       | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
           successors
       | _ -> []
     else
       Analysis.ClassHierarchy.immediate_parents
-        (PyrePysaApi.ReadOnly.class_hierarchy pyre_api)
+        (PyrePysaEnvironment.ReadOnly.class_hierarchy pyre_api)
         class_name
   in
   let parents =
@@ -957,11 +959,11 @@ module type QUERY_KIND = sig
   (* When using multiprocessing, this is the name of the scheduler. *)
   val schedule_identifier : Configuration.ScheduleIdentifier.t
 
-  val make_modelable : pyre_api:PyrePysaApi.ReadOnly.t -> Target.t -> Modelable.t
+  val make_modelable : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Target.t -> Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
     name_captures:NameCaptures.t ->
     modelable:Modelable.t ->
@@ -969,7 +971,7 @@ module type QUERY_KIND = sig
     annotation list
 
   val generate_model_from_annotations
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.HashsetSharedMemory.ReadOnly.t ->
     target:Target.t ->
@@ -1753,7 +1755,7 @@ module AttributeQueryExecutor = struct
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
       let class_summary =
-        PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name >>| Node.value
+        PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name >>| Node.value
       in
       match class_summary with
       | None -> []
@@ -1774,7 +1776,7 @@ module AttributeQueryExecutor = struct
           in
           Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
-    let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api in
+    let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api in
     List.concat_map all_classes ~f:get_class_attributes
 
 
@@ -1784,7 +1786,7 @@ module AttributeQueryExecutor = struct
           annotation
       | _ -> None
     in
-    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
     >>| Node.value
     >>= fun class_summary ->
     match
@@ -1858,19 +1860,19 @@ module GlobalVariableQueryExecutor = struct
   let get_globals ~pyre_api =
     let () = Log.info "Fetching all globals..." in
     let filter_global global_reference =
-      match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api global_reference with
+      match PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api global_reference with
       | Some (TupleAssign _)
       | Some (SimpleAssign _) ->
           true
       | _ -> false
     in
-    PyrePysaApi.ReadOnly.all_unannotated_globals pyre_api
+    PyrePysaEnvironment.ReadOnly.all_unannotated_globals pyre_api
     |> List.filter ~f:filter_global
     |> List.map ~f:Target.create_object
 
 
   let get_type_annotation ~pyre_api reference =
-    match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api reference with
+    match PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api reference with
     | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
     | _ -> None
 

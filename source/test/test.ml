@@ -3408,7 +3408,7 @@ module ScratchProject = struct
     (* Some of the PyrePysa api logic uses global queries that assume we've pre-populated symbol
        tables. *)
     populate_type_environment project;
-    PyrePysaApi.ReadOnly.create
+    PyrePysaEnvironment.ReadOnly.create
       ~type_environment:(type_environment project)
       ~global_module_paths_api:(global_module_paths_api project)
 

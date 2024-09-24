@@ -16,11 +16,11 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type t = {
   models: Model.WithCallTarget.t list;
-  pyre_in_context: PyrePysaApi.InContext.t;
+  pyre_in_context: PyrePysaEnvironment.InContext.t;
   location: Location.WithModule.t;
   interval: Interprocedural.ClassIntervalSet.t;
 }

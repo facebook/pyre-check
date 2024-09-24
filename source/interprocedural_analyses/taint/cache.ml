@@ -13,7 +13,7 @@
 module CamlUnix = Unix
 open Core
 open Pyre
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
@@ -148,9 +148,9 @@ module ChangedFiles = struct
     Interprocedural.ChangedPaths.compute_locally_changed_paths
       ~scheduler
       ~scheduler_policies
-      ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
-      ~old_module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api)
-      ~new_module_paths:(PyrePysaApi.ReadWrite.module_paths_from_disk pyre_read_write_api)
+      ~configuration:(PyrePysaEnvironment.ReadWrite.configuration pyre_read_write_api)
+      ~old_module_paths:(PyrePysaEnvironment.ReadWrite.module_paths pyre_read_write_api)
+      ~new_module_paths:(PyrePysaEnvironment.ReadWrite.module_paths_from_disk pyre_read_write_api)
     |> List.map ~f:ArtifactPath.raw
     |> List.filter ~f:should_invalidate_if_changed
 end
@@ -410,7 +410,7 @@ let load_pyre_read_write_api ~configuration =
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
-    ~f:(fun () -> Ok (PyrePysaApi.ReadWrite.load_from_cache ~configuration))
+    ~f:(fun () -> Ok (PyrePysaEnvironment.ReadWrite.load_from_cache ~configuration))
 
 
 let save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api =
@@ -422,9 +422,9 @@ let save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api 
       Interprocedural.ChangedPaths.save_current_paths
         ~scheduler
         ~scheduler_policies
-        ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
-        ~module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api);
-      PyrePysaApi.ReadWrite.save pyre_read_write_api;
+        ~configuration:(PyrePysaEnvironment.ReadWrite.configuration pyre_read_write_api)
+        ~module_paths:(PyrePysaEnvironment.ReadWrite.module_paths pyre_read_write_api);
+      PyrePysaEnvironment.ReadWrite.save pyre_read_write_api;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 

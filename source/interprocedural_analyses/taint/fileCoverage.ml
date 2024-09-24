@@ -8,7 +8,7 @@
 open Core
 open Data_structures
 open Pyre
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 module File = struct
   module T = struct

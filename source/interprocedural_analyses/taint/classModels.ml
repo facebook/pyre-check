@@ -19,7 +19,7 @@ open Pyre
 open Ast
 open Interprocedural
 open Domains
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module ClassSummary = Analysis.ClassSummary
 
 module FeatureSet = struct
@@ -170,7 +170,7 @@ let infer ~pyre_api ~user_models =
     | None -> existing_state
   in
   let get_attributes_in_alphabetical_order class_name =
-    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
     >>| Node.value
     >>| ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
     |> Option.value ~default:Identifier.SerializableMap.empty
@@ -239,7 +239,7 @@ let infer ~pyre_api ~user_models =
   in
   let compute_typed_dict_models class_name =
     let fields =
-      PyrePysaApi.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
+      PyrePysaEnvironment.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
       >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
       >>| List.map ~f:(fun { Analysis.Type.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]
@@ -301,7 +301,7 @@ let infer ~pyre_api ~user_models =
   in
   let compute_models class_name class_summary =
     if
-      PyrePysaApi.ReadOnly.exists_matching_class_decorator
+      PyrePysaEnvironment.ReadOnly.exists_matching_class_decorator
         pyre_api
         ~names:["dataclasses.dataclass"; "dataclass"]
         class_summary
@@ -332,11 +332,11 @@ let infer ~pyre_api ~user_models =
       []
   in
   let inferred_models class_name =
-    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
     >>| compute_models class_name
     |> Option.value ~default:[]
   in
-  let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api in
+  let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api in
   let models =
     List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
   in

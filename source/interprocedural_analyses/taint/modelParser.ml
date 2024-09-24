@@ -20,7 +20,7 @@ open Interprocedural
 open Statement
 open Domains
 open ModelParseResult
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module ClassSummary = Analysis.ClassSummary
 
 module PythonVersion = struct
@@ -977,7 +977,7 @@ let rec class_names_from_annotation = function
 let get_class_attributes ~pyre_api = function
   | "object" -> Some []
   | class_name ->
-      PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+      PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
       >>| Node.value
       >>| fun class_summary ->
       let attributes = ClassSummary.attributes ~include_generated_attributes:false class_summary in
@@ -995,7 +995,7 @@ let get_class_attributes ~pyre_api = function
 
 let get_class_attributes_transitive ~pyre_api class_name =
   let successors =
-    match PyrePysaApi.ReadOnly.get_class_metadata pyre_api class_name with
+    match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
     | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
         successors
     | _ -> []
@@ -2895,7 +2895,7 @@ module ParsedStatement : sig
   val partition_taint_decorators : Expression.t list -> Decorator.t list * Expression.t list
 
   val create_parsed_signature_from_name
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     parameters:Ast.Expression.Parameter.t list ->
     return_annotation:Ast.Expression.t option ->
     decorators:Ast.Expression.t list ->
@@ -2989,10 +2989,10 @@ end = struct
     let name = mangle_top_level_name name in
     let class_candidate =
       Reference.prefix name
-      >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
+      >>| PyrePysaEnvironment.ReadOnly.parse_reference pyre_api
       >>= fun parsed ->
       let parent, _ = Type.split parsed in
-      Type.primitive_name parent >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
+      Type.primitive_name parent >>| PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api
     in
     let taint_decorators, define_decorators = partition_taint_decorators decorators in
     (* To ensure that the start/stop lines can be used for commenting out models,
@@ -3447,7 +3447,7 @@ let create_model_from_signature
     in
     let parse_annotation ~generation_if_source taint_annotation =
       let captured_variables =
-        match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
+        match PyrePysaEnvironment.ReadOnly.get_define_body pyre_api callable_name with
         | Some { Node.value = { Define.captures; _ }; _ } ->
             List.map ~f:(fun capture -> capture.Define.Capture.name) captures
         | _ -> []

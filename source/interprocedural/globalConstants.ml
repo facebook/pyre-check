@@ -9,7 +9,7 @@ open Core
 open Ast
 open Statement
 open Expression
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 module Heap = struct
   type t = StringLiteral.t Reference.Map.t [@@deriving show, eq]
@@ -69,7 +69,7 @@ module Heap = struct
 
   let from_qualifiers ~pyre_api ~qualifiers =
     let build_per_qualifier qualifier =
-      match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
+      match PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier with
       | None -> empty
       | Some source -> from_source ~qualifier source
     in

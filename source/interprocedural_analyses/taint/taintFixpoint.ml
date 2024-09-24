@@ -17,13 +17,13 @@
 
 open Core
 open Pyre
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 
 module Context = struct
   type t = {
     taint_configuration: TaintConfiguration.SharedMemory.t;
-    pyre_api: PyrePysaApi.ReadOnly.t;
+    pyre_api: PyrePysaEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.t;
@@ -219,7 +219,7 @@ module Analysis = struct
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
       DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
-      >>= PyrePysaApi.ReadOnly.location_of_global pyre_api
+      >>= PyrePysaEnvironment.ReadOnly.location_of_global pyre_api
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in

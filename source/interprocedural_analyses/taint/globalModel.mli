@@ -7,12 +7,12 @@
 
 open Ast
 open Interprocedural
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type t
 
 val from_expression
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   call_graph:CallGraph.DefineCallGraph.t ->
   get_callee_model:(Target.t -> Model.t option) ->
   qualifier:Reference.t ->

@@ -13,7 +13,7 @@
 open Core
 open Ast
 open Pyre
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 module MakeInterner (T : sig
   type t
@@ -516,7 +516,7 @@ module ViaFeature = struct
     let feature =
       object_target
       |> Reference.create
-      |> PyrePysaApi.InContext.resolve_reference pyre_in_context
+      |> PyrePysaEnvironment.InContext.resolve_reference pyre_in_context
       |> Type.weaken_literals
       |> Type.show
     in

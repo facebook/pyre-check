@@ -7,13 +7,13 @@
 
 type t
 
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (* Add the files that contain any of the given callables. *)
 val from_callables
   :  scheduler:Scheduler.t ->
   scheduler_policies:Configuration.SchedulerPolicies.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   resolve_module_path:(Ast.Reference.t -> Interprocedural.RepositoryPath.t option) ->
   callables:Interprocedural.Target.t list ->
   t

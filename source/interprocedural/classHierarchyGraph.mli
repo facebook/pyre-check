@@ -6,7 +6,7 @@
  *)
 
 open Ast
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type class_name = string
 
@@ -32,7 +32,7 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
+  val from_source : pyre_api:PyrePysaEnvironment.ReadOnly.t -> source:Source.t -> t
 
   val create : roots:class_name list -> edges:(class_name * class_name list) list -> t
 
@@ -43,7 +43,7 @@ module Heap : sig
   val from_qualifiers
     :  scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t
 end

@@ -8,7 +8,7 @@
 open Data_structures
 open Ast
 open Expression
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Represents type information about the return type of a call. *)
 module ReturnType : sig
@@ -28,7 +28,7 @@ module ReturnType : sig
 
   val integer : t
 
-  val from_annotation : pyre_api:PyrePysaApi.ReadOnly.t -> Type.t -> t
+  val from_annotation : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Type.t -> t
 
   val to_json : t -> Yojson.Safe.t
 end
@@ -238,7 +238,7 @@ end
 
 (* Exposed for rare use cases, such as resolving the callees of decorators. *)
 val resolve_callees_from_type_external
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   return_type:Type.t lazy_t ->
   ?dunder_call:bool ->
@@ -280,7 +280,7 @@ module DefineCallGraph : sig
   val all_targets : t -> Target.t list
 
   val to_json
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     callable:Target.t ->
     t ->
@@ -289,7 +289,7 @@ end
 
 val call_graph_of_define
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   qualifier:Reference.t ->
@@ -297,7 +297,7 @@ val call_graph_of_define
   DefineCallGraph.t
 
 val redirect_expressions
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   location:Location.t ->
   Expression.expression ->
   Expression.expression
@@ -306,7 +306,7 @@ val redirect_assignments : Statement.t -> Statement.t
 
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   callable:Target.t ->
@@ -363,7 +363,7 @@ type call_graphs = {
 val build_whole_program_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   store_shared_memory:bool ->

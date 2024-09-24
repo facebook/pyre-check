@@ -7,19 +7,19 @@
 
 open Core
 open Ast
-module PyrePysaApi = Analysis.PyrePysaApi
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
 val class_summaries
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   Reference.t ->
   Statement.Class.t Node.t list option
 
 val find_method_definitions
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   ?predicate:(Statement.Define.t -> bool) ->
   Reference.t ->
   Type.type_t Type.Callable.overload list
@@ -32,7 +32,7 @@ module Global : sig
   [@@deriving show]
 end
 
-val resolve_global : pyre_api:PyrePysaApi.ReadOnly.t -> Reference.t -> Global.t option
+val resolve_global : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Reference.t -> Global.t option
 
 (* Exposed for testing. *)
 val demangle_class_attribute : string -> string
@@ -48,6 +48,6 @@ val verify_signature
 val verify_global
   :  path:PyrePath.t option ->
   location:Location.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   name:Reference.t ->
   (unit, ModelVerificationError.t) result

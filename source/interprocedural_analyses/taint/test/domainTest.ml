@@ -15,7 +15,7 @@ open Analysis
 
 let test_partition_call_map context =
   let pyre_api = ScratchProject.setup ~context [] |> ScratchProject.pyre_pysa_read_only_api in
-  let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+  let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
   let taint =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in

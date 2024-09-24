@@ -12,14 +12,14 @@ type t
 (** Traverse the AST to find all callables (functions and methods). *)
 val from_source
   :  configuration:Configuration.Analysis.t ->
-  pyre_api:Analysis.PyrePysaApi.ReadOnly.t ->
+  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   source:Source.t ->
   t
 
 val from_qualifiers
   :  scheduler:Scheduler.t ->
   scheduler_policies:Configuration.SchedulerPolicies.t ->
-  pyre_api:Analysis.PyrePysaApi.ReadOnly.t ->
+  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   configuration:Configuration.Analysis.t ->
   qualifiers:Reference.t list ->
   t
