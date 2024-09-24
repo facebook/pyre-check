@@ -27,8 +27,6 @@ let test_type_variable_scoping =
               infinite recursion.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
-      (* TODO migeedz: look into why we get an Annotation `T` is not defined as a type error after
-         adding bound support. Without bounds, we don't get this problem. *)
       @@ assert_type_errors
            {|
             class A[T:int]:
@@ -51,6 +49,14 @@ let test_type_variable_scoping =
              "Revealed type [-1]: Revealed type for `a.func2(\"42\")` is \
               `typing_extensions.Literal['42']`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            class ClassB[K, V](dict[K, V]):  # OK
+                ...
+
+            |}
+           [];
       (* PEP695 generic methods from non-generic classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

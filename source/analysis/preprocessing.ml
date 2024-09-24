@@ -3199,20 +3199,24 @@ module AccessCollector = struct
     | Assert { Assert.test; message; _ } ->
         let collected = from_expression collected test in
         Option.value_map message ~f:(from_expression collected) ~default:collected
-    | Class { Class.base_arguments; decorators; _ } ->
+    | Class { Class.base_arguments; decorators; type_params; _ } ->
+        let remove_bound_type_param_names =
+          type_param_names_set type_params |> remove_bound_names
+        in
         let collected =
           List.fold base_arguments ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
               from_expression sofar value)
         in
-        List.fold ~init:collected ~f:from_expression decorators
+        List.fold ~init:collected ~f:from_expression decorators |> remove_bound_type_param_names
     | Define
         {
           Define.signature =
             { Define.Signature.decorators; parameters; return_annotation; type_params; _ };
           _;
         } ->
-        let type_param_names_set = type_param_names_set type_params in
-        let remove_bound_names = remove_bound_names type_param_names_set in
+        let remove_bound_type_param_names =
+          type_param_names_set type_params |> remove_bound_names
+        in
         let collected = List.fold ~init:collected ~f:from_expression decorators in
         let collected =
           List.fold
@@ -3220,14 +3224,14 @@ module AccessCollector = struct
             ~init:collected
             ~f:(fun sofar { Node.value = { Parameter.annotation; value; _ }; _ } ->
               let sofar = from_optional_expression sofar annotation in
-              let sofar = sofar |> remove_bound_names in
+              let sofar = sofar |> remove_bound_type_param_names in
               from_optional_expression sofar value)
         in
         let collected_from_return_annotataion =
           from_optional_expression collected return_annotation
         in
         let collected_from_return_annotataion =
-          collected_from_return_annotataion |> remove_bound_names
+          collected_from_return_annotataion |> remove_bound_type_param_names
         in
         let collected = Set.union collected_from_return_annotataion collected in
         collected
@@ -3609,14 +3613,27 @@ let populate_unbound_names ({ Source.module_path = { ModulePath.qualifier; _ }; 
   let rec transform_statement ~scopes statement =
     match statement with
     (* Process each define *)
-    | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
+    | {
+     Node.location;
+     value =
+       Statement.Define
+         ({ Define.signature = { Define.Signature.type_params; _ }; body; _ } as define);
+    } ->
         let scopes =
           if Define.is_toplevel define then
             scopes
           else
             ScopeStack.extend scopes ~with_:(Scope.of_define_exn define)
         in
+        (* collect class type parameters and remove them from the access set *)
+        (* let type_param_names_set = type_param_names_set type_params in *)
+        let remove_bound_type_param_names =
+          type_param_names_set type_params |> remove_bound_names
+        in
         let unbound_names = AccessCollector.from_define define |> compute_unbound_names ~scopes in
+        let unbound_names =
+          Set.to_list (NameAccessSet.of_list unbound_names |> remove_bound_type_param_names)
+        in
         let body = transform_statements ~scopes body in
         { Node.location; value = Statement.Define { define with body; unbound_names } }
     | { Node.location; value = Class ({ Class.body; type_params; _ } as class_) } ->
