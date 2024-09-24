@@ -42,6 +42,7 @@ open Domains
 module CallGraph = Interprocedural.CallGraph
 module CallResolution = Interprocedural.CallResolution
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -729,7 +730,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | AccessPath.Root.CapturedVariable { name = variable } ->
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
             let define_reference =
-              Analysis.FunctionDefinition.qualified_name_of_define
+              PyrePysaLogic.qualified_name_of_define
                 ~module_name:FunctionContext.qualifier
                 FunctionContext.definition.value
             in
@@ -3152,7 +3153,7 @@ let run
     define
   in
   let define_name =
-    Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Node.value define)
+    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
   in
   let module FunctionContext = struct
     let qualifier = qualifier
@@ -3194,7 +3195,7 @@ let run
   end
   in
   let module State = State (FunctionContext) in
-  let module Fixpoint = Analysis.Fixpoint.Make (State) in
+  let module Fixpoint = PyrePysaLogic.Fixpoint.Make (State) in
   if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
     Log.dump
       "Call graph of `%a`:@,%a"
@@ -3209,7 +3210,7 @@ let run
         let normalized_parameters = AccessPath.normalize_parameters parameters in
         State.create ~existing_model normalized_parameters define_location)
   in
-  let () = State.log "Processing CFG:@.%a" Analysis.Cfg.pp cfg in
+  let () = State.log "Processing CFG:@.%a" PyrePysaLogic.Cfg.pp cfg in
   let exit_state =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - fixpoint" ~f:(fun () ->
         Alarm.with_alarm

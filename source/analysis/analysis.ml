@@ -45,6 +45,7 @@ module Parsing = Parsing
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module PyrePysaEnvironment = PyrePysaEnvironment
+module PyrePysaLogic = PyrePysaLogic
 module Resolution = Resolution
 module ResolvedReference = ResolvedReference
 module Scope = Scope
