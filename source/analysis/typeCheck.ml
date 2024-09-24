@@ -458,16 +458,40 @@ module State (Context : Context) = struct
     List.fold mismatches ~f:emit_error ~init:errors
 
 
-  let get_type_params_as_variables type_params =
-    List.map type_params ~f:(fun { Node.value; _ } ->
-        match value with
-        | Ast.Expression.TypeParam.TypeVar { name; _ } ->
-            Type.Variable.TypeVarVariable
-              (Type.Variable.TypeVar.create ~constraints:Unconstrained name)
-        | Ast.Expression.TypeParam.TypeVarTuple name ->
-            Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
-        | Ast.Expression.TypeParam.ParamSpec name ->
-            Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+  let get_type_params_as_variables type_params global_resolution =
+    let create_type =
+      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution
+    in
+    (* TODO migeedz: Add bound validation here. *)
+    let validate_bound _bound = None in
+    let transformed_type_params =
+      List.map type_params ~f:(fun { Node.value; _ } ->
+          match value with
+          | Ast.Expression.TypeParam.TypeVar { name; bound } ->
+              Type.Variable.TypeVarVariable
+                (Type.Variable.TypeVar.create
+                   ~constraints:(Type.Variable.constraints_of_bound bound ~create_type)
+                   name)
+          | Ast.Expression.TypeParam.TypeVarTuple name ->
+              Type.Variable.TypeVarTupleVariable (Type.Variable.TypeVarTuple.create name)
+          | Ast.Expression.TypeParam.ParamSpec name ->
+              Type.Variable.ParamSpecVariable (Type.Variable.ParamSpec.create name))
+    in
+    let error_list =
+      List.fold
+        ~f:(fun acc { Node.value; _ } ->
+          match value with
+          | Ast.Expression.TypeParam.TypeVar { bound; _ } -> begin
+              match validate_bound bound with
+              | Some error -> error :: acc
+              | None -> acc
+            end
+          | _ -> acc)
+        type_params
+        ~init:[]
+    in
+
+    transformed_type_params, error_list
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
@@ -5871,22 +5895,14 @@ module State (Context : Context) = struct
         (* lower augmented assignment to regular assignment *)
         let call = AugmentedAssign.lower ~location augmented_assignment in
         forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some call)
-    (* TODO(T196994965): handle type alias *)
     | TypeAlias { TypeAlias.name; type_params; value } ->
+        let type_params_as_variables, type_params_errors =
+          get_type_params_as_variables type_params global_resolution
+        in
         let resolution =
-          get_type_params_as_variables type_params
+          type_params_as_variables
           |> List.fold ~init:resolution ~f:(fun resolution variable ->
                  Resolution.add_type_variable resolution ~variable)
-        in
-        (* TODO: remove after PEP 695 is supported *)
-        let type_params_errors =
-          match type_params with
-          | { Node.location; _ } :: _ ->
-              emit_error
-                ~errors:[]
-                ~location
-                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
-          | _ -> []
         in
         forward_type_alias_definition
           ~resolution
@@ -6036,16 +6052,7 @@ module State (Context : Context) = struct
               Resolution.new_local resolution ~reference:name ~type_info:annotation
           | _ -> resolution
         in
-        (* TODO: remove after PEP 695 is supported *)
-        let type_params_errors =
-          match type_params with
-          | { Node.location; _ } :: _ ->
-              emit_error
-                ~errors:[]
-                ~location
-                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
-          | _ -> []
-        in
+        let _, type_params_errors = get_type_params_as_variables type_params global_resolution in
         Value resolution, type_params_errors
     | Import { Import.from; imports } ->
         let get_export_kind = function
@@ -6097,6 +6104,7 @@ module State (Context : Context) = struct
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class ({ Class.type_params; _ } as class_statement) ->
+        let _, type_params_errors = get_type_params_as_variables type_params global_resolution in
         let this_class_name = Reference.show class_statement.name in
         let check_dataclass_inheritance base_types_with_location errors =
           let dataclass_options_from_decorator class_name =
@@ -6362,15 +6370,6 @@ module State (Context : Context) = struct
           |> check_protocol_bases generic_and_protocol_bases_with_location base_types_with_location
           |> check_named_tuple_inheritance base_types_with_location
         in
-        let type_params_errors =
-          match type_params with
-          | { Node.location; _ } :: _ ->
-              emit_error
-                ~errors:[]
-                ~location
-                ~kind:(Error.ParserFailure "PEP 695 type params are unsupported")
-          | _ -> []
-        in
         Value resolution, errors @ type_params_errors
     | Try { Try.handlers; handles_exception_group; _ } ->
         (* We only need to check the type annotations of the exception handlers here, since try
@@ -6492,8 +6491,9 @@ module State (Context : Context) = struct
       =
       Context.define
     in
+    let global_resolution = Resolution.global_resolution resolution in
     (* collect type parameters for functions *)
-    let type_params = get_type_params_as_variables type_params in
+    let type_params, _ = get_type_params_as_variables type_params global_resolution in
     (* Add them to the resolution *)
     let resolution =
       type_params

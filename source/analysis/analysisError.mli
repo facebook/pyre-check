@@ -515,6 +515,7 @@ and kind =
     }
   | UndefinedImport of undefined_import
   | UndefinedType of Type.t
+  | InvalidTypeVariableConstraint of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;
       callee: Reference.t option;

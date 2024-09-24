@@ -861,6 +861,7 @@ and kind =
     }
   | UndefinedImport of undefined_import
   | UndefinedType of Type.t
+  | InvalidTypeVariableConstraint of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;
       callee: Reference.t option;
@@ -993,6 +994,7 @@ let code_of_kind = function
   | TupleDelete -> 72
   | OutOfBoundsTupleIndex _ -> 73
   | NamedTupleMissingDefault -> 74
+  | InvalidTypeVariableConstraint _ -> 74
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1072,6 +1074,7 @@ let name_of_kind = function
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedImport _ -> "Undefined import"
   | UndefinedType _ -> "Undefined or invalid type"
+  | InvalidTypeVariableConstraint _ -> "Invalid bound format"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UninitializedLocal _ -> "Uninitialized local"
@@ -3092,6 +3095,8 @@ let rec messages ~concise ~signature location kind =
       ]
   | UndefinedType annotation ->
       [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]
+  | InvalidTypeVariableConstraint annotation ->
+      [Format.asprintf "`%a` is not valid bound." pp_type annotation]
   | UnexpectedKeyword { name; _ } when concise ->
       [Format.asprintf "Unexpected keyword argument `%s`." (Identifier.sanitized name)]
   | UnexpectedKeyword { name; callee } ->
@@ -3333,6 +3338,7 @@ let due_to_analysis_limitations { kind; _ } =
   (* TODO(yangdanny): investigate unexpected cases of 0-1 member tuples being inferred *)
   | OutOfBoundsTupleIndex { members = 0 | 1; _ } -> true
   | AnalysisFailure _
+  | InvalidTypeVariableConstraint _
   | AssertType _
   | BroadcastError _
   | ParserFailure _
@@ -3764,6 +3770,9 @@ let join ~resolution left right =
       ->
         UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute }
     | UndefinedType left, UndefinedType right when Type.equal left right -> UndefinedType left
+    | InvalidTypeVariableConstraint left, InvalidTypeVariableConstraint right
+      when Type.equal left right ->
+        InvalidTypeVariableConstraint left
     | UnexpectedKeyword left, UnexpectedKeyword right
       when Option.equal Reference.equal_sanitized left.callee right.callee
            && Identifier.equal left.name right.name ->
@@ -3939,6 +3948,7 @@ let join ~resolution left right =
     | UndefinedAttribute _, _
     | UndefinedImport _, _
     | UndefinedType _, _
+    | InvalidTypeVariableConstraint _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
     | Unpack _, _
@@ -4629,6 +4639,8 @@ let dequalify
         in
         UndefinedAttribute { attribute; origin }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
+    | InvalidTypeVariableConstraint annotation ->
+        InvalidTypeVariableConstraint (dequalify annotation)
     | UndefinedImport reference -> UndefinedImport reference
     | UnexpectedKeyword { name; callee } ->
         UnexpectedKeyword { name; callee = Option.map callee ~f:dequalify_reference }
