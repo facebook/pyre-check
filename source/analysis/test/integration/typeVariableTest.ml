@@ -2021,6 +2021,27 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            class H[**P]:
+                def f(self, /, *args: P.args, **kwargs: P.kwargs) -> int:
+                    return 5
+
+            def foo(x: H[int, str]) -> None:
+
+                # incorrect
+                x.f()
+                x.f("A", 1)
+
+                # correct
+                x.f(1, "A")
+
+            |}
+           [
+             "Undefined or invalid type [11]: Annotation `P.args` is not defined as a type.";
+             "Undefined or invalid type [11]: Annotation `P.kwargs` is not defined as a type.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from typing import Callable, ParamSpec
 
               TParams = ParamSpec("TParams")
