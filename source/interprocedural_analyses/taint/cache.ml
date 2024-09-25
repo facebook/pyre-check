@@ -14,7 +14,7 @@ module CamlUnix = Unix
 open Core
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
+module PyrePysaLogic = Analysis.PyrePysaLogic
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
@@ -303,9 +303,11 @@ let initialize_shared_memory ~path ~configuration =
 
 
 let check_decorator_invalidation ~decorator_configuration:current_configuration =
-  match DecoratorPreprocessing.get_configuration () with
+  match PyrePysaLogic.DecoratorPreprocessing.get_configuration () with
   | Some cached_configuration
-    when DecoratorPreprocessing.Configuration.equal cached_configuration current_configuration ->
+    when PyrePysaLogic.DecoratorPreprocessing.Configuration.equal
+           cached_configuration
+           current_configuration ->
       Ok ()
   | Some _ ->
       (* We need to invalidate the cache since decorator modes (e.g, `@IgnoreDecorator` and
