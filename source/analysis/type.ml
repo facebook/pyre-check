@@ -4127,7 +4127,10 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let setitem_overloads =
-      let overload { name; annotation; _ } =
+      let overload { name; annotation; readonly; _ } =
+        (* A read-only field cannot be written to, so we set the value type to Never to generate a
+           type error on a write attempt. *)
+        let value_annotation = if readonly then Primitive "typing.Never" else annotation in
         {
           Record.Callable.annotation = Constructors.none;
           parameters =
@@ -4135,7 +4138,7 @@ module TypedDictionary = struct
               [
                 self_parameter class_name;
                 key_parameter name;
-                Named { name = "v"; annotation; default = false };
+                Named { name = "v"; annotation = value_annotation; default = false };
               ];
         }
       in
