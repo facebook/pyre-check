@@ -35,6 +35,7 @@ open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -2894,7 +2895,7 @@ let run
      function of the application (e.g., T132302522). *)
   let define = PyrePysaEnvironment.ReadOnly.decorated_define pyre_api define in
   let define_name =
-    Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Node.value define)
+    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
   in
   let module FunctionContext = struct
     let qualifier = qualifier
@@ -2936,7 +2937,7 @@ let run
   end
   in
   let module State = State (FunctionContext) in
-  let module Fixpoint = Analysis.Fixpoint.Make (State) in
+  let module Fixpoint = PyrePysaLogic.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
   let () =
     State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
