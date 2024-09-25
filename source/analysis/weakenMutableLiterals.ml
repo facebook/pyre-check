@@ -307,7 +307,7 @@ let rec weaken_mutable_literals
                 let key = resolve key in
                 match key with
                 | Type.Literal (Type.String (Type.LiteralValue name)) ->
-                    let { resolved; typed_dictionary_errors }, required =
+                    let { resolved; typed_dictionary_errors }, required, readonly =
                       let resolved = resolve value in
                       let relax { annotation; _ } =
                         (* We recursively call weaken_mutable_literals to weaken the field type. The
@@ -326,12 +326,11 @@ let rec weaken_mutable_literals
                             ~get_typed_dictionary
                       in
                       find_matching_field expected_fields ~name
-                      >>| (fun field -> relax field, field.required)
-                      |> Option.value ~default:(make_weakened_type resolved, true)
+                      >>| (fun field -> relax field, field.required, field.readonly)
+                      |> Option.value ~default:(make_weakened_type resolved, true, false)
                     in
                     Some
-                      ( { name; annotation = resolved; required; readonly = false },
-                        typed_dictionary_errors )
+                      ({ name; annotation = resolved; required; readonly }, typed_dictionary_errors)
                 | _ -> None
               end
             | Splat _ -> None

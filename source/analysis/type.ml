@@ -4083,25 +4083,19 @@ module TypedDictionary = struct
     }
 
 
-  let fields_from_constructor = function
+  let field_names_from_constructor = function
     | {
         Callable.kind = Named name;
         overloads = [{ parameters = Defined (_self :: parameters); _ }; _];
         _;
       }
       when String.equal (Reference.last name) "__init__" ->
-        let parameter_to_field = function
-          | Record.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
-              Some
-                {
-                  name = String.split ~on:'$' name |> List.last_exn;
-                  annotation;
-                  required = not default;
-                  readonly = false;
-                }
+        let parameter_to_field_name = function
+          | Record.Callable.CallableParamType.KeywordOnly { name; _ } ->
+              Some (String.split ~on:'$' name |> List.last_exn)
           | _ -> None
         in
-        List.map ~f:parameter_to_field parameters |> Option.all
+        List.map ~f:parameter_to_field_name parameters |> Option.all
     | _ -> None
 
 

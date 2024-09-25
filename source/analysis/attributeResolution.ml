@@ -1680,6 +1680,81 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         table;
       table
 
+    (* Given a class summary, get the attributes of the class corresponding to TypedDict fields,
+       assuming (without verification) that the class is a TypedDict. *)
+    method get_typed_dictionary_field_attributes
+        ~cycle_detections
+        ~include_generated_attributes
+        ~in_test
+        ~accessed_via_metaclass
+        ~parent_definition
+        { Node.value = { bases = { ClassSummary.base_classes; _ }; _ } as class_summary; _ } =
+      let has_non_total_typed_dictionary_base_class =
+        List.exists base_classes ~f:(fun base_expression ->
+            String.equal
+              (Expression.show base_expression)
+              (Type.TypedDictionary.class_name ~total:false))
+      in
+      ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
+      |> Identifier.SerializableMap.bindings
+      |> List.map ~f:(fun (_, field_attribute) ->
+             ( self#create_uninstantiated_attribute
+                 ~scoped_type_variables:None
+                 ~cycle_detections
+                 ~parent:parent_definition
+                 ?defined:(Some true)
+                 ~accessed_via_metaclass
+                 (Node.value field_attribute),
+               has_non_total_typed_dictionary_base_class ))
+
+    (* Given a class summary, extract the class's TypedDict fields. Returns an empty list if the
+       class is not a TypedDict. *)
+    method typed_dictionary_fields
+        ~cycle_detections
+        ~include_generated_attributes
+        ~in_test
+        ~accessed_via_metaclass
+        ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
+      let Queries.{ is_typed_dictionary; get_class_summary; successors; _ } = queries in
+      let successor_definitions =
+        Reference.show name |> successors |> List.filter_map ~f:get_class_summary
+      in
+      let typed_dictionary_definitions =
+        List.filter
+          (parent_definition :: successor_definitions)
+          ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
+            is_typed_dictionary (Reference.show name))
+      in
+      let attribute_to_typed_dictionary_field (attribute, has_non_total_typed_dictionary_base_class)
+        =
+        match AnnotatedAttribute.uninstantiated_annotation attribute with
+        | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
+            Some
+              (Type.TypedDictionary.create_field
+                 ~annotation
+                 ~has_non_total_typed_dictionary_base_class
+                 (AnnotatedAttribute.name attribute))
+        | _ -> None
+      in
+      let keep_last_declarations fields =
+        List.map fields ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
+            field.name, field)
+        |> Map.of_alist_multi (module String)
+        |> Map.to_alist
+        |> List.map ~f:(fun (_, fields) -> List.last_exn fields)
+      in
+      List.rev typed_dictionary_definitions
+      |> List.concat_map
+           ~f:
+             (self#get_typed_dictionary_field_attributes
+                ~cycle_detections
+                ~include_generated_attributes
+                ~in_test
+                ~accessed_via_metaclass
+                ~parent_definition)
+      |> List.filter_map ~f:attribute_to_typed_dictionary_field
+      |> keep_last_declarations
+
     (* Special-case attribute table factory used as a helper in
      * single_uninstantiated_attribute_table.
      *
@@ -1696,71 +1771,23 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~in_test
         ~accessed_via_metaclass
         ~class_name
-        ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
-      let Queries.{ is_typed_dictionary; get_class_summary; successors; _ } = queries in
+        parent_definition =
+      let Queries.{ get_class_summary; _ } = queries in
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
-        let successor_definitions =
-          Reference.show name |> successors |> List.filter_map ~f:get_class_summary
-        in
         let base_typed_dictionary_definition fields =
           let total = Type.TypedDictionary.are_fields_total fields in
           match get_class_summary (Type.TypedDictionary.class_name ~total) with
           | Some definition -> definition
           | None -> failwith "Expected to find TypedDictionary"
         in
-        let typed_dictionary_definitions =
-          List.filter
-            (parent_definition :: successor_definitions)
-            ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
-              is_typed_dictionary (Reference.show name))
-        in
-        let get_field_attributes
-            ~include_generated_attributes
-            { Node.value = { bases = { ClassSummary.base_classes; _ }; _ } as class_summary; _ }
-          =
-          let has_non_total_typed_dictionary_base_class =
-            List.exists base_classes ~f:(fun base_expression ->
-                String.equal
-                  (Expression.show base_expression)
-                  (Type.TypedDictionary.class_name ~total:false))
-          in
-          ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
-          |> Identifier.SerializableMap.bindings
-          |> List.map ~f:(fun (_, field_attribute) ->
-                 ( self#create_uninstantiated_attribute
-                     ~scoped_type_variables:None
-                     ~cycle_detections
-                     ~parent:parent_definition
-                     ?defined:(Some true)
-                     ~accessed_via_metaclass
-                     (Node.value field_attribute),
-                   has_non_total_typed_dictionary_base_class ))
-        in
-        let attribute_to_typed_dictionary_field
-            (attribute, has_non_total_typed_dictionary_base_class)
-          =
-          match AnnotatedAttribute.uninstantiated_annotation attribute with
-          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
-              Some
-                (Type.TypedDictionary.create_field
-                   ~annotation
-                   ~has_non_total_typed_dictionary_base_class
-                   (AnnotatedAttribute.name attribute))
-          | _ -> None
-        in
-        let keep_last_declarations fields =
-          List.map fields ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
-              field.name, field)
-          |> Map.of_alist_multi (module String)
-          |> Map.to_alist
-          |> List.map ~f:(fun (_, fields) -> List.last_exn fields)
-        in
         let fields =
-          List.rev typed_dictionary_definitions
-          |> List.concat_map ~f:(get_field_attributes ~include_generated_attributes:false)
-          |> List.filter_map ~f:attribute_to_typed_dictionary_field
-          |> keep_last_declarations
+          self#typed_dictionary_fields
+            ~cycle_detections
+            ~include_generated_attributes
+            ~in_test
+            ~accessed_via_metaclass
+            parent_definition
         in
         let overload_method (attribute, _) =
           match AnnotatedAttribute.uninstantiated_annotation attribute with
@@ -1815,7 +1842,12 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         let all_special_methods =
           constructor
           :: (base_typed_dictionary_definition fields
-             |> get_field_attributes ~include_generated_attributes:true
+             |> self#get_typed_dictionary_field_attributes
+                  ~cycle_detections
+                  ~include_generated_attributes:true
+                  ~in_test
+                  ~accessed_via_metaclass
+                  ~parent_definition
              |> List.filter_map ~f:overload_method)
         in
         List.iter ~f:(UninstantiatedAttributeTable.add table) all_special_methods
@@ -2792,27 +2824,50 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
      * determine the typed dictionary fields.
      *)
     method get_typed_dictionary ~cycle_detections annotation =
-      let Queries.{ is_typed_dictionary; _ } = queries in
+      let Queries.{ is_typed_dictionary; get_class_summary; _ } = queries in
       match annotation with
-      | Type.Primitive class_name when is_typed_dictionary class_name ->
-          let fields =
-            self#attribute
-              ~cycle_detections
-              ~transitive:false
-              ~accessed_through_class:true
-              ~accessed_through_readonly:false
-              ~include_generated_attributes:true
-              ~type_for_lookup:(Type.builtins_type annotation)
-              ~special_method:false
-              ~attribute_name:"__init__"
-              class_name
-            >>| AnnotatedAttribute.annotation
-            >>| TypeInfo.Unit.annotation
-            >>= function
-            | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
-            | _ -> None
-          in
-          fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name }
+      | Type.Primitive class_name when is_typed_dictionary class_name -> (
+          let class_summary = get_class_summary class_name in
+          match class_summary with
+          | None -> None
+          | Some class_summary ->
+              let unordered_fields =
+                class_summary
+                |> self#typed_dictionary_fields
+                     ~cycle_detections
+                     ~include_generated_attributes:true
+                     ~in_test:false
+                     ~accessed_via_metaclass:false
+              in
+              let unordered_fields_map =
+                unordered_fields
+                |> List.map ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
+                       field.name, field)
+                |> Map.of_alist_exn (module String)
+              in
+              let ordered_field_names =
+                self#attribute
+                  ~cycle_detections
+                  ~transitive:false
+                  ~accessed_through_class:true
+                  ~accessed_through_readonly:false
+                  ~include_generated_attributes:true
+                  ~type_for_lookup:(Type.builtins_type annotation)
+                  ~special_method:false
+                  ~attribute_name:"__init__"
+                  class_name
+                >>| AnnotatedAttribute.annotation
+                >>| TypeInfo.Unit.annotation
+                >>= function
+                | Type.Callable callable ->
+                    Type.TypedDictionary.field_names_from_constructor callable
+                | _ -> None
+              in
+              let fields =
+                ordered_field_names
+                >>| List.filter_map ~f:(fun field_name -> Map.find unordered_fields_map field_name)
+              in
+              fields >>| fun fields -> { Type.TypedDictionary.fields; name = class_name })
       | _ -> None
 
     (* Construct a ConstraintsSet.order representing the lattice of types for a
@@ -3492,7 +3547,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
     (* Given a call whose callee has type `callable` with arguments `arguments`, resolve the
      * call which either produces a `Type.t` for the return, or information about why
      * resolution failed.
-     * 
+     *
      * The implementation chains the `SignatureSelection` functions
      * `select_closest_signature_for_function_call` to pick an overload
      * and `instantiate_return_annotation`, injecting callbacks to global symbol
@@ -3529,7 +3584,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~comparator:(self#constraints_solution_exists ~cycle_detections)
 
     (* Use constraint solving to determine whether `left` is a gradual subtype of `right`.
-     * 
+     *
      * For the most part this is just the constraint set operations
      * `add_and_simplify` |> `solve`, with callbacks to global symbol tables.
      *

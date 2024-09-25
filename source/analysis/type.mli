@@ -1005,7 +1005,7 @@ module TypedDictionary : sig
 
   val constructor : name:Identifier.t -> fields:typed_dictionary_field list -> Callable.t
 
-  val fields_from_constructor : Callable.t -> typed_dictionary_field list option
+  val field_names_from_constructor : Callable.t -> string list option
 
   val special_overloads
     :  class_name:Primitive.t ->
