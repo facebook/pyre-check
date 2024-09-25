@@ -1803,7 +1803,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
   Transform.transform () source |> Transform.source
 
 
-let replace_platform_specific_code source =
+let replace_platform_specific_code ?(sys_platform = "linux") source =
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
@@ -1815,27 +1815,59 @@ let replace_platform_specific_code source =
           let statements =
             let statements =
               let open Expression in
-              let matches_removed_platform left right =
+              let get_platform_string platform_check_name left right =
                 let is_platform expression =
-                  String.equal (Expression.show expression) "sys.platform"
+                  String.equal (Expression.show expression) platform_check_name
                 in
-                let is_win32 { Node.value; _ } =
+                let get_platform_string { Node.value; _ } =
                   match value with
-                  | Constant (Constant.String { StringLiteral.value = "win32"; _ }) -> true
-                  | _ -> false
+                  | Constant (Constant.String { StringLiteral.value = platform_string; _ }) ->
+                      Some platform_string
+                  | _ -> None
                 in
-                (is_platform left && is_win32 right) || (is_platform right && is_win32 left)
+                if is_platform left then
+                  get_platform_string right
+                else if is_platform right then
+                  get_platform_string left
+                else
+                  None
               in
               match test with
-              | ComparisonOperator { ComparisonOperator.left; operator; right }
-                when matches_removed_platform left right -> (
-                  match operator with
-                  | ComparisonOperator.Equals
-                  | Is ->
-                      orelse
-                  | NotEquals
-                  | IsNot ->
-                      body
+              | ComparisonOperator { ComparisonOperator.left; operator = Equals | Is; right } -> (
+                  match get_platform_string "sys.platform" left right with
+                  | Some platform_string ->
+                      if String.equal sys_platform platform_string then body else orelse
+                  | _ -> [statement])
+              | ComparisonOperator { ComparisonOperator.left; operator = NotEquals | IsNot; right }
+                -> (
+                  match get_platform_string "sys.platform" left right with
+                  | Some platform_string ->
+                      if String.equal sys_platform platform_string then orelse else body
+                  | _ -> [statement])
+              | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
+                  match get_platform_string "sys.platform.startswith" callee expression with
+                  | Some platform_string ->
+                      if String.is_prefix ~prefix:platform_string sys_platform then
+                        body
+                      else
+                        orelse
+                  | _ -> [statement])
+              | UnaryOperator
+                  {
+                    operator = UnaryOperator.Not;
+                    operand =
+                      {
+                        Node.value =
+                          Call { callee; arguments = [{ Call.Argument.value = expression; _ }] };
+                        _;
+                      };
+                  } -> (
+                  match get_platform_string "sys.platform.startswith" callee expression with
+                  | Some platform_string ->
+                      if String.is_prefix ~prefix:platform_string sys_platform then
+                        orelse
+                      else
+                        body
                   | _ -> [statement])
               | _ -> [statement]
             in

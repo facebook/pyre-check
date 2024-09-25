@@ -3392,10 +3392,32 @@ let test_replace_platform_specific_code =
     assert_source_equal
       ~location_insensitive:true
       (parse ~handle expected)
-      (Preprocessing.replace_platform_specific_code (parse ~handle source))
+      (Preprocessing.replace_platform_specific_code ~sys_platform:"linux" (parse ~handle source))
   in
   test_list
     [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_preprocessed
+           {|
+      if not sys.platform.startswith('win32'):
+        a = 1
+      else:
+        a = 2
+    |}
+           {|
+      a = 1
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_preprocessed
+           {|
+      if sys.platform.startswith('win32'):
+        a = 1
+      else:
+        a = 2
+    |}
+           {|
+      a = 2
+    |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_preprocessed
            {|
@@ -3437,24 +3459,19 @@ let test_replace_platform_specific_code =
         a = 8
     |}
            {|
-      if sys.platform != 'linux':
-        a = 8
+      pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_preprocessed
            {|
-      if sys.platform != 'linux':
+      if sys.platform == 'linux':
         a = 9
       else:
         b = 10
         c = 11
     |}
            {|
-      if sys.platform != 'linux':
-        a = 9
-      else:
-        b = 10
-        c = 11
+      a = 9
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_preprocessed
@@ -3531,11 +3548,8 @@ let test_replace_platform_specific_code =
         c = 24
     |}
            {|
-      if 'linux' == sys.platform:
-        a = 22
-        b = 23
-      else:
-        c = 24
+      a = 22
+      b = 23
     |};
     ]
 

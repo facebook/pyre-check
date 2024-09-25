@@ -31,7 +31,7 @@ val replace_version_specific_code
   Source.t
 
 (* Uses heuristics to pick platform-specific code at parse time. *)
-val replace_platform_specific_code : Source.t -> Source.t
+val replace_platform_specific_code : ?sys_platform:string -> Source.t -> Source.t
 
 val expand_type_checking_imports : Source.t -> Source.t
 
