@@ -20,7 +20,7 @@ open Ast
 open Interprocedural
 open Domains
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module ClassSummary = Analysis.ClassSummary
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module FeatureSet = struct
   type t = {
@@ -172,7 +172,7 @@ let infer ~pyre_api ~user_models =
   let get_attributes_in_alphabetical_order class_name =
     PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
     >>| Node.value
-    >>| ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
+    >>| PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
     |> Option.value ~default:Identifier.SerializableMap.empty
   in
   let has_attribute class_name name =
@@ -193,7 +193,8 @@ let infer ~pyre_api ~user_models =
   let compute_dataclass_models class_name =
     let attributes =
       get_attributes_in_declaration_order class_name
-      |> List.map ~f:(fun { Node.value = { ClassSummary.Attribute.name; _ }; _ } -> name)
+      |> List.map ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.name; _ }; _ } ->
+             name)
     in
     let taint_in_taint_out =
       List.foldi
