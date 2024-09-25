@@ -2838,6 +2838,14 @@ let rec messages ~concise ~signature location kind =
             else
               Format.asprintf " `%s`" typed_dictionary_name);
         ]
+      else if String.equal "__setitem__" method_name && Type.is_noreturn_or_never mismatch.expected
+      then
+        [
+          Format.asprintf
+            "Cannot write to `%s` read-only field `%s`."
+            typed_dictionary_name
+            field_name;
+        ]
       else
         [
           Format.asprintf
