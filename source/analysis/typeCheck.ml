@@ -468,10 +468,7 @@ module State (Context : Context) = struct
           && List.for_all
                ~f:(fun e ->
                  match create_type e with
-                 | Type.Top -> (
-                     match e.Node.value with
-                     | Expression.Constant _ -> true
-                     | _ -> false)
+                 | Type.Top -> false
                  | _ -> true)
                elements
       | Expression.Constant _ -> true

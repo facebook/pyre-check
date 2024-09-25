@@ -199,30 +199,42 @@ let test_check_bounded_variables =
             class ClassI[AnyStr: (str, bytes)]:  # OK
                 ...
 
-            class ForwardReference[T]: ...
-
 
             class ClassJ[T: (ForwardReference[int], "ForwardReference[str]", bytes)]:  # OK
                 ...
 
-
             class ClassK[T: ()]:  # E: two or more types required
                 ...
-
 
             class ClassL[T: (str,)]:  # E: two or more types required
                 ...
 
+            class ForwardReference[T]: ...
+
+            class ClassN[T: (3, bytes)]:  # E: invalid expression form
+                ...
 
             |}
            [
-             "Invalid bound [74]: `t1` is not valid bound.";
+             "Invalid bound [74]: `$local_test$t1` is not valid bound.";
              "Invalid bound [74]: `dict[(str, V)]` is not valid bound.";
              "Invalid bound [74]: `[str, int]` is not valid bound.";
-             "Invalid bound [74]: `(ForwardReference[int], \"ForwardReference[str]\", bytes)` is \
-              not valid bound.";
              "Invalid bound [74]: `()` is not valid bound.";
              "Invalid bound [74]: `(str)` is not valid bound.";
+             "Invalid bound [74]: `(3, bytes)` is not valid bound.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            class ClassJ[T: (ForwardReference[int])]:  # OK
+                ...
+            class ForwardReference[T]: ...
+
+            int_instance = ClassJ[int]
+            |}
+           [
+             "Invalid type parameters [24]: Type parameter `int` violates constraints on \
+              `Variable[T (bound to test.ForwardReference[int])]` in generic type `ClassJ`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

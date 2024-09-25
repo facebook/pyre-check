@@ -516,6 +516,20 @@ module Qualify = struct
     | Name.Attribute attribute -> qualify_attribute_name ~qualify_strings ~scope attribute
 
 
+  and qualify_type_params type_params ~scope =
+    List.map type_params ~f:(fun { Node.value; location } ->
+        match value with
+        | Ast.Expression.TypeParam.TypeVar { name; bound } ->
+            let bound =
+              match bound with
+              | Some bound -> Some (qualify_expression ~qualify_strings:Qualify ~scope bound)
+              | None -> None
+            in
+
+            { Node.value = Ast.Expression.TypeParam.TypeVar { name; bound }; location }
+        | result -> { Node.value = result; location })
+
+
   and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
     let value =
       let qualify_entry ~qualify_strings ~scope entry =
@@ -1143,7 +1157,9 @@ module Qualify = struct
         in
         { define with signature; body }
       in
-      let qualify_class ({ Class.name; base_arguments; parent; body; decorators; _ } as definition) =
+      let qualify_class
+          ({ Class.name; base_arguments; parent; body; decorators; type_params; _ } as definition)
+        =
         let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
             argument with
@@ -1163,8 +1179,10 @@ module Qualify = struct
             let result =
               match value with
               | Statement.Define
-                  ({ signature = { name; parameters; return_annotation; decorators; _ }; _ } as
-                  define) ->
+                  ({
+                     signature = { name; parameters; return_annotation; decorators; type_params; _ };
+                     _;
+                   } as define) ->
                   let define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
@@ -1193,7 +1211,14 @@ module Qualify = struct
                   let decorators = List.map decorators ~f:qualify_decorator in
                   let _, name = qualify_function_name ~scope name in
                   let signature =
-                    { define.signature with name; parameters; decorators; return_annotation }
+                    {
+                      define.signature with
+                      name;
+                      parameters;
+                      decorators;
+                      type_params = qualify_type_params type_params ~scope;
+                      return_annotation;
+                    }
                   in
                   { Node.value = Statement.Define { define with signature }; location }
               | Statement.Assign { Assign.target; annotation; value } ->
@@ -1231,6 +1256,7 @@ module Qualify = struct
             qualify_if_needed ~qualifier:(NestingContext.to_qualifier ~module_name parent) name;
           base_arguments = List.map base_arguments ~f:qualify_base;
           body;
+          type_params = qualify_type_params type_params ~scope;
           decorators;
         }
       in
@@ -1346,7 +1372,8 @@ module Qualify = struct
       | TypeAlias { TypeAlias.name; type_params; value } ->
           let value = qualify_assign_value ~scope ~qualified_annotation:None value in
           let target = qualify_assign_target ~scope ~annotation:None name in
-          Statement.TypeAlias { TypeAlias.name = target; type_params; value }
+          Statement.TypeAlias
+            { TypeAlias.name = target; type_params = qualify_type_params type_params ~scope; value }
       | Break
       | Continue
       | Import _
