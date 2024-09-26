@@ -18,7 +18,7 @@
 open Core
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module Context = struct
   type t = {
@@ -218,7 +218,7 @@ module Analysis = struct
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
-      DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
+      PyrePysaLogic.DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
       >>= PyrePysaEnvironment.ReadOnly.location_of_global pyre_api
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
