@@ -2419,6 +2419,16 @@ let test_check_annotated =
     ]
 
 
+let test_check_subscripted_type_expression =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors {|
+              x: type[list[str]] = list[str]
+            |} [];
+    ]
+
+
 let test_check_union_shorthand =
   test_list
     [
@@ -3076,6 +3086,7 @@ let () =
          test_check_variable_bounds_with_quoted_any;
          test_check_variable_bounds_with_quoted_bound;
          test_check_annotated;
+         test_check_subscripted_type_expression;
          test_check_union_shorthand;
          test_check_compose;
          test_check_unpack;

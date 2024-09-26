@@ -2453,10 +2453,11 @@ let test_check_callable_protocols =
                 reveal_type(f)
             |}
            [
-             "Revealed type [-1]: Revealed type for `q` is `typing.Type[typing.Callable[..., str]]`.";
+             "Revealed type [-1]: Revealed type for `q` is `typing.Type[typing.Callable[[int], \
+              str]]`.";
              "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 1 \
               was provided.";
-             "Revealed type [-1]: Revealed type for `f` is `typing.Callable[..., str]`.";
+             "Revealed type [-1]: Revealed type for `f` is `typing.Callable[[int], str]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

@@ -3545,6 +3545,23 @@ module State (Context : Context) = struct
                 | _ ->
                     forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
                 )
+            | _ when Option.is_some (Type.extract_from_builtins_type resolved_base) -> (
+                (* If base of subscript is a type, try to parse the whole expression as a type *)
+                let errors, annotation = parse_and_check_annotation ~resolution expression in
+                match annotation with
+                | Type.Top ->
+                    forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+                | _ when List.is_empty errors ->
+                    {
+                      resolution;
+                      errors;
+                      resolved = Type.builtins_type annotation;
+                      resolved_annotation = None;
+                      base = None;
+                    }
+                | _ ->
+                    forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
+                )
             | _ -> forward_expression ~resolution { Node.value = synthetic_getitem_call; location }
           in
           (* For tuples with fixed length indexed by a literal, emit an error if the index is out of

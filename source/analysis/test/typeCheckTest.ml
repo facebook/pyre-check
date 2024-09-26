@@ -1116,15 +1116,29 @@ let test_forward_expression =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward
            "typing.Callable[[int, str], int]"
-           (Type.builtins_type (Type.Callable.create ~annotation:Type.integer ()));
+           (Type.builtins_type
+              (Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        PositionalOnly { index = 0; annotation = Type.integer; default = false };
+                        PositionalOnly { index = 1; annotation = Type.string; default = false };
+                      ])
+                 ~annotation:Type.integer
+                 ()));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_forward "typing_extensions.Literal[1, 2, 3]" (Type.builtins_type Type.Any);
+      @@ assert_forward
+           "typing_extensions.Literal[1, 2, 3]"
+           (Type.builtins_type
+              (Type.union [Type.literal_integer 1; Type.literal_integer 2; Type.literal_integer 3]));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward
            "typing.ClassVar[int]"
            (Type.builtins_type (Type.parametric "typing.ClassVar" [Single Type.integer]));
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_forward "typing.Union[int, str]" (Type.builtins_type Type.Any);
+      @@ assert_forward
+           "typing.Union[int, str]"
+           (Type.builtins_type (Type.union [Type.integer; Type.string]));
     ]
 
 
