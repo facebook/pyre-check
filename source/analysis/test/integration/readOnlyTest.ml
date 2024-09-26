@@ -42,7 +42,7 @@ let test_readonly =
     ]
 
 
-let test_interaction =
+let test_interaction_with_required_and_annotated =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -84,4 +84,153 @@ let test_interaction =
     ]
 
 
-let () = "readOnly" >::: [test_readonly; test_interaction] |> Test.run
+let test_assignability =
+  (* Tests assignability rules from
+     https://typing.readthedocs.io/en/latest/spec/typeddict.html#id4 *)
+  test_list
+    [
+      (* For each item in A, B has the corresponding key, unless the item in A is read-only, not
+         required, and of top value type (ReadOnly[NotRequired[object]]).*)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import NotRequired, ReadOnly
+
+        class A(TypedDict):
+          x: int
+          y: ReadOnly[NotRequired[object]]
+
+        class B_Ok(TypedDict):
+          x: int
+
+        class B_Error(TypedDict):
+          y: ReadOnly[NotRequired[object]]
+
+        def f(b_ok: B_Ok, b_error: B_Error) -> None:
+          a: A = b_ok
+          a: A = b_error
+      |}
+           [
+             "Incompatible variable type [9]: a is declared to have type `A` but is used as type \
+              `B_Error`.";
+           ];
+      (* For each item in A, if B has the corresponding key, the corresponding value type in B is
+         assignable to the value type in A. *)
+      (* For each non-read-only item in A, its value type is assignable to the corresponding value
+         type in B. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import ReadOnly
+
+        class A1(TypedDict):
+          x: int
+
+        class A2(TypedDict):
+          x: ReadOnly[int]
+
+        class B1(TypedDict):
+          x: bool
+
+        class B2(TypedDict):
+          x: str
+
+        def f(b1: B1, b2: B2) -> None:
+          a1: A1 = b1  # error
+          a2: A2 = b1  # ok
+          a3: A2 = b2  # error
+      |}
+           [
+             "Incompatible variable type [9]: a1 is declared to have type `A1` but is used as type \
+              `B1`.";
+             "Incompatible variable type [9]: a3 is declared to have type `A2` but is used as type \
+              `B2`.";
+           ];
+      (* For each required key in A, the corresponding key is required in B. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import NotRequired, Required
+
+        class A(TypedDict):
+          x: Required[int]
+
+        class B1(TypedDict):
+          x: int
+
+        class B2(TypedDict):
+          x: Required[int]
+
+        class B3(TypedDict):
+          x: NotRequired[int]
+
+        def f(b1: B1, b2: B2, b3: B3) -> None:
+          a1: A = b1  # ok
+          a2: A = b2  # ok
+          a3: A = b3  # error
+      |}
+           [
+             "Incompatible variable type [9]: a3 is declared to have type `A` but is used as type \
+              `B3`.";
+           ];
+      (* For each non-required key in A, if the item is not read-only in A, the corresponding key is
+         not required in B. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import NotRequired, ReadOnly, Required
+
+        class A1(TypedDict):
+          x: NotRequired[int]
+
+        class A2(TypedDict):
+          x: NotRequired[ReadOnly[int]]
+
+        class B1(TypedDict):
+          x: NotRequired[int]
+
+        class B2(TypedDict):
+          x: Required[int]
+
+        def f(b1: B1, b2: B2) -> None:
+          a1: A1 = b1  # ok
+          a2: A1 = b2  # error
+          a3: A2 = b1  # ok
+          a4: A2 = b2  # ok
+      |}
+           [
+             "Incompatible variable type [9]: a2 is declared to have type `A1` but is used as type \
+              `B2`.";
+           ];
+      (* A non-ReadOnly item cannot be redeclared as ReadOnly. This is covered in the conformance
+         tests. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import ReadOnly
+
+        class A(TypedDict):
+          x: int
+
+        class B(TypedDict):
+          x: ReadOnly[int]
+
+        def f(b: B) -> None:
+          a: A = b  # error
+      |}
+           [
+             "Incompatible variable type [9]: a is declared to have type `A` but is used as type \
+              `B`.";
+           ];
+    ]
+
+
+let () =
+  "readOnly"
+  >::: [test_readonly; test_interaction_with_required_and_annotated; test_assignability]
+  |> Test.run

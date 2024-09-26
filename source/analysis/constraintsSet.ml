@@ -853,13 +853,45 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let right_typed_dictionary = get_typed_dictionary right in
         match left_typed_dictionary, right_typed_dictionary with
         | Some { fields = left_fields; _ }, Some { fields = right_fields; _ } ->
-            let field_not_found field =
-              not
-                (List.exists
-                   left_fields
-                   ~f:([%equal: Type.TypedDictionary.typed_dictionary_field] field))
+            (* Implements assignability rules from
+               https://typing.readthedocs.io/en/latest/spec/typeddict.html#id4 *)
+            let fields_needed_from_left =
+              let field_needed { annotation; required; readonly; _ } =
+                not (readonly && (not required) && Type.is_object annotation)
+              in
+              List.filter ~f:field_needed right_fields
             in
-            if not (List.exists right_fields ~f:field_not_found) then
+            let left_fields_map =
+              left_fields
+              |> List.map ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
+                     field.name, field)
+              |> Map.of_alist_exn (module String)
+            in
+            let solve_for (right_field : Type.TypedDictionary.typed_dictionary_field) =
+              match Map.find left_fields_map right_field.name with
+              | None -> impossible
+              | Some left_field ->
+                  if right_field.required && not left_field.required then
+                    impossible
+                  else if (not right_field.readonly) && left_field.readonly then
+                    impossible
+                  else if
+                    (not right_field.required) && (not right_field.readonly) && left_field.required
+                  then
+                    impossible
+                  else if right_field.readonly then
+                    solve_less_or_equal
+                      order
+                      ~left:left_field.annotation
+                      ~right:right_field.annotation
+                      ~constraints
+                  else if Type.equal left_field.annotation right_field.annotation then
+                    [constraints]
+                  else
+                    impossible
+            in
+            let partial_solutions = List.map ~f:solve_for fields_needed_from_left in
+            if List.for_all ~f:potentially_satisfiable partial_solutions then
               [constraints]
             else
               impossible
