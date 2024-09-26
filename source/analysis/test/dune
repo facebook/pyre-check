@@ -31,7 +31,7 @@
   newTypeTest
   overlaidEnvironmentTest
   preprocessingTest
-  pyrePysaApiTest
+  pyrePysaEnvironmentTest
   typeInfoTest
   resolutionTest
   resolvedCallableTest
