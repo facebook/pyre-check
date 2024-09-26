@@ -12,6 +12,7 @@ open Pyre
 open Taint
 module Target = Interprocedural.Target
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 let initialize_and_verify_configuration
     ~static_analysis_configuration:
@@ -111,7 +112,7 @@ let parse_model_modes
   in
   let decorator_preprocessing_configuration =
     {
-      Analysis.DecoratorPreprocessing.Configuration.actions =
+      PyrePysaLogic.DecoratorPreprocessing.Configuration.actions =
         ModelParser.decorator_actions_from_modes model_modes;
       enable_inlining = inline_decorators;
       enable_discarding = true;
