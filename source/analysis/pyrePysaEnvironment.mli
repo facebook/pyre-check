@@ -64,8 +64,6 @@ module ReadOnly : sig
 
   val get_class_summary : t -> string -> ClassSummary.t Ast.Node.t option
 
-  val get_class_metadata : t -> string -> ClassSuccessorMetadataEnvironment.class_metadata option
-
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val immediate_parents : t -> string -> string list

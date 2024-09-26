@@ -999,12 +999,7 @@ let get_class_attributes ~pyre_api = function
 
 
 let get_class_attributes_transitive ~pyre_api class_name =
-  let successors =
-    match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
-    | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
-        successors
-    | _ -> []
-  in
+  let successors = PyrePysaEnvironment.ReadOnly.successors pyre_api class_name in
   class_name :: successors |> List.filter_map ~f:(get_class_attributes ~pyre_api) |> List.concat
 
 

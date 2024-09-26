@@ -631,10 +631,7 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
 let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
   let parents =
     if is_transitive then
-      match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
-      | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
-          successors
-      | _ -> []
+      PyrePysaEnvironment.ReadOnly.successors pyre_api class_name
     else
       PyrePysaEnvironment.ReadOnly.immediate_parents pyre_api class_name
   in

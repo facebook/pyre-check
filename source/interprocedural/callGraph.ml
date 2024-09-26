@@ -2259,14 +2259,7 @@ let resolve_attribute_access_global_targets
         | Type.Primitive class_name ->
             (* Access on an instance, i.e `self.foo`. *)
             let parents =
-              let successors =
-                match PyrePysaEnvironment.ReadOnly.get_class_metadata pyre_api class_name with
-                | Some
-                    { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ }
-                  ->
-                    successors
-                | _ -> []
-              in
+              let successors = PyrePysaEnvironment.ReadOnly.successors pyre_api class_name in
               class_name :: successors
             in
             let add_target targets parent =

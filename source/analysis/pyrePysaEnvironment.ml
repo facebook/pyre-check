@@ -228,8 +228,6 @@ module ReadOnly = struct
 
   let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
 
-  let get_class_metadata api = global_resolution api |> GlobalResolution.get_class_metadata
-
   let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let get_define_names_for_qualifier api =
