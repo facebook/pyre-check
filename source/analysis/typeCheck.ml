@@ -8452,11 +8452,32 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             let matching_successors =
               Map.find_multi field_name_to_successor_fields_map field.name
             in
-            let is_inherited_field =
+            let matching_successor_field_exists =
+              let matches (successor_field : Type.TypedDictionary.typed_dictionary_field) =
+                (* Assignability rules:
+                   https://typing.readthedocs.io/en/latest/spec/typeddict.html#id4 *)
+                let annotation_matches () =
+                  if successor_field.readonly then
+                    GlobalResolution.less_or_equal
+                      global_resolution
+                      ~left:field.annotation
+                      ~right:successor_field.annotation
+                  else
+                    Type.equal successor_field.annotation field.annotation
+                in
+                let requiredness_matches () =
+                  if successor_field.required then
+                    field.required
+                  else
+                    successor_field.readonly || not field.required
+                in
+                let readonlyness_matches () = successor_field.readonly || not field.readonly in
+                requiredness_matches () && readonlyness_matches () && annotation_matches ()
+              in
               List.exists matching_successors ~f:(fun (_, successor_field) ->
-                  [%equal: Type.TypedDictionary.typed_dictionary_field] field successor_field)
+                  matches successor_field)
             in
-            if is_inherited_field then
+            if matching_successor_field_exists then
               []
             else
               List.map matching_successors ~f:(fun (successor_name, successor_field) ->

@@ -230,7 +230,83 @@ let test_assignability =
     ]
 
 
+let test_inheritance =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypedDict
+      from typing_extensions import ReadOnly
+
+      class A(TypedDict):
+        name: ReadOnly[str]
+
+      class B(A):
+        name: str
+        year: int
+
+      def f(b: B) -> None:
+        b["name"] = "Hello World"  # ok
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypedDict
+      from typing_extensions import ReadOnly
+
+      class A(TypedDict):
+        name: ReadOnly[str]
+
+      class B(A):
+        year: int
+
+      def f(b: B) -> None:
+        b["name"] = "Hello World"  # error
+      |}
+           ["Invalid TypedDict operation [54]: Cannot write to `B` read-only field `name`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import ReadOnly
+
+        class A(TypedDict):
+          x: ReadOnly[int]
+
+        class B_Ok(A):
+          x: ReadOnly[bool]
+
+        class B_Err(A):
+          x: ReadOnly[str]
+      |}
+           [
+             "Inconsistent override [15]: `x` overrides attribute defined in `A` inconsistently. \
+              Type `str` is not a subtype of the overridden attribute `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from typing_extensions import NotRequired, ReadOnly, Required
+
+        class A(TypedDict):
+          x: NotRequired[ReadOnly[str]]
+
+        class B(A):
+          x: Required[ReadOnly[str]]
+      |}
+           [];
+    ]
+
+
 let () =
   "readOnly"
-  >::: [test_readonly; test_interaction_with_required_and_annotated; test_assignability]
+  >::: [
+         test_readonly;
+         test_interaction_with_required_and_annotated;
+         test_assignability;
+         test_inheritance;
+       ]
   |> Test.run
