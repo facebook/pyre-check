@@ -21,7 +21,7 @@ open Statement
 open Domains
 open ModelParseResult
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module ClassSummary = Analysis.ClassSummary
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module PythonVersion = struct
   (* Not putting the functions there to prevent circular dependency errors *)
@@ -980,14 +980,19 @@ let get_class_attributes ~pyre_api = function
       PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
       >>| Node.value
       >>| fun class_summary ->
-      let attributes = ClassSummary.attributes ~include_generated_attributes:false class_summary in
-      let constructor_attributes = ClassSummary.constructor_attributes class_summary in
+      let attributes =
+        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
+      in
+      let constructor_attributes =
+        PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+      in
       let all_attributes =
         Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
       in
       let get_attribute attribute_name attribute accumulator =
         match Node.value attribute with
-        | { ClassSummary.Attribute.kind = Simple _; _ } -> attribute_name :: accumulator
+        | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
+            attribute_name :: accumulator
         | _ -> accumulator
       in
       Identifier.SerializableMap.fold get_attribute all_attributes []
