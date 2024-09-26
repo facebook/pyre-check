@@ -636,9 +636,7 @@ let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
           successors
       | _ -> []
     else
-      Analysis.ClassHierarchy.immediate_parents
-        (PyrePysaEnvironment.ReadOnly.class_hierarchy pyre_api)
-        class_name
+      PyrePysaEnvironment.ReadOnly.immediate_parents pyre_api class_name
   in
   let parents =
     if includes_self then

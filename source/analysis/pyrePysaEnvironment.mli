@@ -66,8 +66,6 @@ module ReadOnly : sig
 
   val get_class_metadata : t -> string -> ClassSuccessorMetadataEnvironment.class_metadata option
 
-  val class_hierarchy : t -> (module ClassHierarchy.Handler)
-
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val immediate_parents : t -> string -> string list
