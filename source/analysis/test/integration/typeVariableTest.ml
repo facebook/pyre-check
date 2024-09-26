@@ -2016,6 +2016,7 @@ let test_callable_parameter_variadics =
              "Incompatible parameter type [6]: In call `H.f`, for 2nd positional argument, \
               expected `str` but got `int`.";
            ];
+      (* TODO migeedz: implement error checking for paramSpec *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2024,7 +2025,6 @@ let test_callable_parameter_variadics =
                     return 5
 
             def foo(x: H[int, str]) -> None:
-
                 # incorrect
                 x.f()
                 x.f("A", 1)
@@ -2033,10 +2033,7 @@ let test_callable_parameter_variadics =
                 x.f(1, "A")
 
             |}
-           [
-             "Undefined or invalid type [11]: Annotation `P.args` is not defined as a type.";
-             "Undefined or invalid type [11]: Annotation `P.kwargs` is not defined as a type.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            ~other_sources:

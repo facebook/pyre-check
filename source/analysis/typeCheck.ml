@@ -7255,12 +7255,51 @@ module State (Context : Context) = struct
            }
         :: reversed_head
         when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
-          match
-            GlobalResolution.param_spec_from_vararg_annotations
-              global_resolution
-              ~args_annotation:first_annotation
-              ~kwargs_annotation:second_annotation
-          with
+          (* For PEP695 support, we must get all local type variables in scope, and look for
+             paramSpec there. *)
+          let get_variable_from_name name type_param =
+            match String.equal (Type.Variable.name type_param) name with
+            | true -> Some type_param
+            | false -> None
+          in
+          let type_vars = Resolution.all_type_variables_in_scope resolution in
+          let get_variable name =
+            List.fold_left
+              ~f:(fun acc type_param ->
+                match get_variable_from_name name type_param with
+                | Some param -> Some param
+                | None -> acc)
+              ~init:None
+              type_vars
+          in
+          let param_spec_from_vararg_annotations ~args_annotation ~kwargs_annotation =
+            let get_param_spec variable_name =
+              match get_variable variable_name with
+              | Some (Type.Variable.ParamSpecVariable name) -> Some name
+              | _ -> None
+            in
+            Type.Variable.ParamSpec.of_component_annotations
+              ~get_param_spec
+              ~args_annotation:(delocalize args_annotation)
+              ~kwargs_annotation:(delocalize kwargs_annotation)
+          in
+          let possible_param_spec =
+            let possible_param_spec_global =
+              GlobalResolution.param_spec_from_vararg_annotations
+                global_resolution
+                ~args_annotation:first_annotation
+                ~kwargs_annotation:second_annotation
+            in
+            let possible_param_spec_local =
+              param_spec_from_vararg_annotations
+                ~args_annotation:first_annotation
+                ~kwargs_annotation:second_annotation
+            in
+            match possible_param_spec_local with
+            | None -> possible_param_spec_global
+            | _ -> possible_param_spec_local
+          in
+          match possible_param_spec with
           | Some variable ->
               let add_annotations_to_resolution
                   { Type.Variable.ParamSpec.Components.positional_component; keyword_component }
