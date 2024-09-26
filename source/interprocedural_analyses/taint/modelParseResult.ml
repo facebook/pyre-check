@@ -9,6 +9,7 @@ open Ast
 open Core
 open Interprocedural
 open Pyre
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
@@ -838,7 +839,7 @@ module Modelable = struct
         |> Lazy.force
         |> (function
              | { Statement.Define.signature; _ } -> signature)
-        |> Analysis.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
+        |> PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
     | Attribute _
     | Global _ ->
         failwith "unexpected use of Decorator on an attribute or global"
