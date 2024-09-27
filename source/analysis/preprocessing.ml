@@ -4590,9 +4590,10 @@ module SelfType = struct
           let annotation_with_possible_readonly_wrapper =
             match self_or_class_parameter_value with
             | { Parameter.annotation = Some _readonly_self_or_class_parameter; _ } ->
-                (* The user wrote `self: ReadOnly[Self]` or `cls: ReadOnly[Type[Self]]`. So, wrap
-                   the synthesized type in `ReadOnly`. *)
-                subscript ~location "pyre_extensions.ReadOnly" [annotation] |> Node.create ~location
+                (* The user wrote `self: PyreReadOnly[Self]` or `cls: PyreReadOnly[Type[Self]]`. So,
+                   wrap the synthesized type in `PyreReadOnly`. *)
+                subscript ~location "pyre_extensions.PyreReadOnly" [annotation]
+                |> Node.create ~location
             | _ -> annotation
           in
           {

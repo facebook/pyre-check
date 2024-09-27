@@ -1077,7 +1077,7 @@ let test_expression _ =
      typing.Callable[([PositionalOnly(str)], bool)])]";
   assert_expression
     (Type.PyreReadOnly (Type.list Type.integer))
-    "pyre_extensions.ReadOnly[typing.List[int]]";
+    "pyre_extensions.PyreReadOnly[typing.List[int]]";
   ()
 
 

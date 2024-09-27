@@ -534,7 +534,8 @@ let matches_annotation_constraint
             None
         | "typing.Optional" -> extract_class_name (extract_optional t)
         | "typing._PyreReadOnly_"
-        | "pyre_extensions.ReadOnly" ->
+        | "pyre_extensions.ReadOnly"
+        | "pyre_extensions.PyreReadOnly" ->
             extract_class_name (extract_readonly t)
         | extracted_class_name -> Some extracted_class_name
       in

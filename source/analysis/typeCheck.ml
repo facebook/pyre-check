@@ -133,7 +133,8 @@ let incompatible_annotation_with_attribute_error
 
 (* Return true if the mismatch between `actual` and `expected` is due to readonlyness.
 
-   We check this by stripping any `ReadOnly` types in both and checking if they are compatible. *)
+   We check this by stripping any `PyreReadOnly` types in both and checking if they are
+   compatible. *)
 let is_readonlyness_mismatch ~global_resolution ~actual ~expected =
   (Type.PyreReadOnly.contains_readonly actual || Type.PyreReadOnly.contains_readonly expected)
   && GlobalResolution.less_or_equal

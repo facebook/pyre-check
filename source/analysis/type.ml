@@ -3923,7 +3923,7 @@ module ToExpression = struct
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
-    | PyreReadOnly type_ -> subscript "pyre_extensions.ReadOnly" [expression type_]
+    | PyreReadOnly type_ -> subscript "pyre_extensions.PyreReadOnly" [expression type_]
     | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Concrete []) -> subscript "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
@@ -4902,7 +4902,8 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
            patch the standard library with read-only methods without worrying about whether
            `pyre_extensions` is part of a project. *)
         | "typing._PyreReadOnly_", Some [head]
-        | "pyre_extensions.ReadOnly", Some [head] ->
+        | "pyre_extensions.ReadOnly", Some [head]
+        | "pyre_extensions.PyreReadOnly", Some [head] ->
             Constructors.pyre_read_only head
         | _ -> result
       in
