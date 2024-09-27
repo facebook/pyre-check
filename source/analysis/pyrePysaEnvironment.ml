@@ -9,6 +9,7 @@
    including both taint analysis and model queries. *)
 
 open Core
+open Pyre
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
   let source_code_api =
@@ -260,7 +261,12 @@ module ReadOnly = struct
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
 
-  let get_typed_dictionary api = global_resolution api |> GlobalResolution.get_typed_dictionary
+  let typed_dictionary_field_names api type_name =
+    GlobalResolution.get_typed_dictionary (global_resolution api) type_name
+    >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
+    >>| List.map ~f:(fun { Type.TypedDictionary.name; required = _; _ } -> name)
+    |> Option.value ~default:[]
+
 
   let less_or_equal api = global_resolution api |> GlobalResolution.less_or_equal
 

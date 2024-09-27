@@ -240,10 +240,7 @@ let infer ~pyre_api ~user_models =
   in
   let compute_typed_dict_models class_name =
     let fields =
-      PyrePysaEnvironment.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
-      >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
-      >>| List.map ~f:(fun { Analysis.Type.TypedDictionary.name; required = _; _ } -> name)
-      |> Option.value ~default:[]
+      PyrePysaEnvironment.ReadOnly.typed_dictionary_field_names pyre_api (Type.Primitive class_name)
     in
     let self =
       AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
