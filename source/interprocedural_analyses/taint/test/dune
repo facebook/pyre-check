@@ -29,7 +29,6 @@
   modelInvalidTest
   modelVerificationErrorTest
   missingFlowsTest
-  modelVerifierTest
   sanitizeTest
   sanitizeTransformTest
   sanitizeTransformSetTest
