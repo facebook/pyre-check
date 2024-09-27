@@ -57,6 +57,22 @@ let test_type_variable_scoping =
 
             |}
            [];
+      (* TODO migeedz: Consider what we want to do about this. The conformance test says that we
+         should not return any errors, but Pyre does not accept such programs in legacy syntax
+         currently. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable
+
+            def decorator2[**P, R](x: int) -> Callable[[Callable[P, R]], Callable[P, R]]:
+                ...
+
+            |}
+           [
+             "Invalid type [31]: Expression `typing.Callable[([typing.Callable[(P, R)]], \
+              typing.Callable[(P, R)])]` is not a valid type.";
+           ];
       (* PEP695 generic methods from non-generic classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
