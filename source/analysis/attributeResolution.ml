@@ -4247,3 +4247,20 @@ module Testing = struct
       |> MetaclassCache.Testing.UpdateResult.upstream
   end
 end
+
+(* Creates a function from generic type parameters for a given class to post variance inference *)
+let infer_variance ~generic_type_param =
+  let from_pre_to_post variance =
+    match variance with
+    | Type.Record.PreInferenceVariance.P_Covariant -> Type.Record.Variance.Covariant
+    | Type.Record.PreInferenceVariance.P_Contravariant -> Type.Record.Variance.Contravariant
+    | Type.Record.PreInferenceVariance.P_Invariant -> Type.Record.Variance.Invariant
+    | Type.Record.PreInferenceVariance.P_Undefined -> Type.Record.Variance.Invariant
+  in
+
+  let find_variance =
+    match generic_type_param with
+    | Type.GenericParameter.GpTypeVar { variance; _ } -> from_pre_to_post variance
+    | _ -> Invariant
+  in
+  find_variance

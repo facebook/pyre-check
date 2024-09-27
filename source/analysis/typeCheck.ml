@@ -6250,8 +6250,10 @@ module State (Context : Context) = struct
                  parameter for this class *)
               match maybe_this_class_parameter_name_and_variance base_argument, base_parameter with
               | ( Some (this_name, this_variance),
-                  Type.GenericParameter.GpTypeVar { name = base_name; variance = base_variance; _ }
-                ) -> (
+                  Type.GenericParameter.GpTypeVar { name = base_name; _ } ) -> (
+                  let base_variance =
+                    AttributeResolution.infer_variance ~generic_type_param:base_parameter
+                  in
                   match this_variance, base_variance with
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
                   | Type.Record.Variance.Contravariant, Type.Record.Variance.Invariant

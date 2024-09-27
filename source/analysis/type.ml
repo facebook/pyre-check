@@ -50,6 +50,7 @@ module Record = struct
      for PEP695, our algorithm is still resolving variance. Bivariant is different as it means we
      already ran our algorithm and did not conclude variance. Bivariance is not applicable to legacy
      syntax as the user cannot not specify it. *)
+
   module Variance = struct
     type t =
       | Covariant
@@ -61,6 +62,21 @@ module Record = struct
       | Covariant -> "covariant"
       | Contravariant -> "contravariant"
       | Invariant -> "invariant"
+  end
+
+  module PreInferenceVariance = struct
+    type t =
+      | P_Covariant
+      | P_Contravariant
+      | P_Invariant
+      | P_Undefined
+    [@@deriving compare, eq, sexp, show, hash]
+
+    let show_lowercase = function
+      | P_Covariant -> "P_covariant"
+      | P_Contravariant -> "P_contravariant"
+      | P_Invariant -> "P_invariant"
+      | P_Undefined -> "P_Undefined"
   end
 
   module TypeVarConstraints = struct
@@ -3081,7 +3097,7 @@ module Variable = struct
       | DTypeVar of {
           name: Identifier.t;
           constraints: Expression.t Record.TypeVarConstraints.t;
-          variance: Record.Variance.t;
+          variance: Record.PreInferenceVariance.t;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
@@ -3122,17 +3138,17 @@ module Variable = struct
                   value = { Node.value = Constant Constant.True; _ };
                 }
                 when String.equal (Identifier.sanitized name) "covariant" ->
-                  Some Record.Variance.Covariant
+                  Some Record.PreInferenceVariance.P_Covariant
               | {
                   Call.Argument.name = Some { Node.value = name; _ };
                   value = { Node.value = Constant Constant.True; _ };
                 }
                 when String.equal (Identifier.sanitized name) "contravariant" ->
-                  Some Record.Variance.Contravariant
+                  Some Record.PreInferenceVariance.P_Contravariant
               | _ -> None
             in
             List.find_map arguments ~f:variance_definition
-            |> Option.value ~default:Record.Variance.Invariant
+            |> Option.value ~default:Record.PreInferenceVariance.P_Invariant
           in
 
           Some (DTypeVar { name = Reference.show target; constraints; variance })
@@ -3152,7 +3168,7 @@ module Variable = struct
                {
                  name = Reference.show target;
                  constraints = LiteralIntegers;
-                 variance = Record.Variance.Invariant;
+                 variance = Record.PreInferenceVariance.P_Invariant;
                })
       | {
           Node.value =
@@ -3553,7 +3569,7 @@ module GenericParameter = struct
   type t =
     | GpTypeVar of {
         name: Identifier.t;
-        variance: Record.Variance.t;
+        variance: Record.PreInferenceVariance.t;
         constraints: T.t Record.TypeVarConstraints.t;
       }
     | GpTypeVarTuple of { name: Identifier.t }
@@ -3591,10 +3607,23 @@ module GenericParameter = struct
     | Variable.Declaration.DParamSpec { name } -> GpParamSpec { name }
 
 
+  (* TODO migeedz: get rid of this function *)
   let look_up_variance parameters =
+    (* TODO migeedz: remove variance from TypeVarZipResult and defer dealing with variance till we
+       deal with constraints *)
+    let from_pre_to_post variance =
+      match variance with
+      | Record.PreInferenceVariance.P_Covariant -> Record.Variance.Covariant
+      | Record.PreInferenceVariance.P_Contravariant -> Record.Variance.Contravariant
+      | Record.PreInferenceVariance.P_Invariant -> Record.Variance.Invariant
+      | Record.PreInferenceVariance.P_Undefined -> Record.Variance.Invariant
+    in
     let variance_by_name =
       let add_to_lookup so_far = function
-        | GpTypeVar { name; variance; _ } -> Map.set so_far ~key:name ~data:variance
+        | GpTypeVar { name; variance; _ } ->
+            let variance = from_pre_to_post variance in
+
+            Map.set so_far ~key:name ~data:variance
         | _ -> so_far
       in
       List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
@@ -3726,6 +3755,17 @@ module GenericParameter = struct
               | ( GpTypeVar { name; variance; _ },
                   Record.Argument.Single left,
                   Record.Argument.Single right ) ->
+                  (* TODO migeedz: remove variance from TypeVarZipResult and defer dealing with
+                     variance till we deal with constraints *)
+                  let from_pre_to_post variance =
+                    match variance with
+                    | Record.PreInferenceVariance.P_Covariant -> Record.Variance.Covariant
+                    | Record.PreInferenceVariance.P_Contravariant -> Record.Variance.Contravariant
+                    | Record.PreInferenceVariance.P_Invariant -> Record.Variance.Invariant
+                    | Record.PreInferenceVariance.P_Undefined -> Record.Variance.Invariant
+                  in
+                  let variance = from_pre_to_post variance in
+
                   ( TypeVarZipResult { name; variance; left; right } :: so_far,
                     left_remaining,
                     right_remaining )

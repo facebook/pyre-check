@@ -288,7 +288,7 @@ let parametric_order_base =
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Generic"
     ~arguments_with_variances:
-      [Type.Argument.Single variable_covariant, Type.Record.Variance.Covariant];
+      [Type.Argument.Single variable_covariant, Type.Record.PreInferenceVariance.P_Covariant];
 
   insert order "typing.Iterable";
   connect_with_variance
@@ -296,13 +296,13 @@ let parametric_order_base =
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Iterable"
     ~arguments_with_variances:
-      [Type.Argument.Single variable_covariant, Type.Record.Variance.Covariant];
+      [Type.Argument.Single variable_covariant, Type.Record.PreInferenceVariance.P_Covariant];
   connect_with_variance
     order
     ~predecessor:"typing.Iterable"
     ~successor:"typing.Generic"
     ~arguments_with_variances:
-      [Type.Argument.Single variable_covariant, Type.Record.Variance.Covariant];
+      [Type.Argument.Single variable_covariant, Type.Record.PreInferenceVariance.P_Covariant];
   connect order ~predecessor:"list" ~successor:"typing.Iterable" ~arguments:![variable];
   insert order "tuple";
   connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~arguments:![variable];

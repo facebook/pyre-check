@@ -351,7 +351,13 @@ let is_invariance_mismatch resolution ~left ~right =
           ClassHierarchy.generic_parameters (class_hierarchy resolution) left_name
           (* TODO(T47346673): Do this check when list variadics have variance *)
           >>| List.filter_map ~f:(function
-                  | Type.GenericParameter.GpTypeVar { variance; _ } -> Some variance
+                  | Type.GenericParameter.GpTypeVar p ->
+                      let variance =
+                        AttributeResolution.infer_variance
+                          ~generic_type_param:(Type.GenericParameter.GpTypeVar p)
+                      in
+
+                      Some variance
                   | _ -> None)
         in
         match variances with

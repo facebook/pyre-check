@@ -107,7 +107,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -128,7 +128,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -149,7 +149,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -171,7 +171,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -192,7 +192,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -215,13 +215,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -244,13 +244,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -277,13 +277,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -306,13 +306,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -335,13 +335,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -369,13 +369,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -402,13 +402,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -429,7 +429,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test.T";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -450,13 +450,13 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T2";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);
@@ -477,7 +477,7 @@ let test_parents_and_inferred_generic_base context =
            Type.GenericParameter.GpTypeVar
              {
                name = "test._T1";
-               variance = Type.Record.Variance.Invariant;
+               variance = Type.Record.PreInferenceVariance.P_Invariant;
                constraints = Type.Record.TypeVarConstraints.Unconstrained;
              };
          ]);

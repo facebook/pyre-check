@@ -17,7 +17,7 @@ let empty_lookup _ = None
 let type_var_declaration_and_variable
     ?(declaration_constraints = Type.Record.TypeVarConstraints.Unconstrained)
     ?(type_constraints = Type.Record.TypeVarConstraints.Unconstrained)
-    ?(variance = Type.Record.Variance.Invariant)
+    ?(variance = Type.Record.PreInferenceVariance.P_Invariant)
     name
   =
   ( Type.Variable.Declaration.DTypeVar { name; constraints = declaration_constraints; variance },
@@ -2693,17 +2693,29 @@ let test_parse_type_variable_declarations _ =
   assert_parses_declaration
     "typing.TypeVar('_T')"
     (DTypeVar
-       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variance.Invariant });
+       {
+         name = "target";
+         constraints = Unconstrained;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
+       });
 
   assert_parses_declaration
     "typing.TypeVar('_T', covariant=True)"
     (DTypeVar
-       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variance.Covariant });
+       {
+         name = "target";
+         constraints = Unconstrained;
+         variance = Type.Record.PreInferenceVariance.P_Covariant;
+       });
 
   assert_parses_declaration
     "typing.TypeVar('_T', covariant=False)"
     (DTypeVar
-       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variance.Invariant });
+       {
+         name = "target";
+         constraints = Unconstrained;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
+       });
 
   assert_parses_declaration
     "typing.TypeVar('_T', contravariant=True)"
@@ -2711,20 +2723,24 @@ let test_parse_type_variable_declarations _ =
        {
          name = "target";
          constraints = Unconstrained;
-         variance = Type.Record.Variance.Contravariant;
+         variance = Type.Record.PreInferenceVariance.P_Contravariant;
        });
 
   assert_parses_declaration
     "typing.TypeVar('_T', name=int)"
     (DTypeVar
-       { name = "target"; constraints = Unconstrained; variance = Type.Record.Variance.Invariant });
+       {
+         name = "target";
+         constraints = Unconstrained;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
+       });
   assert_parses_declaration_with_bounds
     "typing.TypeVar('_T', int)"
     (DTypeVar
        {
          name = "target";
          constraints = Type.Record.TypeVarConstraints.Explicit [Type.expression Type.integer];
-         variance = Type.Record.Variance.Invariant;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
        });
 
   assert_parses_declaration_with_bounds
@@ -2734,7 +2750,7 @@ let test_parse_type_variable_declarations _ =
          name = "target";
          constraints =
            Type.Record.TypeVarConstraints.Bound (Type.expression (Type.Primitive "\"C\""));
-         variance = Type.Record.Variance.Invariant;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
        });
 
   assert_parses_declaration_with_bounds
@@ -2745,7 +2761,7 @@ let test_parse_type_variable_declarations _ =
          constraints =
            Type.Record.TypeVarConstraints.Explicit
              [Type.expression (Type.Primitive "\"C\""); Type.expression (Type.Primitive "X")];
-         variance = Type.Record.Variance.Invariant;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
        });
 
   assert_parses_declaration_with_bounds
@@ -2754,7 +2770,7 @@ let test_parse_type_variable_declarations _ =
        {
          name = "target";
          constraints = Type.Record.TypeVarConstraints.Explicit [Type.expression Type.integer];
-         variance = Type.Record.Variance.Invariant;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
        });
 
   assert_parses_declaration_with_bounds
@@ -2765,7 +2781,7 @@ let test_parse_type_variable_declarations _ =
          constraints =
            Type.Record.TypeVarConstraints.Bound
              (Type.expression (Type.Primitive "\"typing.Callable\""));
-         variance = Type.Record.Variance.Invariant;
+         variance = Type.Record.PreInferenceVariance.P_Invariant;
        });
 
   assert_declaration_does_not_parse "typing.TypeVarTuple('Ts', covariant=True)";

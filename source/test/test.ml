@@ -3740,7 +3740,7 @@ module MockClassHierarchyHandler = struct
 
   let connect ?(arguments = []) order ~predecessor ~successor =
     let arguments_with_variances =
-      List.map arguments ~f:(fun argument -> argument, Type.Record.Variance.Invariant)
+      List.map arguments ~f:(fun argument -> argument, Type.Record.PreInferenceVariance.P_Invariant)
     in
     connect_with_variance ~arguments_with_variances order ~predecessor ~successor
 

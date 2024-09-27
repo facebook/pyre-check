@@ -9,6 +9,17 @@ open Core
 open Ast
 
 module Record : sig
+  module PreInferenceVariance : sig
+    type t =
+      | P_Covariant
+      | P_Contravariant
+      | P_Invariant
+      | P_Undefined
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val show_lowercase : t -> string
+  end
+
   module Variance : sig
     type t =
       | Covariant
@@ -826,7 +837,7 @@ module Variable : sig
       | DTypeVar of {
           name: Identifier.t;
           constraints: Expression.t Record.TypeVarConstraints.t;
-          variance: Record.Variance.t;
+          variance: Record.PreInferenceVariance.t;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
@@ -903,7 +914,7 @@ module GenericParameter : sig
   type t =
     | GpTypeVar of {
         name: Identifier.t;
-        variance: Record.Variance.t;
+        variance: Record.PreInferenceVariance.t;
         constraints: type_t Record.TypeVarConstraints.t;
       }
     | GpTypeVarTuple of { name: Identifier.t }

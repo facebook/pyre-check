@@ -301,7 +301,7 @@ let generic_parameters ?(empty_for_nongeneric = false) (module Handler : Handler
           Type.GenericParameter.GpTypeVar
             {
               name = "_T_meta";
-              variance = Type.Record.Variance.Covariant;
+              variance = Type.Record.PreInferenceVariance.P_Covariant;
               constraints = Type.Record.TypeVarConstraints.Unconstrained;
             };
         ]

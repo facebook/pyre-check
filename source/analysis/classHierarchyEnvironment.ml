@@ -193,7 +193,7 @@ module IncomingDataComputation = struct
           match parameter.Node.value with
           | Ast.Expression.TypeParam.TypeVar { name; bound; _ } ->
               Type.GenericParameter.GpTypeVar
-                { name; variance = Invariant; constraints = bound_to_type bound }
+                { name; variance = P_Invariant; constraints = bound_to_type bound }
           | TypeParam.TypeVarTuple name -> GpTypeVarTuple { name }
           | TypeParam.ParamSpec name -> GpParamSpec { name }
         in

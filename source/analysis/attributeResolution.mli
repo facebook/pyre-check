@@ -164,6 +164,8 @@ module AttributeReadOnly : sig
   end
 end
 
+val infer_variance : generic_type_param:Type.GenericParameter.t -> Type.Record.Variance.t
+
 include
   Environment.S
     with module ReadOnly = AttributeReadOnly

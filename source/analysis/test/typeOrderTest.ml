@@ -281,29 +281,29 @@ let variance_order =
     order
     ~predecessor:"Box"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_co, Type.Record.Variance.Covariant];
+    ~arguments_with_variances:[variable_t_co, Type.Record.PreInferenceVariance.P_Covariant];
   concrete_connect_with_variance
     order
     ~predecessor:"Sink"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_contra, Type.Record.Variance.Contravariant];
+    ~arguments_with_variances:[variable_t_contra, Type.Record.PreInferenceVariance.P_Contravariant];
   insert order "Base";
   insert order "Derived";
   concrete_connect_with_variance
     order
     ~predecessor:"Base"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_contra, Type.Record.Variance.Contravariant];
+    ~arguments_with_variances:[variable_t_contra, Type.Record.PreInferenceVariance.P_Contravariant];
   concrete_connect_with_variance
     order
     ~predecessor:"Derived"
     ~successor:"Base"
-    ~arguments_with_variances:[variable_t_co, Type.Record.Variance.Covariant];
+    ~arguments_with_variances:[variable_t_co, Type.Record.PreInferenceVariance.P_Covariant];
   concrete_connect_with_variance
     order
     ~predecessor:"Derived"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_co, Type.Record.Variance.Covariant];
+    ~arguments_with_variances:[variable_t_co, Type.Record.PreInferenceVariance.P_Covariant];
   handler order
 
 
@@ -353,17 +353,17 @@ let multiplane_variance_order =
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_co, Covariant; variable_t_contra, Contravariant];
+    ~arguments_with_variances:[variable_t_co, P_Covariant; variable_t_contra, P_Contravariant];
   concrete_connect_with_variance
     order
     ~predecessor:"B"
     ~successor:"A"
-    ~arguments_with_variances:[variable_t_contra, Contravariant; variable_t_co, Covariant];
+    ~arguments_with_variances:[variable_t_contra, P_Contravariant; variable_t_co, P_Covariant];
   concrete_connect_with_variance
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_contra, Contravariant; variable_t_co, Covariant];
+    ~arguments_with_variances:[variable_t_contra, P_Contravariant; variable_t_co, P_Covariant];
   concrete_connect order ~predecessor:"C" ~successor:"B" ~arguments:[Type.integer; Type.integer];
   concrete_connect order ~predecessor:"D" ~successor:"B" ~arguments:[Type.float; Type.float];
   handler order
@@ -414,17 +414,17 @@ let parallel_planes_variance_order =
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_co, Covariant; variable_t_contra, Contravariant];
+    ~arguments_with_variances:[variable_t_co, P_Covariant; variable_t_contra, P_Contravariant];
   concrete_connect_with_variance
     order
     ~predecessor:"B"
     ~successor:"A"
-    ~arguments_with_variances:[variable_t_co, Covariant; variable_t_contra, Contravariant];
+    ~arguments_with_variances:[variable_t_co, P_Covariant; variable_t_contra, P_Contravariant];
   concrete_connect_with_variance
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_t_co, Covariant; variable_t_contra, Contravariant];
+    ~arguments_with_variances:[variable_t_co, P_Covariant; variable_t_contra, P_Contravariant];
   concrete_connect order ~predecessor:"C" ~successor:"B" ~arguments:[Type.integer; Type.integer];
   concrete_connect order ~predecessor:"D" ~successor:"B" ~arguments:[Type.float; Type.float];
   handler order
@@ -494,18 +494,18 @@ let default =
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_covariant, Covariant];
+    ~arguments_with_variances:[variable_covariant, P_Covariant];
   insert order "typing.Iterable";
   concrete_connect_with_variance
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Iterable"
-    ~arguments_with_variances:[variable_covariant, Covariant];
+    ~arguments_with_variances:[variable_covariant, P_Covariant];
   concrete_connect_with_variance
     order
     ~predecessor:"typing.Iterable"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable_covariant, Covariant];
+    ~arguments_with_variances:[variable_covariant, P_Covariant];
   concrete_connect order ~predecessor:"list" ~successor:"typing.Iterable" ~arguments:[variable];
   concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~arguments:[variable];
   insert order "tuple";
@@ -535,7 +535,7 @@ let default =
     order
     ~predecessor:"typing.Mapping"
     ~successor:"typing.Generic"
-    ~arguments_with_variances:[variable, Invariant; variable_covariant, Covariant];
+    ~arguments_with_variances:[variable, P_Invariant; variable_covariant, P_Covariant];
   insert order "dict";
 
   concrete_connect
@@ -836,7 +836,8 @@ let test_less_or_equal =
       ~successor:typing_mapping;
     concrete_connect_with_variance
       order
-      ~arguments_with_variances:[Type.variable "_T", Invariant; Type.variable "_TCov", Covariant]
+      ~arguments_with_variances:
+        [Type.variable "_T", P_Invariant; Type.variable "_TCov", P_Covariant]
       ~predecessor:typing_mapping
       ~successor:"typing.Generic";
     insert order "dict";
