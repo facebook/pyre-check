@@ -93,7 +93,6 @@ type dependency =
   | AnnotateGlobalLocation of Reference.t
   | FromEmptyStub of Reference.t
   | AttributeTable of AttributeTableKey.t
-  | ParseAnnotation of ParseAnnotationKey.t
   | Metaclass of Type.Primitive.t
   | ComputeModuleComponents of Reference.t
   | FunctionDefinitions of Reference.t
