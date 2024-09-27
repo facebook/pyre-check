@@ -138,30 +138,34 @@ let resolve_global ~pyre_api name =
     else
       None
   else (* Resolve undecorated functions. *)
-    let resolved_global = PyrePysaEnvironment.ReadOnly.global pyre_api name in
-    let resolved_local =
-      if Option.is_none resolved_global then
-        name
-        |> PyrePysaEnvironment.ReadOnly.get_define_body pyre_api
-        >>| Node.value
-        |> function
-        | Some ({ signature = { parent = NestingContext.Function _; _ }; _ } as define) ->
-            Some
-              (PyrePysaEnvironment.ReadOnly.resolve_define_undecorated
-                 ~callable_name:(Some name)
-                 ~implementation:(Some define.signature)
-                 ~overloads:[]
-                 ~scoped_type_variables:None
-                 pyre_api)
-        | _ -> None
-      else
-        None
+    let maybe_signature_of_function =
+      match PyrePysaEnvironment.ReadOnly.global pyre_api name with
+      | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+          Some signature
+      | _ ->
+          PyrePysaEnvironment.ReadOnly.get_define_body pyre_api name
+          >>| Node.value
+          |> (function
+               | Some
+                   ({
+                      Ast.Statement.Define.signature = { parent = NestingContext.Function _; _ };
+                      _;
+                    } as define) ->
+                   Some
+                     (PyrePysaEnvironment.ReadOnly.resolve_define_undecorated
+                        ~callable_name:(Some name)
+                        ~implementation:(Some define.signature)
+                        ~overloads:[]
+                        ~scoped_type_variables:None
+                        pyre_api)
+               | _ -> None)
+          |> Option.map
+               ~f:(fun { Analysis.AnnotatedAttribute.undecorated_signature = signature; _ } ->
+                 signature)
     in
-    match resolved_global, resolved_local with
-    | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
-    | _, Some { Analysis.AnnotatedAttribute.undecorated_signature = signature; _ } ->
-        Some (Global.Attribute (Type.Callable signature))
-    | _ -> (
+    match maybe_signature_of_function with
+    | Some signature -> Some (Global.Attribute (Type.Callable signature))
+    | None -> (
         (* Resolve undecorated methods. *)
         match find_method_definitions ~pyre_api name with
         | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
