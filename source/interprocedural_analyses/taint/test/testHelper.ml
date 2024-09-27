@@ -532,7 +532,7 @@ let initialize
     | None -> Registry.empty, ModelQueryExecution.ModelQueryRegistryMap.empty
     | Some source ->
         let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
-        ModelVerifier.ClassDefinitionsCache.invalidate ();
+        PyrePysaEnvironment.ModelQueries.invalidate_cache ();
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
             ~pyre_api

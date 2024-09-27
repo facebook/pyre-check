@@ -10,13 +10,17 @@ open Core
 open OUnit2
 open Test
 open Ast
-open Taint
-module Global = ModelVerifier.Global
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module Global = PyrePysaEnvironment.ModelQueries.Global
 
 let assert_resolve ~context sources name ~expect =
-  ModelVerifier.ClassDefinitionsCache.invalidate ();
+  PyrePysaEnvironment.ModelQueries.invalidate_cache ();
   let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
-  let actual = ModelVerifier.resolve_global ~pyre_api (Ast.Reference.create name) in
+  let actual =
+    PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global
+      pyre_api
+      (Ast.Reference.create name)
+  in
   let printer = function
     | None -> "None"
     | Some global -> Global.show global

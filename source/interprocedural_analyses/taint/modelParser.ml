@@ -3063,20 +3063,25 @@ type model_or_query =
 
 let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decorators callable =
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
-  let open ModelVerifier in
   let define_name = Target.define_name callable in
   let signature = create_dummy_signature ~decorators define_name in
   if signature_is_property signature then
-    find_method_definitions ~pyre_api ~predicate:is_property define_name
+    PyrePysaEnvironment.ModelQueries.find_method_definitions
+      pyre_api
+      ~predicate:is_property
+      define_name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> Global.Attribute callable)
+    >>| (fun callable -> PyrePysaEnvironment.ModelQueries.Global.Attribute callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter signature then
-    find_method_definitions ~pyre_api ~predicate:Define.is_property_setter define_name
+    PyrePysaEnvironment.ModelQueries.find_method_definitions
+      pyre_api
+      ~predicate:Define.is_property_setter
+      define_name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> Global.Attribute callable)
+    >>| (fun callable -> PyrePysaEnvironment.ModelQueries.Global.Attribute callable)
     |> Core.Result.return
   else if verify_decorators && not (List.is_empty decorators) then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
@@ -3088,7 +3093,7 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
          ~location
          (UnexpectedDecorators { name = define_name; unexpected_decorators = decorators }))
   else
-    Ok (resolve_global ~pyre_api define_name)
+    Ok (PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global pyre_api define_name)
 
 
 let parse_decorator_annotations
@@ -3317,7 +3322,9 @@ let create_model_from_signature
     | None -> (
         let module_name = Reference.first callable_name in
         let module_resolved =
-          ModelVerifier.resolve_global ~pyre_api (Reference.create module_name)
+          PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global
+            pyre_api
+            (Reference.create module_name)
         in
         match module_resolved with
         | Some _ ->
@@ -3326,19 +3333,19 @@ let create_model_from_signature
         | None ->
             model_verification_error
               (NotInEnvironment { module_name; name = Reference.show callable_name }))
-    | Some Global.Class ->
+    | Some PyrePysaEnvironment.ModelQueries.Global.Class ->
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
-    | Some Global.Module ->
+    | Some PyrePysaEnvironment.ModelQueries.Global.Module ->
         model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
-    | Some (Global.Attribute (Type.Callable t))
+    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
     | Some
-        (Global.Attribute
+        (PyrePysaEnvironment.ModelQueries.Global.Attribute
           (Type.Parametric
             { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] })) ->
         Ok (Some t)
-    | Some (Global.Attribute Type.Any) -> Ok None
-    | Some (Global.Attribute Type.Top) -> Ok None
-    | Some (Global.Attribute _) ->
+    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute Type.Any) -> Ok None
+    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute Type.Top) -> Ok None
+    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute _) ->
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
@@ -3843,7 +3850,7 @@ let rec parse_statement
         || not (List.is_empty extra_decorators)
       then
         name
-        |> ModelVerifier.class_summaries ~pyre_api
+        |> PyrePysaEnvironment.ModelQueries.class_summaries pyre_api
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =
@@ -4448,9 +4455,9 @@ let create_callable_model_from_annotations
         ~decorators:define.signature.decorators
         target
       >>| (function
-            | Some (Global.Attribute (Type.Callable t))
+            | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
             | Some
-                (Global.Attribute
+                (PyrePysaEnvironment.ModelQueries.Global.Attribute
                   (Type.Parametric
                     {
                       name = "BoundMethod";

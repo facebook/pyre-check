@@ -11,6 +11,7 @@ open Test
 module Target = Interprocedural.Target
 open Taint
 open ModelParseResult.ModelQuery
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let get_stubs_and_definitions ~source_file_name ~project =
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
@@ -53,7 +54,7 @@ let set_up_environment ?source ~context ~model_source ~validate () =
   let source = Test.trim_extra_indentation model_source in
   let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
 
-  ModelVerifier.ClassDefinitionsCache.invalidate ();
+  PyrePysaEnvironment.ModelQueries.invalidate_cache ();
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse

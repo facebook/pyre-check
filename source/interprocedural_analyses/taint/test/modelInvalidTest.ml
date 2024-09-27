@@ -10,6 +10,7 @@ open Core
 open OUnit2
 open Test
 open Taint
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect context =
   let source =
@@ -67,7 +68,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect con
   in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
-    ModelVerifier.ClassDefinitionsCache.invalidate ();
+    PyrePysaEnvironment.ModelQueries.invalidate_cache ();
     ModelParser.parse
       ~pyre_api
       ~taint_configuration

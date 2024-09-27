@@ -444,3 +444,201 @@ module InContext = struct
     in
     List.fold generators ~init:pyre_in_context ~f:resolve_generator
 end
+
+module ModelQueries = struct
+  module Global = struct
+    type t =
+      | Class
+      | Module
+      | Attribute of Type.t
+    [@@deriving show]
+  end
+
+  module DefinitionsCache (Type : sig
+    type t
+  end) =
+  struct
+    let cache : Type.t Ast.Reference.Table.t = Ast.Reference.Table.create ()
+
+    let set key value = Hashtbl.set cache ~key ~data:value
+
+    let get = Hashtbl.find cache
+
+    let invalidate () = Hashtbl.clear cache
+  end
+
+  module ClassDefinitionsCache = DefinitionsCache (struct
+    type t = Ast.Statement.Class.t Ast.Node.t list option
+  end)
+
+  let containing_source read_only reference =
+    let rec qualifier ~found ~lead ~tail =
+      match tail with
+      | head :: (_ :: _ as tail) ->
+          let new_lead = Ast.Reference.create ~prefix:lead head in
+          if ReadOnly.module_exists read_only new_lead then
+            qualifier ~found:new_lead ~lead:new_lead ~tail
+          else
+            qualifier ~found ~lead:new_lead ~tail
+      | _ -> found
+    in
+    qualifier
+      ~found:Ast.Reference.empty
+      ~lead:Ast.Reference.empty
+      ~tail:(Ast.Reference.as_list reference)
+    |> ReadOnly.source_of_qualifier read_only
+
+
+  let class_summaries read_only reference =
+    match ClassDefinitionsCache.get reference with
+    | Some result -> result
+    | None ->
+        let open Option in
+        let result =
+          containing_source read_only reference
+          >>| Preprocessing.classes
+          >>| List.filter ~f:(fun { Ast.Node.value = { Ast.Statement.Class.name; _ }; _ } ->
+                  Ast.Reference.equal reference name)
+          (* Prefer earlier definitions. *)
+          >>| List.rev
+        in
+        ClassDefinitionsCache.set reference result;
+        result
+
+
+  (* Find a method definition matching the given predicate. *)
+  let find_method_definitions read_only ?(predicate = fun _ -> true) name =
+    let open Ast.Statement in
+    (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is fully
+       qualified. The `Reference.equal` here is relying on this. *)
+    let get_matching_define = function
+      | {
+          Ast.Node.value =
+            Statement.Define ({ signature = { name = define_name; _ } as signature; _ } as define);
+          _;
+        } ->
+          if Ast.Reference.equal define_name name && predicate define then
+            let parser = ReadOnly.annotation_parser read_only in
+            let generic_parameters_as_variables =
+              ReadOnly.generic_parameters_as_variables read_only
+            in
+            AnnotatedDefine.Callable.create_overload_without_applying_decorators
+              ~parser
+              ~generic_parameters_as_variables
+              signature
+            |> Option.some
+          else
+            None
+      | _ -> None
+    in
+    Ast.Reference.prefix name
+    >>= class_summaries read_only
+    >>= List.hd
+    >>| (fun definition -> definition.Ast.Node.value.Class.body)
+    >>| List.filter_map ~f:get_matching_define
+    |> Option.value ~default:[]
+
+
+  (* This is a very specific Pysa API used for dealing with model verification: it - determines what
+     a fully qualified name means, where qualification handles not only module name prepending but
+     nesting of classes, functions, and methods/attributes - if the meaning is not a class or
+     module, it returns the type. For callable types, it uses the undecorated signature rather than
+     the decorated signature.
+
+     This logic used to live inside of `modelVerifier`, but it is extremely invasive to Pyre
+     internals so we need to extract it if we want to be able to work toward a well-defined
+     interface. *)
+  let resolve_qualified_name_to_global read_only name =
+    let toplevel_define_type =
+      Type.Callable.create
+        ~overloads:[]
+        ~parameters:(Type.Callable.Defined [])
+        ~annotation:Type.NoneType
+        ()
+    in
+    let name_end = Ast.Reference.last name in
+    if Ast.Identifier.equal name_end Ast.Statement.toplevel_define_name then
+      if
+        name
+        |> Ast.Reference.prefix
+        >>| ReadOnly.module_exists read_only
+        |> Option.value ~default:false
+      then
+        Some (Global.Attribute toplevel_define_type)
+      else
+        None
+    else if Ast.Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
+      if
+        name
+        |> Ast.Reference.prefix
+        >>| Ast.Reference.show
+        >>| ReadOnly.class_exists read_only
+        |> Option.value ~default:false
+      then
+        Some (Global.Attribute toplevel_define_type)
+      else
+        None
+    else (* Resolve undecorated functions. *)
+      let maybe_signature_of_function =
+        match ReadOnly.global read_only name with
+        | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+            Some signature
+        | _ ->
+            ReadOnly.get_define_body read_only name
+            >>| Ast.Node.value
+            |> (function
+                 | Some
+                     ({
+                        Ast.Statement.Define.signature =
+                          { parent = Ast.NestingContext.Function _; _ };
+                        _;
+                      } as define) ->
+                     Some
+                       (ReadOnly.resolve_define_undecorated
+                          ~callable_name:(Some name)
+                          ~implementation:(Some define.signature)
+                          ~overloads:[]
+                          ~scoped_type_variables:None
+                          read_only)
+                 | _ -> None)
+            |> Option.map ~f:(fun { AnnotatedAttribute.undecorated_signature = signature; _ } ->
+                   signature)
+      in
+      match maybe_signature_of_function with
+      | Some signature -> Some (Global.Attribute (Type.Callable signature))
+      | None -> (
+          (* Resolve undecorated methods. *)
+          match find_method_definitions read_only name with
+          | [callable] ->
+              Some (Global.Attribute (Type.Callable.create_from_implementation callable))
+          | first :: _ :: _ as overloads ->
+              (* Note that we use the first overload as the base implementation, which might be
+                 unsound. *)
+              Some
+                (Global.Attribute
+                   (Type.Callable.create
+                      ~overloads
+                      ~parameters:first.parameters
+                      ~annotation:first.annotation
+                      ()))
+          | [] -> (
+              (* Fall back for anything else. *)
+              let annotation =
+                Ast.Expression.from_reference name ~location:Ast.Location.any
+                |> ReadOnly.resolve_expression_to_type_info read_only
+              in
+              match TypeInfo.Unit.annotation annotation with
+              | Type.Parametric { name = "type"; _ }
+                when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
+                  Some Global.Class
+              | Type.Top when ReadOnly.module_exists read_only name -> Some Global.Module
+              | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
+                  (* FIXME: We are relying on the fact that nonexistent functions & attributes
+                     resolve to mutable annotation, while existing ones resolve to immutable
+                     annotation. This is fragile! *)
+                  None
+              | annotation -> Some (Global.Attribute annotation)))
+
+
+  let invalidate_cache = ClassDefinitionsCache.invalidate
+end

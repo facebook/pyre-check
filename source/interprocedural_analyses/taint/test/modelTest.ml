@@ -11,6 +11,7 @@ open OUnit2
 open Test
 open TestHelper
 open Taint
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let get_stubs_and_definitions ~source_file_name ~project =
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
@@ -122,7 +123,7 @@ let set_up_environment
   in
   let source = Test.trim_extra_indentation model_source in
 
-  ModelVerifier.ClassDefinitionsCache.invalidate ();
+  PyrePysaEnvironment.ModelQueries.invalidate_cache ();
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
@@ -243,7 +244,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
-    ModelVerifier.ClassDefinitionsCache.invalidate ();
+    PyrePysaEnvironment.ModelQueries.invalidate_cache ();
     ModelParser.parse
       ~pyre_api
       ~taint_configuration

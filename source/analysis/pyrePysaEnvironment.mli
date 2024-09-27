@@ -193,3 +193,28 @@ module InContext : sig
 
   val resolve_generators : t -> Ast.Expression.Comprehension.Generator.t list -> t
 end
+
+module ModelQueries : sig
+  module Global : sig
+    type t =
+      | Class
+      | Module
+      | Attribute of Type.t
+    [@@deriving show]
+  end
+
+  val resolve_qualified_name_to_global : ReadOnly.t -> Ast.Reference.t -> Global.t option
+
+  val class_summaries
+    :  ReadOnly.t ->
+    Ast.Reference.t ->
+    Ast.Statement.Class.t Ast.Node.t list option
+
+  val find_method_definitions
+    :  ReadOnly.t ->
+    ?predicate:(Ast.Statement.Define.t -> bool) ->
+    Ast.Reference.t ->
+    Type.type_t Type.Callable.overload list
+
+  val invalidate_cache : unit -> unit
+end

@@ -12,192 +12,7 @@ open Pyre
 open Ast
 open Expression
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module TypeInfo = Analysis.TypeInfo
 module ClassSummary = Analysis.ClassSummary
-
-module DefinitionsCache (Type : sig
-  type t
-end) =
-struct
-  let cache : Type.t Reference.Table.t = Reference.Table.create ()
-
-  let set key value = Hashtbl.set cache ~key ~data:value
-
-  let get = Hashtbl.find cache
-
-  let invalidate () = Hashtbl.clear cache
-end
-
-module ClassDefinitionsCache = DefinitionsCache (struct
-  type t = Statement.Class.t Node.t list option
-end)
-
-let containing_source ~pyre_api reference =
-  let rec qualifier ~found ~lead ~tail =
-    match tail with
-    | head :: (_ :: _ as tail) ->
-        let new_lead = Reference.create ~prefix:lead head in
-        if PyrePysaEnvironment.ReadOnly.module_exists pyre_api new_lead then
-          qualifier ~found:new_lead ~lead:new_lead ~tail
-        else
-          qualifier ~found ~lead:new_lead ~tail
-    | _ -> found
-  in
-  qualifier ~found:Reference.empty ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api
-
-
-let class_summaries ~pyre_api reference =
-  match ClassDefinitionsCache.get reference with
-  | Some result -> result
-  | None ->
-      let open Option in
-      let result =
-        containing_source ~pyre_api reference
-        >>| Preprocessing.classes
-        >>| List.filter ~f:(fun { Node.value = { Statement.Class.name; _ }; _ } ->
-                Reference.equal reference name)
-        (* Prefer earlier definitions. *)
-        >>| List.rev
-      in
-      ClassDefinitionsCache.set reference result;
-      result
-
-
-(* Find a method definition matching the given predicate. *)
-let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
-  let open Statement in
-  (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is fully
-     qualified. The `Reference.equal` here is relying on this. *)
-  let get_matching_define = function
-    | {
-        Node.value =
-          Statement.Define ({ signature = { name = define_name; _ } as signature; _ } as define);
-        _;
-      } ->
-        if Reference.equal define_name name && predicate define then
-          let parser = PyrePysaEnvironment.ReadOnly.annotation_parser pyre_api in
-          let generic_parameters_as_variables =
-            PyrePysaEnvironment.ReadOnly.generic_parameters_as_variables pyre_api
-          in
-          Analysis.AnnotatedDefine.Callable.create_overload_without_applying_decorators
-            ~parser
-            ~generic_parameters_as_variables
-            signature
-          |> Option.some
-        else
-          None
-    | _ -> None
-  in
-  Reference.prefix name
-  >>= class_summaries ~pyre_api
-  >>= List.hd
-  >>| (fun definition -> definition.Node.value.Class.body)
-  >>| List.filter_map ~f:get_matching_define
-  |> Option.value ~default:[]
-
-
-module Global = struct
-  type t =
-    | Class
-    | Module
-    | Attribute of Type.t
-  [@@deriving show]
-end
-
-let toplevel_define_type =
-  Type.Callable.create
-    ~overloads:[]
-    ~parameters:(Type.Callable.Defined [])
-    ~annotation:Type.NoneType
-    ()
-
-
-(* Resolve global symbols, ignoring decorators. *)
-let resolve_global ~pyre_api name =
-  let name_end = Reference.last name in
-  if Identifier.equal name_end Ast.Statement.toplevel_define_name then
-    if
-      name
-      |> Reference.prefix
-      >>| PyrePysaEnvironment.ReadOnly.module_exists pyre_api
-      |> Option.value ~default:false
-    then
-      Some (Global.Attribute toplevel_define_type)
-    else
-      None
-  else if Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
-    if
-      name
-      |> Reference.prefix
-      >>| Reference.show
-      >>| PyrePysaEnvironment.ReadOnly.class_exists pyre_api
-      |> Option.value ~default:false
-    then
-      Some (Global.Attribute toplevel_define_type)
-    else
-      None
-  else (* Resolve undecorated functions. *)
-    let maybe_signature_of_function =
-      match PyrePysaEnvironment.ReadOnly.global pyre_api name with
-      | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
-          Some signature
-      | _ ->
-          PyrePysaEnvironment.ReadOnly.get_define_body pyre_api name
-          >>| Node.value
-          |> (function
-               | Some
-                   ({
-                      Ast.Statement.Define.signature = { parent = NestingContext.Function _; _ };
-                      _;
-                    } as define) ->
-                   Some
-                     (PyrePysaEnvironment.ReadOnly.resolve_define_undecorated
-                        ~callable_name:(Some name)
-                        ~implementation:(Some define.signature)
-                        ~overloads:[]
-                        ~scoped_type_variables:None
-                        pyre_api)
-               | _ -> None)
-          |> Option.map
-               ~f:(fun { Analysis.AnnotatedAttribute.undecorated_signature = signature; _ } ->
-                 signature)
-    in
-    match maybe_signature_of_function with
-    | Some signature -> Some (Global.Attribute (Type.Callable signature))
-    | None -> (
-        (* Resolve undecorated methods. *)
-        match find_method_definitions ~pyre_api name with
-        | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
-        | first :: _ :: _ as overloads ->
-            (* Note that we use the first overload as the base implementation, which might be
-               unsound. *)
-            Some
-              (Global.Attribute
-                 (Type.Callable.create
-                    ~overloads
-                    ~parameters:first.parameters
-                    ~annotation:first.annotation
-                    ()))
-        | [] -> (
-            (* Fall back for anything else. *)
-            let annotation =
-              from_reference name ~location:Location.any
-              |> PyrePysaEnvironment.ReadOnly.resolve_expression_to_type_info pyre_api
-            in
-            match TypeInfo.Unit.annotation annotation with
-            | Type.Parametric { name = "type"; _ }
-              when PyrePysaEnvironment.ReadOnly.class_exists pyre_api (Reference.show name) ->
-                Some Global.Class
-            | Type.Top when PyrePysaEnvironment.ReadOnly.module_exists pyre_api name ->
-                Some Global.Module
-            | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
-                (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
-                   to mutable annotation, while existing ones resolve to immutable annotation. This
-                   is fragile! *)
-                None
-            | annotation -> Some (Global.Attribute annotation)))
-
 
 type parameter_requirements = {
   anonymous_parameters_positions: Int.Set.t;
@@ -399,17 +214,17 @@ let verify_signature
 
 let verify_global ~path ~location ~pyre_api ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global = resolve_global ~pyre_api name in
+  let global = PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global pyre_api name in
   match global with
-  | Some Global.Class ->
+  | Some PyrePysaEnvironment.ModelQueries.Global.Class ->
       Error
         (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
-  | Some Global.Module ->
+  | Some PyrePysaEnvironment.ModelQueries.Global.Module ->
       Error
         (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
-  | Some (Global.Attribute (Type.Callable _))
+  | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable _))
   | Some
-      (Global.Attribute
+      (PyrePysaEnvironment.ModelQueries.Global.Attribute
         (Type.Parametric
           { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable _); _] })) ->
       Error
@@ -417,7 +232,7 @@ let verify_global ~path ~location ~pyre_api ~name =
            ~path
            ~location
            (ModelingCallableAsAttribute (Reference.show name)))
-  | Some (Global.Attribute _)
+  | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute _)
   | None -> (
       let class_summary =
         Reference.prefix name
@@ -447,7 +262,11 @@ let verify_global ~path ~location ~pyre_api ~name =
       | None, Some _ -> Ok ()
       | None, None -> (
           let module_name = Reference.first name in
-          let module_resolved = resolve_global ~pyre_api (Reference.create module_name) in
+          let module_resolved =
+            PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global
+              pyre_api
+              (Reference.create module_name)
+          in
           match module_resolved with
           | Some _ ->
               Error
