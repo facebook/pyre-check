@@ -27,6 +27,10 @@ type order = {
   get_named_tuple_fields: Type.t -> Type.t list option;
   metaclass: Type.Primitive.t -> cycle_detections:CycleDetection.t -> Type.t option;
   cycle_detections: CycleDetection.t;
+  variance_map:
+    class_name:string ->
+    parameters:Type.GenericParameter.t list ->
+    Type.Record.Variance.t Ast.Identifier.Map.t;
 }
 
 val resolve_callable_protocol : assumption:Type.t -> order:order -> Type.t -> Type.t option

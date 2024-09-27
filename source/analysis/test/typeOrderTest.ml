@@ -161,6 +161,7 @@ let less_or_equal
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
+      variance_map = AttributeResolution.variance_map;
     }
 
 
@@ -180,6 +181,7 @@ let join ?(attributes = fun _ ~cycle_detections:_ -> None) handler =
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
+      variance_map = AttributeResolution.variance_map;
     }
 
 
@@ -199,6 +201,7 @@ let meet handler =
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
+      variance_map = AttributeResolution.variance_map;
     }
 
 

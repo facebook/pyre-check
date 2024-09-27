@@ -925,13 +925,10 @@ module GenericParameter : sig
 
   val to_variable : t -> type_t Record.Variable.record
 
-  val look_up_variance : t list -> Identifier.t -> Record.Variance.t option
-
   module ZipTwoArgumentsLists : sig
     type result =
       | TypeVarZipResult of {
           name: Identifier.t;
-          variance: Record.Variance.t;
           left: type_t;
           right: type_t;
         }

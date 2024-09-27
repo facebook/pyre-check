@@ -773,6 +773,40 @@ let callable_call_special_cases
   | _ -> None
 
 
+(* Creates a function from generic type parameters for a given class to post variance inference *)
+let infer_variance_for_one_param ~generic_type_param =
+  let from_pre_to_post variance =
+    match variance with
+    | Type.Record.PreInferenceVariance.P_Covariant -> Type.Record.Variance.Covariant
+    | Type.Record.PreInferenceVariance.P_Contravariant -> Type.Record.Variance.Contravariant
+    | Type.Record.PreInferenceVariance.P_Invariant -> Type.Record.Variance.Invariant
+    | Type.Record.PreInferenceVariance.P_Undefined -> Type.Record.Variance.Invariant
+  in
+
+  let find_variance =
+    match generic_type_param with
+    | Type.GenericParameter.GpTypeVar { variance; _ } -> from_pre_to_post variance
+    | _ -> Invariant
+  in
+  find_variance
+
+
+let infer_variance_for_all_params parameters =
+  let add_to_lookup so_far = function
+    | Type.GenericParameter.GpTypeVar { name; _ } as gp ->
+        let variance = infer_variance_for_one_param ~generic_type_param:gp in
+        Map.set so_far ~key:name ~data:variance
+    | _ -> so_far
+  in
+  List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
+
+
+(* We will expose this interface as the variance map *)
+let variance_map ~class_name ~parameters =
+  let _class_name = class_name in
+  infer_variance_for_all_params parameters
+
+
 class base ~queries:(Queries.{ controls; _ } as queries) =
   object (self)
     (* Given a `Type.t`, recursively search for parameteric forms with invalid
@@ -2986,6 +3020,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
         get_named_tuple_fields;
         metaclass;
+        variance_map;
       }
 
     (* Given an expression, produce a Type.t where literal type information - that is,
@@ -4247,20 +4282,3 @@ module Testing = struct
       |> MetaclassCache.Testing.UpdateResult.upstream
   end
 end
-
-(* Creates a function from generic type parameters for a given class to post variance inference *)
-let infer_variance ~generic_type_param =
-  let from_pre_to_post variance =
-    match variance with
-    | Type.Record.PreInferenceVariance.P_Covariant -> Type.Record.Variance.Covariant
-    | Type.Record.PreInferenceVariance.P_Contravariant -> Type.Record.Variance.Contravariant
-    | Type.Record.PreInferenceVariance.P_Invariant -> Type.Record.Variance.Invariant
-    | Type.Record.PreInferenceVariance.P_Undefined -> Type.Record.Variance.Invariant
-  in
-
-  let find_variance =
-    match generic_type_param with
-    | Type.GenericParameter.GpTypeVar { variance; _ } -> from_pre_to_post variance
-    | _ -> Invariant
-  in
-  find_variance

@@ -6234,25 +6234,32 @@ module State (Context : Context) = struct
             (* Given an argument to a base class, check whether it is a TypeVar and if so get the
                matching GenericParameter.t for this class so we can check variance. *)
             let maybe_this_class_parameter_name_and_variance =
-              let look_up_this_class_variance =
+              let generic_parameters =
                 GlobalResolution.generic_parameters global_resolution this_class_name
                 |> Option.value ~default:[]
-                |> Type.GenericParameter.look_up_variance
+              in
+              let look_up_this_class_variance =
+                AttributeResolution.variance_map
+                  ~parameters:generic_parameters
+                  ~class_name:this_class_name
               in
               fun base_class_argument ->
                 match base_class_argument with
                 | Type.Argument.Single (Type.Variable { Type.Record.Variable.TypeVar.name; _ }) ->
-                    look_up_this_class_variance name >>| fun variance -> name, variance
+                    Map.find look_up_this_class_variance name >>| fun variance -> name, variance
                 | _ -> None
             in
-            let check_pair errors base_argument base_parameter =
+            let check_pair ~base_class_name ~parameters errors base_argument base_parameter =
               (* If the argument to a base class is a type variable, find the corresponding type
                  parameter for this class *)
               match maybe_this_class_parameter_name_and_variance base_argument, base_parameter with
               | ( Some (this_name, this_variance),
                   Type.GenericParameter.GpTypeVar { name = base_name; _ } ) -> (
                   let base_variance =
-                    AttributeResolution.infer_variance ~generic_type_param:base_parameter
+                    Map.find
+                      (AttributeResolution.variance_map ~parameters ~class_name:base_class_name)
+                      base_name
+                    |> Option.value ~default:Type.Record.Variance.Invariant
                   in
                   match this_variance, base_variance with
                   | Type.Record.Variance.Covariant, Type.Record.Variance.Invariant
@@ -6279,7 +6286,13 @@ module State (Context : Context) = struct
                   GlobalResolution.generic_parameters global_resolution name
                   |> Option.value ~default:[]
                 in
-                match List.fold2 arguments parameters ~init:errors ~f:check_pair with
+                match
+                  List.fold2
+                    arguments
+                    parameters
+                    ~init:errors
+                    ~f:(check_pair ~base_class_name:name ~parameters)
+                with
                 | Ok errors -> errors
                 | Unequal_lengths -> errors
               end
@@ -6548,10 +6561,14 @@ module State (Context : Context) = struct
     let look_up_current_class_variance =
       match maybe_current_class_name with
       | Some current_class_name ->
-          GlobalResolution.generic_parameters global_resolution current_class_name
-          |> Option.value ~default:[]
-          |> Type.GenericParameter.look_up_variance
-      | None -> fun _ -> None
+          let generic_parameters =
+            GlobalResolution.generic_parameters global_resolution current_class_name
+            |> Option.value ~default:[]
+          in
+          AttributeResolution.variance_map
+            ~parameters:generic_parameters
+            ~class_name:current_class_name
+      | None -> Identifier.Map.empty
     in
     let parameter_types =
       let create_parameter { Node.value = { Parameter.name; value; annotation }; _ } =
@@ -6789,7 +6806,7 @@ module State (Context : Context) = struct
       let add_variance_error return_type errors =
         match return_type with
         | Type.Variable { Type.Variable.TypeVar.name = type_var_name; _ } -> (
-            match look_up_current_class_variance type_var_name with
+            match Map.find look_up_current_class_variance type_var_name with
             | Some (Type.Record.Variance.Contravariant as variance) ->
                 emit_error
                   ~errors
@@ -7030,7 +7047,7 @@ module State (Context : Context) = struct
           match annotation with
           | Type.Variable { Type.Variable.TypeVar.name = type_var_name; _ }
             when not (Define.is_constructor define) -> (
-              match look_up_current_class_variance type_var_name with
+              match Map.find look_up_current_class_variance type_var_name with
               | Some (Type.Record.Variance.Covariant as variance) ->
                   emit_error
                     ~errors

@@ -122,6 +122,7 @@ module OrderImplementation = struct
            ConstraintsSet.class_hierarchy =
              { least_upper_bound; instantiate_successors_parameters; generic_parameters; _ };
            is_protocol;
+           variance_map;
            _;
          } as order)
         left
@@ -230,12 +231,17 @@ module OrderImplementation = struct
                 with
                 | ClassHierarchy.Untracked _ -> None
               in
-              let handle_target target =
+              let handle_target target ~parameters =
                 let left_arguments = instantiate_successors_parameters ~source:left ~target in
                 let right_arguments = instantiate_successors_parameters ~source:right ~target in
                 let join_arguments_respecting_variance = function
                   | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarZipResult
-                      { variance; left; right; _ } -> (
+                      { name; left; right; _ } -> (
+                      let variance =
+                        Map.find (variance_map ~class_name:target ~parameters) name
+                        |> Option.value ~default:Type.Record.Variance.Invariant
+                      in
+
                       match left, right, variance with
                       | Type.Bottom, other, _
                       | other, Type.Bottom, _ ->
@@ -284,7 +290,12 @@ module OrderImplementation = struct
                     >>| fun arguments -> Type.parametric target arguments
                 | _ -> None
               in
-              target >>= handle_target |> Option.value ~default:union
+              target
+              >>= handle_target
+                    ~parameters:
+                      (generic_parameters (target |> Option.value ~default:"")
+                      |> Option.value ~default:[])
+              |> Option.value ~default:union
         | Type.Tuple (Concrete left), Type.Tuple (Concrete right)
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(join order) |> Type.tuple

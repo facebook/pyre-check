@@ -3607,30 +3607,6 @@ module GenericParameter = struct
     | Variable.Declaration.DParamSpec { name } -> GpParamSpec { name }
 
 
-  (* TODO migeedz: get rid of this function *)
-  let look_up_variance parameters =
-    (* TODO migeedz: remove variance from TypeVarZipResult and defer dealing with variance till we
-       deal with constraints *)
-    let from_pre_to_post variance =
-      match variance with
-      | Record.PreInferenceVariance.P_Covariant -> Record.Variance.Covariant
-      | Record.PreInferenceVariance.P_Contravariant -> Record.Variance.Contravariant
-      | Record.PreInferenceVariance.P_Invariant -> Record.Variance.Invariant
-      | Record.PreInferenceVariance.P_Undefined -> Record.Variance.Invariant
-    in
-    let variance_by_name =
-      let add_to_lookup so_far = function
-        | GpTypeVar { name; variance; _ } ->
-            let variance = from_pre_to_post variance in
-
-            Map.set so_far ~key:name ~data:variance
-        | _ -> so_far
-      in
-      List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
-    in
-    fun variable_name -> Map.find variance_by_name variable_name
-
-
   (* A zip function + result type used when we need to use type paramter information of a type
    * constructor to compare two specializations of that type constructor: we want to zip the
    * two argument lists * up with the parameters.
@@ -3648,7 +3624,6 @@ module GenericParameter = struct
     type result =
       | TypeVarZipResult of {
           name: Identifier.t;
-          variance: Record.Variance.t;
           left: T.t;
           right: T.t;
         }
@@ -3752,23 +3727,8 @@ module GenericParameter = struct
             right_argument :: right_remaining ) ->
             let so_far, left_remaining, right_remaining =
               match parameter, left_argument, right_argument with
-              | ( GpTypeVar { name; variance; _ },
-                  Record.Argument.Single left,
-                  Record.Argument.Single right ) ->
-                  (* TODO migeedz: remove variance from TypeVarZipResult and defer dealing with
-                     variance till we deal with constraints *)
-                  let from_pre_to_post variance =
-                    match variance with
-                    | Record.PreInferenceVariance.P_Covariant -> Record.Variance.Covariant
-                    | Record.PreInferenceVariance.P_Contravariant -> Record.Variance.Contravariant
-                    | Record.PreInferenceVariance.P_Invariant -> Record.Variance.Invariant
-                    | Record.PreInferenceVariance.P_Undefined -> Record.Variance.Invariant
-                  in
-                  let variance = from_pre_to_post variance in
-
-                  ( TypeVarZipResult { name; variance; left; right } :: so_far,
-                    left_remaining,
-                    right_remaining )
+              | GpTypeVar { name; _ }, Record.Argument.Single left, Record.Argument.Single right ->
+                  TypeVarZipResult { name; left; right } :: so_far, left_remaining, right_remaining
               | (GpTypeVarTuple _ as parameter), _, _ ->
                   let zip_item, left_after_unpack, right_after_unpack =
                     zip_type_var_tuple_parameter

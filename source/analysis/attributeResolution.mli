@@ -164,7 +164,10 @@ module AttributeReadOnly : sig
   end
 end
 
-val infer_variance : generic_type_param:Type.GenericParameter.t -> Type.Record.Variance.t
+val variance_map
+  :  class_name:'a ->
+  parameters:Type.GenericParameter.t list ->
+  Type.Record.Variance.t Identifier.Map.t
 
 include
   Environment.S
