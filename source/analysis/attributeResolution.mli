@@ -44,6 +44,12 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, sexp, show, hash]
 
+type type_validation_policy =
+  | NoValidation
+  | ValidatePrimitives
+  | ValidatePrimitivesAndTypeParameters
+[@@deriving compare, sexp, show, hash]
+
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
@@ -59,7 +65,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
-    ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
+    ?validation:type_validation_policy ->
     Expression.expression Node.t ->
     Type.t
 

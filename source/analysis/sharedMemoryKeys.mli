@@ -32,25 +32,6 @@ module AttributeTableKey : sig
   include Core.Hashable with type t := t
 end
 
-module ParseAnnotationKey : sig
-  type type_validation_policy =
-    | NoValidation
-    | ValidatePrimitives
-    | ValidatePrimitivesAndTypeParameters
-
-  type t = {
-    validation: type_validation_policy;
-    expression: Expression.t;
-  }
-  [@@deriving sexp]
-
-  include Memory.KeyType with type t := t
-
-  module Set : Core.Set.S with type Elt.t = t
-
-  include Core.Hashable with type t := t
-end
-
 type dependency =
   | CreateModuleErrors of Reference.t
   | TypeCheckDefine of Reference.t

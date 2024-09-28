@@ -58,30 +58,6 @@ module AttributeTableKey = struct
   let from_string sexp = Sexp.of_string sexp |> t_of_sexp
 end
 
-module ParseAnnotationKey = struct
-  type type_validation_policy =
-    | NoValidation
-    | ValidatePrimitives
-    | ValidatePrimitivesAndTypeParameters
-  [@@deriving compare, sexp, hash, show]
-
-  module T = struct
-    type t = {
-      validation: type_validation_policy;
-      expression: Expression.t;
-    }
-    [@@deriving compare, sexp, hash, show]
-  end
-
-  include T
-  module Set = Set.Make (T)
-  include Hashable.Make (T)
-
-  let to_string key = sexp_of_t key |> Sexp.to_string
-
-  let from_string sexp = Sexp.of_string sexp |> t_of_sexp
-end
-
 type dependency =
   | CreateModuleErrors of Reference.t
   | TypeCheckDefine of Reference.t

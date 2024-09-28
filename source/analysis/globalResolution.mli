@@ -90,7 +90,7 @@ val full_order : t -> ConstraintsSet.order
 
 val parse_annotation
   :  t ->
-  ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
+  ?validation:AttributeResolution.type_validation_policy ->
   Expression.t ->
   Type.t
 

@@ -318,7 +318,7 @@ let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hiera
 
 let parse_reference ?(allow_untracked = false) resolution reference =
   let validation =
-    if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives
+    if allow_untracked then AttributeResolution.NoValidation else ValidatePrimitives
   in
   Expression.from_reference ~location:Location.any reference
   |> parse_annotation resolution ~validation
@@ -615,7 +615,7 @@ let annotation_parser resolution =
 let nonvalidating_annotation_parser resolution =
   {
     AnnotatedCallable.parse_annotation =
-      parse_annotation ~validation:SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitives resolution;
+      parse_annotation ~validation:AttributeResolution.ValidatePrimitives resolution;
     param_spec_from_vararg_annotations = param_spec_from_vararg_annotations resolution;
   }
 

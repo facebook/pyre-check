@@ -234,6 +234,12 @@ module TypeParameterValidationTypes = struct
   [@@deriving compare, sexp, show, hash]
 end
 
+type type_validation_policy =
+  | NoValidation
+  | ValidatePrimitives
+  | ValidatePrimitivesAndTypeParameters
+[@@deriving compare, sexp, show, hash]
+
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
 module ParsingValidation = struct
@@ -252,9 +258,9 @@ module ParsingValidation = struct
       EnvironmentControls.no_validation_on_class_lookup_failure controls
     in
     if no_validation_on_class_lookup_failure then
-      SharedMemoryKeys.ParseAnnotationKey.NoValidation
+      NoValidation
     else
-      SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters
+      ValidatePrimitivesAndTypeParameters
 end
 
 (* This function mutably updates an UninstantiatedAttributeTable.t if a class has any dataclass

@@ -58,7 +58,7 @@ module ReadOnly : sig
 
   val parse_annotation
     :  t ->
-    ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
+    ?validation:AttributeResolution.type_validation_policy ->
     Ast.Expression.t ->
     Type.t
 
