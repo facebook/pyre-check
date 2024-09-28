@@ -8,10 +8,9 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Core.List
 module Exit_status = Hack_utils.Exit_status
 module Measure = Hack_utils.Measure
-module PrintSignal = Hack_utils.PrintSignal
+module Chan = Domainslib.Chan
 open Hack_heap
 
 (*****************************************************************************
@@ -74,6 +73,24 @@ let () =
 type request = Request of (serializer -> unit)
 and serializer = { send: 'a. 'a -> unit }
 
+module Response = struct
+  type 'a t =
+    | Success of { result: 'a; stats: Measure.record_data }
+    | Failure of { exn: string; backtrace: Printexc.raw_backtrace }
+
+  type any = Any : 'a t -> any
+
+  let unpack (w : 'a t) : 'a =
+    match w with
+    | Success { result; stats } ->
+      Measure.merge ~from:(Measure.deserialize stats) ();
+      result
+    | Failure { exn; backtrace } ->
+      raise (Worker_exception (exn, backtrace))
+
+end
+
+
 (*****************************************************************************
  * Everything we need to know about a worker.
  *
@@ -81,27 +98,24 @@ and serializer = { send: 'a. 'a -> unit }
 
 type t = {
   (* Sanity check: is the worker still available ? *)
-  mutable killed: bool;
+  killed: bool Atomic.t;
 
   (* Sanity check: is the worker currently busy ? *)
-  mutable busy: bool;
+  busy: bool Atomic.t;
 
-  pid: int;
-  ic: in_channel;
-  oc: out_channel;
+  domain : unit Domain.t;
+
+  ic: Response.any Chan.t;
+  oc: request Chan.t;
+
+  (* Setting [done_] to true signals the worker not to thread additional tasks. *)
+  done_ : bool Atomic.t;
 
   (* File descriptor corresponding to ic, used for `select`. *)
-  infd: Unix.file_descr;
+  (*infd: Unix.file_descr;*)
 }
 
 type 'a handle = t
-
-module Response = struct
-  type 'a t =
-    | Success of { result: 'a; stats: Measure.record_data }
-    | Failure of { exn: string; backtrace: Printexc.raw_backtrace }
-end
-
 
 (*****************************************************************************
  * Entry point for spawned worker.
@@ -117,9 +131,7 @@ let worker_job_main ic oc =
   let start_user_time = ref 0.0 in
   let start_system_time = ref 0.0 in
   let send_response response =
-    let s = Marshal.to_string response [Marshal.Closures] in
-    output_string oc s;
-    flush oc
+    Chan.send oc response
   in
   let send_result result =
     let tm = Unix.times () in
@@ -129,11 +141,11 @@ let worker_job_main ic oc =
     Measure.sample "worker_system_time" (end_system_time -. !start_system_time);
 
     let stats = Measure.serialize (Measure.pop_global ()) in
-    send_response (Response.Success { result; stats })
+    send_response Response.(Any (Success { result; stats }))
   in
   try
     Measure.push_global ();
-    let Request do_process = Marshal.from_channel ic in
+    let Request do_process = Chan.recv ic in
     let tm = Unix.times () in
     start_user_time := tm.Unix.tms_utime +. tm.Unix.tms_cutime;
     start_system_time := tm.Unix.tms_stime +. tm.Unix.tms_cstime;
@@ -157,54 +169,25 @@ let worker_job_main ic oc =
       Exit_status.exit exit_code
   | exn ->
       let backtrace = Printexc.get_raw_backtrace () in
-      send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace })
+      send_response Response.(Any (Failure { exn = Base.Exn.to_string exn; backtrace }))
 
 let fork_handler ic oc =
   (* We fork an ephemeral worker for every incoming request.
      And let it die after one request. This is the quickest GC. *)
-  match Unix.fork () with
-  | 0 ->
-    worker_job_main ic oc;
-    exit 0
-  | pid ->
-    (* Wait for the ephemeral worker termination... *)
-    match snd (waitpid_no_eintr [] pid) with
-    | Unix.WEXITED 0 -> ()
-    | Unix.WEXITED 1 ->
-        raise End_of_file
-    | Unix.WEXITED code ->
-        Printf.eprintf "Worker exited (code: %d)\n" code;
-        Stdlib.exit code
-    | Unix.WSIGNALED x ->
-        let sig_str = PrintSignal.string_of_signal x in
-        Printf.eprintf "Worker interrupted with signal: %s\n" sig_str;
-        exit 2
-    | Unix.WSTOPPED x ->
-        Printf.eprintf "Worker stopped with signal: %d\n" x;
-        exit 3
+  let d = Domain.spawn (fun () -> worker_job_main ic oc) in
+  Domain.join d
 
-let worker_loop handler infd outfd =
-  let ic = Unix.in_channel_of_descr infd in
-  let oc = Unix.out_channel_of_descr outfd in
+let worker_loop done_ handler ic oc =
   try
-    while true do
-      (* Wait for an incoming job : is there something to read?
-         But we don't read it yet. It will be read by the forked ephemeral worker. *)
-      let readyl, _, _ = Unix.select [infd] [] [] (-1.0) in
-      if readyl = [] then raise End_of_file;
+    while not (Atomic.get done_) do
       handler ic oc
     done
   with End_of_file -> ()
 
-let worker_main restore state handler infd outfd =
-  try
-    restore state;
-    worker_loop handler infd outfd;
-    exit 0
-  with exn ->
-    let backtrace = Printexc.get_raw_backtrace () in
-    Printexc.default_uncaught_exception_handler exn backtrace;
-    exit 1
+let worker_main restore state handler done_ infd outfd =
+  restore state;
+  worker_loop done_ handler infd outfd;
+  exit 0
 
 (**************************************************************************
  * Creates a pool of workers.
@@ -230,19 +213,20 @@ let make ~nbr_procs ~gc_control ~long_lived_workers =
       fork_handler
   in
   let fork worker_id =
-    let parent_in, child_out = Unix.pipe () in
-    let child_in, parent_out = Unix.pipe () in
-    match Unix.fork () with
-    | 0 ->
-      Unix.close parent_in;
-      Unix.close parent_out;
-      worker_main restore worker_id handler child_in child_out
-    | pid ->
-      Unix.close child_in;
-      Unix.close child_out;
-      let ic = Unix.in_channel_of_descr parent_in in
-      let oc = Unix.out_channel_of_descr parent_out in
-      { busy = false; killed = false; pid; infd = parent_in; ic; oc }
+    let child_in = Chan.make_bounded 1 in
+    let child_out = Chan.make_bounded 1 in
+    let done_ = Atomic.make false in
+    let domain =
+      Domain.spawn
+        (fun () -> worker_main restore worker_id handler done_ child_in child_out)
+    in
+    { busy = Atomic.make false;
+      killed = Atomic.make false;
+      ic = child_out;
+      oc = child_in;
+      domain;
+      done_;
+    }
   in
   let rec loop acc n =
     if n = 0 then acc
@@ -262,23 +246,13 @@ let current_worker_id () = !current_worker_id
  **************************************************************************)
 
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
-  if w.killed then raise Worker_killed;
-  if w.busy then raise Worker_busy;
+  if Atomic.get w.killed then raise Worker_killed;
+  if Atomic.get w.busy then raise Worker_busy;
   (* Mark the worker as busy. *)
-  w.busy <- true;
+  Atomic.set w.busy true;
   let request = Request (fun { send } -> send (f x)) in
   (* Send the job to the ephemeral worker. *)
-  let () =
-    try
-      Marshal.to_channel w.oc request [Marshal.Closures];
-      flush w.oc
-    with e ->
-      match Unix.waitpid [Unix.WNOHANG] w.pid with
-      | 0, _ ->
-          raise (Worker_failed_to_send_job (Other_send_job_failure e))
-      | _, status ->
-          raise (Worker_failed_to_send_job (Worker_already_exited status))
-  in
+  Chan.send w.oc request;
   (* And returned the 'handle'. *)
   w
 
@@ -289,22 +263,18 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
  *
  **************************************************************************)
 
-let get_result w =
-  w.busy <- false;
-  match Marshal.from_channel w.ic with
-  | Response.Success { result; stats } ->
+let get_result (w : 'a handle) : 'a =
+  Atomic.set w.busy false;
+  match Chan.recv w.ic with
+  | Response.(Any (Success { result; stats })) ->
+    assert (Atomic.get w.done_);
     Measure.merge ~from:(Measure.deserialize stats) ();
-    result
-  | Response.Failure { exn; backtrace } ->
+    Atomic.set w.done_ false;
+    (Obj.magic result : 'a)
+  | Response.(Any (Failure { exn; backtrace })) ->
+    assert (Atomic.get w.done_);
+    Atomic.set w.done_ false;
     raise (Worker_exception (exn, backtrace))
-  | exception exn ->
-    let backtrace = Printexc.get_raw_backtrace () in
-    match Unix.waitpid [Unix.WNOHANG] w.pid with
-    | 0, _ -> Printexc.raise_with_backtrace exn backtrace
-    | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
-        raise SharedMemory.Out_of_shared_memory
-    | _, exit_status ->
-        raise (Worker_exited_abnormally (w.pid, exit_status))
 
 (*****************************************************************************
  * Our polling primitive on workers
@@ -313,25 +283,21 @@ let get_result w =
  *****************************************************************************)
 
 type 'a selected = {
-  readys: 'a handle list;
+  readys: ('a Response.t * t) list;
   waiters: 'a handle list;
 }
 
-let select ws =
-  let fds = List.map ~f:(fun w -> w.infd) ws in
-  let ready_fds, _, _ =
-    if fds = [] then
-      [], [], []
-    else
-      Unix.select fds [] [] ~-.1.
-  in
+let select = fun (type a) (ws : a handle list) ->
   let rec loop readys waiters = function
     | [] -> { readys; waiters }
-    | w :: ws ->
-      if List.mem ~equal:(=) ready_fds w.infd then
-        loop (w :: readys) waiters ws
-      else
+    | w :: ws -> (
+      match Chan.recv_poll w.ic with
+      | Some Response.(Any (result : _ Response.t)) ->
+        (* Very unsafe, but so was the previous implem *)
+        loop (((Obj.magic result : a Response.t), w) :: readys) waiters ws
+      | None ->
         loop readys (w :: waiters) ws
+      )
   in
   loop [] [] ws
 
@@ -342,12 +308,12 @@ let get_worker w = w
  **************************************************************************)
 
 let kill w =
-  if not w.killed then begin
-    w.killed <- true;
-    close_in_noerr w.ic;
-    close_out_noerr w.oc;
-    try Unix.kill w.pid Sys.sigkill; ignore (waitpid_no_eintr [] w.pid)
-    with Unix.Unix_error (Unix.ESRCH, _, _) -> ()
+  if not (Atomic.get w.killed) then begin
+    (* TODO this does not actually kill the task but waits for its completion,
+       we may want to actually kill it *)
+    Atomic.set w.done_ true;
+    Atomic.set w.killed true;
+    Domain.join w.domain;
   end
 
 let exception_backtrace = function

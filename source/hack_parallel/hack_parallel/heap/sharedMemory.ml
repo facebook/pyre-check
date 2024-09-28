@@ -9,17 +9,15 @@
 
 
 module List = Core.List
-module ISet = Hack_collections.ISet
 module MyMap = Hack_collections.MyMap
 module Hh_logger = Hack_utils.Hh_logger
 module Measure = Hack_utils.Measure
+module Ht = Kcas_data.Hashtbl
 
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)
-type config = {
-  heap_size        : int;
+type dep_config = {
   dep_table_pow    : int;
-  hash_table_pow   : int;
   log_level        : int;
 }
 
@@ -55,12 +53,20 @@ let () =
   Callback.register_exception
     "c_assertion_failure" (C_assertion_failure "dummy string")
 
+(* Initialize the _dependency table_ parameters (formerly both tables). *)
+external hh_shared_init : dep_config -> unit = "hh_shared_init"
+
 (*****************************************************************************)
 (* Initializes the shared memory. Must be called before forking. *)
 (*****************************************************************************)
-external init : config -> unit = "hh_shared_init"
+let init (config : dep_config) : unit =
+  hh_shared_init config
 
-external connect : unit -> unit = "hh_connect"
+(* Just sets a worker's PID on the C side. Can probably be removed later *)
+external hh_connect : unit -> unit = "hh_connect" [@@noalloc]
+
+let connect () =
+  hh_connect ()
 
 (*****************************************************************************)
 (* The shared memory garbage collector. It must be called every time we
@@ -68,7 +74,7 @@ external connect : unit -> unit = "hh_connect"
 *)
 (*****************************************************************************)
 
-external hh_collect: unit -> unit = "hh_collect" [@@noalloc]
+let hh_collect () = ()
 
 (*****************************************************************************)
 (* Serializes the dependency table and writes it to a file *)
@@ -101,31 +107,55 @@ external load_dep_table_sqlite_c: string -> bool -> int = "hh_load_dep_table_sql
 let load_dep_table_sqlite : string -> bool -> int = fun fn ignore_hh_version ->
   load_dep_table_sqlite_c fn ignore_hh_version
 
+(* Value of any type. *)
+type value = Value : 'a -> value
+
+let hashtbl : (string, value) Ht.t =
+  Ht.create ~hashed_type:(module String) ()
+
+(*****************************************************************************)
+(* Empty the shared hash table *)
+(*****************************************************************************)
+external hh_pyre_reset : unit -> unit = "hh_pyre_reset"
+
+let pyre_reset () =
+  hh_pyre_reset ();
+  Ht.clear hashtbl
+
 (*****************************************************************************)
 (* Serializes & loads the hash table directly into memory *)
 (*****************************************************************************)
 
-external save_table: string -> unit = "hh_save_table"
+let save_table (filename : string) : unit =
+  let oc = Out_channel.open_bin filename in
+  (* This is obviously not versioned and hackish. *)
+  let bindings : (string * value) list = Ht.to_seq hashtbl |> Stdlib.List.of_seq in
+  Marshal.to_channel oc bindings []
 
-external load_table: string -> unit = "hh_load_table"
+let load_table (filename :string) : unit =
+  let ic = In_channel.open_bin filename in
+  (* This is obviously not versioned and hackish. *)
+  let bindings = (Marshal.from_channel ic : (string * value) list) in
+  let new_ht = Ht.of_seq (Stdlib.List.to_seq bindings) in
+  Ht.swap hashtbl new_ht
 
 (*****************************************************************************)
 (* Serializes the hash table to sqlite *)
 (*****************************************************************************)
 
-external hh_save_table_sqlite: string -> int = "hh_save_table_sqlite"
-let save_table_sqlite filename = hh_save_table_sqlite filename
+(*external hh_save_table_sqlite: string -> int = "hh_save_table_sqlite"*)
+(*let save_table_sqlite _filename = failwith "To be supported again"*)
 
-external hh_save_table_keys_sqlite: string -> string array -> int =
-  "hh_save_table_keys_sqlite"
-let save_table_keys_sqlite filename keys = hh_save_table_keys_sqlite filename keys
+(*external hh_save_table_keys_sqlite: string -> string array -> int =
+  "hh_save_table_keys_sqlite"*)
+(*let save_table_keys_sqlite _filename _keys = failwith "To be supported again"*)
 
 (*****************************************************************************)
 (* Loads the hash table by reading from a file *)
 (*****************************************************************************)
 
-external hh_load_table_sqlite: string -> bool -> int = "hh_load_table_sqlite"
-let load_table_sqlite filename verify = hh_load_table_sqlite filename verify
+(*external hh_load_table_sqlite: string -> bool -> int = "hh_load_table_sqlite"*)
+(*let load_table_sqlite _filename _verify = failwith "To be supported again"*)
 
 (*****************************************************************************)
 (* Cleans up the artifacts generated by SQL *)
@@ -135,12 +165,12 @@ external cleanup_sqlite: unit -> unit = "hh_cleanup_sqlite"
 (*****************************************************************************)
 (* The size of the dynamically allocated shared memory section *)
 (*****************************************************************************)
-external heap_size: unit -> int = "hh_used_heap_size" [@@noalloc]
+let heap_size () : int = 0
 
 (*****************************************************************************)
 (* Part of the heap not reachable from hashtable entries. *)
 (*****************************************************************************)
-external wasted_heap_size: unit -> int = "hh_wasted_heap_size" [@@noalloc]
+let wasted_heap_size () : int = 0
 
 (*****************************************************************************)
 (* The logging level for shared memory statistics *)
@@ -152,12 +182,14 @@ external hh_log_level : unit -> int = "hh_log_level" [@@noalloc]
 (*****************************************************************************)
 (* The number of used slots in our hashtable *)
 (*****************************************************************************)
-external hash_used_slots : unit -> int * int = "hh_hash_used_slots"
+let hash_used_slots () : int * int =
+  (Ht.length hashtbl, Ht.length hashtbl)
 
 (*****************************************************************************)
 (* The total number of slots in our hashtable *)
 (*****************************************************************************)
-external hash_slots : unit -> int = "hh_hash_slots"
+let hash_slots () : int =
+  fst (hash_used_slots ())
 
 (*****************************************************************************)
 (* The number of used slots in our dependency table *)
@@ -174,7 +206,7 @@ external dep_slots : unit -> int = "hh_dep_slots"
  * (cf serverInit.ml). *)
 (*****************************************************************************)
 
-external hh_check_heap_overflow: unit -> bool  = "hh_check_heap_overflow"
+let hh_check_heap_overflow () : bool = false
 
 let init_done () = ()
 
@@ -218,40 +250,6 @@ let collect (effort : [ `gentle | `aggressive | `always_TEST ]) =
   end
 
 let is_heap_overflow () = hh_check_heap_overflow ()
-
-(*****************************************************************************)
-(* Compute size of values in the garbage-collected heap *)
-(*****************************************************************************)
-module HeapSize = struct
-
-  let rec traverse ((visited:ISet.t), acc) r =
-    if Obj.is_block r then begin
-      let p:int = Obj.magic r in
-      if ISet.mem p visited
-      then (visited,acc)
-      else begin
-        let visited' = ISet.add p visited in
-        let n = Obj.size r in
-        let acc' = acc + 1 + n in
-        if Obj.tag r < Obj.no_scan_tag
-        then traverse_fields (visited', acc') r n
-        else (visited', acc')
-      end
-    end else (visited, acc)
-
-  and traverse_fields acc r i =
-    let i = i - 1 in
-    if i < 0 then acc
-    else traverse_fields (traverse acc (Obj.field r i)) r i
-
-  (* Return size in bytes that o occupies in GC heap *)
-  let size r =
-    let (_, w) = traverse (ISet.empty, 0) r in
-    w * (Sys.word_size / 8)
-end
-
-let value_size = HeapSize.size
-
 
 (*****************************************************************************)
 (* The interfaces for keys and values of shared memory tables *)
@@ -348,17 +346,39 @@ module Raw (Key: Key) (Value : ValueType): sig
   val remove : Key.md5 -> unit
   val move   : Key.md5 -> Key.md5 -> unit
 end = struct
+  (* Unsafely marshal values to and from strings *)
+  let pack_value (value : Value.t) : value =
+    Value value
+
+  let unpack_value (Value v : value) : Value.t =
+    (* This is unsafe, but not more neither less unsafe than what was done
+       previously (marshalling in the C stub) *)
+    (Obj.magic v : Value.t)
+
   (* Returns the number of bytes allocated in the heap, or a negative number
    * if no new memory was allocated *)
-  external hh_add    : Key.md5 -> Value.t -> int * int = "hh_add"
-  external hh_mem         : Key.md5 -> bool            = "hh_mem"
-  external hh_mem_status  : Key.md5 -> int             = "hh_mem_status"
-  external hh_get_size    : Key.md5 -> int             = "hh_get_size"
-  external hh_get_and_deserialize: Key.md5 -> Value.t = "hh_get_and_deserialize"
-  external hh_remove      : Key.md5 -> unit            = "hh_remove"
-  external hh_move        : Key.md5 -> Key.md5 -> unit = "hh_move"
+  let hh_add : Key.md5 -> Value.t -> int * int = fun key value ->
+    Ht.add hashtbl (Key.string_of_md5 key) (pack_value value);
+    1, 1
 
-  let _ = hh_mem_status
+  let hh_mem         : Key.md5 -> bool            = fun key ->
+    Ht.mem hashtbl (Key.string_of_md5 key)
+
+  (* unused *)
+  (*external hh_mem_status  : Key.md5 -> int             = "hh_mem_status"*)
+  (*external hh_get_size    : Key.md5 -> int             = "hh_get_size"*)
+
+  let hh_get_and_deserialize: Key.md5 -> Value.t = fun key ->
+    Ht.find hashtbl (Key.string_of_md5 key) |> unpack_value
+
+  let hh_remove      : Key.md5 -> unit            = fun key ->
+    Ht.remove hashtbl (Key.string_of_md5 key)
+
+  let hh_move        : Key.md5 -> Key.md5 -> unit = fun src dst ->
+    (* IIUC this doesn't need to be atomic *)
+    let data = Ht.find hashtbl (Key.string_of_md5 src) in
+    Ht.remove hashtbl (Key.string_of_md5 src);
+    Ht.add hashtbl (Key.string_of_md5 dst) data
 
   let log_serialize compressed original =
     let compressed = float compressed in
@@ -384,7 +404,7 @@ end = struct
     if hh_log_level() > 1
     then begin
       (* value_size is a bit expensive to call this often, so only run with log levels >= 2 *)
-      let localheap = float (value_size r) in
+      let localheap = float r in
 
       Measure.sample (Value.description ^ " (bytes allocated for deserialized value)") localheap;
       Measure.sample ("ALL bytes allocated for deserialized value") localheap
@@ -404,7 +424,7 @@ end = struct
   let get key =
     let v = hh_get_and_deserialize key in
     if hh_log_level() > 0
-    then (log_deserialize (hh_get_size key) (Obj.repr v));
+    then (log_deserialize 1 1);
     v
 end
 

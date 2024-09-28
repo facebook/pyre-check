@@ -51,7 +51,7 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         allocation_policy = best_fit_allocation_policy;
         space_overhead = 120;
       };
-    let shared_mem_config = { SharedMemory.heap_size; dep_table_pow; hash_table_pow; log_level } in
+    let shared_mem_config = { SharedMemory.dep_table_pow; log_level } in
     Log.info
       "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
       heap_size
@@ -181,11 +181,9 @@ let load_shared_memory ~path ~configuration =
       raise (SavedStateLoadingFailure message)
 
 
-external pyre_reset : unit -> unit = "pyre_reset"
-
 let reset_shared_memory () =
   SharedMemory.invalidate_caches ();
-  pyre_reset ()
+  SharedMemory.pyre_reset ()
 
 
 module IntKey = struct

@@ -22,7 +22,7 @@ value hh_check_heap_overflow(void);
 value hh_connect(value connector);
 
 /* Reset the shared memory to its initial state */
-void pyre_reset(void);
+CAMLprim value hh_pyre_reset(value unit);
 
 /*****************************************************************************/
 /* Heap diagnostics. */
