@@ -23,3 +23,7 @@ module DecoratorPreprocessing = DecoratorPreprocessing
 module ClassSummary = ClassSummary
 
 let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
+
+module Testing = struct
+  module AnalysisError = AnalysisError
+end

@@ -8,15 +8,14 @@
 (* TestHelper: utility functions for unit and integration tests. *)
 
 module CamlUnix = Unix
-module TypeCheck = Analysis.TypeCheck
 open Core
 open OUnit2
-open Analysis
-module AnalysisError = Analysis.AnalysisError
 open Ast
 open Pyre
 open Taint
 open Interprocedural
+module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type parameter_sinks = {
   name: string;
@@ -460,6 +459,36 @@ let set_up_decorator_preprocessing ~handle models =
     { actions = decorator_actions; enable_inlining = true; enable_discarding = true }
 
 
+let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source =
+  let configuration, pyre_api, errors =
+    let project = Test.ScratchProject.setup ~context [handle, source_content] in
+    set_up_decorator_preprocessing ~handle models_source;
+    let _, errors = Test.ScratchProject.build_type_environment_and_postprocess project in
+    ( Test.ScratchProject.configuration_of project,
+      Test.ScratchProject.pyre_pysa_read_only_api project,
+      errors )
+  in
+  (if not (List.is_empty errors) then
+     let errors =
+       errors
+       |> List.map ~f:(fun error ->
+              let error =
+                PyrePysaLogic.Testing.AnalysisError.instantiate
+                  ~show_error_traces:false
+                  ~lookup:(PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api)
+                  error
+              in
+              Format.asprintf
+                "%a:%s"
+                Location.WithPath.pp
+                (PyrePysaLogic.Testing.AnalysisError.Instantiated.location error)
+                (PyrePysaLogic.Testing.AnalysisError.Instantiated.description error))
+       |> String.concat ~sep:"\n"
+     in
+     failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
+  configuration, pyre_api
+
+
 let initialize
     ?(handle = "test.py")
     ?models_source
@@ -471,53 +500,23 @@ let initialize
     ~context
     source_content
   =
+  let configuration, pyre_api =
+    initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source
+  in
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
-  in
-  let configuration, type_environment, global_module_paths_api, pyre_api, errors =
-    let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    set_up_decorator_preprocessing ~handle models_source;
-    let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
-      Test.ScratchProject.build_type_environment_and_postprocess project
-    in
-    ( Test.ScratchProject.configuration_of project,
-      type_environment,
-      Test.ScratchProject.global_module_paths_api project,
-      Test.ScratchProject.pyre_pysa_read_only_api project,
-      errors )
   in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
-  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source =
-    SourceCodeApi.source_of_qualifier source_code_api qualifier
+    PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
-  (if not (List.is_empty errors) then
-     let errors =
-       errors
-       |> List.map ~f:(fun error ->
-              let error =
-                AnalysisError.instantiate
-                  ~show_error_traces:false
-                  ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api)
-                  error
-              in
-              Format.asprintf
-                "%a:%s"
-                Location.WithPath.pp
-                (AnalysisError.Instantiated.location error)
-                (AnalysisError.Instantiated.description error))
-       |> String.concat ~sep:"\n"
-     in
-     failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
-
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
-  let pyre_api = PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =
