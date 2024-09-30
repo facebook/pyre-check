@@ -81,3 +81,7 @@ def attach_to_returned_with_captures():
         return 0
 
     return nested()
+
+
+def attach_to_parameter_source(x):
+    _test_sink(x)

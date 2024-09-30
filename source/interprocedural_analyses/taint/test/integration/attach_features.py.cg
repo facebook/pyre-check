@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+attach_features.attach_to_parameter_source (fun) -> [_test_sink (fun)]
 attach_features.attach_to_returned_source (fun) -> []
 attach_features.attach_to_returned_source_2 (fun) -> []
 attach_features.attach_to_returned_with_captures (fun) -> [attach_features.attach_to_returned_with_captures.nested (fun)]
