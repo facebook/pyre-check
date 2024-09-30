@@ -278,7 +278,7 @@
           {
             "kinds": [
               {
-                "features": [
+                "local_features": [
                   { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "leaves": [
@@ -783,7 +783,7 @@
           {
             "kinds": [
               {
-                "features": [
+                "local_features": [
                   { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "leaves": [
@@ -909,7 +909,7 @@
           {
             "kinds": [
               {
-                "features": [
+                "local_features": [
                   { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "leaves": [

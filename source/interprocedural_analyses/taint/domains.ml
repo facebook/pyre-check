@@ -1299,22 +1299,36 @@ end = struct
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
       let apply_frame frame =
-        let frame =
+        let frame, kind_specific_local_breadcrumbs =
           match call_info with
           | CallInfo.Declaration _ ->
-              (* Even if we allow extra traces on user models in the future, we would still want to
-                 propagate them to the first frame. This is because the Declaration frame is never
-                 shown in the Zoncolan UI. The first frame is the Origin one. *)
-              frame
-          | _ -> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom frame
+              (* Propagate breadcrumbs and extra traces onto the first frame, since Declaration
+                 frame are never shown in the SAPP UI. The first frame is the Origin one. *)
+              let user_declared_breadcrumbs = Frame.get Frame.Slots.PropagatedBreadcrumb frame in
+              let frame =
+                frame
+                |> Frame.transform
+                     Features.LocalKindSpecificBreadcrumbSet.Self
+                     Map
+                     ~f:(Features.BreadcrumbSet.add_set ~to_add:user_declared_breadcrumbs)
+                |> Frame.update Frame.Slots.PropagatedBreadcrumb Features.BreadcrumbSet.empty
+              in
+              frame, Features.BreadcrumbSet.empty
+          | _ ->
+              let local_breadcrumbs = Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame in
+              let frame =
+                frame
+                |> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom
+                |> Frame.update Frame.Slots.LocalKindSpecificBreadcrumb Features.BreadcrumbSet.empty
+              in
+              frame, local_breadcrumbs
         in
+        (* Existing local breadcrumbs (kind specific or not) become "propagated" breadcrumbs *)
         let local_breadcrumbs =
-          Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
-          |> Features.BreadcrumbSet.sequence_join local_breadcrumbs
+          Features.BreadcrumbSet.sequence_join kind_specific_local_breadcrumbs local_breadcrumbs
         in
         frame
         |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
-        |> Frame.update Frame.Slots.LocalKindSpecificBreadcrumb Features.BreadcrumbSet.empty
         |> Frame.transform
              Features.PropagatedBreadcrumbSet.Self
              Map

@@ -17,7 +17,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -44,7 +44,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -138,7 +138,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_first",
@@ -253,7 +253,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -286,7 +286,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -324,7 +324,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_first",
@@ -359,7 +359,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_rhs" } ],
+                "local_features": [ { "always-via": "string_concat_rhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_second",
@@ -384,7 +384,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_first",
@@ -419,7 +419,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
@@ -457,7 +457,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_first",
@@ -477,7 +477,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -508,7 +508,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
                 "leaves": [
                   {
                     "name": "add_feature_to_argument.add_feature_to_first",
@@ -528,7 +528,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -559,7 +559,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -644,7 +644,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],

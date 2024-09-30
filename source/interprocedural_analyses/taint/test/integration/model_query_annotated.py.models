@@ -44,7 +44,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -117,7 +117,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -190,7 +190,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -263,7 +263,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -336,7 +336,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -409,7 +409,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -644,7 +644,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -713,7 +713,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -751,7 +751,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -820,7 +820,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -858,7 +858,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -888,7 +888,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
@@ -921,7 +921,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
