@@ -4138,7 +4138,7 @@ module TypedDictionary = struct
       in
       List.map ~f:overload
     in
-    let get_overloads =
+    let get_overloads fields =
       let overloads { name; annotation; _ } =
         [
           {
@@ -4162,7 +4162,37 @@ module TypedDictionary = struct
           };
         ]
       in
-      List.concat_map ~f:overloads
+      List.concat_map ~f:overloads fields
+      @ [
+          {
+            Record.Callable.annotation = Constructors.union [Constructors.object_primitive; NoneType];
+            parameters =
+              Defined
+                [
+                  self_parameter class_name;
+                  CallableParamType.Named
+                    { name = "k"; annotation = Constructors.string; default = false };
+                ];
+          };
+          {
+            Record.Callable.annotation =
+              Constructors.union
+                [Constructors.object_primitive; Variable (Variable.TypeVar.create "_T")];
+            parameters =
+              Defined
+                [
+                  self_parameter class_name;
+                  CallableParamType.Named
+                    { name = "k"; annotation = Constructors.string; default = false };
+                  Named
+                    {
+                      name = "default";
+                      annotation = Variable (Variable.TypeVar.create "_T");
+                      default = false;
+                    };
+                ];
+          };
+        ]
     in
     let setdefault_overloads =
       let overload { name; annotation; _ } =

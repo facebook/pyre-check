@@ -598,20 +598,25 @@ let test_check_typed_dictionaries =
               Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
               def f() -> None:
                 movie: Movie
-                v = movie['name']
-                reveal_type(v)
-                v = movie.get('name')
-                reveal_type(v)
-                v = movie.get('name', True)
-                reveal_type(v)
-                v = movie.get('nae', True)
+                a = movie['name']
+                reveal_type(a)
+                b = movie.get('name')
+                reveal_type(b)
+                c = movie.get('name', True)
+                reveal_type(c)
+                d = movie.get('nae')
+                reveal_type(d)
+                e = movie.get('nae', True)
+                reveal_type(e)
             |}
            [
-             "Revealed type [-1]: Revealed type for `v` is `str`.";
-             "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
-             "Revealed type [-1]: Revealed type for `v` is "
+             "Revealed type [-1]: Revealed type for `a` is `str`.";
+             "Revealed type [-1]: Revealed type for `b` is `typing.Optional[str]`.";
+             "Revealed type [-1]: Revealed type for `c` is "
              ^ "`typing.Union[typing_extensions.Literal[True], str]`.";
-             "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+             "Revealed type [-1]: Revealed type for `d` is `typing.Optional[object]`.";
+             "Revealed type [-1]: Revealed type for `e` is \
+              `typing.Union[typing_extensions.Literal[True], object]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
