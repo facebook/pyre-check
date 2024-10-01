@@ -37,29 +37,29 @@ let butterfly, butterfly_class_names =
   handler order, Hash_set.to_list order.all_class_names
 
 
-(*          0 - 3
- *          |   |   \
- *          BOTTOM  - b - 1      TOP
- *          |  \       /
- *          4 -- 2 --- *)
-let order, order_class_names =
+(*          A -- D
+ *          |       \
+ *    bottom --------- B     top
+ *          |  \    /
+ *          E -- C *)
+let complex_order, complex_order_class_names =
   let bottom = "bottom" in
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
   insert order bottom;
-  insert order "0";
-  insert order "1";
-  insert order "2";
-  insert order "3";
-  insert order "4";
-  insert order "5";
-  connect order ~predecessor:"0" ~successor:"3";
-  connect order ~predecessor:"1" ~successor:"3";
-  connect order ~predecessor:"4" ~successor:"2";
-  connect order ~predecessor:bottom ~successor:"0";
-  connect order ~predecessor:bottom ~successor:"1";
-  connect order ~predecessor:bottom ~successor:"2";
-  connect order ~predecessor:bottom ~successor:"4";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  insert order "D";
+  insert order "E";
+  insert order "top";
+  connect order ~predecessor:"A" ~successor:"D";
+  connect order ~predecessor:"B" ~successor:"D";
+  connect order ~predecessor:"E" ~successor:"C";
+  connect order ~predecessor:bottom ~successor:"A";
+  connect order ~predecessor:bottom ~successor:"B";
+  connect order ~predecessor:bottom ~successor:"C";
+  connect order ~predecessor:bottom ~successor:"E";
   handler order, Hash_set.to_list order.all_class_names
 
 
@@ -123,9 +123,9 @@ let test_immediate_parents _ =
   assert_equal (immediate_parents butterfly "D") [];
   assert_equal (immediate_parents butterfly "A") ["D"; "C"];
 
-  assert_equal (immediate_parents order "3") [];
-  assert_equal (immediate_parents order "0") ["3"];
-  assert_equal (immediate_parents order "bottom") ["4"; "2"; "1"; "0"];
+  assert_equal (immediate_parents complex_order "D") [];
+  assert_equal (immediate_parents complex_order "A") ["D"];
+  assert_equal (immediate_parents complex_order "bottom") ["E"; "C"; "B"; "A"];
   ()
 
 
@@ -146,7 +146,7 @@ let test_check_integrity _ =
     | _ -> assert_failure "expected a cyclic error but did not get one"
   in
 
-  assert_ok order ~class_names:order_class_names;
+  assert_ok complex_order ~class_names:complex_order_class_names;
   assert_ok butterfly ~class_names:butterfly_class_names;
 
   (*(* 0 <-> 1 *)*)
