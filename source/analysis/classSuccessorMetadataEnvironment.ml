@@ -51,7 +51,7 @@ module IncomingDataComputation = struct
         let (module Handler) = get_class_hierarchy () in
         match
           ClassHierarchy.method_resolution_order_linearize
-            ~get_successors:(ClassHierarchy.parents_of (module Handler))
+            ~get_parents:(ClassHierarchy.parents_of (module Handler))
             annotation
         with
         | Result.Ok (_ :: successors) -> Some successors

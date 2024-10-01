@@ -96,7 +96,7 @@ val parents_of : (module Handler) -> Ast.Identifier.t -> Target.t list option
 val is_instantiated : (module Handler) -> Type.t -> bool
 
 val method_resolution_order_linearize
-  :  get_successors:(Ast.Identifier.t -> Target.t list option) ->
+  :  get_parents:(Ast.Identifier.t -> Target.t list option) ->
   Type.Primitive.t ->
   (Type.Primitive.t list, MethodResolutionOrderError.t) result
 

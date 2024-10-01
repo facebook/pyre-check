@@ -198,7 +198,7 @@ let raise_if_untracked (module Handler : Handler) annotation =
     raise (Untracked annotation)
 
 
-let method_resolution_order_linearize_exn ~get_successors class_name =
+let method_resolution_order_linearize_exn ~get_parents class_name =
   (* The `merge` function takes a list of "constraints" as input and return a list `L` representing
      the computed MRO that satisfy those constraints. Each "constraint" is by itself another list of
      class names indicating what orderings must be perserved in `L`.
@@ -262,7 +262,7 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
     let visited = Set.add visited class_name in
     let successors =
       let get_class_name { Target.target; _ } = target in
-      class_name |> get_successors |> Option.value ~default:[] |> List.map ~f:get_class_name
+      class_name |> get_parents |> Option.value ~default:[] |> List.map ~f:get_class_name
     in
     let linearized_successors = List.map successors ~f:(linearize ~visited) in
     class_name :: merge (List.append linearized_successors [successors])
@@ -270,8 +270,8 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
   linearize ~visited:String.Set.empty class_name
 
 
-let method_resolution_order_linearize ~get_successors class_name =
-  match method_resolution_order_linearize_exn ~get_successors class_name with
+let method_resolution_order_linearize ~get_parents class_name =
+  match method_resolution_order_linearize_exn ~get_parents class_name with
   | result -> Result.Ok result
   | exception Cyclic name -> Result.Error (MethodResolutionOrderError.Cyclic name)
   | exception InconsistentMethodResolutionOrder name ->

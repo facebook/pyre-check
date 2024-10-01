@@ -98,12 +98,12 @@ let triangle_order =
 
 let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order (module Handler : Handler) annotation expected =
-    let get_successors = ClassHierarchy.parents_of (module Handler) in
+    let get_parents = ClassHierarchy.parents_of (module Handler) in
     assert_equal
       ~cmp:[%compare.equal: string list]
       ~printer:(fun names -> [%sexp_of: string list] names |> Sexp.to_string_hum)
       expected
-      (method_resolution_order_linearize annotation ~get_successors |> Result.ok |> Option.value_exn)
+      (method_resolution_order_linearize annotation ~get_parents |> Result.ok |> Option.value_exn)
   in
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];

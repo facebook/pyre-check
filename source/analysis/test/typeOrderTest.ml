@@ -81,7 +81,7 @@ let hierarchy class_hierarchy_handler =
   let has_transitive_successor ~successor predecessor =
     match
       ClassHierarchy.method_resolution_order_linearize
-        ~get_successors:(ClassHierarchy.parents_of class_hierarchy_handler)
+        ~get_parents:(ClassHierarchy.parents_of class_hierarchy_handler)
         predecessor
     with
     | Result.Error error ->
@@ -97,10 +97,10 @@ let hierarchy class_hierarchy_handler =
         List.exists mro_of_source ~f:(fun current -> Type.Primitive.equal successor current)
   in
   let least_upper_bound left right =
-    let get_successors = ClassHierarchy.parents_of class_hierarchy_handler in
+    let get_parents = ClassHierarchy.parents_of class_hierarchy_handler in
     match
-      ( ClassHierarchy.method_resolution_order_linearize ~get_successors left,
-        ClassHierarchy.method_resolution_order_linearize ~get_successors right )
+      ( ClassHierarchy.method_resolution_order_linearize ~get_parents left,
+        ClassHierarchy.method_resolution_order_linearize ~get_parents right )
     with
     | Result.Error error, _ ->
         let message =
