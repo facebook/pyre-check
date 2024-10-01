@@ -2877,7 +2877,8 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> None
 
     (* We will expose this interface as the variance map *)
-    method variance_map ~class_name ~parameters =
+    method variance_map ~cycle_detections ~class_name ~parameters =
+      let _cycle_detections = cycle_detections in
       (* Creates a function from generic type parameters for a given class to post variance
          inference *)
       let infer_variance_for_one_param ~generic_type_param =
@@ -3026,7 +3027,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         get_typed_dictionary = self#get_typed_dictionary ~cycle_detections;
         get_named_tuple_fields;
         metaclass;
-        variance_map = self#variance_map;
+        variance_map = self#variance_map ~cycle_detections;
       }
 
     (* Given an expression, produce a Type.t where literal type information - that is,
@@ -4197,10 +4198,8 @@ module ReadOnly = struct
         ~dependency:None
         ~class_metadata_environment:(class_metadata_environment read_only)
     in
-
     let implementation = new base ~queries in
-
-    implementation#variance_map
+    implementation#variance_map ~cycle_detections:empty_cycle_detections
 
 
   let instantiate_attribute =
