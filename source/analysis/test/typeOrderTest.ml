@@ -141,6 +141,41 @@ let attribute_from_attributes attributes =
   attribute
 
 
+(* TODO migeedz: duplicate implementation since I need global resolution to be able to invoke the
+   variable map. Is there a way to obtain it here? we need the source and the test context. *)
+let variance_map ~class_name ~parameters =
+  (* Creates a function from generic type parameters for a given class to post variance inference *)
+  let infer_variance_for_one_param ~generic_type_param =
+    let from_pre_to_post variance =
+      match variance with
+      | Type.Record.PreInferenceVariance.P_Covariant -> Type.Record.Variance.Covariant
+      | Type.Record.PreInferenceVariance.P_Contravariant -> Type.Record.Variance.Contravariant
+      | Type.Record.PreInferenceVariance.P_Invariant -> Type.Record.Variance.Invariant
+      | Type.Record.PreInferenceVariance.P_Undefined -> Type.Record.Variance.Invariant
+    in
+
+    let find_variance =
+      match generic_type_param with
+      | Type.GenericParameter.GpTypeVar { variance; _ } -> from_pre_to_post variance
+      | _ -> Invariant
+    in
+    find_variance
+  in
+
+  let infer_variance_for_all_params parameters =
+    let add_to_lookup so_far = function
+      | Type.GenericParameter.GpTypeVar { name; _ } as gp ->
+          let variance = infer_variance_for_one_param ~generic_type_param:gp in
+          Map.set so_far ~key:name ~data:variance
+      | _ -> so_far
+    in
+    List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
+  in
+
+  let _class_name = class_name in
+  infer_variance_for_all_params parameters
+
+
 let less_or_equal
     ?(attributes = fun _ ~cycle_detections:_ -> None)
     ?(is_protocol = fun _ -> false)
@@ -161,7 +196,7 @@ let less_or_equal
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
-      variance_map = AttributeResolution.variance_map;
+      variance_map;
     }
 
 
@@ -181,7 +216,7 @@ let join ?(attributes = fun _ ~cycle_detections:_ -> None) handler =
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
-      variance_map = AttributeResolution.variance_map;
+      variance_map;
     }
 
 
@@ -201,7 +236,7 @@ let meet handler =
       get_typed_dictionary;
       get_named_tuple_fields;
       metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
-      variance_map = AttributeResolution.variance_map;
+      variance_map;
     }
 
 

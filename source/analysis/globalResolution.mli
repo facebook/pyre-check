@@ -105,6 +105,12 @@ val constraints_solution_exists
   right:Type.t ->
   bool
 
+val variance_map
+  :  t ->
+  class_name:string ->
+  parameters:Type.GenericParameter.t list ->
+  Type.Record.Variance.t Identifier.Map.t
+
 val uninstantiated_attributes
   :  t ->
   ?transitive:bool ->

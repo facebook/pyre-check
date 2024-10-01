@@ -6240,7 +6240,8 @@ module State (Context : Context) = struct
                 |> Option.value ~default:[]
               in
               let look_up_this_class_variance =
-                AttributeResolution.variance_map
+                GlobalResolution.variance_map
+                  global_resolution
                   ~parameters:generic_parameters
                   ~class_name:this_class_name
               in
@@ -6258,7 +6259,10 @@ module State (Context : Context) = struct
                   Type.GenericParameter.GpTypeVar { name = base_name; _ } ) -> (
                   let base_variance =
                     Map.find
-                      (AttributeResolution.variance_map ~parameters ~class_name:base_class_name)
+                      (GlobalResolution.variance_map
+                         global_resolution
+                         ~parameters
+                         ~class_name:base_class_name)
                       base_name
                     |> Option.value ~default:Type.Record.Variance.Invariant
                   in
@@ -6566,7 +6570,8 @@ module State (Context : Context) = struct
             GlobalResolution.generic_parameters global_resolution current_class_name
             |> Option.value ~default:[]
           in
-          AttributeResolution.variance_map
+          GlobalResolution.variance_map
+            global_resolution
             ~parameters:generic_parameters
             ~class_name:current_class_name
       | None -> Identifier.Map.empty

@@ -157,6 +157,12 @@ module AttributeReadOnly : sig
     right:Type.t ->
     bool
 
+  val variance_map
+    :  t ->
+    class_name:string ->
+    parameters:Type.GenericParameter.t list ->
+    Type.Record.Variance.t Identifier.Map.t
+
   val global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 
   module Testing : sig
@@ -169,11 +175,6 @@ module AttributeReadOnly : sig
       TypeConstraints.Solution.t
   end
 end
-
-val variance_map
-  :  class_name:'a ->
-  parameters:Type.GenericParameter.t list ->
-  Type.Record.Variance.t Identifier.Map.t
 
 include
   Environment.S

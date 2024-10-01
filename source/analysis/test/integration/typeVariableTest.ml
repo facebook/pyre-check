@@ -189,6 +189,28 @@ let test_type_variable_scoping =
              x2: str = foo.f("foo")
            |}
            [];
+      (* The errors about __len__ happen in legacy syntax too. Those errors need further
+         investigation. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Sequence
+            class ShouldBeCovariant2[T](Sequence[T]):
+                pass
+
+            vco2_1: ShouldBeCovariant2[float] = ShouldBeCovariant2[int]()  # OK
+            vco2_2: ShouldBeCovariant2[int] = ShouldBeCovariant2[float]()  # E
+            |}
+           [
+             "Incompatible variable type [9]: vco2_1 is declared to have type \
+              `ShouldBeCovariant2[float]` but is used as type `ShouldBeCovariant2[int]`.";
+             "Invalid class instantiation [45]: Cannot instantiate abstract class \
+              `ShouldBeCovariant2` with abstract method `__len__`.";
+             "Incompatible variable type [9]: vco2_2 is declared to have type \
+              `ShouldBeCovariant2[int]` but is used as type `ShouldBeCovariant2[float]`.";
+             "Invalid class instantiation [45]: Cannot instantiate abstract class \
+              `ShouldBeCovariant2` with abstract method `__len__`.";
+           ];
     ]
 
 

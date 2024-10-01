@@ -255,6 +255,10 @@ let constraints_solution_exists ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
+let variance_map resolution =
+  AttributeResolution.ReadOnly.variance_map (attribute_resolution resolution)
+
+
 let uninstantiated_attributes
     ({ dependency; _ } as resolution)
     ?(transitive = false)
@@ -362,7 +366,8 @@ let is_invariance_mismatch resolution ~left ~right =
                   | Type.GenericParameter.GpTypeVar { name; _ } ->
                       let variance =
                         Map.find
-                          (AttributeResolution.variance_map
+                          (variance_map
+                             resolution
                              ~parameters:generic_parameters
                              ~class_name:left_name)
                           name

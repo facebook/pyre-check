@@ -236,7 +236,7 @@ let make_assert_functions context =
           get_typed_dictionary;
           get_named_tuple_fields;
           metaclass;
-          variance_map = AttributeResolution.variance_map;
+          variance_map = GlobalResolution.variance_map (GlobalResolution.create environment);
         }
       in
       let attributes annotation ~cycle_detections =
@@ -1555,7 +1555,7 @@ let test_instantiate_protocol_parameters context =
         get_typed_dictionary;
         get_named_tuple_fields;
         metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
-        variance_map = AttributeResolution.variance_map;
+        variance_map = GlobalResolution.variance_map (GlobalResolution.create environment);
       }
     in
     assert_equal
@@ -1730,7 +1730,7 @@ let test_mark_escaped_as_escaped context =
         get_typed_dictionary;
         get_named_tuple_fields;
         metaclass = (fun _ ~cycle_detections:_ -> Some (Type.Primitive "type"));
-        variance_map = AttributeResolution.variance_map;
+        variance_map = GlobalResolution.variance_map (GlobalResolution.create environment);
       }
     in
     TypeOrder.OrderedConstraintsSet.add_and_simplify
