@@ -149,33 +149,33 @@ let test_check_integrity _ =
   assert_ok complex_order ~class_names:complex_order_class_names;
   assert_ok butterfly ~class_names:butterfly_class_names;
 
-  (*(* 0 <-> 1 *)*)
+  (* A <-> B *)
   let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
-    insert order "0";
-    insert order "1";
-    connect order ~predecessor:"0" ~successor:"1";
-    connect order ~predecessor:"1" ~successor:"0";
+    insert order "A";
+    insert order "B";
+    connect order ~predecessor:"A" ~successor:"B";
+    connect order ~predecessor:"B" ~successor:"A";
     handler order, Hash_set.to_list order.all_class_names
   in
   assert_cyclic order ~class_names;
 
-  (* 0 -> 1
+  (* A -> B
    * ^    |
    *  \   v
-   * .  - 2 -> 3 *)
+   * .  - C -> D *)
   let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
-    insert order "0";
-    insert order "1";
-    insert order "2";
-    insert order "3";
-    connect order ~predecessor:"0" ~successor:"1";
-    connect order ~predecessor:"1" ~successor:"2";
-    connect order ~predecessor:"2" ~successor:"0";
-    connect order ~predecessor:"2" ~successor:"3";
+    insert order "A";
+    insert order "B";
+    insert order "C";
+    insert order "D";
+    connect order ~predecessor:"A" ~successor:"B";
+    connect order ~predecessor:"B" ~successor:"C";
+    connect order ~predecessor:"C" ~successor:"A";
+    connect order ~predecessor:"C" ~successor:"D";
     handler order, Hash_set.to_list order.all_class_names
   in
   assert_cyclic order ~class_names;
@@ -183,8 +183,8 @@ let test_check_integrity _ =
   let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
-    insert order "0";
-    handler order, ["1"]
+    insert order "A";
+    handler order, ["B"]
   in
   assert_incomplete order ~class_names;
   ()
@@ -194,26 +194,25 @@ let test_to_dot _ =
   let order, keys =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
-    insert order "0";
-    insert order "1";
-    insert order "2";
+    insert order "A";
+    insert order "B";
+    insert order "C";
     insert order "object";
-    connect order ~predecessor:"0" ~successor:"2";
-    connect order ~predecessor:"0" ~successor:"1" ~arguments:![Type.string];
+    connect order ~predecessor:"A" ~successor:"C";
+    connect order ~predecessor:"A" ~successor:"B" ~arguments:![Type.string];
 
-    (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
     handler order, Hash_set.to_list order.all_class_names
   in
   assert_equal
     ~printer:Fn.id
     ({|
       digraph {
-        0[label="0"]
-        1[label="1"]
-        2[label="2"]
+        A[label="A"]
+        B[label="B"]
+        C[label="C"]
         object[label="object"]
-        0 -> 1[label="(str)"]
-        0 -> 2
+        A -> B[label="(str)"]
+        A -> C
       }
     |}
     |> Test.trim_extra_indentation)
