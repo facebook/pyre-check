@@ -220,15 +220,15 @@ let method_resolution_order_linearize_exn ~get_parents class_name =
     | [] -> []
     | [single_linearized_parent] -> single_linearized_parent
     | linearized_successors ->
-        let find_valid_head linearizations =
+        let head =
           let is_valid_head head =
             let not_in_tail target = function
               | [] -> true
               | _ :: tail -> not (List.exists ~f:(Identifier.equal target) tail)
             in
-            List.for_all ~f:(not_in_tail head) linearizations
+            List.for_all ~f:(not_in_tail head) linearized_successors
           in
-          linearizations
+          linearized_successors
           |> List.filter_map ~f:List.hd
           |> List.find ~f:is_valid_head
           |> function
@@ -241,9 +241,10 @@ let method_resolution_order_linearize_exn ~get_parents class_name =
           | successor_head :: tail when Identifier.equal successor_head head -> Some tail
           | successor -> Some successor
         in
-        let head = find_valid_head linearized_successors in
-        let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
-        head :: merge linearized_successors
+        let linearized_successors_without_head =
+          List.filter_map ~f:(strip_head head) linearized_successors
+        in
+        head :: merge linearized_successors_without_head
   in
   (* `linearize C` computes the MRO for class `C`. The additional `visited` parameter is used to
      detect when MRO computation would run into cycles (e.g. class A inherits from class B, which in
