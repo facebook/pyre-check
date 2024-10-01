@@ -260,12 +260,12 @@ let method_resolution_order_linearize_exn ~get_parents class_name =
       Log.error "Order is cyclic:\nTrace: {%s}" (Set.to_list visited |> String.concat ~sep:", ");
       raise (Cyclic class_name));
     let visited = Set.add visited class_name in
-    let successors =
+    let immediate_parents =
       let get_class_name { Target.target; _ } = target in
       class_name |> get_parents |> Option.value ~default:[] |> List.map ~f:get_class_name
     in
-    let linearized_successors = List.map successors ~f:(linearize ~visited) in
-    class_name :: merge (List.append linearized_successors [successors])
+    let linearized_successors = List.map immediate_parents ~f:(linearize ~visited) in
+    class_name :: merge (List.append linearized_successors [immediate_parents])
   in
   linearize ~visited:String.Set.empty class_name
 
