@@ -14,20 +14,26 @@ open ClassHierarchy
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
 (* Butterfly:
- *  0 - 2
+ *
+ * (top / superclasses)
+ *
+ *  B - D 
  *    X
- *  1 - 3 *)
+ *  A - C
+ * 
+ * (bottom / subclasses)
+ *)
 let butterfly, butterfly_class_names =
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
-  insert order "0";
-  insert order "1";
-  insert order "2";
-  insert order "3";
-  connect order ~predecessor:"0" ~successor:"2";
-  connect order ~predecessor:"0" ~successor:"3";
-  connect order ~predecessor:"1" ~successor:"2";
-  connect order ~predecessor:"1" ~successor:"3";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  insert order "D";
+  connect order ~predecessor:"A" ~successor:"C";
+  connect order ~predecessor:"A" ~successor:"D";
+  connect order ~predecessor:"B" ~successor:"C";
+  connect order ~predecessor:"B" ~successor:"D";
   handler order, Hash_set.to_list order.all_class_names
 
 
@@ -105,8 +111,8 @@ let test_method_resolution_order_linearize _ =
       expected
       (method_resolution_order_linearize annotation ~get_parents |> Result.ok |> Option.value_exn)
   in
-  assert_method_resolution_order butterfly "3" ["3"];
-  assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
+  assert_method_resolution_order butterfly "D" ["D"];
+  assert_method_resolution_order butterfly "A" ["A"; "D"; "C"];
   assert_method_resolution_order diamond_order "D" ["D"; "C"; "B"; "A"];
 
   (* The subclass gets chosen first even if after the superclass when both are inherited. *)
@@ -114,8 +120,8 @@ let test_method_resolution_order_linearize _ =
 
 
 let test_immediate_parents _ =
-  assert_equal (immediate_parents butterfly "3") [];
-  assert_equal (immediate_parents butterfly "0") ["3"; "2"];
+  assert_equal (immediate_parents butterfly "D") [];
+  assert_equal (immediate_parents butterfly "A") ["D"; "C"];
 
   assert_equal (immediate_parents order "3") [];
   assert_equal (immediate_parents order "0") ["3"];
