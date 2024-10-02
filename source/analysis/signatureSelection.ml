@@ -673,6 +673,12 @@ let check_arguments_against_parameters
   =
   let open SignatureSelectionTypes in
   let open Type.Callable in
+  let add_less_or_equal_constraint constraints_set ~left ~right =
+    TypeOrder.OrderedConstraintsSet.add_and_simplify
+      constraints_set
+      ~new_constraint:(LessOrEqual { left; right })
+      ~order
+  in
   (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]` * and the argument
      is `lambda parameter: body` *)
   let is_generic_lambda parameter arguments =
@@ -762,10 +768,10 @@ let check_arguments_against_parameters
         { reasons with annotation = mismatch :: annotation }
       in
       let updated_constraints_set =
-        TypeOrder.OrderedConstraintsSet.add_and_simplify
+        add_less_or_equal_constraint
           constraints_set
-          ~new_constraint:(LessOrEqual { left = argument_annotation; right = parameter_annotation })
-          ~order
+          ~left:argument_annotation
+          ~right:parameter_annotation
       in
       if ConstraintsSet.potentially_satisfiable updated_constraints_set then
         { signature_match with constraints_set = updated_constraints_set }
@@ -777,10 +783,10 @@ let check_arguments_against_parameters
         if Type.is_unbound resolved then
           ConstraintsSet.impossible
         else
-          TypeOrder.OrderedConstraintsSet.add_and_simplify
+          add_less_or_equal_constraint
             ConstraintsSet.empty
-            ~new_constraint:(LessOrEqual { left = resolved; right = generic_iterable_type })
-            ~order
+            ~left:resolved
+            ~right:generic_iterable_type
       in
       TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order
       >>| fun solution ->
@@ -900,11 +906,10 @@ let check_arguments_against_parameters
                   |> Option.value ~default:location
                 in
                 let is_mismatch =
-                  TypeOrder.OrderedConstraintsSet.add_and_simplify
+                  add_less_or_equal_constraint
                     signature_match.constraints_set
-                    ~new_constraint:
-                      (LessOrEqual { left = item_type_for_error; right = expected_item_type })
-                    ~order
+                    ~left:item_type_for_error
+                    ~right:expected_item_type
                   |> ConstraintsSet.potentially_satisfiable
                   |> not
                 in
@@ -1323,10 +1328,7 @@ let check_arguments_against_parameters
       when String.equal (Reference.show name) "dict.__init__"
            && has_matched_keyword_parameter parameters ->
         let updated_constraints =
-          TypeOrder.OrderedConstraintsSet.add_and_simplify
-            constraints_set
-            ~new_constraint:(LessOrEqual { left = Type.string; right = key_type })
-            ~order
+          add_less_or_equal_constraint constraints_set ~left:Type.string ~right:key_type
         in
         if ConstraintsSet.potentially_satisfiable updated_constraints then
           { signature_match with constraints_set = updated_constraints }
@@ -1381,10 +1383,7 @@ let check_arguments_against_parameters
                   in
                   Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
                 in
-                TypeOrder.OrderedConstraintsSet.add_and_simplify
-                  constraints_set
-                  ~new_constraint:(LessOrEqual { left = resolved; right = annotation })
-                  ~order
+                add_less_or_equal_constraint constraints_set ~left:resolved ~right:annotation
                 (* Once we've used this solution, we have to commit to it *)
                 |> TypeOrder.OrderedConstraintsSet.add_and_simplify
                      ~new_constraint:
@@ -1398,6 +1397,99 @@ let check_arguments_against_parameters
       ~f:(fun ~key ~data ->
         check_lambda_argument_and_update_signature_match ~parameter:key ~arguments:data)
       parameter_argument_mapping
+  in
+  let special_case_typed_dictionary_update
+      ({ callable; parameter_argument_mapping; _ } as signature_match)
+    =
+    let open Type.Record.Callable in
+    match callable with
+    | {
+     kind = Named name;
+     implementation = { parameters = Defined [PositionalOnly _; PositionalOnly _]; _ };
+     _;
+    }
+      when List.exists
+             ~f:(String.equal (Reference.show name))
+             ["TypedDictionary.update"; "NonTotalTypedDictionary.update"] ->
+        (* We've matched the (self: A, other_typed_dict: A, /) signature for TypedDict.update() *)
+        let check_typed_dictionary_argument_and_update_signature_match
+            ~(parameter : Type.Callable.CallableParamType.parameter)
+            ~(arguments : Type.t matched_argument list)
+            ({ constraints_set; reasons; _ } as signature_match)
+          =
+          match parameter, arguments with
+          | ( PositionalOnly { index = 1; annotation = parameter_type; _ },
+              [
+                MatchedArgument
+                  { argument = { expression; position; resolved = argument_type; _ }; _ };
+              ] ) -> (
+              (* A single argument has been matched to the other_typed_dict parameter. *)
+              match get_typed_dictionary parameter_type, get_typed_dictionary argument_type with
+              | Some { fields = self_fields; _ }, Some { fields = update_fields; _ } ->
+                  (* We've confirmed that a TypedDict A is being updated with the items from another
+                     TypedDict B. We check that B does not contain any read-only keys from A and has
+                     compatible value types for any other keys in A that are present in B. *)
+                  let readonly_field_names, non_readonly_fields =
+                    List.partition_map
+                      ~f:(fun field ->
+                        if field.readonly then Either.First field.name else Either.Second field)
+                      self_fields
+                  in
+                  let update_fields_map =
+                    update_fields
+                    |> List.map ~f:(fun (field : Type.TypedDictionary.typed_dictionary_field) ->
+                           field.name, field)
+                    |> Map.of_alist_reduce (module String) ~f:(fun _ field -> field)
+                  in
+                  let illegal_update readonly_field_name =
+                    match Map.find update_fields_map readonly_field_name with
+                    | Some { annotation; _ } -> not (Type.is_noreturn_or_never annotation)
+                    | None -> false
+                  in
+                  let mismatch =
+                    let argument_location = get_location ~expression ~default:location in
+                    { actual = argument_type; expected = parameter_type; name = None; position }
+                    |> Node.create ~location:argument_location
+                    |> fun mismatch -> Mismatches [Mismatch mismatch]
+                  in
+                  if List.exists ~f:illegal_update readonly_field_names then
+                    { signature_match with reasons = { reasons with annotation = [mismatch] } }
+                  else
+                    let update_constraints_set
+                        constraints_set
+                        ({ name; annotation = expected_annotation; _ } :
+                          Type.TypedDictionary.typed_dictionary_field)
+                      =
+                      match Map.find update_fields_map name with
+                      | None -> constraints_set
+                      | Some { annotation = actual_annotation; _ } ->
+                          add_less_or_equal_constraint
+                            constraints_set
+                            ~left:actual_annotation
+                            ~right:expected_annotation
+                    in
+                    let updated_constraints_set =
+                      List.fold ~init:constraints_set ~f:update_constraints_set non_readonly_fields
+                    in
+                    if ConstraintsSet.potentially_satisfiable updated_constraints_set then
+                      {
+                        signature_match with
+                        constraints_set = updated_constraints_set;
+                        reasons = { reasons with annotation = [] };
+                      }
+                    else
+                      { signature_match with reasons = { reasons with annotation = [mismatch] } }
+              | _ -> signature_match)
+          | _ -> signature_match
+        in
+        Map.fold
+          ~init:signature_match
+          ~f:(fun ~key ~data ->
+            check_typed_dictionary_argument_and_update_signature_match
+              ~parameter:key
+              ~arguments:data)
+          parameter_argument_mapping
+    | _ -> signature_match
   in
   let signature_match =
     {
@@ -1414,6 +1506,7 @@ let check_arguments_against_parameters
     parameter_argument_mapping
   |> special_case_dictionary_constructor
   |> special_case_lambda_parameter
+  |> special_case_typed_dictionary_update
   |> check_if_solution_exists
 
 

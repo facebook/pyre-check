@@ -4210,11 +4210,20 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let update_overloads fields =
+      let never_match_readonly field =
+        if field.readonly then { field with annotation = Primitive "typing.Never" } else field
+      in
+      let fields_no_readonly = List.map ~f:never_match_readonly fields in
       [
+        (* Type parameters corresponding to read-only fields as Never so that we error on any
+           attempt to write to read-only fields via `update. *)
         {
           Record.Callable.annotation = Constructors.none;
-          parameters = field_named_parameters ~all_default:true ~class_name fields;
+          parameters = field_named_parameters ~all_default:true ~class_name fields_no_readonly;
         };
+        (* We also need to error on updating read-only fields passed in via a TypedDict, but this
+           case is difficult to express via type signature, so it is special-cased in
+           signatureSelection:check_arguments_against_parameters. *)
         {
           annotation = Constructors.none;
           parameters =

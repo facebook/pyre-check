@@ -301,6 +301,120 @@ let test_inheritance =
     ]
 
 
+let test_dict_update =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypedDict
+      from typing_extensions import ReadOnly
+
+      class A(TypedDict):
+        x: ReadOnly[int]
+        y: str
+
+      def f(a: A) -> None:
+        a.update(x=5)  # error
+        a.update(y='')  # ok
+      |}
+           [
+             "Incompatible parameter type [6]: In call `TypedDictionary.update`, for argument `x`, \
+              expected `Never` but got `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+    from typing import TypedDict
+    from typing_extensions import ReadOnly
+
+    class A(TypedDict):
+      x: ReadOnly[int]
+
+    def f(a1: A, a2: A) -> None:
+      a1.update(a2)
+    |}
+           [
+             "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st \
+              positional argument, expected `A` but got `A`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+    from typing import Never, TypedDict
+    from typing_extensions import NotRequired, ReadOnly
+
+    class A(TypedDict):
+      x: ReadOnly[int]
+
+    class B(TypedDict):
+      x: NotRequired[Never]
+
+    def f(a: A, b: B) -> None:
+      a.update(b)
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+    from typing import TypedDict
+    from typing_extensions import ReadOnly
+
+    class A(TypedDict):
+      x: ReadOnly[int]
+      y: str
+
+    class B_Ok(TypedDict):
+      y: str
+
+    class B_Err(TypedDict):
+      y: bool
+
+    def f(a: A, b_ok: B_Ok, b_err: B_Err) -> None:
+      a.update(b_ok)
+      a.update(b_err)
+          |}
+           [
+             "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st \
+              positional argument, expected `A` but got `B_Err`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           (* Tests a case where B is not assignable to A but the update() call is still valid. *)
+           {|
+      from typing import TypedDict
+      from typing_extensions import ReadOnly
+
+      class A(TypedDict):
+        x: int
+
+      class B(TypedDict):
+        x: ReadOnly[int]
+
+      def f(a: A, b: B) -> None:
+        a.update(b)
+      |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import TypedDict
+      from typing_extensions import ReadOnly
+
+      class A(TypedDict, total=False):
+        x: ReadOnly[int]
+        y: str
+
+      class B(TypedDict):
+        y: str
+
+      def f(a: A, b: B) -> None:
+        a.update(b)
+      |}
+           [];
+    ]
+
+
 let () =
   "readOnly"
   >::: [
@@ -308,5 +422,6 @@ let () =
          test_interaction_with_required_and_annotated;
          test_assignability;
          test_inheritance;
+         test_dict_update;
        ]
   |> Test.run
