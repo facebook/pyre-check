@@ -1408,9 +1408,7 @@ let check_arguments_against_parameters
      implementation = { parameters = Defined [PositionalOnly _; PositionalOnly _]; _ };
      _;
     }
-      when List.exists
-             ~f:(String.equal (Reference.show name))
-             ["TypedDictionary.update"; "NonTotalTypedDictionary.update"] ->
+      when Type.TypedDictionary.is_update_method name ->
         (* We've matched the (self: A, other_typed_dict: A, /) signature for TypedDict.update() *)
         let check_typed_dictionary_argument_and_update_signature_match
             ~(parameter : Type.Callable.CallableParamType.parameter)

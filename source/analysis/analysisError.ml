@@ -1518,22 +1518,34 @@ let rec messages ~concise ~signature location kind =
           []
       in
       let target = incompatible_parameter_target ~keyword_argument_name ~position ~callee in
-      let expected_message, actual_message, explanation =
-        match Option.map ~f:Reference.as_list callee with
-        | Some ["int"; "__add__"]
-        | Some ["int"; "__sub__"]
-        | Some ["int"; "__mul__"]
-        | Some ["int"; "__floordiv__"] ->
-            "`int`", Format.asprintf "`%a`" pp_type actual, ""
-        | _ -> get_mismatch_explanation expected actual
+      let typed_dictionary_update_error =
+        match callee with
+        | Some callee when Type.TypedDictionary.is_update_method callee ->
+            if Type.is_noreturn_or_never expected then
+              Some " cannot update read-only field."
+            else if Type.equal expected actual then
+              let target_dict = Format.asprintf "`%a`" pp_type expected in
+              Some (Format.sprintf " cannot update read-only fields of %s." target_dict)
+            else
+              None
+        | _ -> None
       in
-      Format.sprintf
-        "%s expected %s but got %s.%s"
-        target
-        expected_message
-        actual_message
-        explanation
-      :: trace
+      let error_message =
+        match typed_dictionary_update_error with
+        | Some error -> error
+        | None ->
+            let expected_message, actual_message, explanation =
+              match Option.map ~f:Reference.as_list callee with
+              | Some ["int"; "__add__"]
+              | Some ["int"; "__sub__"]
+              | Some ["int"; "__mul__"]
+              | Some ["int"; "__floordiv__"] ->
+                  "`int`", Format.asprintf "`%a`" pp_type actual, ""
+              | _ -> get_mismatch_explanation expected actual
+            in
+            Format.sprintf " expected %s but got %s.%s" expected_message actual_message explanation
+      in
+      (target ^ error_message) :: trace
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
       [

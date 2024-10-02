@@ -1036,6 +1036,8 @@ module TypedDictionary : sig
   val class_name : total:bool -> Primitive.t
 
   val is_builtin_typed_dictionary_class : Primitive.t -> bool
+
+  val is_update_method : Reference.t -> bool
 end
 
 module PyreReadOnly : sig

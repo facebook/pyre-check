@@ -4387,6 +4387,12 @@ module TypedDictionary = struct
     else
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
+
+
+  let is_update_method name =
+    List.exists
+      ~f:(String.equal (Reference.show name))
+      ["TypedDictionary.update"; "NonTotalTypedDictionary.update"]
 end
 
 include T

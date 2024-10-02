@@ -320,7 +320,7 @@ let test_dict_update =
       |}
            [
              "Incompatible parameter type [6]: In call `TypedDictionary.update`, for argument `x`, \
-              expected `Never` but got `int`.";
+              cannot update read-only field.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -336,7 +336,7 @@ let test_dict_update =
     |}
            [
              "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st \
-              positional argument, expected `A` but got `A`.";
+              positional argument, cannot update read-only fields of `A`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
