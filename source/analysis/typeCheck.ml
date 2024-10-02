@@ -4729,7 +4729,6 @@ module State (Context : Context) = struct
                   (Expression.Name
                      (Name.Attribute { base; attribute = "__getitem__"; special = true }))
               in
-
               Resolution.resolve_expression_to_type
                 resolution
                 (Node.create_with_default_location
@@ -4878,15 +4877,13 @@ module State (Context : Context) = struct
               | None -> Type.Top
               | Some reference -> Type.Primitive (Reference.show reference)
             in
-            let is_enum = GlobalResolution.is_enum global_resolution parent_annotation in
+            let is_enum_member_definition =
+              StatementDefine.is_class_toplevel define
+              && GlobalResolution.is_enum global_resolution parent_annotation
+            in
             let check_assignment_compatibility errors =
-              let is_valid_enumeration_assignment, expected_enumeration_type =
-                let parent_annotation =
-                  match legacy_parent with
-                  | None -> Type.Top
-                  | Some reference -> Type.Primitive (Reference.show reference)
-                in
-                if is_enum then
+              let is_valid_enumeration_assignment, expected =
+                if is_enum_member_definition then
                   (* If a type annotation is provided for _value_, the members of the enum must
                      match that type. *)
                   match
@@ -4901,22 +4898,20 @@ module State (Context : Context) = struct
                      do this check. *)
                   | Type.Tuple _, Some _ -> true, expected
                   | _, Some instantiated ->
-                      let { TypeInfo.Unit.annotation; _ } =
+                      let { TypeInfo.Unit.annotation = enum_value_annotation; _ } =
                         AnnotatedAttribute.annotation instantiated
                       in
-                      ( GlobalResolution.less_or_equal
+                      let matches_enum_value_annotation =
+                        GlobalResolution.less_or_equal
                           global_resolution
-                          ~left:annotation
-                          ~right:resolved,
-                        annotation )
+                          ~left:enum_value_annotation
+                          ~right:resolved
+                      in
+                      ( matches_enum_value_annotation,
+                        if matches_enum_value_annotation then expected else enum_value_annotation )
                   | _ -> true, expected
                 else
                   false, expected
-              in
-              (* Use the type annotation for _value_ on enum assignments for better error
-                 messages *)
-              let expected =
-                if not is_valid_enumeration_assignment then expected_enumeration_type else expected
               in
               let is_incompatible =
                 let expression_is_ellipses =
@@ -5053,7 +5048,8 @@ module State (Context : Context) = struct
               (* Enum member definitions may not have type annotations. *)
               match TypeInfo.Unit.annotation target_annotation with
               | Type.Literal (Type.EnumerationMember _)
-                when (has_explicit_annotation && not expression_is_ellipses) && is_enum ->
+                when (has_explicit_annotation && not expression_is_ellipses)
+                     && is_enum_member_definition ->
                   emit_error
                     ~errors
                     ~location

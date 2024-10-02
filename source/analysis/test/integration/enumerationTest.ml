@@ -322,6 +322,16 @@ let test_check_enumeration_attributes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            import enum
+
+            class Foo(enum.IntEnum):
+                def test(self, x: str) -> None:
+                    x = x
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from enum import Enum
 
               class C(Enum):
