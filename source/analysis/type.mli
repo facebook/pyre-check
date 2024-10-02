@@ -1013,7 +1013,10 @@ module TypedDictionary : sig
 
   val constructor : name:Identifier.t -> fields:typed_dictionary_field list -> Callable.t
 
-  val field_names_from_constructor : Callable.t -> string list option
+  val fields_from_constructor
+    :  Callable.t ->
+    (string, bool, Base.String.comparator_witness) Map_intf.Map.t ->
+    typed_dictionary_field list option
 
   val special_overloads
     :  class_name:Primitive.t ->

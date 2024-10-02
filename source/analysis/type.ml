@@ -4083,19 +4083,27 @@ module TypedDictionary = struct
     }
 
 
-  let field_names_from_constructor = function
+  let fields_from_constructor constructor readonlyness =
+    match constructor with
     | {
-        Callable.kind = Named name;
-        overloads = [{ parameters = Defined (_self :: parameters); _ }; _];
-        _;
-      }
+     Callable.kind = Named name;
+     overloads = [{ parameters = Defined (_self :: parameters); _ }; _];
+     _;
+    }
       when String.equal (Reference.last name) "__init__" ->
-        let parameter_to_field_name = function
-          | Record.Callable.CallableParamType.KeywordOnly { name; _ } ->
-              Some (String.split ~on:'$' name |> List.last_exn)
+        let parameter_to_field = function
+          | Record.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
+              let name = String.split ~on:'$' name |> List.last_exn in
+              Some
+                {
+                  name;
+                  annotation;
+                  required = not default;
+                  readonly = Option.value ~default:false (Map.find readonlyness name);
+                }
           | _ -> None
         in
-        List.map ~f:parameter_to_field_name parameters |> Option.all
+        List.map ~f:parameter_to_field parameters |> Option.all
     | _ -> None
 
 

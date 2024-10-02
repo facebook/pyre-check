@@ -3745,9 +3745,12 @@ let test_infer_transform _ =
     ~expected:(Type.optional (Type.Primitive "string"))
 
 
-let test_field_names_from_constructor _ =
-  let assert_field_names ~constructor ~expected =
-    assert_equal expected (Type.TypedDictionary.field_names_from_constructor constructor)
+let test_fields_from_constructor _ =
+  let assert_fields ~constructor ~expected =
+    assert_equal
+      ~printer:[%show: Type.TypedDictionary.typed_dictionary_field list option]
+      expected
+      (Type.TypedDictionary.fields_from_constructor constructor String.Map.empty)
   in
   let fields =
     [
@@ -3770,13 +3773,13 @@ let test_field_names_from_constructor _ =
     | Type.Callable callable -> callable
     | _ -> failwith "expected callable"
   in
-  assert_field_names ~constructor:non_constructor ~expected:None;
-  assert_field_names
+  assert_fields ~constructor:non_constructor ~expected:None;
+  assert_fields
     ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields)
-    ~expected:(Some ["name"; "year"]);
-  assert_field_names
+    ~expected:(Some fields);
+  assert_fields
     ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields)
-    ~expected:(Some ["name"; "year"]);
+    ~expected:(Some fields);
   ()
 
 
@@ -4231,7 +4234,7 @@ let () =
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;
          "union_upper_bound" >:: test_union_upper_bound;
          "infer_transform" >:: test_infer_transform;
-         "field_names_from_constructor" >:: test_field_names_from_constructor;
+         "fields_from_constructor" >:: test_fields_from_constructor;
          "map_callable_annotation" >:: test_map_callable_annotation;
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "class_attribute_lookups_for_type" >:: test_class_attribute_lookups_for_type;
