@@ -13,6 +13,71 @@ open ClassHierarchy
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Argument.Single single)
 
+let assert_method_resolution_order (module Handler : Handler) annotation expected =
+  let get_parents = ClassHierarchy.parents_of (module Handler) in
+  assert_equal
+    ~cmp:[%compare.equal: string list]
+    ~printer:(fun names -> [%sexp_of: string list] names |> Sexp.to_string_hum)
+    expected
+    (method_resolution_order_linearize annotation ~get_parents |> Result.ok |> Option.value_exn)
+
+
+(* Test matching the example in
+ * https://web.archive.org/web/20241001181736/https://en.wikipedia.org/wiki/C3_linearization
+ *
+ * This is a convenient test since the article walks through algorithm execution in detail.
+ *
+ * class O
+ * class A extends O
+ * class B extends O
+ * class C extends O
+ * class D extends O
+ * class E extends O
+ * class K1 extends C, A, B
+ * class K2 extends B, D, E
+ * class K3 extends A, D
+ * class Z extends K1, K3, K2
+ *
+ * MRO(Z) = [Z, K1, C, K3, A, K2, B, D, E, O]
+ *
+ * (Note: the order of `connect` is reversed relative to source code order because
+ * it prepends)
+ *)
+let test_wikipedia_example _ =
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
+  insert order "O";
+  insert order "A";
+  connect order ~predecessor:"A" ~successor:"O";
+  insert order "B";
+  connect order ~predecessor:"B" ~successor:"O";
+  insert order "C";
+  connect order ~predecessor:"C" ~successor:"O";
+  insert order "D";
+  connect order ~predecessor:"D" ~successor:"O";
+  insert order "E";
+  connect order ~predecessor:"E" ~successor:"O";
+  insert order "K1";
+  connect order ~predecessor:"K1" ~successor:"B";
+  connect order ~predecessor:"K1" ~successor:"A";
+  connect order ~predecessor:"K1" ~successor:"C";
+  insert order "K2";
+  connect order ~predecessor:"K2" ~successor:"E";
+  connect order ~predecessor:"K2" ~successor:"D";
+  connect order ~predecessor:"K2" ~successor:"B";
+  insert order "K3";
+  connect order ~predecessor:"K3" ~successor:"D";
+  connect order ~predecessor:"K3" ~successor:"A";
+  insert order "Z";
+  connect order ~predecessor:"Z" ~successor:"K2";
+  connect order ~predecessor:"Z" ~successor:"K3";
+  connect order ~predecessor:"Z" ~successor:"K1";
+  assert_method_resolution_order
+    (handler order)
+    "Z"
+    ["Z"; "K1"; "C"; "K3"; "A"; "K2"; "B"; "D"; "E"; "O"]
+
+
 (* Butterfly:
  *
  * (top / superclasses)
@@ -103,14 +168,6 @@ let triangle_order =
 
 
 let test_method_resolution_order_linearize _ =
-  let assert_method_resolution_order (module Handler : Handler) annotation expected =
-    let get_parents = ClassHierarchy.parents_of (module Handler) in
-    assert_equal
-      ~cmp:[%compare.equal: string list]
-      ~printer:(fun names -> [%sexp_of: string list] names |> Sexp.to_string_hum)
-      expected
-      (method_resolution_order_linearize annotation ~get_parents |> Result.ok |> Option.value_exn)
-  in
   assert_method_resolution_order butterfly "D" ["D"];
   assert_method_resolution_order butterfly "A" ["A"; "D"; "C"];
   assert_method_resolution_order diamond_order "D" ["D"; "C"; "B"; "A"];
@@ -565,6 +622,7 @@ let test_instantiate_successors_parameters _ =
 let () =
   "order"
   >::: [
+         "wikipedia_example" >:: test_wikipedia_example;
          "check_integrity" >:: test_check_integrity;
          "is_instantiated" >:: test_is_instantiated;
          "immediate_parents" >:: test_immediate_parents;
