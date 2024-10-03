@@ -193,6 +193,7 @@ class PythonAutoTargetsMetadata:
 @functools.lru_cache(maxsize=1)
 def get_buck_root() -> str:
     buck_root_query_parameters = ["buck2", "root", "--kind", "project"]
+    LOG.debug(f"Getting Buck root: `{' '.join(buck_root_query_parameters)}`")
     buck2_root_query = subprocess.run(
         buck_root_query_parameters,
         capture_output=True,
@@ -731,6 +732,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "prelude//python/typecheck/batch_files.bxl:run",
                 f"@{argfile.name}",
             ]
+            LOG.debug(
+                f"Querying Buck for type errors: `{' '.join(type_check_parameters)}`"
+            )
             type_check = await asyncio.create_subprocess_exec(
                 *type_check_parameters,
                 stdout=asyncio.subprocess.PIPE,
@@ -869,6 +873,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "prelude//python/sourcedb/typing_query.bxl:typing_query",
                 f"@{argfile.name}",
             ]
+            LOG.debug(
+                f"Getting files for type checker from Buck: `{' '.join(query_parameters)}`"
+            )
             type_checked_files_query = asyncio.create_subprocess_exec(
                 *query_parameters,
                 stdout=asyncio.subprocess.PIPE,
@@ -1068,13 +1075,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
         pyautodeps_parameters = [
-            pyautotargets_bin,
+            str(pyautotargets_bin),
             "--verbose",
             "--buck-root",
             buck2_root,
             "--isolation-dir=.pyautotargets",
             str(changed_file),
         ]
+        LOG.debug(f"Running Pyautotargets: `{' '.join(pyautodeps_parameters)}`")
         pyautodeps_run = await asyncio.create_subprocess_exec(
             *pyautodeps_parameters,
             stdout=asyncio.subprocess.PIPE,
