@@ -22,6 +22,13 @@ let assert_method_resolution_order (module Handler : Handler) annotation expecte
     (method_resolution_order_linearize annotation ~get_parents |> Result.ok |> Option.value_exn)
 
 
+let assert_inconsistent_order (module Handler : Handler) annotation =
+  let get_parents = ClassHierarchy.parents_of (module Handler) in
+  match method_resolution_order_linearize annotation ~get_parents with
+  | Result.Error (ClassHierarchy.MethodResolutionOrderError.Inconsistent _) -> ()
+  | _ -> failwith "Expected InconsistentMethodResolutionOrder"
+
+
 (* Test matching the example in
  * https://web.archive.org/web/20241001181736/https://en.wikipedia.org/wiki/C3_linearization
  *
@@ -183,6 +190,42 @@ let test_immediate_parents _ =
   assert_equal (immediate_parents complex_order "D") [];
   assert_equal (immediate_parents complex_order "A") ["D"];
   assert_equal (immediate_parents complex_order "bottom") ["E"; "C"; "B"; "A"];
+  ()
+
+
+(* Example that will fail at runtime in Python:
+ *
+ *  class A: pass
+ *  class B: pass
+ *  class C(A): pass
+ *  class D(C, B): pass
+ *  class E(D, B, A): pass
+ *
+ * Here's the result of running the algorithm:
+ *   mro(A) = [A]
+ *   mro(B) = [B]
+ *   mro(C) = [C A]
+ *   mro(D) = [D C A B]
+ *   mro(E) = E :: merge [D C A B] [B] [A] [D, B, A]
+ *          = [E D C] ++ merge [A B] [B] [A] [B A]
+ *          = <fail>
+ *)
+let test_nonlinearizable_mro _ =
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  connect order ~predecessor:"C" ~successor:"A";
+  insert order "D";
+  connect order ~predecessor:"D" ~successor:"B";
+  connect order ~predecessor:"D" ~successor:"C";
+  insert order "E";
+  connect order ~predecessor:"E" ~successor:"A";
+  connect order ~predecessor:"E" ~successor:"B";
+  connect order ~predecessor:"E" ~successor:"D";
+  assert_method_resolution_order (handler order) "D" ["D"; "C"; "A"; "B"];
+  assert_inconsistent_order (handler order) "E";
   ()
 
 
@@ -626,6 +669,7 @@ let () =
          "check_integrity" >:: test_check_integrity;
          "is_instantiated" >:: test_is_instantiated;
          "immediate_parents" >:: test_immediate_parents;
+         "nonlinearizable_mro" >:: test_nonlinearizable_mro;
          "to_dot" >:: test_to_dot;
          "generic_parameters_as_variables" >:: test_generic_parameters_as_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
