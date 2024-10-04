@@ -12,7 +12,7 @@ open Pyre
 open Ast
 open Expression
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module ClassSummary = Analysis.ClassSummary
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type parameter_requirements = {
   anonymous_parameters_positions: Int.Set.t;
@@ -243,9 +243,11 @@ let verify_global ~path ~location ~pyre_api ~name =
       match class_summary, global with
       | Some ({ name = class_name; _ } as class_summary), _ ->
           let attributes =
-            ClassSummary.attributes ~include_generated_attributes:false class_summary
+            PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
           in
-          let constructor_attributes = ClassSummary.constructor_attributes class_summary in
+          let constructor_attributes =
+            PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+          in
           let attribute_name = Reference.last name in
           if
             Identifier.SerializableMap.mem attribute_name attributes

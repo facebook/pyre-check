@@ -18,7 +18,7 @@ open Ast
 open Interprocedural
 open ModelParseResult
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module ClassSummary = Analysis.ClassSummary
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Represents the result of generating models from queries. *)
 module ModelQueryRegistryMap = struct
@@ -1757,15 +1757,15 @@ module AttributeQueryExecutor = struct
       | None -> []
       | Some ({ name = class_name_reference; _ } as class_summary) ->
           let attributes, constructor_attributes =
-            ( ClassSummary.attributes ~include_generated_attributes:false class_summary,
-              ClassSummary.constructor_attributes class_summary )
+            ( PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary,
+              PyrePysaLogic.ClassSummary.constructor_attributes class_summary )
           in
           let all_attributes =
             Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
           in
           let get_target_from_attributes attribute_name attribute accumulator =
             match Node.value attribute with
-            | { ClassSummary.Attribute.kind = Simple _; _ } ->
+            | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
                 Target.create_object (Reference.create ~prefix:class_name_reference attribute_name)
                 :: accumulator
             | _ -> accumulator
@@ -1778,7 +1778,11 @@ module AttributeQueryExecutor = struct
 
   let get_type_annotation ~pyre_api class_name attribute =
     let get_annotation = function
-      | { ClassSummary.Attribute.kind = Simple { ClassSummary.Attribute.annotation; _ }; _ } ->
+      | {
+          PyrePysaLogic.ClassSummary.Attribute.kind =
+            Simple { PyrePysaLogic.ClassSummary.Attribute.annotation; _ };
+          _;
+        } ->
           annotation
       | _ -> None
     in
@@ -1786,14 +1790,14 @@ module AttributeQueryExecutor = struct
     >>| Node.value
     >>= fun class_summary ->
     match
-      ClassSummary.constructor_attributes class_summary
+      PyrePysaLogic.ClassSummary.constructor_attributes class_summary
       |> Identifier.SerializableMap.find_opt attribute
       >>| Node.value
       >>| get_annotation
     with
     | Some annotation -> annotation
     | None ->
-        ClassSummary.attributes ~include_generated_attributes:false class_summary
+        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
         |> Identifier.SerializableMap.find_opt attribute
         >>| Node.value
         >>= get_annotation
