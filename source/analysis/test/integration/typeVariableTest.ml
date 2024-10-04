@@ -2060,7 +2060,7 @@ let test_callable_parameter_variadics =
                 def f(self, /, *args: P.args, **kwargs: P.kwargs) -> int:
                     return 5
 
-            def foo(x: H[int, str]) -> None:
+            def foo(x: H[[int, str]]) -> None:
                 # incorrect
                 x.f()
                 x.f("A", 1)
@@ -3507,6 +3507,26 @@ let test_variadic_tuples =
               def foo(x: Tuple[int, Unpack[Ts]]) -> Tuple[bool, Unpack[Ts]]: ...
 
               def bar() -> None:
+                x: Tuple[int, str, bool]
+                y = foo(x)
+                reveal_type(y)
+
+                x2: Tuple[int]
+                y2 = foo(x2)
+                reveal_type(y2)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `y` is `Tuple[bool, str, bool]`.";
+             "Revealed type [-1]: Revealed type for `y2` is `Tuple[bool]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Tuple, Unpack
+
+            def foo[*Ts](x: Tuple[int, Unpack[Ts]]) -> Tuple[bool, Unpack[Ts]]: ...
+
+            def bar() -> None:
                 x: Tuple[int, str, bool]
                 y = foo(x)
                 reveal_type(y)
