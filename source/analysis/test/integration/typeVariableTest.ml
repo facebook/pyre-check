@@ -57,22 +57,17 @@ let test_type_variable_scoping =
 
             |}
            [];
-      (* TODO migeedz: Consider what we want to do about this. The conformance test says that we
-         should not return any errors, but Pyre does not accept such programs in legacy syntax
-         currently. *)
+      (* TODO migeedz: Why do we need to express the domain of Callable as a list for this to
+         typecheck? *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Callable
+            from typing import Callable, ParamSpec
 
-            def decorator2[**P, R](x: int) -> Callable[[Callable[P, R]], Callable[P, R]]:
+            def decorator3[**L, M](x: Callable[L, M]) -> int:
                 ...
-
             |}
-           [
-             "Invalid type [31]: Expression `typing.Callable[([typing.Callable[(P, R)]], \
-              typing.Callable[(P, R)])]` is not a valid type.";
-           ];
+           ["Invalid type [31]: Expression `typing.Callable[(L, M)]` is not a valid type."];
       (* PEP695 generic methods from non-generic classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
