@@ -1140,11 +1140,42 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             ~inner_scope_type_variables:local_scoped_type_variables
             ~outer_scope_type_variables
         in
+        (* We modify the original param_spec_from_vararg_annotations from TypeAliasEnvironment to a
+           version which accounts for scoped type variables. Here, we are turning
+           scoped_type_variables to a get_variable and if we don't find a result, we revert to the
+           original version of param_spec_from_vararg_annotations, which will use the global
+           scope. *)
+        let param_spec_from_vararg_annotations ~args_annotation ~kwargs_annotation =
+          let local_get_variable =
+            match scoped_type_variables with
+            | Some variable_map -> (
+                fun variable_name ->
+                  let local_scope_variable = map_find variable_map variable_name in
+                  match local_scope_variable with
+                  | None -> None
+                  | Some variable -> Some variable)
+            | _ -> fun _ -> None
+          in
+          let get_param_spec variable_name =
+            match local_get_variable variable_name with
+            | Some (Type.Variable.ParamSpecVariable name) -> Some name
+            | _ -> None
+          in
+          let res =
+            Type.Variable.ParamSpec.of_component_annotations
+              ~get_param_spec
+              ~args_annotation:(Expression.delocalize args_annotation)
+              ~kwargs_annotation:(Expression.delocalize kwargs_annotation)
+          in
+          match res with
+          | Some res -> Some res
+          | _ -> param_spec_from_vararg_annotations ~args_annotation ~kwargs_annotation ()
+        in
         let parser =
           {
             AnnotatedCallable.parse_annotation =
               self#parse_annotation ~cycle_detections ~scoped_type_variables;
-            param_spec_from_vararg_annotations = param_spec_from_vararg_annotations ();
+            param_spec_from_vararg_annotations;
           }
         in
         AnnotatedCallable.create_overload_without_applying_decorators

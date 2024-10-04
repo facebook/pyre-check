@@ -2069,7 +2069,13 @@ let test_callable_parameter_variadics =
                 x.f(1, "A")
 
             |}
-           [];
+           [
+             "Missing argument [20]: Call `H.f` expects argument in position 1.";
+             "Incompatible parameter type [6]: In call `H.f`, for 1st positional argument, \
+              expected `int` but got `str`.";
+             "Incompatible parameter type [6]: In call `H.f`, for 2nd positional argument, \
+              expected `str` but got `int`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            ~other_sources:
