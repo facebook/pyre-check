@@ -67,7 +67,7 @@ let test_type_variable_scoping =
             def decorator3[**L, M](x: Callable[L, M]) -> int:
                 ...
             |}
-           ["Invalid type [31]: Expression `typing.Callable[(L, M)]` is not a valid type."];
+           [];
       (* PEP695 generic methods from non-generic classes *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

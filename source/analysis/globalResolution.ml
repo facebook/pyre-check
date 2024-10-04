@@ -237,6 +237,16 @@ let parse_annotation ({ dependency; _ } as resolution) =
     ~scoped_type_variables:None
 
 
+let parse_annotation_with_scoped_typed_variables
+    ({ dependency; _ } as resolution)
+    ~scoped_type_variables
+  =
+  AttributeResolution.ReadOnly.parse_annotation
+    ?dependency
+    (attribute_resolution resolution)
+    ~scoped_type_variables
+
+
 let global ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.global (attribute_resolution resolution) ?dependency
 

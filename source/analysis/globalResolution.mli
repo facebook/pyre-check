@@ -94,6 +94,13 @@ val parse_annotation
   Expression.t ->
   Type.t
 
+val parse_annotation_with_scoped_typed_variables
+  :  t ->
+  scoped_type_variables:Type.Variable.t Identifier.Map.t option ->
+  ?validation:AttributeResolution.type_validation_policy ->
+  Expression.expression Node.t ->
+  Type.t
+
 val global : t -> Reference.t -> AttributeResolution.Global.t option
 
 val get_typed_dictionary : t -> Type.t -> Type.TypedDictionary.t option

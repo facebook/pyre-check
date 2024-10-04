@@ -97,6 +97,26 @@ module type Signature = sig
   include Fixpoint.State with type t := t
 end
 
+(* A helper function which converts type parameters to a type variable map *)
+let scoped_type_variables_as_map scoped_type_variables_list =
+  let empty_string_map = Identifier.Map.empty in
+  let update_map map key value =
+    match Map.add ~key ~data:value map with
+    | `Ok new_map -> new_map
+    | `Duplicate -> map
+  in
+  let named_values = List.map ~f:(fun x -> Type.Variable.name x, x) scoped_type_variables_list in
+  let create_mapping_from_type_variable_assoc_list =
+    List.fold_left
+      ~f:(fun map (key, value) -> update_map map key value)
+      ~init:empty_string_map
+      named_values
+  in
+  match named_values with
+  | [] -> None
+  | _ -> Some create_mapping_from_type_variable_assoc_list
+
+
 let error_and_location_from_typed_dictionary_mismatch
     { Node.value = mismatch; location = define_location }
   =
@@ -636,8 +656,13 @@ module State (Context : Context) = struct
       else
         errors, Type.Top
     in
+    let type_variables_in_scope = Resolution.all_type_variables_in_scope resolution in
+    let scoped_type_variables = scoped_type_variables_as_map type_variables_in_scope in
     let annotation =
-      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
+      (GlobalResolution.parse_annotation_with_scoped_typed_variables ~scoped_type_variables)
+        ~validation:NoValidation
+        global_resolution
+        expression
     in
     let errors =
       match annotation with
@@ -6551,6 +6576,7 @@ module State (Context : Context) = struct
     let global_resolution = Resolution.global_resolution resolution in
     (* collect type parameters for functions *)
     let type_params, _ = get_type_params_as_variables type_params global_resolution in
+    let scoped_type_variables = scoped_type_variables_as_map type_params in
     (* Add them to the resolution *)
     let resolution =
       type_params
@@ -6715,7 +6741,9 @@ module State (Context : Context) = struct
             if String.is_prefix ~prefix:"**" name then
               match
                 annotation
-                >>| GlobalResolution.parse_annotation global_resolution
+                >>| GlobalResolution.parse_annotation_with_scoped_typed_variables
+                      global_resolution
+                      ~scoped_type_variables
                 >>| Type.unpack_value
                 |> Option.value ~default:None
                 >>| GlobalResolution.get_typed_dictionary global_resolution
