@@ -50,10 +50,14 @@ def patch_one_file(
     if original_code is None:
         raise ValueError(f"Could not find content for {file_patch.path}")
     else:
-        patched_code = transforms.apply_patches_in_sequence(
-            code=original_code,
-            patches=file_patch.patches,
-        )
+        try:
+            patched_code = transforms.apply_patches_in_sequence(
+                code=original_code,
+                patches=file_patch.patches,
+            )
+        except NotImplementedError as e:
+            e.args = (f"{file_patch.path}: {e.args[0]}",) + e.args[1:]
+            raise e
         diff_view = compute_diff_view(
             original_code=original_code,
             patched_code=patched_code,

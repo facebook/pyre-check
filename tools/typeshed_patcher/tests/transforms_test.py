@@ -326,6 +326,32 @@ class PatchTransformsTest(testslide.TestCase):
             ),
         )
 
+    def test_delete__multistatement_if_block(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                if condition:
+                    class A:
+                        pass
+                    class B:
+                        pass
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.DeleteAction(
+                    name="A",
+                ),
+            ),
+            expected_code=(
+                """
+                if condition:
+                    class B:
+                        pass
+                """
+            ),
+        )
+
     def test_delete__typealias(self) -> None:
         self.assert_transform(
             original_code=(
@@ -646,6 +672,34 @@ class PatchTransformsTest(testslide.TestCase):
                 import baz
                 Bar = baz.Bar
                 x: Bar
+                """
+            ),
+        )
+
+    def test_replace__multistatement_if_block(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                if condition:
+                    class A:
+                        pass
+                    class B:
+                        pass
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.ReplaceAction(
+                    name="A",
+                    content="A = int",
+                ),
+            ),
+            expected_code=(
+                """
+                if condition:
+                    A = int
+                    class B:
+                        pass
                 """
             ),
         )
