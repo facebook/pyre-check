@@ -6,7 +6,7 @@
 from builtins import _test_source, _test_sink
 from typing import Any, MutableMapping
 from typing_extensions import Self
-from pyre_extensions import ReadOnly
+from pyre_extensions import PyreReadOnly
 
 
 class A:
@@ -15,7 +15,7 @@ class A:
         self.mapping: MutableMapping[str, Any] = {}
 
     def self_readonly_str(
-        self: ReadOnly[Self]
+        self: PyreReadOnly[Self]
     ) -> None:
         _test_sink(self.B)
 
@@ -25,7 +25,7 @@ class A:
         _test_sink(self.B)
 
     def self_readonly_map(
-        self: ReadOnly[Self]
+        self: PyreReadOnly[Self]
     ) -> None:
         # pyre-ignore[3005]: Ignore ReadOnly Violation
         _test_sink(self.mapping.get(""))
@@ -35,7 +35,7 @@ class A:
     ) -> None:
         _test_sink(self.mapping.get(""))
 
-    def readonly_tito(self, x: ReadOnly[str]):
+    def readonly_tito(self, x: PyreReadOnly[str]):
         return x
 
 
@@ -50,11 +50,11 @@ class Foo:
     not_tainted: str = ""
 
 
-def readonly_foo_tainted(foo: ReadOnly[Foo]) -> None:
+def readonly_foo_tainted(foo: PyreReadOnly[Foo]) -> None:
     _test_sink(foo.tainted)
 
 
-def readonly_foo_not_tainted(foo: ReadOnly[Foo]) -> None:
+def readonly_foo_not_tainted(foo: PyreReadOnly[Foo]) -> None:
     _test_sink(foo.not_tainted)
 
 
