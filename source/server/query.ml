@@ -935,7 +935,7 @@ let rec process_request_exn
               let python_version =
                 Taint.ModelParser.PythonVersion.from_configuration configuration
               in
-              let get_model_queries (path, source) =
+              let parse_model_queries (path, source) =
                 Taint.ModelParser.parse
                   ~pyre_api
                   ~path
@@ -950,14 +950,15 @@ let rec process_request_exn
                   ~python_version
                   ()
                 |> fun { Taint.ModelParseResult.queries; errors; _ } ->
-                if List.is_empty errors then
-                  Ok
-                    (List.filter queries ~f:(fun rule ->
-                         String.equal rule.Taint.ModelParseResult.ModelQuery.name query_name))
-                else
-                  Error errors
+                {
+                  Taint.ModelParseResult.queries =
+                    List.filter queries ~f:(fun { Taint.ModelParseResult.ModelQuery.name; _ } ->
+                        String.equal name query_name);
+                  models = Taint.Registry.empty;
+                  errors;
+                }
               in
-              let rules =
+              let parse_result =
                 let sources = Taint.ModelParser.get_model_sources ~paths:[path] in
                 if List.is_empty sources then
                   failwith
@@ -965,62 +966,83 @@ let rec process_request_exn
                        "ModelParser.get_model_sources ~paths:[%s] was empty"
                        (PyrePath.show path))
                 else
-                  let open Result in
-                  sources |> List.map ~f:get_model_queries |> Result.combine_errors >>| List.concat
+                  sources
+                  |> List.map ~f:parse_model_queries
+                  |> List.fold ~f:Taint.ModelParseResult.join ~init:Taint.ModelParseResult.empty
               in
-              match rules with
-              | Error errors ->
+              match parse_result with
+              | { Taint.ModelParseResult.queries = []; errors; _ } ->
+                  let pp_errors formatter = function
+                    | [] -> ()
+                    | errors ->
+                        Format.fprintf
+                          formatter
+                          " This might be because of the following parse errors:\n%s"
+                          (List.map ~f:Taint.ModelVerificationError.display errors
+                          |> String.concat ~sep:"\n")
+                  in
                   Error
-                    (List.fold (List.concat errors) ~init:"" ~f:(fun accum error ->
-                         accum ^ Taint.ModelVerificationError.display error))
-              | Ok rules ->
-                  if List.is_empty rules then
+                    (Format.asprintf
+                       "No model query with name `%s` was found in path `%s`.%a"
+                       query_name
+                       (PyrePath.show path)
+                       pp_errors
+                       errors)
+              | { Taint.ModelParseResult.queries = _ :: _ :: _ as queries; _ } ->
+                  let show_query_location { Taint.ModelParseResult.ModelQuery.location; path; _ } =
+                    Format.sprintf
+                      "%s:%d:%d"
+                      (path >>| PyrePath.absolute |> Option.value ~default:"?")
+                      location.start.line
+                      location.start.column
+                  in
+                  Error
+                    (Format.sprintf
+                       "Found multiple model queries with name `%s` in path `%s`:\n%s"
+                       query_name
+                       (PyrePath.show path)
+                       (List.map ~f:show_query_location queries |> String.concat ~sep:"\n"))
+              | { Taint.ModelParseResult.queries = [query]; _ } ->
+                  let {
+                    Taint.ModelQueryExecution.ExecutionResult.models = models_and_names;
+                    errors;
+                  }
+                    =
+                    setup_and_execute_model_queries [query]
+                  in
+                  let to_taint_model (callable, model) =
+                    {
+                      Base.callable = Interprocedural.Target.external_name callable;
+                      model =
+                        Taint.Model.to_json
+                          ~expand_overrides:None
+                          ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
+                          ~resolve_module_path:None
+                          ~resolve_callable_location:None
+                          ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
+                          callable
+                          model;
+                    }
+                  in
+                  let models =
+                    models_and_names
+                    |> Taint.ModelQueryExecution.ModelQueryRegistryMap.get_registry
+                         ~model_join:Taint.Model.join_user_models
+                    |> Taint.Registry.to_alist
+                    |> List.map ~f:to_taint_model
+                  in
+                  if List.is_empty models then
                     Error
                       (Format.sprintf
-                         "No model query with name `%s` was found in path `%s`"
+                         "No models found for model query `%s` in path `%s`"
                          query_name
                          (PyrePath.show path))
+                  else if not (List.is_empty errors) then
+                    Error
+                      (List.fold errors ~init:"" ~f:(fun accum error ->
+                           accum ^ Taint.ModelVerificationError.display error))
                   else
-                    let {
-                      Taint.ModelQueryExecution.ExecutionResult.models = models_and_names;
-                      errors;
-                    }
-                      =
-                      setup_and_execute_model_queries rules
-                    in
-                    let to_taint_model (callable, model) =
-                      {
-                        Base.callable = Interprocedural.Target.external_name callable;
-                        model =
-                          Taint.Model.to_json
-                            ~expand_overrides:None
-                            ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
-                            ~resolve_module_path:None
-                            ~resolve_callable_location:None
-                            ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
-                            callable
-                            model;
-                      }
-                    in
-                    let models =
-                      models_and_names
-                      |> Taint.ModelQueryExecution.ModelQueryRegistryMap.get_registry
-                           ~model_join:Taint.Model.join_user_models
-                      |> Taint.Registry.to_alist
-                      |> List.map ~f:to_taint_model
-                    in
-                    if List.is_empty models then
-                      Error
-                        (Format.sprintf
-                           "No models found for model query `%s` in path `%s`"
-                           query_name
-                           (PyrePath.show path))
-                    else if not (List.is_empty errors) then
-                      Error
-                        (List.fold errors ~init:"" ~f:(fun accum error ->
-                             accum ^ Taint.ModelVerificationError.display error))
-                    else
-                      Single (Base.FoundModels models)))
+                    Single (Base.FoundModels models)))
     | ModulesOfPath path ->
         Single
           (Base.FoundModules
