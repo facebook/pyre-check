@@ -22,6 +22,7 @@ from pyre_extensions import override
 
 from ..configuration import Configuration
 from ..errors import Errors
+from ..filesystem import add_local_mode, LocalMode
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
@@ -36,10 +37,12 @@ class Fixme(ErrorSuppressingCommand):
         repository: Repository,
         error_source: str,
         only_fix_error_code: Optional[int] = None,
+        fixme_threshold: Optional[int] = None,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._error_source: str = error_source
         self._only_fix_error_code: Optional[int] = only_fix_error_code
+        self._fixme_threshold: Optional[int] = fixme_threshold
 
     @staticmethod
     def from_arguments(
@@ -50,6 +53,7 @@ class Fixme(ErrorSuppressingCommand):
             command_arguments,
             repository=repository,
             error_source=arguments.error_source,
+            fixme_threshold=arguments.fixme_threshold,
             only_fix_error_code=arguments.only_fix_error_code,
         )
 
@@ -70,6 +74,12 @@ class Fixme(ErrorSuppressingCommand):
             help="Only add fixmes for errors with this specific error code.",
             default=None,
         )
+        parser.add_argument(
+            "--fixme-threshold",
+            type=int,
+            help="If a file contains more than this number of errors, add a pyre-ignore-all comment.",
+            default=None,
+        )
 
     @override
     def run(self) -> None:
@@ -83,7 +93,26 @@ class Fixme(ErrorSuppressingCommand):
                     self._apply_suppressions(errors)
         else:
             errors = Errors.from_stdin(self._only_fix_error_code)
-            self._apply_suppressions(errors)
+            fixme_threshold = self._fixme_threshold
+            if fixme_threshold is None:
+                self._apply_suppressions(errors)
+                return
+
+            for path, path_errors in errors.paths_to_errors.items():
+                if len(path_errors) > fixme_threshold:
+                    LOG.info(
+                        "%d errors found in `%s`. Adding file-level ignore.",
+                        len(path_errors),
+                        path,
+                    )
+                    add_local_mode(
+                        path,
+                        LocalMode.IGNORE,
+                        False,  # ignore empty files (False is default)
+                        True,  # override existing local mode
+                    )
+                else:
+                    self._apply_suppressions(Errors(path_errors))
 
     def _generate_errors(self) -> Errors:
         configuration_path = Configuration.find_project_configuration()

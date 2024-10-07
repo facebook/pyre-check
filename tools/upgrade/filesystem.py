@@ -184,8 +184,29 @@ def remove_local_mode(path: Path, modes: List[LocalMode]) -> List[LocalMode]:
     return list(lines_with_modes.values())
 
 
+def replace_local_mode(lines: List[str], mode: LocalMode, path: Path) -> bool:
+    new_lines = []
+    LOG
+    for line in lines:
+        local_mode_line = False
+        for local_mode in LocalMode:
+            if re.match(local_mode.get_regex(), line):
+                local_mode_line = True
+        if local_mode_line:
+            LOG.error("HERE - Replacing it")
+            new_lines.append(mode.get_comment())
+        else:
+            new_lines.append(line)
+    new_text = "\n".join(new_lines)
+    path.write_text(new_text)
+    return True
+
+
 def add_local_mode(
-    filename: str, mode: LocalMode, ignore_empty_files: bool = False
+    filename: str,
+    mode: LocalMode,
+    ignore_empty_files: bool = False,
+    override: bool = False,
 ) -> bool:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
@@ -204,6 +225,8 @@ def add_local_mode(
     for line in lines:
         for local_mode in LocalMode:
             if re.match(local_mode.get_regex(), line):
+                if override:
+                    return replace_local_mode(lines, mode, path)
                 return False
 
     def is_header(line: str) -> bool:

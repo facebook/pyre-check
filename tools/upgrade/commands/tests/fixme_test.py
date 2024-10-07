@@ -22,7 +22,7 @@ class FixmeTest(unittest.TestCase):
 
         arguments.error_source = ErrorSource.STDIN
         mock_errors = MagicMock()
-
+        arguments.fixme_threshold = None
         with patch.object(
             errors.Errors, "from_stdin", return_value=mock_errors
         ) as errors_from_stdin, patch.object(
