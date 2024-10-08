@@ -193,7 +193,6 @@ def replace_local_mode(lines: List[str], mode: LocalMode, path: Path) -> bool:
             if re.match(local_mode.get_regex(), line):
                 local_mode_line = True
         if local_mode_line:
-            LOG.error("HERE - Replacing it")
             new_lines.append(mode.get_comment())
         else:
             new_lines.append(line)
