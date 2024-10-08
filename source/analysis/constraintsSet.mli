@@ -71,9 +71,10 @@ module type OrderedConstraintsSetType = sig
 
   (* Only exposed for testing *)
   val instantiate_protocol_parameters
-    :  order ->
-    candidate:Type.t ->
+    :  candidate:Type.t ->
     protocol:Ast.Identifier.t ->
+    ?protocol_arguments:Type.Argument.t list ->
+    order ->
     Type.Argument.t list option
 end
 

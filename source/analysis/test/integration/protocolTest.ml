@@ -627,6 +627,53 @@ let test_check_generic_protocols =
              "Revealed type [-1]: Revealed type for `a` is `PXY[int, str]`.";
              "Revealed type [-1]: Revealed type for `b` is `PYX[str, int]`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Any, Generic, overload, Protocol, TypeVar
+
+      _T_contra = TypeVar("_T_contra", contravariant=True)
+      AnyStr = TypeVar("AnyStr", str, bytes)
+
+      class SupportsWrite(Protocol[_T_contra]):
+          def write(self, s: _T_contra, /) -> object:
+              pass
+
+      class IO(Generic[AnyStr]):
+          @overload
+          def write(self: "IO[bytes]", s: bytes, /) -> int: ...
+
+          @overload
+          def write(self, s: AnyStr, /) -> int: ...
+
+          # pyre-ignore[2]: Explicit Any.
+          def write(self: Any, s: Any, /) -> int:
+              return 0
+
+      def f(x: SupportsWrite[str]) -> None:
+          pass
+
+      def g(x: IO[str]) -> None:
+          f(x)
+             |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import Iterable, Protocol, TypeVar
+
+      _T = TypeVar('_T')
+
+      class HasKeys(Protocol[_T]):
+          def keys(self) -> Iterable[_T]: ...
+
+      def f(x: HasKeys[str]) -> None:
+        pass
+
+      def g() -> None:
+        f({})
+      |}
+           [];
     ]
 
 

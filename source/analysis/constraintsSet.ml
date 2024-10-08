@@ -101,9 +101,10 @@ module type OrderedConstraintsSetType = sig
     Type.Callable.parameters list
 
   val instantiate_protocol_parameters
-    :  order ->
-    candidate:Type.t ->
+    :  candidate:Type.t ->
     protocol:Ast.Identifier.t ->
+    ?protocol_arguments:Type.Argument.t list ->
+    order ->
     Type.Argument.t list option
 end
 
@@ -857,7 +858,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           let left_arguments = instantiate_successors_parameters ~source:left ~target:right_name in
           match left_arguments with
           | None when is_protocol right ->
-              instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
+              instantiate_protocol_parameters
+                order
+                ~protocol:right_name
+                ~protocol_arguments:right_arguments
+                ~candidate:left
           | _ -> left_arguments
         in
         left_arguments
@@ -1144,14 +1149,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       Note that classes that refer to themselves don't suffer from this since subtyping for two
       classes just follows from the class hierarchy. *)
   and instantiate_protocol_parameters_with_solve
+      ~solve_candidate_less_or_equal_protocol
+      ~candidate
+      ~protocol
+      ?protocol_arguments
       ({
          class_hierarchy = { generic_parameters; _ };
          cycle_detections = { assumed_protocol_instantiations; _ } as cycle_detections;
          _;
        } as order)
-      ~solve_candidate_less_or_equal_protocol
-      ~candidate
-      ~protocol
       : Type.Argument.t list option
     =
     match candidate with
@@ -1270,24 +1276,52 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               >>| desanitize
               |> Option.value ~default:[]
             in
-            let protocol_annotation =
+            let generic_protocol_annotation =
               protocol_generic_parameters
               >>| Type.parametric protocol
               |> Option.value ~default:(Type.Primitive protocol)
             in
-            solve_candidate_less_or_equal_protocol
-              order_with_new_assumption
-              ~candidate
-              ~protocol_annotation
-            >>| instantiate_protocol_generics)
+            let protocol_annotations =
+              (* When protocol arguments are provided by the caller, we first try solving for them
+                 before falling back to a protocol annotation with generic parameters. We keep only
+                 the non-variable arguments because using the variable names from the protocol
+                 definition produces better error messages. Falling back to the generic annotation
+                 handles the case of `candidate` being an empty container. *)
+              match protocol_arguments, protocol_generic_parameters with
+              | Some arguments, Some generic_arguments
+                when Int.equal (List.length arguments) (List.length generic_arguments) ->
+                  let map argument generic_argument =
+                    match argument with
+                    | Type.Argument.Single (Type.Variable _) -> generic_argument
+                    | _ -> argument
+                  in
+                  let protocol_annotation =
+                    Type.Parametric
+                      {
+                        name = protocol;
+                        arguments = List.map2_exn ~f:map arguments generic_arguments;
+                      }
+                  in
+                  [protocol_annotation; generic_protocol_annotation]
+              | _ -> [generic_protocol_annotation]
+            in
+            let find_first_solution sofar protocol_annotation =
+              match sofar with
+              | Some _ -> sofar
+              | None ->
+                  solve_candidate_less_or_equal_protocol
+                    order_with_new_assumption
+                    ~candidate
+                    ~protocol_annotation
+                  >>| instantiate_protocol_generics
+            in
+            List.fold ~init:None ~f:find_first_solution protocol_annotations)
 
 
   (** As with `instantiate_protocol_parameters_with_solve`, here `None` means a failure to match
       `candidate` type with the protocol, whereas `Some []` means no generic constraints were
       induced. *)
-  and instantiate_protocol_parameters
-      : order -> candidate:Type.t -> protocol:Ast.Identifier.t -> Type.Argument.t list option
-    =
+  and instantiate_protocol_parameters ~candidate ~protocol ?protocol_arguments order =
     (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
        `x` in the protocol. *)
     let solve_all_protocol_attributes_less_or_equal
@@ -1346,7 +1380,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       >>= List.hd
     in
     instantiate_protocol_parameters_with_solve
+      order
       ~solve_candidate_less_or_equal_protocol:solve_all_protocol_attributes_less_or_equal
+      ~candidate
+      ~protocol
+      ~protocol_arguments:(Option.value ~default:[] protocol_arguments)
 
 
   and instantiate_recursive_type_parameters order ~candidate ~recursive_type
