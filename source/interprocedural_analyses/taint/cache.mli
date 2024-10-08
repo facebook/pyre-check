@@ -7,6 +7,7 @@
 
 open Interprocedural
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type t
 
@@ -17,7 +18,7 @@ val try_load
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   saved_state:Configuration.StaticAnalysis.SavedState.t ->
   configuration:Configuration.Analysis.t ->
-  decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->
+  decorator_configuration:PyrePysaLogic.DecoratorPreprocessing.Configuration.t ->
   skip_type_checking_callables:Ast.Reference.SerializableSet.t ->
   enabled:bool ->
   t
