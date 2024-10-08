@@ -4415,7 +4415,8 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create
                                ~implicit_receiver:true
-                               ~is_class_method:false
+                               ~is_class_method:true
+                               ~receiver_class:"test.C"
                                (Target.Method
                                   { class_name = "test.C"; method_name = "h"; kind = Normal });
                            ]
@@ -4428,7 +4429,8 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create
                                ~implicit_receiver:true
-                               ~is_class_method:false
+                               ~is_class_method:true
+                               ~receiver_class:"test.C"
                                ~index:1
                                (Target.Method
                                   { class_name = "test.C"; method_name = "h"; kind = Normal });

@@ -730,7 +730,8 @@
               "resolves_to": [ "class_methods.D.class_abstractmethod" ],
               "port": "formal(arg, position=1)"
             },
-            "caller_interval": [ { "lower": 8, "upper": 11 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": true
           }
         ]
@@ -761,6 +762,7 @@
               "port": "formal(arg, position=1)"
             },
             "caller_interval": [ { "lower": 8, "upper": 11 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": true
           }
         ]

@@ -201,11 +201,15 @@ module CallTarget = struct
     |> fun (annotation, parameters) ->
     (Type.primitive_name annotation, parameters)
     |> function
-    | Some "type", [Type.Record.Argument.Single parameter] when is_class_method ->
+    | Some "type", [Type.Record.Argument.Single parameter] when is_class_method -> (
         (* The receiver is the class itself. Technically, the receiver class type should be
            `Type[int]`. However, we strip away the `type` part since it is implied by the
            `is_class_method` flag. *)
-        Type.primitive_name parameter
+        match parameter with
+        | Type.Primitive class_name
+        | Type.Parametric { name = class_name; _ } ->
+            Some class_name
+        | _ -> None)
     | Some "type", _ -> None
     | Some "super", _ -> None
     | name, _ -> name
@@ -1212,7 +1216,9 @@ module CalleeKind = struct
              implementation. *)
           let type_, parameters = Type.split receiver_type in
           match Type.primitive_name type_, parameters with
-          | Some "type", [Type.Record.Argument.Single (Type.Primitive _)] -> true
+          | Some "type", [Type.Record.Argument.Single (Type.Primitive _)]
+          | Some "type", [Type.Record.Argument.Single (Type.Parametric _)] ->
+              true
           | _ -> false
         in
         Method
