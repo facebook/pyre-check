@@ -4366,15 +4366,21 @@ let test_call_graph_of_define =
       class C(Generic[TInput]):
         @abstractclassmethod
         def f(cls, arg: TInput) -> TInput:
-          raise NotImplementedError()
+          pass
+        @classmethod
+        def h(cls, arg: TInput) -> TInput:
+          pass
         @classmethod
         def g(cls, arg: TInput):
           cls.f(arg)
+          functools.partial(cls.f, arg)
+          cls.h(arg)
+          functools.partial(cls.h, arg)
       |}
            ~define_name:"test.C.g"
            ~expected:
              [
-               ( "12:4-12:14",
+               ( "15:4-15:14",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
                       (CallCallees.create
@@ -4385,6 +4391,47 @@ let test_call_graph_of_define =
                                ~is_class_method:true
                                (Target.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
+                           ]
+                         ())) );
+               ( "16:4-16:33",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               ~implicit_receiver:true
+                               ~is_class_method:true
+                               ~index:1
+                               (Target.Method
+                                  { class_name = "test.C"; method_name = "f"; kind = Normal });
+                           ]
+                         ())) );
+               ( "17:4-17:14",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               ~implicit_receiver:true
+                               ~is_class_method:false
+                               (Target.Method
+                                  { class_name = "test.C"; method_name = "h"; kind = Normal });
+                           ]
+                         ())) );
+               ( "18:4-18:33",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               ~implicit_receiver:true
+                               ~is_class_method:false
+                               ~index:1
+                               (Target.Method
+                                  { class_name = "test.C"; method_name = "h"; kind = Normal });
                            ]
                          ())) );
              ]
