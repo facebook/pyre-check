@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional
 
 # pyre-ignore[21]
-from utils import run_pysa_integration_test
+from runner_lib import run_pysa_integration_test
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -29,8 +29,7 @@ def main(
 ) -> None:
     """
     Entry point function which checks if full_result.json is there, calls
-    functions from integration_test_utils to run pysa, parse
-    full_result.json, and compare the output.
+    functions from runner_lib to run pysa, parse full_result.json, and compare the output.
     """
     logging.basicConfig(
         level=logging.DEBUG,
