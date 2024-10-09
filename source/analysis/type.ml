@@ -56,12 +56,14 @@ module Record = struct
       | Covariant
       | Contravariant
       | Invariant
+      | Bivariant
     [@@deriving compare, eq, sexp, show, hash]
 
     let show_lowercase = function
       | Covariant -> "covariant"
       | Contravariant -> "contravariant"
       | Invariant -> "invariant"
+      | Bivariant -> "bivariant"
   end
 
   module PreInferenceVariance = struct

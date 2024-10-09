@@ -826,7 +826,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
                   |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left:right ~right:left))
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | _, _, Type.Record.Variance.Bivariant -> constraints)
           | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarTupleZipResult { left; right; _ } ->
               (* We assume variadic classes are covariant by default since they represent the
                  immutable shape of a datatype. *)

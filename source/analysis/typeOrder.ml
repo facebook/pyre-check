@@ -261,7 +261,8 @@ module OrderImplementation = struct
                           then
                             Some left
                           else
-                            None)
+                            None
+                      | _, _, Type.Record.Variance.Bivariant -> Some Type.Bottom)
                   | Type.GenericParameter.ZipTwoArgumentsLists.TypeVarTupleZipResult _
                   | Type.GenericParameter.ZipTwoArgumentsLists.ParamSpecZipResult _ ->
                       (* TODO(T47348395): Implement joining for variadics *)

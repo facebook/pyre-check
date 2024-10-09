@@ -25,6 +25,7 @@ module Record : sig
       | Covariant
       | Contravariant
       | Invariant
+      | Bivariant
     [@@deriving compare, eq, sexp, show, hash]
 
     val show_lowercase : t -> string
