@@ -1,3 +1,4 @@
+# ruff: noqa: PYI036 # This is the module declaring BaseException
 import _ast
 import _typeshed
 import sys
@@ -31,9 +32,10 @@ from _typeshed import (
 )
 from collections.abc import Awaitable, Callable, Iterable, Iterator, MutableSet, Reversible, Set as AbstractSet, Sized
 from io import BufferedRandom, BufferedReader, BufferedWriter, FileIO, TextIOWrapper
-from types import CodeType, TracebackType, _Cell
+from types import CellType, CodeType, TracebackType
 
-# mypy crashes if any of {ByteString, Sequence, MutableSequence, Mapping, MutableMapping} are imported from collections.abc in builtins.pyi
+# mypy crashes if any of {ByteString, Sequence, MutableSequence, Mapping, MutableMapping}
+# are imported from collections.abc in builtins.pyi
 from typing import (  # noqa: Y022
     IO,
     Any,
@@ -66,6 +68,7 @@ from typing_extensions import (  # noqa: Y023
     Self,
     TypeAlias,
     TypeGuard,
+    TypeIs,
     TypeVarTuple,
     deprecated,
 )
@@ -78,6 +81,7 @@ N1 = TypeVar("N1", bound=int)
 N2 = TypeVar("N2", bound=int)
 
 _T = TypeVar("_T")
+_I = TypeVar("_I", default=int)
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 _R_co = TypeVar("_R_co", covariant=True)
@@ -103,7 +107,7 @@ class object:
     @property
     def __class__(self) -> type[Self]: ...
     @__class__.setter
-    def __class__(self, type: type[object], /) -> None: ...  # noqa: F811
+    def __class__(self, type: type[object], /) -> None: ...
     def __init__(self) -> None: ...
     def __new__(cls) -> Self: ...
     # N.B. `object.__setattr__` and `object.__delattr__` are heavily special-cased by type checkers.
@@ -464,7 +468,7 @@ class str(Sequence[str]):
     def format(self: LiteralString, *args: LiteralString, **kwargs: LiteralString) -> LiteralString: ...
     @overload
     def format(self, *args: object, **kwargs: object) -> str: ...
-    def format_map(self, map: _FormatMapMapping) -> str: ...
+    def format_map(self, mapping: _FormatMapMapping, /) -> str: ...
     def index(self, sub: str, start: SupportsIndex | None = ..., end: SupportsIndex | None = ..., /) -> int: ...
     def isalnum(self) -> bool: ...
     def isalpha(self) -> bool: ...
@@ -498,10 +502,20 @@ class str(Sequence[str]):
     def partition(self: LiteralString, sep: LiteralString, /) -> tuple[LiteralString, LiteralString, LiteralString]: ...
     @overload
     def partition(self, sep: str, /) -> tuple[str, str, str]: ...  # type: ignore[misc]
-    @overload
-    def replace(self: LiteralString, old: LiteralString, new: LiteralString, count: SupportsIndex = -1, /) -> LiteralString: ...
-    @overload
-    def replace(self, old: str, new: str, count: SupportsIndex = -1, /) -> str: ...  # type: ignore[misc]
+    if sys.version_info >= (3, 13):
+        @overload
+        def replace(
+            self: LiteralString, old: LiteralString, new: LiteralString, /, count: SupportsIndex = -1
+        ) -> LiteralString: ...
+        @overload
+        def replace(self, old: str, new: str, /, count: SupportsIndex = -1) -> str: ...  # type: ignore[misc]
+    else:
+        @overload
+        def replace(
+            self: LiteralString, old: LiteralString, new: LiteralString, count: SupportsIndex = -1, /
+        ) -> LiteralString: ...
+        @overload
+        def replace(self, old: str, new: str, count: SupportsIndex = -1, /) -> str: ...  # type: ignore[misc]
     if sys.version_info >= (3, 9):
         @overload
         def removeprefix(self: LiteralString, prefix: LiteralString, /) -> LiteralString: ...
@@ -815,8 +829,12 @@ class bytearray(MutableSequence[int]):
     def __buffer__(self, flags: int, /) -> memoryview: ...
     def __release_buffer__(self, buffer: memoryview, /) -> None: ...
 
+_IntegerFormats: TypeAlias = Literal[
+    "b", "B", "@b", "@B", "h", "H", "@h", "@H", "i", "I", "@i", "@I", "l", "L", "@l", "@L", "q", "Q", "@q", "@Q", "P", "@P"
+]
+
 @final
-class memoryview(Sequence[int]):
+class memoryview(Sequence[_I]):
     @property
     def format(self) -> str: ...
     @property
@@ -846,13 +864,20 @@ class memoryview(Sequence[int]):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None, /
     ) -> None: ...
-    def cast(self, format: str, shape: list[int] | tuple[int, ...] = ...) -> memoryview: ...
     @overload
-    def __getitem__(self, key: SupportsIndex | tuple[SupportsIndex, ...], /) -> int: ...
+    def cast(self, format: Literal["c", "@c"], shape: list[int] | tuple[int, ...] = ...) -> memoryview[bytes]: ...
     @overload
-    def __getitem__(self, key: slice, /) -> memoryview: ...
+    def cast(self, format: Literal["f", "@f", "d", "@d"], shape: list[int] | tuple[int, ...] = ...) -> memoryview[float]: ...
+    @overload
+    def cast(self, format: Literal["?"], shape: list[int] | tuple[int, ...] = ...) -> memoryview[bool]: ...
+    @overload
+    def cast(self, format: _IntegerFormats, shape: list[int] | tuple[int, ...] = ...) -> memoryview: ...
+    @overload
+    def __getitem__(self, key: SupportsIndex | tuple[SupportsIndex, ...], /) -> _I: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> memoryview[_I]: ...
     def __contains__(self, x: object, /) -> bool: ...
-    def __iter__(self) -> Iterator[int]: ...
+    def __iter__(self) -> Iterator[_I]: ...
     def __len__(self) -> int: ...
     def __eq__(self, value: object, /) -> bool: ...
     def __hash__(self) -> int: ...
@@ -947,13 +972,15 @@ class tuple(Sequence[_T_co]):
     if sys.version_info >= (3, 9):
         def __class_getitem__(cls, item: Any, /) -> GenericAlias: ...
 
-# Doesn't exist at runtime, but deleting this breaks mypy. See #2999
+# Doesn't exist at runtime, but deleting this breaks mypy and pyright. See:
+# https://github.com/python/typeshed/issues/7580
+# https://github.com/python/mypy/issues/8240
 @final
 @type_check_only
 class function:
     # Make sure this class definition stays roughly in line with `types.FunctionType`
     @property
-    def __closure__(self) -> tuple[_Cell, ...] | None: ...
+    def __closure__(self) -> tuple[CellType, ...] | None: ...
     __code__: CodeType
     __defaults__: tuple[Any, ...] | None
     __dict__: dict[str, Any]
@@ -1041,15 +1068,25 @@ class dict(MutableMapping[_KT, _VT]):
     @overload
     def __init__(self) -> None: ...
     @overload
-    def __init__(self: dict[str, _VT], **kwargs: _VT) -> None: ...
+    def __init__(self: dict[str, _VT], **kwargs: _VT) -> None: ...  # pyright: ignore[reportInvalidTypeVarUse]  #11780
     @overload
     def __init__(self, map: SupportsKeysAndGetItem[_KT, _VT], /) -> None: ...
     @overload
-    def __init__(self: dict[str, _VT], map: SupportsKeysAndGetItem[str, _VT], /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        map: SupportsKeysAndGetItem[str, _VT],
+        /,
+        **kwargs: _VT,
+    ) -> None: ...
     @overload
     def __init__(self, iterable: Iterable[tuple[_KT, _VT]], /) -> None: ...
     @overload
-    def __init__(self: dict[str, _VT], iterable: Iterable[tuple[str, _VT]], /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        iterable: Iterable[tuple[str, _VT]],
+        /,
+        **kwargs: _VT,
+    ) -> None: ...
     # Next two overloads are for dict(string.split(sep) for string in iterable)
     # Cannot be Iterable[Sequence[_T]] or otherwise dict(["foo", "bar", "baz"]) is not an error
     @overload
@@ -1070,7 +1107,8 @@ class dict(MutableMapping[_KT, _VT]):
     def items(self) -> dict_items[_KT, _VT]: ...
     @overload
     def items(self: _PyreReadOnly_[Self]) -> _PyreReadOnly_[dict_items[_KT, _VT]]: ...
-    # Signature of `dict.fromkeys` should be kept identical to `fromkeys` methods of `OrderedDict`/`ChainMap`/`UserDict` in `collections`
+    # Signature of `dict.fromkeys` should be kept identical to
+    # `fromkeys` methods of `OrderedDict`/`ChainMap`/`UserDict` in `collections`
     # TODO: the true signature of `dict.fromkeys` is not expressible in the current type system.
     # See #3800 & https://github.com/python/typing/issues/548#issuecomment-683336963.
     @classmethod
@@ -1232,6 +1270,9 @@ class property:
     fset: Callable[[Any, Any], None] | None
     fdel: Callable[[Any], None] | None
     __isabstractmethod__: bool
+    if sys.version_info >= (3, 13):
+        __name__: str
+
     def __init__(
         self,
         fget: Callable[[Any], Any] | None = ...,
@@ -1260,7 +1301,7 @@ def any(iterable: Iterable[object], /) -> bool: ...
 def ascii(obj: object, /) -> str: ...
 def bin(number: int | SupportsIndex, /) -> str: ...
 def breakpoint(*args: Any, **kws: Any) -> None: ...
-def callable(obj: object, /) -> TypeGuard[Callable[..., object]]: ...
+def callable(obj: object, /) -> TypeIs[Callable[..., object]]: ...
 def chr(i: int, /) -> str: ...
 
 # We define this here instead of using os.PathLike to avoid import cycle issues.
@@ -1339,19 +1380,41 @@ def divmod(x: _T_contra, y: SupportsRDivMod[_T_contra, _T_co], /) -> _T_co: ...
 
 # The `globals` argument to `eval` has to be `dict[str, Any]` rather than `dict[str, object]` due to invariance.
 # (The `globals` argument has to be a "real dict", rather than any old mapping, unlike the `locals` argument.)
-def eval(
-    source: str | ReadableBuffer | CodeType, globals: dict[str, Any] | None = None, locals: Mapping[str, object] | None = None, /
-) -> Any: ...
+if sys.version_info >= (3, 13):
+    def eval(
+        source: str | ReadableBuffer | CodeType,
+        /,
+        globals: dict[str, Any] | None = None,
+        locals: Mapping[str, object] | None = None,
+    ) -> Any: ...
+
+else:
+    def eval(
+        source: str | ReadableBuffer | CodeType,
+        globals: dict[str, Any] | None = None,
+        locals: Mapping[str, object] | None = None,
+        /,
+    ) -> Any: ...
 
 # Comment above regarding `eval` applies to `exec` as well
-if sys.version_info >= (3, 11):
+if sys.version_info >= (3, 13):
+    def exec(
+        source: str | ReadableBuffer | CodeType,
+        /,
+        globals: dict[str, Any] | None = None,
+        locals: Mapping[str, object] | None = None,
+        *,
+        closure: tuple[CellType, ...] | None = None,
+    ) -> None: ...
+
+elif sys.version_info >= (3, 11):
     def exec(
         source: str | ReadableBuffer | CodeType,
         globals: dict[str, Any] | None = None,
         locals: Mapping[str, object] | None = None,
         /,
         *,
-        closure: tuple[_Cell, ...] | None = None,
+        closure: tuple[CellType, ...] | None = None,
     ) -> None: ...
 
 else:
@@ -1369,6 +1432,8 @@ class filter(Iterator[_T]):
     def __new__(cls, function: None, iterable: Iterable[_T | None], /) -> Self: ...
     @overload
     def __new__(cls, function: Callable[[_S], TypeGuard[_T]], iterable: Iterable[_S], /) -> Self: ...
+    @overload
+    def __new__(cls, function: Callable[[_S], TypeIs[_T]], iterable: Iterable[_S], /) -> Self: ...
     @overload
     def __new__(cls, function: Callable[[_T], Any], iterable: Iterable[_T], /) -> Self: ...
     def __iter__(self) -> Self: ...
@@ -1654,9 +1719,9 @@ def pow(base: float, exp: complex | _SupportsSomeKindOfPow, mod: None = None) ->
 @overload
 def pow(base: complex, exp: complex | _SupportsSomeKindOfPow, mod: None = None) -> complex: ...
 @overload
-def pow(base: _SupportsPow2[_E, _T_co], exp: _E, mod: None = None) -> _T_co: ...
+def pow(base: _SupportsPow2[_E, _T_co], exp: _E, mod: None = None) -> _T_co: ...  # type: ignore[overload-overlap]
 @overload
-def pow(base: _SupportsPow3NoneOnly[_E, _T_co], exp: _E, mod: None = None) -> _T_co: ...
+def pow(base: _SupportsPow3NoneOnly[_E, _T_co], exp: _E, mod: None = None) -> _T_co: ...  # type: ignore[overload-overlap]
 @overload
 def pow(base: _SupportsPow3[_E, _M, _T_co], exp: _E, mod: _M) -> _T_co: ...
 @overload
@@ -1713,7 +1778,7 @@ _SupportsSumNoDefaultT = TypeVar("_SupportsSumNoDefaultT", bound=_SupportsSumWit
 # without creating many false-positive errors (see #7578).
 # Instead, we special-case the most common examples of this: bool and literal integers.
 @overload
-def sum(iterable: Iterable[bool | _LiteralInteger], /, start: int = 0) -> int: ...  # type: ignore[overload-overlap]
+def sum(iterable: Iterable[bool | _LiteralInteger], /, start: int = 0) -> int: ...
 @overload
 def sum(iterable: Iterable[_SupportsSumNoDefaultT], /) -> _SupportsSumNoDefaultT | Literal[0]: ...
 @overload
@@ -1721,9 +1786,8 @@ def sum(iterable: Iterable[_AddableT1], /, start: _AddableT2) -> _AddableT1 | _A
 
 # The argument to `vars()` has to have a `__dict__` attribute, so the second overload can't be annotated with `object`
 # (A "SupportsDunderDict" protocol doesn't work)
-# Use a type: ignore to make complaints about overlapping overloads go away
 @overload
-def vars(object: type, /) -> types.MappingProxyType[str, Any]: ...  # type: ignore[overload-overlap]
+def vars(object: type, /) -> types.MappingProxyType[str, Any]: ...
 @overload
 def vars(object: Any = ..., /) -> dict[str, Any]: ...
 
@@ -1810,7 +1874,7 @@ def __import__(
     fromlist: Sequence[str] = (),
     level: int = 0,
 ) -> types.ModuleType: ...
-def __build_class__(func: Callable[[], _Cell | Any], name: str, /, *bases: Any, metaclass: Any = ..., **kwds: Any) -> Any: ...
+def __build_class__(func: Callable[[], CellType | Any], name: str, /, *bases: Any, metaclass: Any = ..., **kwds: Any) -> Any: ...
 
 if sys.version_info >= (3, 10):
     from types import EllipsisType
@@ -1837,6 +1901,7 @@ class BaseException:
     __suppress_context__: bool
     __traceback__: TracebackType | None
     def __init__(self, *args: object) -> None: ...
+    def __new__(cls, *args: Any, **kwds: Any) -> Self: ...
     def __setstate__(self, state: dict[str, Any] | None, /) -> None: ...
     def with_traceback(self, tb: TracebackType | None, /) -> Self: ...
     if sys.version_info >= (3, 11):
@@ -1896,6 +1961,7 @@ class MemoryError(Exception): ...
 
 class NameError(Exception):
     if sys.version_info >= (3, 10):
+        def __init__(self, *args: object, name: str | None = ...) -> None: ...
         name: str
 
 class ReferenceError(Exception): ...
@@ -1988,9 +2054,9 @@ if sys.version_info >= (3, 10):
     class EncodingWarning(Warning): ...
 
 if sys.version_info >= (3, 11):
-    _BaseExceptionT_co = TypeVar("_BaseExceptionT_co", bound=BaseException, covariant=True)
+    _BaseExceptionT_co = TypeVar("_BaseExceptionT_co", bound=BaseException, covariant=True, default=BaseException)
     _BaseExceptionT = TypeVar("_BaseExceptionT", bound=BaseException)
-    _ExceptionT_co = TypeVar("_ExceptionT_co", bound=Exception, covariant=True)
+    _ExceptionT_co = TypeVar("_ExceptionT_co", bound=Exception, covariant=True, default=Exception)
     _ExceptionT = TypeVar("_ExceptionT", bound=Exception)
 
     # See `check_exception_group.py` for use-cases and comments.
@@ -2052,3 +2118,6 @@ if sys.version_info >= (3, 11):
         def split(
             self, condition: Callable[[_ExceptionT_co | Self], bool], /
         ) -> tuple[ExceptionGroup[_ExceptionT_co] | None, ExceptionGroup[_ExceptionT_co] | None]: ...
+
+if sys.version_info >= (3, 13):
+    class PythonFinalizationError(RuntimeError): ...

@@ -14,6 +14,9 @@ from genericpath import (
     sameopenfile as sameopenfile,
     samestat as samestat,
 )
+
+if sys.version_info >= (3, 13):
+    from genericpath import isdevdrive as isdevdrive
 from os import PathLike
 from typing import AnyStr, overload
 from typing_extensions import LiteralString
@@ -60,6 +63,8 @@ __all__ = [
 ]
 if sys.version_info >= (3, 12):
     __all__ += ["isjunction", "splitroot"]
+if sys.version_info >= (3, 13):
+    __all__ += ["isdevdrive"]
 
 supports_unicode_filenames: bool
 # aliases (also in os)
@@ -72,11 +77,7 @@ pathsep: LiteralString
 defpath: LiteralString
 devnull: LiteralString
 
-# Overloads are necessary to work around python/mypy#3644.
-@overload
-def abspath(path: PathLike[AnyStr]) -> AnyStr: ...
-@overload
-def abspath(path: AnyStr) -> AnyStr: ...
+def abspath(path: PathLike[AnyStr] | AnyStr) -> AnyStr: ...
 @overload
 def basename(p: PathLike[AnyStr]) -> AnyStr: ...
 @overload
@@ -85,14 +86,8 @@ def basename(p: AnyOrLiteralStr) -> AnyOrLiteralStr: ...
 def dirname(p: PathLike[AnyStr]) -> AnyStr: ...
 @overload
 def dirname(p: AnyOrLiteralStr) -> AnyOrLiteralStr: ...
-@overload
-def expanduser(path: PathLike[AnyStr]) -> AnyStr: ...
-@overload
-def expanduser(path: AnyStr) -> AnyStr: ...
-@overload
-def expandvars(path: PathLike[AnyStr]) -> AnyStr: ...
-@overload
-def expandvars(path: AnyStr) -> AnyStr: ...
+def expanduser(path: PathLike[AnyStr] | AnyStr) -> AnyStr: ...
+def expandvars(path: PathLike[AnyStr] | AnyStr) -> AnyStr: ...
 @overload
 def normcase(s: PathLike[AnyStr]) -> AnyStr: ...
 @overload

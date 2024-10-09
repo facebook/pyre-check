@@ -10,27 +10,28 @@ class _ABC(type):
     if sys.version_info >= (3, 9):
         def __init__(cls, *args: Unused) -> None: ...
 
-@deprecated("Replaced by ast.Constant; removal scheduled for Python 3.14")
-class Num(Constant, metaclass=_ABC):
-    value: int | float | complex
+if sys.version_info < (3, 14):
+    @deprecated("Replaced by ast.Constant; removed in Python 3.14")
+    class Num(Constant, metaclass=_ABC):
+        value: int | float | complex
 
-@deprecated("Replaced by ast.Constant; removal scheduled for Python 3.14")
-class Str(Constant, metaclass=_ABC):
-    value: str
-    # Aliases for value, for backwards compatibility
-    s: str
+    @deprecated("Replaced by ast.Constant; removed in Python 3.14")
+    class Str(Constant, metaclass=_ABC):
+        value: str
+        # Aliases for value, for backwards compatibility
+        s: str
 
-@deprecated("Replaced by ast.Constant; removal scheduled for Python 3.14")
-class Bytes(Constant, metaclass=_ABC):
-    value: bytes
-    # Aliases for value, for backwards compatibility
-    s: bytes
+    @deprecated("Replaced by ast.Constant; removed in Python 3.14")
+    class Bytes(Constant, metaclass=_ABC):
+        value: bytes
+        # Aliases for value, for backwards compatibility
+        s: bytes
 
-@deprecated("Replaced by ast.Constant; removal scheduled for Python 3.14")
-class NameConstant(Constant, metaclass=_ABC): ...
+    @deprecated("Replaced by ast.Constant; removed in Python 3.14")
+    class NameConstant(Constant, metaclass=_ABC): ...
 
-@deprecated("Replaced by ast.Constant; removal scheduled for Python 3.14")
-class Ellipsis(Constant, metaclass=_ABC): ...
+    @deprecated("Replaced by ast.Constant; removed in Python 3.14")
+    class Ellipsis(Constant, metaclass=_ABC): ...
 
 if sys.version_info >= (3, 9):
     class slice(AST): ...
@@ -181,82 +182,172 @@ class NodeTransformer(NodeVisitor):
 
 _T = _TypeVar("_T", bound=AST)
 
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
-    mode: Literal["exec"] = "exec",
-    *,
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> Module: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    filename: str | ReadableBuffer | os.PathLike[Any],
-    mode: Literal["eval"],
-    *,
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> Expression: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    filename: str | ReadableBuffer | os.PathLike[Any],
-    mode: Literal["func_type"],
-    *,
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> FunctionType: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    filename: str | ReadableBuffer | os.PathLike[Any],
-    mode: Literal["single"],
-    *,
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> Interactive: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    *,
-    mode: Literal["eval"],
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> Expression: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    *,
-    mode: Literal["func_type"],
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> FunctionType: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    *,
-    mode: Literal["single"],
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> Interactive: ...
-@overload
-def parse(
-    source: str | ReadableBuffer,
-    filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
-    mode: str = "exec",
-    *,
-    type_comments: bool = False,
-    feature_version: None | int | tuple[int, int] = None,
-) -> AST: ...
+if sys.version_info >= (3, 13):
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
+        mode: Literal["exec"] = "exec",
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> Module: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["eval"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> Expression: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["func_type"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> FunctionType: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["single"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> Interactive: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["eval"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> Expression: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["func_type"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> FunctionType: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["single"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> Interactive: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
+        mode: str = "exec",
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+        optimize: Literal[-1, 0, 1, 2] = -1,
+    ) -> AST: ...
+
+else:
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
+        mode: Literal["exec"] = "exec",
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> Module: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["eval"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> Expression: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["func_type"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> FunctionType: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any],
+        mode: Literal["single"],
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> Interactive: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["eval"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> Expression: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["func_type"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> FunctionType: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        *,
+        mode: Literal["single"],
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> Interactive: ...
+    @overload
+    def parse(
+        source: str | ReadableBuffer,
+        filename: str | ReadableBuffer | os.PathLike[Any] = "<unknown>",
+        mode: str = "exec",
+        *,
+        type_comments: bool = False,
+        feature_version: None | int | tuple[int, int] = None,
+    ) -> AST: ...
 
 if sys.version_info >= (3, 9):
     def unparse(ast_obj: AST) -> str: ...
 
 def copy_location(new_node: _T, old_node: AST) -> _T: ...
 
-if sys.version_info >= (3, 9):
+if sys.version_info >= (3, 13):
+    def dump(
+        node: AST,
+        annotate_fields: bool = True,
+        include_attributes: bool = False,
+        *,
+        indent: int | str | None = None,
+        show_empty: bool = False,
+    ) -> str: ...
+
+elif sys.version_info >= (3, 9):
     def dump(
         node: AST, annotate_fields: bool = True, include_attributes: bool = False, *, indent: int | str | None = None
     ) -> str: ...
@@ -275,3 +366,6 @@ def walk(node: AST) -> Iterator[AST]: ...
 
 if sys.version_info >= (3, 9):
     def main() -> None: ...
+
+if sys.version_info >= (3, 14):
+    def compare(left: AST, right: AST, /, *, compare_attributes: bool = False) -> bool: ...

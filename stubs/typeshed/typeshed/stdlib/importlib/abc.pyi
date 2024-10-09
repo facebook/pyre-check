@@ -64,7 +64,7 @@ class SourceLoader(ResourceLoader, ExecutionLoader, metaclass=ABCMeta):
 
 # The base classes differ starting in 3.10:
 if sys.version_info >= (3, 10):
-    # Please keep in sync with sys._MetaPathFinder
+    # Please keep in sync with _typeshed.importlib.MetaPathFinderProtocol
     class MetaPathFinder(metaclass=ABCMeta):
         if sys.version_info < (3, 12):
             def find_module(self, fullname: str, path: Sequence[str] | None) -> Loader | None: ...
@@ -85,7 +85,7 @@ if sys.version_info >= (3, 10):
         def find_spec(self, fullname: str, target: types.ModuleType | None = ...) -> ModuleSpec | None: ...
 
 else:
-    # Please keep in sync with sys._MetaPathFinder
+    # Please keep in sync with _typeshed.importlib.MetaPathFinderProtocol
     class MetaPathFinder(Finder):
         def find_module(self, fullname: str, path: Sequence[str] | None) -> Loader | None: ...
         def invalidate_caches(self) -> None: ...
@@ -145,10 +145,10 @@ if sys.version_info >= (3, 9):
         # which is not the case.
         @overload
         @abstractmethod
-        def open(self, mode: Literal["r"] = "r", /, *, encoding: str | None = None, errors: str | None = None) -> IO[str]: ...
+        def open(self, mode: Literal["r"] = "r", *, encoding: str | None = None, errors: str | None = None) -> IO[str]: ...
         @overload
         @abstractmethod
-        def open(self, mode: Literal["rb"], /) -> IO[bytes]: ...
+        def open(self, mode: Literal["rb"]) -> IO[bytes]: ...
         @property
         @abstractmethod
         def name(self) -> str: ...

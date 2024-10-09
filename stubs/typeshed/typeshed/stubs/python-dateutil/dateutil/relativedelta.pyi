@@ -1,11 +1,11 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import SupportsFloat, TypeVar, overload
 from typing_extensions import Self, TypeAlias
 
 # See #9817 for why we reexport this here
 from ._common import weekday as weekday
 
-_DateT = TypeVar("_DateT", date, datetime)
+_DateT = TypeVar("_DateT", bound=date)
 # Work around attribute and type having the same name.
 _Weekday: TypeAlias = weekday
 
@@ -38,15 +38,15 @@ class relativedelta:
         self,
         dt1: date | None = None,
         dt2: date | None = None,
-        years: int | None = 0,
-        months: int | None = 0,
-        days: int | None = 0,
-        leapdays: int | None = 0,
-        weeks: int | None = 0,
-        hours: int | None = 0,
-        minutes: int | None = 0,
-        seconds: int | None = 0,
-        microseconds: int | None = 0,
+        years: int = 0,
+        months: int = 0,
+        days: int = 0,
+        leapdays: int = 0,
+        weeks: int = 0,
+        hours: int = 0,
+        minutes: int = 0,
+        seconds: int = 0,
+        microseconds: int = 0,
         year: int | None = None,
         month: int | None = None,
         day: int | None = None,

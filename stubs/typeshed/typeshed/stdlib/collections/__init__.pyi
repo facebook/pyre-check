@@ -51,15 +51,27 @@ class UserDict(MutableMapping[_KT, _VT]):
     @overload
     def __init__(self, dict: None = None, /) -> None: ...
     @overload
-    def __init__(self: UserDict[str, _VT], dict: None = None, /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: UserDict[str, _VT], dict: None = None, /, **kwargs: _VT  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+    ) -> None: ...
     @overload
     def __init__(self, dict: SupportsKeysAndGetItem[_KT, _VT], /) -> None: ...
     @overload
-    def __init__(self: UserDict[str, _VT], dict: SupportsKeysAndGetItem[str, _VT], /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: UserDict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        dict: SupportsKeysAndGetItem[str, _VT],
+        /,
+        **kwargs: _VT,
+    ) -> None: ...
     @overload
     def __init__(self, iterable: Iterable[tuple[_KT, _VT]], /) -> None: ...
     @overload
-    def __init__(self: UserDict[str, _VT], iterable: Iterable[tuple[str, _VT]], /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: UserDict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        iterable: Iterable[tuple[str, _VT]],
+        /,
+        **kwargs: _VT,
+    ) -> None: ...
     @overload
     def __init__(self: UserDict[str, str], iterable: Iterable[list[str]], /) -> None: ...
     @overload
@@ -137,8 +149,10 @@ class UserList(MutableSequence[_T]):
     def copy(self) -> Self: ...
     def __copy__(self) -> Self: ...
     def count(self, item: _T) -> int: ...
-    # All arguments are passed to `list.index` at runtime, so the signature should be kept in line with `list.index`.
-    def index(self, item: _T, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
+    # The runtime signature is "item, *args", and the arguments are then passed
+    # to `list.index`. In order to give more precise types, we pretend that the
+    # `item` argument is positional-only.
+    def index(self, item: _T, start: SupportsIndex = 0, stop: SupportsIndex = sys.maxsize, /) -> int: ...
     # All arguments are passed to `list.sort` at runtime, so the signature should be kept in line with `list.sort`.
     @overload
     def sort(self: UserList[SupportsRichComparisonT], *, key: None = None, reverse: bool = False) -> None: ...
@@ -331,15 +345,15 @@ class _OrderedDictValuesView(ValuesView[_VT_co], Reversible[_VT_co]):
 # but they are not exposed anywhere)
 # pyright doesn't have a specific error code for subclassing error!
 @final
-class _odict_keys(dict_keys[_KT_co, _VT_co], Reversible[_KT_co]):  # type: ignore[misc]  # pyright: ignore
+class _odict_keys(dict_keys[_KT_co, _VT_co], Reversible[_KT_co]):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
     def __reversed__(self) -> Iterator[_KT_co]: ...
 
 @final
-class _odict_items(dict_items[_KT_co, _VT_co], Reversible[tuple[_KT_co, _VT_co]]):  # type: ignore[misc]  # pyright: ignore
+class _odict_items(dict_items[_KT_co, _VT_co], Reversible[tuple[_KT_co, _VT_co]]):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
     def __reversed__(self) -> Iterator[tuple[_KT_co, _VT_co]]: ...
 
 @final
-class _odict_values(dict_values[_KT_co, _VT_co], Reversible[_VT_co], Generic[_KT_co, _VT_co]):  # type: ignore[misc]  # pyright: ignore
+class _odict_values(dict_values[_KT_co, _VT_co], Reversible[_VT_co], Generic[_KT_co, _VT_co]):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
     def __reversed__(self) -> Iterator[_VT_co]: ...
 
 class OrderedDict(dict[_KT, _VT], Reversible[_KT], Generic[_KT, _VT]):
@@ -387,16 +401,21 @@ class defaultdict(dict[_KT, _VT]):
     @overload
     def __init__(self) -> None: ...
     @overload
-    def __init__(self: defaultdict[str, _VT], **kwargs: _VT) -> None: ...
+    def __init__(self: defaultdict[str, _VT], **kwargs: _VT) -> None: ...  # pyright: ignore[reportInvalidTypeVarUse]  #11780
     @overload
     def __init__(self, default_factory: Callable[[], _VT] | None, /) -> None: ...
     @overload
-    def __init__(self: defaultdict[str, _VT], default_factory: Callable[[], _VT] | None, /, **kwargs: _VT) -> None: ...
+    def __init__(
+        self: defaultdict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        default_factory: Callable[[], _VT] | None,
+        /,
+        **kwargs: _VT,
+    ) -> None: ...
     @overload
     def __init__(self, default_factory: Callable[[], _VT] | None, map: SupportsKeysAndGetItem[_KT, _VT], /) -> None: ...
     @overload
     def __init__(
-        self: defaultdict[str, _VT],
+        self: defaultdict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
         default_factory: Callable[[], _VT] | None,
         map: SupportsKeysAndGetItem[str, _VT],
         /,
@@ -406,7 +425,7 @@ class defaultdict(dict[_KT, _VT]):
     def __init__(self, default_factory: Callable[[], _VT] | None, iterable: Iterable[tuple[_KT, _VT]], /) -> None: ...
     @overload
     def __init__(
-        self: defaultdict[str, _VT],
+        self: defaultdict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
         default_factory: Callable[[], _VT] | None,
         iterable: Iterable[tuple[str, _VT]],
         /,
@@ -456,10 +475,15 @@ class ChainMap(MutableMapping[_KT, _VT]):
     def pop(self, key: _KT, default: _T) -> _VT | _T: ...
     def copy(self) -> Self: ...
     __copy__ = copy
-    # All arguments to `fromkeys` are passed to `dict.fromkeys` at runtime, so the signature should be kept in line with `dict.fromkeys`.
+    # All arguments to `fromkeys` are passed to `dict.fromkeys` at runtime,
+    # so the signature should be kept in line with `dict.fromkeys`.
     @classmethod
     @overload
-    def fromkeys(cls, iterable: Iterable[_T], __value: None = None) -> ChainMap[_T, Any | None]: ...
+    def fromkeys(cls, iterable: Iterable[_T]) -> ChainMap[_T, Any | None]: ...
+    @classmethod
+    @overload
+    # Special-case None: the user probably wants to add non-None values later.
+    def fromkeys(cls, iterable: Iterable[_T], value: None, /) -> ChainMap[_T, Any | None]: ...
     @classmethod
     @overload
     def fromkeys(cls, iterable: Iterable[_T], value: _S, /) -> ChainMap[_T, _S]: ...

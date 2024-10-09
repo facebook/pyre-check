@@ -1,3 +1,4 @@
+from _typeshed import FileDescriptorOrPath
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from logging import Logger
 from socket import socket
@@ -11,13 +12,14 @@ from paramiko.channel import Channel
 from paramiko.message import Message
 from paramiko.packet import Packetizer
 from paramiko.pkey import PKey
+from paramiko.proxy import ProxyCommand
 from paramiko.server import ServerInterface, SubsystemHandler
 from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_gss import _SSH_GSSAuth
 from paramiko.util import ClosingContextManager
 
 _Addr: TypeAlias = tuple[str, int]
-_SocketLike: TypeAlias = str | _Addr | socket | Channel
+_SocketLike: TypeAlias = str | _Addr | socket | Channel | ProxyCommand
 
 class _KexEngine(Protocol):
     def start_kex(self) -> None: ...
@@ -105,7 +107,7 @@ class Transport(Thread, ClosingContextManager):
     def add_server_key(self, key: PKey) -> None: ...
     def get_server_key(self) -> PKey | None: ...
     @staticmethod
-    def load_server_moduli(filename: str | None = None) -> bool: ...
+    def load_server_moduli(filename: FileDescriptorOrPath | None = None) -> bool: ...
     def close(self) -> None: ...
     def get_remote_server_key(self) -> PKey: ...
     def is_active(self) -> bool: ...
