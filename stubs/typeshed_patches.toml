@@ -22,7 +22,7 @@ action = "replace"
 parent = "object"
 name = "__eq__"
 content = '''
-def __eq__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], o: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -49,7 +49,7 @@ action = "replace"
 parent = "int"
 name = "__eq__"
 content = '''
-def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], x: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -57,7 +57,7 @@ action = "replace"
 parent = "float"
 name = "__eq__"
 content = '''
-def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], x: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 # Mark or override a variety of string methods as _PyreReadOnly_
@@ -86,7 +86,7 @@ action = "replace"
 parent = "str"
 name = "__eq__"
 content = '''
-def __eq__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
+def __eq__(self: _PyreReadOnly_[Self], x: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -94,7 +94,7 @@ action = "replace"
 parent = "str"
 name = "__getitem__"
 content = '''
-def __getitem__(self: _PyreReadOnly_[Self], __i: SupportsIndex | slice) -> str: ...
+def __getitem__(self: _PyreReadOnly_[Self], i: SupportsIndex | slice, /) -> str: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -102,7 +102,7 @@ action = "replace"
 parent = "str"
 name = "__contains__"
 content = '''
-def __contains__(self, __o: str) -> bool: ...  # type: ignore[override]
+def __contains__(self, o: str, /) -> bool: ...  # type: ignore[override]
 '''
 
 # Add read-only overloads for list __iter__ + __getitem__, and make __contains__ read-only
@@ -124,13 +124,13 @@ parent = "list"
 name = "__getitem__"
 content = '''
 @overload
-def __getitem__(self, __i: SupportsIndex) -> _T: ...
+def __getitem__(self, i: SupportsIndex, /) -> _T: ...
 @overload
-def __getitem__(self, __s: slice) -> list[_T]: ...
+def __getitem__(self, s: slice, /) -> list[_T]: ...
 @overload
-def __getitem__(self: _PyreReadOnly_[Self], __i: SupportsIndex) -> _PyreReadOnly_[_T]: ...
+def __getitem__(self: _PyreReadOnly_[Self], i: SupportsIndex, /) -> _PyreReadOnly_[_T]: ...
 @overload
-def __getitem__(self: _PyreReadOnly_[Self], __s: slice) -> list[_PyreReadOnly_[_T]]: ...
+def __getitem__(self: _PyreReadOnly_[Self], s: slice, /) -> list[_PyreReadOnly_[_T]]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -138,7 +138,7 @@ action = "replace"
 parent = "list"
 name = "__contains__"
 content = '''
-def __contains__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], o: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 # Add read-only overloads for a handful of dict
@@ -182,13 +182,13 @@ parent = "dict"
 name = "get"
 content = '''
 @overload
-def get(self, __key: _KT) -> _VT | None: ...
+def get(self, key: _KT, /) -> _VT | None: ...
 @overload
-def get(self, __key: _KT, __default: _VT | _T) -> _VT | _T: ...
+def get(self, key: _KT, default: _VT | _T, /) -> _VT | _T: ...
 @overload
-def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT | None]: ...
+def get(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], /) -> _PyreReadOnly_[_VT | None]: ...
 @overload
-def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT], __default: _PyreReadOnly_[_VT | _T]) -> _PyreReadOnly_[_VT | _T]: ...
+def get(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], default: _PyreReadOnly_[_VT | _T], /) -> _PyreReadOnly_[_VT | _T]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -197,9 +197,9 @@ parent = "dict"
 name = "__getitem__"
 content = '''
 @overload
-def __getitem__(self, __key: _KT) -> _VT: ...
+def __getitem__(self, key: _KT, /) -> _VT: ...
 @overload
-def __getitem__(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT]: ...
+def __getitem__(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], /) -> _PyreReadOnly_[_VT]: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -220,7 +220,7 @@ action = "replace"
 parent = "set"
 name = "__contains__"
 content = '''
-def __contains__(self, __o: _PyreReadOnly_[object]) -> bool: ...
+def __contains__(self, o: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -229,9 +229,9 @@ parent = "set"
 name = "__sub__"
 content = '''
 @overload
-def __sub__(self, __s: _PyreReadOnly_[AbstractSet[_T | None]]) -> set[_T]: ...
+def __sub__(self, s: _PyreReadOnly_[AbstractSet[_T | None]], /) -> set[_T]: ...
 @overload
-def __sub__(self: _PyreReadOnly_[Self], __s: _PyreReadOnly_[AbstractSet[_T | None]]) -> _PyreReadOnly_[set[_T]]: ...
+def __sub__(self: _PyreReadOnly_[Self], s: _PyreReadOnly_[AbstractSet[_T | None]], /) -> _PyreReadOnly_[set[_T]]: ...
 '''
 
 # Mark a few of the builtin functions as read-only
@@ -240,14 +240,14 @@ def __sub__(self: _PyreReadOnly_[Self], __s: _PyreReadOnly_[AbstractSet[_T | Non
 action = "replace"
 name = "hasattr"
 content = '''
-def hasattr(__obj: _PyreReadOnly_[object], __name: str) -> bool: ...
+def hasattr(obj: _PyreReadOnly_[object], name: str, /) -> bool: ...
 '''
 
 [["stdlib/builtins.pyi"]]
 action = "replace"
 name = "len"
 content = '''
-def len(__obj: _PyreReadOnly_[Sized]) -> int: ...
+def len(obj: _PyreReadOnly_[Sized], /) -> int: ...
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -256,10 +256,10 @@ name = "sorted"
 content = '''
 @overload
 def sorted(
-    __iterable: _PyreReadOnly_[Iterable[SupportsRichComparisonT]], *, key: None = None, reverse: bool = False
+    iterable: _PyreReadOnly_[Iterable[SupportsRichComparisonT]], /, *, key: None = None, reverse: bool = False
 ) -> list[SupportsRichComparisonT]: ...
 @overload
-def sorted(__iterable: _PyreReadOnly_[Iterable[_T]], *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
+def sorted(iterable: _PyreReadOnly_[Iterable[_T]], /, *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
 '''
 
 # Explicitly define BaseException's __str__ and __repr__ so that Pysa can mark them as sources.
@@ -293,7 +293,7 @@ class AsyncContextManager(Protocol[_T_co]):
     async def __aenter__(self) -> _T_co: ...
     @abstractmethod
     async def __aexit__(
-        self, __exc_type: Type[BaseException] | None, __exc_value: BaseException | None, __traceback: TracebackType | None
+        self, exc_type: Type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None, /
     ) -> bool | None: ...
 '''
 
@@ -304,7 +304,7 @@ parent = "Container"
 name = "__contains__"
 content = '''
 @abstractmethod
-def __contains__(self: _PyreReadOnly_[Self], __x: _PyreReadOnly_[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], x: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 
@@ -322,10 +322,10 @@ def __getitem__(self, index: int) -> _T_co: ...
 def __getitem__(self, index: slice) -> Sequence[_T_co]: ...
 @overload
 @abstractmethod
-def __getitem__(self: _PyreReadOnly_[Self], __i: int) -> _PyreReadOnly_[_T_co]: ...
+def __getitem__(self: _PyreReadOnly_[Self], i: int, /) -> _PyreReadOnly_[_T_co]: ...
 @overload
 @abstractmethod
-def __getitem__(self: _PyreReadOnly_[Self], __s: slice) -> _PyreReadOnly_[Self]: ...
+def __getitem__(self: _PyreReadOnly_[Self], s: slice, /) -> _PyreReadOnly_[Self]: ...
 '''
 
 # Add read-only overloads for Collection.__iter__
@@ -385,10 +385,10 @@ name = "__getitem__"
 content = '''
 @overload
 @abstractmethod
-def __getitem__(self, __key: _KT) -> _VT_co: ...
+def __getitem__(self, key: _KT, /) -> _VT_co: ...
 @overload
 @abstractmethod
-def __getitem__(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT_co]: ...
+def __getitem__(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], /) -> _PyreReadOnly_[_VT_co]: ...
 '''
 
 [["stdlib/typing.pyi"]]
@@ -397,13 +397,13 @@ parent = "Mapping"
 name = "get"
 content = '''
 @overload
-def get(self, __key: _KT) -> _VT_co | None: ...
+def get(self, key: _KT, /) -> _VT_co | None: ...
 @overload
-def get(self, __key: _KT, default: _VT_co | _T) -> _VT_co | _T: ...
+def get(self, key: _KT, /, default: _VT_co | _T) -> _VT_co | _T: ...
 @overload
-def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT]) -> _PyreReadOnly_[_VT_co | None]: ...
+def get(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], /) -> _PyreReadOnly_[_VT_co | None]: ...
 @overload
-def get(self: _PyreReadOnly_[Self], __key: _PyreReadOnly_[_KT], default: _PyreReadOnly_[_VT_co | _T]) -> _PyreReadOnly_[_VT_co | _T]: ...
+def get(self: _PyreReadOnly_[Self], key: _PyreReadOnly_[_KT], /, default: _PyreReadOnly_[_VT_co | _T]) -> _PyreReadOnly_[_VT_co | _T]: ...
 '''
 
 [["stdlib/typing.pyi"]]
@@ -411,7 +411,7 @@ action = "replace"
 parent = "Mapping"
 name = "__contains__"
 content = '''
-def __contains__(self: _PyreReadOnly_[Self], __o: _PyreReadOnly_[object]) -> bool: ...
+def __contains__(self: _PyreReadOnly_[Self], o: _PyreReadOnly_[object], /) -> bool: ...
 '''
 
 
@@ -501,68 +501,74 @@ name = "gather"
 content = '''
 if sys.version_info >= (3, 10):
     @overload
-    def gather(__coro_or_future1: _FutureLike[_T1], *, return_exceptions: Literal[False] = False) -> Future[tuple[_T1]]: ...  # type: ignore[misc]
+    def gather(coro_or_future1: _FutureLike[_T1], /, *, return_exceptions: Literal[False] = False) -> Future[tuple[_T1]]: ...  # type: ignore[misc]
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1], __coro_or_future2: _FutureLike[_T2], *, return_exceptions: Literal[False] = False
+        coro_or_future1: _FutureLike[_T1], coro_or_future2: _FutureLike[_T2], /, *, return_exceptions: Literal[False] = False
     ) -> Future[tuple[_T1, _T2]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        /,
         *,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        /,
         *,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3, _T4]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
-        __coro_or_future5: _FutureLike[_T5],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        coro_or_future5: _FutureLike[_T5],
+        /,
         *,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3, _T4, _T5]]: ...
     @overload
-    def gather(__coro_or_future1: _FutureLike[_T1], *, return_exceptions: bool) -> Future[tuple[_T1 | BaseException]]: ...  # type: ignore[misc]
+    def gather(coro_or_future1: _FutureLike[_T1], /, *, return_exceptions: bool) -> Future[tuple[_T1 | BaseException]]: ...  # type: ignore[misc]
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1], __coro_or_future2: _FutureLike[_T2], *, return_exceptions: bool
+        coro_or_future1: _FutureLike[_T1], coro_or_future2: _FutureLike[_T2], /, *, return_exceptions: bool
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        /,
         *,
         return_exceptions: bool,
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException, _T3 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        /,
         *,
         return_exceptions: bool,
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException, _T3 | BaseException, _T4 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
-        __coro_or_future5: _FutureLike[_T5],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        coro_or_future5: _FutureLike[_T5],
+        /,
         *,
         return_exceptions: bool,
     ) -> Future[
@@ -573,84 +579,92 @@ if sys.version_info >= (3, 10):
 else:
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1], *, loop: AbstractEventLoop | None = None, return_exceptions: Literal[False] = False
+        coro_or_future1: _FutureLike[_T1], /, *, loop: AbstractEventLoop | None = None, return_exceptions: Literal[False] = False
     ) -> Future[tuple[_T1]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3, _T4]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
-        __coro_or_future5: _FutureLike[_T5],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        coro_or_future5: _FutureLike[_T5],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: Literal[False] = False,
     ) -> Future[tuple[_T1, _T2, _T3, _T4, _T5]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1], *, loop: AbstractEventLoop | None = None, return_exceptions: bool
+        coro_or_future1: _FutureLike[_T1], /, *, loop: AbstractEventLoop | None = None, return_exceptions: bool
     ) -> Future[tuple[_T1 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: bool,
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: bool,
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException, _T3 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: bool,
     ) -> Future[tuple[_T1 | BaseException, _T2 | BaseException, _T3 | BaseException, _T4 | BaseException]]: ...
     @overload
     def gather(  # type: ignore[misc]
-        __coro_or_future1: _FutureLike[_T1],
-        __coro_or_future2: _FutureLike[_T2],
-        __coro_or_future3: _FutureLike[_T3],
-        __coro_or_future4: _FutureLike[_T4],
-        __coro_or_future5: _FutureLike[_T5],
+        coro_or_future1: _FutureLike[_T1],
+        coro_or_future2: _FutureLike[_T2],
+        coro_or_future3: _FutureLike[_T3],
+        coro_or_future4: _FutureLike[_T4],
+        coro_or_future5: _FutureLike[_T5],
+        /,
         *,
         loop: AbstractEventLoop | None = None,
         return_exceptions: bool,
@@ -846,14 +860,14 @@ def getstate() -> _random._State: ...
 action = "replace"
 name = "setstate"
 content = '''
-def setstate(__state: _random._State) -> None: ...
+def setstate(state: _random._State, /) -> None: ...
 '''
 
 [["stdlib/random.pyi"]]
 action = "replace"
 name = "getrandbits"
 content = '''
-def getrandbits(__k: int) -> int: ...
+def getrandbits(k: int, /) -> int: ...
 '''
 
 [["stdlib/random.pyi"]]
