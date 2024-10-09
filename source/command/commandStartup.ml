@@ -28,6 +28,7 @@ module BaseConfiguration = struct
     debug: bool;
     enable_type_comments: bool;
     python_version: Configuration.PythonVersion.t;
+    system_platform: string option;
     (* Parallelism controls *)
     parallel: bool;
     number_of_workers: int;
@@ -89,6 +90,7 @@ module BaseConfiguration = struct
         | `Null -> Configuration.PythonVersion.create ()
         | _ as json -> Configuration.PythonVersion.of_yojson json |> Result.ok_or_failwith
       in
+      let system_platform = json |> optional_string_member "system_platform" in
       let parallel = json |> bool_member "parallel" ~default:false in
       let number_of_workers = json |> int_member "number_of_workers" ~default:1 in
       let long_lived_workers = json |> optional_bool_member "long_lived_workers" in
@@ -151,6 +153,7 @@ module BaseConfiguration = struct
           debug;
           enable_type_comments;
           python_version;
+          system_platform;
           parallel;
           number_of_workers;
           long_lived_workers;

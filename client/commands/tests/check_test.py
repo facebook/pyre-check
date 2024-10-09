@@ -121,6 +121,7 @@ class CheckTest(testslide.TestCase):
                         number_of_workers=42,
                         parallel=True,
                         python_version=check_configuration.get_python_version(),
+                        system_platform=check_configuration.get_system_platform(),
                         search_paths=[
                             configuration.search_path.SimpleElement(
                                 str(root_path / "search")

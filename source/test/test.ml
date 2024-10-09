@@ -3186,6 +3186,7 @@ module ScratchProject = struct
       ?(no_validation_on_class_lookup_failure = false)
       ?(use_errpy_parser = false)
       ?python_version
+      ?system_platform
       ?debug
       ?strict
       ?enable_readonly_analysis
@@ -3232,6 +3233,7 @@ module ScratchProject = struct
           ~parallel:false
           ~use_errpy_parser
           ~python_version:(Option.value python_version ~default:default_python_version)
+          ?system_platform
           ?strict
           ?debug
           ?enable_readonly_analysis
@@ -3473,6 +3475,7 @@ let assert_errors
     ?(other_sources = [])
     ?(include_line_numbers = false)
     ?python_version
+    ?system_platform
     ?enable_readonly_analysis
     ?enable_strict_override_check
     ?enable_unawaited_awaitable_analysis
@@ -3506,6 +3509,7 @@ let assert_errors
             ~strict
             ~debug
             ?python_version
+            ?system_platform
             ?enable_readonly_analysis
             ?enable_strict_override_check
             ?enable_unawaited_awaitable_analysis
@@ -3601,6 +3605,7 @@ let assert_equivalent_attributes
     ?(assert_attribute_equal = assert_instantiated_attribute_equal)
     ?external_sources
     ?python_version
+    ?system_platform
     ~source
     ~class_name
     expected_equivalent_class_source
@@ -3614,6 +3619,7 @@ let assert_equivalent_attributes
         ~context
         ?external_sources
         ?python_version
+        ?system_platform
         [Format.asprintf "%s.py" module_name, source]
       |> ScratchProject.build_global_environment
     in

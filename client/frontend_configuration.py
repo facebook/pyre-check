@@ -122,6 +122,10 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_system_platform(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def get_shared_memory(self) -> configuration_module.SharedMemory:
         raise NotImplementedError()
 
@@ -337,6 +341,9 @@ class OpenSource(Base):
 
     def get_python_version(self) -> configuration_module.PythonVersion:
         return self.configuration.get_python_version()
+
+    def get_system_platform(self) -> Optional[str]:
+        return self.configuration.get_system_platform()
 
     def get_shared_memory(self) -> configuration_module.SharedMemory:
         return self.configuration.shared_memory

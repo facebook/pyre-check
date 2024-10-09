@@ -434,6 +434,7 @@ class StartTest(testslide.TestCase):
                         number_of_workers=42,
                         parallel=True,
                         python_version=server_configuration.get_python_version(),
+                        system_platform=server_configuration.get_system_platform(),
                         search_paths=[
                             search_path.SimpleElement(str(root_path / "search"))
                         ],

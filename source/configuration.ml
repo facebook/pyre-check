@@ -391,6 +391,7 @@ module Analysis = struct
     track_dependencies: bool;
     log_directory: PyrePath.t;
     python_version: PythonVersion.t;
+    system_platform: string option;
     shared_memory: shared_memory;
     enable_type_comments: bool;
     enable_readonly_analysis: bool;
@@ -421,6 +422,7 @@ module Analysis = struct
       ?(track_dependencies = false)
       ?log_directory
       ?(python_version = PythonVersion.create ())
+      ?(system_platform = None)
       ?(shared_memory_heap_size = default_shared_memory_heap_size)
       ?(shared_memory_dependency_table_power_from_configuration =
         default_shared_memory_dependency_table_power)
@@ -475,6 +477,7 @@ module Analysis = struct
         | Some directory -> PyrePath.create_absolute directory
         | None -> PyrePath.append local_root ~element:".pyre");
       python_version;
+      system_platform;
       shared_memory =
         {
           heap_size = shared_memory_heap_size;

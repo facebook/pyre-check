@@ -35,6 +35,7 @@ let dummy_base_configuration =
     debug = false;
     enable_type_comments = true;
     python_version = Configuration.PythonVersion.create ();
+    system_platform = "linux";
     parallel = false;
     number_of_workers = 1;
     long_lived_workers = None;

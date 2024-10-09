@@ -129,6 +129,7 @@ def create_check_arguments(
             parallel=not check_arguments.sequential,
             profiling_output=profiling_output,
             python_version=configuration.get_python_version(),
+            system_platform=configuration.get_system_platform(),
             shared_memory=configuration.get_shared_memory(),
             remote_logging=remote_logging,
             search_paths=configuration.get_existent_search_paths(),

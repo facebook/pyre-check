@@ -179,16 +179,19 @@ let parse_result_of_load_result ~controls module_path code_result =
   let post_process_source source =
     let {
       Configuration.Analysis.python_version = { Configuration.PythonVersion.major; minor; micro };
+      system_platform;
       _;
     }
       =
       configuration
     in
+    let sys_platform = Option.value system_platform ~default:"linux" in
     Preprocessing.replace_version_specific_code
       ~major_version:major
       ~minor_version:minor
       ~micro_version:micro
       source
+    |> Preprocessing.replace_platform_specific_code ~sys_platform
     |> Preprocessing.preprocess_before_wildcards
   in
   match code_result with

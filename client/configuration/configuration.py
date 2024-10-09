@@ -137,6 +137,7 @@ class PartialConfiguration:
     )
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
+    system_platform: Optional[str] = None
     search_path: Sequence[search_path_module.RawElement] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -222,6 +223,7 @@ class PartialConfiguration:
                 if python_version_string is not None
                 else None
             ),
+            system_platform=arguments.system_platform,
             search_path=[
                 search_path_module.SimpleRawElement(element)
                 for element in arguments.search_path
@@ -466,6 +468,9 @@ class PartialConfiguration:
                     configuration_json, "pysa_version", str
                 ),
                 python_version=python_version,
+                system_platform=ensure_option_type(
+                    configuration_json, "system_platform", str
+                ),
                 search_path=search_path,
                 optional_search_path=optional_search_path,
                 shared_memory=shared_memory,
@@ -595,6 +600,7 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
+    system_platform: Optional[str] = None
     relative_local_root: Optional[str] = None
     search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
     optional_search_path: Sequence[search_path_module.RawElement] = field(
@@ -657,6 +663,7 @@ class Configuration:
             other_critical_files=partial_configuration.other_critical_files,
             pysa_version_hash=partial_configuration.pysa_version_hash,
             python_version=partial_configuration.python_version,
+            system_platform=partial_configuration.system_platform,
             relative_local_root=relative_local_root,
             search_path=[
                 path.expand_global_root(str(global_root)) for path in search_path
@@ -769,6 +776,11 @@ class Configuration:
             **(
                 {"python_version": python_version.to_string()}
                 if python_version is not None
+                else {}
+            ),
+            **(
+                {"system_platform": self.system_platform}
+                if self.system_platform is not None
                 else {}
             ),
             **(
@@ -911,6 +923,13 @@ class Configuration:
                 minor=version_info.minor,
                 micro=version_info.micro,
             )
+
+    def get_system_platform(self) -> str:
+        system_platform = self.system_platform
+        if system_platform is not None:
+            return system_platform
+        else:
+            return sys.platform
 
 
 def create_configuration(

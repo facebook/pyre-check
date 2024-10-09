@@ -63,6 +63,7 @@ module CodeNavigationConfiguration = struct
             debug;
             enable_type_comments;
             python_version;
+            system_platform;
             parallel;
             number_of_workers;
             long_lived_workers;
@@ -100,6 +101,7 @@ module CodeNavigationConfiguration = struct
       ~track_dependencies:true
       ~log_directory:(PyrePath.absolute log_path)
       ~python_version
+      ~system_platform
       ~shared_memory_heap_size:heap_size
       ~shared_memory_dependency_table_power_from_configuration:dependency_table_power
       ~shared_memory_hash_table_power:hash_table_power

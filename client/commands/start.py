@@ -362,6 +362,7 @@ def create_server_arguments(
             parallel=not start_arguments.sequential,
             profiling_output=profiling_output,
             python_version=configuration.get_python_version(),
+            system_platform=configuration.get_system_platform(),
             shared_memory=configuration.get_shared_memory(),
             remote_logging=backend_arguments.RemoteLogging.create(
                 configuration.get_remote_logger(),

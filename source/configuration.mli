@@ -142,6 +142,7 @@ module Analysis : sig
     track_dependencies: bool;
     log_directory: PyrePath.t;
     python_version: PythonVersion.t;
+    system_platform: string option;
     shared_memory: shared_memory;
     enable_type_comments: bool;
     enable_readonly_analysis: bool;
@@ -172,6 +173,7 @@ module Analysis : sig
     ?track_dependencies:bool ->
     ?log_directory:string ->
     ?python_version:PythonVersion.t ->
+    ?system_platform:string option ->
     ?shared_memory_heap_size:int ->
     ?shared_memory_dependency_table_power_from_configuration:int ->
     ?shared_memory_hash_table_power:int ->

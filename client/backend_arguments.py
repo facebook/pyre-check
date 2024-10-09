@@ -189,6 +189,7 @@ class BaseArguments:
     python_version: configuration_module.PythonVersion = (
         configuration_module.PythonVersion(major=3)
     )
+    system_platform: Optional[str] = None
     shared_memory: configuration_module.SharedMemory = (
         configuration_module.SharedMemory()
     )
@@ -246,6 +247,11 @@ class BaseArguments:
                 "minor": self.python_version.minor,
                 "micro": self.python_version.micro,
             },
+            **(
+                {}
+                if self.system_platform is None
+                else {"system_platform": self.system_platform}
+            ),
             "shared_memory": self.shared_memory.to_json(),
             "parallel": self.parallel,
             "number_of_workers": self.number_of_workers,

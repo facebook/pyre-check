@@ -1803,7 +1803,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
   Transform.transform () source |> Transform.source
 
 
-let replace_platform_specific_code ?(sys_platform = "linux") source =
+let replace_platform_specific_code ~sys_platform source =
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
@@ -4846,7 +4846,6 @@ let expand_enum_functional_syntax
 let preprocess_before_wildcards source =
   source
   |> expand_relative_imports
-  |> replace_platform_specific_code
   |> expand_type_checking_imports
   |> expand_implicit_returns
   |> expand_import_python_calls

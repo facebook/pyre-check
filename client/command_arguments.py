@@ -113,6 +113,7 @@ class CommandArguments:
     dot_pyre_directory: Optional[Path] = None
     isolation_prefix: Optional[str] = None
     python_version: Optional[str] = None
+    system_platform: Optional[str] = None
     shared_memory_heap_size: Optional[int] = None
     shared_memory_dependency_table_power: Optional[int] = None
     shared_memory_hash_table_power: Optional[int] = None

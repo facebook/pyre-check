@@ -61,6 +61,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 typeshed="typeshed",
                 dot_pyre_directory=Path(".pyre"),
                 python_version="3.6.7",
+                system_platform="darwin",
                 shared_memory_heap_size=42,
                 number_of_workers=43,
                 use_buck2=True,
@@ -91,6 +92,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
+        self.assertEqual(configuration.system_platform, "darwin")
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
         self.assertEqual(configuration.site_package_search_strategy, None)
         self.assertEqual(configuration.site_roots, None)
@@ -317,6 +319,13 @@ class PartialConfigurationTest(unittest.TestCase):
 
         self.assertEqual(
             PartialConfiguration.from_string(
+                json.dumps({"system_platform": "darwin"})
+            ).system_platform,
+            "darwin",
+        )
+
+        self.assertEqual(
+            PartialConfiguration.from_string(
                 json.dumps({"shared_memory": {"heap_size": 1}})
             ).shared_memory,
             SharedMemory(heap_size=1),
@@ -512,6 +521,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"pysa_version": 123}))
         assert_raises(json.dumps({"python_version": "abc"}))
         assert_raises(json.dumps({"python_version": 42}))
+        assert_raises(json.dumps({"system_platform": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
         assert_raises(json.dumps({"site_package_search_strategy": False}))
@@ -660,6 +670,7 @@ class ConfigurationTest(testslide.TestCase):
                 oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
+                system_platform="darwin",
                 search_path=[SimpleRawElement("search_path")],
                 optional_search_path=[SimpleRawElement("optional_search_path")],
                 shared_memory=SharedMemory(heap_size=1024),
@@ -704,6 +715,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
+        self.assertEqual(configuration.system_platform, "darwin")
         self.assertEqual(configuration.source_directories, None)
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=1024))
         self.assertEqual(
