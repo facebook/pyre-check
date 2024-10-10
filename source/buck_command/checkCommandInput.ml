@@ -10,14 +10,16 @@ open Base
 type t = {
   get_source_db: unit -> Sourcedb.t;
   get_python_version: unit -> Configuration.PythonVersion.t;
+  get_system_platform: unit -> string option;
 }
 
 let create_for_testing
     ?(get_source_db = fun () -> Sourcedb.create ())
     ?(get_python_version = fun () -> Configuration.PythonVersion.create ())
+    ?(get_system_platform = fun () -> None)
     ()
   =
-  { get_source_db; get_python_version }
+  { get_source_db; get_python_version; get_system_platform }
 
 
 module Error = struct
@@ -48,6 +50,7 @@ module Arguments = struct
     dependencies: string list; [@default []]
     typeshed: string option; [@default None]
     py_version: string;
+    system_platform: string option; [@default None]
   }
   [@@deriving of_yojson { strict = false }]
 end
@@ -82,7 +85,8 @@ let load_manifests filenames =
   load [] filenames
 
 
-let create_from_arguments { Arguments.sources; dependencies; typeshed; py_version } =
+let create_from_arguments { Arguments.sources; dependencies; typeshed; py_version; system_platform }
+  =
   let open Result.Monad_infix in
   load_manifests sources
   >>= fun source_manifests ->
@@ -97,6 +101,7 @@ let create_from_arguments { Arguments.sources; dependencies; typeshed; py_versio
       get_source_db =
         Sourcedb.create_from_manifests ~source_manifests ~dependency_manifests ~typeshed_manifests;
       get_python_version = (fun () -> parsed_python_version);
+      get_system_platform = (fun () -> system_platform);
     }
 
 

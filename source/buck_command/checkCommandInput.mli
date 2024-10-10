@@ -30,6 +30,7 @@ end
 type t = {
   get_source_db: unit -> Sourcedb.t;
   get_python_version: unit -> Configuration.PythonVersion.t;
+  get_system_platform: unit -> string option;
 }
 
 val parse_py_version : string -> (Configuration.PythonVersion.t, Error.t) result
@@ -37,6 +38,7 @@ val parse_py_version : string -> (Configuration.PythonVersion.t, Error.t) result
 val create_for_testing
   :  ?get_source_db:(unit -> Sourcedb.t) ->
   ?get_python_version:(unit -> Configuration.PythonVersion.t) ->
+  ?get_system_platform:(unit -> string option) ->
   unit ->
   t
 

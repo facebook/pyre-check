@@ -7,7 +7,7 @@
 
 open Base
 
-let create_environment_controls ~root ~python_version () =
+let create_environment_controls ~root ~python_version ~system_platform () =
   (* TODO: Rename `log_directory` to `saved_state_directory` in Configuration.Analysis *)
   let log_directory = Stdlib.Filename.get_temp_dir_name () in
   let configuration =
@@ -31,6 +31,7 @@ let create_environment_controls ~root ~python_version () =
       ~track_dependencies:false
       ~log_directory
       ~python_version
+      ~system_platform
       ~enable_type_comments:true
       ~enable_readonly_analysis:false
       ~enable_strict_override_check:false
@@ -92,9 +93,14 @@ let print_errors ~output errors =
   | Some output -> Yojson.Safe.to_file output json
 
 
-let run_check ~root ~output { CheckCommandInput.get_source_db; get_python_version } =
+let run_check
+    ~root
+    ~output
+    { CheckCommandInput.get_source_db; get_python_version; get_system_platform }
+  =
   let python_version = get_python_version () in
-  let controls = create_environment_controls ~root ~python_version () in
+  let system_platform = get_system_platform () in
+  let controls = create_environment_controls ~root ~python_version ~system_platform () in
   let { Sourcedb.lookup; listing } = get_source_db () in
   let buck_based_source_code_api =
     let loader = FileLoader.create_from_sourcedb_lookup ~root lookup in
