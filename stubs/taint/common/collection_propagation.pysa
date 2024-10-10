@@ -16,9 +16,9 @@ def collections.defaultdict.__init__(self, default_factory, map: TaintInTaintOut
 def collections.defaultdict.__init__(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
-def dict.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __k): ...
+def dict.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], k, /): ...
 @SkipObscure
-def typing.Mapping.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __k): ...
+def typing.Mapping.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], k, /): ...
 
 @SkipObscure
 def dict.__setitem__(
@@ -60,13 +60,15 @@ def typing.MutableMapping.update(self, **kwargs: TaintInTaintOut[Updates[self], 
 @SkipObscure
 def dict.get(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
-    __key,
-    __default: TaintInTaintOut[LocalReturn, NoCollapse],
+    key,
+    default: TaintInTaintOut[LocalReturn, NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.Mapping.get(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
-    __key,
+    key,
+    /,
     default: TaintInTaintOut[LocalReturn, NoCollapse],
 ): ...
 
@@ -171,7 +173,7 @@ def typing.MutableSequence.__setitem__(self, index, value: TaintInTaintOut[Updat
 def collections.deque.__setitem__(self, s, o: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse], /): ...
 
 @SkipObscure
-def list.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], __s): ...
+def list.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], s, /): ...
 @SkipObscure
 def tuple.__getitem__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse], s, /): ...
 @SkipObscure
@@ -536,7 +538,8 @@ def frozenset.difference(
 @SkipObscure
 def set.__sub__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
-    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    /,
 ): ...
 @SkipObscure
 def typing.AbstractSet.__sub__(
