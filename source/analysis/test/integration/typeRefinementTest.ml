@@ -652,6 +652,47 @@ let test_check_local_refinement =
              "Revealed type [-1]: Revealed type for `x` is `int`.";
              "Revealed type [-1]: Revealed type for `x` is `int`.";
            ];
+      (* TODO(T204207195) These two test cases illustrate a mysterious bug where an equality check
+         on a sub-attribute can undo a non-temporary attribute refinement. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Final, Optional, Callable
+            class A:
+                ax: int = ...
+            class B:
+                bx: Final[Optional[A]] = ...
+            def foo(b: Optional[B], pred: Callable[[], bool]) -> None:
+                if (b and b.bx and pred()):
+                    reveal_type(b)
+                    reveal_type(b.bx)
+                    reveal_type(b.bx.ax)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `b` is `Optional[B]` (inferred: `B`).";
+             "Revealed type [-1]: Revealed type for `b.bx` is `Optional[A]` (inferred: `A`, final).";
+             "Revealed type [-1]: Revealed type for `b.bx.ax` is `int`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Final, Optional
+            class A:
+                ax: int = ...
+            class B:
+                bx: Final[Optional[A]] = ...
+            def foo(b: Optional[B]) -> None:
+                if (b and b.bx and b.bx.ax == 42):
+                    reveal_type(b)
+                    reveal_type(b.bx)
+                    reveal_type(b.bx.ax)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `b` is `B`.";
+             "Revealed type [-1]: Revealed type for `b.bx` is `Optional[A]` (final).";
+             "Revealed type [-1]: Revealed type for `b.bx.ax` is `typing_extensions.Literal[42]`.";
+             "Undefined attribute [16]: `Optional` has no attribute `ax`.";
+           ];
     ]
 
 
