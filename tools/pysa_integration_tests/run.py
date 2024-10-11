@@ -4,89 +4,157 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+A generic script to run integration tests.
 """
 
+# pyre-strict
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-# pyre-ignore[21]
-from runner_lib import run_pysa_integration_test
+# This script is meant to be run from the command line.
+if TYPE_CHECKING:
+    import tools.pyre.tools.pysa_integration_tests.runner_lib as test_runner_lib
+else:
+    import runner_lib as test_runner_lib  # @manual=//tools/pyre/tools/pysa_integration_tests:runner_lib
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def main(
-    run_directory: Path,
+    *,
+    working_directory: Path,
     filter_issues: bool,
     skip_model_verification: bool,
     run_from_source: bool,
-    passthrough_args: List[str],
+    passthrough_args: Optional[List[str]],
     save_results_to: Optional[Path],
+    typeshed: Optional[Path],
+    compact_ocaml_heap: bool,
+    check_invariants: bool,
+    inline_decorators: bool,
+    require_pyre_env: bool,
+    ignore_positions: bool,
 ) -> None:
     """
-    Entry point function which checks if full_result.json is there, calls
-    functions from runner_lib to run pysa, parse full_result.json, and compare the output.
+    Entry point function to run a full end-to-end integration test.
     """
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    full_result_file_path = run_directory / "full_result.json"
-
-    if not os.path.isfile(full_result_file_path):
-        raise FileNotFoundError(
-            f"{full_result_file_path} containing expected issues is not found"
+    # Verify `PYRE_BINARY` is set
+    if require_pyre_env and "PYRE_BINARY" not in os.environ:
+        LOG.error(
+            "Required environment variable `PYRE_BINARY` is not set. "
+            "`make all` from this script's directory will "
+            "automatically set `PYRE_BINARY`"
         )
+        sys.exit(1)
 
-    LOG.info("Running in `%s`", run_directory)
-    run_pysa_integration_test(
-        run_directory,
+    LOG.info("Running in `%s`", working_directory)
+    pysa_results = test_runner_lib.run_pysa(
         passthrough_args=passthrough_args,
         skip_model_verification=skip_model_verification,
-        filter_issues=filter_issues,
         run_from_source=run_from_source,
         save_results_to=save_results_to,
+        typeshed=typeshed,
+        compact_ocaml_heap=compact_ocaml_heap,
+        check_invariants=check_invariants,
+        inline_decorators=inline_decorators,
+        working_directory=working_directory,
+    )
+
+    test_result_directory = (
+        save_results_to if save_results_to is not None else working_directory
+    )
+    test_runner_lib.compare_to_expected_json(
+        actual_results=pysa_results,
+        expected_results_path=working_directory / "result.json",
+        test_result_directory=test_result_directory,
+        filter_issues=filter_issues,
+        ignore_positions=ignore_positions,
     )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run integeration tests")
 
-    parser.add_argument("--run-directory", type=Path)
-    parser.add_argument("--filter-issues", action="store_true")
-    parser.add_argument("--skip-model-verification", action="store_true")
-    parser.add_argument("--run-from-source", action="store_true")
-    parser.add_argument("--passthrough-args", nargs="+")
+    parser.add_argument("--working-directory", type=Path, help="Test working directory")
+    parser.add_argument(
+        "--filter-issues",
+        action="store_true",
+        help="Filter out issues with a rule that is not present in the function name",
+    )
+    parser.add_argument(
+        "--skip-model-verification", action="store_true", help="Skip model verification"
+    )
+    parser.add_argument(
+        "--run-from-source",
+        action="store_true",
+        help="Run pysa from source with the open source setup",
+    )
+    parser.add_argument(
+        "--require-pyre-env",
+        action="store_true",
+        help="Require the PYRE_BINARY environment variable to be set",
+    )
+    parser.add_argument(
+        "--ignore-positions",
+        action="store_true",
+        help="Ignore positions when comparing expected results",
+    )
+    parser.add_argument(
+        "--passthrough-args",
+        nargs="+",
+        help="Additional parameters to pass to `pyre analyze`",
+    )
     parser.add_argument(
         "-s",
         "--save-results-to",
         type=Path,
-        help=("Directory to write analysis results to. Default: output is not saved"),
+        help="Directory to write analysis results to. Default: output is not saved",
+    )
+    parser.add_argument(
+        "--compact-ocaml-heap",
+        action="store_true",
+        default=False,
+        help="Compact OCaml heap during the analysis to save memory",
+    )
+    parser.add_argument(
+        "--check-invariants",
+        action="store_true",
+        default=False,
+        help="Check abstract domain invariants when running the analysis",
+    )
+    parser.add_argument(
+        "--inline-decorators",
+        action="store_true",
+        default=False,
+        help="Inline decorators when running the analysis",
+    )
+    parser.add_argument(
+        "--typeshed",
+        type=Path,
+        help="Path to the typeshed to use",
     )
 
     parsed: argparse.Namespace = parser.parse_args()
-
-    run_directory: Path = parsed.run_directory
-    if run_directory is None:
-        run_directory = Path(os.getcwd())
-    filter_issues: bool = parsed.filter_issues
-    skip_model_verification: bool = parsed.skip_model_verification
-    run_from_source: bool = parsed.run_from_source
-    passthrough_args: List[str] = parsed.passthrough_args
-    if passthrough_args is None:
-        passthrough_args = []
-    save_results_to: Optional[Path] = parsed.save_results_to
-
     main(
-        run_directory,
-        filter_issues,
-        skip_model_verification,
-        run_from_source,
-        passthrough_args,
-        save_results_to,
+        working_directory=parsed.working_directory or Path(os.getcwd()),
+        filter_issues=parsed.filter_issues,
+        skip_model_verification=parsed.skip_model_verification,
+        run_from_source=parsed.run_from_source,
+        passthrough_args=parsed.passthrough_args,
+        save_results_to=parsed.save_results_to,
+        typeshed=parsed.typeshed,
+        compact_ocaml_heap=parsed.compact_ocaml_heap,
+        check_invariants=parsed.check_invariants,
+        inline_decorators=parsed.inline_decorators,
+        require_pyre_env=parsed.require_pyre_env,
+        ignore_positions=parsed.ignore_positions,
     )
