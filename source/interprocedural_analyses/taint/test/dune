@@ -15,7 +15,6 @@
 
 (tests
  (names
-  accessPathTest
   annotationParserTest
   configurationTest
   domainTest

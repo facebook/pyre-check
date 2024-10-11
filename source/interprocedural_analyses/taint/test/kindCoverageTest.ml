@@ -8,6 +8,7 @@
 open Core
 open OUnit2
 open Taint
+module AccessPath = Interprocedural.AccessPath
 
 let test_from_source _ =
   let assert_sources ~expected ~actual =

@@ -11,6 +11,7 @@
  *)
 
 open Core
+module AccessPath = Interprocedural.AccessPath
 
 let name = "sink"
 

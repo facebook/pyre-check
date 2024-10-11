@@ -10,6 +10,7 @@ open Core
 open Interprocedural
 open Pyre
 module PyrePysaLogic = Analysis.PyrePysaLogic
+module AccessPath = Interprocedural.AccessPath
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 

@@ -12,7 +12,7 @@ module KindExpression : sig
         name: string;
         subkind: string option;
       }
-    | Updates of AccessPath.Root.t
+    | Updates of Interprocedural.AccessPath.Root.t
   [@@deriving equal]
 
   val from_name : string -> t

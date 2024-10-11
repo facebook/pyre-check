@@ -10,6 +10,7 @@
 
 open Core
 open Ast
+module AccessPath = Interprocedural.AccessPath
 
 module IncompatibleModelError = struct
   type reason =

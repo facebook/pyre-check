@@ -13,6 +13,7 @@ open Ast
 open Expression
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
+module AccessPath = Interprocedural.AccessPath
 
 type parameter_requirements = {
   anonymous_parameters_positions: Int.Set.t;

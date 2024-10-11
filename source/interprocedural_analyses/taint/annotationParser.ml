@@ -11,6 +11,7 @@
 
 open Core
 open Result
+module AccessPath = Interprocedural.AccessPath
 
 (* Represents a source or sink kind from a model (e.g, UserControlled). *)
 module KindExpression = struct

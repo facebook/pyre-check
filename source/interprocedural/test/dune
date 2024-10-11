@@ -11,7 +11,8 @@
   fetchCallablesTest
   overrideGraphTest
   changedPathsTest
-  globalConstantsTest)
+  globalConstantsTest
+  taintAccessPathTest)
  (preprocess
   (pps
    ppx_deriving.eq

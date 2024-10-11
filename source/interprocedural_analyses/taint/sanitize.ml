@@ -9,6 +9,7 @@
  * domain. *)
 
 open Core
+module AccessPath = Interprocedural.AccessPath
 
 type sanitize = {
   sources: SanitizeTransform.SourceSet.t;

@@ -7,7 +7,6 @@
 
 (* Taint: here we expose modules for the `pyrelib.taint` library *)
 
-module AccessPath = AccessPath
 module BackwardAnalysis = BackwardAnalysis
 module Rule = Rule
 module SourceSinkFilter = SourceSinkFilter

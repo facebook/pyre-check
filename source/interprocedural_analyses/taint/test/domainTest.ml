@@ -31,7 +31,7 @@ let test_partition_call_map context =
       ~location
       ~callee
       ~arguments:[]
-      ~port:AccessPath.Root.LocalResult
+      ~port:Interprocedural.AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~is_class_method:false
       ~is_static_method:false
@@ -45,7 +45,7 @@ let test_partition_call_map context =
       ~location
       ~callee
       ~arguments:[]
-      ~port:AccessPath.Root.LocalResult
+      ~port:Interprocedural.AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~is_class_method:false
       ~is_static_method:false

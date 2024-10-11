@@ -16,6 +16,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module AccessPath = Interprocedural.AccessPath
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type t = {

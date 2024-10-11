@@ -7,6 +7,8 @@
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
+module AccessPath = Interprocedural.AccessPath
+
 module CollapseDepth : sig
   type t =
     | Value of int

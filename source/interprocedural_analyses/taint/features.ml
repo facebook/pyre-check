@@ -14,6 +14,7 @@ open Core
 open Ast
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module AccessPath = Interprocedural.AccessPath
 
 module MakeInterner (T : sig
   type t

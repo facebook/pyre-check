@@ -7,8 +7,8 @@
 
 open OUnit2
 open Core
-open Taint
 open Test
+module AccessPath = Interprocedural.AccessPath
 
 let test_of_expression _ =
   let ( !+ ) expression = Test.parse_single_expression expression in

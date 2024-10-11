@@ -12,6 +12,7 @@ open Test
 open TestHelper
 open Taint
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module AccessPath = Interprocedural.AccessPath
 
 let get_stubs_and_definitions ~source_file_name ~project =
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
