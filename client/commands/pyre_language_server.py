@@ -1046,6 +1046,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
     async def _run_python_auto_targets(
         self,
         changed_file: Path,
+        removals_enabled: bool,
     ) -> PythonAutoTargetsMetadata:
         try:
             buck2_root = get_buck_root()
@@ -1073,15 +1074,18 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             else Path(f"{buck2_root}/xplat/tools/pyautotargets")
         )
-
-        pyautodeps_parameters = [
-            str(pyautotargets_bin),
-            "--verbose",
-            "--buck-root",
-            buck2_root,
-            "--isolation-dir=.pyautotargets",
-            str(changed_file),
-        ]
+        pyautodeps_parameters = [str(pyautotargets_bin)]
+        if removals_enabled:
+            pyautodeps_parameters.append("--remove-deps")
+        pyautodeps_parameters.extend(
+            [
+                "--verbose",
+                "--buck-root",
+                buck2_root,
+                "--isolation-dir=.pyautotargets",
+                str(changed_file),
+            ]
+        )
         LOG.debug(f"Running Pyautotargets: `{' '.join(pyautodeps_parameters)}`")
         pyautodeps_run = await asyncio.create_subprocess_exec(
             *pyautodeps_parameters,
@@ -1138,7 +1142,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         ):
             async with self.server_state.pyautotargets_lock:
                 auto_targets_metadata = await self._run_python_auto_targets(
-                    document_path
+                    document_path,
+                    self.get_language_server_features().python_auto_targets_removal.is_enabled(),
                 )
         else:
             auto_targets_metadata = PythonAutoTargetsMetadata(
