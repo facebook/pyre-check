@@ -115,11 +115,13 @@ module StringSet = Set.Make (String)
 
 module Label = struct
   module T = struct
+    open Core
+
     type t =
       | AnyIndex
       | Index of string
       | Field of string
-    [@@deriving ord, eq]
+    [@@deriving ord, eq, sexp, hash]
 
     type path = t list
   end

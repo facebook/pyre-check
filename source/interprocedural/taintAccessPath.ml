@@ -207,7 +207,7 @@ let normalize_parameters parameters =
 
 
 module Path = struct
-  type t = Abstract.TreeDomain.Label.t list
+  type t = Abstract.TreeDomain.Label.t list [@@deriving compare, sexp, hash]
 
   let pp = Abstract.TreeDomain.Label.pp_path
 
@@ -373,7 +373,7 @@ type t = {
   root: Root.t;
   path: Path.t;
 }
-[@@deriving compare]
+[@@deriving compare, eq, sexp, hash]
 
 let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp root Path.pp path
 

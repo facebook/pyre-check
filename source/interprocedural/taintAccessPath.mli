@@ -70,7 +70,7 @@ type t = {
   root: Root.t;
   path: Path.t;
 }
-[@@deriving compare]
+[@@deriving compare, eq, sexp, hash]
 
 val pp : Format.formatter -> t -> unit
 
