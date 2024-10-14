@@ -1,6 +1,6 @@
 ---
 id: getting-started
-title: Getting Started
+title: Getting Started with Pyre
 sidebar_label: Getting Started
 ---
 import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
