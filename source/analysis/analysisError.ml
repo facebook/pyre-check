@@ -994,7 +994,7 @@ let code_of_kind = function
   | TupleDelete -> 72
   | OutOfBoundsTupleIndex _ -> 73
   | NamedTupleMissingDefault -> 74
-  | InvalidTypeVariableConstraint _ -> 74
+  | InvalidTypeVariableConstraint _ -> 75
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001

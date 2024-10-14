@@ -247,12 +247,12 @@ let test_check_bounded_variables =
 
             |}
            [
-             "Invalid bound [74]: `$local_test$t1` is not valid bound.";
-             "Invalid bound [74]: `dict[(str, V)]` is not valid bound.";
-             "Invalid bound [74]: `[str, int]` is not valid bound.";
-             "Invalid bound [74]: `()` is not valid bound.";
-             "Invalid bound [74]: `(str)` is not valid bound.";
-             "Invalid bound [74]: `(3, bytes)` is not valid bound.";
+             "Invalid bound [75]: `$local_test$t1` is not valid bound.";
+             "Invalid bound [75]: `dict[(str, V)]` is not valid bound.";
+             "Invalid bound [75]: `[str, int]` is not valid bound.";
+             "Invalid bound [75]: `()` is not valid bound.";
+             "Invalid bound [75]: `(str)` is not valid bound.";
+             "Invalid bound [75]: `(3, bytes)` is not valid bound.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
