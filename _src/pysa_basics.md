@@ -1,6 +1,6 @@
 ---
 id: pysa-basics
-title: Overview
+title: Pysa Overview
 sidebar_label: Overview
 ---
 
@@ -61,7 +61,7 @@ some_sink(x.some_attribute) # This is also detected
 some_sink(x.__class__) # This is (unfortunately) also detected
 ```
 
-## Configuration
+## Pysa Configuration
 
 Pysa uses two types of files for configuration: a single `taint.config` file,
 and an unlimited number of files with a `.pysa` extension. The `taint.config`

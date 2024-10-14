@@ -1,7 +1,7 @@
 ---
 id: features
-title: Features
-sidebar_label: Features
+title: Pyre-Exclusive Features
+sidebar_label: Pyre-Exclusive Features
 ---
 
 Pyre has custom support for Python idioms that would otherwise not be supported by the usual type annotations.

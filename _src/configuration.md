@@ -1,6 +1,6 @@
 ---
 id: configuration
-title: Configuration
+title: Pyre Configuration
 sidebar_label: Configuration
 ---
 <!-- There is a separate page for internal config at ./fb/configuration.md. When making changes, please keep common docs in sync. -->
@@ -78,7 +78,7 @@ provides typed stubs for library functions.
 
 - `strict`: Setting this to `true` will make [strict mode](gradual_typing.md#strict-mode) the default in your project.
 
-- `python_version`: This is expected to be a string of the form "X.Y.Z" which specifies what version of Python the checked code is expected to be executed with. By default, the version is set to the same as the Python interpreter that runs `pyre` itself. 
+- `python_version`: This is expected to be a string of the form "X.Y.Z" which specifies what version of Python the checked code is expected to be executed with. By default, the version is set to the same as the Python interpreter that runs `pyre` itself.
 
 Note: Since Pyre does not run your code, the setting of Python version tends to have relatively small impact on the type checker's behavior. Currently, Pyre only uses Python version to syntactically resolve version conditions of [certain form](https://github.com/python/typeshed/blob/main/CONTRIBUTING.md#stub-versioning).
 
