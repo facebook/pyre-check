@@ -396,21 +396,6 @@ module Store = struct
 
   let has_nontemporary_type_info ~name { type_info; _ } = ReferenceMap.mem type_info name
 
-  let get_unit ?(include_temporary = true) ~name { type_info; temporary_type_info } =
-    let temporary =
-      if include_temporary then
-        ReferenceMap.find temporary_type_info name
-      else
-        None
-    in
-    let found =
-      match temporary with
-      | Some _ -> temporary
-      | None -> ReferenceMap.find type_info name
-    in
-    Option.value ~default:LocalOrGlobal.empty found
-
-
   (** Map an operation over what's at a given name. If there's nothing already existing, use
       `empty`.
 
@@ -440,10 +425,30 @@ module Store = struct
       }
 
 
-  let get_base ~name store = get_unit ~name store |> LocalOrGlobal.base
+  let select_nontemporary_or_temporary (nontemporary, temporary) =
+    match nontemporary, temporary with
+    | None, info -> info
+    | info, None -> info
+    | Some info, Some _ ->
+        (* Nontemporary refinements can get mirrored into temporary refinements. Prefer the
+           nontemporary if we find both. *)
+        Some info
 
-  let get_type_info ~name ~attribute_path store =
-    get_unit ~name store |> LocalOrGlobal.get_type_info ~attribute_path
+
+  let get_base ~name { type_info; temporary_type_info } =
+    let get_type_info_from type_info_map =
+      Reference.Map.Tree.find type_info_map name >>= LocalOrGlobal.base
+    in
+    (get_type_info_from type_info, get_type_info_from temporary_type_info)
+    |> select_nontemporary_or_temporary
+
+
+  let get_type_info ~name ~attribute_path { type_info; temporary_type_info } =
+    let get_type_info_from type_info_map =
+      Reference.Map.Tree.find type_info_map name >>= LocalOrGlobal.get_type_info ~attribute_path
+    in
+    (get_type_info_from type_info, get_type_info_from temporary_type_info)
+    |> select_nontemporary_or_temporary
 
 
   let set_base ?(temporary = false) ~name ~base store =
