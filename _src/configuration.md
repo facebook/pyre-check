@@ -80,7 +80,9 @@ provides typed stubs for library functions.
 
 - `python_version`: This is expected to be a string of the form "X.Y.Z" which specifies what version of Python the checked code is expected to be executed with. By default, the version is set to the same as the Python interpreter that runs `pyre` itself.
 
-Note: Since Pyre does not run your code, the setting of Python version tends to have relatively small impact on the type checker's behavior. Currently, Pyre only uses Python version to syntactically resolve version conditions of [certain form](https://github.com/python/typeshed/blob/main/CONTRIBUTING.md#stub-versioning).
+- `system_platform`: This is expected to be a string that specifies the platform the checked code is expected to be executed on, and should be a legal value for [`sys.platform`](https://docs.python.org/3/library/sys.html#sys.platform). By default, the platform is `"linux"`.
+
+Note: Since Pyre does not run your code, the setting of Python version and platform tends to have relatively small impact on the type checker's behavior. Currently, Pyre only uses Python version and platform to syntactically resolve version conditions of [certain form](https://github.com/python/typeshed/blob/main/CONTRIBUTING.md#stub-versioning).
 
 ## Command Line Arguments
 You can get a full and current list of options to run Pyre by running `pyre --help`. The following is a list of commonly used commands and options.
