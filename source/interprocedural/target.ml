@@ -194,7 +194,7 @@ module Regular = struct
 
   (** Return the define name of a Function or Method target. Note that multiple targets can match to
       the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
-  let define_name = function
+  let define_name_exn = function
     | Function { name; _ } -> Reference.create name
     | Method { class_name; method_name; _ } ->
         Reference.create ~prefix:(Reference.create class_name) method_name
@@ -369,9 +369,17 @@ let is_override target = target |> get_regular |> Regular.is_override
 
 let is_object target = target |> get_regular |> Regular.is_object
 
-let override_to_method target = target |> get_regular |> Regular.override_to_method |> from_regular
+let rec for_issue_handle = function
+  | Regular regular -> regular |> Regular.override_to_method |> from_regular
+  | Parameterized { regular; parameters } ->
+      Parameterized
+        {
+          regular = Regular.override_to_method regular;
+          parameters = ParameterMap.map for_issue_handle parameters;
+        }
 
-let define_name target = target |> get_regular |> Regular.define_name
+
+let define_name_exn target = target |> get_regular |> Regular.define_name_exn
 
 module Set = Stdlib.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)
@@ -415,7 +423,7 @@ let get_definitions ~pyre_api define_name =
 
 
 let get_module_and_definition ~pyre_api callable =
-  define_name callable
+  define_name_exn callable
   |> get_definitions ~pyre_api
   >>= fun { qualifier; callables; _ } ->
   Map.find_opt callable callables >>| fun define -> qualifier, define

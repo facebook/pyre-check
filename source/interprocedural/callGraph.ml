@@ -1167,7 +1167,7 @@ module CallTargetIndexer = struct
       ?(explicit_receiver = false)
       original_target
     =
-    let target_for_index = Target.override_to_method original_target in
+    let target_for_index = Target.for_issue_handle original_target in
     let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
     let implicit_receiver =

@@ -803,7 +803,7 @@ module Modelable = struct
 
 
   let name = function
-    | Callable { target; _ } -> target |> Target.override_to_method |> Target.define_name
+    | Callable { target; _ } -> Target.define_name_exn target
     | Attribute { name; _ }
     | Global { name; _ } ->
         name

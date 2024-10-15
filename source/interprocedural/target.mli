@@ -36,6 +36,10 @@ module Regular : sig
        HttpRequest.GET *)
     | Object of string
   [@@deriving sexp, compare, hash, eq]
+
+  val override_to_method : t -> t
+
+  val define_name_exn : t -> Reference.t
 end
 
 module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
@@ -134,11 +138,11 @@ val is_override : t -> bool
 
 val is_object : t -> bool
 
-val override_to_method : t -> t
+val for_issue_handle : t -> t
 
 (** Return the define name of a Function or Method target. Note that multiple targets can match to
     the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
-val define_name : t -> Reference.t
+val define_name_exn : t -> Reference.t
 
 module Set : Stdlib.Set.S with type elt = t
 

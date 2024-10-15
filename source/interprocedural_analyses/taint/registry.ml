@@ -25,7 +25,7 @@ let targets_with_mode models ~mode =
 let skip_overrides models =
   targets_with_mode models ~mode:Model.Mode.SkipOverrides
   |> List.filter ~f:Target.is_function_or_method
-  |> List.map ~f:Target.define_name
+  |> List.map ~f:Target.define_name_exn
   |> Reference.SerializableSet.of_list
 
 

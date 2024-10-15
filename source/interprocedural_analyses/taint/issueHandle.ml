@@ -42,7 +42,7 @@ module Sink = struct
       | Variable name -> Variable name
       | CapturedVariable name -> CapturedVariable name
     in
-    let target = Target.override_to_method target in
+    let target = Target.for_issue_handle target in
     Call { callee = target; index; parameter = root }
 
 
