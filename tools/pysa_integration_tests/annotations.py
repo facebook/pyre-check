@@ -15,6 +15,14 @@ from typing import Optional, TypeVar
 T = TypeVar("T")
 
 
+def generic_test_source() -> None:
+    pass
+
+
+def generic_test_sink(param: str) -> None:
+    pass
+
+
 class ExpectIssue:
     def __new__(
         cls,
