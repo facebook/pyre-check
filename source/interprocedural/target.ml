@@ -201,6 +201,12 @@ module Regular = struct
     | Override _
     | Object _ ->
         failwith "unexpected"
+
+
+  let create_derived_override_exn ~at_type = function
+    | Override { method_name; kind; _ } ->
+        Override { class_name = Reference.show at_type; method_name; kind }
+    | _ -> failwith "unexpected"
 end
 
 module ParameterMap = Data_structures.SerializableMap.Make (TaintAccessPath.Root)
@@ -307,6 +313,11 @@ let get_regular = function
       regular
 
 
+let as_regular_exn = function
+  | Regular regular -> regular
+  | Parameterized _ -> failwith "expect `Regular`"
+
+
 let create_function ?kind reference =
   Function (create_function_name ?kind reference) |> from_regular
 
@@ -332,14 +343,6 @@ let create define_name define =
 
 
 let create_object reference = Object (Reference.show reference) |> from_regular
-
-let create_derived_override override ~at_type =
-  match override with
-  | Regular (Regular.Override { method_name; kind; _ })
-  | Parameterized { regular = Regular.Override { method_name; kind; _ }; _ } ->
-      Override { class_name = Reference.show at_type; method_name; kind } |> from_regular
-  | _ -> failwith "unexpected"
-
 
 let get_corresponding_method target =
   target |> get_regular |> Regular.get_corresponding_method |> from_regular

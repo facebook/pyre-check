@@ -64,7 +64,12 @@ module Reversed = struct
       let add ~member:method_name ~subtypes (override_map, all_overrides) =
         let key = Target.get_corresponding_override method_name in
         let data =
-          List.map subtypes ~f:(fun at_type -> Target.create_derived_override key ~at_type)
+          List.map subtypes ~f:(fun at_type ->
+              key
+              |> Target.as_regular_exn
+              (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+              |> Target.Regular.create_derived_override_exn ~at_type
+              |> Target.from_regular)
         in
         ( Target.Map.Tree.set override_map ~key ~data,
           Target.Set.union all_overrides (Target.Set.of_list data) )

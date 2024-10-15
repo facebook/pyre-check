@@ -491,7 +491,12 @@ module Make (Analysis : ANALYSIS) = struct
         override_graph
         ~member:(Target.get_corresponding_method callable)
       |> Option.value ~default:[]
-      |> List.map ~f:(fun at_type -> Target.create_derived_override callable ~at_type)
+      |> List.map ~f:(fun at_type ->
+             callable
+             |> Target.as_regular_exn
+                (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+             |> Target.Regular.create_derived_override_exn ~at_type
+             |> Target.from_regular)
     in
     let new_model =
       let lookup override =

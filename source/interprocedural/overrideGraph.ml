@@ -235,7 +235,13 @@ module SharedMemory = struct
         if not (Target.is_override target) then
           target :: expanded
         else
-          let make_override at_type = Target.create_derived_override target ~at_type in
+          let make_override at_type =
+            target
+            |> Target.as_regular_exn
+               (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+            |> Target.Regular.create_derived_override_exn ~at_type
+            |> Target.from_regular
+          in
           let overrides =
             let member = Target.get_corresponding_method target in
             T.ReadOnly.get handle member |> Option.value ~default:[] |> List.map ~f:make_override

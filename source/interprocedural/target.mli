@@ -40,6 +40,8 @@ module Regular : sig
   val override_to_method : t -> t
 
   val define_name_exn : t -> Reference.t
+
+  val create_derived_override_exn : at_type:Reference.t -> t -> t
 end
 
 module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
@@ -106,11 +108,13 @@ val create_object : Reference.t -> t
 
 val create : Ast.Reference.t -> Define.t -> t
 
-val create_derived_override : t -> at_type:Reference.t -> t
-
 val from_regular : Regular.t -> t
 
+(* Return `Regular.t` when called on any `t`. *)
 val get_regular : t -> Regular.t
+
+(* Return `Regular.t`, but throw if called on `Parameterized`. *)
+val as_regular_exn : t -> Regular.t
 
 (* Accessors. *)
 
