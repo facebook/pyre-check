@@ -1063,13 +1063,9 @@ module State (Context : Context) = struct
 
   let add_annotation_errors errors local_resolution location parsed =
     let global_resolution = Resolution.global_resolution local_resolution in
-
     add_invalid_type_parameters_errors ~resolution:global_resolution ~location ~errors parsed
     |> fun (errors, _) ->
-    let errors =
-      List.append errors (get_untracked_annotation_errors ~local_resolution ~location parsed)
-    in
-    errors
+    List.append errors (get_untracked_annotation_errors ~local_resolution ~location parsed)
 
 
   (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
@@ -4667,6 +4663,17 @@ module State (Context : Context) = struct
     let errors = add_annotation_errors errors resolution location parsed in
     let errors = add_type_variable_errors errors parsed location in
     let errors = add_prohibited_any_errors errors target parsed value location in
+    let errors =
+      match parsed with
+      | Type.Top ->
+          emit_error
+            ~errors
+            ~location
+            ~kind:
+              (Error.InvalidType
+                 (InvalidTypeAnnotationExpression { annotation = value; expected = "" }))
+      | _ -> errors
+    in
     Value resolution, errors
 
 

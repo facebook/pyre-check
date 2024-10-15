@@ -12,6 +12,14 @@ let test_check_assign =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_strict_type_errors
+           {|
+              from typing import Dict
+              x = Dict[int, object]
+              x = { "foo": "bar" }  # x is a type alias, it shouldn't be assignable with a value
+            |}
+           ["Invalid type [31]: Expression `{ \"foo\":\"bar\" }` is not a valid type."];
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               def foo() -> None:
