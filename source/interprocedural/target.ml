@@ -112,7 +112,7 @@ module Regular = struct
     | _ -> failwith "not an override target"
 
 
-  let get_corresponding_override = function
+  let get_corresponding_override_exn = function
     | Method method_name -> Override method_name
     | _ -> failwith "unexpected"
 
@@ -343,10 +343,6 @@ let create define_name define =
 
 
 let create_object reference = Object (Reference.show reference) |> from_regular
-
-let get_corresponding_override target =
-  target |> get_regular |> Regular.get_corresponding_override |> from_regular
-
 
 let class_name target = target |> get_regular |> Regular.class_name
 

@@ -1321,7 +1321,11 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
     match override_graph with
     | Some override_graph
       when OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph method_name ->
-        Target.get_corresponding_override method_name
+        method_name
+        |> Target.as_regular_exn
+        (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+        |> Target.Regular.get_corresponding_override_exn
+        |> Target.from_regular
     | _ -> method_name
   in
   let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
