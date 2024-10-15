@@ -10,9 +10,10 @@ Helper functions for integration test runners,
 e.g running pysa and compare the results with the expectations.
 """
 
-from __future__ import annotations
+from __future__ import annotations as _annotations
 
 import ast
+import collections
 import enum
 import json
 import logging
@@ -20,8 +21,9 @@ import os.path
 import re
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import final, Optional, Sequence
+from typing import DefaultDict, Dict, final, List, Optional, Sequence, TypedDict
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -342,6 +344,318 @@ def compare_to_expected_json(
             actual_invariant_results_path,
         ]
     )
+    if error_help is not None:
+        sys.stdout.write("\n")
+        sys.stdout.write(error_help)
+    sys.exit(ExitCode.TEST_COMPARISON_DIFFERS.value)
+
+
+@dataclass(frozen=True)
+class TestAnnotation:
+    expected: bool  # True = ExpectIssue, False = ExpectNoIssue
+    code: int
+    line: Optional[int] = None
+    task: Optional[str] = None
+    currently_found: Optional[bool] = None
+
+
+@dataclass(frozen=True)
+class FunctionTestAnnotations:
+    definition_line: int
+    annotations: List[TestAnnotation]
+
+
+def parse_test_annotation(
+    decorator: ast.Call, decorated_function: str
+) -> Optional[TestAnnotation]:
+    if not isinstance(decorator.func, ast.Name):
+        return None
+
+    expected: bool = True
+    if decorator.func.id == "ExpectIssue":
+        expected = True
+    elif decorator.func.id == "ExpectNoIssue":  # pyre-ignore
+        expected = False
+    else:
+        # Not a test annotation.
+        return None
+
+    code: Optional[int] = None
+    line: Optional[int] = None
+    task: Optional[str] = None
+    currently_found: Optional[bool] = None
+
+    if len(decorator.args) > 0:
+        raise TestConfigurationException(
+            f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+            + "Unsupported positional argument"
+        )
+
+    for keyword_argument in decorator.keywords:
+        if keyword_argument.arg is None:
+            raise TestConfigurationException(
+                f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                + "Unsupported **kwargs"
+            )
+        if keyword_argument.arg == "code":
+            if not isinstance(keyword_argument.value, ast.Constant) or not isinstance(
+                keyword_argument.value.value, int
+            ):
+                raise TestConfigurationException(
+                    f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                    + f"Invalid type for parameter {keyword_argument.arg}"
+                )
+            code = keyword_argument.value.value
+        elif keyword_argument.arg == "line":
+            if not isinstance(keyword_argument.value, ast.Constant) or not isinstance(
+                keyword_argument.value.value, int
+            ):
+                raise TestConfigurationException(
+                    f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                    + f"Invalid type for parameter {keyword_argument.arg}"
+                )
+            line = keyword_argument.value.value
+        elif keyword_argument.arg == "task":
+            if not isinstance(keyword_argument.value, ast.Constant) or not isinstance(
+                keyword_argument.value.value, str
+            ):
+                raise TestConfigurationException(
+                    f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                    + f"Invalid type for parameter {keyword_argument.arg}"
+                )
+            task = keyword_argument.value.value
+        elif keyword_argument.arg == "currently_found":
+            if not isinstance(keyword_argument.value, ast.Constant) or not isinstance(
+                keyword_argument.value.value, bool
+            ):
+                raise TestConfigurationException(
+                    f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                    + f"Invalid type for parameter {keyword_argument.arg}"
+                )
+            currently_found = keyword_argument.value.value
+        else:
+            raise TestConfigurationException(
+                f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+                + f"Unexpected parameter {keyword_argument.arg}"
+            )
+
+    if code is None:
+        raise TestConfigurationException(
+            f"Invalid annotation `{decorator.func.id}` on `{decorated_function}`: "
+            + "Missing required parameter 'code'"
+        )
+
+    return TestAnnotation(
+        expected=expected,
+        code=code,
+        line=line,
+        task=task,
+        currently_found=currently_found,
+    )
+
+
+def parse_test_annotations_from_source(
+    source: str,
+) -> Dict[str, FunctionTestAnnotations]:
+    parsed_ast = ast.parse(source)
+
+    annotated_functions: Dict[str, FunctionTestAnnotations] = {}
+    for function in parsed_ast.body:
+        if not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+
+        annotations: List[TestAnnotation] = []
+        for decorator_expression in function.decorator_list:
+            if not isinstance(decorator_expression, ast.Call):
+                continue
+
+            annotation = parse_test_annotation(decorator_expression, function.name)
+            if annotation is not None:
+                annotations.append(annotation)
+
+        if len(annotations) > 0:
+            annotated_functions[function.name] = FunctionTestAnnotations(
+                definition_line=function.lineno, annotations=annotations
+            )
+
+    # Sanity check that we parsed all test annotations.
+    number_expect_issue_substrings = source.count("@ExpectIssue(")
+    number_expect_no_issue_substrings = source.count("@ExpectNoIssue(")
+    number_parsed_annotations = sum(
+        len(function_annotation.annotations)
+        for function_annotation in annotated_functions.values()
+    )
+    if (
+        number_expect_issue_substrings + number_expect_no_issue_substrings
+        != number_parsed_annotations
+    ):
+        raise TestConfigurationException(
+            "Unexpected mismatch between '@ExpectIssue' and parsed annotations:\n"
+            + f"Found {number_expect_issue_substrings} @ExpectIssue\n"
+            + f"Found {number_expect_no_issue_substrings} @ExpectNoIssue\n"
+            + f"Parsed {number_parsed_annotations} test annotations"
+        )
+
+    return annotated_functions
+
+
+def parse_test_annotations_from_directory(
+    directory: Path, repository_root: Path
+) -> Dict[str, FunctionTestAnnotations]:
+    LOG.info(f"Parsing test annotations in {directory}")
+
+    annotated_functions: Dict[str, FunctionTestAnnotations] = {}
+    for path in directory.iterdir():
+        if not path.name.endswith(".py"):
+            continue
+
+        base_module = ".".join(path.relative_to(repository_root).parts)
+        base_module = base_module[:-3]  # Remove .py suffix
+
+        for function_name, annotations in parse_test_annotations_from_source(
+            path.read_text()
+        ).items():
+            annotated_functions[f"{base_module}.{function_name}"] = annotations
+
+    return annotated_functions
+
+
+class Issue(TypedDict):
+    define: str
+    code: int
+    path: str
+    line: int
+    column: int
+    stop_line: int
+    stop_column: int
+    description: str
+    name: str
+
+
+def compare_issues_to_test_annotations(
+    function: str,
+    definition_line: int,
+    code: int,
+    issues: List[Issue],
+    annotations: List[TestAnnotation],
+) -> List[str]:
+    remaining_issues = sorted(
+        issues, key=lambda issue: (issue["line"], issue["column"])
+    )
+    annotations.sort(key=lambda annotation: annotation.line)
+
+    test_failures: List[str] = []
+    number_expected_issues = 0
+    for annotation in annotations:
+        currently_found = annotation.currently_found
+        expected = (
+            currently_found if currently_found is not None else annotation.expected
+        )
+        expected_reason = (
+            f" (because currently_found={currently_found})"
+            if currently_found is not None
+            else ""
+        )
+
+        line = annotation.line
+        matching_issues_index: List[int] = [
+            index
+            for index, issue in enumerate(remaining_issues)
+            if line is None or issue["line"] - definition_line == line
+        ]
+        line_expectation_prefix = f" at line {line}" if line is not None else ""
+        line_expectation_suffix = " at that line" if line is not None else ""
+
+        if expected:
+            number_expected_issues += 1
+            if len(matching_issues_index) > 0:  # pass
+                remaining_issues.pop(matching_issues_index[0])
+            else:  # failure
+                test_failures.append(
+                    f"Expected an issue with code {code}{line_expectation_prefix}{expected_reason}, but no issue was found{line_expectation_suffix}."
+                )
+        else:
+            if len(matching_issues_index) > 0:  # failure
+                test_failures.append(
+                    f"Expected NO issue with code {code}{line_expectation_prefix}{expected_reason}, but an issue was found{line_expectation_suffix}."
+                )
+            else:
+                pass  # pass
+
+    if len(issues) != number_expected_issues:
+        test_failures.append(
+            f"Expected {number_expected_issues} issues with code {code}, but found {len(issues)} issues"
+        )
+
+    if len(test_failures) > 0:
+        if len(issues) > 0:
+            issues_for_json = [
+                {
+                    "description": issue["description"],
+                    "name": issue["name"],
+                    "start": "%d:%d" % (issue["line"], issue["column"]),
+                    "end": "%d:%d" % (issue["stop_line"], issue["stop_column"]),
+                    "relative_line": issue["line"] - definition_line,
+                }
+                for issue in issues
+            ]
+            test_failures.append(
+                f"Issues with code {code} for callable `{function}`:\n{json.dumps(issues_for_json, indent=2)}"
+            )
+        else:
+            test_failures.append(f"No issue found with code {code} for {function}")
+
+    return test_failures
+
+
+def compare_to_test_annotations(
+    *,
+    actual_errors: List[Issue],
+    annotated_functions: Dict[str, FunctionTestAnnotations],
+    error_help: Optional[str] = None,
+) -> None:
+    """
+    Compare the errors from `run_pysa` to the test expectations
+    from test annotations.
+    """
+    function_to_code_to_issues: DefaultDict[str, DefaultDict[int, List[Issue]]] = (
+        collections.defaultdict(lambda: collections.defaultdict(lambda: []))
+    )
+    for error in actual_errors:
+        function_to_code_to_issues[error["define"]][error["code"]].append(error)
+
+    test_failures: List[str] = []
+    for function, function_annotations in annotated_functions.items():
+        annotations_per_code: DefaultDict[int, List[TestAnnotation]] = (
+            collections.defaultdict(lambda: [])
+        )
+        for annotation in function_annotations.annotations:
+            annotations_per_code[annotation.code].append(annotation)
+
+        function_test_failures: List[str] = []
+        for code, annotations in annotations_per_code.items():
+            issues = function_to_code_to_issues[function][code]
+            function_test_failures += compare_issues_to_test_annotations(
+                function,
+                function_annotations.definition_line,
+                code,
+                issues,
+                annotations,
+            )
+
+        if len(function_test_failures) > 0:
+            test_failures.append(
+                f"Error{'s' if len(function_test_failures) > 1 else ''} for `{function}`:"
+            )
+            test_failures += function_test_failures
+
+    if len(test_failures) == 0:
+        LOG.info("Run produced expected results")
+        return
+
+    sys.stdout.write("Output differs from expected:\n")
+    for test_failure in test_failures:
+        sys.stdout.write(test_failure + "\n")
     if error_help is not None:
         sys.stdout.write("\n")
         sys.stdout.write(error_help)
