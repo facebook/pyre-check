@@ -86,6 +86,7 @@ PTT_PREEMPTED_RETRIES: int = 3
 PYAUTOTARGETS_ENABLED_SUFFIXES: Set[str] = {
     ".py",
 }
+PTT_ISOLATION_PREFIX: str = ".pyrelsp"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -721,11 +722,20 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 file=argfile,
             )
             argfile.flush()
+            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
+                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
+                preemptible = []
+            else:
+                isolation_dir = []
+                preemptible = [
+                    "--preemptible=ondifferentstate",
+                ]
             type_check_parameters = [
                 "buck2",
+                *isolation_dir,
                 "bxl",
                 "--reuse-current-config",
-                "--preemptible=ondifferentstate",
+                *preemptible,
                 "--oncall=pyre",
                 "--client-metadata=id=pyre.ide",
                 f"--write-build-id={build_id_file.name}",
@@ -864,8 +874,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 file=argfile,
             )
             argfile.flush()
+            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
+                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
+            else:
+                isolation_dir = []
             query_parameters = [
                 "buck2",
+                *isolation_dir,
                 "bxl",
                 "--reuse-current-config",
                 "--oncall=pyre",
@@ -957,6 +972,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
             pyre_buck_metadata.error_message or ""
         )
 
+        if self.get_language_server_features().per_target_isolation_dir.is_enabled():
+            isolation_dir = PTT_ISOLATION_PREFIX
+        else:
+            isolation_dir = "v2"
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -975,6 +994,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "typing_query": type_checked_files.to_json(),
                     "telemetry_version": 3,
                     "new_file_loaded": new_file_loaded,
+                    "isolation_dir": isolation_dir,
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
