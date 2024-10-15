@@ -80,7 +80,7 @@ def validate_test_functions_and_class_names(current_directory: Path) -> None:
 
     test_paths = [
         path
-        for path in current_directory.iterdir()
+        for path in current_directory.glob("**/*.py")
         if re.match(r"test(_\w+)?\.py$", path.name)
     ]
 
@@ -561,10 +561,7 @@ def parse_test_annotations_from_directory(
     LOG.info(f"Parsing test annotations in {directory}")
 
     result = DirectoryTestAnnotations()
-    for path in directory.iterdir():
-        if not path.name.endswith(".py"):
-            continue
-
+    for path in directory.glob("**/*.py"):
         base_module = ".".join(path.relative_to(repository_root).parts)
         base_module = base_module[:-3]  # Remove .py suffix
 
