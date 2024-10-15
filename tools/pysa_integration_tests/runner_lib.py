@@ -23,7 +23,17 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import DefaultDict, Dict, final, List, Optional, Sequence, TypedDict
+from typing import (
+    DefaultDict,
+    Dict,
+    final,
+    IO,
+    List,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -358,11 +368,57 @@ class TestAnnotation:
     task: Optional[str] = None
     currently_found: Optional[bool] = None
 
+    def asdict(self) -> Dict[str, Union[bool, int, str]]:
+        result: Dict[str, Union[bool, int, str]] = {
+            "expected": self.expected,
+            "code": self.code,
+        }
+        line = self.line
+        if line is not None:
+            result["line"] = line
+        task = self.task
+        if task is not None:
+            result["task"] = task
+        currently_found = self.currently_found
+        if currently_found is not None:
+            result["currently_found"] = currently_found
+        return result
+
 
 @dataclass(frozen=True)
 class FunctionTestAnnotations:
     definition_line: int
     annotations: List[TestAnnotation]
+
+
+class DirectoryTestAnnotations:
+    def __init__(self) -> None:
+        self.function_annotations: Dict[str, FunctionTestAnnotations] = {}
+
+    def set(self, function: str, annotations: FunctionTestAnnotations) -> None:
+        self.function_annotations[function] = annotations
+
+    def add(self, other: "DirectoryTestAnnotations") -> None:
+        for name, annotations in other.function_annotations.items():
+            if name in self.function_annotations:
+                raise AssertionError(
+                    f"Could NOT merge annotations with conflicting definitions: {name}"
+                )
+            self.function_annotations[name] = annotations
+
+    def dump(self, output: IO[str]) -> None:
+        output.write(
+            json.dumps(
+                {
+                    name: [
+                        annotation.asdict()
+                        for annotation in function_annotations.annotations
+                    ]
+                    for name, function_annotations in self.function_annotations.items()
+                }
+            )
+        )
+        output.write("\n")
 
 
 def parse_test_annotation(
@@ -501,10 +557,10 @@ def parse_test_annotations_from_source(
 
 def parse_test_annotations_from_directory(
     directory: Path, repository_root: Path
-) -> Dict[str, FunctionTestAnnotations]:
+) -> DirectoryTestAnnotations:
     LOG.info(f"Parsing test annotations in {directory}")
 
-    annotated_functions: Dict[str, FunctionTestAnnotations] = {}
+    result = DirectoryTestAnnotations()
     for path in directory.iterdir():
         if not path.name.endswith(".py"):
             continue
@@ -515,9 +571,9 @@ def parse_test_annotations_from_directory(
         for function_name, annotations in parse_test_annotations_from_source(
             path.read_text()
         ).items():
-            annotated_functions[f"{base_module}.{function_name}"] = annotations
+            result.set(f"{base_module}.{function_name}", annotations)
 
-    return annotated_functions
+    return result
 
 
 class Issue(TypedDict):
@@ -611,7 +667,7 @@ def compare_issues_to_test_annotations(
 def compare_to_test_annotations(
     *,
     actual_errors: List[Issue],
-    annotated_functions: Dict[str, FunctionTestAnnotations],
+    annotations: DirectoryTestAnnotations,
     error_help: Optional[str] = None,
 ) -> None:
     """
@@ -625,7 +681,7 @@ def compare_to_test_annotations(
         function_to_code_to_issues[error["define"]][error["code"]].append(error)
 
     test_failures: List[str] = []
-    for function, function_annotations in annotated_functions.items():
+    for function, function_annotations in annotations.function_annotations.items():
         annotations_per_code: DefaultDict[int, List[TestAnnotation]] = (
             collections.defaultdict(lambda: [])
         )
@@ -633,14 +689,14 @@ def compare_to_test_annotations(
             annotations_per_code[annotation.code].append(annotation)
 
         function_test_failures: List[str] = []
-        for code, annotations in annotations_per_code.items():
+        for code, annotations_for_code in annotations_per_code.items():
             issues = function_to_code_to_issues[function][code]
             function_test_failures += compare_issues_to_test_annotations(
                 function,
                 function_annotations.definition_line,
                 code,
                 issues,
-                annotations,
+                annotations_for_code,
             )
 
         if len(function_test_failures) > 0:
