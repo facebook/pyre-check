@@ -4372,9 +4372,9 @@ let decorator_actions_from_modes model_modes =
     let has_ignore = Model.ModeSet.contains Model.Mode.IgnoreDecorator modes in
     let has_skip_decorator = Model.ModeSet.contains Model.Mode.SkipDecoratorWhenInlining modes in
     if has_ignore && not has_skip_decorator then
-      Some Analysis.DecoratorPreprocessing.Action.Discard
+      Some PyrePysaLogic.DecoratorPreprocessing.Action.Discard
     else if has_skip_decorator && not has_ignore then
-      Some Analysis.DecoratorPreprocessing.Action.DoNotInline
+      Some PyrePysaLogic.DecoratorPreprocessing.Action.DoNotInline
     else if has_skip_decorator && has_ignore then
       let () =
         Log.warning

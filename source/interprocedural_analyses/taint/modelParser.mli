@@ -6,6 +6,7 @@
  *)
 
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module PythonVersion : sig
   include module type of Configuration.PythonVersion
@@ -50,7 +51,7 @@ val parse_model_modes
 
 val decorator_actions_from_modes
   :  Model.ModeSet.t Ast.Reference.SerializableMap.t ->
-  Analysis.DecoratorPreprocessing.Action.t Ast.Reference.SerializableMap.t
+  PyrePysaLogic.DecoratorPreprocessing.Action.t Ast.Reference.SerializableMap.t
 
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
