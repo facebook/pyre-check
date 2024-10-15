@@ -2101,6 +2101,65 @@ def foo(x: int, __y: int) -> None:  # Error
     pass
 ```
 
+### 70: Assert Type
+
+`assert_type` is a static assertion that has no effect at runtime. Pyre will emit an error if the inferred type for the first argument does not match the type provided as the second argument.
+
+```python
+x: int = 1
+assert_type(x, str) # Error
+```
+
+### 71: Typed Dictionary Isinstance
+
+Typed dictionaries are structurally typed. This means that it is invalid to use `isinstance` to check whether something is an instance of a typed dictionary.
+
+```python
+class Coord(TypedDict):
+    x: int
+    y: int
+
+isinstance({}, Coord) # Error
+```
+
+### 72: Tuple Delete
+
+Tuples are immutable, so deleting elements is not allowed.
+
+```python
+x = (1, 2, 3)
+del x[0] # Error
+```
+
+### 73: Tuple Out of Bounds
+
+When a tuple with a concrete/known length is indexed with a literal, Pyre will emit an error if the index is out of bounds.
+
+```python
+x = (1, 2, 3)
+y: int = ...
+x[0] # OK
+x[-1] # OK
+x[5] # Error
+x[y] # OK
+```
+
+### 74: Named Tuple Default Fields
+
+Since named tuple constructors are generated based on the order fields are declared in, fields without defaults may not follow fields with defaults in a named tuple declaration.
+
+```python
+# This is OK
+class MyTuple(NamedTuple):
+    x: int
+    y: int = 1
+
+# This is not allowed
+class MyTuple2(NamedTuple):
+    x: int = 1
+    y: int
+```
+
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
