@@ -134,24 +134,26 @@ let fetch_and_externalize
     ~resolve_callable_location
     ~override_graph
     ~dump_override_models
-  = function
-  | Target.Override _ when not dump_override_models -> []
-  | callable ->
-      let model =
-        TaintFixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
-      in
-      let result =
-        TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
-      in
-      externalize
-        ~taint_configuration
-        ~fixpoint_state
-        ~resolve_module_path
-        ~resolve_callable_location
-        ~override_graph
-        callable
-        result
-        model
+    callable
+  =
+  if Target.is_override callable && not dump_override_models then
+    []
+  else
+    let model =
+      TaintFixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
+    in
+    let result =
+      TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
+    in
+    externalize
+      ~taint_configuration
+      ~fixpoint_state
+      ~resolve_module_path
+      ~resolve_callable_location
+      ~override_graph
+      callable
+      result
+      model
 
 
 let save_results_to_directory

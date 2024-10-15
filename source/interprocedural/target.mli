@@ -27,13 +27,27 @@ type method_name = {
 }
 [@@deriving show, sexp, compare, hash, eq]
 
+module Regular : sig
+  type t =
+    | Function of function_name
+    | Method of method_name
+    | Override of method_name
+    (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
+       HttpRequest.GET *)
+    | Object of string
+  [@@deriving sexp, compare, hash, eq]
+end
+
+module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
+
 type t =
-  | Function of function_name
-  | Method of method_name
-  | Override of method_name
-  (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
-     HttpRequest.GET *)
-  | Object of string
+  | Regular of Regular.t
+  | Parameterized of {
+      regular: Regular.t;
+      parameters: t ParameterMap.t;
+    }
+    (* This represents a regular callable with its function-typed parameters being instantited with
+       `parameters`. *)
 [@@deriving sexp, compare, hash, eq]
 
 module T : sig
@@ -90,6 +104,10 @@ val create : Ast.Reference.t -> Define.t -> t
 
 val create_derived_override : t -> at_type:Reference.t -> t
 
+val from_regular : Regular.t -> t
+
+val get_regular : t -> Regular.t
+
 (* Accessors. *)
 
 val get_corresponding_method : t -> t
@@ -100,19 +118,27 @@ val class_name : t -> string option
 
 val method_name : t -> string option
 
+val function_name : t -> string option
+
+val object_name : t -> Reference.t
+
 val is_function_or_method : t -> bool
+
+val is_method_or_override : t -> bool
 
 val is_method : t -> bool
 
-val is_method_or_override : t -> bool
+val is_function : t -> bool
+
+val is_override : t -> bool
+
+val is_object : t -> bool
 
 val override_to_method : t -> t
 
 (** Return the define name of a Function or Method target. Note that multiple targets can match to
     the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
 val define_name : t -> Reference.t
-
-val object_name : t -> Reference.t
 
 module Set : Stdlib.Set.S with type elt = t
 

@@ -495,11 +495,12 @@ let remove_sinks model =
 
 let add_obscure_sink ~pyre_api ~call_target model =
   let real_target =
-    match call_target with
-    | Target.Function _ -> Some call_target
-    | Target.Method _ -> Some call_target
-    | Target.Override method_name -> Some (Target.Method method_name)
-    | Target.Object _ -> None
+    match Target.get_regular call_target with
+    | Target.Regular.Function _ -> Some call_target
+    | Target.Regular.Method _ -> Some call_target
+    | Target.Regular.Override method_name ->
+        Some (Target.Regular.Method method_name |> Target.from_regular)
+    | Target.Regular.Object _ -> None
   in
   match real_target with
   | None -> model

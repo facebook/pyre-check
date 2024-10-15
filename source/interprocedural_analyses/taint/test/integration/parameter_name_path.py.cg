@@ -1,11 +1,11 @@
 @generated
 Call dependencies
-parameter_name_path.test_tito_mix_positional_and_named_parameters (fun) -> []
+parameter_name_path.$toplevel (fun) -> []
 parameter_name_path.test_tito_args_kwargs (fun) -> []
 parameter_name_path.test_tito_keyword_only_parameter (fun) -> []
-parameter_name_path.test_tito_positional_only_parameter (fun) -> []
-parameter_name_path.test_tito_regular_parameters (fun) -> []
-parameter_name_path.$toplevel (fun) -> []
 parameter_name_path.test_tito_mix1 (fun) -> []
 parameter_name_path.test_tito_mix2 (fun) -> []
 parameter_name_path.test_tito_mix3 (fun) -> []
+parameter_name_path.test_tito_mix_positional_and_named_parameters (fun) -> []
+parameter_name_path.test_tito_positional_only_parameter (fun) -> []
+parameter_name_path.test_tito_regular_parameters (fun) -> []

@@ -93,7 +93,9 @@ module Heap = struct
                 Target.Normal
             in
             Some
-              ( Target.Method { class_name = Reference.show ancestor_parent; method_name; kind },
+              ( Target.Regular.Method
+                  { class_name = Reference.show ancestor_parent; method_name; kind }
+                |> Target.from_regular,
                 class_name )
         in
         let extract_define = function
@@ -226,16 +228,17 @@ module SharedMemory = struct
     let overrides_exist handle member = T.ReadOnly.mem handle member
 
     let expand_override_targets handle callees =
-      let rec expand_and_gather expanded = function
-        | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
-        | Target.Override _ as override ->
-            let make_override at_type = Target.create_derived_override override ~at_type in
-            let overrides =
-              let member = Target.get_corresponding_method override in
-              T.ReadOnly.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
-            in
-            Target.get_corresponding_method override
-            :: List.fold overrides ~f:expand_and_gather ~init:expanded
+      let rec expand_and_gather expanded target =
+        if not (Target.is_override target) then
+          target :: expanded
+        else
+          let make_override at_type = Target.create_derived_override target ~at_type in
+          let overrides =
+            let member = Target.get_corresponding_method target in
+            T.ReadOnly.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
+          in
+          Target.get_corresponding_method target
+          :: List.fold overrides ~f:expand_and_gather ~init:expanded
       in
       List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
   end

@@ -85,7 +85,8 @@ let assert_call_graph_of_define
          ~pyre_api
          ~override_graph:
            (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-         ~attribute_targets:(Target.HashSet.of_list object_targets)
+         ~attribute_targets:
+           (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
          ~qualifier:(Reference.create "test")
          ~define)
   in
@@ -114,7 +115,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -169,12 +171,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.bool)
-                               (Target.Function { name = "test.bar"; kind = Normal });
-                             CallTarget.create
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.baz"; kind = Normal });
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
                ( "3:5-3:10",
@@ -186,11 +188,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"int"
                                      ~return_type:(Some ReturnType.bool)
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "int";
                                           method_name = "__le__";
@@ -203,11 +205,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"int"
                                      ~return_type:(Some ReturnType.bool)
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "int";
                                           method_name = "__gt__";
@@ -242,11 +244,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"int"
                                      ~return_type:(Some ReturnType.bool)
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "int";
                                           method_name = "__le__";
@@ -259,11 +261,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"int"
                                      ~return_type:(Some ReturnType.bool)
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "int";
                                           method_name = "__gt__";
@@ -278,7 +280,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -514,18 +517,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.any)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.any)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -546,18 +549,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "int"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -581,18 +584,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.any)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.any)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -617,18 +620,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.any)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.B"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.any)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -653,18 +656,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.any)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.any)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.B"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -691,10 +694,10 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.none)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "p"; kind = PropertySetter });
                           ];
                         global_targets = [];
@@ -706,10 +709,10 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.integer)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "p"; kind = Normal });
                           ];
                         global_targets = [];
@@ -736,10 +739,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -765,12 +768,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -780,13 +783,13 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~index:1
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -823,10 +826,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -858,10 +861,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.A"
-                               (Target.Override
+                               (Target.Regular.Override
                                   { class_name = "test.A"; method_name = "g"; kind = Normal });
                            ]
                          ())) );
@@ -882,11 +885,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.bool)
                                ~receiver_class:"int"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "int"; method_name = "__gt__"; kind = Normal });
                            ]
                          ())) );
@@ -911,10 +914,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "__repr__"; kind = Normal });
                            ]
                          ())) );
@@ -939,7 +942,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.create
                          ~call_targets:
-                           [CallTarget.create (Target.Function { name = "test.f"; kind = Normal })]
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.f"; kind = Normal });
+                           ]
                          ())) );
              ]
            ();
@@ -965,9 +971,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.callable_target"; kind = Normal });
+                               (Target.Regular.Function
+                                  { name = "test.callable_target"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -995,12 +1002,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~implicit_dunder_call:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"TestCallableTarget"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "TestCallableTarget";
                                     method_name = "__call__";
@@ -1028,7 +1035,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -1057,16 +1065,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "super"; method_name = "__init__"; kind = Normal });
                            ]
                          ())) );
@@ -1076,11 +1084,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1110,9 +1118,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1149,12 +1157,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1164,12 +1172,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~receiver_class:"test.D"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.D"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1179,11 +1187,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
                                ~receiver_class:"test.D"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "g"; kind = Normal });
                            ]
                          ())) );
@@ -1211,9 +1219,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.bool)
-                               (Target.Function { name = "test.hof"; kind = Normal });
+                               (Target.Regular.Function { name = "test.hof"; kind = Normal });
                            ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
@@ -1222,9 +1230,10 @@ let test_call_graph_of_define =
                                   index = 0;
                                   call_targets =
                                     [
-                                      CallTarget.create
+                                      CallTarget.create_regular
                                         ~return_type:(Some ReturnType.integer)
-                                        (Target.Function { name = "test.bar"; kind = Normal });
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
                                     ];
                                   unresolved = false;
                                 };
@@ -1258,9 +1267,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.bool)
-                               (Target.Function { name = "test.hof"; kind = Normal });
+                               (Target.Regular.Function { name = "test.hof"; kind = Normal });
                            ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
@@ -1269,9 +1278,10 @@ let test_call_graph_of_define =
                                   index = 0;
                                   call_targets =
                                     [
-                                      CallTarget.create
+                                      CallTarget.create_regular
                                         ~return_type:(Some ReturnType.integer)
-                                        (Target.Function { name = "test.foo"; kind = Normal });
+                                        (Target.Regular.Function
+                                           { name = "test.foo"; kind = Normal });
                                     ];
                                   unresolved = false;
                                 };
@@ -1279,9 +1289,10 @@ let test_call_graph_of_define =
                                   index = 1;
                                   call_targets =
                                     [
-                                      CallTarget.create
+                                      CallTarget.create_regular
                                         ~return_type:(Some ReturnType.integer)
-                                        (Target.Function { name = "test.bar"; kind = Normal });
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
                                     ];
                                   unresolved = false;
                                 };
@@ -1315,9 +1326,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "len"; kind = Normal });
+                               (Target.Regular.Function { name = "len"; kind = Normal });
                            ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
@@ -1326,9 +1337,9 @@ let test_call_graph_of_define =
                                   index = 0;
                                   call_targets =
                                     [
-                                      CallTarget.create
+                                      CallTarget.create_regular
                                         ~implicit_receiver:true
-                                        (Target.Method
+                                        (Target.Regular.Method
                                            {
                                              class_name = "test.Enum";
                                              method_name = "value";
@@ -1356,16 +1367,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "map"; method_name = "__init__"; kind = Normal });
                            ]
                          ~higher_order_parameters:
@@ -1404,16 +1415,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "test.Builder";
                                     method_name = "__init__";
@@ -1427,10 +1438,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.Builder"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "test.Builder";
                                     method_name = "set_not_saved";
@@ -1444,10 +1455,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.Builder"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "test.Builder";
                                     method_name = "set_saved";
@@ -1478,9 +1489,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.f"; kind = Normal });
+                               (Target.Regular.Function { name = "test.f"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -1508,11 +1519,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "m"; kind = Normal });
                            ]
                          ())) );
@@ -1540,12 +1551,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                ~implicit_receiver:true
                                ~implicit_dunder_call:true
                                ~receiver_class:"functools._lru_cache_wrapper"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "functools._lru_cache_wrapper";
                                     method_name = "__call__";
@@ -1576,16 +1587,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ())) );
@@ -1595,10 +1606,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "run"; kind = Normal });
                            ]
                          ())) );
@@ -1611,10 +1622,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -1627,10 +1638,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.Iterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -1689,11 +1700,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:(Some ReturnType.integer)
                                      ~receiver_class:"contextlib.ContextManager"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "contextlib.ContextManager";
                                           method_name = "__enter__";
@@ -1706,8 +1717,8 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
-                                     (Target.Function { name = "test.to_cm"; kind = Normal });
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.to_cm"; kind = Normal });
                                  ]
                                ()) );
                       ]) );
@@ -1738,10 +1749,10 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.any)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "p"; kind = Normal });
                           ];
                         global_targets = [];
@@ -1753,10 +1764,10 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.none)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "p"; kind = PropertySetter });
                           ];
                         global_targets = [];
@@ -1785,11 +1796,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1799,10 +1810,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -1838,15 +1849,15 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.integer)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "foo"; kind = Normal });
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.bool)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.D"; method_name = "foo"; kind = Normal });
                           ];
                         global_targets = [];
@@ -1858,11 +1869,11 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~index:1
                               ~return_type:(Some ReturnType.integer)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "foo"; kind = Normal });
                           ];
                         global_targets = [];
@@ -1898,15 +1909,15 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.integer)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "foo"; kind = Normal });
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
                               ~return_type:(Some ReturnType.integer)
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.D"; method_name = "foo"; kind = Normal });
                           ];
                         global_targets = [];
@@ -1937,7 +1948,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.d")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.d");
+                          ];
                         nonlocal_targets = [];
                       }) );
                ( "11:2-11:6",
@@ -1946,10 +1961,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"dict"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "dict";
                                     method_name = "__getitem__";
@@ -1963,11 +1978,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -1998,7 +2013,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.foo"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "10:2-10:20",
@@ -2007,10 +2023,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"dict"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "dict";
                                     method_name = "__setitem__";
@@ -2024,7 +2040,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
                ( "11:2-11:18",
@@ -2033,11 +2050,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"dict"
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "dict";
                                     method_name = "__setitem__";
@@ -2051,7 +2068,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.baz"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
                ( "11:13-11:18",
@@ -2060,9 +2078,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
-                               (Target.Function { name = "test.bar"; kind = Normal });
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
                ( "12:2-12:8",
@@ -2071,10 +2089,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"dict"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "dict";
                                     method_name = "__getitem__";
@@ -2088,11 +2106,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"dict"
                                ~index:2
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "dict";
                                     method_name = "__setitem__";
@@ -2121,8 +2139,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
-                               (Target.Function { name = "test.outer.inner"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.outer.inner"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2147,8 +2165,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
-                               (Target.Function { name = "test.Foo.outer.inner"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function
+                                  { name = "test.Foo.outer.inner"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2182,10 +2201,10 @@ let test_call_graph_of_define =
                           ExpressionCallees.from_string_format
                             (StringFormatCallees.from_stringify_targets
                                [
-                                 CallTarget.create
+                                 CallTarget.create_regular
                                    ~implicit_receiver:true
                                    ~receiver_class:"str"
-                                   (Target.Method
+                                   (Target.Regular.Method
                                       { class_name = "str"; method_name = "__str__"; kind = Normal });
                                ]) );
                         ( "m",
@@ -2193,10 +2212,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"test.C"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         { class_name = "test.C"; method_name = "m"; kind = Normal });
                                  ]
                                ()) );
@@ -2224,9 +2243,9 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets =
                           [
-                            CallTarget.create
+                            CallTarget.create_regular
                               ~implicit_receiver:true
-                              (Target.Method
+                              (Target.Regular.Method
                                  { class_name = "test.C"; method_name = "attribute"; kind = Normal });
                           ];
                         global_targets = [];
@@ -2260,7 +2279,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.foo"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "10:4-10:10",
@@ -2269,7 +2289,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2297,16 +2318,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "BaseException";
                                     method_name = "__init__";
@@ -2320,7 +2341,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2354,9 +2376,9 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -2369,9 +2391,9 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -2386,7 +2408,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.baz"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ~unresolved:true
                          ())) );
@@ -2420,9 +2443,9 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -2435,9 +2458,9 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -2452,7 +2475,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.bar"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ~unresolved:true
                          ())) );
@@ -2492,9 +2516,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2533,11 +2557,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.Foo"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2574,9 +2598,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2612,10 +2636,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2645,7 +2669,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.foo"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2674,9 +2699,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2718,12 +2743,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~receiver_class:"test.Foo"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2764,10 +2789,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2809,12 +2834,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~is_class_method:true
                                ~receiver_class:"test.Foo"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                            ]
                          ())) );
@@ -2852,7 +2877,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create (Target.Function { name = "test.foo"; kind = Normal });
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -2880,7 +2906,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.create
                          ~call_targets:
-                           [CallTarget.create (Target.Function { name = "print"; kind = Normal })]
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "print"; kind = Normal });
+                           ]
                          ())) );
              ]
            ();
@@ -2911,7 +2940,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.create
                          ~call_targets:
-                           [CallTarget.create (Target.Function { name = "print"; kind = Normal })]
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "print"; kind = Normal });
+                           ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
                               [
@@ -2919,11 +2951,11 @@ let test_call_graph_of_define =
                                   index = 0;
                                   call_targets =
                                     [
-                                      CallTarget.create
+                                      CallTarget.create_regular
                                         ~implicit_receiver:true
                                         ~implicit_dunder_call:true
                                         ~receiver_class:"test.CallableClass"
-                                        (Target.Method
+                                        (Target.Regular.Method
                                            {
                                              class_name = "test.CallableClass";
                                              method_name = "__call__";
@@ -2938,7 +2970,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.Token.token"]
+           ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
       class Token:
@@ -2959,14 +2991,19 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets = [];
                         global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.Token.token")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.Token.token");
+                          ];
                         is_attribute = true;
                       }) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.A.attribute"; Target.Object "test.C.attribute"]
+           ~object_targets:
+             [Target.Regular.Object "test.A.attribute"; Target.Regular.Object "test.C.attribute"]
            ~source:
              {|
       from typing import Union
@@ -2993,8 +3030,12 @@ let test_call_graph_of_define =
                         AttributeAccessCallees.property_targets = [];
                         global_targets =
                           [
-                            CallTarget.create ~return_type:None (Target.Object "test.A.attribute");
-                            CallTarget.create ~return_type:None (Target.Object "test.C.attribute");
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.A.attribute");
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.C.attribute");
                           ];
                         is_attribute = true;
                       }) );
@@ -3002,7 +3043,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.Token.token"]
+           ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
       from typing import Optional
@@ -3025,14 +3066,18 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets = [];
                         global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.Token.token")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.Token.token");
+                          ];
                         is_attribute = true;
                       }) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.Token.token"]
+           ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
       class Token:
@@ -3053,8 +3098,8 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
-                                     (Target.Function { name = "getattr"; kind = Normal });
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "getattr"; kind = Normal });
                                  ]
                                ()) );
                         ( "token",
@@ -3063,9 +3108,9 @@ let test_call_graph_of_define =
                               AttributeAccessCallees.property_targets = [];
                               global_targets =
                                 [
-                                  CallTarget.create
+                                  CallTarget.create_regular
                                     ~return_type:None
-                                    (Target.Object "test.Token.token");
+                                    (Target.Regular.Object "test.Token.token");
                                 ];
                               is_attribute = true;
                             } );
@@ -3074,7 +3119,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.Token.token"]
+           ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
       class Token:
@@ -3092,10 +3137,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.Token"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "object";
                                     method_name = "__setattr__";
@@ -3135,7 +3180,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.x");
+                          ];
                         nonlocal_targets = [];
                       }) );
              ]
@@ -3166,10 +3215,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"int"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "7:15-7:16",
@@ -3177,11 +3226,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"float"
                              ~index:1
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "7:18-7:19",
@@ -3189,10 +3238,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"str"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "str"; method_name = "__str__"; kind = Normal });
                          ])) );
                ( "7:21-7:22",
@@ -3200,11 +3249,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~index:2
                              ~receiver_class:"list"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "7:24-7:25",
@@ -3212,11 +3261,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~index:3
                              ~receiver_class:"list"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "7:27-7:28",
@@ -3224,11 +3273,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~index:4
                              ~receiver_class:"int"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "7:30-7:31",
@@ -3236,11 +3285,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~index:1
                              ~receiver_class:"str"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "str"; method_name = "__str__"; kind = Normal });
                          ])) );
                ( "7:33-7:34",
@@ -3248,11 +3297,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~index:5
                              ~receiver_class:"float"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
              ]
@@ -3284,9 +3333,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.none)
-                               (Target.Function { name = "test.bar"; kind = Normal });
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
                ( "4:9-4:15",
@@ -3324,10 +3373,10 @@ let test_call_graph_of_define =
                       (StringFormatCallees.from_stringify_targets
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"object"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
              ]
@@ -3354,10 +3403,10 @@ let test_call_graph_of_define =
                       (StringFormatCallees.from_stringify_targets
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"object"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "3:16-3:17",
@@ -3366,11 +3415,11 @@ let test_call_graph_of_define =
                       (StringFormatCallees.from_stringify_targets
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"object"
                              ~index:1
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
              ]
@@ -3415,16 +3464,16 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -3435,10 +3484,10 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              (* TODO(T146836847): Missing the stringify callee. *)
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"str"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "str"; method_name = "__mod__"; kind = Normal });
                            ]
                          ())) );
@@ -3467,10 +3516,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"Exception"
-                             (Target.Method
+                             (Target.Regular.Method
                                 {
                                   class_name = "BaseException";
                                   method_name = "__str__";
@@ -3496,9 +3545,9 @@ let test_call_graph_of_define =
                             (StringFormatCallees.from_stringify_targets
                                [
                                  (* TODO(T112761296): Probably wrong call resolution *)
-                                 CallTarget.create
+                                 CallTarget.create_regular
                                    ~index:1
-                                   (Target.Method
+                                   (Target.Regular.Method
                                       {
                                         class_name = "BaseException";
                                         method_name = "__str__";
@@ -3510,9 +3559,9 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~new_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~is_static_method:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "type";
                                           method_name = "__new__";
@@ -3521,9 +3570,9 @@ let test_call_graph_of_define =
                                  ]
                                ~init_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "type";
                                           method_name = "__init__";
@@ -3557,12 +3606,13 @@ let test_call_graph_of_define =
                       (StringFormatCallees.from_stringify_targets
                          [
                            (* TODO(T112761296): Wrong call resolution *)
-                           CallTarget.create
-                             (Target.Function { name = "BaseException.__str__"; kind = Normal });
-                           CallTarget.create
+                           CallTarget.create_regular
+                             (Target.Regular.Function
+                                { name = "BaseException.__str__"; kind = Normal });
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"str"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "str"; method_name = "__str__"; kind = Normal });
                          ])) );
              ]
@@ -3590,8 +3640,8 @@ let test_call_graph_of_define =
                       (StringFormatCallees.from_stringify_targets
                          [
                            (* TODO(T112761296): Wrong call resolution *)
-                           CallTarget.create
-                             (Target.Method
+                           CallTarget.create_regular
+                             (Target.Regular.Method
                                 {
                                   class_name = "BaseException";
                                   method_name = "__str__";
@@ -3632,19 +3682,21 @@ let test_call_graph_of_define =
                             (StringFormatCallees.from_stringify_targets
                                [
                                  (* TODO(T112761296): Probably wrong call resolution *)
-                                 CallTarget.create
-                                   (Target.Function { name = "object.__str__"; kind = Normal });
-                                 CallTarget.create
-                                   (Target.Function { name = "test.A.__str__"; kind = Normal });
+                                 CallTarget.create_regular
+                                   (Target.Regular.Function
+                                      { name = "object.__str__"; kind = Normal });
+                                 CallTarget.create_regular
+                                   (Target.Regular.Function
+                                      { name = "test.A.__str__"; kind = Normal });
                                ]) );
                         ( "__class__",
                           ExpressionCallees.from_attribute_access
                             {
                               AttributeAccessCallees.property_targets =
                                 [
-                                  CallTarget.create
+                                  CallTarget.create_regular
                                     ~implicit_receiver:true
-                                    (Target.Method
+                                    (Target.Regular.Method
                                        {
                                          class_name = "object";
                                          method_name = "__class__";
@@ -3687,8 +3739,8 @@ let test_call_graph_of_define =
                             (StringFormatCallees.from_stringify_targets
                                [
                                  (* TODO(T112761296): Probably wrong call resolution *)
-                                 CallTarget.create
-                                   (Target.Method
+                                 CallTarget.create_regular
+                                   (Target.Regular.Method
                                       {
                                         class_name = "test.A";
                                         method_name = "__str__";
@@ -3700,9 +3752,9 @@ let test_call_graph_of_define =
                             {
                               AttributeAccessCallees.property_targets =
                                 [
-                                  CallTarget.create
+                                  CallTarget.create_regular
                                     ~implicit_receiver:true
-                                    (Target.Method
+                                    (Target.Regular.Method
                                        {
                                          class_name = "object";
                                          method_name = "__class__";
@@ -3731,9 +3783,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "BaseException";
                                     method_name = "__str__";
@@ -3747,9 +3799,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "str"; method_name = "__add__"; kind = Normal });
                            ]
                          ())) );
@@ -3781,9 +3833,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:0
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "10:4-10:9",
@@ -3792,9 +3844,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "11:4-11:9",
@@ -3803,9 +3855,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:0
-                               (Target.Function { name = "test.bar"; kind = Normal });
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
                ( "12:4-12:9",
@@ -3814,9 +3866,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:2
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "13:4-13:9",
@@ -3825,9 +3877,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
-                               (Target.Function { name = "test.bar"; kind = Normal });
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -3851,9 +3903,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:3
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "6:8-6:13",
@@ -3862,9 +3914,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:0
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "6:15-6:25",
@@ -3873,9 +3925,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:2
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
                ( "6:19-6:24",
@@ -3884,9 +3936,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -3926,17 +3978,17 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:0
                                ~receiver_class:"test.B"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:0
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -3946,10 +3998,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:0
                                ~return_type:(Some ReturnType.bool)
-                               (Target.Function { name = "isinstance"; kind = Normal });
+                               (Target.Regular.Function { name = "isinstance"; kind = Normal });
                            ]
                          ())) );
                ( "17:8-17:15",
@@ -3958,13 +4010,13 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                  (* Assigned index is 2 instead of 1, because we use the control
                                     flow graph traversal order. *)
                                ~index:2
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -3974,11 +4026,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:1
                                ~receiver_class:"test.B"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -3990,10 +4042,10 @@ let test_call_graph_of_define =
                            [
                              (* Assigned index is 2 instead of 1, because we visit the if statement
                                 twice. *)
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:2
                                ~return_type:(Some ReturnType.bool)
-                               (Target.Function { name = "isinstance"; kind = Normal });
+                               (Target.Regular.Function { name = "isinstance"; kind = Normal });
                            ]
                          ())) );
                ( "22:8-22:15",
@@ -4002,11 +4054,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:3
                                ~receiver_class:"test.B"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
                          ())) );
@@ -4031,11 +4083,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.any)
                                ~receiver_class:"list"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "list"; method_name = "__iter__"; kind = Normal });
                            ]
                          ())) );
@@ -4045,11 +4097,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"typing.Iterator"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "typing.Iterator";
                                     method_name = "__next__";
@@ -4077,11 +4129,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"list"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "list";
                                     method_name = "__getitem__";
@@ -4120,9 +4172,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -4150,9 +4202,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -4180,9 +4232,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.baz"; kind = Normal });
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -4212,9 +4264,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Function { name = "test.baz"; kind = Normal });
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -4251,9 +4303,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Override
+                               (Target.Regular.Override
                                   {
                                     Target.class_name = "test.Base";
                                     method_name = "query";
@@ -4267,18 +4319,18 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.Base";
                                     method_name = "query";
                                     kind = Normal;
                                   });
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.SubChild";
                                     method_name = "query";
@@ -4324,9 +4376,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.BaseA";
                                     method_name = "query";
@@ -4340,10 +4392,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     (* Not `test.BaseC`, because `A` is the first parent class of
                                        `Child`. *)
@@ -4386,10 +4438,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -4399,11 +4451,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
@@ -4413,11 +4465,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "h"; kind = Normal });
                            ]
                          ())) );
@@ -4427,12 +4479,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~is_class_method:true
                                ~receiver_class:"test.C"
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "h"; kind = Normal });
                            ]
                          ())) );
@@ -4476,9 +4528,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Override
+                               (Target.Regular.Override
                                   {
                                     Target.class_name = "test.A";
                                     method_name = "query";
@@ -4492,20 +4544,20 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                              (* TODO(T118125320): Return type is None, which is incorrect *)
                                ~implicit_receiver:true
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.A";
                                     method_name = "query";
                                     kind = Normal;
                                   });
-                             CallTarget.create
+                             CallTarget.create_regular
                              (* TODO(T118125320): Return type is None, which is incorrect *)
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.D";
                                     method_name = "query";
@@ -4519,11 +4571,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.C"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.C";
                                     method_name = "query";
@@ -4537,12 +4589,12 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.D"
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.D";
                                     method_name = "query";
@@ -4581,9 +4633,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.A";
                                     method_name = "query";
@@ -4613,10 +4665,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__aiter__";
@@ -4629,10 +4681,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -4678,10 +4730,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__aiter__";
@@ -4694,7 +4746,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -4705,7 +4757,7 @@ let test_call_graph_of_define =
                                             is_enumeration = false;
                                           })
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -4723,10 +4775,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -4739,7 +4791,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -4750,7 +4802,7 @@ let test_call_graph_of_define =
                                             is_enumeration = false;
                                           })
                                      ~receiver_class:"typing.Iterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -4768,10 +4820,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterable"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterable";
                                           method_name = "__aiter__";
@@ -4784,7 +4836,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -4796,7 +4848,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.AsyncIterator"
                                      ~index:1
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -4810,7 +4862,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.create
                          ~call_targets:
-                           [CallTarget.create (Target.Function { name = "test.g"; kind = Normal })]
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.g"; kind = Normal });
+                           ]
                          ())) );
                ( "13:18-13:25",
                  LocationCallees.Compound
@@ -4821,11 +4876,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
                                      ~index:1
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -4838,7 +4893,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.Iterator"
                                      ~return_type:
@@ -4850,7 +4905,7 @@ let test_call_graph_of_define =
                                             is_enumeration = false;
                                           })
                                      ~index:1
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -4863,10 +4918,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"test.A"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         { class_name = "test.A"; method_name = "f"; kind = Normal });
                                  ]
                                ()) );
@@ -4880,11 +4935,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
                                      ~index:2
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -4897,7 +4952,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -4909,7 +4964,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.Iterator"
                                      ~index:2
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -4927,11 +4982,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterable"
                                      ~index:1
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterable";
                                           method_name = "__aiter__";
@@ -4944,7 +4999,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -4956,7 +5011,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.AsyncIterator"
                                      ~index:2
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -4974,11 +5029,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
                                      ~index:3
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -4991,7 +5046,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -5003,7 +5058,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.Iterator"
                                      ~index:3
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -5021,11 +5076,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterable"
                                      ~index:2
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterable";
                                           method_name = "__aiter__";
@@ -5038,7 +5093,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -5050,7 +5105,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.AsyncIterator"
                                      ~index:3
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -5068,11 +5123,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"list"
                                      ~index:4
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "list";
                                           method_name = "__iter__";
@@ -5085,7 +5140,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -5097,7 +5152,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.Iterator"
                                      ~index:4
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.Iterator";
                                           method_name = "__next__";
@@ -5115,11 +5170,11 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterable"
                                      ~index:3
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterable";
                                           method_name = "__aiter__";
@@ -5132,7 +5187,7 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~return_type:
                                        (Some
@@ -5144,7 +5199,7 @@ let test_call_graph_of_define =
                                           })
                                      ~receiver_class:"typing.AsyncIterator"
                                      ~index:4
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -5178,10 +5233,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__aiter__";
@@ -5194,10 +5249,10 @@ let test_call_graph_of_define =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
+                                   CallTarget.create_regular
                                      ~implicit_receiver:true
                                      ~receiver_class:"typing.AsyncIterator"
-                                     (Target.Method
+                                     (Target.Regular.Method
                                         {
                                           class_name = "typing.AsyncIterator";
                                           method_name = "__anext__";
@@ -5212,10 +5267,10 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"test.B"
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     Target.class_name = "test.B";
                                     method_name = "foo";
@@ -5253,7 +5308,12 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.x")];
+                          [
+                            CallTarget.create_regular
+                              ~index:0
+                              ~return_type:None
+                              (Target.Regular.Object "test.x");
+                          ];
                         nonlocal_targets = [];
                       }) );
                ( "10:2-10:3",
@@ -5261,7 +5321,12 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.y")];
+                          [
+                            CallTarget.create_regular
+                              ~index:0
+                              ~return_type:None
+                              (Target.Regular.Object "test.y");
+                          ];
                         nonlocal_targets = [];
                       }) );
                ( "12:2-12:8",
@@ -5270,9 +5335,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:0
-                               (Target.Function { name = "test.baz"; kind = Normal });
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
                ( "12:6-12:7",
@@ -5280,7 +5345,12 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.x")];
+                          [
+                            CallTarget.create_regular
+                              ~index:1
+                              ~return_type:None
+                              (Target.Regular.Object "test.x");
+                          ];
                         nonlocal_targets = [];
                       }) );
                ( "13:2-13:8",
@@ -5289,9 +5359,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
-                               (Target.Function { name = "test.baz"; kind = Normal });
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
                ( "13:6-13:7",
@@ -5299,7 +5369,12 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.y")];
+                          [
+                            CallTarget.create_regular
+                              ~index:1
+                              ~return_type:None
+                              (Target.Regular.Object "test.y");
+                          ];
                         nonlocal_targets = [];
                       }) );
              ]
@@ -5324,14 +5399,18 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.x");
+                          ];
                         nonlocal_targets = [];
                       }) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.A.B"]
+           ~object_targets:[Target.Regular.Object "test.A.B"]
            ~source:
              {|
       from typing import Any, MutableMapping
@@ -5356,7 +5435,11 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets = [];
                         global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.A.B")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.A.B");
+                          ];
                         is_attribute = true;
                       }) );
                ( "13:4-13:18",
@@ -5365,11 +5448,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"typing.MutableMapping"
                                ~return_type:(Some ReturnType.none)
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "typing.Mapping";
                                     method_name = "get";
@@ -5381,7 +5464,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~object_targets:[Target.Object "test.A.B"]
+           ~object_targets:[Target.Regular.Object "test.A.B"]
            ~source:
              {|
       from typing import Any, MutableMapping
@@ -5404,7 +5487,11 @@ let test_call_graph_of_define =
                       {
                         AttributeAccessCallees.property_targets = [];
                         global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.A.B")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.A.B");
+                          ];
                         is_attribute = true;
                       }) );
                ( "11:4-11:18",
@@ -5413,11 +5500,11 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~receiver_class:"typing.MutableMapping"
                                ~return_type:(Some ReturnType.none)
-                               (Target.Method
+                               (Target.Regular.Method
                                   {
                                     class_name = "typing.Mapping";
                                     method_name = "get";
@@ -5443,7 +5530,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.global_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.x");
+                          ];
                         nonlocal_targets = [];
                       }) );
              ]
@@ -5466,7 +5557,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.nonlocal_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.outer.x")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.outer.x");
+                          ];
                         global_targets = [];
                       }) );
              ]
@@ -5488,7 +5583,11 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_identifier
                       {
                         IdentifierCallees.nonlocal_targets =
-                          [CallTarget.create ~return_type:None (Target.Object "test.outer.x")];
+                          [
+                            CallTarget.create_regular
+                              ~return_type:None
+                              (Target.Regular.Object "test.outer.x");
+                          ];
                         global_targets = [];
                       }) );
              ]
@@ -5542,16 +5641,16 @@ let test_call_graph_of_define_foo_and_bar =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -5561,18 +5660,18 @@ let test_call_graph_of_define_foo_and_bar =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:1
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:1
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -5582,18 +5681,18 @@ let test_call_graph_of_define_foo_and_bar =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:2
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:2
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -5603,18 +5702,18 @@ let test_call_graph_of_define_foo_and_bar =
                       (CallCallees.create
                          ~init_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~implicit_receiver:true
                                ~index:3
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__init__"; kind = Normal });
                            ]
                          ~new_targets:
                            [
-                             CallTarget.create
+                             CallTarget.create_regular
                                ~index:3
                                ~is_static_method:true
-                               (Target.Method
+                               (Target.Regular.Method
                                   { class_name = "object"; method_name = "__new__"; kind = Normal });
                            ]
                          ())) );
@@ -5630,10 +5729,10 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.A"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "test.A"; method_name = "__str__"; kind = Normal });
                          ])) );
                ( "25:20-25:21",
@@ -5641,10 +5740,10 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.B"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "test.B"; method_name = "__repr__"; kind = Normal });
                          ])) );
                ( "25:28-25:29",
@@ -5652,10 +5751,10 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.C"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "test.C"; method_name = "__str__"; kind = Normal });
                          ])) );
                ( "25:31-25:32",
@@ -5663,10 +5762,10 @@ let test_call_graph_of_define_foo_and_bar =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.D"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__repr__"; kind = Normal });
                          ])) );
              ]
@@ -5691,25 +5790,25 @@ let test_call_graph_of_define_foo_and_bar =
                          [
                            (* TODO(T112028293): Properly resolve `__str__` calls on union-typed
                               variables *)
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.B"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__str__"; kind = Normal });
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.D"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "object"; method_name = "__str__"; kind = Normal });
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.A"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "test.A"; method_name = "__str__"; kind = Normal });
-                           CallTarget.create
+                           CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"test.C"
-                             (Target.Method
+                             (Target.Regular.Method
                                 { class_name = "test.C"; method_name = "__str__"; kind = Normal });
                          ])) );
              ]

@@ -215,14 +215,27 @@ module CallTarget = struct
     | name, _ -> name
 
 
+  let default =
+    {
+      target = "<default_call_target>" |> Reference.create |> Target.create_object;
+      implicit_receiver = false;
+      implicit_dunder_call = false;
+      index = 0;
+      return_type = Some ReturnType.any;
+      receiver_class = None;
+      is_class_method = false;
+      is_static_method = false;
+    }
+
+
   let create
-      ?(implicit_receiver = false)
-      ?(implicit_dunder_call = false)
-      ?(index = 0)
-      ?(return_type = Some ReturnType.any)
+      ?(implicit_receiver = default.implicit_receiver)
+      ?(implicit_dunder_call = default.implicit_dunder_call)
+      ?(index = default.index)
+      ?(return_type = default.return_type)
       ?receiver_class
-      ?(is_class_method = false)
-      ?(is_static_method = false)
+      ?(is_class_method = default.is_class_method)
+      ?(is_static_method = default.is_static_method)
       target
     =
     {
@@ -235,6 +248,28 @@ module CallTarget = struct
       is_class_method;
       is_static_method;
     }
+
+
+  let create_regular
+      ?(implicit_receiver = default.implicit_receiver)
+      ?(implicit_dunder_call = default.implicit_dunder_call)
+      ?(index = default.index)
+      ?(return_type = default.return_type)
+      ?receiver_class
+      ?(is_class_method = default.is_class_method)
+      ?(is_static_method = default.is_static_method)
+      target
+    =
+    target
+    |> Target.from_regular
+    |> create
+         ~implicit_receiver
+         ~implicit_dunder_call
+         ~index
+         ~return_type
+         ?receiver_class
+         ~is_class_method
+         ~is_static_method
 
 
   let equal_ignoring_types
@@ -553,9 +588,12 @@ module CallCallees = struct
 
 
   let is_method_of_class ~is_class_name callees =
-    let is_call_target = function
-      | { CallTarget.target = Method { class_name; _ }; receiver_class = Some receiver_class; _ }
-      | { target = Override { class_name; _ }; receiver_class = Some receiver_class; _ } ->
+    let is_call_target call_target =
+      match
+        Target.get_regular call_target.CallTarget.target, call_target.CallTarget.receiver_class
+      with
+      | Target.Regular.Method { class_name; _ }, Some receiver_class
+      | Target.Regular.Override { class_name; _ }, Some receiver_class ->
           (* Is it not enough to check the class name, since methods can be inherited.
            * For instance, `__iter__` is not defined on `Mapping`, but is defined in the parent class `Iterable`. *)
           is_class_name class_name || is_class_name receiver_class
@@ -604,27 +642,22 @@ module CallCallees = struct
 
   let is_object_new = function
     | [] -> (* Unresolved call, assume it's object.__new__ *) true
-    | [
-        {
-          CallTarget.target =
-            Target.Method { class_name = "object"; method_name = "__new__"; kind = Normal };
-          _;
-        };
-      ] ->
-        true
+    | [call_target] -> (
+        match Target.get_regular call_target.CallTarget.target with
+        | Target.Regular.Method { class_name = "object"; method_name = "__new__"; kind = Normal } ->
+            true
+        | _ -> false)
     | _ -> false
 
 
   let is_object_init = function
     | [] -> (* Unresolved call, assume it's object.__init__ *) true
-    | [
-        {
-          CallTarget.target =
-            Target.Method { class_name = "object"; method_name = "__init__"; kind = Normal };
-          _;
-        };
-      ] ->
-        true
+    | [call_target] -> (
+        match Target.get_regular call_target.CallTarget.target with
+        | Target.Regular.Method { class_name = "object"; method_name = "__init__"; kind = Normal }
+          ->
+            true
+        | _ -> false)
     | _ -> false
 
 
@@ -1293,8 +1326,8 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
   in
   let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
   let declaring_type, method_name, kind =
-    match implementation_target with
-    | Target.Method { class_name; method_name; kind } ->
+    match Target.get_regular implementation_target with
+    | Target.Regular.Method { class_name; method_name; kind } ->
         Reference.create class_name, method_name, kind
     | _ -> failwith "Unexpected target"
   in
@@ -1341,7 +1374,8 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
         let override_targets =
           let create_override_target class_name =
             get_actual_target
-              (Target.Method { class_name = Reference.show class_name; method_name; kind })
+              (Target.Regular.Method { class_name = Reference.show class_name; method_name; kind }
+              |> Target.from_regular)
           in
           List.filter overriding_types ~f:keep_subtypes
           |> fun subtypes -> List.map subtypes ~f:create_override_target
@@ -1495,12 +1529,13 @@ let rec resolve_callees_from_type
                     ~return_type
                 in
                 let target =
-                  Target.Method
+                  Target.Regular.Method
                     {
                       Target.class_name = primitive_callable_name;
                       method_name = "__call__";
                       kind = Normal;
                     }
+                  |> Target.from_regular
                 in
                 CallCallees.create
                   ~call_targets:
@@ -1934,7 +1969,7 @@ let resolve_recognized_callees
               call_indexer
               ~implicit_dunder_call:false
               ~return_type:(Some return_type)
-              (Target.Function { name; kind = Normal });
+              (Target.Regular.Function { name; kind = Normal } |> Target.from_regular);
           ]
         ()
   | _ -> None
@@ -1979,7 +2014,8 @@ let resolve_callee_ignoring_decorators
                 call_indexer
                 ~implicit_dunder_call:false
                 ~return_type:(Some (return_type ()))
-                (Target.Function { name = Reference.show name; kind = Normal });
+                (Target.Regular.Function { name = Reference.show name; kind = Normal }
+                |> Target.from_regular);
             ]
         | Some
             (ResolvedReference.ModuleAttribute
@@ -2006,7 +2042,9 @@ let resolve_callee_ignoring_decorators
                     ~return_type:(Some (return_type ()))
                     ~is_class_method
                     ~is_static_method:static
-                    (Target.Method { Target.class_name; method_name = attribute; kind = Normal });
+                    (Target.Regular.Method
+                       { Target.class_name; method_name = attribute; kind = Normal }
+                    |> Target.from_regular);
                 ]
             | Some attribute ->
                 let () =
@@ -2070,8 +2108,9 @@ let resolve_callee_ignoring_decorators
                   Type.Parametric
                     { name = "type"; arguments = [Single (Type.Primitive class_name)] }
                 in
-                Target.Method
+                Target.Regular.Method
                   { Target.class_name = base_class; method_name = attribute; kind = Normal }
+                |> Target.from_regular
                 (* Over-approximately consider that any overriding method might be called. We
                    prioritize reducing false negatives than reducing false positives. *)
                 |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
@@ -2540,7 +2579,7 @@ struct
       in
       let call_target =
         {
-          CallTarget.target = Target.Object target;
+          CallTarget.target = Target.Regular.Object target |> Target.from_regular;
           implicit_receiver = false;
           implicit_dunder_call = false;
           index = 0;

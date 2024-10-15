@@ -1,6 +1,7 @@
 @generated
 Call dependencies
 global.$toplevel (fun) -> [_test_source (fun) global.create_global_source (fun) global.obj1 (object) global.obj2 (object) global.obj3 (object) global.obj4 (object) global.obj6 (object) global.obj8 (object) object.__init__ (method) object.__new__ (method)]
+global.Object.$class_toplevel (method) -> []
 global.create_global_source (fun) -> [_test_source (fun)]
 global.obj1_flow (fun) -> [global.obj1_sink (fun) global.obj1_source (fun)]
 global.obj1_no_flow (fun) -> [global.obj1_sink (fun) global.obj1_source (fun)]
@@ -21,4 +22,3 @@ global.obj8_flow (fun) -> [_test_sink (fun) _test_source (fun) global.obj8_retur
 global.obj8_return (fun) -> [global.obj8 (object)]
 global.obj8_set (fun) -> [global.obj8 (object)]
 global.return_global_source (fun) -> []
-global.Object.$class_toplevel (method) -> []

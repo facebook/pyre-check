@@ -29,7 +29,7 @@ let test_callables context =
     |> assert_equal
          ~printer:(List.to_string ~f:Target.show_pretty)
          ~cmp:(List.equal Target.equal)
-         expected
+         (List.map ~f:Target.from_regular expected)
   in
   assert_callables
     {|
@@ -39,9 +39,10 @@ let test_callables context =
     |}
     ~expected:
       [
-        Target.Function { name = "test.$toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Method
+          { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
     {|
@@ -60,9 +61,10 @@ let test_callables context =
     |}
     ~expected:
       [
-        Target.Function { name = "test.$toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Method
+          { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
     {|
@@ -115,10 +117,11 @@ let test_callables context =
     |}
     ~expected:
       [
-        Target.Function { name = "test.$toplevel"; kind = Normal };
-        Target.Function { name = "test.test_int"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Function { name = "test.test_int"; kind = Normal };
+        Target.Regular.Method
+          { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
     "pass"
@@ -133,7 +136,7 @@ let test_callables context =
           |}
         );
       ]
-    ~expected:[Target.Function { name = "test.$toplevel"; kind = Normal }];
+    ~expected:[Target.Regular.Function { name = "test.$toplevel"; kind = Normal }];
 
   assert_callables
     ~source_filename:"test.pyi"
@@ -143,7 +146,8 @@ let test_callables context =
         def foo() -> int:
           ...
     |}
-    ~expected:[Target.Method { class_name = "test.Toplevel"; method_name = "foo"; kind = Normal }]
+    ~expected:
+      [Target.Regular.Method { class_name = "test.Toplevel"; method_name = "foo"; kind = Normal }]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

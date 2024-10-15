@@ -1,4 +1,4 @@
 @generated
 Overrides
-via_attribute_name.TitoAttributes.__init__ (override) -> [via_attribute_name.TitoAttributes.__init__ (method)]
 object.__init__ (override) -> [object.__init__ (method) via_attribute_name.TitoAttributes.__init__ (override)]
+via_attribute_name.TitoAttributes.__init__ (override) -> [via_attribute_name.TitoAttributes.__init__ (method)]

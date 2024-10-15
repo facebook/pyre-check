@@ -1344,12 +1344,12 @@ end = struct
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
       let class_intervals =
-        match callee with
-        | Target.Object _
-        | Target.Function _ ->
+        match Target.get_regular callee with
+        | Target.Regular.Object _
+        | Target.Regular.Function _ ->
             Some call_info_intervals
-        | Target.Method _
-        | Target.Override _ ->
+        | Target.Regular.Method _
+        | Target.Regular.Override _ ->
             let class_intervals = CallInfo.class_intervals call_info in
             apply_class_interval
               ~callee_class_interval:class_intervals.ClassIntervals.caller_interval
@@ -1407,12 +1407,12 @@ end = struct
     =
     let apply (call_info, local_taint) =
       let class_intervals =
-        match callee with
-        | Target.Object _
-        | Target.Function _ ->
+        match Target.get_regular callee with
+        | Target.Regular.Object _
+        | Target.Regular.Function _ ->
             Some call_info_intervals
-        | Target.Method _
-        | Target.Override _ ->
+        | Target.Regular.Method _
+        | Target.Regular.Override _ ->
             (* Find a tito interval that lets through the taint. *)
             apply_class_interval
               ~callee_class_interval:tito_intervals

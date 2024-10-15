@@ -37,7 +37,7 @@ type method_name = {
 }
 [@@deriving show { with_path = false }, sexp, compare, hash, eq]
 
-module T = struct
+module Regular = struct
   type t =
     | Function of function_name
     | Method of method_name
@@ -45,6 +45,175 @@ module T = struct
     (* Represents a global variable or field of a class that we want to model,
      * e.g os.environ or HttpRequest.GET *)
     | Object of string
+  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+
+  (* Lower priority appears earlier in comparison. *)
+  let priority = function
+    | Function _ -> 0
+    | Method _ -> 1
+    | Override _ -> 2
+    | Object _ -> 3
+
+
+  let compare left right =
+    let priority_comparison = Int.compare (priority left) (priority right) in
+    if priority_comparison <> 0 then
+      priority_comparison
+    else
+      match left, right with
+      | Function first, Function second -> compare_function_name first second
+      | Method first, Method second -> compare_method_name first second
+      | Override first, Override second -> compare_method_name first second
+      | Object first, Object second -> String.compare first second
+      | _ -> failwith "The compared targets must belong to the same variant."
+
+
+  let pp_kind formatter = function
+    | Normal -> ()
+    | PropertySetter -> Format.fprintf formatter "@setter"
+
+
+  let pp_pretty formatter = function
+    | Function { name; kind } -> Format.fprintf formatter "%s%a" name pp_kind kind
+    | Method { class_name; method_name; kind } ->
+        Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
+    | Override { class_name; method_name; kind } ->
+        Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
+    | Object name -> Format.fprintf formatter "Object{%s}" name
+
+
+  let pp_pretty_with_kind formatter = function
+    | Function { name; kind } -> Format.fprintf formatter "%s%a (fun)" name pp_kind kind
+    | Method { class_name; method_name; kind } ->
+        Format.fprintf formatter "%s.%s%a (method)" class_name method_name pp_kind kind
+    | Override { class_name; method_name; kind } ->
+        Format.fprintf formatter "%s.%s%a (override)" class_name method_name pp_kind kind
+    | Object name -> Format.fprintf formatter "%s (object)" name
+
+
+  let pp_external formatter = function
+    | Function { name; kind } ->
+        Format.fprintf
+          formatter
+          "%a%a"
+          Reference.pp
+          (name |> Reference.create |> Reference.delocalize)
+          pp_kind
+          kind
+    | Method { class_name; method_name; kind } ->
+        Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
+    | Override { class_name; method_name; kind } ->
+        Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
+    | Object name -> Format.fprintf formatter "Obj{%s}" name
+
+
+  let get_corresponding_method = function
+    | Override method_name -> Method method_name
+    | _ -> failwith "not an override target"
+
+
+  let get_corresponding_override = function
+    | Method method_name -> Override method_name
+    | _ -> failwith "unexpected"
+
+
+  let class_name = function
+    | Method { class_name; _ } -> Some class_name
+    | Override { class_name; _ } -> Some class_name
+    | Function _
+    | Object _ ->
+        None
+
+
+  let method_name = function
+    | Method { method_name; _ } -> Some method_name
+    | Override { method_name; _ } -> Some method_name
+    | Function _
+    | Object _ ->
+        None
+
+
+  let function_name = function
+    | Function { name; _ } -> Some name
+    | Method _
+    | Override _
+    | Object _ ->
+        None
+
+
+  let object_name = function
+    | Object name -> Reference.create name
+    | _ -> failwith "unexpected"
+
+
+  let is_function_or_method = function
+    | Function _
+    | Method _ ->
+        true
+    | Override _
+    | Object _ ->
+        false
+
+
+  let is_method_or_override = function
+    | Method _
+    | Override _ ->
+        true
+    | Function _
+    | Object _ ->
+        false
+
+
+  let is_method = function
+    | Method _ -> true
+    | _ -> false
+
+
+  let is_function = function
+    | Function _ -> true
+    | _ -> false
+
+
+  let is_override = function
+    | Override _ -> true
+    | _ -> false
+
+
+  let is_object = function
+    | Object _ -> true
+    | _ -> false
+
+
+  let override_to_method = function
+    | Function target -> Function target
+    | Method target
+    | Override target ->
+        Method target
+    | Object name -> Object name
+
+
+  (** Return the define name of a Function or Method target. Note that multiple targets can match to
+      the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
+  let define_name = function
+    | Function { name; _ } -> Reference.create name
+    | Method { class_name; method_name; _ } ->
+        Reference.create ~prefix:(Reference.create class_name) method_name
+    | Override _
+    | Object _ ->
+        failwith "unexpected"
+end
+
+module ParameterMap = Data_structures.SerializableMap.Make (TaintAccessPath.Root)
+
+module T = struct
+  type t =
+    | Regular of Regular.t
+    | Parameterized of {
+        regular: Regular.t;
+        parameters: t ParameterMap.t;
+      }
+      (* This represents a regular callable with its function-typed parameters being instantited
+         with `parameters`. *)
   [@@deriving show { with_path = false }, sexp, compare, hash, eq]
 end
 
@@ -59,78 +228,66 @@ module Map = struct
   end)
 end
 
-(* Lower priority appears earlier in comparison. *)
-let priority = function
-  | Function _ -> 0
-  | Method _ -> 1
-  | Override _ -> 2
-  | Object _ -> 3
+module type RegularTargetPrettyPrintType = sig
+  val pp : Format.formatter -> Regular.t -> unit
+end
+
+module MakePrettyPrint (RegularTargetPrettyPrint : RegularTargetPrettyPrintType) = struct
+  let rec pp formatter = function
+    | Regular regular -> RegularTargetPrettyPrint.pp formatter regular
+    | Parameterized { regular; parameters } ->
+        let rec pp_parameters formatter = function
+          | [] -> Format.fprintf formatter ""
+          | [(access_path, target)] ->
+              Format.fprintf formatter "%a=%a" TaintAccessPath.Root.pp access_path pp target
+          | (access_path, target) :: tail ->
+              let () =
+                Format.fprintf formatter "%a=%a, " TaintAccessPath.Root.pp access_path pp target
+              in
+              pp_parameters formatter tail
+        in
+        Format.fprintf
+          formatter
+          "%a[%a]"
+          RegularTargetPrettyPrint.pp
+          regular
+          pp_parameters
+          (ParameterMap.to_alist parameters)
 
 
-let compare left right =
-  let priority_comparison = Int.compare (priority left) (priority right) in
-  if priority_comparison <> 0 then
-    priority_comparison
-  else
-    match left, right with
-    | Function first, Function second -> compare_function_name first second
-    | Method first, Method second -> compare_method_name first second
-    | Override first, Override second -> compare_method_name first second
-    | Object first, Object second -> String.compare first second
-    | _ -> failwith "The compared targets must belong to the same variant."
-
+  let show = Format.asprintf "%a" pp
+end
 
 let pp_internal = pp
 
 let show_internal = Format.asprintf "%a" pp_internal
 
-let pp_kind formatter = function
-  | Normal -> ()
-  | PropertySetter -> Format.fprintf formatter "@setter"
-
-
-let pp_pretty formatter = function
-  | Function { name; kind } -> Format.fprintf formatter "%s%a" name pp_kind kind
-  | Method { class_name; method_name; kind } ->
-      Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
-  | Override { class_name; method_name; kind } ->
-      Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
-  | Object name -> Format.fprintf formatter "Object{%s}" name
-
-
-let show_pretty = Format.asprintf "%a" pp_pretty
-
-let pp_pretty_with_kind formatter = function
-  | Function { name; kind } -> Format.fprintf formatter "%s%a (fun)" name pp_kind kind
-  | Method { class_name; method_name; kind } ->
-      Format.fprintf formatter "%s.%s%a (method)" class_name method_name pp_kind kind
-  | Override { class_name; method_name; kind } ->
-      Format.fprintf formatter "%s.%s%a (override)" class_name method_name pp_kind kind
-  | Object name -> Format.fprintf formatter "%s (object)" name
-
-
-let show_pretty_with_kind = Format.asprintf "%a" pp_pretty_with_kind
-
-let pp_external formatter = function
-  | Function { name; kind } ->
-      Format.fprintf
-        formatter
-        "%a%a"
-        Reference.pp
-        (name |> Reference.create |> Reference.delocalize)
-        pp_kind
-        kind
-  | Method { class_name; method_name; kind } ->
-      Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
-  | Override { class_name; method_name; kind } ->
-      Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
-  | Object name -> Format.fprintf formatter "Obj{%s}" name
-
-
 (* Equivalent to pp_internal. Required by @@deriving. *)
 let pp = pp_internal
 
-let external_name = Format.asprintf "%a" pp_external
+module PrettyPrint = MakePrettyPrint (struct
+  let pp = Regular.pp_pretty
+end)
+
+let pp_pretty = PrettyPrint.pp
+
+let show_pretty = PrettyPrint.show
+
+module PrettyPrintWithKind = MakePrettyPrint (struct
+  let pp = Regular.pp_pretty_with_kind
+end)
+
+let pp_pretty_with_kind = PrettyPrintWithKind.pp
+
+let show_pretty_with_kind = PrettyPrintWithKind.show
+
+module PrettyPrintExternal = MakePrettyPrint (struct
+  let pp = Regular.pp_external
+end)
+
+let pp_external = PrettyPrintExternal.pp
+
+let external_name = PrettyPrintExternal.show
 
 let create_function_name ?(kind = Normal) reference = { name = Reference.show reference; kind }
 
@@ -142,16 +299,28 @@ let create_method_name ?(kind = Normal) reference =
   }
 
 
-let create_function ?kind reference = Function (create_function_name ?kind reference)
+let from_regular regular = Regular regular
 
-let create_method ?kind reference = Method (create_method_name ?kind reference)
+let get_regular = function
+  | Regular regular
+  | Parameterized { regular; _ } ->
+      regular
 
-let create_property_setter reference = Method (create_method_name ~kind:PropertySetter reference)
 
-let create_override ?kind reference = Override (create_method_name ?kind reference)
+let create_function ?kind reference =
+  Function (create_function_name ?kind reference) |> from_regular
+
+
+let create_method ?kind reference = Method (create_method_name ?kind reference) |> from_regular
+
+let create_property_setter reference =
+  Method (create_method_name ~kind:PropertySetter reference) |> from_regular
+
+
+let create_override ?kind reference = Override (create_method_name ?kind reference) |> from_regular
 
 let create_property_setter_override reference =
-  Override (create_method_name ~kind:PropertySetter reference)
+  Override (create_method_name ~kind:PropertySetter reference) |> from_regular
 
 
 let create define_name define =
@@ -162,87 +331,47 @@ let create define_name define =
   | None -> create_function ~kind define_name
 
 
-let create_object reference = Object (Reference.show reference)
+let create_object reference = Object (Reference.show reference) |> from_regular
 
 let create_derived_override override ~at_type =
   match override with
-  | Override { method_name; kind; _ } ->
-      Override { class_name = Reference.show at_type; method_name; kind }
+  | Regular (Regular.Override { method_name; kind; _ })
+  | Parameterized { regular = Regular.Override { method_name; kind; _ }; _ } ->
+      Override { class_name = Reference.show at_type; method_name; kind } |> from_regular
   | _ -> failwith "unexpected"
 
 
-let get_corresponding_method = function
-  | Override method_name -> Method method_name
-  | _ -> failwith "not an override target"
+let get_corresponding_method target =
+  target |> get_regular |> Regular.get_corresponding_method |> from_regular
 
 
-let get_corresponding_override = function
-  | Method method_name -> Override method_name
-  | _ -> failwith "unexpected"
+let get_corresponding_override target =
+  target |> get_regular |> Regular.get_corresponding_override |> from_regular
 
 
-let class_name = function
-  | Method { class_name; _ } -> Some class_name
-  | Override { class_name; _ } -> Some class_name
-  | Function _
-  | Object _ ->
-      None
+let class_name target = target |> get_regular |> Regular.class_name
 
+let method_name target = target |> get_regular |> Regular.method_name
 
-let method_name = function
-  | Method { method_name; _ } -> Some method_name
-  | Override { method_name; _ } -> Some method_name
-  | Function _
-  | Object _ ->
-      None
+let function_name target = target |> get_regular |> Regular.function_name
 
+let object_name target = target |> get_regular |> Regular.object_name
 
-let is_function_or_method = function
-  | Function _
-  | Method _ ->
-      true
-  | Override _
-  | Object _ ->
-      false
+let is_function_or_method target = target |> get_regular |> Regular.is_function_or_method
 
+let is_method_or_override target = target |> get_regular |> Regular.is_method_or_override
 
-let is_method = function
-  | Method _ -> true
-  | _ -> false
+let is_method target = target |> get_regular |> Regular.is_method
 
+let is_function target = target |> get_regular |> Regular.is_function
 
-let is_method_or_override = function
-  | Method _
-  | Override _ ->
-      true
-  | Function _
-  | Object _ ->
-      false
+let is_override target = target |> get_regular |> Regular.is_override
 
+let is_object target = target |> get_regular |> Regular.is_object
 
-let override_to_method = function
-  | Function target -> Function target
-  | Method target
-  | Override target ->
-      Method target
-  | Object name -> Object name
+let override_to_method target = target |> get_regular |> Regular.override_to_method |> from_regular
 
-
-(** Return the define name of a Function or Method target. Note that multiple targets can match to
-    the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
-let define_name = function
-  | Function { name; _ } -> Reference.create name
-  | Method { class_name; method_name; _ } ->
-      Reference.create ~prefix:(Reference.create class_name) method_name
-  | Override _
-  | Object _ ->
-      failwith "unexpected"
-
-
-let object_name = function
-  | Object name -> Reference.create name
-  | _ -> failwith "unexpected"
-
+let define_name target = target |> get_regular |> Regular.define_name
 
 module Set = Stdlib.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)
@@ -319,17 +448,17 @@ let resolve_method ~pyre_api ~class_type ~method_name =
 
 
 module ArtificialTargets = struct
-  let format_string = Object "<format-string>"
+  let format_string = Object "<format-string>" |> from_regular
 
-  let str_add = Object "<str.__add__>"
+  let str_add = Object "<str.__add__>" |> from_regular
 
-  let str_mod = Object "<str.__mod__>"
+  let str_mod = Object "<str.__mod__>" |> from_regular
 
-  let str_format = Object "<str.format>"
+  let str_format = Object "<str.format>" |> from_regular
 
-  let str_literal = Object "<literal-string>"
+  let str_literal = Object "<literal-string>" |> from_regular
 
-  let condition = Object "<condition>"
+  let condition = Object "<condition>" |> from_regular
 end
 
 module SharedMemoryKey = struct

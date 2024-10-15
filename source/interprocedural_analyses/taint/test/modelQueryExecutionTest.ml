@@ -47,7 +47,10 @@ let test_generated_annotations context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:(ModelQueryExecution.CallableQueryExecutor.make_modelable ~pyre_api callable)
+        ~modelable:
+          (ModelQueryExecution.CallableQueryExecutor.make_modelable
+             ~pyre_api
+             (Target.from_regular callable))
         query
     in
     assert_equal
@@ -126,7 +129,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -144,7 +147,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -162,7 +165,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -180,7 +183,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -198,7 +201,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -216,7 +219,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
 
   (* Test multiple constraints. *)
@@ -241,7 +244,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -264,7 +267,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
 
   (* Method vs. callable productions. *)
@@ -285,7 +288,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
   assert_generated_annotations
@@ -305,7 +308,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Multiple productions. *)
@@ -330,7 +333,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test");
@@ -361,7 +364,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -398,7 +401,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -427,7 +430,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -465,7 +468,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -501,7 +504,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -541,7 +544,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -582,7 +585,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -621,7 +624,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -656,7 +659,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -691,7 +694,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -730,7 +733,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -770,7 +773,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -808,7 +811,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -843,7 +846,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -878,7 +881,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -906,7 +909,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -946,7 +949,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -964,7 +967,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -982,7 +985,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -1000,7 +1003,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1018,7 +1021,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Return annotation extends. *)
   assert_generated_annotations
@@ -1055,7 +1058,8 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test1"; kind = Normal })
+    ~callable:
+      (Target.Regular.Method { class_name = "test.Test"; method_name = "test1"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -1091,7 +1095,8 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test2"; kind = Normal })
+    ~callable:
+      (Target.Regular.Method { class_name = "test.Test"; method_name = "test2"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1127,7 +1132,8 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test3"; kind = Normal })
+    ~callable:
+      (Target.Regular.Method { class_name = "test.Test"; method_name = "test3"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1162,7 +1168,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1197,7 +1203,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test2"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test2"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1232,7 +1238,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test3"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test3"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1264,7 +1270,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -1289,7 +1295,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1314,7 +1320,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1343,7 +1349,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1368,7 +1374,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1397,7 +1403,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:
@@ -1433,7 +1439,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1459,7 +1465,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[];
   (* Any of. *)
   assert_generated_annotations
@@ -1485,7 +1491,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1510,7 +1516,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1539,7 +1545,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1579,7 +1585,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* All of. *)
   assert_generated_annotations
@@ -1606,7 +1612,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Some cases where we don't match with "AllOf". *)
   assert_generated_annotations
@@ -1632,7 +1638,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -1657,7 +1663,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* Named parameters + parametric sources from annotation. *)
   assert_generated_annotations
@@ -1687,7 +1693,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1727,7 +1733,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1762,7 +1768,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source ~subkind:"B" "Dynamic")];
   (* Named parameters + parametric sinks from annotation. *)
   assert_generated_annotations
@@ -1789,7 +1795,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1827,7 +1833,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1866,7 +1872,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1909,7 +1915,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1938,7 +1944,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1957,7 +1963,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:{|
@@ -1976,7 +1982,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -1995,7 +2001,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -2013,7 +2019,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -2031,7 +2037,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Decorator names. *)
@@ -2062,7 +2068,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Basic test case for `FullyQualifiedCallee`. *)
   assert_generated_annotations
@@ -2092,7 +2098,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Test `FullyQualifiedCallee` when the callee is unresolvable. *)
   assert_generated_annotations
@@ -2117,7 +2123,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[];
   (* Test `FullyQualifiedCallee` on a decorator factory. *)
   assert_generated_annotations
@@ -2147,7 +2153,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Test `FullyQualifiedCallee` when there are multiple decorators. We consider it as being matched
      if one of the decorators match. *)
@@ -2181,7 +2187,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Test `FullyQualifiedCallee` when the decorator is overriden. *)
   assert_generated_annotations
@@ -2214,7 +2220,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Test `FullyQualifiedCallee` when the decorator is a base method. *)
   assert_generated_annotations
@@ -2246,7 +2252,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Test `FullyQualifiedCallee` for class decorators. *)
   assert_generated_annotations
@@ -2282,7 +2288,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2311,7 +2317,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2340,7 +2346,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2369,7 +2375,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2397,7 +2403,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2419,7 +2425,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2448,7 +2454,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2477,7 +2483,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2521,7 +2527,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2565,7 +2571,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2610,7 +2616,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2655,7 +2661,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2707,7 +2713,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2759,7 +2765,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2811,7 +2817,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   assert_generated_annotations
@@ -2836,7 +2842,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2860,7 +2866,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
   assert_generated_annotations
@@ -2885,7 +2891,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2913,7 +2919,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -2941,7 +2947,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -2985,7 +2991,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3029,7 +3035,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test attribute models. *)
@@ -3366,7 +3372,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
@@ -3389,7 +3395,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3409,7 +3415,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3437,7 +3443,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -3465,7 +3471,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3485,7 +3491,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
+    ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations_for_attributes
     ~source:
@@ -3689,7 +3695,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3720,7 +3726,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3751,7 +3757,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3782,7 +3788,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test includes_self=False *)
@@ -3898,7 +3904,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -3928,7 +3934,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -3958,7 +3964,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -3988,7 +3994,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4018,7 +4024,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4048,7 +4054,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test cls.any_child *)
@@ -4087,7 +4093,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4124,7 +4130,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4161,7 +4167,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4198,7 +4204,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4235,7 +4241,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4272,7 +4278,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4309,7 +4315,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4346,7 +4352,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4383,7 +4389,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4420,7 +4426,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test cls.any_parent *)
@@ -4458,7 +4464,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4494,7 +4500,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4530,7 +4536,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4566,7 +4572,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4602,7 +4608,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4638,7 +4644,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4674,7 +4680,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4710,7 +4716,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
     ~source:
@@ -4746,7 +4752,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -4782,7 +4788,7 @@ let test_generated_annotations context =
         expected_models = [];
         unexpected_models = [];
       }
-    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
+    ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   assert_generated_annotations_for_globals
@@ -4927,7 +4933,7 @@ let test_partition_cache_queries _ =
 
 
 let test_generated_cache context =
-  let assert_generated_cache ~source ~queries ~callables ~expected =
+  let assert_generated_cache ~source ~queries ~regular_callables ~expected =
     let pyre_api =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
     in
@@ -4944,14 +4950,18 @@ let test_generated_cache context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
-        ~targets:callables
+        ~targets:(List.map regular_callables ~f:Target.from_regular)
         queries
     in
     let expected =
       List.fold
         ~init:ModelQueryExecution.ReadWriteCache.empty
         ~f:(fun cache (kind, name, target) ->
-          ModelQueryExecution.ReadWriteCache.write cache ~kind ~name ~target)
+          ModelQueryExecution.ReadWriteCache.write
+            cache
+            ~kind
+            ~name
+            ~target:(Target.from_regular target))
         expected
     in
     assert_equal
@@ -4986,12 +4996,12 @@ let test_generated_cache context =
           unexpected_models = [];
         };
       ]
-    ~callables:
+    ~regular_callables:
       [
-        Target.Function { name = "test.foo"; kind = Normal };
-        Target.Function { name = "test.no_match"; kind = Normal };
+        Target.Regular.Function { name = "test.foo"; kind = Normal };
+        Target.Regular.Function { name = "test.no_match"; kind = Normal };
       ]
-    ~expected:["thrift", "foo", Target.Function { name = "test.foo"; kind = Normal }];
+    ~expected:["thrift", "foo", Target.Regular.Function { name = "test.foo"; kind = Normal }];
   assert_generated_cache
     ~source:
       {|
@@ -5026,19 +5036,19 @@ let test_generated_cache context =
           unexpected_models = [];
         };
       ]
-    ~callables:
+    ~regular_callables:
       [
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
       ]
     ~expected:
       [
         ( "thrift",
           "C:foo",
-          Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
+          Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
         ( "thrift",
           "D:foo",
-          Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal } );
+          Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal } );
       ];
   (* We can have multiple targets for the same kind+name *)
   assert_generated_cache
@@ -5070,15 +5080,19 @@ let test_generated_cache context =
           unexpected_models = [];
         };
       ]
-    ~callables:
+    ~regular_callables:
       [
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
       ]
     ~expected:
       [
-        "thrift", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-        "thrift", "foo", Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+        ( "thrift",
+          "foo",
+          Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
+        ( "thrift",
+          "foo",
+          Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal } );
       ];
   (* Multiple WriteToCache in the same query. *)
   assert_generated_cache
@@ -5115,15 +5129,19 @@ let test_generated_cache context =
           unexpected_models = [];
         };
       ]
-    ~callables:
+    ~regular_callables:
       [
-        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
       ]
     ~expected:
       [
-        "a", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
-        "b", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        ( "a",
+          "foo",
+          Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
+        ( "b",
+          "foo",
+          Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
       ];
   ()
 
@@ -5133,8 +5151,12 @@ let test_read_from_cache_constraints _ =
     let cache =
       List.fold
         ~init:ModelQueryExecution.ReadWriteCache.empty
-        ~f:(fun cache (kind, name, target) ->
-          ModelQueryExecution.ReadWriteCache.write cache ~kind ~name ~target)
+        ~f:(fun cache (kind, name, regular_target) ->
+          ModelQueryExecution.ReadWriteCache.write
+            cache
+            ~kind
+            ~name
+            ~target:(Target.from_regular regular_target))
         cache
     in
     let actual =
@@ -5148,9 +5170,15 @@ let test_read_from_cache_constraints _ =
   in
   let cache =
     [
-      "thrift", "A:foo", Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal };
-      "thrift", "B:foo", Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal };
-      "thrift", "C:foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ( "thrift",
+        "A:foo",
+        Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal } );
+      ( "thrift",
+        "B:foo",
+        Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal } );
+      ( "thrift",
+        "C:foo",
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
     ]
   in
   assert_target_candidates
@@ -5159,7 +5187,10 @@ let test_read_from_cache_constraints _ =
     ~expected:
       (Set
          (Target.Set.of_list
-            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+            [
+              Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }
+              |> Target.from_regular;
+            ]));
   assert_target_candidates
     ~cache
     ~constraints:[NameConstraint (Matches (Re2.create_exn "bar"))]
@@ -5174,7 +5205,10 @@ let test_read_from_cache_constraints _ =
     ~expected:
       (Set
          (Target.Set.of_list
-            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+            [
+              Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }
+              |> Target.from_regular;
+            ]));
   assert_target_candidates
     ~cache
     ~constraints:
@@ -5197,8 +5231,10 @@ let test_read_from_cache_constraints _ =
       (Set
          (Target.Set.of_list
             [
-              Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal };
-              Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal };
+              Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }
+              |> Target.from_regular;
+              Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal }
+              |> Target.from_regular;
             ]));
   assert_target_candidates
     ~cache
@@ -5239,7 +5275,10 @@ let test_read_from_cache_constraints _ =
     ~expected:
       (Set
          (Target.Set.of_list
-            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+            [
+              Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }
+              |> Target.from_regular;
+            ]));
   ()
 
 

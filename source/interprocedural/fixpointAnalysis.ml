@@ -180,9 +180,10 @@ module Make (Analysis : ANALYSIS) = struct
 
     let object_targets registry =
       let add target _ so_far =
-        match target with
-        | Target.Object _ -> Target.Set.add target so_far
-        | _ -> so_far
+        if Target.is_object target then
+          Target.Set.add target so_far
+        else
+          so_far
       in
       Target.Map.fold add registry Target.Set.empty
 
@@ -316,11 +317,8 @@ module Make (Analysis : ANALYSIS) = struct
       let () = SharedModels.add shared_models_handle callable state.model in
       (* Skip result writing unless necessary (e.g. overrides don't have results) *)
       let () =
-        match callable with
-        | Target.Function _
-        | Target.Method _ ->
-            SharedResults.add callable state.result
-        | _ -> ()
+        if Target.is_function_or_method callable then
+          SharedResults.add callable state.result
       in
       SharedFixpoint.add callable { is_partial = state.is_partial; step }
 
@@ -560,20 +558,23 @@ module Make (Analysis : ANALYSIS) = struct
       | _ -> ()
     in
     match callable with
-    | (Target.Function _ | Target.Method _) as callable -> (
+    | Target.Regular (Target.Regular.Function _)
+    | Target.Regular (Target.Regular.Method _) -> (
         match Target.get_module_and_definition callable ~pyre_api with
         | None ->
             Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
         | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define)
-    | Target.Override _ as callable ->
+    | Target.Regular (Target.Regular.Override _) ->
         Alarm.with_alarm
           ~max_time_in_seconds:60
           ~event_name:"override analysis"
           ~callable:(Target.show_pretty callable)
           (fun () -> analyze_overrides ~max_iterations ~override_graph ~step ~callable)
           ()
-    | Target.Object _ as target ->
-        Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty target |> failwith
+    | Target.Regular (Target.Regular.Object _) ->
+        Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty callable
+        |> failwith
+    | Target.Parameterized _ -> failwith "Not implemented: Analyzing parameterized targets"
 
 
   type iteration_result = {

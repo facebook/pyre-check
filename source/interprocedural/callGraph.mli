@@ -67,6 +67,18 @@ module CallTarget : sig
     Target.t ->
     t
 
+  (* For testing purpose only. *)
+  val create_regular
+    :  ?implicit_receiver:bool ->
+    ?implicit_dunder_call:bool ->
+    ?index:int ->
+    ?return_type:ReturnType.t option ->
+    ?receiver_class:string ->
+    ?is_class_method:bool ->
+    ?is_static_method:bool ->
+    Target.Regular.t ->
+    t
+
   val to_json : t -> Yojson.Safe.t
 end
 

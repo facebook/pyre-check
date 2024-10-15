@@ -1,6 +1,9 @@
 @generated
 Call dependencies
 model_shaping.$toplevel (fun) -> []
+model_shaping.DictRecord.$class_toplevel (method) -> []
+model_shaping.MutableRecord.$class_toplevel (method) -> []
+model_shaping.RecordSchema.$class_toplevel (method) -> []
 model_shaping._asdict_inner (fun) -> [dict.items (method) getattr (fun) isinstance (fun) list.__init__ (method) list.__iter__ (method) list.append (method) model_shaping._asdict_inner (fun) model_shaping._is_dataclass_instance (fun) model_shaping.fields (fun) object.__new__ (method) tuple.__init__ (method) type.__init__ (method) type.__new__ (method) typing.GenericMeta.__getitem__ (method) typing.Iterable.__iter__ (method) typing.Iterator.__next__ (method) typing.cast (fun)]
 model_shaping.asdict (fun) -> [model_shaping._asdict_inner (fun)]
 model_shaping.asdict_test (fun) -> [model_shaping.asdict (fun)]
@@ -9,6 +12,3 @@ model_shaping.shape_multi_sink (fun) -> [_rce (fun) _sql (fun)]
 model_shaping.shape_multi_source (fun) -> [_cookies (fun) _user_controlled (fun) int.__gt__ (method) int.__le__ (method)]
 model_shaping.test_tito_shaping (fun) -> [_test_sink (fun) _test_source (fun) dict.__getitem__ (method) model_shaping.tito_shaping (fun)]
 model_shaping.tito_shaping (fun) -> [dict.get (method) object.__repr__ (method)]
-model_shaping.DictRecord.$class_toplevel (method) -> []
-model_shaping.MutableRecord.$class_toplevel (method) -> []
-model_shaping.RecordSchema.$class_toplevel (method) -> []

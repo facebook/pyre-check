@@ -1,4 +1,4 @@
 @generated
 Overrides
-readonly.A.__init__ (override) -> [readonly.A.__init__ (method)]
 object.__init__ (override) -> [object.__init__ (method) readonly.A.__init__ (override)]
+readonly.A.__init__ (override) -> [readonly.A.__init__ (method)]

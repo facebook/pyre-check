@@ -1435,17 +1435,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Not access a named tuple *)
           Lazy.force state_before_index_access
     in
-    match call_target with
-    | {
-        CallGraph.CallTarget.target = Method { method_name = "__getitem__"; _ };
-        receiver_class = Some receiver_class;
-        _;
-      }
-    | {
-        CallGraph.CallTarget.target = Override { method_name = "__getitem__"; _ };
-        receiver_class = Some receiver_class;
-        _;
-      } ->
+    match
+      ( Interprocedural.Target.get_regular call_target.CallGraph.CallTarget.target,
+        call_target.CallGraph.CallTarget.receiver_class )
+    with
+    | Interprocedural.Target.Regular.Method { method_name = "__getitem__"; _ }, Some receiver_class
+    | Override { method_name = "__getitem__"; _ }, Some receiver_class ->
         (* Potentially access a named tuple *)
         analyze_getitem receiver_class
     | _ ->
@@ -2156,8 +2151,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               location = call_location;
             }
           in
-          match call_target.target with
-          | Interprocedural.Target.Method { method_name; _ } -> callee_from_method_name method_name
+          match Interprocedural.Target.get_regular call_target.target with
+          | Interprocedural.Target.Regular.Method { method_name; _ } ->
+              callee_from_method_name method_name
           | Override { method_name; _ } -> callee_from_method_name method_name
           | Function { name; _ } ->
               { Node.value = Name (Name.Identifier name); location = call_location }

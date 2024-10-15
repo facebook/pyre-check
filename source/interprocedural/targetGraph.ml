@@ -49,6 +49,6 @@ let pp formatter edges =
     Format.fprintf formatter "%a -> [%s]\n" Target.pp_pretty_with_kind callable targets
   in
   let compare (left, _) (right, _) =
-    String.compare (Target.show_internal left) (Target.show_internal right)
+    String.compare (Target.show_pretty_with_kind left) (Target.show_pretty_with_kind right)
   in
   Target.Map.Tree.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge

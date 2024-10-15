@@ -1,5 +1,6 @@
 @generated
 Overrides
+object.__init__ (override) -> [object.__init__ (method) overrides.Base.__init__ (override)]
 overrides.A.__init__ (override) -> [overrides.A.__init__ (method)]
 overrides.A.methodA (override) -> [overrides.A.methodA (method)]
 overrides.AnalyzeAllOverrides.return_source (override) -> [overrides.AnalyzeAllOverrides.return_source (method) overrides.AnalyzeAllOverridesChild1.return_source (override) overrides.AnalyzeAllOverridesChild2.return_source (override) overrides.AnalyzeAllOverridesChild3.return_source (override)]
@@ -22,4 +23,3 @@ overrides.D.methodA (override) -> [overrides.D.methodA (method) overrides.Overlo
 overrides.D.methodB (override) -> [overrides.D.methodB (method)]
 overrides.DerivedWithDeclaration.return_source (override) -> [overrides.DerivedWithDeclaration.return_source (method)]
 overrides.OverloadedOverride.methodA (override) -> [overrides.OverloadedOverride.methodA (method)]
-object.__init__ (override) -> [object.__init__ (method) overrides.Base.__init__ (override)]

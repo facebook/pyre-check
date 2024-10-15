@@ -19,7 +19,9 @@ let test_get_module_and_definition context =
       |> Test.ScratchProject.pyre_pysa_read_only_api
     in
     let actual =
-      Target.get_module_and_definition ~pyre_api target
+      target
+      |> Target.from_regular
+      |> Target.get_module_and_definition ~pyre_api
       >>| fun (qualifier, { Node.value = { Statement.Define.body; _ }; _ }) -> qualifier, body
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =
@@ -47,7 +49,8 @@ let test_get_module_and_definition context =
       def foo(self, value: int) -> None:
         self._foo = value
   |}
-    ~target:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = PropertySetter })
+    ~target:
+      (Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = PropertySetter })
     ~expected:
       (Some
          ( Reference.create "test",
@@ -82,7 +85,9 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (Target.Method { class_name = "cls"; method_name = "named"; kind = Normal }));
+    (Some
+       (Target.Regular.Method { class_name = "cls"; method_name = "named"; kind = Normal }
+       |> Target.from_regular));
   assert_get_resolve_method
     ~source:
       {|
@@ -92,7 +97,39 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (Target.Method { class_name = "cls"; method_name = "named"; kind = Normal }));
+    (Some
+       (Target.Regular.Method { class_name = "cls"; method_name = "named"; kind = Normal }
+       |> Target.from_regular));
+  ()
+
+
+let test_pretty_print _ =
+  let assert_equal ~expected ~actual =
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected (Target.show_pretty actual)
+  in
+  assert_equal
+    ~expected:"foo[]"
+    ~actual:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters = Target.ParameterMap.empty;
+         });
+  assert_equal
+    ~expected:"foo[local(x)=bar, local(y)=baz]"
+    ~actual:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "bar"; kind = Normal } |> Target.from_regular );
+               ( AccessPath.Root.Variable "y",
+                 Target.Regular.Function { name = "baz"; kind = Normal } |> Target.from_regular );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         });
   ()
 
 
@@ -101,5 +138,6 @@ let () =
   >::: [
          "get_module_and_definition" >:: test_get_module_and_definition;
          "resolve_method" >:: test_resolve_method;
+         "pretty_print" >:: test_pretty_print;
        ]
   |> Test.run

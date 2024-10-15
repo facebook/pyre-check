@@ -20,7 +20,9 @@ let test_partition_call_map context =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in
   let callee =
-    Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
+    Interprocedural.Target.Regular.Method
+      { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
+    |> Interprocedural.Target.from_regular
   in
   let location = Location.WithModule.any in
   let call_site = location |> Location.strip_module |> CallSite.create in

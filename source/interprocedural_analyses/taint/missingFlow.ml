@@ -16,8 +16,9 @@ open Domains
 open Interprocedural
 
 (* Returns true if the given target is a symbolic target that represents an unknown callee. *)
-let is_unknown_callee = function
-  | Target.Object name when String.is_prefix name ~prefix:"unknown-callee:" -> true
+let is_unknown_callee target =
+  match Target.get_regular target with
+  | Target.Regular.Object name when String.is_prefix name ~prefix:"unknown-callee:" -> true
   | _ -> false
 
 

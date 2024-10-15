@@ -1,4 +1,4 @@
 @generated
 Overrides
-via_type_of.Test1_C.__init__ (override) -> [via_type_of.Test1_C.__init__ (method)]
 object.__init__ (override) -> [object.__init__ (method) via_type_of.Test1_C.__init__ (override)]
+via_type_of.Test1_C.__init__ (override) -> [via_type_of.Test1_C.__init__ (method)]

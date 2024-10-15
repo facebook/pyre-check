@@ -1,4 +1,4 @@
 @generated
 Overrides
-self.Foo.__init__ (override) -> [self.Foo.__init__ (method)]
 object.__init__ (override) -> [object.__init__ (method) self.Foo.__init__ (override)]
+self.Foo.__init__ (override) -> [self.Foo.__init__ (method)]

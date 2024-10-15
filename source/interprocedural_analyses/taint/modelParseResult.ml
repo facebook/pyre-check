@@ -854,8 +854,8 @@ module Modelable = struct
 
   let matches_find modelable find =
     match find, modelable with
-    | ModelQuery.Find.Function, Callable { target = Target.Function _; _ }
-    | ModelQuery.Find.Method, Callable { target = Target.Method _; _ }
+    | ModelQuery.Find.Function, Callable { target; _ } when Target.is_function target -> true
+    | ModelQuery.Find.Method, Callable { target; _ } when Target.is_method target -> true
     | ModelQuery.Find.Attribute, Attribute _
     | ModelQuery.Find.Global, Global _ ->
         true
@@ -865,21 +865,31 @@ module Modelable = struct
   let expand_format_string ~name_captures ~parameter modelable name =
     let open Core.Result in
     let expand_function_name () =
+      let error = Error "`function_name` can only be used on functions" in
       match modelable with
-      | Callable { target = Target.Function { name; _ }; _ } ->
-          Reference.create name |> Reference.last |> Result.return
-      | _ -> Error "`function_name` can only be used on functions"
+      | Callable { target; _ } -> (
+          match Target.function_name target with
+          | Some name -> Reference.create name |> Reference.last |> Result.return
+          | None -> error)
+      | _ -> error
     in
     let expand_method_name () =
+      let error = Error "`method_name` can only be used on methods" in
       match modelable with
-      | Callable { target = Target.Method { method_name; _ }; _ } -> Ok method_name
-      | _ -> Error "`method_name` can only be used on methods"
+      | Callable { target; _ } -> (
+          match Target.method_name target with
+          | Some method_name -> Ok method_name
+          | _ -> error)
+      | _ -> error
     in
     let expand_class_name () =
+      let error = Error "`class_name` can only be used on methods" in
       match modelable with
-      | Callable { target = Target.Method { class_name; _ }; _ } ->
-          Reference.create class_name |> Reference.last |> Result.return
-      | _ -> Error "`class_name` can only be used on methods"
+      | Callable { target; _ } -> (
+          match Target.class_name target with
+          | Some class_name -> Reference.create class_name |> Reference.last |> Result.return
+          | None -> error)
+      | _ -> error
     in
     let expand_capture identifier =
       match NameCaptures.get name_captures identifier with
