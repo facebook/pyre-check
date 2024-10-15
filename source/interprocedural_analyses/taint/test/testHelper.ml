@@ -455,7 +455,7 @@ let set_up_decorator_preprocessing ~handle models =
           |> ModelParser.decorator_actions_from_modes)
     |> Option.value ~default:Reference.SerializableMap.empty
   in
-  Analysis.DecoratorPreprocessing.setup_preprocessing
+  PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing
     { actions = decorator_actions; enable_inlining = true; enable_discarding = true }
 
 
