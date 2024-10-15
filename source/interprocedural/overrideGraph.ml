@@ -242,12 +242,21 @@ module SharedMemory = struct
             |> Target.Regular.create_derived_override_exn ~at_type
             |> Target.from_regular
           in
-          let overrides =
-            let member = Target.get_corresponding_method target in
-            T.ReadOnly.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
+          let corresponding_method =
+            (* In the override graph, keys can only be `Target.Regular.Method` and hence not
+               `Target.Parameterized`. *)
+            target
+            |> Target.get_regular
+            |> Target.Regular.get_corresponding_method_exn
+            |> Target.from_regular
           in
-          Target.get_corresponding_method target
-          :: List.fold overrides ~f:expand_and_gather ~init:expanded
+          let overrides =
+            handle
+            |> get_overriding_types ~member:corresponding_method
+            |> Option.value ~default:[]
+            |> List.map ~f:make_override
+          in
+          corresponding_method :: List.fold overrides ~f:expand_and_gather ~init:expanded
       in
       List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
   end

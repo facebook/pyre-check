@@ -487,9 +487,15 @@ module Make (Analysis : ANALYSIS) = struct
     =
     let timer = Timer.start () in
     let overrides =
-      OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
-        override_graph
-        ~member:(Target.get_corresponding_method callable)
+      override_graph
+      |> OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
+           ~member:
+             (* In the override graph, keys can only be `Target.Regular.Method` and hence not
+                `Target.Parameterized`. *)
+             (callable
+             |> Target.get_regular
+             |> Target.Regular.get_corresponding_method_exn
+             |> Target.from_regular)
       |> Option.value ~default:[]
       |> List.map ~f:(fun at_type ->
              callable
@@ -522,7 +528,13 @@ module Make (Analysis : ANALYSIS) = struct
         | Some model -> model
       in
       let direct_model =
-        let direct_callable = Target.get_corresponding_method callable in
+        let direct_callable =
+          callable
+          |> Target.as_regular_exn
+             (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+          |> Target.Regular.get_corresponding_method_exn
+          |> Target.from_regular
+        in
         State.get_model shared_models_handle direct_callable
         |> Option.value ~default:Analysis.empty_model
         |> Model.for_override_model ~callable:direct_callable

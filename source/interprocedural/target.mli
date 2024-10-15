@@ -42,6 +42,8 @@ module Regular : sig
   val define_name_exn : t -> Reference.t
 
   val create_derived_override_exn : at_type:Reference.t -> t -> t
+
+  val get_corresponding_method_exn : t -> t
 end
 
 module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
@@ -117,8 +119,6 @@ val get_regular : t -> Regular.t
 val as_regular_exn : t -> Regular.t
 
 (* Accessors. *)
-
-val get_corresponding_method : t -> t
 
 val get_corresponding_override : t -> t
 

@@ -107,7 +107,7 @@ module Regular = struct
     | Object name -> Format.fprintf formatter "Obj{%s}" name
 
 
-  let get_corresponding_method = function
+  let get_corresponding_method_exn = function
     | Override method_name -> Method method_name
     | _ -> failwith "not an override target"
 
@@ -343,10 +343,6 @@ let create define_name define =
 
 
 let create_object reference = Object (Reference.show reference) |> from_regular
-
-let get_corresponding_method target =
-  target |> get_regular |> Regular.get_corresponding_method |> from_regular
-
 
 let get_corresponding_override target =
   target |> get_regular |> Regular.get_corresponding_override |> from_regular
