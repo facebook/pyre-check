@@ -406,6 +406,12 @@ class DirectoryTestAnnotations:
                 )
             self.function_annotations[name] = annotations
 
+    def number_annotations(self) -> int:
+        return sum(
+            len(function_annotations.annotations)
+            for function_annotations in self.function_annotations.values()
+        )
+
     def dump(self, output: IO[str]) -> None:
         output.write(
             json.dumps(
@@ -602,6 +608,13 @@ def parse_test_annotations_from_directory(
             path.read_text()
         ).items():
             result.set(f"{base_module}.{function_name}", annotations)
+
+    LOG.info(f"Found {result.number_annotations()} test annotations")
+
+    if result.number_annotations() == 0:
+        raise TestConfigurationException(
+            f"Could NOT find test annotations in {directory}"
+        )
 
     return result
 
