@@ -75,6 +75,7 @@ def validate_test_functions_and_class_names(current_directory: Path) -> None:
     )
 
     test_function_pattern = re.compile(r"test_\d{4}(_no)?_flag_\w+")
+    helper_function_pattern = re.compile(r"helper\w+")
     test_class_pattern = re.compile(r"Test\d{4}\w+")
     helper_class_pattern = re.compile(r"Helper\w+")
 
@@ -86,12 +87,6 @@ def validate_test_functions_and_class_names(current_directory: Path) -> None:
 
     for test_path in test_paths:
         parsed_ast = ast.parse(test_path.read_text())
-
-        functions = [
-            node
-            for node in parsed_ast.body
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        ]
 
         functions = []
         classes = []
@@ -105,11 +100,16 @@ def validate_test_functions_and_class_names(current_directory: Path) -> None:
             function_name = function.name
             LOG.debug(f"Validating function: {function_name}")
 
-            if not test_function_pattern.match(function_name):
+            if not (
+                test_function_pattern.match(function_name)
+                or helper_function_pattern.match(function_name)
+            ):
                 raise TestConfigurationException(
                     f"Expected test function {function_name} to have the "
                     + "format test_####_flag_XXXX or test_####_no_flag_XXXX, "
-                    + "to indicate that issue #### is being tested"
+                    + "to indicate that issue #### is being tested, or "
+                    + "helperXXX to indicate it is an unrelated helper "
+                    + "function."
                 )
 
         for klass in classes:
