@@ -99,6 +99,7 @@ InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
 PerTargetTypeErrorsAvailability = CustomAvailability
 PerTargetIsolationDirAvailability = CustomAvailability
+TypeErrorShardingAvailability = CustomAvailability
 PythonAutoTargetsAvailability = CustomAvailability
 SystemPyAutoTargetsAvailability = CustomAvailability
 # TODO: T204372341 remove this once we have rolled out addition and removal features
@@ -122,6 +123,9 @@ class LanguageServerFeatures:
     )
     per_target_isolation_dir: PerTargetIsolationDirAvailability = (
         PerTargetIsolationDirAvailability.from_enabled(False)
+    )
+    type_error_sharding: TypeErrorShardingAvailability = (
+        TypeErrorShardingAvailability.from_enabled(False)
     )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED

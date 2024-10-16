@@ -712,6 +712,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
             tempfile.NamedTemporaryFile(mode="w") as argfile,
         ):
             print("--", file=argfile)
+            if self.get_language_server_features().type_error_sharding.is_enabled():
+                print("--enable-sharding\ntrue", file=argfile)
             print(
                 *[
                     argument
@@ -995,6 +997,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "telemetry_version": 3,
                     "new_file_loaded": new_file_loaded,
                     "isolation_dir": isolation_dir,
+                    "sharding_enabled": self.get_language_server_features().type_error_sharding.is_enabled(),
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
