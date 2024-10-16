@@ -668,9 +668,9 @@ def compare_issues_to_test_annotations(
             else:
                 pass  # pass
 
-    if len(issues) != number_expected_issues:
+    if len(issues) != number_expected_issues and len(test_failures) == 0:
         test_failures.append(
-            f"Expected {number_expected_issues} issues with code {code}, but found {len(issues)} issues"
+            f"Expected {number_expected_issues} issues with code {code}, but found {len(issues)} issues."
         )
 
     if len(test_failures) > 0:
