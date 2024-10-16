@@ -318,6 +318,16 @@ let test_check_bounded_variables =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import TypeVar, Callable
+              T1 = TypeVar("T1", bound=Callable[[], str] | Callable[[], int])
+              def foo(x: T1) -> None:
+                y = x()
+                reveal_type(y)
+            |}
+           ["Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from typing import TypeVar, Callable, Union
               T1 = TypeVar("T1", bound=Union[Callable[[], str], Callable[[], int]])
               def foo(x: T1) -> None:

@@ -3896,6 +3896,16 @@ let replace_union_shorthand source =
           when name_is ~name:"isinstance" callee || name_is ~name:"issubclass" callee ->
             let arguments = List.map ~f:transform_argument arguments in
             Expression.Call { callee; arguments }
+        | Expression.Call { callee; arguments } when name_is ~name:"TypeVar" callee ->
+            let arguments =
+              List.map
+                ~f:(fun argument ->
+                  match argument with
+                  | { name = Some { Node.value = "bound"; _ }; _ } -> transform_argument argument
+                  | _ -> argument)
+                arguments
+            in
+            Expression.Call { callee; arguments }
         | value -> value
       in
       { expression with Node.value }
