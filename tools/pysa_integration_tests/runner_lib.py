@@ -96,21 +96,36 @@ def validate_test_functions_and_class_names(current_directory: Path) -> None:
             elif isinstance(node, ast.ClassDef):
                 classes.append(node)
 
+        # Note: this only iterates on top level functions, excluding methods
+        # and nested functions.
         for function in functions:
             function_name = function.name
             LOG.debug(f"Validating function: {function_name}")
 
-            if not (
-                test_function_pattern.match(function_name)
-                or helper_function_pattern.match(function_name)
-            ):
-                raise TestConfigurationException(
-                    f"Expected test function {function_name} to have the "
-                    + "format test_####_flag_XXXX or test_####_no_flag_XXXX, "
-                    + "to indicate that issue #### is being tested, or "
-                    + "helperXXX to indicate it is an unrelated helper "
-                    + "function."
-                )
+            if helper_function_pattern.match(function_name):
+                continue
+
+            if test_function_pattern.match(function_name):
+                # Sanity check that there is at least one test annotation.
+                if not any(
+                    isinstance(decorator, ast.Call)
+                    and isinstance(decorator.func, ast.Name)
+                    and decorator.func.id in ("ExpectIssue", "ExpectNoIssue")
+                    for decorator in function.decorator_list
+                ):
+                    raise TestConfigurationException(
+                        f"Test function {function_name} does NOT have any test annotation (`ExpectIssue`, `ExpectNoIssue`)"
+                    )
+
+                continue
+
+            raise TestConfigurationException(
+                f"Expected test function {function_name} to have the "
+                + "format test_####_flag_XXXX or test_####_no_flag_XXXX, "
+                + "to indicate that issue #### is being tested, or "
+                + "helperXXX to indicate it is an unrelated helper "
+                + "function."
+            )
 
         for klass in classes:
             class_name = klass.name
