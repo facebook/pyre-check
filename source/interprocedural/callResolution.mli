@@ -7,7 +7,7 @@
 
 open Ast
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module AnnotatedAttribute = Analysis.AnnotatedAttribute
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
 val extract_constant_name : Expression.t -> string option
@@ -53,7 +53,7 @@ val defining_attribute
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   Type.t ->
   string ->
-  AnnotatedAttribute.instantiated option
+  PyrePysaLogic.AnnotatedAttribute.instantiated option
 
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)

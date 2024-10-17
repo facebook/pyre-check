@@ -14,7 +14,7 @@ open Ast
 open Expression
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module AnnotatedAttribute = Analysis.AnnotatedAttribute
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
 let extract_constant_name { Node.value = expression; _ } =
@@ -43,7 +43,7 @@ let has_transitive_successor_ignoring_untracked ~pyre_api ~reflexive ~predecesso
     reflexive
   else
     try PyrePysaEnvironment.ReadOnly.has_transitive_successor pyre_api ~successor predecessor with
-    | Analysis.ClassHierarchy.Untracked untracked_type ->
+    | PyrePysaLogic.UntrackedClass untracked_type ->
         Log.warning
           "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
            lead to false negatives."
@@ -96,7 +96,7 @@ let is_nonlocal ~pyre_in_context ~define variable =
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 let resolve_ignoring_untracked ~pyre_in_context expression =
   try PyrePysaEnvironment.InContext.resolve_expression_to_type pyre_in_context expression with
-  | Analysis.ClassHierarchy.Untracked untracked_type ->
+  | PyrePysaLogic.UntrackedClass untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of `%a`. This could lead to false \
          negatives."
@@ -111,7 +111,7 @@ let resolve_attribute_access_ignoring_untracked ~pyre_in_context ~base_type ~att
   try
     PyrePysaEnvironment.InContext.resolve_attribute_access pyre_in_context ~base_type ~attribute
   with
-  | Analysis.ClassHierarchy.Untracked untracked_type ->
+  | PyrePysaLogic.UntrackedClass untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of attribute `%s` in `%a`. This could \
          lead to false negatives."
@@ -137,7 +137,7 @@ let defining_attribute ~pyre_in_context type_for_lookup attribute =
   in
   instantiated_attribute
   >>= fun instantiated_attribute ->
-  if AnnotatedAttribute.defined instantiated_attribute then
+  if PyrePysaLogic.AnnotatedAttribute.defined instantiated_attribute then
     Some instantiated_attribute
   else
     PyrePysaEnvironment.InContext.fallback_attribute pyre_in_context ~name:attribute class_name
