@@ -21,7 +21,10 @@ module Cfg = Cfg
 module Fixpoint = Fixpoint
 module DecoratorPreprocessing = DecoratorPreprocessing
 module ClassSummary = ClassSummary
+module AnnotatedAttribute = AnnotatedAttribute
 module SharedMemoryKeys = SharedMemoryKeys
+
+exception UntrackedClass = ClassHierarchy.Untracked
 
 let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
 

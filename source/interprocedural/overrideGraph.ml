@@ -16,6 +16,7 @@ open Pyre
 open Ast
 open Statement
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
@@ -61,7 +62,7 @@ module Heap = struct
                 (Reference.show class_name)
                 ~name:method_name
             with
-            | Analysis.ClassHierarchy.Untracked untracked_type ->
+            | PyrePysaLogic.UntrackedClass untracked_type ->
                 Log.warning
                   "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will \
                    be considered has having no parent, which could lead to false negatives."
@@ -73,7 +74,7 @@ module Heap = struct
           in
           ancestor
           >>= fun ancestor ->
-          let parent_annotation = Analysis.AnnotatedAttribute.parent ancestor in
+          let parent_annotation = PyrePysaLogic.AnnotatedAttribute.parent ancestor in
           let ancestor_parent =
             Type.Primitive parent_annotation
             |> Type.expression
