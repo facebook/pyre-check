@@ -23,6 +23,8 @@ module Fixpoint = Fixpoint
 module DecoratorPreprocessing = DecoratorPreprocessing
 module ClassSummary = ClassSummary
 module AnnotatedAttribute = AnnotatedAttribute
+module ResolvedReference = ResolvedReference
+module ModuleExport = Module.Export
 module SharedMemoryKeys = SharedMemoryKeys
 
 exception UntrackedClass = ClassHierarchy.Untracked
@@ -38,10 +40,16 @@ let qualifier_and_bodies_of_function_definition ({ FunctionDefinition.qualifier;
 
 let artifact_path_of_module_path = ArtifactPaths.artifact_path_of_module_path
 
+let type_of_attribute instantiated_attribute =
+  AnnotatedAttribute.annotation instantiated_attribute |> TypeInfo.Unit.annotation
+
+
 let name_of_method method_as_instantiated_attribute =
-  AnnotatedAttribute.annotation method_as_instantiated_attribute
-  |> TypeInfo.Unit.annotation
-  |> Type.callable_name
+  type_of_attribute method_as_instantiated_attribute |> Type.callable_name
+
+
+let undecorated_signature_of_global { AttributeResolution.Global.undecorated_signature; _ } =
+  undecorated_signature
 
 
 module Testing = struct

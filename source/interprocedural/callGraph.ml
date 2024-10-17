@@ -22,11 +22,7 @@ open Statement
 open Expression
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
-module Cfg = Analysis.Cfg
-module ResolvedReference = Analysis.ResolvedReference
-module ClassSummary = Analysis.ClassSummary
-module AnnotatedAttribute = Analysis.AnnotatedAttribute
-module TypeInfo = Analysis.TypeInfo
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module JsonHelper = struct
   let add_optional name value to_json bindings =
@@ -124,7 +120,7 @@ module ReturnType = struct
       in
       { is_boolean; is_integer; is_float; is_enumeration }
     with
-    | Analysis.ClassHierarchy.Untracked untracked_type ->
+    | PyrePysaLogic.UntrackedClass untracked_type ->
         Log.warning
           "Found untracked type `%s` when checking the return type `%a` of a call. The return type \
            will NOT be considered a scalar, which could lead to missing breadcrumbs."
@@ -1360,7 +1356,7 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
               ~left:candidate_type
               ~right:receiver_type
           with
-          | Analysis.ClassHierarchy.Untracked untracked_type ->
+          | PyrePysaLogic.UntrackedClass untracked_type ->
               Log.warning
                 "Found untracked type `%s` when comparing `%a` and `%a`. The class `%a` will be \
                  considered a subclass of `%a`, which could lead to false positives."
@@ -1683,8 +1679,7 @@ let resolve_callee_from_defining_expression
       (* If implementing_class is unknown, this must be a function rather than a method. We can use
          global resolution on the callee. *)
       PyrePysaEnvironment.ReadOnly.global pyre_api (Ast.Expression.name_to_reference_exn name)
-      >>= fun { Analysis.AttributeResolution.Global.undecorated_signature; _ } ->
-      undecorated_signature
+      >>= PyrePysaLogic.undecorated_signature_of_global
       >>| fun undecorated_signature ->
       resolve_callees_from_type
         ~debug
@@ -1764,7 +1759,7 @@ let resolve_stringify_call ~pyre_in_context expression =
         "__repr__"
     | _ -> "__str__"
   with
-  | Analysis.ClassHierarchy.Untracked _ -> "__str__"
+  | PyrePysaLogic.UntrackedClass _ -> "__str__"
 
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
@@ -2007,9 +2002,11 @@ let resolve_callee_ignoring_decorators
         let name = Ast.Expression.name_to_reference_exn name in
         match PyrePysaEnvironment.ReadOnly.resolve_exports pyre_api name with
         | Some
-            (ResolvedReference.ModuleAttribute
+            (PyrePysaLogic.ResolvedReference.ModuleAttribute
               {
-                export = ResolvedReference.Exported (Analysis.Module.Export.Name.Define _);
+                export =
+                  PyrePysaLogic.ResolvedReference.Exported
+                    (PyrePysaLogic.ModuleExport.Name.Define _);
                 remaining = [];
                 _;
               }) ->
@@ -2022,18 +2019,19 @@ let resolve_callee_ignoring_decorators
                 |> Target.from_regular);
             ]
         | Some
-            (ResolvedReference.ModuleAttribute
+            (PyrePysaLogic.ResolvedReference.ModuleAttribute
               {
                 from;
                 name;
-                export = ResolvedReference.Exported Analysis.Module.Export.Name.Class;
+                export =
+                  PyrePysaLogic.ResolvedReference.Exported PyrePysaLogic.ModuleExport.Name.Class;
                 remaining = [attribute];
                 _;
               }) -> (
             let class_name = Reference.create ~prefix:from name |> Reference.show in
             PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
             >>| Node.value
-            >>| ClassSummary.attributes
+            >>| PyrePysaLogic.ClassSummary.attributes
             >>= Identifier.SerializableMap.find_opt attribute
             >>| Node.value
             |> function
@@ -2054,7 +2052,7 @@ let resolve_callee_ignoring_decorators
                 let () =
                   log
                     "Bypassing decorators - Non-method attribute `%s` for callee `%s`"
-                    (ClassSummary.Attribute.show_attribute attribute)
+                    (PyrePysaLogic.ClassSummary.Attribute.show_attribute attribute)
                     (Expression.show callee)
                 in
                 []
@@ -2093,11 +2091,15 @@ let resolve_callee_ignoring_decorators
               match
                 PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api element
                 >>| Node.value
-                >>| ClassSummary.attributes
+                >>| PyrePysaLogic.ClassSummary.attributes
                 >>= Identifier.SerializableMap.find_opt attribute
                 >>| Node.value
               with
-              | Some { ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ } ->
+              | Some
+                  {
+                    PyrePysaLogic.ClassSummary.Attribute.kind = Method { static; signatures; _ };
+                    _;
+                  } ->
                   Some (element, contain_class_method signatures, static)
               | _ -> None
             in
@@ -2199,11 +2201,9 @@ let resolve_attribute_access_properties
         ReturnType.none
       else
         let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
-        AnnotatedAttribute.annotation property
-        |> TypeInfo.Unit.annotation
-        |> ReturnType.from_annotation ~pyre_api
+        PyrePysaLogic.type_of_attribute property |> ReturnType.from_annotation ~pyre_api
     in
-    let parent = AnnotatedAttribute.parent property |> Reference.create in
+    let parent = PyrePysaLogic.AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
       if Type.is_builtins_type base_type_info then
@@ -2228,7 +2228,8 @@ let resolve_attribute_access_properties
   let properties, non_properties =
     List.partition_map
       ~f:(function
-        | Some property when AnnotatedAttribute.property property -> Either.First property
+        | Some property when PyrePysaLogic.AnnotatedAttribute.property property ->
+            Either.First property
         | attribute -> Either.Second attribute)
       attributes
   in
@@ -2254,7 +2255,7 @@ let as_identifier_reference ~define ~pyre_in_context expression =
         (PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
         reference
       >>= function
-      | ResolvedReference.ModuleAttribute { from; name; remaining = []; _ } ->
+      | PyrePysaLogic.ResolvedReference.ModuleAttribute { from; name; remaining = []; _ } ->
           Some (IdentifierCallees.Global (Reference.combine from (Reference.create name)))
       | _ -> None)
   | _ -> None
@@ -2298,8 +2299,9 @@ let resolve_attribute_access_global_targets
                       ~type_for_lookup:annotation
               in
               match attribute with
-              | Some attribute when AnnotatedAttribute.defined attribute ->
-                  Type.Primitive (AnnotatedAttribute.parent attribute) |> Type.class_name
+              | Some attribute when PyrePysaLogic.AnnotatedAttribute.defined attribute ->
+                  Type.Primitive (PyrePysaLogic.AnnotatedAttribute.parent attribute)
+                  |> Type.class_name
               | _ -> Type.class_name annotation
             in
             let attribute = Format.sprintf "__class__.%s" attribute in
@@ -2926,7 +2928,7 @@ struct
 
   module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)
 
-  include Analysis.Fixpoint.Make (struct
+  include PyrePysaLogic.Fixpoint.Make (struct
     type t = unit [@@deriving show]
 
     let bottom = ()
@@ -2985,7 +2987,7 @@ let call_graph_of_define
     ~qualifier
     ~define
   =
-  let name = Analysis.FunctionDefinition.qualified_name_of_define ~module_name:qualifier define in
+  let name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define in
   let timer = Timer.start () in
   let callees_at_location = Location.Table.create () in
   let module DefineFixpoint = DefineCallGraphFixpoint (struct
@@ -3027,7 +3029,7 @@ let call_graph_of_define
               value))
   in
 
-  DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
+  DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
   let call_graph =
     Hashtbl.to_alist callees_at_location
     |> List.map ~f:(fun (location, unprocessed_callees) ->
