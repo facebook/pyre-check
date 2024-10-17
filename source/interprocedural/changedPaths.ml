@@ -12,8 +12,7 @@
 
 open Core
 open Ast
-module SharedMemoryKeys = Analysis.SharedMemoryKeys
-module ArtifactPaths = Analysis.ArtifactPaths
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module HashResult = struct
   type t =
@@ -30,7 +29,7 @@ end
 (* Store the hash for each module in the shared memory. *)
 module SharedMemoryHashes =
   Memory.NoCache.Make
-    (SharedMemoryKeys.ReferenceKey)
+    (PyrePysaLogic.SharedMemoryKeys.ReferenceKey)
     (struct
       type t = HashResult.t
 
@@ -47,7 +46,7 @@ let save_current_paths ~scheduler ~scheduler_policies ~configuration ~module_pat
   let save_paths module_paths =
     let save_path module_path =
       let hash =
-        ArtifactPaths.artifact_path_of_module_path ~configuration module_path |> hash_of_content
+        PyrePysaLogic.artifact_path_of_module_path ~configuration module_path |> hash_of_content
       in
       let qualifier = ModulePath.qualifier module_path in
       SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
@@ -99,7 +98,7 @@ let compute_locally_changed_paths
   let changed_paths new_module_paths =
     let changed_path module_path =
       let old_hash = SharedMemoryHashes.get (ModulePath.qualifier module_path) in
-      let path = ArtifactPaths.artifact_path_of_module_path ~configuration module_path in
+      let path = PyrePysaLogic.artifact_path_of_module_path ~configuration module_path in
       let current_hash = hash_of_content path in
       if Option.equal HashResult.equal old_hash (Some current_hash) then
         None
@@ -137,7 +136,7 @@ let compute_locally_changed_paths
     |> List.filter ~f:(fun module_path ->
            let key = ModulePath.raw module_path in
            not (Hash_set.mem tracked_set key))
-    |> List.map ~f:(ArtifactPaths.artifact_path_of_module_path ~configuration)
+    |> List.map ~f:(PyrePysaLogic.artifact_path_of_module_path ~configuration)
   in
   Statistics.performance ~name:"computed locally changed files" ~timer ();
   changed_paths @ removed_paths

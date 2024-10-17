@@ -28,6 +28,8 @@ exception UntrackedClass = ClassHierarchy.Untracked
 
 let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
 
+let artifact_path_of_module_path = ArtifactPaths.artifact_path_of_module_path
+
 module Testing = struct
   module AnalysisError = AnalysisError
 end
