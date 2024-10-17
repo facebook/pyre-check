@@ -17,6 +17,7 @@
  * understand what else would be needed if we exposed a high-quality typed AST.
  *)
 
+open Core
 module Cfg = Cfg
 module Fixpoint = Fixpoint
 module DecoratorPreprocessing = DecoratorPreprocessing
@@ -28,7 +29,20 @@ exception UntrackedClass = ClassHierarchy.Untracked
 
 let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
 
+let qualifier_and_bodies_of_function_definition ({ FunctionDefinition.qualifier; _ } as definition) =
+  ( qualifier,
+    FunctionDefinition.all_bodies definition
+    |> List.filter ~f:(fun { Ast.Node.value; _ } ->
+           not (Ast.Statement.Define.is_overloaded_function value)) )
+
+
 let artifact_path_of_module_path = ArtifactPaths.artifact_path_of_module_path
+
+let name_of_method method_as_instantiated_attribute =
+  AnnotatedAttribute.annotation method_as_instantiated_attribute
+  |> TypeInfo.Unit.annotation
+  |> Type.callable_name
+
 
 module Testing = struct
   module AnalysisError = AnalysisError

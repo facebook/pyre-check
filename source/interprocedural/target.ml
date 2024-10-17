@@ -18,6 +18,7 @@ open Ast
 open Statement
 open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type kind =
   | Normal
@@ -393,12 +394,8 @@ type definitions_result = {
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 let get_definitions ~pyre_api define_name =
   PyrePysaEnvironment.ReadOnly.get_function_definition pyre_api define_name
-  >>| fun ({ Analysis.FunctionDefinition.qualifier; _ } as definitions) ->
-  let bodies = Analysis.FunctionDefinition.all_bodies definitions in
-  (* Ignore defines for type overloads. *)
-  let bodies =
-    List.filter ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value)) bodies
-  in
+  >>| PyrePysaLogic.qualifier_and_bodies_of_function_definition
+  >>| fun (qualifier, bodies) ->
   let fold ({ callables; _ } as result) define =
     let target = create define_name (Node.value define) in
     match Map.find_opt target callables with
@@ -442,11 +439,8 @@ let resolve_method ~pyre_api ~class_type ~method_name =
           ~type_for_lookup:class_type
   in
   match callable_implementation with
-  | Some callable when Analysis.AnnotatedAttribute.defined callable ->
-      Analysis.AnnotatedAttribute.annotation callable
-      |> Analysis.TypeInfo.Unit.annotation
-      |> Type.callable_name
-      >>| create_method
+  | Some callable when PyrePysaLogic.AnnotatedAttribute.defined callable ->
+      PyrePysaLogic.name_of_method callable >>| create_method
   | _ -> None
 
 
