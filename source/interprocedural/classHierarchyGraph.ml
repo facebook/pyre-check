@@ -12,6 +12,7 @@ open Core
 open Ast
 open Statement
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type class_name = string
 
@@ -175,7 +176,7 @@ end
 module SharedMemory = struct
   module DirectChildren =
     Memory.WithCache.Make
-      (Analysis.SharedMemoryKeys.StringKey)
+      (PyrePysaLogic.SharedMemoryKeys.StringKey)
       (struct
         type t = ClassNameSet.t
 
@@ -186,7 +187,7 @@ module SharedMemory = struct
 
   module TransitiveChildren =
     Memory.WithCache.Make
-      (Analysis.SharedMemoryKeys.StringKey)
+      (PyrePysaLogic.SharedMemoryKeys.StringKey)
       (struct
         type t = ClassNameSet.t
 

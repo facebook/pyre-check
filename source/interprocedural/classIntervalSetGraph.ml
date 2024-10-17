@@ -12,6 +12,7 @@
  * stored in shared memory using the `SharedMemory` module.
  *)
 
+module PyrePysaLogic = Analysis.PyrePysaLogic
 module HackSharedMemory = Hack_parallel.Std.SharedMemory
 open ClassHierarchyGraph
 
@@ -114,7 +115,7 @@ end
 module SharedMemory = struct
   module Internal =
     HackSharedMemory.FirstClass.WithCache.Make
-      (Analysis.SharedMemoryKeys.StringKey)
+      (PyrePysaLogic.SharedMemoryKeys.StringKey)
       (struct
         type t = ClassIntervalSet.t
 

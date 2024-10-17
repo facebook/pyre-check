@@ -10,6 +10,7 @@ open Ast
 open Statement
 open Expression
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module Heap = struct
   type t = StringLiteral.t Reference.Map.t [@@deriving show, eq]
@@ -96,7 +97,7 @@ end
 module SharedMemory = struct
   include
     SaveLoadSharedMemory.MakeKeyValue
-      (Analysis.SharedMemoryKeys.ReferenceKey)
+      (PyrePysaLogic.SharedMemoryKeys.ReferenceKey)
       (struct
         type t = StringLiteral.t
 
