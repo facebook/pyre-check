@@ -9,6 +9,7 @@ open Core
 open OUnit2
 open Pyre
 open Test
+module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type locally_changed_file = {
   relative: string;
@@ -36,7 +37,7 @@ let test_compute_locally_changed_files context =
           ~scheduler
           ~scheduler_policies
           ~configuration
-          ~module_paths:(Analysis.ModuleTracker.module_paths module_tracker)
+          ~module_paths:(PyrePysaLogic.Testing.ModuleTracker.module_paths module_tracker)
       in
       configuration, module_tracker
     in
@@ -50,17 +51,20 @@ let test_compute_locally_changed_files context =
     in
     List.iter files ~f:write_new_file;
     let new_module_tracker =
-      Analysis.EnvironmentControls.create configuration |> Analysis.ModuleTracker.create
+      PyrePysaLogic.Testing.EnvironmentControls.create configuration
+      |> PyrePysaLogic.Testing.ModuleTracker.create
     in
     let actual =
       Interprocedural.ChangedPaths.compute_locally_changed_paths
         ~scheduler
         ~scheduler_policies
         ~configuration
-        ~old_module_paths:(Analysis.ModuleTracker.module_paths old_module_tracker)
-        ~new_module_paths:(Analysis.ModuleTracker.module_paths new_module_tracker)
+        ~old_module_paths:(PyrePysaLogic.Testing.ModuleTracker.module_paths old_module_tracker)
+        ~new_module_paths:(PyrePysaLogic.Testing.ModuleTracker.module_paths new_module_tracker)
       |> List.filter_map ~f:(fun path ->
-             PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path))
+             PyrePath.get_relative_to_root
+               ~root:local_root
+               ~path:(PyrePysaLogic.Testing.ArtifactPath.raw path))
     in
     assert_equal
       ~printer:(List.to_string ~f:Fn.id)

@@ -54,4 +54,8 @@ let undecorated_signature_of_global { AttributeResolution.Global.undecorated_sig
 
 module Testing = struct
   module AnalysisError = AnalysisError
+  module ModuleTracker = ModuleTracker
+  module ArtifactPath = ArtifactPath
+  module EnvironmentControls = EnvironmentControls
+  module SourceCodeApi = SourceCodeApi
 end
