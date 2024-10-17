@@ -222,6 +222,7 @@ module.exports = {
     }),
     'pysa-additional-resources',
     ...fbInternalOnly(['fb/pysa-cross-repo-taint-exchange']),
+    ...fbInternalOnly(['fb/pysa-integration-tests']),
     ...fbInternalOnly(['fb/pysa-ig-integration-test']),
     ...fbInternalOnly([
       {
