@@ -656,7 +656,7 @@ def compare_issues_to_test_annotations(
     remaining_issues = sorted(
         issues, key=lambda issue: (issue["line"], issue["column"])
     )
-    annotations.sort(key=lambda annotation: annotation.line)
+    annotations.sort(key=lambda annotation: annotation.line or 99999)
 
     test_failures: List[str] = []
     number_expected_issues = 0
