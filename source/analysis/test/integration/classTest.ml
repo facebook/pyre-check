@@ -94,10 +94,7 @@ let test_dynamic_class_body =
                for x in range(5):
                    print(x)
            |}
-           [
-             "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
-             "Undefined attribute [16]: `C` has no attribute `x`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -105,10 +102,7 @@ let test_dynamic_class_body =
                with open("file") as x:
                    print(x)
            |}
-           [
-             "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
-             "Undefined attribute [16]: `C` has no attribute `x`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

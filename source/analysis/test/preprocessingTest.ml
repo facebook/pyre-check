@@ -1966,8 +1966,8 @@ let test_qualify_source =
     |}
            {|
       class qualifier.A:
-         for qualifier.A.x in []:
-           qualifier.A.x
+         for $local_qualifier?A$x in []:
+           $local_qualifier?A$x
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1978,8 +1978,8 @@ let test_qualify_source =
     |}
            {|
       class qualifier.A:
-         with item as qualifier.A.x:
-           qualifier.A.x
+         with item as $local_qualifier?A$x:
+           $local_qualifier?A$x
     |};
       (* Don't qualify x within d["x"]. *)
       labeled_test_case __FUNCTION__ __LINE__

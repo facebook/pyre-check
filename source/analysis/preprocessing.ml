@@ -923,21 +923,23 @@ module Qualify = struct
       in
       { scope with aliases = Map.set aliases ~key:name ~data:(local_alias ~name:qualified) }
     in
-    let explore_single_target ~scope:({ parent; locals; _ } as scope) name =
-      if NestingContext.is_class parent then
+    let explore_single_target ?(force_local = false) ~scope:({ parent; locals; _ } as scope) name =
+      if NestingContext.is_class parent && not force_local then
         add_class_attribute_alias_to_scope ~scope name
       else if Set.mem locals name then
         scope
       else
         add_local_alias_to_scope ~scope name
     in
-    let rec explore_target ~scope = function
+    let rec explore_target ?(force_local = false) ~scope = function
       | { Node.value = Expression.Tuple elements; _ }
       | { Node.value = Expression.List elements; _ } ->
-          List.fold elements ~init:scope ~f:(fun scope target -> explore_target ~scope target)
+          List.fold elements ~init:scope ~f:(fun scope target ->
+              explore_target ~force_local ~scope target)
       | { Node.value = Expression.(Starred (Starred.Once element)); _ } ->
-          explore_target ~scope element
-      | { Node.value = Name (Name.Identifier name); _ } -> explore_single_target ~scope name
+          explore_target ~force_local ~scope element
+      | { Node.value = Name (Name.Identifier name); _ } ->
+          explore_single_target ~force_local ~scope name
       | _ -> scope
     in
     let rec explore_aliases ({ module_name; parent; aliases; _ } as scope) { Node.value; _ } =
@@ -999,7 +1001,7 @@ module Qualify = struct
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }
       | Statement.For { For.target; body; orelse; _ } ->
-          let scope = explore_target ~scope target in
+          let scope = explore_target ~force_local:true ~scope target in
           let scope = List.fold body ~init:scope ~f:explore_aliases in
           List.fold orelse ~init:scope ~f:explore_aliases
       | Statement.Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
@@ -1020,7 +1022,7 @@ module Qualify = struct
       | Statement.With { With.items; body; _ } ->
           let explore_with_item scope (_, alias) =
             match alias with
-            | Some alias -> explore_target ~scope alias
+            | Some alias -> explore_target ~force_local:true ~scope alias
             | None -> scope
           in
           let scope = List.fold items ~init:scope ~f:explore_with_item in
