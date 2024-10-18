@@ -47,76 +47,6 @@ let test_show_search_path _ =
   ()
 
 
-let test_normalize context =
-  let good_root = bracket_tmpdir context in
-  let good_root_path = PyrePath.create_absolute good_root in
-  let bad_root_path =
-    PyrePath.create_relative ~root:good_root_path ~relative:"nonexist/directory"
-  in
-  let bad_root = PyrePath.absolute bad_root_path in
-  let good_subroot_path = PyrePath.create_relative ~root:good_root_path ~relative:"subroot" in
-  PyrePath.create_directory_recursively good_subroot_path |> Base.Result.ok_or_failwith;
-  let good_subroot = PyrePath.absolute good_subroot_path in
-  let create_input ?subdirectory ?submodule root =
-    let search_path =
-      match subdirectory, submodule with
-      | Some subdirectory, _ -> SearchPath.Subdirectory { root = !root; subdirectory }
-      | _, Some submodule -> SearchPath.Submodule { root = !root; submodule }
-      | _ -> SearchPath.Root !root
-    in
-    SearchPath.show search_path
-  in
-  let assert_success ~normalize ~expected input =
-    let create_search_path, create_type =
-      if normalize then
-        SearchPath.create_normalized, "normalized"
-      else
-        SearchPath.create, "non-normalized"
-    in
-    try
-      let _ = create_search_path input in
-      if not expected then
-        let message =
-          Format.sprintf
-            "Expect %s search path creation to succeed but it failed on input %s"
-            create_type
-            input
-        in
-        assert_failure message
-    with
-    | _ ->
-        if expected then
-          let message =
-            Format.sprintf
-              "Expect %s search path creation to fail but it succeeded on input %s"
-              create_type
-              input
-          in
-          assert_failure message
-  in
-
-  (* Non-normalized creation succeeds all the time. *)
-  assert_success ~normalize:false ~expected:true (create_input good_root);
-  assert_success ~normalize:false ~expected:true (create_input good_subroot);
-  assert_success ~normalize:false ~expected:true (create_input bad_root);
-  assert_success ~normalize:false ~expected:true (create_input ~subdirectory:"subroot" good_root);
-  assert_success ~normalize:false ~expected:true (create_input ~subdirectory:"nosubroot" good_root);
-  assert_success ~normalize:false ~expected:true (create_input ~subdirectory:"subroot" bad_root);
-  assert_success ~normalize:false ~expected:true (create_input ~submodule:"subroot" bad_root);
-
-  (* Normalized creation depends on filesystem state. *)
-  assert_success ~normalize:true ~expected:true (create_input good_root);
-  assert_success ~normalize:true ~expected:true (create_input good_subroot);
-  assert_success ~normalize:true ~expected:false (create_input bad_root);
-  assert_success ~normalize:true ~expected:true (create_input ~subdirectory:"subroot" good_root);
-  assert_success ~normalize:true ~expected:false (create_input ~subdirectory:"nosubroot" good_root);
-  assert_success ~normalize:true ~expected:false (create_input ~subdirectory:"subroot" bad_root);
-  assert_success ~normalize:true ~expected:true (create_input ~submodule:"subroot" good_root);
-  assert_success ~normalize:true ~expected:false (create_input ~submodule:"subroot" bad_root);
-
-  ()
-
-
 let test_search_for_path context =
   let root = bracket_tmpdir context |> PyrePath.create_absolute in
   let assert_path ~search_paths ~path ~expected =
@@ -157,7 +87,6 @@ let () =
   >::: [
          "create_search_path" >:: test_create_search_path;
          "show_search_path" >:: test_show_search_path;
-         "normalize" >:: test_normalize;
          "search_for_path" >:: test_search_for_path;
        ]
   |> Test.run

@@ -105,7 +105,7 @@ module CheckConfiguration = struct
       ?long_lived_workers
       ~local_root:(Option.value local_root ~default:global_root)
       ~project_root:global_root
-      ~search_paths:(List.map search_paths ~f:SearchPath.normalize)
+      ~search_paths
       ~strict
       ~debug
       ~show_error_traces

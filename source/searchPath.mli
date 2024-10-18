@@ -30,13 +30,4 @@ val to_path : t -> PyrePath.t
    side-effect. *)
 val create : string -> t
 
-(* Create a normalized search path from its string representation. Normalizing a path means to
-   expand its relativized root and follow symlinks. This operation DOES have filesystem
-   side-effect. *)
-val create_normalized : string -> t
-
-(* Turn a potentially un-normalized search path into a normalized one. This operation DOES have
-   filesystem side-effect.*)
-val normalize : t -> t
-
 val search_for_path : search_paths:t list -> ArtifactPath.t -> search_result option

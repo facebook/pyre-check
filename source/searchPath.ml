@@ -77,25 +77,6 @@ let create serialized =
   | _ -> failwith (Format.asprintf "Unable to create search path from %s" serialized)
 
 
-let normalize = function
-  | Root root ->
-      Root (PyrePath.create_absolute ~follow_symbolic_links:false (PyrePath.absolute root))
-  | Subdirectory { root; subdirectory } ->
-      Subdirectory
-        {
-          root = PyrePath.create_absolute ~follow_symbolic_links:false (PyrePath.absolute root);
-          subdirectory;
-        }
-  | Submodule { root; submodule } ->
-      Submodule
-        {
-          root = PyrePath.create_absolute ~follow_symbolic_links:false (PyrePath.absolute root);
-          submodule;
-        }
-
-
-let create_normalized serialized = create serialized |> normalize
-
 let search_for_path ~search_paths analysis_path =
   let raw_path = ArtifactPath.raw analysis_path in
   let under_root search_path =
