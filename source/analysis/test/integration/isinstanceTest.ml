@@ -452,4 +452,41 @@ let test_check_isinstance =
     ]
 
 
-let () = "isinstance" >::: [test_check_isinstance] |> Test.run
+let test_check_issubclass =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      class A: ...
+      class B(A): ...
+      def foo(x: type[A]) -> None:
+        if issubclass(x, A):
+          reveal_type(x)
+    |}
+           ["Revealed type [-1]: Revealed type for `x` is `typing.Type[A]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      class A: ...
+      class B(A): ...
+      def foo(x: type[A]) -> None:
+        if issubclass(x, B):
+          reveal_type(x)
+    |}
+           ["Revealed type [-1]: Revealed type for `x` is `typing.Type[B]`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import assert_never
+      class A: ...
+      class B(A): ...
+      def foo(x: type[A]) -> None:
+        if issubclass(x, int):
+          assert_never()
+    |}
+           [];
+    ]
+
+
+let () = "isinstance" >::: [test_check_isinstance; test_check_issubclass] |> Test.run

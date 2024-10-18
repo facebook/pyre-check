@@ -4012,6 +4012,56 @@ module State (Context : Context) = struct
               | _ -> Value resolution)
           | _ -> Value resolution)
     in
+    let refine_isinstance name parsed_annotation =
+      let refinement_unnecessary existing_annotation =
+        annotation_less_or_equal
+          ~left:existing_annotation
+          ~right:(TypeInfo.Unit.create_mutable parsed_annotation)
+        && (not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Bottom))
+        && not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any)
+      in
+      match existing_annotation name with
+      | Some _ when Type.is_any parsed_annotation -> Value resolution
+      | None -> Value resolution
+      | Some existing_annotation when refinement_unnecessary existing_annotation -> Value resolution
+      (* Clarify Anys if possible *)
+      | Some existing_annotation
+        when Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any ->
+          Value (TypeInfo.Unit.create_mutable parsed_annotation |> refine_local ~name)
+      | Some existing_annotation ->
+          let existing_type = TypeInfo.Unit.annotation existing_annotation in
+          let { consistent_with_boundary; _ } =
+            partition existing_type ~boundary:parsed_annotation
+          in
+          if not (Type.is_unbound consistent_with_boundary) then
+            Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
+          else if
+            GlobalResolution.less_or_equal
+              global_resolution
+              ~left:parsed_annotation
+              ~right:existing_type
+          then
+            (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound to
+               refine `x` to `Child` because the runtime will not enter the branch unless `x` is an
+               instance of `Child`. *)
+            let refined_type =
+              if
+                (not (Type.is_top existing_type))
+                && GlobalResolution.less_or_equal
+                     global_resolution
+                     ~left:(Type.PyreReadOnly.create parsed_annotation)
+                     ~right:existing_type
+              then
+                (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
+                   `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
+                Type.PyreReadOnly.create parsed_annotation
+              else
+                parsed_annotation
+            in
+            Value (TypeInfo.Unit.create_mutable refined_type |> refine_local ~name)
+          else
+            Unreachable
+    in
     match Node.value test with
     (* Explicit asserting falsy values. *)
     | Expression.Constant Constant.(False | NoneLiteral)
@@ -4062,61 +4112,29 @@ module State (Context : Context) = struct
               { Call.Argument.name = None; value = refinement_target };
               { Call.Argument.name = None; value = annotation_expression };
             ];
-        } -> begin
+        } -> (
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
-        | Some name -> (
+        | Some name ->
             let parsed_annotation = parse_refinement_annotation annotation_expression in
-            let refinement_unnecessary existing_annotation =
-              annotation_less_or_equal
-                ~left:existing_annotation
-                ~right:(TypeInfo.Unit.create_mutable parsed_annotation)
-              && (not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Bottom))
-              && not (Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any)
-            in
-            match existing_annotation name with
-            | Some _ when Type.is_any parsed_annotation -> Value resolution
-            | None -> Value resolution
-            | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                Value resolution
-            (* Clarify Anys if possible *)
-            | Some existing_annotation
-              when Type.equal (TypeInfo.Unit.annotation existing_annotation) Type.Any ->
-                Value (TypeInfo.Unit.create_mutable parsed_annotation |> refine_local ~name)
-            | Some existing_annotation ->
-                let existing_type = TypeInfo.Unit.annotation existing_annotation in
-                let { consistent_with_boundary; _ } =
-                  partition existing_type ~boundary:parsed_annotation
-                in
-                if not (Type.is_unbound consistent_with_boundary) then
-                  Value (TypeInfo.Unit.create_mutable consistent_with_boundary |> refine_local ~name)
-                else if
-                  GlobalResolution.less_or_equal
-                    global_resolution
-                    ~left:parsed_annotation
-                    ~right:existing_type
-                then
-                  (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound
-                     to refine `x` to `Child` because the runtime will not enter the branch unless
-                     `x` is an instance of `Child`. *)
-                  let refined_type =
-                    if
-                      (not (Type.is_top existing_type))
-                      && GlobalResolution.less_or_equal
-                           global_resolution
-                           ~left:(Type.PyreReadOnly.create parsed_annotation)
-                           ~right:existing_type
-                    then
-                      (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
-                         `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
-                      Type.PyreReadOnly.create parsed_annotation
-                    else
-                      parsed_annotation
-                  in
-                  Value (TypeInfo.Unit.create_mutable refined_type |> refine_local ~name)
-                else
-                  Unreachable)
-      end
+            refine_isinstance name parsed_annotation)
+    | Call
+        {
+          callee = { Node.value = Name (Name.Identifier "issubclass"); _ };
+          arguments =
+            [
+              { Call.Argument.name = None; value = refinement_target };
+              { Call.Argument.name = None; value = annotation_expression };
+            ];
+        } -> (
+        (* Handle issubclass(x, y) like isinstance(x, type[y]) - using a generic type in isinstance
+           isn't legal at runtime, but Pyre can handle it statically to achieve the desired
+           behavior. *)
+        match maybe_simple_name_of refinement_target with
+        | None -> Value resolution
+        | Some name ->
+            let parsed_annotation = parse_refinement_annotation annotation_expression in
+            refine_isinstance name (Type.builtins_type parsed_annotation))
     (* Type is *not* the same as `annotation_expression` *)
     | ComparisonOperator
         {

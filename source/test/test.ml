@@ -1615,6 +1615,7 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
             field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
             **kwargs: Any,
           ) -> IdentityFunction: ...
+          def assert_never(arg: Never, /) -> Never: ...
       |}
     );
     "asyncio/coroutines.pyi", {|
