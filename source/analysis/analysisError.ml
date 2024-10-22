@@ -905,6 +905,7 @@ and kind =
       members: int;
     }
   | NamedTupleMissingDefault
+  | AwaitOutsideAsyncDef
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -995,6 +996,7 @@ let code_of_kind = function
   | OutOfBoundsTupleIndex _ -> 73
   | NamedTupleMissingDefault -> 74
   | InvalidTypeVariableConstraint _ -> 75
+  | AwaitOutsideAsyncDef -> 76
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1087,6 +1089,7 @@ let name_of_kind = function
   | TupleDelete -> "Unable to delete tuple member"
   | OutOfBoundsTupleIndex _ -> "Invalid tuple index"
   | NamedTupleMissingDefault -> "Missing named tuple default"
+  | AwaitOutsideAsyncDef -> "Illegal await"
   | AssertType _ -> "Assert type"
 
 
@@ -2819,6 +2822,7 @@ let rec messages ~concise ~signature location kind =
           "Named tuple field without default value may not be preceded by a field with default \
            value.";
       ]
+  | AwaitOutsideAsyncDef -> [Format.asprintf "`await` may only be used inside an async definition."]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -3405,6 +3409,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TupleDelete
   | OutOfBoundsTupleIndex _
   | NamedTupleMissingDefault
+  | AwaitOutsideAsyncDef
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryIsInstance
   | TypedDictionaryKeyNotFound _
@@ -3954,6 +3959,7 @@ let join ~resolution left right =
     | TupleDelete, _
     | OutOfBoundsTupleIndex _, _
     | NamedTupleMissingDefault, _
+    | AwaitOutsideAsyncDef, _
     | AssertType _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryIsInstance, _
@@ -4574,6 +4580,7 @@ let dequalify
     | TupleDelete -> TupleDelete
     | OutOfBoundsTupleIndex details -> OutOfBoundsTupleIndex details
     | NamedTupleMissingDefault -> NamedTupleMissingDefault
+    | AwaitOutsideAsyncDef -> AwaitOutsideAsyncDef
     | ReadOnlynessMismatch mismatch ->
         ReadOnlynessMismatch (ReadOnly.dequalify ~dequalify_type:dequalify mismatch)
     | SuppressionCommentWithoutErrorCode error_codes ->

@@ -1782,7 +1782,7 @@ let test_global_statements context =
 
       async def async_func(x: int) -> None: ...
 
-      def test() -> None:
+      async def test() -> None:
         global my_global
         await async_func(my_global.setdefault("a", 1))
     |}

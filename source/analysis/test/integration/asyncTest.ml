@@ -18,12 +18,20 @@ let test_check_async =
       def bar() -> None:
         await foo()
     |}
+           ["Illegal await [76]: `await` may only be used inside an async definition."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      async def foo() -> int: return 1
+      async def bar() -> None:
+        await foo()
+    |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
       import typing
-      def bar(a: typing.Awaitable[int]) -> int:
+      async def bar(a: typing.Awaitable[int]) -> int:
         return await a
     |}
            [];
@@ -31,7 +39,7 @@ let test_check_async =
       @@ assert_type_errors
            {|
       from builtins import IsAwaitable
-      def bar(a: IsAwaitable) -> int:
+      async def bar(a: IsAwaitable) -> int:
         await a
         return 0
     |}
@@ -44,7 +52,7 @@ let test_check_async =
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
 
-      def foo(c: C) -> int:
+      async def foo(c: C) -> int:
         return (await c)
     |}
            ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
@@ -55,7 +63,7 @@ let test_check_async =
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
 
-      def foo(c: C) -> int:
+      async def foo(c: C) -> int:
         return (await c)
     |}
            ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
@@ -63,14 +71,14 @@ let test_check_async =
       @@ assert_type_errors
            {|
       from builtins import IsAwaitable
-      def bar(a: IsAwaitable) -> int:
+      async def bar(a: IsAwaitable) -> int:
         return (await a)
     |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      def bar(a: int) -> None:
+      async def bar(a: int) -> None:
         await a
     |}
            ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
@@ -78,7 +86,7 @@ let test_check_async =
       @@ assert_default_type_errors
            {|
       import typing
-      def bar(a: typing.Any) -> None:
+      async def bar(a: typing.Any) -> None:
         await a
     |}
            [];
@@ -139,7 +147,7 @@ let test_check_async =
         ...
 
       reveal_type(foo())
-      def bar() -> None:
+      async def bar() -> None:
         async for x in foo():
             pass
     |}
@@ -156,7 +164,7 @@ let test_check_async =
         yield True
 
       reveal_type(foo())
-      def bar() -> None:
+      async def bar() -> None:
         async for x in foo():
             pass
     |}
@@ -182,7 +190,7 @@ let test_check_async =
               yield True
 
       reveal_type(C().foo())
-      def bar(c: C) -> None:
+      async def bar(c: C) -> None:
         async for x in c.foo():
             pass
     |}
@@ -200,7 +208,7 @@ let test_check_async =
             ...
 
       reveal_type(C().foo())
-      def bar(c: C) -> None:
+      async def bar(c: C) -> None:
         async for x in c.foo():
             pass
     |}
@@ -327,7 +335,7 @@ let test_check_async =
       async def foo(x: int) -> int:
         return x + 1
 
-      def main() -> None:
+      async def main() -> None:
         xs = (await foo(x) for x in range(5))
         any(xs)
     |}
@@ -342,7 +350,7 @@ let test_check_async =
       async def foo(x: int) -> int:
         return x + 1
 
-      def main() -> None:
+      async def main() -> None:
         xs = (await foo(x) for x in range(5))
         ys = ((await foo(x) for x in range(5)) for y in range(5))
         reveal_type(xs)

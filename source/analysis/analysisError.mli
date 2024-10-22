@@ -559,6 +559,7 @@ and kind =
       members: int;
     }
   | NamedTupleMissingDefault
+  | AwaitOutsideAsyncDef
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

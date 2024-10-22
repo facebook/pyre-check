@@ -455,6 +455,7 @@ let test_check_yield_from =
            [
              "Incompatible return type [7]: Expected `Generator[int, None, None]` but got \
               `AsyncGenerator[int, typing.Any]`.";
+             "Illegal await [76]: `await` may only be used inside an async definition.";
            ];
     ]
 

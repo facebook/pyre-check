@@ -912,6 +912,7 @@ let test_function_call =
                       await self.some_classmethod(42)
             |}
            [
+             "Illegal await [76]: `await` may only be used inside an async definition.";
              "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
               `test.Foo.some_method` may modify its object. Cannot call it on readonly expression \
               `self` of type `pyre_extensions.PyreReadOnly[Foo]`.\n\
@@ -920,6 +921,7 @@ let test_function_call =
               https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
              "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional \
               argument, expected `str` but got `int`.";
+             "Illegal await [76]: `await` may only be used inside an async definition.";
              "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
               argument, expected `str` but got `int`.";
            ];

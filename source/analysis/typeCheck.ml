@@ -2082,6 +2082,16 @@ module State (Context : Context) = struct
           let { Resolved.resolution; resolved; errors; _ } =
             forward_expression ~resolution expression
           in
+          let { Node.value = { Define.signature = { Define.Signature.async = is_async; _ }; _ }; _ }
+            =
+            Context.define
+          in
+          let errors =
+            if is_async then
+              errors
+            else
+              emit_error ~errors ~location ~kind:Error.AwaitOutsideAsyncDef
+          in
           match resolved with
           | Type.Any ->
               {

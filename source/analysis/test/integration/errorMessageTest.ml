@@ -251,14 +251,20 @@ let test_concise =
            {|
       await 1
     |}
-           ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
+           [
+             "Incompatible awaitable type [12]: Expected an awaitable but got `int`.";
+             "Illegal await [76]: `await` may only be used inside an async definition.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
     def foo(x: int) -> None: ...
     await foo
   |}
-           ["Incompatible awaitable type [12]: Expected an awaitable but got `(x: int) -> None`."];
+           [
+             "Incompatible awaitable type [12]: Expected an awaitable but got `(x: int) -> None`.";
+             "Illegal await [76]: `await` may only be used inside an async definition.";
+           ];
       (* Prohibited Any *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

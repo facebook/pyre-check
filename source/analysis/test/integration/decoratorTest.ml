@@ -385,7 +385,7 @@ let test_decorators =
                 async def get_int(self) -> int:
                   return 5
 
-                def test(self) -> int:
+                async def test(self) -> int:
                   x = await self.get_int
                   return x
             |}
