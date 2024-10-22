@@ -30,8 +30,6 @@ from .parameter import Parameter
 
 def extract_qualified_name(callable_object: Callable[..., object]) -> Optional[str]:
     if inspect.ismethod(callable_object):
-        # pyre-fixme[6]: Expected `(...) -> object` for 1st param but got
-        #  `_StaticFunctionType`.
         return extract_qualified_name(callable_object.__func__)
     else:
         module_name = getattr(callable_object, "__module__", None)
@@ -55,7 +53,6 @@ def extract_parameters(
     if isinstance(callable_object, types.FunctionType):
         callable_parameters = inspect.signature(callable_object).parameters
     elif isinstance(callable_object, types.MethodType):
-        # pyre-ignore: Too dynamic
         callable_parameters = inspect.signature(callable_object.__func__).parameters
 
     parameters: List[Parameter] = []

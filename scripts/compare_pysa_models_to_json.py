@@ -225,7 +225,6 @@ def get_attribute_model_from_line(line: str) -> Optional[Tuple[str, TargetModel]
         for annotation in annotation_match.group("model_leaves").split(", ")
     }
     if model_type == "sources":
-        # pyre-fixme[26]: TypedDict key must be a string literal.
         result["return_model"][model_type].update(attribute_model_leaves)
     else:
         result["parameters"]["$global"][

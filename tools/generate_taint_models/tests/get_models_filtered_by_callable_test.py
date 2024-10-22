@@ -22,7 +22,6 @@ class TestModel(Model):
 
     # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
     def __hash__(self) -> int:
-        # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
         pass
 
     def __str__(self) -> str:
