@@ -578,17 +578,16 @@ class EmptyContainerCollector(matchers.MatcherDecoratableVisitor):
     def record_constructor_call(self, node: libcst.Assign) -> None:
         func = libcst.ensure_type(node.value, libcst.Call)
         func_name = libcst.ensure_type(func.func, libcst.Name)
-        match func_name.value:
-            case "list":
-                kind = EmptyContainerKind.LIST_CALL
-            case "dict":
-                kind = EmptyContainerKind.DICT_CALL
-            case "set":
-                kind = EmptyContainerKind.SET_CALL
-            case "frozenset":
-                kind = EmptyContainerKind.FROZENSET_CALL
-            case _:
-                raise ValueError(f"Unexpected function call: {func_name}")
+        if func_name.value == "list":
+            kind = EmptyContainerKind.LIST_CALL
+        elif func_name.value == "dict":
+            kind = EmptyContainerKind.DICT_CALL
+        elif func_name.value == "set":
+            kind = EmptyContainerKind.SET_CALL
+        elif func_name.value == "frozenset":
+            kind = EmptyContainerKind.FROZENSET_CALL
+        else:
+            raise ValueError(f"Unexpected function call: {func_name}")
         self.record_empty_container(kind, self.location(node))
 
 
