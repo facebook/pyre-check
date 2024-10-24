@@ -2735,7 +2735,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> CallGraph.DefineCallGraph.resolve_identifier
                      ~location:(Node.location target)
                      ~identifier
-                >>| (fun { global_targets = _; nonlocal_targets } -> nonlocal_targets)
+                >>| (fun { nonlocal_targets; _ } -> nonlocal_targets)
                 >>| Fn.non List.is_empty
                 >>| (fun has_nonlocal_targets -> Option.some_if has_nonlocal_targets identifier)
                 |> Option.value ~default:None

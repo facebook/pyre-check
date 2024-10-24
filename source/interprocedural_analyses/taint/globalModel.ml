@@ -33,7 +33,7 @@ let get_global_targets ~call_graph ~expression =
         call_graph
         ~location:(Node.location expression)
         ~identifier
-      >>| (fun { global_targets; nonlocal_targets = _ } -> global_targets)
+      >>| (fun { global_targets; _ } -> global_targets)
       |> Option.value ~default:[]
   | Expression.Name (Name.Attribute { attribute; _ }) ->
       CallGraph.DefineCallGraph.resolve_attribute_access

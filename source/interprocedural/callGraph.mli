@@ -190,8 +190,17 @@ module IdentifierCallees : sig
   type t = {
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
+    callable_targets: CallTarget.t list;
+        (* Function-typed runtime values that the identifiers may evaluate into. *)
   }
   [@@deriving eq, show]
+
+  val create
+    :  ?global_targets:CallTarget.t list ->
+    ?nonlocal_targets:CallTarget.t list ->
+    ?callable_targets:CallTarget.t list ->
+    unit ->
+    t
 
   val to_json : t -> Yojson.Safe.t
 end

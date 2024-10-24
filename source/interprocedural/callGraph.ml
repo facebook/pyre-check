@@ -751,6 +751,8 @@ module IdentifierCallees = struct
   type t = {
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
+    callable_targets: CallTarget.t list;
+        (* Function-typed runtime values that the identifiers may evaluate into. *)
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -758,32 +760,49 @@ module IdentifierCallees = struct
     | Global of Reference.t
     | Nonlocal of Reference.t
 
-  let deduplicate { global_targets; nonlocal_targets } =
+  let create ?(global_targets = []) ?(nonlocal_targets = []) ?(callable_targets = []) () =
+    { global_targets; nonlocal_targets; callable_targets }
+
+
+  let deduplicate { global_targets; nonlocal_targets; callable_targets } =
     {
       global_targets = CallTarget.dedup_and_sort global_targets;
       nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
+      callable_targets = CallTarget.dedup_and_sort callable_targets;
     }
 
 
   let join
-      { global_targets = left_global_targets; nonlocal_targets = left_nonlocal_targets }
-      { global_targets = right_global_targets; nonlocal_targets = right_nonlocal_targets }
+      {
+        global_targets = left_global_targets;
+        nonlocal_targets = left_nonlocal_targets;
+        callable_targets = left_callable_targets;
+      }
+      {
+        global_targets = right_global_targets;
+        nonlocal_targets = right_nonlocal_targets;
+        callable_targets = right_callable_targets;
+      }
     =
     {
       global_targets = List.rev_append left_global_targets right_global_targets;
       nonlocal_targets = List.rev_append left_nonlocal_targets right_nonlocal_targets;
+      callable_targets = List.rev_append left_callable_targets right_callable_targets;
     }
 
 
-  let all_targets { global_targets; nonlocal_targets } =
+  let all_targets { global_targets; nonlocal_targets; callable_targets = _ } =
+    (* Ignore `callable_targets` since they are "internal" -- they are only used by the higher order
+       call graph building. *)
     List.map ~f:CallTarget.target (global_targets @ nonlocal_targets)
 
 
-  let to_json { global_targets; nonlocal_targets } =
+  let to_json { global_targets; nonlocal_targets; callable_targets } =
     `Assoc
       [
         "globals", `List (List.map ~f:CallTarget.to_json global_targets);
         "nonlocals", `List (List.map ~f:CallTarget.to_json nonlocal_targets);
+        "callables", `List (List.map ~f:CallTarget.to_json callable_targets);
       ]
 end
 
@@ -2238,6 +2257,73 @@ let resolve_attribute_access_properties
   { property_targets; is_attribute }
 
 
+let log ~debug format =
+  if debug then
+    Log.dump format
+  else
+    Log.log ~section:`CallGraph format
+
+
+let resolve_regular_callees
+    ~debug
+    ~pyre_in_context
+    ~override_graph
+    ~call_indexer
+    ~return_type
+    ~callee
+  =
+  let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
+  log
+    ~debug
+    "Checking if `%a` is a callable, resolved type is `%a`"
+    Expression.pp
+    callee
+    Type.pp
+    callee_type;
+  let recognized_callees =
+    resolve_recognized_callees
+      ~debug
+      ~pyre_in_context
+      ~override_graph
+      ~call_indexer
+      ~callee
+      ~return_type
+      ~callee_type
+    |> CallCallees.default_to_unresolved
+  in
+  if CallCallees.is_partially_resolved recognized_callees then
+    let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
+    recognized_callees
+  else
+    let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
+    let callees_from_type =
+      resolve_callees_from_type
+        ~debug
+        ~pyre_in_context
+        ~override_graph
+        ~call_indexer
+        ~return_type
+        ~callee_kind
+        callee_type
+    in
+    if CallCallees.is_partially_resolved callees_from_type then
+      let () =
+        log ~debug "Resolved callee from its resolved type:@,`%a`" CallCallees.pp callees_from_type
+      in
+      callees_from_type
+    else
+      resolve_callee_ignoring_decorators
+        ~debug
+        ~pyre_in_context
+        ~call_indexer
+        ~override_graph
+        ~return_type
+        callee
+      |> function
+      | [] -> CallCallees.unresolved ()
+      | call_targets -> CallCallees.create ~call_targets ()
+
+
 let as_identifier_reference ~define ~pyre_in_context expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
@@ -2326,36 +2412,58 @@ let resolve_attribute_access_global_targets
       find_targets [] base_type_info
 
 
-let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
-  Expression.Name (Name.Identifier identifier)
-  |> Node.create_with_default_location
-  |> as_identifier_reference ~define ~pyre_in_context
-  |> Option.filter ~f:(Fn.non is_builtin_reference)
-  >>| function
-  | IdentifierCallees.Global global ->
-      {
-        IdentifierCallees.global_targets =
-          [
-            CallTargetIndexer.create_target
-              call_indexer
-              ~implicit_dunder_call:false
-              ~return_type:None
-              (Target.create_object global);
-          ];
-        nonlocal_targets = [];
-      }
-  | Nonlocal nonlocal ->
-      {
-        IdentifierCallees.nonlocal_targets =
-          [
-            CallTargetIndexer.create_target
-              call_indexer
-              ~implicit_dunder_call:false
-              ~return_type:None
-              (Target.create_object nonlocal);
-          ];
-        global_targets = [];
-      }
+let return_type_for_call ~pyre_in_context ~callee =
+  lazy
+    (Expression.Call { callee; arguments = [] }
+    |> Node.create_with_default_location
+    |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
+
+
+let resolve_identifier ~override_graph ~define ~pyre_in_context ~call_indexer ~identifier =
+  let expression =
+    Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
+  in
+  let global_targets, nonlocal_targets =
+    expression
+    |> as_identifier_reference ~define ~pyre_in_context
+    |> Option.filter ~f:(Fn.non is_builtin_reference)
+    >>| (function
+          | IdentifierCallees.Global global ->
+              ( [
+                  CallTargetIndexer.create_target
+                    call_indexer
+                    ~implicit_dunder_call:false
+                    ~return_type:None
+                    (Target.create_object global);
+                ],
+                [] )
+          | Nonlocal nonlocal ->
+              ( [],
+                [
+                  CallTargetIndexer.create_target
+                    call_indexer
+                    ~implicit_dunder_call:false
+                    ~return_type:None
+                    (Target.create_object nonlocal);
+                ] ))
+    |> Option.value ~default:([], [])
+  in
+  let { CallCallees.call_targets = callable_targets; _ } =
+    resolve_regular_callees
+      ~debug:false
+      ~pyre_in_context
+      ~override_graph
+      ~call_indexer:(CallTargetIndexer.create ())
+        (* Need not index them, because these callees are only used by higher order call graph
+           building. *)
+      ~return_type:(return_type_for_call ~pyre_in_context ~callee:expression)
+      ~callee:expression
+  in
+  match global_targets, nonlocal_targets, callable_targets with
+  | [], [], [] -> None
+  | _ ->
+      (* Exist at least a non-empty list. *)
+      Some { IdentifierCallees.global_targets; nonlocal_targets; callable_targets }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -2391,70 +2499,11 @@ struct
     assignment_target: assignment_target option;
   }
 
-  let log format =
-    if Context.debug then
-      Log.dump format
-    else
-      Log.log ~section:`CallGraph format
-
-
   let override_graph = Context.override_graph
 
   let call_indexer = Context.call_indexer
 
   let attribute_targets = Context.attribute_targets
-
-  let resolve_regular_callees ~pyre_in_context ~override_graph ~call_indexer ~return_type ~callee =
-    let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
-    log
-      "Checking if `%a` is a callable, resolved type is `%a`"
-      Expression.pp
-      callee
-      Type.pp
-      callee_type;
-    let recognized_callees =
-      resolve_recognized_callees
-        ~debug:Context.debug
-        ~pyre_in_context
-        ~override_graph
-        ~call_indexer
-        ~callee
-        ~return_type
-        ~callee_type
-      |> CallCallees.default_to_unresolved
-    in
-    if CallCallees.is_partially_resolved recognized_callees then
-      let () = log "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
-      recognized_callees
-    else
-      let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
-      let callees_from_type =
-        resolve_callees_from_type
-          ~debug:Context.debug
-          ~pyre_in_context
-          ~override_graph
-          ~call_indexer
-          ~return_type
-          ~callee_kind
-          callee_type
-      in
-      if CallCallees.is_partially_resolved callees_from_type then
-        let () =
-          log "Resolved callee from its resolved type:@,`%a`" CallCallees.pp callees_from_type
-        in
-        callees_from_type
-      else
-        resolve_callee_ignoring_decorators
-          ~debug:Context.debug
-          ~pyre_in_context
-          ~call_indexer
-          ~override_graph
-          ~return_type
-          callee
-        |> function
-        | [] -> CallCallees.unresolved ()
-        | call_targets -> CallCallees.create ~call_targets ()
-
 
   let resolve_callees
       ~pyre_in_context
@@ -2463,23 +2512,19 @@ struct
       ~call:({ Call.callee; arguments } as call)
     =
     log
+      ~debug:Context.debug
       "Resolving function call `%a`"
       Expression.pp
       (Expression.Call call |> Node.create_with_default_location);
     let higher_order_parameters =
       let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-        let return_type =
-          lazy
-            (Expression.Call { callee = argument; arguments = [] }
-            |> Node.create_with_default_location
-            |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
-        in
         match
           ( resolve_regular_callees
+              ~debug:Context.debug
               ~pyre_in_context
               ~override_graph
               ~call_indexer
-              ~return_type
+              ~return_type:(return_type_for_call ~pyre_in_context ~callee:argument)
               ~callee:argument,
             argument )
         with
@@ -2502,7 +2547,13 @@ struct
         |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
     in
     let regular_callees =
-      resolve_regular_callees ~pyre_in_context ~override_graph ~call_indexer ~return_type ~callee
+      resolve_regular_callees
+        ~debug:Context.debug
+        ~pyre_in_context
+        ~override_graph
+        ~call_indexer
+        ~return_type
+        ~callee
     in
     { regular_callees with higher_order_parameters }
 
@@ -2520,6 +2571,7 @@ struct
     let base_type_info = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
 
     log
+      ~debug:Context.debug
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \
        is `%a`"
       attribute
@@ -2610,6 +2662,7 @@ struct
       CallTargetIndexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier ?(location = location) callees =
         log
+          ~debug:Context.debug
           "Resolved callees for expression `%a`:@,%a"
           Expression.pp
           expression
@@ -2648,6 +2701,7 @@ struct
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
             resolve_identifier
+              ~override_graph
               ~define:Context.define_name
               ~pyre_in_context
               ~call_indexer
@@ -2702,6 +2756,7 @@ struct
                         in
                         CallTargetIndexer.generate_fresh_indices call_indexer;
                         resolve_regular_callees
+                          ~debug:Context.debug
                           ~pyre_in_context
                           ~override_graph
                           ~call_indexer
@@ -2940,7 +2995,7 @@ struct
     let widen ~previous:_ ~next:_ ~iteration:_ = ()
 
     let forward_statement ~pyre_in_context ~statement =
-      log "Building call graph of statement: `%a`" Ast.Statement.pp statement;
+      log ~debug:Context.debug "Building call graph of statement: `%a`" Ast.Statement.pp statement;
       let statement = redirect_assignments statement in
       match Node.value statement with
       | Statement.Assign { Assign.target; value = Some value; _ } ->
@@ -2987,13 +3042,11 @@ let call_graph_of_define
     ~qualifier
     ~define
   =
-  let name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define in
   let timer = Timer.start () in
-  let callees_at_location = Location.Table.create () in
-  let module DefineFixpoint = DefineCallGraphFixpoint (struct
+  let module Context = struct
     let pyre_api = pyre_api
 
-    let define_name = name
+    let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
 
     let define = define
 
@@ -3001,7 +3054,7 @@ let call_graph_of_define
 
     let debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
 
-    let callees_at_location = callees_at_location
+    let callees_at_location = Location.Table.create ()
 
     let override_graph = override_graph
 
@@ -3014,9 +3067,12 @@ let call_graph_of_define
         Configuration.MissingFlowKind.equal
         find_missing_flows
         (Some Configuration.MissingFlowKind.Type)
-  end)
+  end
   in
-  let () = DefineFixpoint.log "Building call graph of `%a`" Reference.pp name in
+  let module DefineFixpoint = DefineCallGraphFixpoint (Context) in
+  let () =
+    log ~debug:Context.debug "Building call graph of `%a`" Reference.pp Context.define_name
+  in
   (* Handle parameters. *)
   let () =
     let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
@@ -3031,7 +3087,7 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
   let call_graph =
-    Hashtbl.to_alist callees_at_location
+    Hashtbl.to_alist Context.callees_at_location
     |> List.map ~f:(fun (location, unprocessed_callees) ->
            match SerializableStringMap.to_alist unprocessed_callees with
            | [] -> failwith "unreachable"
@@ -3057,7 +3113,7 @@ let call_graph_of_define
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Call graph built"
     ~section:`DependencyGraph
-    ~normals:["callable", Reference.show name]
+    ~normals:["callable", Reference.show Context.define_name]
     ~timer
     ();
   call_graph
