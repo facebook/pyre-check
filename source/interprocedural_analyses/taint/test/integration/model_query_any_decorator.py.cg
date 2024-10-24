@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-model_query_any_decorator.$toplevel (fun) -> [model_query_any_decorator.app (object) model_query_any_decorator.arg1 (object) object.__init__ (method) object.__new__ (method)]
+model_query_any_decorator.$toplevel (fun) -> [object.__init__ (method) object.__new__ (method)]
 model_query_any_decorator.Application.$class_toplevel (method) -> []
 model_query_any_decorator.Application.decorator (method) -> []
 model_query_any_decorator.decorator_ignored (fun) -> []

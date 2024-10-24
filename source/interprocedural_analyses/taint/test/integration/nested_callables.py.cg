@@ -1,15 +1,15 @@
 @generated
 Call dependencies
-nested_callables.$toplevel (fun) -> [nested_callables.g (object)]
+nested_callables.$toplevel (fun) -> []
 nested_callables.A.$class_toplevel (method) -> []
 nested_callables.access_parameter_in_inner_scope_sink (fun) -> [nested_callables.access_parameter_in_inner_scope_sink.inner (fun)]
 nested_callables.access_parameter_in_inner_scope_sink.inner (fun) -> [_test_sink (fun)]
 nested_callables.access_parameter_in_inner_scope_tito (fun) -> [nested_callables.access_parameter_in_inner_scope_tito.inner (fun)]
 nested_callables.access_parameter_in_inner_scope_tito.inner (fun) -> []
 nested_callables.access_variables_in_outer_scope_issue (fun) -> [_test_source (fun) nested_callables.access_variables_in_outer_scope_issue.inner (fun)]
-nested_callables.access_variables_in_outer_scope_issue.inner (fun) -> [_test_sink (fun) nested_callables.access_variables_in_outer_scope_issue.x (object)]
+nested_callables.access_variables_in_outer_scope_issue.inner (fun) -> [_test_sink (fun)]
 nested_callables.access_variables_in_outer_scope_source (fun) -> [_test_source (fun) nested_callables.access_variables_in_outer_scope_source.inner (fun)]
-nested_callables.access_variables_in_outer_scope_source.inner (fun) -> [nested_callables.access_variables_in_outer_scope_source.x (object)]
+nested_callables.access_variables_in_outer_scope_source.inner (fun) -> []
 nested_callables.call_outer (fun) -> [_test_source (fun) nested_callables.outer (fun)]
 nested_callables.duplicate_function (fun) -> [nested_callables.foo (fun)]
 nested_callables.foo (fun) -> []

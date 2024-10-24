@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-properties.$toplevel (fun) -> [properties.T (object)]
+properties.$toplevel (fun) -> []
 properties.Class.$class_toplevel (method) -> []
 properties.Class.__init__ (method) -> []
 properties.Class.my_property (method) -> []

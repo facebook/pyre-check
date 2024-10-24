@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-readonly.$toplevel (fun) -> [readonly._Self_readonly_A__ (object)]
+readonly.$toplevel (fun) -> []
 readonly.A.$class_toplevel (method) -> []
 readonly.A.__init__ (method) -> [readonly.A.B (object) readonly.A.mapping (object)]
 readonly.A.readonly_tito (method) -> []

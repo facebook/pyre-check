@@ -368,7 +368,9 @@ module HigherOrderParameter = struct
   }
   [@@deriving eq, show { with_path = false }]
 
-  let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
+  let all_targets ~exclude_reference_only:_ { call_targets; _ } =
+    List.map ~f:CallTarget.target call_targets
+
 
   let equal_ignoring_types
       { index = index_left; call_targets = call_targets_left; unresolved = unresolved_left }
@@ -424,10 +426,12 @@ module HigherOrderParameterMap = struct
 
   let deduplicate map = Map.map HigherOrderParameter.deduplicate map
 
-  let all_targets map =
+  let all_targets ~exclude_reference_only map =
     Map.fold
       (fun _ higher_order_parameter targets ->
-        List.rev_append targets (HigherOrderParameter.all_targets higher_order_parameter))
+        List.rev_append
+          targets
+          (HigherOrderParameter.all_targets ~exclude_reference_only higher_order_parameter))
       map
       []
 
@@ -550,12 +554,16 @@ module CallCallees = struct
     { call_targets; new_targets; init_targets; higher_order_parameters; unresolved }
 
 
-  let all_targets { call_targets; new_targets; init_targets; higher_order_parameters; _ } =
+  let all_targets
+      ~exclude_reference_only
+      { call_targets; new_targets; init_targets; higher_order_parameters; _ }
+    =
     call_targets
     |> List.rev_append new_targets
     |> List.rev_append init_targets
     |> List.map ~f:CallTarget.target
-    |> List.rev_append (HigherOrderParameterMap.all_targets higher_order_parameters)
+    |> List.rev_append
+         (HigherOrderParameterMap.all_targets ~exclude_reference_only higher_order_parameters)
 
 
   let equal_ignoring_types
@@ -713,7 +721,7 @@ module AttributeAccessCallees = struct
     }
 
 
-  let all_targets { property_targets; global_targets; _ } =
+  let all_targets ~exclude_reference_only:_ { property_targets; global_targets; _ } =
     List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
 
 
@@ -791,10 +799,12 @@ module IdentifierCallees = struct
     }
 
 
-  let all_targets { global_targets; nonlocal_targets; callable_targets = _ } =
-    (* Ignore `callable_targets` since they are "internal" -- they are only used by the higher order
-       call graph building. *)
-    List.map ~f:CallTarget.target (global_targets @ nonlocal_targets)
+  let all_targets ~exclude_reference_only { global_targets; nonlocal_targets; callable_targets } =
+    (if exclude_reference_only then
+       []
+    else
+      nonlocal_targets |> List.rev_append global_targets |> List.rev_append callable_targets)
+    |> List.map ~f:CallTarget.target
 
 
   let to_json { global_targets; nonlocal_targets; callable_targets } =
@@ -833,8 +843,12 @@ module StringFormatCallees = struct
     }
 
 
-  let all_targets { stringify_targets; f_string_targets } =
-    List.rev_append stringify_targets f_string_targets |> List.map ~f:CallTarget.target
+  let all_targets ~exclude_reference_only { stringify_targets; f_string_targets } =
+    (if exclude_reference_only then
+       stringify_targets
+    else
+      List.rev_append f_string_targets stringify_targets)
+    |> List.map ~f:CallTarget.target
 
 
   let from_stringify_targets stringify_targets = { stringify_targets; f_string_targets = [] }
@@ -916,16 +930,24 @@ module ExpressionCallees = struct
     }
 
 
-  let all_targets { call; attribute_access; identifier; string_format } =
-    let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
+  let all_targets ~exclude_reference_only { call; attribute_access; identifier; string_format } =
+    let call_targets =
+      call >>| CallCallees.all_targets ~exclude_reference_only |> Option.value ~default:[]
+    in
     let attribute_access_targets =
-      attribute_access >>| AttributeAccessCallees.all_targets |> Option.value ~default:[]
+      attribute_access
+      >>| AttributeAccessCallees.all_targets ~exclude_reference_only
+      |> Option.value ~default:[]
     in
     let identifier_targets =
-      identifier >>| IdentifierCallees.all_targets |> Option.value ~default:[]
+      identifier
+      >>| IdentifierCallees.all_targets ~exclude_reference_only
+      |> Option.value ~default:[]
     in
     let string_format_targets =
-      string_format >>| StringFormatCallees.all_targets |> Option.value ~default:[]
+      string_format
+      >>| StringFormatCallees.all_targets ~exclude_reference_only
+      |> Option.value ~default:[]
     in
     call_targets
     |> List.rev_append attribute_access_targets
@@ -996,10 +1018,11 @@ module LocationCallees = struct
 
   let show callees = Format.asprintf "%a" pp callees
 
-  let all_targets = function
-    | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
+  let all_targets ~exclude_reference_only = function
+    | Singleton raw_callees -> ExpressionCallees.all_targets ~exclude_reference_only raw_callees
     | Compound map ->
-        SerializableStringMap.data map |> List.concat_map ~f:ExpressionCallees.all_targets
+        SerializableStringMap.data map
+        |> List.concat_map ~f:(ExpressionCallees.all_targets ~exclude_reference_only)
 
 
   let equal_ignoring_types location_callees_left location_callees_right =
@@ -1114,10 +1137,11 @@ module DefineCallGraph = struct
     Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
 
 
-  (** Return all callees of the call graph, as a sorted list. *)
-  let all_targets call_graph =
+  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
+      true excludes the targets that are not required in building the dependency graph. *)
+  let all_targets ~exclude_reference_only call_graph =
     Location.Map.Tree.data call_graph
-    |> List.concat_map ~f:LocationCallees.all_targets
+    |> List.concat_map ~f:(LocationCallees.all_targets ~exclude_reference_only)
     |> List.dedup_and_sort ~compare:Target.compare
 
 
@@ -3272,7 +3296,7 @@ let build_whole_program_call_graph
           WholeProgramCallGraph.add_or_exn
             whole_program_call_graph
             ~callable
-            ~callees:(DefineCallGraph.all_targets callable_call_graph)
+            ~callees:(DefineCallGraph.all_targets ~exclude_reference_only:true callable_call_graph)
         in
         define_call_graphs, whole_program_call_graph
     in

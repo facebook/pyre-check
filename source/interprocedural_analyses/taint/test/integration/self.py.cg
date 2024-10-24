@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-self.$toplevel (fun) -> [self.TFoo (object) self._Self_self_Foo__ (object)]
+self.$toplevel (fun) -> []
 self.Foo.$class_toplevel (method) -> [self.Foo.__class__.tainted_class (object)]
 self.Foo.__init__ (method) -> [_test_source (fun)]
 self.Foo.selftype_access_other (method) -> []

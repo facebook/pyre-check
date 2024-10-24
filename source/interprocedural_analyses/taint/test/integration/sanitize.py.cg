@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-sanitize.$toplevel (fun) -> [sanitize.T (object)]
+sanitize.$toplevel (fun) -> []
 sanitize.C_sanitized_a_sink.$class_toplevel (method) -> []
 sanitize.C_sanitized_a_sink.__init__ (method) -> [sanitize.C_sanitized_a_sink.attribute (object) sanitize.C_sanitized_a_sink.instance (object)]
 sanitize.C_sanitized_a_source.$class_toplevel (method) -> []

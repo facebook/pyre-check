@@ -297,8 +297,9 @@ module DefineCallGraph : sig
   (* For testing purpose only. *)
   val equal_ignoring_types : t -> t -> bool
 
-  (** Return all callees of the call graph, as a sorted list. *)
-  val all_targets : t -> Target.t list
+  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
+      true excludes the targets that are not required in building the dependency graph. *)
+  val all_targets : exclude_reference_only:bool -> t -> Target.t list
 
   val to_json
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->

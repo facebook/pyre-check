@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-mutate_self.$toplevel (fun) -> [mutate_self.MySelf (object)]
+mutate_self.$toplevel (fun) -> []
 mutate_self.Base.$class_toplevel (method) -> []
 mutate_self.Base.__init__ (method) -> []
 mutate_self.Base.bar_sink (method) -> [_test_sink (fun)]

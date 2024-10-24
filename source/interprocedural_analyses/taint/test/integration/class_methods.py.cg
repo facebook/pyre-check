@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-class_methods.$toplevel (fun) -> [class_methods.TInput (object)]
+class_methods.$toplevel (fun) -> []
 class_methods.C.$class_toplevel (method) -> []
 class_methods.C.abstract_class_method (method) -> []
 class_methods.C.abstract_method (method) -> []

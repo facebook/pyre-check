@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-callables.$toplevel (fun) -> [callables.EPInputType (object) callables.EPOutputType (object) callables.PIInputType (object) callables.PIOutputType (object)]
+callables.$toplevel (fun) -> []
 callables.AbstractEventProcessor.$class_toplevel (method) -> []
 callables.AbstractEventProcessor.__init__ (method) -> []
 callables.AbstractEventProcessor.async_call_tainted (method) -> []

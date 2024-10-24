@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-typevar.$toplevel (fun) -> [typevar.T (object)]
+typevar.$toplevel (fun) -> []
 typevar.Foo.$class_toplevel (method) -> []
 typevar.Foo.__init__ (method) -> [typevar.Foo.tainted (object)]
 typevar.issue (fun) -> [_test_sink (fun) typevar.Foo.tainted (object)]
