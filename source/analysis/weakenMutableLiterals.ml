@@ -351,9 +351,26 @@ let rec weaken_mutable_literals
             | Type.Primitive name when String.equal name fresh_class_name -> Some typed_dictionary
             | _ -> None
           in
+          (* Dictionary literals may have duplicate entries, but their typed dict representation
+             should not. When deduplicating, the last entry takes precedence. *)
+          let deduplicate_fields fields =
+            List.rev fields
+            |> List.fold ~init:[] ~f:(fun sofar (({ name; _ } : typed_dictionary_field) as field) ->
+                   if
+                     List.exists
+                       ~f:(fun ({ name = existing_name; _ } : typed_dictionary_field) ->
+                         String.equal name existing_name)
+                       sofar
+                   then
+                     sofar
+                   else
+                     field :: sofar)
+          in
           let weaken_valid_fields fields =
             let ({ fields = actual_fields; _ } as resolved_typed_dictionary) =
-              add_missing_fields_if_all_non_required fields |> Type.TypedDictionary.anonymous
+              add_missing_fields_if_all_non_required fields
+              |> deduplicate_fields
+              |> Type.TypedDictionary.anonymous
             in
             let less_than_expected =
               comparator_without_override

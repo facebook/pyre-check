@@ -3965,6 +3965,7 @@ module TypedDictionary = struct
 
   open T
 
+  (* Precondition: `fields` cannot have duplicate entries *)
   let anonymous fields = { name = "$anonymous"; fields }
 
   let create_field ~annotation ~has_non_total_typed_dictionary_base_class name =

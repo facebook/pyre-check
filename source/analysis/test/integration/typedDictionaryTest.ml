@@ -1042,6 +1042,16 @@ let test_check_typed_dictionaries =
                 return {'name' : "Blade Runner", 'year' : 1982}
             |}
            [];
+      (* Dictionary literals might have duplicate keys *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_test_typed_dictionary
+           {|
+              import mypy_extensions
+              Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+              def f() -> Movie:
+                return {'name' : "Blade Runner", 'year' : 1981, 'year': 1982}
+            |}
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_test_typed_dictionary
            {|
