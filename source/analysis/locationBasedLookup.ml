@@ -169,6 +169,8 @@ module ExpressionTypes = struct
     let visit_expression_children _ _ = true
 
     let visit_format_string_children _ _ = true
+
+    let visit_expression_based_on_parent ~parent_expression:_ _ = true
   end
 
   (** This is a simple wrapper around [CreateDefinitionAndAnnotationLookupVisitor]. It ensures that
@@ -182,10 +184,14 @@ module ExpressionTypes = struct
       let visit_statement_override ~state statement =
         (* Special-casing for statements that require lookup using the postcondition. *)
         let precondition_visit =
-          visit_expression ~state ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node
+          visit_expression
+            ~parent_expression:None
+            ~state
+            ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node
         in
         let postcondition_visit =
           visit_expression
+            ~parent_expression:None
             ~state
             ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node_postcondition
         in
@@ -638,6 +644,8 @@ module SymbolSelection = struct
     let visit_expression_children _ _ = true
 
     let visit_format_string_children _ _ = true
+
+    let visit_expression_based_on_parent ~parent_expression:_ _ = true
   end
 
   (** This is a simple wrapper around [FindNarrowestSpanningExpression]. It visits imported symbols
@@ -657,7 +665,7 @@ module SymbolSelection = struct
         | type_annotation_symbol -> type_annotation_symbol
       in
       let symbols = ref [] in
-      visit_expression ~state:symbols annotation_expression;
+      visit_expression ~parent_expression:None ~state:symbols annotation_expression;
       List.map !symbols ~f:expression_symbol_to_type_annotation_symbol
 
 
@@ -668,10 +676,13 @@ module SymbolSelection = struct
         =
         let module Visitor = FindNarrowestSpanningExpression (PositionData) in
         let visit_using_precondition_info =
-          visit_expression ~state ~visitor_override:Visitor.node
+          visit_expression ~parent_expression:None ~state ~visitor_override:Visitor.node
         in
         let visit_using_postcondition_info =
-          visit_expression ~state ~visitor_override:Visitor.node_using_postcondition
+          visit_expression
+            ~parent_expression:None
+            ~state
+            ~visitor_override:Visitor.node_using_postcondition
         in
         let store_type_annotation ({ Node.location; _ } as annotation_expression) =
           if location_contains_position location PositionData.position then

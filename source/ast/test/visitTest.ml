@@ -365,6 +365,8 @@ let test_node_visitor _ =
     let visit_expression_children _ _ = true
 
     let visit_format_string_children _ _ = true
+
+    let visit_expression_based_on_parent ~parent_expression:_ _ = true
   end
   in
   let module Visit = Visit.MakeNodeVisitor (Visitor) in

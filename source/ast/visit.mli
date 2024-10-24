@@ -35,11 +35,14 @@ module type NodeVisitor = sig
   val visit_expression_children : t -> Expression.t -> bool
 
   val visit_format_string_children : t -> Expression.t -> bool
+
+  val visit_expression_based_on_parent : parent_expression:Expression.t -> Expression.t -> bool
 end
 
 module MakeNodeVisitor (Visitor : NodeVisitor) : sig
   val visit_expression
-    :  state:Visitor.t ref ->
+    :  parent_expression:t option ->
+    state:Visitor.t ref ->
     ?visitor_override:(Visitor.t -> node -> Visitor.t) ->
     Expression.t ->
     unit

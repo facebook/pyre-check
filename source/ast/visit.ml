@@ -39,6 +39,8 @@ module type NodeVisitor = sig
   val visit_expression_children : t -> Expression.t -> bool
 
   val visit_format_string_children : t -> Expression.t -> bool
+
+  val visit_expression_based_on_parent : parent_expression:Expression.t -> Expression.t -> bool
 end
 
 (** This visitor iterates over every toplevel statement. Assuming `visit_statement_children` is set
@@ -68,9 +70,11 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     | _ -> ()
 
 
-  let rec visit_expression ~state ?visitor_override expression =
+  let rec visit_expression ~parent_expression ~state ?visitor_override expression =
     let visitor = Option.value visitor_override ~default:Visitor.node in
-    let visit_expression = visit_expression ~state ?visitor_override in
+    let visit_expression =
+      visit_expression ~parent_expression:(Some expression) ~state ?visitor_override
+    in
     let visit_generator
         ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
         ~visit_expression
@@ -168,13 +172,19 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     in
     if Visitor.visit_expression_children !state expression then
       visit_children (Node.value expression);
-    visit_node ~state ~visitor (Expression expression)
+    if
+      parent_expression
+      |> Option.map ~f:(fun parent_expression ->
+             Visitor.visit_expression_based_on_parent ~parent_expression expression)
+      |> Option.value ~default:true
+    then
+      visit_node ~state ~visitor (Expression expression)
 
 
   let rec visit_statement ~state statement =
     let location = Node.location statement in
     let visitor = Visitor.node in
-    let visit_expression = visit_expression ~state in
+    let visit_expression = visit_expression ~parent_expression:None ~state in
     let visit_statement = visit_statement ~state in
     let visit_children value =
       let open Statement in
@@ -333,6 +343,8 @@ module Make (Visitor : Visitor) = struct
       let visit_expression_children _ _ = true
 
       let visit_format_string_children _ _ = false
+
+      let visit_expression_based_on_parent ~parent_expression:_ _ = true
     end)
     in
     NodeVisitor.visit
@@ -460,6 +472,8 @@ struct
       let visit_expression_children _ = ExpressionPredicate.visit_children
 
       let visit_format_string_children _ _ = false
+
+      let visit_expression_based_on_parent ~parent_expression:_ _ = true
     end
     in
     let module CollectingVisit = MakeNodeVisitor (CollectingVisitor) in

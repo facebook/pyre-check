@@ -3003,6 +3003,13 @@ struct
     let visit_expression_children _ _ = true
 
     let visit_format_string_children _ _ = true
+
+    let visit_expression_based_on_parent ~parent_expression expression =
+      (* Only skip visiting the callee. *)
+      match parent_expression.Node.value, expression.Node.value with
+      | Expression.Call { callee; _ }, Expression.Name (Name.Identifier _) ->
+          not (Expression.equal callee expression)
+      | _ -> true
   end
 
   module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)
@@ -3024,15 +3031,18 @@ struct
       match Node.value statement with
       | Statement.Assign { Assign.target; value = Some value; _ } ->
           CalleeVisitor.visit_expression
+            ~parent_expression:None
             ~state:
               (ref
                  { pyre_in_context; assignment_target = Some { location = Node.location target } })
             target;
           CalleeVisitor.visit_expression
+            ~parent_expression:None
             ~state:(ref { pyre_in_context; assignment_target = None })
             value
       | Statement.Assign { Assign.target; value = None; _ } ->
           CalleeVisitor.visit_expression
+            ~parent_expression:None
             ~state:
               (ref
                  { pyre_in_context; assignment_target = Some { location = Node.location target } })
@@ -3105,6 +3115,7 @@ let call_graph_of_define
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
         Option.iter value ~f:(fun value ->
             DefineFixpoint.CalleeVisitor.visit_expression
+              ~parent_expression:None
               ~state:(ref { DefineFixpoint.pyre_in_context; assignment_target = None })
               value))
   in
