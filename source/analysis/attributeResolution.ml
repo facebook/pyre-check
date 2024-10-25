@@ -441,6 +441,7 @@ let apply_dataclass_transforms_to_table
     instantiate_attribute
     class_name
     table
+    ~scoped_type_variables
   =
   let open Expression in
   let { Node.value = { ClassSummary.name; _ }; _ } = definition in
@@ -563,7 +564,7 @@ let apply_dataclass_transforms_to_table
                   Node.create (Expression.Constant Constant.Ellipsis) ~location
             in
             ( create_uninstantiated_attribute
-                ~scoped_type_variables:None
+                ~scoped_type_variables
                 ~parent
                 ?defined:None
                 ~accessed_via_metaclass:false
@@ -2064,11 +2065,12 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           | Some parameter_list -> parameter_list
           | _ -> []
         in
+        let scoped_type_variables = scoped_type_variables_as_map class_parameters in
         let add_actual () =
           let collect_attributes attribute =
             let created_attribute =
               self#create_uninstantiated_attribute
-                ~scoped_type_variables:(scoped_type_variables_as_map class_parameters)
+                ~scoped_type_variables
                 (Node.value attribute)
                 ~cycle_detections
                 ~parent
@@ -2111,6 +2113,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                  ~apply_descriptors:false)
               class_name
               table
+              ~scoped_type_variables
         in
         table
       in

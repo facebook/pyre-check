@@ -327,11 +327,34 @@ let test_type_variable_scoping =
              "Incompatible variable type [9]: vinv5_1 is declared to have type \
               `ShouldBeInvariant5[float]` but is used as type `ShouldBeInvariant5[int]`.";
            ];
+      (* TODO migeedz: In both of these tests, vo4_1 should be okay. Is there something about the
+         generated attributes that's causing this? *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
             from dataclasses import dataclass
             from typing import Generic, TypeVar
+
+            T = TypeVar("T", infer_variance=True)
+
+            @dataclass(frozen=True)
+            class ShouldBeCovariant4(Generic[T]):
+                x: T
+
+            vo4_1: ShouldBeCovariant4[float] = ShouldBeCovariant4[int](1)  # OK
+            vo4_4: ShouldBeCovariant4[int] = ShouldBeCovariant4[float](1.0)  # E
+
+            |}
+           [
+             "Incompatible variable type [9]: vo4_1 is declared to have type \
+              `ShouldBeCovariant4[float]` but is used as type `ShouldBeCovariant4[int]`.";
+             "Incompatible variable type [9]: vo4_4 is declared to have type \
+              `ShouldBeCovariant4[int]` but is used as type `ShouldBeCovariant4[float]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
 
             @dataclass(frozen=True)
             class ShouldBeCovariant4[T]:
@@ -344,14 +367,10 @@ let test_type_variable_scoping =
 
             |}
            [
-             "Uninitialized attribute [13]: Attribute `x` is declared in class \
-              `ShouldBeCovariant4` to have type `Variable[T]` but is never initialized.";
-             "Too many arguments [19]: Call `ShouldBeCovariant4.__init__` expects 0 positional \
-              arguments, 1 was provided.";
+             "Incompatible variable type [9]: vo4_1 is declared to have type \
+              `ShouldBeCovariant4[float]` but is used as type `ShouldBeCovariant4[int]`.";
              "Incompatible variable type [9]: vo4_4 is declared to have type \
               `ShouldBeCovariant4[int]` but is used as type `ShouldBeCovariant4[float]`.";
-             "Too many arguments [19]: Call `ShouldBeCovariant4.__init__` expects 0 positional \
-              arguments, 1 was provided.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
