@@ -120,7 +120,7 @@
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "origin": {
               "filename": "missing_type.py",
-              "line": 31,
+              "line": 32,
               "start": 15,
               "end": 16
             }
@@ -128,78 +128,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "missing_type.test_unknown_source_attribute",
-    "callable_line": 29,
-    "code": 5002,
-    "line": 31,
-    "start": 15,
-    "end": 16,
-    "filename": "missing_type.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{missing_type.UnknownSourceAttribute.unknown}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 30, "start": 8, "end": 17 } ],
-            "origin": {
-              "filename": "missing_type.py",
-              "line": 30,
-              "start": 8,
-              "end": 17
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "missing_type.py",
-              "line": 31,
-              "start": 15,
-              "end": 16
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "missing_type.test_unknown_source_attribute:5002:0:Call|_test_sink|0|formal(arg):1584cf04889a0197e642b9b46c97bc33"
   }
 }
 {

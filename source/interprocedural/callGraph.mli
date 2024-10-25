@@ -177,8 +177,17 @@ module AttributeAccessCallees : sig
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
+    callable_targets: CallTarget.t list;
   }
   [@@deriving eq, show]
+
+  val create
+    :  ?property_targets:CallTarget.t list ->
+    ?global_targets:CallTarget.t list ->
+    ?callable_targets:CallTarget.t list ->
+    ?is_attribute:bool ->
+    unit ->
+    t
 
   val empty : t
 
@@ -233,8 +242,6 @@ module ExpressionCallees : sig
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t
-
-  val from_call_with_empty_attribute : CallCallees.t -> t
 
   val from_attribute_access : AttributeAccessCallees.t -> t
 

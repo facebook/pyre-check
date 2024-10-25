@@ -691,14 +691,33 @@ module AttributeAccessCallees = struct
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
+    callable_targets: CallTarget.t list;
+        (* Function-typed runtime values that the identifiers may evaluate into. *)
   }
   [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { property_targets; global_targets; is_attribute } =
+  let empty =
+    { property_targets = []; global_targets = []; is_attribute = true; callable_targets = [] }
+
+
+  let is_empty attribute_access_callees = equal attribute_access_callees empty
+
+  let create
+      ?(property_targets = empty.property_targets)
+      ?(global_targets = empty.global_targets)
+      ?(callable_targets = empty.callable_targets)
+      ?(is_attribute = empty.is_attribute)
+      ()
+    =
+    { property_targets; global_targets; is_attribute; callable_targets }
+
+
+  let deduplicate { property_targets; global_targets; is_attribute; callable_targets } =
     {
       property_targets = CallTarget.dedup_and_sort property_targets;
       global_targets = CallTarget.dedup_and_sort global_targets;
       is_attribute;
+      callable_targets = CallTarget.dedup_and_sort callable_targets;
     }
 
 
@@ -707,22 +726,32 @@ module AttributeAccessCallees = struct
         property_targets = left_property_targets;
         global_targets = left_global_targets;
         is_attribute = left_is_attribute;
+        callable_targets = left_callable_targets;
       }
       {
         property_targets = right_property_targets;
         global_targets = right_global_targets;
         is_attribute = right_is_attribute;
+        callable_targets = right_callable_targets;
       }
     =
     {
       property_targets = List.rev_append left_property_targets right_property_targets;
       global_targets = List.rev_append left_global_targets right_global_targets;
       is_attribute = left_is_attribute || right_is_attribute;
+      callable_targets = List.rev_append left_callable_targets right_callable_targets;
     }
 
 
-  let all_targets ~exclude_reference_only:_ { property_targets; global_targets; _ } =
-    List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
+  let all_targets
+      ~exclude_reference_only
+      { property_targets; global_targets; callable_targets; is_attribute = _ }
+    =
+    (if exclude_reference_only then
+       List.rev_append property_targets global_targets
+    else
+      global_targets |> List.rev_append property_targets |> List.rev_append callable_targets)
+    |> List.map ~f:CallTarget.target
 
 
   let equal_ignoring_types
@@ -730,26 +759,26 @@ module AttributeAccessCallees = struct
         property_targets = property_targets_left;
         global_targets = global_targets_left;
         is_attribute = is_attribute_left;
+        callable_targets = callable_targets_left;
       }
       {
         property_targets = property_targets_right;
         global_targets = global_targets_right;
         is_attribute = is_attribute_right;
+        callable_targets = callable_targets_right;
       }
     =
     List.equal CallTarget.equal_ignoring_types property_targets_left property_targets_right
     && List.equal CallTarget.equal_ignoring_types global_targets_left global_targets_right
     && Bool.equal is_attribute_left is_attribute_right
+    && List.equal CallTarget.equal_ignoring_types callable_targets_left callable_targets_right
 
 
-  let empty = { property_targets = []; global_targets = []; is_attribute = true }
-
-  let is_empty attribute_access_callees = equal attribute_access_callees empty
-
-  let to_json { property_targets; global_targets; is_attribute } =
+  let to_json { property_targets; global_targets; is_attribute; callable_targets } =
     []
     |> JsonHelper.add_list "properties" property_targets CallTarget.to_json
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
+    |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
     |> JsonHelper.add_flag_if "is_attribute" is_attribute
     |> fun bindings -> `Assoc (List.rev bindings)
 end
@@ -874,15 +903,6 @@ module ExpressionCallees = struct
 
   let from_call callees =
     { call = Some callees; attribute_access = None; identifier = None; string_format = None }
-
-
-  let from_call_with_empty_attribute callees =
-    {
-      call = Some callees;
-      attribute_access = Some AttributeAccessCallees.empty;
-      identifier = None;
-      string_format = None;
-    }
 
 
   let from_attribute_access properties =
@@ -2633,7 +2653,23 @@ struct
                 ~return_type:None)
     in
 
-    { AttributeAccessCallees.property_targets; global_targets; is_attribute }
+    let expression =
+      Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+      |> Node.create_with_default_location
+    in
+    let { CallCallees.call_targets = callable_targets; _ } =
+      resolve_regular_callees
+        ~debug:Context.debug
+        ~pyre_in_context
+        ~override_graph
+        ~call_indexer:(CallTargetIndexer.create ())
+          (* Need not index them, because these callees are only used by higher order call graph
+             building. *)
+        ~return_type:(return_type_for_call ~pyre_in_context ~callee:expression)
+        ~callee:expression
+    in
+
+    { AttributeAccessCallees.property_targets; global_targets; is_attribute; callable_targets }
 
 
   (* For the missing flow analysis (`--find-missing-flows=type`), we turn unresolved
@@ -3007,7 +3043,8 @@ struct
     let visit_expression_based_on_parent ~parent_expression expression =
       (* Only skip visiting the callee. *)
       match parent_expression.Node.value, expression.Node.value with
-      | Expression.Call { callee; _ }, Expression.Name (Name.Identifier _) ->
+      | Expression.Call { callee; _ }, Expression.Name (Name.Identifier _)
+      | Expression.Call { callee; _ }, Expression.Name (Name.Attribute _) ->
           not (Expression.equal callee expression)
       | _ -> true
   end

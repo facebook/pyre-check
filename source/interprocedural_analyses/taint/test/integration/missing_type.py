@@ -27,6 +27,7 @@ class UnknownSourceAttribute:
 
 
 def test_unknown_source_attribute(x: UnknownSourceAttribute) -> None:
+    # TODO(T205677349): We don't find the flow here.
     y = x.unknown()
     _test_sink(y)
 
