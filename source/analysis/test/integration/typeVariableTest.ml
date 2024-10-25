@@ -250,6 +250,52 @@ let test_type_variable_scoping =
              "Incompatible variable type [9]: vcontra1_1 is declared to have type \
               `ShouldBeContravariant1[float]` but is used as type `ShouldBeContravariant1[int]`.";
            ];
+      (* TODO migeedz: vo5_1 should not raise an error. Tried considering the "self" parameter as
+         bivariant and that did not solve the issue. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Generic, TypeVar, Iterator
+
+              T = TypeVar("T", infer_variance=True)
+
+
+              class ShouldBeCovariant1(Generic[T]):
+                  def __getitem__(self, index: int) -> T:
+                      ...
+
+                  def __iter__(self) -> Iterator[T]:
+                      ...
+
+
+              vco1_1: ShouldBeCovariant1[float] = ShouldBeCovariant1[int]()  # OK
+              vco1_2: ShouldBeCovariant1[int] = ShouldBeCovariant1[float]()  # E
+
+
+
+              K = TypeVar("K", infer_variance=True)
+
+
+              class ShouldBeCovariant5(Generic[K]):
+                  def __init__(self, x: K) -> None:
+                      self._x = x
+
+                  def x(self) -> K:
+                      return self._x
+
+
+              vo5_1: ShouldBeCovariant5[float] = ShouldBeCovariant5[int](1)  # OK
+              vo5_2: ShouldBeCovariant5[int] = ShouldBeCovariant5[float](1.0)  # E
+
+            |}
+           [
+             "Incompatible variable type [9]: vco1_2 is declared to have type \
+              `ShouldBeCovariant1[int]` but is used as type `ShouldBeCovariant1[float]`.";
+             "Incompatible variable type [9]: vo5_1 is declared to have type \
+              `ShouldBeCovariant5[float]` but is used as type `ShouldBeCovariant5[int]`.";
+             "Incompatible variable type [9]: vo5_2 is declared to have type \
+              `ShouldBeCovariant5[int]` but is used as type `ShouldBeCovariant5[float]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

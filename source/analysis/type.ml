@@ -3149,6 +3149,12 @@ module Variable = struct
                 }
                 when String.equal (Identifier.sanitized name) "contravariant" ->
                   Some Record.PreInferenceVariance.P_Contravariant
+              | {
+                  Call.Argument.name = Some { Node.value = name; _ };
+                  value = { Node.value = Constant Constant.True; _ };
+                }
+                when String.equal (Identifier.sanitized name) "infer_variance" ->
+                  Some Record.PreInferenceVariance.P_Undefined
               | _ -> None
             in
             List.find_map arguments ~f:variance_definition
