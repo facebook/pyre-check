@@ -330,27 +330,6 @@ module Raw : sig
     type t = ?mode:string -> ?isolation_prefix:string -> string list -> Output.t Lwt.t
   end
 
-  (** This module contains APIs specific to Buck1 *)
-  module V1 : sig
-    type t
-
-    (** Create an instance of [t] based on system-installed Buck1. The [additional_log_size]
-        parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
-        default, the size is set to 0, which means no additional log will be kept. *)
-    val create : ?additional_log_size:int -> unit -> t
-
-    (** Create an instance of [t] from custom [query] and [build] behavior. Useful for unit testing. *)
-    val create_for_testing : query:Command.t -> build:Command.t -> unit -> t
-
-    (** Shell out to `buck1 query` with the given cli arguments. Returns the content of stdout. If
-        the return code is not 0, raise [BuckError]. *)
-    val query : t -> Command.t
-
-    (** Shell out to `buck1 build` with the given cli arguments. Returns the content of stdout. If
-        the return code is not 0, raise [BuckError]. *)
-    val build : t -> Command.t
-  end
-
   (** This module contains APIs specific to Buck2 *)
   module V2 : sig
     type t
@@ -394,71 +373,6 @@ module Interface : sig
     }
 
     val create : ?metadata:'metadata -> 'data -> ('data, 'metadata) t
-  end
-
-  (** This module contains APIs specific to Buck1 *)
-  module V1 : sig
-    type t
-
-    (** Create an instance of [t] from an instance of {!Raw.V1.t} and some buck options. Interfaces
-        created this way is only compatible with Buck1. *)
-    val create : ?mode:string -> ?isolation_prefix:string -> Raw.V1.t -> t
-
-    module BuckChangedTargetsQueryOutput : sig
-      type t = {
-        source_base_path: string;
-        artifact_base_path: string;
-        artifacts_to_sources: (string * string) list;
-      }
-
-      val to_partial_build_map : t -> (BuildMap.Partial.t, string) Result.t
-
-      val to_build_map_batch : t list -> (BuildMap.t, string) Result.t
-    end
-
-    (** Create an instance of [t] from custom [normalize_targets], [construct_build_map], and
-        [query_owner_targets] behavior. Useful for unit testing. *)
-    val create_for_testing
-      :  normalize_targets:(string list -> Target.t list Lwt.t) ->
-      construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
-      query_owner_targets:
-        (targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t) ->
-      unit ->
-      t
-
-    (** Given a list of buck target specifications (which may contain `...` or filter expression),
-        query [buck] and return the set of individual targets which will be built.
-
-        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
-        succeeds but its output cannot be parsed. *)
-    val normalize_targets : t -> string list -> Target.t list Lwt.t
-
-    (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
-        source databases. It then loads all generated source databases, and merge all of them into a
-        single [BuildMap.t].
-
-        Source-db merging may not always succeed when merge conflict cannot be resolved (see
-        {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
-        merged into the build map due to unresolvable conflict, a warning will be printed and the
-        target will be dropped. If a target is dropped, it will not show up in the final target list
-        returned from this API (alongside with the build map).
-
-        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
-        succeeds but its output cannot be parsed. *)
-    val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
-
-    (** Given a list of normalized Buck targets and a list of changed files, invoke [buck] to find
-        out what owner targets of those changed files are beneath the given normalized target list,
-        and finally return "local build map" for those owner targets in the form of
-        [BuckChangedTargetsQueryOutput.t].
-
-        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
-        succeeds but its output cannot be parsed. *)
-    val query_owner_targets
-      :  t ->
-      targets:Target.t list ->
-      PyrePath.t list ->
-      BuckChangedTargetsQueryOutput.t list Lwt.t
   end
 
   (** This module contains APIs specific to Buck2 *)
@@ -536,10 +450,6 @@ module Builder : sig
     type t
 
     (** {1 Creation} *)
-
-    (** Create an instance of {!Builder.Classic.t} from an instance of {!Interface.V1.t} and some
-        buck options. Builders created this way are only compatible with Buck1. *)
-    val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.V1.t -> t
 
     (** Create an instance of {!Builder.Classic.t} from an instance of {!Interface.V2.t} and some
         buck options. Builders created with way are only compatible with Buck2. *)

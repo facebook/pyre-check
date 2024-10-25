@@ -183,81 +183,6 @@ let test_lookup_artifact context =
   ()
 
 
-let assert_difference_equal ~context ~expected actual =
-  let compare = [%compare: string * BuildMap.Difference.Kind.t] in
-  assert_equal
-    ~ctxt:context
-    ~cmp:[%compare.equal: (string * BuildMap.Difference.Kind.t) list]
-    ~printer:(fun result ->
-      [%sexp_of: (string * BuildMap.Difference.Kind.t) list] result |> Sexp.to_string_hum)
-    (List.sort ~compare expected)
-    (List.sort ~compare actual)
-
-
-let test_difference_from_removed_relative_paths context =
-  let assert_difference ~expected ~paths build_map =
-    let build_map_index =
-      BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index
-    in
-    let actual =
-      Builder.Classic.V1.compute_difference_from_removed_relative_paths ~build_map_index paths
-      |> BuildMap.Difference.to_alist
-    in
-    assert_difference_equal ~context ~expected actual
-  in
-
-  assert_difference [] ~paths:["source/foo.py"] ~expected:[];
-  assert_difference
-    ["foo.py", "source/foo.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Deleted];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo2.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Deleted];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Deleted; "foo2.py", Deleted];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo2.py"]
-    ~paths:["source/foo.py"; "source/foo2.py"]
-    ~expected:["foo.py", Deleted; "foo2.py", Deleted];
-  ()
-
-
-let test_difference_from_changed_relative_paths context =
-  let assert_difference ~expected ~paths build_map =
-    let build_map_index =
-      BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index
-    in
-    let actual =
-      Builder.Classic.V1.compute_difference_from_changed_relative_paths ~build_map_index paths
-      |> BuildMap.Difference.to_alist
-    in
-    assert_difference_equal ~context ~expected actual
-  in
-
-  assert_difference [] ~paths:["source/foo.py"] ~expected:[];
-  assert_difference
-    ["foo.py", "source/foo.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Changed "source/foo.py"];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo2.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Changed "source/foo.py"];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo.py"]
-    ~paths:["source/foo.py"]
-    ~expected:["foo.py", Changed "source/foo.py"; "foo2.py", Changed "source/foo.py"];
-  assert_difference
-    ["foo.py", "source/foo.py"; "foo2.py", "source/foo2.py"]
-    ~paths:["source/foo.py"; "source/foo2.py"]
-    ~expected:["foo.py", Changed "source/foo.py"; "foo2.py", Changed "source/foo2.py"];
-  ()
-
-
 let test_lazy_build context =
   let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
@@ -337,8 +262,6 @@ let () =
   >::: [
          "lookup_source" >:: test_lookup_source;
          "lookup_artifact" >:: test_lookup_artifact;
-         "difference_from_removed_relative_paths" >:: test_difference_from_removed_relative_paths;
-         "difference_from_changed_relative_paths" >:: test_difference_from_changed_relative_paths;
          "lazy_build" >:: OUnitLwt.lwt_wrapper test_lazy_build;
        ]
   |> Test.run
