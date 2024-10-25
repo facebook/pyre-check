@@ -166,7 +166,7 @@ module VarianceVisitor = struct
     List.iter
       ~f:(fun x ->
         let element = AnnotatedAttribute.uninstantiated_annotation x in
-        begin
+        if not (String.equal (AnnotatedAttribute.name x) "__init__") then begin
           match element with
           | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
               let visibility = AnnotatedAttribute.visibility x in
@@ -185,8 +185,7 @@ module VarianceVisitor = struct
              DecoratedMethod { undecorated_signature; _ };
            _;
           } ->
-              if not (String.equal (AnnotatedAttribute.name x) "__init__") then
-                on_type ~variance:Covariant ~inj:true ~typ:(Type.Callable undecorated_signature)
+              on_type ~variance:Covariant ~inj:true ~typ:(Type.Callable undecorated_signature)
           | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Property { getter; setter }; _ }
             -> (
               let call_on_type_co value =

@@ -327,8 +327,6 @@ let test_type_variable_scoping =
              "Incompatible variable type [9]: vinv5_1 is declared to have type \
               `ShouldBeInvariant5[float]` but is used as type `ShouldBeInvariant5[int]`.";
            ];
-      (* TODO migeedz: In both of these tests, vo4_1 should be okay. Is there something about the
-         generated attributes that's causing this? *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -346,8 +344,6 @@ let test_type_variable_scoping =
 
             |}
            [
-             "Incompatible variable type [9]: vo4_1 is declared to have type \
-              `ShouldBeCovariant4[float]` but is used as type `ShouldBeCovariant4[int]`.";
              "Incompatible variable type [9]: vo4_4 is declared to have type \
               `ShouldBeCovariant4[int]` but is used as type `ShouldBeCovariant4[float]`.";
            ];
@@ -367,8 +363,6 @@ let test_type_variable_scoping =
 
             |}
            [
-             "Incompatible variable type [9]: vo4_1 is declared to have type \
-              `ShouldBeCovariant4[float]` but is used as type `ShouldBeCovariant4[int]`.";
              "Incompatible variable type [9]: vo4_4 is declared to have type \
               `ShouldBeCovariant4[int]` but is used as type `ShouldBeCovariant4[float]`.";
            ];
