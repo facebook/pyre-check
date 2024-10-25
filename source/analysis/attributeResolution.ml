@@ -45,6 +45,159 @@ open SignatureSelection
 
 let map_find = Map.find
 
+let compose = function
+  | Type.Record.Variance.Bivariant, x
+  | x, Type.Record.Variance.Bivariant ->
+      x
+  | Invariant, _
+  | _, Invariant ->
+      Invariant
+  | Covariant, Covariant
+  | Contravariant, Contravariant ->
+      Covariant
+  | _ -> Contravariant
+
+
+let inv v = compose (v, Contravariant)
+
+let union = function
+  | Type.Record.Variance.Bivariant, x
+  | x, Type.Record.Variance.Bivariant ->
+      x
+  | Covariant, Covariant -> Covariant
+  | Contravariant, Contravariant -> Contravariant
+  | _ -> Invariant
+
+
+module VarianceVisitor = struct
+  type injectivity = bool [@@deriving show, compare]
+
+  type t_param = string * Type.Record.Variance.t * injectivity [@@deriving show, compare]
+
+  type t_param_array = t_param array [@@deriving show, compare]
+
+  (* type on_edge = class_name:string -> t_param array *)
+
+  (* type on_var = string -> Type.Record.Variance.t -> injectivity -> unit *)
+
+  type variance_env = (string, t_param array) Stdlib.Hashtbl.t
+
+  let on_class ~class_name ~on_edge ~on_var ~to_list ~get_base_class_types =
+    let handle_ordered_types ordered_types on_type variance inj =
+      match ordered_types with
+      | Type.Record.OrderedTypes.Concrete concretes ->
+          List.iter ~f:(fun ty -> on_type ~variance ~inj ~typ:ty) concretes (* TODO *)
+      | Type.Record.OrderedTypes.Concatenation c -> begin
+          match Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation c with
+          | Some annotation -> on_type ~variance ~inj ~typ:annotation
+          | None -> ()
+        end
+    in
+    let param_to_types p =
+      match p with
+      | Type.Record.Callable.Defined defined ->
+          List.filter_map ~f:(fun x -> Type.Record.Callable.CallableParamType.annotation x) defined
+      | FromParamSpec { head; _ } -> head
+      | _ -> []
+    in
+    let arguments_to_types (arguments : Type.Argument.t list) =
+      List.fold
+        ~f:(fun acc x ->
+          match x with
+          | Type.Argument.Single t -> t :: acc
+          | CallableParameters parameters -> param_to_types parameters @ acc
+          | Unpacked unpackable -> (
+              let ordered_types =
+                Type.OrderedTypes.Concatenation.create_from_unpackable unpackable
+              in
+              match
+                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation ordered_types
+              with
+              | Some annotation -> annotation :: acc
+              | _ -> acc))
+        arguments
+        ~init:[]
+    in
+
+    let rec on_type ~variance ~inj ~typ =
+      match typ with
+      | Type.Variable v ->
+          (* TODO: understand how to implement on_var *)
+          on_var v.name variance inj
+      | Type.Parametric { name; arguments } ->
+          let params : t_param array = on_edge name in
+          let arguments_to_types = arguments_to_types arguments in
+          for i = 0 to Array.length params - 1 do
+            let ty = List.nth arguments_to_types i in
+            match ty with
+            | Some ty ->
+                let _, variance', inj' = params.(i) in
+                on_type ~variance:(compose (variance, variance')) ~inj:inj' ~typ:ty
+            | None -> ()
+          done
+      | Type.Union types -> List.iter ~f:(fun ty -> on_type ~variance ~inj ~typ:ty) types
+      | Type.PyreReadOnly typ -> on_type ~variance ~inj ~typ
+      | Type.Callable { implementation; overloads; _ } ->
+          let process (currerent_signature : Type.t Callable.overload) =
+            let return_type = currerent_signature.annotation in
+
+            let safe_tl lst =
+              match lst with
+              | [] -> []
+              | _ :: tl -> tl
+            in
+            let params_types = param_to_types currerent_signature.parameters in
+            (* TODO: For methods, the first parameter is just the type of the self argument and
+               should not be considered. *)
+            on_type ~variance ~inj ~typ:return_type;
+            List.iter
+              ~f:(fun ty -> on_type ~variance:(inv variance) ~inj ~typ:ty)
+              (safe_tl params_types)
+          in
+          process implementation;
+          List.iter ~f:process overloads
+      | Type.Tuple ordered_types -> handle_ordered_types ordered_types on_type variance inj
+      | Type.TypeOperation (Compose ordered_types) ->
+          handle_ordered_types ordered_types on_type variance inj
+      (* TODO: handle recursive types *)
+      | Type.RecursiveType r -> on_type ~variance ~inj ~typ:(Type.RecursiveType.body r)
+      | _ -> ()
+    in
+    List.iter
+      ~f:(fun x ->
+        let element = AnnotatedAttribute.uninstantiated_annotation x in
+        begin
+          match element with
+          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
+              on_type ~variance:Covariant ~inj:true ~typ:annotation
+          | {
+           AnnotatedAttribute.UninstantiatedAnnotation.kind =
+             DecoratedMethod { undecorated_signature; _ };
+           _;
+          } ->
+              on_type ~variance:Covariant ~inj:true ~typ:(Type.Callable undecorated_signature)
+          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Property { getter; setter }; _ }
+            -> (
+              let call_on_type value =
+                match value with
+                | Some typ -> on_type ~variance:Covariant ~inj:true ~typ
+                | _ -> ()
+              in
+              call_on_type getter.self;
+              call_on_type getter.value;
+
+              match setter with
+              | Some setter ->
+                  call_on_type setter.self;
+                  call_on_type setter.value
+              | _ -> ())
+        end)
+      (to_list class_name);
+    List.iter
+      ~f:(fun typ -> on_type ~variance:Covariant ~inj:true ~typ)
+      (get_base_class_types class_name)
+end
+
 (* a helper function which converts type variables to a string -> type variable map *)
 let scoped_type_variables_as_map scoped_type_variables_list =
   let empty_string_map = Identifier.Map.empty in
@@ -779,7 +932,7 @@ let callable_call_special_cases
   | _ -> None
 
 
-class base ~queries:(Queries.{ controls; _ } as queries) =
+class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ } as queries) =
   object (self)
     (* Given a `Type.t`, recursively search for parameteric forms with invalid
      * type arguments. If we find such arguments:
@@ -2886,16 +3039,16 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
 
     (* We will expose this interface as the variance map *)
     method variance_map ~cycle_detections ~class_name ~parameters =
-      let _cycle_detections = cycle_detections in
-      (* Creates a function from generic type parameters for a given class to post variance
-         inference *)
-      let infer_variance_for_one_param ~generic_type_param =
+      let contains_bivariant = ref false in
+      let convert_pre_to_post_one_param ~generic_type_param =
         let from_pre_to_post variance =
           match variance with
           | Type.Record.PreInferenceVariance.P_Covariant -> Type.Record.Variance.Covariant
           | Type.Record.PreInferenceVariance.P_Contravariant -> Type.Record.Variance.Contravariant
           | Type.Record.PreInferenceVariance.P_Invariant -> Type.Record.Variance.Invariant
-          | Type.Record.PreInferenceVariance.P_Undefined -> Type.Record.Variance.Invariant
+          | Type.Record.PreInferenceVariance.P_Undefined ->
+              contains_bivariant := true;
+              Type.Record.Variance.Bivariant
         in
 
         let find_variance =
@@ -2905,19 +3058,162 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         in
         find_variance
       in
+      let default_variance_and_inj gp =
+        let variance = convert_pre_to_post_one_param ~generic_type_param:gp in
+        let inj =
+          match variance with
+          | Type.Record.Variance.Bivariant -> false
+          | _ -> true
+        in
+        variance, inj
+      in
+      let from_gp_to_decl gp =
+        match gp with
+        | Type.GenericParameter.GpTypeVar { name; _ } as gp ->
+            let variance, inj = default_variance_and_inj gp in
 
-      let infer_variance_for_all_params parameters =
+            Some (name, variance, inj)
+        | _ -> None
+      in
+      let convert_all_params parameters =
         let add_to_lookup so_far = function
           | Type.GenericParameter.GpTypeVar { name; _ } as gp ->
-              let variance = infer_variance_for_one_param ~generic_type_param:gp in
+              let variance = convert_pre_to_post_one_param ~generic_type_param:gp in
               Map.set so_far ~key:name ~data:variance
-          | _ -> so_far
+          | Type.GenericParameter.GpParamSpec { name } -> Map.set so_far ~key:name ~data:Invariant
+          | Type.GenericParameter.GpTypeVarTuple { name } ->
+              Map.set so_far ~key:name ~data:Invariant
         in
         List.fold parameters ~f:add_to_lookup ~init:Identifier.Map.empty
       in
+      let post_inference_initial = convert_all_params parameters in
 
-      let _class_name = class_name in
-      infer_variance_for_all_params parameters
+      if not !contains_bivariant then
+        post_inference_initial
+      else
+        let class_parameters = List.map ~f:Type.GenericParameter.to_variable parameters in
+        let scoped_type_variables = scoped_type_variables_as_map class_parameters in
+        let parse_annotation =
+          self#parse_annotation ~cycle_detections ?validation:None ~scoped_type_variables
+        in
+        (* Creates a function from generic type parameters for a given class to post variance
+           inference *)
+        let environment : VarianceVisitor.variance_env = Stdlib.Hashtbl.create 0 in
+        let params_from_gp ~class_name =
+          let class_hierarchy_handler = class_hierarchy () in
+          let generic_parameters = ClassHierarchy.generic_parameters class_hierarchy_handler in
+
+          let parameters =
+            match generic_parameters class_name with
+            | Some parameters -> parameters
+            | _ -> []
+          in
+          let params =
+            Array.of_list
+              (List.map
+                 ~f:(fun param ->
+                   Type.GenericParameter.parameter_name param, Type.Record.Variance.Bivariant, false)
+                 parameters)
+          in
+          List.iteri
+            ~f:(fun i param ->
+              match from_gp_to_decl param with
+              | Some (name, variance, inj) -> params.(i) <- name, variance, inj
+              | None -> ())
+            parameters;
+          params
+        in
+
+        let to_list class_name =
+          let get_table class_name =
+            self#single_uninstantiated_attribute_table
+              ~cycle_detections
+              ~include_generated_attributes:true
+              ~accessed_via_metaclass:false
+              class_name
+          in
+
+          match get_table class_name with
+          | Some table -> UninstantiatedAttributeTable.to_list table
+          | None -> []
+        in
+
+        let get_base_class_types class_name =
+          match get_class_summary class_name with
+          | Some { Node.value = { ClassSummary.bases = { base_classes; _ }; _ }; _ } ->
+              List.map ~f:parse_annotation base_classes
+          | None -> []
+        in
+
+        let rec loop class_name =
+          match Stdlib.Hashtbl.find_opt environment class_name with
+          | Some params -> params
+          | None ->
+              let params = params_from_gp ~class_name in
+              Stdlib.Hashtbl.add environment class_name params;
+              let on_var _name _variance _inj = () in
+              let on_edge = loop in
+              VarianceVisitor.on_class ~class_name ~on_edge ~on_var ~to_list ~get_base_class_types;
+
+              params
+        in
+        ignore (loop class_name);
+
+        let rec fixpoint env =
+          let environment' : VarianceVisitor.variance_env = Stdlib.Hashtbl.create 0 in
+          let changed = ref false in
+          Stdlib.Hashtbl.iter
+            (fun class_name params ->
+              let params' = Array.copy params in
+              Stdlib.Hashtbl.add environment' class_name params';
+              let on_var name variance inj =
+                Array.iteri
+                  ~f:(fun i (n, variance', inj') ->
+                    if String.equal n name then
+                      params'.(i) <- name, union (variance, variance'), inj || inj')
+                  params'
+              in
+
+              let on_edge class_name = Stdlib.Hashtbl.find env class_name in
+
+              VarianceVisitor.on_class ~class_name ~on_edge ~on_var ~to_list ~get_base_class_types;
+
+              changed := !changed || VarianceVisitor.compare_t_param_array params params' = 1)
+            env;
+          if !changed then
+            fixpoint environment'
+          else
+            environment'
+        in
+
+        let environment = fixpoint environment in
+
+        let rec to_map = function
+          | [] -> Identifier.Map.empty
+          | (name, variance, inj) :: rest ->
+              let inferred_variance =
+                match Map.find post_inference_initial name with
+                | Some Type.Record.Variance.Bivariant -> (
+                    match variance, inj with
+                    | _, false -> Type.Record.Variance.Bivariant
+                    | Type.Record.Variance.Bivariant, _ -> Bivariant
+                    | Covariant, _ -> Covariant
+                    | Contravariant, _ -> Contravariant
+                    | Invariant, _ -> Invariant)
+                | Some res -> res
+                | None -> failwith "Impossible. Class name must be present in initial variance map"
+              in
+              let map = to_map rest in
+              Map.set ~key:name ~data:inferred_variance map
+        in
+
+        let class_variances =
+          match Stdlib.Hashtbl.find_opt environment class_name with
+          | Some params -> to_map (Array.to_list params)
+          | None -> failwith "class_name is always present in the map"
+        in
+
+        class_variances
 
     (* Construct a ConstraintsSet.order representing the lattice of types for a
      * project. The order object is just a record of callbacks providing access to

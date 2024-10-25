@@ -184,6 +184,8 @@ module Record : sig
     type 'annotation record [@@deriving compare, eq, sexp, show, hash]
 
     val name : 'annotation record -> Identifier.t
+
+    val body : 'annotation record -> 'annotation
   end
 
   module TypeOperation : sig
@@ -925,6 +927,8 @@ module GenericParameter : sig
   val of_declaration : Variable.Declaration.t -> create_type:(Expression.t -> type_t) -> t
 
   val to_variable : t -> type_t Record.Variable.record
+
+  val parameter_name : t -> string
 
   module ZipTwoArgumentsLists : sig
     type result =

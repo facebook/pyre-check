@@ -310,6 +310,8 @@ module Record = struct
     [@@deriving compare, eq, sexp, show, hash]
 
     let name { name; _ } = name
+
+    let body { body; _ } = body
   end
 
   module TypeOperation = struct
