@@ -470,22 +470,15 @@ let get_initializer source_paths =
         Configuration.Buck.mode;
         isolation_prefix;
         bxl_builder;
-        use_buck2;
         source_root;
         artifact_root;
         targets;
         targets_fallback_sources = _;
       } ->
       let builder =
-        match use_buck2 with
-        | false ->
-            let raw = Buck.Raw.V1.create ~additional_log_size:10 () in
-            let interface = Buck.Interface.V1.create ?mode ?isolation_prefix raw in
-            ClassicBuckBuilder.create ~source_root ~artifact_root interface
-        | true ->
-            let raw = Buck.Raw.V2.create ~additional_log_size:30 () in
-            let interface = Buck.Interface.V2.create ?mode ?isolation_prefix ?bxl_builder raw in
-            ClassicBuckBuilder.create_v2 ~source_root ~artifact_root interface
+        let raw = Buck.Raw.V2.create ~additional_log_size:30 () in
+        let interface = Buck.Interface.V2.create ?mode ?isolation_prefix ?bxl_builder raw in
+        ClassicBuckBuilder.create_v2 ~source_root ~artifact_root interface
       in
       Initializer.buck ~builder ~artifact_root ~targets ()
 
