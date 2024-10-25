@@ -59,8 +59,7 @@
       communicates with Buck (e.g. how to shell out to the [buck] executable, how cli arguments are
       passed, how subprocess stdout/stderr are handled, etc.).
     - The middle abstraction layer is {!module:Interface}, which handles how one or more [buck]
-      invocations can be organized to perform higher-level tasks (e.g. normalize targets, load
-      source databases, etc.).
+      invocations can be organized to perform higher-level tasks (e.g. load source databases).
     - The highest abstraction layer is {!module:Builder}, which coordinates one or more [buck] tasks
       as well as Pyre's own link tree building tasks to offer push-button build state management.
       (e.g. "build this project", "incrementally update my build", etc.).*)
@@ -330,22 +329,19 @@ module Raw : sig
     type t = ?mode:string -> ?isolation_prefix:string -> string list -> Output.t Lwt.t
   end
 
-  (** This module contains APIs specific to Buck2 *)
-  module V2 : sig
-    type t
+  type t
 
-    (** Create an instance of [t] based on system-installed Buck2. The [additional_log_size]
-        parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised.
-        By default, the size is set to 0, which means no additional log will be kept. *)
-    val create : ?additional_log_size:int -> unit -> t
+  (** Create an instance of [t] based on system-installed Buck2. The [additional_log_size] parameter
+      controls how many lines of Buck2 log to preserve when an {!BuckError} is raised. By default,
+      the size is set to 0, which means no additional log will be kept. *)
+  val create : ?additional_log_size:int -> unit -> t
 
-    (** Create an instance of [t] from custom [bxl] behavior. Useful for unit testing. *)
-    val create_for_testing : bxl:Command.t -> unit -> t
+  (** Create an instance of [t] from custom [bxl] behavior. Useful for unit testing. *)
+  val create_for_testing : bxl:Command.t -> unit -> t
 
-    (** Shell out to `buck2 bxl` with the given cli arguments. Returns the content of stdout. If the
-        return code is not 0, raise [BuckError]. *)
-    val bxl : t -> Command.t
-  end
+  (** Shell out to `buck2 bxl` with the given cli arguments. Returns the content of stdout. If the
+      return code is not 0, raise [BuckError]. *)
+  val bxl : t -> Command.t
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
@@ -375,13 +371,12 @@ module Interface : sig
     val create : ?metadata:'metadata -> 'data -> ('data, 'metadata) t
   end
 
-  (** This module contains APIs specific to Buck2 *)
-  module V2 : sig
+  (** This module contains APIs specific eager Buck building *)
+  module Eager : sig
     type t
 
-    (** Create an instance of [t] from an instance of {!Raw.V2.t} and some buck options. Interfaces
-        created this way is only compatible with Buck2.*)
-    val create : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.V2.t -> t
+    (** Create an instance of [t] from an instance of {!Raw.t} and some buck options. *)
+    val create : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.t -> t
 
     (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
         testing. *)
@@ -406,16 +401,15 @@ module Interface : sig
 
   (** This module contains APIs specific to lazy Buck building.
 
-      Lazy building is only supported for Buck2. The APIs are very simliar to those of
-      {!Interface.V2}, except that targets to build are not specified upfront for the lazy case.
-      Instead, the lazy builder is only given a set of source paths to construct the build map on,
-      and the builder itself needs to figure out what are the corresponding targets for these source
-      paths. *)
+      The APIs are very similar to those of {!Interface.Eager}, except that targets to build are not
+      specified upfront for the lazy case. Instead, the lazy builder is only given a set of source
+      paths to construct the build map on, and the builder itself needs to figure out what are the
+      corresponding targets for these source paths. *)
   module Lazy : sig
     type t
 
-    (** Create an instance of [t] from an instance of {!Raw.V2.t} and some buck options. *)
-    val create : ?mode:string -> ?isolation_prefix:string -> bxl_builder:string -> Raw.V2.t -> t
+    (** Create an instance of [t] from an instance of {!Raw.t} and some buck options. *)
+    val create : ?mode:string -> ?isolation_prefix:string -> bxl_builder:string -> Raw.t -> t
 
     (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
         testing. *)
@@ -446,14 +440,14 @@ module Builder : sig
 
   (** This module contains APIs specific to classical, non-lazy Buck building, where the targets
       that need to be built are specified upfront. *)
-  module Classic : sig
+  module Eager : sig
     type t
 
     (** {1 Creation} *)
 
-    (** Create an instance of {!Builder.Classic.t} from an instance of {!Interface.V2.t} and some
-        buck options. Builders created with way are only compatible with Buck2. *)
-    val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.V2.t -> t
+    (** Create an instance of {!Builder.Eager.t} from an instance of {!Interface.Eager.t} and some
+        buck options. *)
+    val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.Eager.t -> t
 
     (** {1 Build} *)
 
@@ -468,12 +462,11 @@ module Builder : sig
       }
     end
 
-    (** A type representing the result of builds, along with some metadata about the build
-        (Buck2-only). *)
+    (** A type representing the result of builds, along with some metadata about the build. *)
     type build_result_t = (Interface.BuildResult.t, string) Interface.WithMetadata.t
 
     (** A type representing the result of incremental builds, along with some metadata about the
-        build (Buck2-only). *)
+        build. *)
     type incremental_build_result_t = (IncrementalBuildResult.t, string) Interface.WithMetadata.t
 
     (** Given a list of buck target specificaitons to build, construct a build map for the targets
@@ -505,7 +498,7 @@ module Builder : sig
         accordingly.
 
         In most cases, downstream clients are discouraged from invoking this API.
-        {!val:Builder.Classic.build} should be used instead, since it does not force the clients to
+        {!val:Builder.Eager.build} should be used instead, since it does not force the clients to
         construct a build map by themselves and risk having the build map and the link tree
         inconsistent with what the target specification says. The only scenario where it makes sense
         to prefer {!val:restore} over {!val:build} is saved state loading: in that case, we already
@@ -601,17 +594,17 @@ module Builder : sig
 
   (** This module contains APIs specific to lazy Buck building.
 
-      Lazy building is only supported for Buck2. The APIs are very simliar to those of {!Builder},
-      except that targets to build are not specified upfront for the lazy case. Instead, the lazy
-      builder is only given a set of source paths to construct the build map on, and the builder
-      itself needs to figure out what are the corresponding targets for these source paths. *)
+      The APIs are very similar to those of {!Builder.Eager}, except that targets to build are not
+      specified upfront for the lazy case. Instead, the lazy builder is only given a set of source
+      paths to construct the build map on, and the builder itself needs to figure out what are the
+      corresponding targets for these source paths. *)
   module Lazy : sig
     type t
 
     (** {1 Creation} *)
 
-    (** Create an instance of [Builder.t] from an instance of {!Interface.Lazy.t} and some buck
-        options. Builders created this way are only compatible with Buck2. *)
+    (** Create an instance of [Builder.Lazy.t] from an instance of {!Interface.Lazy.t} and some buck
+        options. *)
     val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.Lazy.t -> t
 
     (** {1 Build} *)

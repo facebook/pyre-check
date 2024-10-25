@@ -157,7 +157,7 @@ let get_initializer = function
       match bxl_builder with
       | None -> failwith "Code navigation server requires a BXL builder to function"
       | Some bxl_builder ->
-          Buck.Raw.V2.create ~additional_log_size:30 ()
+          Buck.Raw.create ~additional_log_size:30 ()
           |> Buck.Interface.Lazy.create ?mode ?isolation_prefix ~bxl_builder
           |> Buck.Builder.Lazy.create ~source_root ~artifact_root
           |> Initializer.buck ~artifact_root)

@@ -44,13 +44,13 @@ let create_for_testing
   { update; lookup_source; lookup_artifact; store }
 
 
-module ClassicBuckBuilder = Buck.Builder.Classic
+module EagerBuckBuilder = Buck.Builder.Eager
 module WithMetadata = Buck.Interface.WithMetadata
 
 module BuckBuildSystem = struct
   module State = struct
     type t = {
-      builder: ClassicBuckBuilder.t;
+      builder: EagerBuckBuilder.t;
       targets: string list;
       mutable normalized_targets: Buck.Target.t list;
       mutable build_map: Buck.BuildMap.t;
@@ -77,7 +77,7 @@ module BuckBuildSystem = struct
 
     let create_from_scratch ~builder ~targets () =
       let open Lwt.Infix in
-      ClassicBuckBuilder.build builder ~targets
+      EagerBuckBuilder.build builder ~targets
       >>= fun Buck.Interface.
                 {
                   WithMetadata.data = { BuildResult.targets = normalized_targets; build_map };
@@ -97,7 +97,7 @@ module BuckBuildSystem = struct
          But that should be fine -- it is guaranteed that after saved state loading, the server will
          process another incremental update request to bring everything up-to-date again. If that
          incremental update is correctly handled, the dead links will be properly cleaned up. *)
-      ClassicBuckBuilder.restore builder ~build_map
+      EagerBuckBuilder.restore builder ~build_map
       >>= fun () ->
       Lwt.return (create ~targets ~builder ~normalized_targets ~build_map () |> WithMetadata.create)
   end
@@ -179,7 +179,7 @@ module BuckBuildSystem = struct
         let should_reconstruct_build_map paths =
           let f path =
             List.is_empty
-              (ClassicBuckBuilder.lookup_artifact
+              (EagerBuckBuilder.lookup_artifact
                  ~index:state.build_map_index
                  ~builder:state.builder
                  path)
@@ -191,7 +191,7 @@ module BuckBuildSystem = struct
           >>= fun {
                     WithMetadata.data =
                       {
-                        ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
+                        EagerBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
                         build_map;
                         changed_artifacts;
                       };
@@ -204,7 +204,7 @@ module BuckBuildSystem = struct
           {
             IncrementalBuilder.name = "full";
             run =
-              ClassicBuckBuilder.full_incremental_build
+              EagerBuckBuilder.full_incremental_build
                 ~old_build_map:state.build_map
                 ~targets:state.targets
               |> rebuild_and_update_state;
@@ -228,7 +228,7 @@ module BuckBuildSystem = struct
             {
               IncrementalBuilder.name = "skip_renormalize_optimized";
               run =
-                ClassicBuckBuilder.fast_incremental_build_with_normalized_targets
+                EagerBuckBuilder.fast_incremental_build_with_normalized_targets
                   ~old_build_map:state.build_map
                   ~old_build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
@@ -245,7 +245,7 @@ module BuckBuildSystem = struct
           ])
         ~normals:(fun _ ->
           [
-            "buck_builder_type", ClassicBuckBuilder.identifier_of state.builder;
+            "buck_builder_type", EagerBuckBuilder.identifier_of state.builder;
             "event_type", "rebuild";
             "event_subtype", incremental_builder.name;
           ])
@@ -253,12 +253,12 @@ module BuckBuildSystem = struct
     in
     let lookup_source path =
       ArtifactPath.raw path
-      |> ClassicBuckBuilder.lookup_source ~index:state.build_map_index ~builder:state.builder
+      |> EagerBuckBuilder.lookup_source ~index:state.build_map_index ~builder:state.builder
       |> Option.map ~f:SourcePath.create
     in
     let lookup_artifact path =
       SourcePath.raw path
-      |> ClassicBuckBuilder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
+      |> EagerBuckBuilder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
       |> List.map ~f:ArtifactPath.create
     in
     let store () =
@@ -282,7 +282,7 @@ module BuckBuildSystem = struct
         ])
       ~normals:(fun _ ->
         [
-          "buck_builder_type", ClassicBuckBuilder.identifier_of builder;
+          "buck_builder_type", EagerBuckBuilder.identifier_of builder;
           "event_type", "build";
           "event_subtype", "cold_start";
         ])
@@ -309,7 +309,7 @@ module BuckBuildSystem = struct
         ])
       ~normals:(fun _ ->
         [
-          "buck_builder_type", ClassicBuckBuilder.identifier_of builder;
+          "buck_builder_type", EagerBuckBuilder.identifier_of builder;
           "event_type", "build";
           "event_subtype", "saved_state";
         ])
@@ -476,9 +476,9 @@ let get_initializer source_paths =
         targets_fallback_sources = _;
       } ->
       let builder =
-        let raw = Buck.Raw.V2.create ~additional_log_size:30 () in
-        let interface = Buck.Interface.V2.create ?mode ?isolation_prefix ?bxl_builder raw in
-        ClassicBuckBuilder.create_v2 ~source_root ~artifact_root interface
+        let raw = Buck.Raw.create ~additional_log_size:30 () in
+        let interface = Buck.Interface.Eager.create ?mode ?isolation_prefix ?bxl_builder raw in
+        EagerBuckBuilder.create ~source_root ~artifact_root interface
       in
       Initializer.buck ~builder ~artifact_root ~targets ()
 

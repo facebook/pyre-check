@@ -38,7 +38,7 @@ module WithMetadata = struct
   let create ?metadata data = { data; metadata }
 end
 
-module V2 = struct
+module Eager = struct
   type t = { construct_build_map: string list -> (BuildMap.t, string) WithMetadata.t Lwt.t }
 
   let create_for_testing ~construct_build_map () = { construct_build_map }
@@ -152,7 +152,7 @@ module V2 = struct
             List.bind target_patterns ~f:(fun target ->
                 ["--target"; Stdlib.Format.sprintf "%s" target]);
           ]
-        |> Raw.V2.bxl ?mode ?isolation_prefix raw
+        |> Raw.bxl ?mode ?isolation_prefix raw
 
 
   let warn_on_conflict
@@ -224,8 +224,8 @@ module Lazy = struct
 
 
   let parse_bxl_output bxl_output =
-    V2.parse_merged_sourcedb_path_json bxl_output
-    |> V2.parse_merged_sourcedb_json
+    Eager.parse_merged_sourcedb_path_json bxl_output
+    |> Eager.parse_merged_sourcedb_json
     |> parse_merged_sourcedb
 
 
@@ -247,7 +247,7 @@ module Lazy = struct
             ["--"];
             List.bind target_patterns ~f:(fun source_path -> ["--source"; source_path]);
           ]
-        |> Raw.V2.bxl ?mode ?isolation_prefix raw
+        |> Raw.bxl ?mode ?isolation_prefix raw
         >>= fun { Raw.Command.Output.stdout; _ } -> Lwt.return (parse_bxl_output stdout)
 
 

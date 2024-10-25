@@ -130,86 +130,82 @@ let on_completion ?build_id ~buck_command ~arguments ~log_buffer = function
           fail_with_error description)
 
 
-module V2 = struct
-  type t = { bxl: Command.t }
+type t = { bxl: Command.t }
 
-  let create_for_testing ~bxl () = { bxl }
+let create_for_testing ~bxl () = { bxl }
 
-  let isolation_prefix_to_buck_arguments = function
-    | None
-    | Some "" ->
-        []
-    | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
+let isolation_prefix_to_buck_arguments = function
+  | None
+  | Some "" ->
+      []
+  | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
 
 
-  let read_build_id_from filename =
-    let open Lwt.Infix in
-    let read () =
-      Lwt_io.with_file ~mode:Lwt_io.Input filename Lwt_io.read
-      >>= fun build_id ->
-      Log.info "UUID of the build = %s" build_id;
-      Lwt.return_some build_id
+let read_build_id_from filename =
+  let open Lwt.Infix in
+  let read () =
+    Lwt_io.with_file ~mode:Lwt_io.Input filename Lwt_io.read
+    >>= fun build_id ->
+    Log.info "UUID of the build = %s" build_id;
+    Lwt.return_some build_id
+  in
+  let error exn =
+    Log.info "Failed to read build UUID from %s: %s" filename (Exception.exn_to_string exn);
+    Lwt.return_none
+  in
+  Lwt.catch read error
+
+
+let create ?(additional_log_size = 0) () =
+  let buck2 = "buck2" in
+  let open Lwt.Infix in
+  let invoke_buck ?mode ?isolation_prefix ~command user_supplied_arguments =
+    (* Preserve the last several lines of Buck log for error reporting purpose. *)
+    let log_buffer = BoundedQueue.create additional_log_size in
+    let common_buck_arguments =
+      List.concat
+        [
+          isolation_prefix_to_buck_arguments isolation_prefix;
+          [command];
+          mode_to_buck_arguments mode;
+          (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+          ["--client-metadata"; "id=pyre"];
+        ]
     in
-    let error exn =
-      Log.info "Failed to read build UUID from %s: %s" filename (Exception.exn_to_string exn);
-      Lwt.return_none
-    in
-    Lwt.catch read error
+    let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
+    Log.debug "Running command: %s" (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
+    (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
+       operating system. Pass all the user-supplied arguments via a temporary file instead. *)
+    Lwt_io.with_temp_dir ~prefix:"pyre_buck" (fun directory_name ->
+        let argument_filename = Stdlib.Filename.concat directory_name "arguments" in
+        Lwt_io.with_file ~mode:Lwt_io.Output argument_filename (fun output_channel ->
+            Lwt_io.write_lines output_channel (Lwt_stream.of_list user_supplied_arguments))
+        >>= fun () ->
+        let build_id_filename = Stdlib.Filename.concat directory_name "build_id" in
+        let actual_buck_arguments =
+          List.concat
+            [
+              common_buck_arguments;
+              ["--write-build-id"; build_id_filename];
+              [Stdlib.Format.sprintf "@%s" argument_filename];
+            ]
+        in
+        let consume_stderr = consume_stderr ~log_buffer in
+        LwtSubprocess.run buck2 ~arguments:actual_buck_arguments ~consume_stderr
+        >>= fun result ->
+        read_build_id_from build_id_filename
+        >>= fun build_id ->
+        on_completion
+          ~buck_command:buck2
+          ~arguments:expanded_buck_arguments
+          ~log_buffer
+          ?build_id
+          result)
+  in
+  let bxl ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
+  in
+  { bxl }
 
 
-  let create ?(additional_log_size = 0) () =
-    let buck2 = "buck2" in
-    let open Lwt.Infix in
-    let invoke_buck ?mode ?isolation_prefix ~command user_supplied_arguments =
-      (* Preserve the last several lines of Buck log for error reporting purpose. *)
-      let log_buffer = BoundedQueue.create additional_log_size in
-      let common_buck_arguments =
-        List.concat
-          [
-            isolation_prefix_to_buck_arguments isolation_prefix;
-            [command];
-            mode_to_buck_arguments mode;
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--client-metadata"; "id=pyre"];
-          ]
-      in
-      let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
-      Log.debug
-        "Running command: %s"
-        (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
-      (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
-         operating system. Pass all the user-supplied arguments via a temporary file instead. *)
-      Lwt_io.with_temp_dir ~prefix:"pyre_buck" (fun directory_name ->
-          let argument_filename = Stdlib.Filename.concat directory_name "arguments" in
-          Lwt_io.with_file ~mode:Lwt_io.Output argument_filename (fun output_channel ->
-              Lwt_io.write_lines output_channel (Lwt_stream.of_list user_supplied_arguments))
-          >>= fun () ->
-          let build_id_filename = Stdlib.Filename.concat directory_name "build_id" in
-          let actual_buck_arguments =
-            List.concat
-              [
-                common_buck_arguments;
-                ["--write-build-id"; build_id_filename];
-                [Stdlib.Format.sprintf "@%s" argument_filename];
-              ]
-          in
-          let consume_stderr = consume_stderr ~log_buffer in
-          LwtSubprocess.run buck2 ~arguments:actual_buck_arguments ~consume_stderr
-          >>= fun result ->
-          read_build_id_from build_id_filename
-          >>= fun build_id ->
-          on_completion
-            ~buck_command:buck2
-            ~arguments:expanded_buck_arguments
-            ~log_buffer
-            ?build_id
-            result)
-    in
-    let bxl ?mode ?isolation_prefix arguments =
-      invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
-    in
-    { bxl }
-
-
-  let bxl { bxl; _ } = bxl
-end
+let bxl { bxl; _ } = bxl

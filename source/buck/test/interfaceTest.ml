@@ -23,12 +23,12 @@ let assert_mapping_equal ~context ~expected actual =
 
 
 let assert_conflicts_equal ~context ~expected actual =
-  let compare = [%compare: string * Interface.V2.BuckBxlBuilderOutput.Conflict.t] in
+  let compare = [%compare: string * Interface.Eager.BuckBxlBuilderOutput.Conflict.t] in
   assert_equal
     ~ctxt:context
-    ~cmp:[%compare.equal: (string * Interface.V2.BuckBxlBuilderOutput.Conflict.t) list]
+    ~cmp:[%compare.equal: (string * Interface.Eager.BuckBxlBuilderOutput.Conflict.t) list]
     ~printer:(fun items ->
-      [%sexp_of: (string * Interface.V2.BuckBxlBuilderOutput.Conflict.t) list] items
+      [%sexp_of: (string * Interface.Eager.BuckBxlBuilderOutput.Conflict.t) list] items
       |> Sexp.to_string_hum)
     (expected |> List.sort ~compare)
     (actual |> List.sort ~compare)
@@ -37,12 +37,12 @@ let assert_conflicts_equal ~context ~expected actual =
 let test_parse_merged_sourcedb_v2 context =
   let assert_parsed ~expected_build_map ~expected_target_count ~expected_conflicts output =
     let {
-      Interface.V2.BuckBxlBuilderOutput.build_map = actual_build_map;
+      Interface.Eager.BuckBxlBuilderOutput.build_map = actual_build_map;
       target_count = actual_target_count;
       conflicts = actual_conflicts;
     }
       =
-      Yojson.Safe.from_string output |> Interface.V2.parse_merged_sourcedb
+      Yojson.Safe.from_string output |> Interface.Eager.parse_merged_sourcedb
     in
     assert_mapping_equal ~context ~expected:expected_build_map (BuildMap.to_alist actual_build_map);
     assert_equal
@@ -58,7 +58,7 @@ let test_parse_merged_sourcedb_v2 context =
   in
   let assert_not_parsed output =
     try
-      let _ = Yojson.Safe.from_string output |> Interface.V2.parse_merged_sourcedb in
+      let _ = Yojson.Safe.from_string output |> Interface.Eager.parse_merged_sourcedb in
       let message = Stdlib.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -97,7 +97,7 @@ let test_parse_merged_sourcedb_v2 context =
       [
         ( "//targets:c",
           {
-            Interface.V2.BuckBxlBuilderOutput.Conflict.conflict_with = "//targets:a";
+            Interface.Eager.BuckBxlBuilderOutput.Conflict.conflict_with = "//targets:a";
             artifact_path = "a.py";
             preserved_source_path = "source/a.py";
             dropped_source_path = "source/c.py";
@@ -139,10 +139,10 @@ let test_parse_merged_sourcedb_lazy context =
 
 
 let test_parse_buck_bxl_output_v2 context =
-  let assert_parsed output = Interface.V2.parse_bxl_output output |> ignore in
+  let assert_parsed output = Interface.Eager.parse_bxl_output output |> ignore in
   let assert_not_parsed output =
     try
-      let _ = Interface.V2.parse_bxl_output output in
+      let _ = Interface.Eager.parse_bxl_output output in
       let message = Stdlib.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with

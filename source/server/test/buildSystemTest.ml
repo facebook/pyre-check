@@ -380,9 +380,9 @@ let test_buck_update context =
           BuildMap.(create (Partial.of_alist_exn build_mappings)) |> Interface.WithMetadata.create)
         |> Lwt.return
       in
-      Buck.Interface.V2.create_for_testing ~construct_build_map ()
+      Buck.Interface.Eager.create_for_testing ~construct_build_map ()
     in
-    let builder = Buck.Builder.Classic.create_v2 ~source_root ~artifact_root interface in
+    let builder = Buck.Builder.Eager.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
@@ -465,9 +465,9 @@ let test_buck_update_without_rebuild context =
           BuildMap.(create (Partial.of_alist_exn build_mappings)) |> Interface.WithMetadata.create)
         |> Lwt.return
       in
-      Buck.Interface.V2.create_for_testing ~construct_build_map ()
+      Buck.Interface.Eager.create_for_testing ~construct_build_map ()
     in
-    let builder = Buck.Builder.Classic.create_v2 ~source_root ~artifact_root interface in
+    let builder = Buck.Builder.Eager.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in

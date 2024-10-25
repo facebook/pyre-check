@@ -66,7 +66,7 @@ let do_lookup_artifact ~index ~source_root ~artifact_root path =
       |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:artifact_root ~relative)
 
 
-module Classic = struct
+module Eager = struct
   module IncrementalBuildResult = struct
     type t = {
       build_map: BuildMap.t;
@@ -114,32 +114,31 @@ module Classic = struct
     identifier: string;
   }
 
-  module V2 = struct
-    let build ~interface ~source_root ~artifact_root targets =
-      let open Lwt.Infix in
-      Interface.V2.construct_build_map interface targets
-      >>= fun { Interface.WithMetadata.data = build_map; metadata } ->
-      Log.info "Constructing Python link-tree for type checking...";
-      Artifacts.populate ~source_root ~artifact_root build_map
-      >>= function
-      | Result.Error message -> raise (LinkTreeConstructionError message)
-      | Result.Ok () ->
-          Lwt.return Interface.(WithMetadata.create { BuildResult.targets; build_map } ?metadata)
+  let build ~interface ~source_root ~artifact_root targets =
+    let open Lwt.Infix in
+    Interface.Eager.construct_build_map interface targets
+    >>= fun { Interface.WithMetadata.data = build_map; metadata } ->
+    Log.info "Constructing Python link-tree for type checking...";
+    Artifacts.populate ~source_root ~artifact_root build_map
+    >>= function
+    | Result.Error message -> raise (LinkTreeConstructionError message)
+    | Result.Ok () ->
+        Lwt.return Interface.(WithMetadata.create { BuildResult.targets; build_map } ?metadata)
 
 
-    let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
-      let open Lwt.Infix in
-      Interface.V2.construct_build_map interface targets
-      >>= fun { Interface.WithMetadata.data = build_map; metadata } ->
-      do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
-      >>= fun changed_artifacts ->
-      Lwt.return
-        (Interface.WithMetadata.create
-           { IncrementalBuildResult.targets; build_map; changed_artifacts }
-           ?metadata)
-  end
+  let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
+    let open Lwt.Infix in
+    Interface.Eager.construct_build_map interface targets
+    >>= fun { Interface.WithMetadata.data = build_map; metadata } ->
+    do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+    >>= fun changed_artifacts ->
+    Lwt.return
+      (Interface.WithMetadata.create
+         { IncrementalBuildResult.targets; build_map; changed_artifacts }
+         ?metadata)
 
-  let create_v2 ~source_root ~artifact_root interface =
+
+  let create ~source_root ~artifact_root interface =
     let fast_incremental_build_with_normalized_targets
         ~old_build_map
         ~old_build_map_index:_
@@ -149,14 +148,14 @@ module Classic = struct
       =
       (* NOTE: The same query we relied on to optimize incremental build in Buck1 does not exist in
          Buck2. For now, fallback to a less optimized rebuild approach. *)
-      V2.full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets
+      full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets
     in
     {
-      build = V2.build ~interface ~source_root ~artifact_root;
+      build = build ~interface ~source_root ~artifact_root;
       restore = restore ~source_root ~artifact_root;
-      full_incremental_build = V2.full_incremental_build ~interface ~source_root ~artifact_root;
+      full_incremental_build = full_incremental_build ~interface ~source_root ~artifact_root;
       incremental_build_with_normalized_targets =
-        V2.full_incremental_build ~interface ~source_root ~artifact_root;
+        full_incremental_build ~interface ~source_root ~artifact_root;
       fast_incremental_build_with_normalized_targets;
       lookup_source = lookup_source ~source_root ~artifact_root;
       lookup_artifact = lookup_artifact ~source_root ~artifact_root;

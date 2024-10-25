@@ -97,7 +97,7 @@ module Initializer : sig
       - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation cannot
         function properly due to unexpected issues on the filesystem. *)
   val buck
-    :  builder:Buck.Builder.Classic.t ->
+    :  builder:Buck.Builder.Eager.t ->
     artifact_root:PyrePath.t ->
     targets:string list ->
     unit ->
