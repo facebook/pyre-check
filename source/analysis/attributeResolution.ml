@@ -70,11 +70,11 @@ let union = function
 
 
 module VarianceVisitor = struct
-  type injectivity = bool [@@deriving show, compare]
+  type injectivity = bool [@@deriving compare]
 
-  type t_param = string * Type.Record.Variance.t * injectivity [@@deriving show, compare]
+  type t_param = string * Type.Record.Variance.t * injectivity [@@deriving compare]
 
-  type t_param_array = t_param array [@@deriving show, compare]
+  type t_param_array = t_param array [@@deriving compare]
 
   (* type on_edge = class_name:string -> t_param array *)
 
