@@ -261,6 +261,13 @@ let is_private ({ name; _ } as attribute) =
   String.is_prefix ~prefix:(parent_prefix ^ "__") name
 
 
+let is_private_field { name; _ } =
+  match name with
+  | "" -> false
+  | _ when Char.equal name.[0] '_' -> true
+  | _ -> false
+
+
 let public_name ({ name; _ } as attribute) =
   let parent_prefix = parent_prefix attribute in
   if is_private attribute then

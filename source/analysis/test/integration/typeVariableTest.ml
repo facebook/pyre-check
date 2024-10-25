@@ -250,8 +250,6 @@ let test_type_variable_scoping =
              "Incompatible variable type [9]: vcontra1_1 is declared to have type \
               `ShouldBeContravariant1[float]` but is used as type `ShouldBeContravariant1[int]`.";
            ];
-      (* TODO migeedz: vo5_1 should not raise an error. Tried considering the "self" parameter as
-         bivariant and that did not solve the issue. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -291,10 +289,98 @@ let test_type_variable_scoping =
            [
              "Incompatible variable type [9]: vco1_2 is declared to have type \
               `ShouldBeCovariant1[int]` but is used as type `ShouldBeCovariant1[float]`.";
-             "Incompatible variable type [9]: vo5_1 is declared to have type \
-              `ShouldBeCovariant5[float]` but is used as type `ShouldBeCovariant5[int]`.";
              "Incompatible variable type [9]: vo5_2 is declared to have type \
               `ShouldBeCovariant5[int]` but is used as type `ShouldBeCovariant5[float]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            class ShouldBeCovariant5[K]:
+                def __init__(self, x: K) -> None:
+                    self._x = x
+
+                def x(self) -> K:
+                    return self._x
+
+
+            vo5_1: ShouldBeCovariant5[float] = ShouldBeCovariant5[int](1)  # OK
+            vo5_2: ShouldBeCovariant5[int] = ShouldBeCovariant5[float](1.0)  # E
+
+
+            |}
+           [
+             "Incompatible variable type [9]: vo5_2 is declared to have type \
+              `ShouldBeCovariant5[int]` but is used as type `ShouldBeCovariant5[float]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            class ShouldBeInvariant5[T]:
+                def __init__(self, x: T) -> None:
+                    self.x = x
+
+
+            vinv5_1: ShouldBeInvariant5[float] = ShouldBeInvariant5[int](1)  # E
+
+            |}
+           [
+             "Incompatible variable type [9]: vinv5_1 is declared to have type \
+              `ShouldBeInvariant5[float]` but is used as type `ShouldBeInvariant5[int]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
+            from typing import Generic, TypeVar
+
+            @dataclass(frozen=True)
+            class ShouldBeCovariant4[T]:
+                x: T
+
+
+            vo4_1: ShouldBeCovariant4[float] = ShouldBeCovariant4[int](1)  # OK
+            vo4_4: ShouldBeCovariant4[int] = ShouldBeCovariant4[float](1.0)  # E
+
+
+            |}
+           [
+             "Uninitialized attribute [13]: Attribute `x` is declared in class \
+              `ShouldBeCovariant4` to have type `Variable[T]` but is never initialized.";
+             "Too many arguments [19]: Call `ShouldBeCovariant4.__init__` expects 0 positional \
+              arguments, 1 was provided.";
+             "Incompatible variable type [9]: vo4_4 is declared to have type \
+              `ShouldBeCovariant4[int]` but is used as type `ShouldBeCovariant4[float]`.";
+             "Too many arguments [19]: Call `ShouldBeCovariant4.__init__` expects 0 positional \
+              arguments, 1 was provided.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+
+            from typing import *
+
+
+            class ShouldBeInvariant1[K]:
+              def __init__(self, value: K) -> None:
+                  self._value = value
+
+              @property
+              def value(self) -> K:
+                  return self._value
+
+              @value.setter
+              def value(self, value: K) -> None:
+                  self._value = value
+
+            vinv1_1: ShouldBeInvariant1[float] = ShouldBeInvariant1[int](1)  # E
+            vinv1_2: ShouldBeInvariant1[int] = ShouldBeInvariant1[float](1.1)  # E
+
+            |}
+           [
+             "Incompatible variable type [9]: vinv1_1 is declared to have type \
+              `ShouldBeInvariant1[float]` but is used as type `ShouldBeInvariant1[int]`.";
+             "Incompatible variable type [9]: vinv1_2 is declared to have type \
+              `ShouldBeInvariant1[int]` but is used as type `ShouldBeInvariant1[float]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

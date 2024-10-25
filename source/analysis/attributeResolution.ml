@@ -169,27 +169,43 @@ module VarianceVisitor = struct
         begin
           match element with
           | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
-              on_type ~variance:Covariant ~inj:true ~typ:annotation
+              let visibility = AnnotatedAttribute.visibility x in
+              let variance =
+                match visibility with
+                | ReadOnly _ -> Type.Record.Variance.Covariant
+                | ReadWrite ->
+                    if AnnotatedAttribute.is_private_field x then
+                      Covariant
+                    else
+                      Invariant
+              in
+              on_type ~variance ~inj:true ~typ:annotation
           | {
            AnnotatedAttribute.UninstantiatedAnnotation.kind =
              DecoratedMethod { undecorated_signature; _ };
            _;
           } ->
-              on_type ~variance:Covariant ~inj:true ~typ:(Type.Callable undecorated_signature)
+              if not (String.equal (AnnotatedAttribute.name x) "__init__") then
+                on_type ~variance:Covariant ~inj:true ~typ:(Type.Callable undecorated_signature)
           | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Property { getter; setter }; _ }
             -> (
-              let call_on_type value =
+              let call_on_type_co value =
                 match value with
                 | Some typ -> on_type ~variance:Covariant ~inj:true ~typ
                 | _ -> ()
               in
-              call_on_type getter.self;
-              call_on_type getter.value;
+              let call_on_type_contra value =
+                match value with
+                | Some typ -> on_type ~variance:Contravariant ~inj:true ~typ
+                | _ -> ()
+              in
+              call_on_type_co getter.self;
+              call_on_type_co getter.value;
 
               match setter with
               | Some setter ->
-                  call_on_type setter.self;
-                  call_on_type setter.value
+                  call_on_type_co setter.self;
+                  call_on_type_contra setter.value
               | _ -> ())
         end)
       (to_list class_name);
