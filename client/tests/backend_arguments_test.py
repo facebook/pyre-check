@@ -16,7 +16,6 @@ from ..backend_arguments import (
     BaseArguments,
     BuckSourcePath,
     find_buck2_root,
-    find_buck_root,
     find_watchman_root,
     get_checked_directory_allowlist,
     get_source_path,
@@ -102,7 +101,6 @@ class ArgumentsTest(testslide.TestCase):
                 "source_root": "/source",
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar", "//foo:baz"],
-                "use_buck2": True,
             },
         )
         self.assertDictEqual(
@@ -115,7 +113,6 @@ class ArgumentsTest(testslide.TestCase):
                 mode="opt",
                 isolation_prefix=".lsp",
                 bxl_builder="//foo.bxl:build",
-                use_buck2=True,
             ).serialize(),
             {
                 "kind": "buck",
@@ -126,7 +123,6 @@ class ArgumentsTest(testslide.TestCase):
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
                 "bxl_builder": "//foo.bxl:build",
-                "use_buck2": True,
             },
         )
 
@@ -231,30 +227,6 @@ class ArgumentsTest(testslide.TestCase):
                 find_watchman_root(root_path / "foo", stop_search_after=1)
             )
             self.assertIsNone(find_watchman_root(root_path, stop_search_after=0))
-
-    def test_find_buck_root(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            setup.ensure_files_exist(
-                root_path,
-                ["foo/qux/derp", "foo/bar/.buckconfig", "foo/bar/baz/derp"],
-            )
-
-            expected_root = root_path / "foo/bar"
-            self.assertEqual(
-                find_buck_root(root_path / "foo/bar/baz", stop_search_after=3),
-                expected_root,
-            )
-            self.assertEqual(
-                find_buck_root(root_path / "foo/bar", stop_search_after=2),
-                expected_root,
-            )
-
-            self.assertIsNone(
-                find_buck_root(root_path / "foo/qux", stop_search_after=2)
-            )
-            self.assertIsNone(find_buck_root(root_path / "foo", stop_search_after=1))
-            self.assertIsNone(find_buck_root(root_path, stop_search_after=0))
 
     def test_find_buck2_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -486,7 +458,6 @@ class ArgumentsTest(testslide.TestCase):
                         configuration.create_configuration(
                             command_arguments.CommandArguments(
                                 dot_pyre_directory=root_path / ".pyre",
-                                use_buck2=True,
                             ),
                             root_path / "repo_root" / "buck_root",
                         )
@@ -501,7 +472,6 @@ class ArgumentsTest(testslide.TestCase):
                     checked_directory=root_path / "repo_root" / "buck_root",
                     targets=["//ct:lavos"],
                     bxl_builder="//ct:robo",
-                    use_buck2=True,
                 ),
             )
 
@@ -570,7 +540,6 @@ class ArgumentsTest(testslide.TestCase):
                         configuration.create_configuration(
                             command_arguments.CommandArguments(
                                 dot_pyre_directory=root_path / ".pyre",
-                                use_buck2=True,
                             ),
                             root_path / "repo_root" / "buck_root",
                         )
@@ -588,7 +557,6 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ],
                     bxl_builder="//ct:robo",
-                    use_buck2=True,
                 ),
             )
 
