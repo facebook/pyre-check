@@ -3584,6 +3584,17 @@ let test_expand_type_checking_imports =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_expanded
            {|
+      from typing import TYPE_CHECKING
+      if TYPE_CHECKING or False:
+        pass
+    |}
+           {|
+      from typing import TYPE_CHECKING
+      pass
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expanded
+           {|
       from typing import TYPE_CHECKING, TypeVar
       if TYPE_CHECKING:
         T = TypeVar('T')

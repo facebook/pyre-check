@@ -1915,6 +1915,15 @@ let expand_type_checking_imports source =
           }
         when is_type_checking operand ->
           (), orelse
+      | If
+          {
+            If.test =
+              { Node.value = BooleanOperator { BooleanOperator.operator = Or; left; right }; _ };
+            body;
+            _;
+          }
+        when is_type_checking left || is_type_checking right ->
+          (), body
       | _ -> (), [statement]
   end)
   in
