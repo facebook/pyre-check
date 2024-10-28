@@ -159,8 +159,8 @@ module VarianceVisitor = struct
       | Type.Tuple ordered_types -> handle_ordered_types ordered_types on_type variance inj
       | Type.TypeOperation (Compose ordered_types) ->
           handle_ordered_types ordered_types on_type variance inj
-      (* TODO: handle recursive types *)
-      | Type.RecursiveType r -> on_type ~variance ~inj ~typ:(Type.RecursiveType.body r)
+      (* Recursive types cannot currently be generic. So we do nothing for variance. *)
+      | Type.RecursiveType _ -> ()
       | _ -> ()
     in
     List.iter
