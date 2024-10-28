@@ -209,7 +209,7 @@ function Playground() {
 
   return (
     <Layout title="Playground">
-      <main className={styles.main}>
+      <main className={styles.playgroundMain}>
         <OssOnly>
           <h1 className={styles.heading}>Playground</h1>
           <Code
