@@ -788,6 +788,7 @@ and kind =
       parameter: type_parameter_name_and_variance;
       origin: type_variance_origin;
     }
+  | InvalidVarianceDefinition
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of {
       parent: Identifier.t;
@@ -997,6 +998,7 @@ let code_of_kind = function
   | NamedTupleMissingDefault -> 74
   | InvalidTypeVariableConstraint _ -> 75
   | AwaitOutsideAsyncDef -> 76
+  | InvalidVarianceDefinition -> 77
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1041,6 +1043,7 @@ let name_of_kind = function
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
+  | InvalidVarianceDefinition -> "Invalid variance definition"
   | InvalidInheritance _ -> "Invalid inheritance"
   | InvalidOverride _ -> "Invalid override"
   | InvalidPositionalOnlyParameter -> "Invalid positional-only parameter"
@@ -2165,6 +2168,8 @@ let rec messages ~concise ~signature location kind =
               base_parameter
       in
       [formatted; "See `https://pyre-check.org/docs/errors#35-invalid-type-variance` for details."]
+  | InvalidVarianceDefinition ->
+      [Format.asprintf "Cannot use infer_variance with predefined variance."]
   | InvalidInheritance invalid_inheritance -> (
       match invalid_inheritance with
       | ProtocolBaseClass ->
@@ -3383,6 +3388,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidTypeParameters _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
+  | InvalidVarianceDefinition
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidPositionalOnlyParameter
@@ -3929,6 +3935,7 @@ let join ~resolution left right =
     | InvalidTypeParameters _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
+    | InvalidVarianceDefinition, _
     | InvalidInheritance _, _
     | InvalidOverride _, _
     | InvalidPositionalOnlyParameter, _
@@ -4466,6 +4473,7 @@ let dequalify
             origin = dequalify_type_variance_origin origin;
           }
     | InvalidInheritance name -> InvalidInheritance (dequalify_invalid_inheritance name)
+    | InvalidVarianceDefinition -> InvalidVarianceDefinition
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent = dequalify_identifier parent; decorator }
     | InvalidPositionalOnlyParameter -> InvalidPositionalOnlyParameter

@@ -3102,6 +3102,7 @@ module Variable = struct
           name: Identifier.t;
           constraints: Expression.t Record.TypeVarConstraints.t;
           variance: Record.PreInferenceVariance.t;
+          infer_variance: bool;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
@@ -3160,8 +3161,20 @@ module Variable = struct
             List.find_map arguments ~f:variance_definition
             |> Option.value ~default:Record.PreInferenceVariance.P_Invariant
           in
+          let infer_variance =
+            let variance_definition = function
+              | {
+                  Call.Argument.name = Some { Node.value = name; _ };
+                  value = { Node.value = Constant Constant.True; _ };
+                }
+                when String.equal (Identifier.sanitized name) "infer_variance" ->
+                  true
+              | _ -> false
+            in
+            List.exists arguments ~f:variance_definition
+          in
 
-          Some (DTypeVar { name = Reference.show target; constraints; variance })
+          Some (DTypeVar { name = Reference.show target; constraints; variance; infer_variance })
       | {
        Node.value =
          Expression.Call
@@ -3179,6 +3192,7 @@ module Variable = struct
                  name = Reference.show target;
                  constraints = LiteralIntegers;
                  variance = Record.PreInferenceVariance.P_Invariant;
+                 infer_variance = false;
                })
       | {
           Node.value =
@@ -3604,7 +3618,7 @@ module GenericParameter = struct
 
   let of_declaration declaration ~create_type =
     match declaration with
-    | Variable.Declaration.DTypeVar { name; constraints; variance } ->
+    | Variable.Declaration.DTypeVar { name; constraints; variance; _ } ->
         let constraints =
           match constraints with
           | Bound expression -> Record.TypeVarConstraints.Bound (create_type expression)

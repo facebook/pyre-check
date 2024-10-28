@@ -841,6 +841,7 @@ module Variable : sig
           name: Identifier.t;
           constraints: Expression.t Record.TypeVarConstraints.t;
           variance: Record.PreInferenceVariance.t;
+          infer_variance: bool;
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }

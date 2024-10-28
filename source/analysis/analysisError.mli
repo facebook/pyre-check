@@ -442,6 +442,7 @@ and kind =
       parameter: type_parameter_name_and_variance;
       origin: type_variance_origin;
     }
+  | InvalidVarianceDefinition
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of {
       parent: Identifier.t;

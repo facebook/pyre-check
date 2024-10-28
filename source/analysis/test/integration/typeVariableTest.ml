@@ -398,6 +398,20 @@ let test_type_variable_scoping =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            from typing import *
+
+            S1 = TypeVar("S1", covariant=True, infer_variance=True)  # E: cannot use covariant with infer_variance
+            S2 = TypeVar("S2", contravariant=True, infer_variance=True)  # E: cannot use contravariant with infer_variance
+
+
+            |}
+           [
+             "Invalid variance definition [77]: Cannot use infer_variance with predefined variance.";
+             "Invalid variance definition [77]: Cannot use infer_variance with predefined variance.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
             from typing import Sequence
             class ShouldBeCovariant2[T](Sequence[T]):
                 pass

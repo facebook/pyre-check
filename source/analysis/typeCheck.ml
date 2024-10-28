@@ -4643,13 +4643,22 @@ module State (Context : Context) = struct
 
   and forward_variable_alias_definition ~resolution ~location ~errors ~target ~value ~reference =
     let global_resolution = Resolution.global_resolution resolution in
-
     (* try to parse as a variable declaration and raise the appropriate errors for variables if we
        are successful *)
     let parse_as_declaration = Type.Variable.Declaration.parse value ~target:reference in
-
     match parse_as_declaration with
     | Some parsed ->
+        (* if infer_variance is true but variance is not undefined, we raise an error *)
+        let errors_from_variance_declarations =
+          match parsed with
+          | Type.Variable.Declaration.DTypeVar { variance; infer_variance = true; _ }
+            when not
+                   (Type.Record.PreInferenceVariance.equal
+                      variance
+                      Type.Record.PreInferenceVariance.P_Undefined) ->
+              emit_error ~errors ~location ~kind:Error.InvalidVarianceDefinition
+          | _ -> []
+        in
         let create_type =
           GlobalResolution.parse_annotation ~validation:NoValidation global_resolution
         in
@@ -4679,6 +4688,7 @@ module State (Context : Context) = struct
               errors
           | _ -> errors
         in
+        let errors = errors_from_variance_declarations @ errors in
         Value resolution, errors
     | _ -> Value resolution, errors
 
