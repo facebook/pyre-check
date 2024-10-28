@@ -166,6 +166,7 @@ class PartialConfiguration:
     )
     typeshed: Optional[str] = None
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
+    use_buck2: Optional[bool] = None
     version_hash: Optional[str] = None
     use_errpy_parser: Optional[bool] = None
 
@@ -244,6 +245,7 @@ class PartialConfiguration:
             targets=targets,
             typeshed=arguments.typeshed,
             unwatched_dependency=None,
+            use_buck2=arguments.use_buck2,
             version_hash=None,
         )
 
@@ -484,6 +486,7 @@ class PartialConfiguration:
                 targets=ensure_optional_string_list(configuration_json, "targets"),
                 typeshed=ensure_option_type(configuration_json, "typeshed", str),
                 unwatched_dependency=unwatched_dependency,
+                use_buck2=ensure_option_type(configuration_json, "use_buck2", bool),
                 version_hash=ensure_option_type(configuration_json, "version", str),
                 use_errpy_parser=ensure_option_type(
                     configuration_json, "use_errpy_parser", bool
@@ -616,6 +619,7 @@ class Configuration:
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
+    use_buck2: bool = True
     version_hash: Optional[str] = None
     use_errpy_parser: bool = False
 
@@ -678,6 +682,9 @@ class Configuration:
             targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
             unwatched_dependency=partial_configuration.unwatched_dependency,
+            use_buck2=_get_optional_value(
+                partial_configuration.use_buck2, default=True
+            ),
             version_hash=partial_configuration.version_hash,
             use_errpy_parser=_get_optional_value(
                 partial_configuration.use_errpy_parser, default=False
@@ -808,6 +815,7 @@ class Configuration:
                 if unwatched_dependency is not None
                 else {}
             ),
+            "use_buck2": self.use_buck2,
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 

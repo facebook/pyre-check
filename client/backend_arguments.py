@@ -114,6 +114,7 @@ class BuckSourcePath:
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
     bxl_builder: Optional[str] = None
+    use_buck2: bool = True
 
     def serialize(self) -> Dict[str, object]:
         mode = self.mode
@@ -140,6 +141,7 @@ class BuckSourcePath:
                 else {"isolation_prefix": isolation_prefix}
             ),
             **({} if bxl_builder is None else {"bxl_builder": bxl_builder}),
+            "use_buck2": self.use_buck2,
             "source_root": str(self.source_root),
             "artifact_root": str(self.artifact_root),
         }
@@ -280,6 +282,15 @@ def find_watchman_root(
     )
 
 
+def find_buck_root(
+    base: Path,
+    stop_search_after: Optional[int] = None,
+) -> Optional[Path]:
+    return find_directories.find_parent_directory_containing_file(
+        base, ".buckconfig", stop_search_after
+    )
+
+
 def find_buck2_root(
     base: Path,
     stop_search_after: Optional[int] = None,
@@ -340,8 +351,11 @@ def get_source_path(
         )
 
     if targets is not None:
+        use_buck2 = configuration.uses_buck2()
         search_base = _get_global_or_local_root(configuration)
-        source_root = find_buck2_root(search_base)
+        source_root = (
+            find_buck2_root(search_base) if use_buck2 else find_buck_root(search_base)
+        )
         if source_root is None:
             raise configuration_module.InvalidConfiguration(
                 "Cannot find a buck root for the specified targets. "
@@ -359,6 +373,7 @@ def get_source_path(
             mode=buck_mode,
             isolation_prefix=configuration.get_buck_isolation_prefix(),
             bxl_builder=configuration.get_buck_bxl_builder(),
+            use_buck2=use_buck2,
         )
 
     raise configuration_module.InvalidConfiguration(
