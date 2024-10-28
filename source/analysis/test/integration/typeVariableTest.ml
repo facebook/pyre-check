@@ -57,8 +57,6 @@ let test_type_variable_scoping =
 
             |}
            [];
-      (* TODO migeedz: Why do we need to express the domain of Callable as a list for this to
-         typecheck? *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -66,6 +64,39 @@ let test_type_variable_scoping =
 
             def decorator3[**L, M](x: Callable[L, M]) -> int:
                 ...
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable, Awaitable
+
+            def outer[**TParams, TReturn](
+                inner: Callable[TParams, Awaitable[TReturn]],
+            ) -> Callable[TParams, Awaitable[TReturn]]:
+                async def _func(
+                    *args: TParams.args, **kwargs: TParams.kwargs
+                ) -> TReturn:
+                    return await inner(*args, **kwargs)
+                return _func
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            from typing import Callable, Awaitable, ParamSpec, TypeVar
+
+            TParams = ParamSpec("TParams")
+            TReturn = TypeVar("TReturn")
+
+            def outer(
+                inner: Callable[TParams, Awaitable[TReturn]],
+            ) -> Callable[TParams, Awaitable[TReturn]]:
+                async def _func(
+                    *args: TParams.args, **kwargs: TParams.kwargs
+                ) -> TReturn:
+                    return await inner(*args, **kwargs)
+                return _func
             |}
            [];
       (* PEP695 generic methods from non-generic classes *)
