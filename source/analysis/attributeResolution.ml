@@ -76,17 +76,13 @@ module VarianceVisitor = struct
 
   type t_param_array = t_param array [@@deriving compare]
 
-  (* type on_edge = class_name:string -> t_param array *)
-
-  (* type on_var = string -> Type.Record.Variance.t -> injectivity -> unit *)
-
   type variance_env = (string, t_param array) Stdlib.Hashtbl.t
 
   let on_class ~class_name ~on_edge ~on_var ~to_list ~get_base_class_types =
     let handle_ordered_types ordered_types on_type variance inj =
       match ordered_types with
       | Type.Record.OrderedTypes.Concrete concretes ->
-          List.iter ~f:(fun ty -> on_type ~variance ~inj ~typ:ty) concretes (* TODO *)
+          List.iter ~f:(fun ty -> on_type ~variance ~inj ~typ:ty) concretes
       | Type.Record.OrderedTypes.Concatenation c -> begin
           match Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation c with
           | Some annotation -> on_type ~variance ~inj ~typ:annotation
@@ -98,7 +94,7 @@ module VarianceVisitor = struct
       | Type.Record.Callable.Defined defined ->
           List.filter_map ~f:(fun x -> Type.Record.Callable.CallableParamType.annotation x) defined
       | FromParamSpec { head; _ } -> head
-      | _ -> []
+      | Type.Record.Callable.Undefined -> []
     in
     let arguments_to_types (arguments : Type.Argument.t list) =
       List.fold
@@ -114,7 +110,7 @@ module VarianceVisitor = struct
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation ordered_types
               with
               | Some annotation -> annotation :: acc
-              | _ -> acc))
+              | None -> acc))
         arguments
         ~init:[]
     in
