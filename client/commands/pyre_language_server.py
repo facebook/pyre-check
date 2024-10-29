@@ -145,13 +145,18 @@ class BuckTypeCheckStatus(enum.Enum):
     PARSE_ERROR = "parse_error"
     NOT_RUN = "not_run"
     PREEMPTED = "preempted"
+    PREEMPTED_SHOULD_RETRY = "preempted_should_retry"
 
     @classmethod
-    def from_returncode(cls, returncode: Optional[int]) -> BuckTypeCheckStatus:
+    def from_returncode(
+        cls, returncode: Optional[int], remaining_tasks: Optional[int] = None
+    ) -> BuckTypeCheckStatus:
         if returncode == 0:
             return BuckTypeCheckStatus.SUCCESS
         elif returncode == 3:
             return BuckTypeCheckStatus.USER_ERROR
+        elif returncode == 5 and remaining_tasks == 0:
+            return BuckTypeCheckStatus.PREEMPTED_SHOULD_RETRY
         elif returncode == 5:
             return BuckTypeCheckStatus.PREEMPTED
         else:
@@ -498,7 +503,7 @@ def log_exceptions_factory(
     return log_exceptions
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class PyreLanguageServer(PyreLanguageServerApi):
     # Channel to send responses to the editor
     output_channel: connections.AsyncTextWriter
@@ -511,6 +516,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
     index_querier: daemon_querier.AbstractDaemonQuerier
     document_formatter: Optional[AbstractDocumentFormatter]
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
+    ongoing_type_checks: int = 0
 
     async def write_telemetry(
         self,
@@ -747,12 +753,16 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.debug(
                 f"Querying Buck for type errors: `{' '.join(type_check_parameters)}`"
             )
+
+            self.ongoing_type_checks += 1
             type_check = await asyncio.create_subprocess_exec(
                 *type_check_parameters,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout_data, stderr_data = await type_check.communicate()
+            self.ongoing_type_checks -= 1
+
             stdout_text = stdout_data.decode("utf-8")
             stderr_text = stderr_data.decode("utf-8")
             LOG.debug(f"Buck type check results:\n{stdout_text}\n{stderr_text}")
@@ -762,14 +772,20 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         error_message = None
         # return now if buck build was unsuccessful or not preempted
-        if type_check.returncode != 0:
-            if type_check.returncode != 5:
+        result_status = BuckTypeCheckStatus.from_returncode(
+            type_check.returncode, remaining_tasks=self.ongoing_type_checks
+        )
+        if result_status != BuckTypeCheckStatus.SUCCESS:
+            if result_status not in (
+                BuckTypeCheckStatus.PREEMPTED,
+                BuckTypeCheckStatus.PREEMPTED_SHOULD_RETRY,
+            ):
                 error_message = (
                     f"Got error exit code from Buck type check: {stderr_text}"
                 )
                 LOG.error(error_message)
             return PyreBuckTypeErrorMetadata(
-                status=BuckTypeCheckStatus.from_returncode(type_check.returncode),
+                status=result_status,
                 duration=buck_query_timer.stop_in_millisecond(),
                 type_errors={},
                 build_id=build_id,
@@ -822,7 +838,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             result = await self._query_buck_for_type_errors(
                 type_checkable_files, buck_query_timer, retries=retries
             )
-            if result.status != BuckTypeCheckStatus.PREEMPTED:
+            if result.status != BuckTypeCheckStatus.PREEMPTED_SHOULD_RETRY:
                 return result
 
         LOG.warning(
@@ -893,15 +909,17 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.debug(
                 f"Getting files for type checker from Buck: `{' '.join(query_parameters)}`"
             )
-            type_checked_files_query = asyncio.create_subprocess_exec(
+
+            self.ongoing_type_checks += 1
+            type_checked_files_query = await asyncio.create_subprocess_exec(
                 *query_parameters,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            awaited_files_query = await type_checked_files_query
-            stdout_data, stderr_data = await awaited_files_query.communicate()
+            stdout_data, stderr_data = await type_checked_files_query.communicate()
+            self.ongoing_type_checks -= 1
 
-        if awaited_files_query.returncode != 0:
+        if type_checked_files_query.returncode != 0:
             stderr = stderr_data.decode("utf-8")
             message = f"Typing query ended in error: {stderr}"
             LOG.error(message)
@@ -1723,12 +1741,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
 
         try:
-            if self.document_formatter is None:
+            document_formatter = self.document_formatter
+            if document_formatter is None:
                 raise json_rpc.InternalError("Formatter was not initialized correctly.")
             else:
                 document_formatter_timer = timer.Timer()
-                document_formatting_response = (
-                    await self.document_formatter.format_document(document_path)
+                document_formatting_response = await document_formatter.format_document(
+                    document_path
                 )
 
                 raw_results = lsp.DocumentFormattingResponse.cached_schema().dump(
@@ -2307,7 +2326,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class CodeNavigationServerApi(PyreLanguageServer):
     pass
 
