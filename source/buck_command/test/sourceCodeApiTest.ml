@@ -174,6 +174,20 @@ let test_source_code_api =
     assert_module_tracked ~context ~api !"a.d.e" ~expected:true;
     assert_module_tracked ~context ~api !"a.x" ~expected:false;
     ());
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"do not shadow builtins.pyi"
+    @@ fun context ->
+    let api =
+      let loader = FileLoader.create_for_testing ["__init__.py", ""; "builtins.pyi", ""] in
+      let listing =
+        Sourcedb.Listing.create_for_testing
+          ~sources:["__init__.py"]
+          ~dependencies:["builtins.pyi"]
+          ()
+      in
+      create loader listing
+    in
+    assert_lookup_relative_path ~context ~api [!"", Some "__init__.py"];
+    ());
   ]
 
 
