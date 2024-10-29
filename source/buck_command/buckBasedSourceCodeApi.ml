@@ -78,9 +78,17 @@ let create
   let source_index = build_index ~configuration:dummy_configuration source_module_paths in
   let dependency_index = build_index ~configuration:dummy_configuration dependency_module_paths in
   let merged_index =
-    (* Source files always take priority over dependency files *)
-    (* TODO: Revisit this decision once we get more results from production *)
-    let combine ~key:_ source_value _dependency_value = source_value in
+    (* Source files always take priority over dependency files, except in the special case of the
+       Reference.empty module name, in which case we make sure that it is not possible for an
+       `__init__.py` to shadow `builtins.pyi`. *)
+    let combine ~key:_ source_module_path dependency_module_path =
+      match
+        ( String.equal (ModulePath.relative dependency_module_path) "builtins.pyi",
+          String.equal (ModulePath.relative source_module_path) "builtins.pyi" )
+      with
+      | true, false -> dependency_module_path
+      | _, _ -> source_module_path
+    in
     Map.merge_skewed source_index dependency_index ~combine
   in
   let implicit_modules =

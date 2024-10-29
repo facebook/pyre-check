@@ -186,7 +186,7 @@ let test_source_code_api =
       in
       create loader listing
     in
-    assert_lookup_relative_path ~context ~api [!"", Some "__init__.py"];
+    assert_lookup_relative_path ~context ~api [!"", Some "builtins.pyi"];
     ());
   ]
 
