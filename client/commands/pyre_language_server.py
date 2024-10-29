@@ -730,14 +730,20 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 file=argfile,
             )
             argfile.flush()
-            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
-                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
-                preemptible = []
-            else:
-                isolation_dir = []
+            if (
+                self.get_language_server_features().type_errors_preemptible.is_enabled()
+                or self.get_language_server_features().per_target_isolation_dir.is_disabled()
+            ):
                 preemptible = [
                     "--preemptible=ondifferentstate",
                 ]
+            else:
+                preemptible = []
+            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
+                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
+            else:
+                isolation_dir = []
+
             type_check_parameters = [
                 "buck2",
                 *isolation_dir,
@@ -1016,6 +1022,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "new_file_loaded": new_file_loaded,
                     "isolation_dir": isolation_dir,
                     "sharding_enabled": self.get_language_server_features().type_error_sharding.is_enabled(),
+                    "preemptible": (
+                        self.get_language_server_features().type_errors_preemptible.is_enabled()
+                        or self.get_language_server_features().per_target_isolation_dir.is_disabled()
+                    ),
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },
