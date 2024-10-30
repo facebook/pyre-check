@@ -793,9 +793,14 @@ module IdentifierCallees = struct
   }
   [@@deriving eq, show { with_path = false }]
 
-  type identifier_reference =
-    | Global of Reference.t
-    | Nonlocal of Reference.t
+  module Reference = struct
+    type t =
+      | Global of {
+          reference: Reference.t;
+          export_name: PyrePysaLogic.ModuleExport.Name.t option;
+        }
+      | Nonlocal of Reference.t
+  end
 
   let create ?(global_targets = []) ?(nonlocal_targets = []) ?(callable_targets = []) () =
     { global_targets; nonlocal_targets; callable_targets }
@@ -2373,9 +2378,11 @@ let as_identifier_reference ~define ~pyre_in_context expression =
   | Expression.Name (Name.Identifier identifier) ->
       let reference = Reference.create identifier in
       if PyrePysaEnvironment.InContext.is_global pyre_in_context ~reference then
-        Some (IdentifierCallees.Global (Reference.delocalize reference))
+        Some
+          (IdentifierCallees.Reference.Global
+             { reference = Reference.delocalize reference; export_name = None })
       else if CallResolution.is_nonlocal ~pyre_in_context ~define reference then
-        Some (IdentifierCallees.Nonlocal (Reference.delocalize reference))
+        Some (IdentifierCallees.Reference.Nonlocal (Reference.delocalize reference))
       else
         None
   | Name name -> (
@@ -2385,14 +2392,26 @@ let as_identifier_reference ~define ~pyre_in_context expression =
         (PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
         reference
       >>= function
-      | PyrePysaLogic.ResolvedReference.ModuleAttribute { from; name; remaining = []; _ } ->
-          Some (IdentifierCallees.Global (Reference.combine from (Reference.create name)))
+      | PyrePysaLogic.ResolvedReference.ModuleAttribute
+          {
+            from;
+            name;
+            remaining = [];
+            export = PyrePysaLogic.ResolvedReference.Exported export_name;
+          } ->
+          Some
+            (IdentifierCallees.Reference.Global
+               {
+                 reference = Reference.combine from (Reference.create name);
+                 export_name = Some export_name;
+               })
       | _ -> None)
   | _ -> None
 
 
 let is_builtin_reference = function
-  | IdentifierCallees.Global reference -> reference |> Reference.single |> Option.is_some
+  | IdentifierCallees.Reference.Global { reference; _ } ->
+      reference |> Reference.single |> Option.is_some
   | Nonlocal _ -> false
 
 
@@ -2410,7 +2429,7 @@ let resolve_attribute_access_global_targets
     |> Node.create_with_default_location
   in
   match as_identifier_reference ~define ~pyre_in_context expression with
-  | Some (IdentifierCallees.Global global) -> [global]
+  | Some (IdentifierCallees.Reference.Global { reference; _ }) -> [reference]
   | Some (Nonlocal _) -> []
   | None ->
       let rec find_targets targets = function
@@ -2463,6 +2482,33 @@ let return_type_for_call ~pyre_in_context ~callee =
     |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
 
 
+let resolve_attribute_access_callable_targets ~define ~pyre_in_context expression =
+  match as_identifier_reference ~define ~pyre_in_context expression with
+  | Some
+      (IdentifierCallees.Reference.Global
+        { reference; export_name = Some (PyrePysaLogic.ModuleExport.Name.Define _) }) ->
+      let target = Target.create_function reference in
+      let call_indexer =
+        CallTargetIndexer.create ()
+        (* Need not index them, because these callees are only used by higher order call graph
+           building. *)
+      in
+      let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
+      let return_type =
+        return_type_for_call ~pyre_in_context ~callee:expression
+        |> Lazy.force
+        |> ReturnType.from_annotation ~pyre_api
+      in
+      [
+        CallTargetIndexer.create_target
+          call_indexer
+          ~implicit_dunder_call:false
+          ~return_type:(Some return_type)
+          target;
+      ]
+  | _ -> []
+
+
 let resolve_identifier ~override_graph ~define ~pyre_in_context ~call_indexer ~identifier =
   let expression =
     Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
@@ -2472,15 +2518,18 @@ let resolve_identifier ~override_graph ~define ~pyre_in_context ~call_indexer ~i
     |> as_identifier_reference ~define ~pyre_in_context
     |> Option.filter ~f:(Fn.non is_builtin_reference)
     >>| (function
-          | IdentifierCallees.Global global ->
+          | IdentifierCallees.Reference.Global
+              { reference; export_name = Some PyrePysaLogic.ModuleExport.Name.GlobalVariable }
+          | IdentifierCallees.Reference.Global { reference; export_name = None } ->
               ( [
                   CallTargetIndexer.create_target
                     call_indexer
                     ~implicit_dunder_call:false
                     ~return_type:None
-                    (Target.create_object global);
+                    (Target.create_object reference);
                 ],
                 [] )
+          | IdentifierCallees.Reference.Global _ -> [], []
           | Nonlocal nonlocal ->
               ( [],
                 [
@@ -2653,20 +2702,10 @@ struct
                 ~return_type:None)
     in
 
-    let expression =
+    let callable_targets =
       Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
       |> Node.create_with_default_location
-    in
-    let { CallCallees.call_targets = callable_targets; _ } =
-      resolve_regular_callees
-        ~debug:Context.debug
-        ~pyre_in_context
-        ~override_graph
-        ~call_indexer:(CallTargetIndexer.create ())
-          (* Need not index them, because these callees are only used by higher order call graph
-             building. *)
-        ~return_type:(return_type_for_call ~pyre_in_context ~callee:expression)
-        ~callee:expression
+      |> resolve_attribute_access_callable_targets ~define:Context.define_name ~pyre_in_context
     in
 
     { AttributeAccessCallees.property_targets; global_targets; is_attribute; callable_targets }

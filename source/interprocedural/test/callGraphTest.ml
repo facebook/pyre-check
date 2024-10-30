@@ -1453,18 +1453,6 @@ let test_call_graph_of_define =
                                 };
                               ])
                          ())) );
-               ( "11:11-11:21",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               (Target.Regular.Method
-                                  { class_name = "test.Enum"; method_name = "value"; kind = Normal });
-                           ]
-                         ())) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -2509,19 +2497,6 @@ let test_call_graph_of_define =
                                  ]
                                ()) );
                       ]) );
-               ( "10:12-10:19",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               ~receiver_class:"test.Foo"
-                               (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
-                           ]
-                         ())) );
                ( "10:21-10:24",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_attribute_access
@@ -3107,24 +3082,6 @@ let test_call_graph_of_define =
                                   unresolved = false;
                                 };
                               ])
-                         ())) );
-               ( "14:12-14:23",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               ~implicit_dunder_call:true
-                               ~receiver_class:"test.CallableClass"
-                               (Target.Regular.Method
-                                  {
-                                    class_name = "test.CallableClass";
-                                    method_name = "__call__";
-                                    kind = Normal;
-                                  });
-                           ]
                          ())) );
              ]
            ();
@@ -4624,20 +4581,6 @@ let test_call_graph_of_define =
                                   { class_name = "test.C"; method_name = "f"; kind = Normal });
                            ]
                          ())) );
-               ( "16:22-16:27",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               ~is_class_method:true
-                               ~index:0
-                               (Target.Regular.Method
-                                  { class_name = "test.C"; method_name = "f"; kind = Normal });
-                           ]
-                         ())) );
                ( "17:4-17:14",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
@@ -4663,21 +4606,6 @@ let test_call_graph_of_define =
                                ~is_class_method:true
                                ~receiver_class:"test.C"
                                ~index:1
-                               (Target.Regular.Method
-                                  { class_name = "test.C"; method_name = "h"; kind = Normal });
-                           ]
-                         ())) );
-               ( "18:22-18:27",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               ~is_class_method:true
-                               ~receiver_class:"test.C"
-                               ~index:0
                                (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "h"; kind = Normal });
                            ]
@@ -5780,6 +5708,84 @@ let test_call_graph_of_define =
                          ())) );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
+     def foo():
+       return bar
+     def bar(): ...
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:9-3:12",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
+     def foo():
+       yield bar
+     def bar(): ...
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:8-3:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     class C:
+       def m(self): ...
+     def foo(c: C):
+       return c.m
+  |}
+           ~define_name:"test.foo"
+           ~expected:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
+     def foo():
+       def inner(): ...
+       return inner
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "4:9-4:14",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_identifier
+                      (IdentifierCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
     ]
 
 
@@ -5999,50 +6005,6 @@ let test_call_graph_of_define_foo_and_bar =
                              (Target.Regular.Method
                                 { class_name = "test.C"; method_name = "__str__"; kind = Normal });
                          ])) );
-             ]
-           ();
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_call_graph_of_define
-           ~source:{|
-     def foo():
-       return bar
-     def bar(): ...
-  |}
-           ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "3:9-3:12",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                           ]
-                         ())) );
-             ]
-           ();
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_call_graph_of_define
-           ~source:{|
-     def foo():
-       yield bar
-     def bar(): ...
-  |}
-           ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "3:8-3:11",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_attribute_access
-                      (AttributeAccessCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                           ]
-                         ())) );
              ]
            ();
     ]
