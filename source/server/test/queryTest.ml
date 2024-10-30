@@ -1990,6 +1990,31 @@ let test_handle_references_used_by_file_query context =
                ]
                |> QueryTestTypes.create_types_at_locations;
            }))
+  >>= fun () ->
+  assert_query_and_response_json
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
+        from typing import Optional
+        from other_module import GenericType
+
+        def return_generic_type() -> Optional[GenericType[int]]:
+            return GenericType[int]()
+        
+        def foo() -> None:
+            x: Optional[GenericType[int]] = return_generic_type()
+    |}
+        );
+      ]
+    ~no_validation_on_class_lookup_failure:true
+    [
+      ( "references_used_by_file(path='test.py')",
+        fun _ ->
+          {|["Query", {"error": "Type `other_module.GenericType` was not found in the type order."}]|}
+      );
+    ]
 
 
 let test_handle_query_with_build_system context =
