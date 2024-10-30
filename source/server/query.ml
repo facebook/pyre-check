@@ -536,6 +536,7 @@ let rec process_request_exn
     let parse_and_validate
         ?(unknown_is_top = false)
         ?(fill_missing_type_parameters_with_any = false)
+        ?(raise_if_missing_arguments = true)
         expression
       =
       let annotation =
@@ -571,13 +572,16 @@ let rec process_request_exn
         | _ -> annotation
       in
       if ClassHierarchy.is_instantiated order annotation then
-        let mismatches, _ =
-          GlobalResolution.validate_and_sanitize_type_arguments global_resolution annotation
-        in
-        if List.is_empty mismatches then
-          annotation
+        if raise_if_missing_arguments then
+          let mismatches, _ =
+            GlobalResolution.validate_and_sanitize_type_arguments global_resolution annotation
+          in
+          if List.is_empty mismatches then
+            annotation
+          else
+            raise (IncorrectParameters annotation)
         else
-          raise (IncorrectParameters annotation)
+          annotation
       else
         raise (ClassHierarchy.Untracked (Type.show annotation))
     in
@@ -694,7 +698,9 @@ let rec process_request_exn
           let final = AnnotatedAttribute.is_final instantiated_annotation in
           { Base.name; annotation; kind; final }
         in
-        parse_and_validate (Expression.from_reference ~location:Location.any annotation)
+        parse_and_validate
+          (Expression.from_reference ~location:Location.any annotation)
+          ~raise_if_missing_arguments:false
         |> Type.split
         |> fst
         |> Type.primitive_name

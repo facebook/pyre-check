@@ -84,7 +84,7 @@ let test_parse_query context =
   assert_fails_to_parse "types(a.py:1:2)";
   assert_fails_to_parse "types(a.py)";
   assert_fails_to_parse "types('a.py', 1, 2)";
-  assert_parses "attributes(C)" (Attributes !&"C");
+  assert_parses "attributes(int)" (Attributes !&"int");
   assert_fails_to_parse "attributes(C, D)";
   assert_parses "save_server_state('state')" (SaveServerState (PyrePath.create_absolute "state"));
   assert_fails_to_parse "save_server_state(state)";
@@ -459,6 +459,29 @@ let test_handle_query_basic context =
     (Single
        (Base.FoundAttributes
           [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:
+      {|
+      class C[T]:
+        x: T
+
+        @property
+        def foo(self) -> T:
+          return T
+    |}
+    ~query:"attributes(test.C)"
+    (Single
+       (Base.FoundAttributes
+          [
+            {
+              Base.name = "foo";
+              annotation = Type.variable "T";
+              kind = Base.Property;
+              final = false;
+            };
+            { Base.name = "x"; annotation = Type.variable "T"; kind = Base.Regular; final = false };
+          ]))
   >>= fun () ->
   assert_type_query_response
     ~source:{|
